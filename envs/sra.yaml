@@ -1,0 +1,9 @@
+name: sratools
+channels:
+  - conda-forge
+  - bioconda
+  - r
+dependencies:
+  - libgcc-ng=7.3.0=hdf63c60_0
+  - sra-tools=2.9.1_1=h470a237_0
+

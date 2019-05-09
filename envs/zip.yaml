@@ -1,0 +1,11 @@
+name: zip
+channels:
+  - conda-forge
+  - bioconda
+  - r
+dependencies:
+  - libgcc-ng=7.3.0=hdf63c60_0
+  - pigz=2.3.4=0
+  - zlib=1.2.11=h14c3975_1004
+prefix: /home/fall/anaconda3/envs/zip
+

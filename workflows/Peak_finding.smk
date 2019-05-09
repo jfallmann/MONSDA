@@ -1,0 +1,210 @@
+import glob, os, sys, inspect, snakemake
+
+###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
+###--configfile Workflow/config_compare.json --directory ${PWD}
+###--printshellcmds 2> run.log
+
+cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from Collection import *
+
+ADAPTERS=config["ADAPTERS"]
+REFERENCE=config["REFERENCE"]
+GENOME=config["GENOME"]
+NAME=config["NAME"]
+BINS=config["BINS"]
+MAPPERENV=config["MAPPERENV"]
+MAPPERBIN=config["MAPPERBIN"]
+SOURCE=sources(config)
+SAMPLES=samples(config)
+
+wildcard_constraints:
+    type="|_unique"
+
+rule all:
+    input:  expand("DONE/{file}_peaks{type}",file=SAMPLES, type=['',"_unique"])
+
+#rule bamtobedg:
+#    input:  "SORTED_MAPPED/{source}/{file}_mapped_sorted{condition}.bam",
+#            "UNIQUE_MAPPED/{source}/{file}_mapped_sorted{condition}.bam"
+#    output: "PEAKS/{source}/{file}_mapped_sorted{condition}.bedg"
+#    log:    "LOGS/{source}/Peaks/bam2bedg_{file}.log"
+#    conda:  "../envs/bedtools.yaml"
+#    params: ref=REFERENCE,
+#            gen=GENOME
+#    shell:  "bedtools genomecov -bg -ibam {input} -g {params.ref}/{params.gen}/{params.gen}.chrom.sizes > {output}"
+
+rule bamtobed:
+    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: "PEAKS/{file}_mapped_sorted.bed",
+            "PEAKS/{file}_mapped_sorted_unique.bed"
+    log:    "LOGS/Peaks/bam2bed_{file}.log"
+    threads: 1
+    conda:  "../envs/bedtools.yaml"
+    shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
+
+rule index_fa:
+    input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),#"{ref}/{{org}}/{{gen}}_{name}.fa", ref=config["REFERENCE"], name =config["NAME"])#, gen=pathstogenomes(SAMPLES, config))
+    output: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)#"{ref}/{{org}}/{{gen}}_{name}.fa.fai", ref=config["REFERENCE"], name =config["NAME"])#, gen=pathstogenomes(SAMPLES, config))
+    log:    "LOGS/{org}/{gen}/indexfa.log"
+    conda:  "../envs/samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
+
+rule get_chromsize_genomic:
+    input: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
+    output: expand("{ref}/{{org}}/{{gen}}{name}.chrom.sizes",ref=REFERENCE, name=NAME)
+    log:    "LOGS/PrepareGenomes/{org}/{gen}/chromsize.log"
+    conda:  "../envs/samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "cut -f1,2 {input} > {output} 2> {log}"
+
+rule extendbed:
+    input:  "PEAKS/{file}_mapped_sorted{type}.bed",
+            expand("{ref}/{org}{name}.chrom.sizes",ref=REFERENCE,org=genomepath(config["GENOME"],config), name=NAME)
+    output: "PEAKS/{file}_mapped_sorted_extended{type}.bed"
+    log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
+    conda:  "../envs/perl.yaml"
+    threads: 1
+    params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+            bins=BINS
+    shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
+
+rule bedtobedgraph:
+    input:  "PEAKS/{file}_mapped_sorted_extended{type}.bed" if config["CLIP"] == 'iCLIP' else "PEAKS/{file}_mapped_sorted{type}.bed"
+    output: "PEAKS/{file}_mapped_sorted{type}.bedg.gz",
+            temp("PEAKS/{file}_unsrted{type}.bedg.gz")
+    log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+    conda:  "../envs/bedtools.yaml"
+    threads: 1
+    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+            bins=BINS,
+            odir=lambda wildcards,output:(os.path.dirname(output[0]))
+    shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
+
+rule PreprocessPeaks:
+    input:  "PEAKS/{file}_mapped_sorted{type}.bedg.gz"
+    output: "PEAKS/{file}_prepeak{type}.bed.gz",
+    log:    "LOGS/Peaks/prepeak{type}_{file}.log"
+    conda:  "../envs/perl.yaml"
+    threads: 1
+    params:  bins=BINS
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} |sort -k1,1 -k2,2n | gzip > {output[0]}"
+
+rule Find_Peaks:
+    input:  "PEAKS/{file}_prepeak{type}.bed.gz"
+    output: "PEAKS/{file}_peak{type}.bed.gz"
+    log:    "LOGS/Peaks/findpeaks{type}_{file}.log"
+    conda:  "../envs/perl.yaml"
+    threads: 1
+    params: limitratio=config["MINPEAKRATIO"],
+            ratio=config["PEAKCUTOFF"],
+            distance=config["PEAKDISTANCE"],
+            width=config["PEAKWIDTH"],
+            cutoff=config["MINPEAKHEIGHT"],
+            userlimit=config["USRLIMIT"],
+            bins=BINS
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort -k1,1 -k2,2n  |gzip > {output[0]}"
+
+#rule QuantPeaks:
+#   input:  "PEAKS/{source}/Peak_{file}.bed.gz"
+#   output: "PEAKS/{source}/QuantPeak_{file}.bed.gz"
+#   params: limit=config["MINPEAKHEIGHT},
+#       distance=config["PEAKDISTANCE},
+#       width=config["PEAKWIDTH},
+#       ratio=config["PEAKCUTOFF}
+#   shell:
+
+rule AddSequenceToPeak:
+    input:  "PEAKS/{file}_peak{type}.bed.gz"
+    output: "PEAKS/{file}_peak_seq{type}.bed.gz",
+            temp("PEAKS/{file}_peak_seq{type}.tmp")
+    log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
+    conda:  "../envs/bedtools.yaml"
+    threads: 1
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
+
+rule AnnotatePeak:
+    input:  "PEAKS/{file}_peak_seq{type}.bed.gz"
+    output: "PEAKS/{file}_peak_anno{type}.bed.gz"
+    log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
+    conda:  "../envs/perl.yaml"
+    threads: 1
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+            bins=BINS,
+            anno=lambda wildcards: anno_from_file(genome(wildcards.file, config), config)
+    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
+
+rule PeakToBedg:
+    input:  "PEAKS/{file}_peak{type}.bed.gz"
+    output: "UCSC/{file}_peak{type}.fw.bedg.gz",
+            "UCSC/{file}_peak{type}.re.bedg.gz",
+            temp("UCSC/{file}_peak{type}.fw.tmp.gz"),
+            temp("UCSC/{file}_peak{type}.re.tmp.gz"),
+
+    conda:  "../envs/perl.yaml"
+    threads: 1
+    params: out=expand("UCSC/{source}",source=SOURCE),
+            bins=BINS,
+            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=config["NAME"])
+    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]}"
+
+#rule QuantPeakToBedg:
+#   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
+#   output: "UCSC/{source}/QuantPeak_{file}.fw.bedg.gz",
+#       "UCSC/{source}/QuantPeak_{file}.re.bedg.gz"
+#   params: out="UCSC/"{source},
+#       source=QuantPeak_{file}
+#   shell:  "perl {BINS}/Bed2Bedgraph.pl -f {input[0]} -t {params.source} -c /scratch2/fall/Data/GenomeStuff/ChromSizes/hg38.chrom.size -v on -p peak -x {params.out}"
+
+### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
+rule PeakToUCSC:
+    input:  "UCSC/{file}_peak{type}.fw.bedg.gz",
+            "UCSC/{file}_peak{type}.re.bedg.gz"
+    output: "UCSC/{file}_peak{type}.fw.bw",
+            "UCSC/{file}_peak{type}.re.bw",
+            temp("UCSC/{file}_{type}fw_tmp"),
+            temp("UCSC/{file}_{type}re_tmp")
+    conda:  "../envs/ucsc.yaml"
+    threads: 1
+    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=config["NAME"])
+    shell:  "zcat {input[0]} |sort -k1,1 -k2,2n > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} && zcat {input[1]} |sort -k1,1 -k2,2n > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]}"
+
+#rule QuantPeakToUCSC:
+#   input:  "UCSC/{source}/Peak_{file}.fw.bedg.gz",
+#       "UCSC/{source}/Peak_{file}.re.bedg.gz"
+#   output: "UCSC/{source}/Peak_{file}.fw.bw",
+#       "UCSC/{source}/Peak_{file}.re.bw"
+#   params: out="UCSC/"{source},
+#       source=Peak_{file}
+#   shell:  "gunzip -c {input[0]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.fw.bw && gunzip -c {input[1]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.re.bw && rm -f tmp"
+
+rule themall:
+    input:  "PEAKS/{file}_mapped_sorted{type}.bedg.gz",
+            "UCSC/{file}_peak{type}.fw.bw",
+            "UCSC/{file}_peak{type}.re.bw",
+            "UCSC/{file}_peak{type}.fw.bedg.gz",
+            "UCSC/{file}_peak{type}.re.bedg.gz",
+            "PEAKS/{file}_peak{type}.bed.gz",
+            "PEAKS/{file}_prepeak{type}.bed.gz",
+            "PEAKS/{file}_peak_seq{type}.bed.gz",
+            "PEAKS/{file}_peak_anno{type}.bed.gz" if config["ANNOTATE"] == "ON" else
+            "PEAKS/{file}_mapped_sorted{type}.bedg.gz",
+            "UCSC/{file}_peak{type}.fw.bw",
+            "UCSC/{file}_peak{type}.re.bw",
+            "UCSC/{file}_peak{type}.fw.bedg.gz",
+            "UCSC/{file}_peak{type}.re.bedg.gz",
+            "PEAKS/{file}_peak{type}.bed.gz",
+            "PEAKS/{file}_prepeak{type}.bed.gz",
+            "PEAKS/{file}_peak_seq{type}.bed.gz"
+    output: "DONE/{file}_peaks{type}"
+    run:
+        for f in output:
+            with open(f, "w") as out:
+                        out.write("DONE")

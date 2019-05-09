@@ -1,0 +1,22 @@
+name: snakemake
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bcftools=1.9=h4da6232_0
+  - picard=2.18.12=0
+  - pyfaidx=0.5.4.1=py_0
+  - pysam=0.15.0.1=py36hdfb72b2_1
+  - samtools=1.9=h46bd0b3_0
+  - snakemake=5.2.2=py36_1
+  - snakemake-minimal=5.2.2=py36_1
+  - natsort=5.4.0=py_0
+  - openssl=1.0.2p=h470a237_0
+  - pandas=0.23.4=py36hf8a1672_0
+  - pandoc=2.2.2=1
+  - pango=1.40.14=0
+  - perl=5.26.2=h470a237_0
+  - pigz=2.3.4=0
+  - pip=18.0=py36_1
+  - python=3.6.3=h1284df2_4

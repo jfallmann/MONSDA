@@ -1,0 +1,16 @@
+name: ucsc
+channels:
+  - conda-forge
+  - bioconda
+  - r
+dependencies:
+  - ca-certificates=2018.11.29=ha4d7672_0
+  - libgcc-ng=7.3.0=hdf63c60_0
+  - libpng=1.6.36=h84994c4_1000
+  - libstdcxx-ng=7.3.0=hdf63c60_0
+  - libuuid=2.32.1=h14c3975_1000
+  - mysql-connector-c=6.1.11=hab6429c_1002
+  - openssl=1.0.2q=h14c3975_0
+  - ucsc-bedgraphtobigwig=377=h199ee4e_0
+  - zlib=1.2.11=h14c3975_1004
+
