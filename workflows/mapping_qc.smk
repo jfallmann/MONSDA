@@ -22,6 +22,7 @@ SOURCE=sources(config)
 SAMPLES=samples(config)
 
 include: "trimgalore.smk"
+include: "fastqc.smk"
 
 rule all:
     input: expand("DONE/{file}_mapped",file=SAMPLES),
@@ -32,27 +33,8 @@ rule all:
 #       "LOGS/sra2fastq_{file}.log" shell: "fastq-dump -Z {input} |
 #       gzip > {output}"
 
-rule fastqc_raw:
-    input: "FASTQ/{file}.fastq.gz"
-    output: report("QC/{file}_fastqc.zip", category="QC")
-    log:    "LOGS/{file}/fastqc_raw.log"
-    conda:  "../envs/qc.yaml"
-    threads: 20
-    params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input} 2> {log};done"
-
-rule fastqc_trimmed:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-            "QC/{file}_fastqc.zip"
-    output: report("QC/{file}_trimmed_fastqc.zip", category="QC")
-    log:    "LOGS/{file}/fastqc_trimmed.log"
-    conda:  "../envs/qc.yaml"
-    threads: 20
-    params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input[0]} 2> {log};done"
-
 rule mapping:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_fastqc.zip" if config["QC"] == "ON" else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
+    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_qc.zip" if config["QC"] == "ON" else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
     output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}_unmapped.fastq"
     log:    "LOGS/{file}/mapping.log"
@@ -83,17 +65,8 @@ rule sortsam:
     threads: 20
     shell: "samtools view -H {input[0]}|grep '@HD' |pigz -p {threads} -f > {output[1]} && samtools view -H {input[0]}|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@RG'|pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@PG'|pigz -p {threads} -f >> {output[1]} && export LC_ALL=C;zcat {input[0]} | grep -v \"^@\"|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output[2]} && cat {output[1]} {output[2]} > {output[0]}"
 
-rule fastqc_mapped:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
-    output:  report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
-    log: "LOGS/{file}/fastqc_mapped.log"
-    params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-    conda: "../envs/qc.yaml"
-    threads: 20
-    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input} 2> {log};done"
-
 rule sam2bam:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz", "QC/{file}_mapped_sorted_fastqc.zip" if config["QC"] == "ON" else "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
+    input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz", "QC/{file}_mapped_sorted_qc.zip" if config["QC"] == "ON" else "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
     output: report("SORTED_MAPPED/{file}_mapped_sorted.bam", category="2BAM"),
             "SORTED_MAPPED/{file}_mapped_sorted.bam.bai"
     log:    "LOGS/{file}/sam2bam.log"
@@ -131,22 +104,11 @@ rule sam2bamuniq:
     shell: "zcat {input[0]} | samtools view -bS - | samtools sort -T {params.fn} -o {output[0]} --threads {threads} && samtools index {output[0]} 2> {log}"
            #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
 
-rule fastqc_uniquemapped:
-    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam.bai"
-    output: report("QC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
-    log: "LOGS/{file}/fastqc_uniquemapped.log"
-    conda: "../envs/qc.yaml"
-    threads: 20
-    params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-#    params: dir=expand("QC/{source}",source=SOURCE)
-    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input[0]} 2> {log};done"
-
 rule multiqc:
-    input:  expand("QC/{file}_fastqc.zip", file=SAMPLES),
-            expand("QC/{file}_trimmed_fastqc.zip", file=SAMPLES),
-            expand("QC/{file}_mapped_sorted_fastqc.zip", file=SAMPLES),
-            expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=SAMPLES)
+    input:  expand("QC/{file}_qc.zip", file=SAMPLES),
+            expand("QC/{file}_trimmed_qc.zip", file=SAMPLES),
+            expand("QC/{file}_mapped_sorted_qc.zip", file=SAMPLES),
+            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=SAMPLES)
     output: report("QC/Multi/DONE", category="QC")
     log:    "LOGS/multiqc.log"
     conda:  "../envs/qc.yaml"

@@ -35,11 +35,11 @@ rule mapping:
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
-    params: p=lambda wildcards: mapping_params(wildcards.file, "all", config),
+    params: p=lambda wildcards: mapping_params(wildcards.file, "std", config),
             index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME)),
             mapp=MAPPERBIN
-    shell: "{params.mapp} {params.p} -d {params.ref} -i {params.index} -q {input[0]} --threads {threads} -o {output[0]} -u {output[1]} 2> {log}"
+    shell: "{params.mapp} {params.p}  2> {log}"
 
 rule gzipsam:
     input: "MAPPED/{file}_mapped.sam",
