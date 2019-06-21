@@ -4,16 +4,6 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - libdeflate=1.0=h470a237_0
   - samtools=1.9=h8ee4bcc_1
   - bzip2=1.0.6=h470a237_2
-  - ca-certificates=2018.8.24=ha4d7672_0
-  - curl=7.61.0=h93b3f91_2
-  - krb5=1.14.6=0
-  - libgcc-ng=7.2.0=hdf63c60_3
-  - libssh2=1.8.0=h5b517e9_2
-  - libstdcxx-ng=7.2.0=hdf63c60_3
-  - ncurses=6.1=hfc679d8_1
-  - openssl=1.0.2p=h470a237_0
-  - xz=5.2.4=h470a237_1
   - zlib=1.2.11=h470a237_3

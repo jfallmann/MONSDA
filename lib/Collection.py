@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Apr 30 17:17:21 2019 (+0200)
+# Last-Updated: Fri Jun 21 11:22:13 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 76
+#     Update #: 85
 # URL:
 # Doc URL:
 # Keywords:
@@ -81,12 +81,27 @@ import collections
 ##############################
 ########Snakemake Subs########
 ##############################
+#def sources(config):
+#    try:
+#        ret = list()
+#        for x,y in config["SOURCE"].items():
+#            if x in list(config["SAMPLES"]):
+#                ret.append(str(y))
+#        return ret
+#
+#    except Exception as err:
+#        exc_type, exc_value, exc_tb = sys.exc_info()
+#        tbe = tb.TracebackException(
+#            exc_type, exc_value, exc_tb,
+#        )
+#        with open('error','a') as h:
+#            print(''.join(tbe.format()), file=h)
+
 def sources(config):
     try:
         ret = list()
-        for x,y in config["SOURCE"].items():
-            if x in list(config["SAMPLES"]):
-                ret.append(str(y))
+        for key in config["SOURCE"] and config["SAMPLES"]:
+            ret.append(str(key))
         return ret
 
     except Exception as err:
@@ -96,6 +111,7 @@ def sources(config):
         )
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def samples(config):
     try:
@@ -486,7 +502,6 @@ def convertcol(entry):
 def eprint(*args, **kwargs):
     try:
         with open('error', 'a') as e:
-            print('error in ')
             print(*args, file=e, **kwargs)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

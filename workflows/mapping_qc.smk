@@ -20,6 +20,8 @@ MAPPERENV=config["MAPPERENV"]
 MAPPERBIN=config["MAPPERBIN"]
 SOURCE=sources(config)
 SAMPLES=samples(config)
+if os.path.exists(SAMPLES[0]) is False:
+    SAMPLES=sampleslong(config)
 
 include: "trimgalore.smk"
 include: "fastqc.smk"

@@ -20,10 +20,14 @@ MAPPERENV=config["MAPPERENV"]
 MAPPERBIN=config["MAPPERBIN"]
 SOURCE=sources(config)
 SAMPLES=samples(config)
+if os.path.exists(SAMPLES[0]) is False:
+    SAMPLES=sampleslong(config)
 
 rule fastqc_raw:
     input: "FASTQ/{file}.fastq.gz"
     output: report("QC/{file}_qc.zip", category="QC")
+#    wildcard_constraints:
+#        file="trimmed{0}"
     log:    "LOGS/{file}/fastqc_raw.log"
     conda:  "../envs/qc.yaml"
     threads: 20
@@ -33,7 +37,7 @@ rule fastqc_raw:
 rule fastqc_trimmed:
     input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
             "QC/{file}_qc.zip"
-    output: report("QC/{file}_trimmed_fastqc.zip", category="QC")
+    output: report("QC/{file}_trimmed_qc.zip", category="QC")
     log:    "LOGS/{file}/fastqc_trimmed.log"
     conda:  "../envs/qc.yaml"
     threads: 20

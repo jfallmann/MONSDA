@@ -4,7 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bcftools=1.9=h4da6232_0
+  - bcftools=1.9=ha228f0b_4
   - picard=2.18.12=0
   - pyfaidx=0.5.4.1=py_0
   - pysam=0.15.0.1=py36hdfb72b2_1
@@ -18,5 +18,4 @@ dependencies:
   - pango=1.40.14=0
   - perl=5.26.2=h470a237_0
   - pigz=2.3.4=0
-  - pip=18.0=py36_1
-  - python=3.6.3=h1284df2_4
+  - pip=19.1.1=py36_0

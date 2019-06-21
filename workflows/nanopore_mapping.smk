@@ -20,6 +20,8 @@ MAPPERENV=config["MAPPERENV"]
 MAPPERBIN=config["MAPPERBIN"]
 SOURCE=sources(config)
 SAMPLES=samples(config)
+if os.path.exists(SAMPLES[0]) is False:
+    SAMPLES=sampleslong(config)
 
 #include: "porechop.smk" #We lack a proper adapter trimming tool
 include: "fastqc.smk"           #Need alternative for really long reads
