@@ -37,7 +37,7 @@ rule mapping:
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
-    params: p=lambda wildcards: mapping_params(wildcards.file, "std", config),
+    params: p=lambda wildcards: mapping_params(wildcards.file,None ,config),
             index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME)),
             mapp=MAPPERBIN

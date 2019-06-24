@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jun 21 11:22:13 2019 (+0200)
+# Last-Updated: Mon Jun 24 12:48:22 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 85
+#     Update #: 87
 # URL:
 # Doc URL:
 # Keywords:
@@ -210,6 +210,8 @@ def genome(s, config):
                     for x, y in config["GENOME"].items():
                         if g == y:
                             return str(y)
+                        elif g == x:
+                            return str(x)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -272,10 +274,12 @@ def pathstogenomes(samples, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def mapping_params(sample, runstate, config):
+def mapping_params(sample, runstate=None, config):
     try:
         s = os.path.basename(str(sample))
         t = genome(s,config)
+        if runstate is None:
+            runstate = str(*os.path.split(source_from_sample(sample))[-1])
         for k,v in config["MAPPING"].items():
             for g,p in v[runstate].items():
                 if g == t:
