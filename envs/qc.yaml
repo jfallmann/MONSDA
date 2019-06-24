@@ -43,8 +43,8 @@ dependencies:
   - networkx=2.0
   - numpy=1.11.3
   - openblas=0.2.20
-  - openjdk=11.0.115
-  - openssl=1.0.2o
+  - openjdk=11.0.1
+  - openssl=1.0.2
   - pango=1.40.3
   - pcre=8.41
   - perl=5.22.2.1

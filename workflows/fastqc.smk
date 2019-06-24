@@ -32,7 +32,7 @@ rule fastqc_raw:
     conda:  "../envs/qc.yaml"
     threads: 20
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input} 2> {log};done"
+    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input} 2> {log};done && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule fastqc_trimmed:
     input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
@@ -42,7 +42,7 @@ rule fastqc_trimmed:
     conda:  "../envs/qc.yaml"
     threads: 20
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input[0]} 2> {log};done"
+    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input[0]} 2> {log};done && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule fastqc_mapped:
     input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
@@ -51,7 +51,7 @@ rule fastqc_mapped:
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
     conda: "../envs/qc.yaml"
     threads: 20
-    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input} 2> {log};done"
+    shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input} 2> {log};done && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule fastqc_uniquemapped:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
@@ -62,4 +62,4 @@ rule fastqc_uniquemapped:
     threads: 20
     params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
 #    params: dir=expand("QC/{source}",source=SOURCE)
-    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input[0]} 2> {log};done"
+    shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input[0]} 2> {log};done && cd $OUT && rename fastqc qc *_fastqc*"
