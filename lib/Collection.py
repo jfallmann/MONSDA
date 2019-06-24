@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jun 24 12:48:22 2019 (+0200)
+# Last-Updated: Mon Jun 24 14:59:38 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 87
+#     Update #: 112
 # URL:
 # Doc URL:
 # Keywords:
@@ -190,9 +190,14 @@ def genomepath(s, config):
         for k,v in config["SAMPLES"].items():
             for g,l in v.items():
                 if s in l:
-                    for x, y in config["GENOME"].items():
-                        if g == y:
-                            return os.path.join(str(x),str(y))
+                    for a,b in config["SOURCE"].items():
+                        for c,d in b.items():
+                            if g == c:
+                                for x, y in config["GENOME"].items():
+                                    if str(d) == str(y):
+                                        return os.path.join(str(x),str(y))
+                                    elif str(d) == str(x):
+                                        return os.path.join(str(x),str(y))
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -207,11 +212,14 @@ def genome(s, config):
         for k,v in config["SAMPLES"].items():
             for g,l in v.items():
                 if s in l:
-                    for x, y in config["GENOME"].items():
-                        if g == y:
-                            return str(y)
-                        elif g == x:
-                            return str(x)
+                    for a,b in config["SOURCE"].items():
+                        for c,d in b.items():
+                            if g == c:
+                                for x, y in config["GENOME"].items():
+                                    if str(d) == str(y):
+                                        return str(y)
+                                    elif str(d) == str(x):
+                                        return str(x)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -274,15 +282,15 @@ def pathstogenomes(samples, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def mapping_params(sample, runstate=None, config):
+def mapping_params(sample, runstate, config):
     try:
         s = os.path.basename(str(sample))
         t = genome(s,config)
         if runstate is None:
-            runstate = str(*os.path.split(source_from_sample(sample))[-1])
+            runstate = str(os.path.split(source_from_sample(str(sample)))[-1])
         for k,v in config["MAPPING"].items():
             for g,p in v[runstate].items():
-                if g == t:
+                if str(g) == str(t):
                     return str(p)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -363,7 +371,7 @@ def source_from_sample(sample):
 
 def sample_from_path(path):
     try:
-        ret = str(os.path.join(*os.path.split(str(path))[-1]))
+        ret = str(os.path.join(os.path.split(str(path))[-1]))
         return ret
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

@@ -7,3 +7,4 @@ dependencies:
   - samtools=1.9
   - bzip2=1.0.6
   - zlib=1.2.11
+  - pigz=2.3.4
