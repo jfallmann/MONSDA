@@ -4,20 +4,20 @@ channels:
   - bioconda
   - r
 dependencies:
-  - bzip2=1.0.6=h14c3975_1002
-  - ca-certificates=2019.3.9=hecc5488_0
-  - curl=7.64.0=h646f8bb_0
-  - htslib=1.9=h4da6232_3
-  - krb5=1.16.3=hbb41f41_0
-  - libcurl=7.64.0=h01ee5af_0
-  - libdeflate=1.2=h14c3975_0
-  - libedit=3.1.20170329=hf8c457e_1001
-  - libgcc-ng=7.3.0=hdf63c60_0
-  - libssh2=1.8.0=h1ad7b7a_1003
-  - libstdcxx-ng=7.2.0=hdf63c60_3
-  - ncurses=6.1=hfc679d8_2
-  - openssl=1.0.2r=h14c3975_0
-  - segemehl=0.3.4=haeeaa98_0
-  - tk=8.6.9=h84994c4_1001
-  - xz=5.2.4=h14c3975_1001
-  - zlib=1.2.11=h14c3975_1004
+  - bzip2=1.0.6
+  - ca-certificates=2019.3.9
+  - curl=7.64.0
+  - htslib=1.9
+  - krb5=1.16.3
+  - libcurl=7.64.0
+  - libdeflate=1.2
+  - libedit=3.1.20170329
+  - libgcc-ng=7.3.0
+  - libssh2=1.8.0
+  - libstdcxx-ng=7.2.0
+  - ncurses=6.1
+  - openssl=1.0.2r
+  - segemehl=0.3.4
+  - tk=8.6.9
+  - xz=5.2.4
+  - zlib=1.2.11

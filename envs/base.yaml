@@ -4,18 +4,18 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bcftools=1.9=ha228f0b_4
-  - picard=2.18.12=0
-  - pyfaidx=0.5.4.1=py_0
-  - pysam=0.15.0.1=py36hdfb72b2_1
-  - samtools=1.9=h46bd0b3_0
-  - snakemake=5.2.2=py36_1
-  - snakemake-minimal=5.2.2=py36_1
-  - natsort=5.4.0=py_0
-  - openssl=1.0.2p=h470a237_0
-  - pandas=0.23.4=py36hf8a1672_0
-  - pandoc=2.2.2=1
-  - pango=1.40.14=0
-  - perl=5.26.2=h470a237_0
-  - pigz=2.3.4=0
-  - pip=19.1.1=py36_0
+  - bcftools=1.9
+  - picard=2.18.12
+  - pyfaidx=0.5.4.1
+  - pysam=0.15.0.1
+  - samtools=1.9
+  - snakemake=5.2.2
+  - snakemake-minimal=5.2.2
+  - natsort=5.4.0
+  - openssl=1.0.2p
+  - pandas=0.23.4
+  - pandoc=2.2.2
+  - pango=1.40.14
+  - perl=5.26.2
+  - pigz=2.3.4
+  - pip=19.1.1

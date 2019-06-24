@@ -4,6 +4,6 @@ channels:
   - bioconda
   - r
 dependencies:
-  - libgcc-ng=7.3.0=hdf63c60_0
-  - sra-tools=2.9.1_1=h470a237_0
+  - libgcc-ng=7.3.0
+  - sra-tools=2.9.1_1
 

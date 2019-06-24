@@ -5,7 +5,7 @@ channels:
   - r
   - defaults
 dependencies:
-  - infernal=1.1.2=h470a237_1
-  - trnascan-se=2.0=pl526h470a237_1
-  - libgcc-ng=7.2.0=hdf63c60_3
-  - perl=5.26.2=h470a237_0
+  - infernal=1.1.2
+  - trnascan-se=2.0
+  - libgcc-ng=7.2.0
+  - perl=5.26.2
