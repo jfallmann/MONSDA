@@ -45,7 +45,7 @@
 
 # Code:
 rule bbduk_trim:
-        input:  "FASTQ/{file}.fastq.gz", "QC/{file}_fastqc.zip" if config["QC"] == "ON" else  "FASTQ/{file}.fastq.gz"
+        input:  "FASTQ/{file}.fastq.gz", "QC/{file}_fastqc.zip" if "ON" in config["QC"] else  "FASTQ/{file}.fastq.gz"
         output: "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
         log:    "LOGS/{file}_trimmed.log"
         params: ada={ADAPTERS}

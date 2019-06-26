@@ -2,19 +2,19 @@
     "REFERENCE": "${PWD}/GENOMES", #where to find the reference genomes
     "BINS": "scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
-                "H.sapiens" : "hg38",
+                "H.sapiens" : "hg38"
               },
     "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "genomic": "genomic"
             },
     "SOURCE": { #which organisms are to be parsed for which samples
                 "LE04": {
-                    "hg38",
+                    "hg38"
                 }
               },
     "SAMPLES":{ #which samples to analyze
                 "LE04": {
-                    "hg38": ["01_R1_01", "01_R2_01", "02_R1_01"],
+                    "hg38": ["01_R1_01", "01_R2_01", "02_R1_01"]
                 }
               },
 #Trimming options
@@ -26,11 +26,13 @@
     "MAPPING": { #options for mapping for each sample/condition
                  "LE04": {
                      "std" : {
-                         "hg38": "--silent --evalue 500 --differences 3 --maxinterval 1000 --accuracy 85",
+                         "hg38": "--silent --evalue 500 --differences 3 --maxinterval 1000 --accuracy 85"
                      }
-                 },
+                 }
                },
-    "QC": "ON", # comment this out if you do not want QC,
+    "QC": {
+        "ON": "" # comment this out if you do not want QC
+    },
 ##These options are used for CLIP/RIP processing
 #    "CLIP":"iCLIP", # type of CLIP/RIP experiment, so far only iCLIP has specific meaning
 #    "MINPEAKRATIO": "0.5",

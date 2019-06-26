@@ -49,7 +49,7 @@ rule fastqc_trimmed:
     shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input[0]} 2> {log};done"
 
 rule segemehl_map_artificial:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_fastqc.zip" if config["QC"] == "ON"  else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
+    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_fastqc.zip" if "ON" in config["QC"]  else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
     output: report("MAPPED/{file}_mapped_artificial.sam", category="MAPPING"),
             "UNMAPPED/{file}_unmapped_artificial.fastq"
     log:    "LOGS/{file}/segemehl_map_artificial.log"
@@ -155,7 +155,7 @@ rule fastqc_mapped:
     shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input} 2> {log};done"
 
 rule sam2bam:
-    input:  "SORTED_MAPPED/{file}_mapped_{cond}_sorted.sam.gz", "QC/{file}_mapped_{cond}_sorted_fastqc.zip" if config["QC"] == "ON" else "SORTED_MAPPED/{file}_mapped_{cond}_sorted.sam.gz"
+    input:  "SORTED_MAPPED/{file}_mapped_{cond}_sorted.sam.gz", "QC/{file}_mapped_{cond}_sorted_fastqc.zip" if "ON" in config["QC"] else "SORTED_MAPPED/{file}_mapped_{cond}_sorted.sam.gz"
     output: report("SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam", category="2BAM"),
             "SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam.bai"
     log:    "LOGS/{file}/sam2bam_{cond}.log"
@@ -241,7 +241,7 @@ rule fastqc_phasedmapped:
     shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input[0]} 2> {log};done"
 
 rule remove_dups:
-    input:  "SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam", "QC/{file}_mapped_{cond}_sorted_fastqc.zip" if config["QC"] == "ON" else "SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam"
+    input:  "SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam", "QC/{file}_mapped_{cond}_sorted_fastqc.zip" if "ON" in config["QC"] else "SORTED_MAPPED/{file}_mapped_{cond}_sorted.bam"
     output: report("SORTED_MAPPED/{file}_mapped_{cond}_sorted_dedup.bam", category="DEDUP"),
             "LOGS/{file}_{cond}_dedup.txt",
             "SORTED_MAPPED/{file}_mapped_{cond}_sorted_dedup.bam.bai"
@@ -319,7 +319,7 @@ rule multiqc:
     shell:  "multiqc -k json -z -o {params.dir} . 2> {log}"
 
 rule themall:
-    input:  "QC/Multi/multiqc_report.html", "PHASED_MAPPED/{file}_mapped_cluster_sorted_phased_dedup.bam" if config["QC"] == "ON" else "PHASED_MAPPED/{file}_mapped_cluster_sorted_phased_dedup.bam"
+    input:  "QC/Multi/multiqc_report.html", "PHASED_MAPPED/{file}_mapped_cluster_sorted_phased_dedup.bam" if "ON" in config["QC"] else "PHASED_MAPPED/{file}_mapped_cluster_sorted_phased_dedup.bam"
     output: "DONE/{file}_processed"
 #    conda: "../envs/base.yaml"
     run:
