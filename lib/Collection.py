@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 16:11:02 2019 (+0200)
+# Last-Updated: Mon Jul  1 16:11:56 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 137
+#     Update #: 138
 # URL:
 # Doc URL:
 # Keywords:
@@ -469,7 +469,7 @@ def find_innermost_value_from_dict(dictionary):
             else:
                 return v
         else:
-            return v
+            return dictionary
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
