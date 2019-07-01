@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 15:52:11 2019 (+0200)
+# Last-Updated: Mon Jul  1 16:00:00 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 130
+#     Update #: 133
 # URL:
 # Doc URL:
 # Keywords:
@@ -439,11 +439,10 @@ def find_all_values_on_key(key, dictionary):
 
 def find_innermost_value_from_dict(dictionary):
     for k, v in dictionary.items():
-        for k, v in d.items():
-            if isinstance(v, dict):
-                myprint(v)
-            else:
-                return v
+        if isinstance(v, dict):
+            find_innermost_value_from_dict(v)
+        else:
+            return v
 
 def removekey(d, key):
     try:
