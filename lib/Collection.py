@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 16:11:56 2019 (+0200)
+# Last-Updated: Mon Jul  1 17:40:50 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 138
+#     Update #: 210
 # URL:
 # Doc URL:
 # Keywords:
@@ -112,14 +112,14 @@ def sources(config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-
 def samples(config):
     try:
         ret = list()
         for x,y in config["SOURCE"].items():
-            for s in config["SAMPLES"][x]:
-                n = find_innermost_value_from_dict(s)
-                ret.append(os.path.join(str(x),str(n)))
+            k = find_innermost_value_from_dict(config["SAMPLES"][x])
+            for l in k:
+                ret.append(os.path.join(str(x),str(l)))
+                print('sret ',ret)
         return ret
 
     except Exception as err:
@@ -135,8 +135,9 @@ def sampleslong(config):
         ret = list()
         for x,y in config["SOURCE"].items():
             for s in config["SAMPLES"][x]:
-                for n in config["SAMPLES"][x][s]:
-                    ret.append(os.path.join(str(x),str(s),str(n)))
+                k = list_all_values_of_dict(config["SAMPLES"][x][s])
+                for v in k:
+                    ret.append(os.path.join(str(x),str(s),str(v)))
         return ret
 
     except Exception as err:
@@ -462,14 +463,16 @@ def find_all_values_on_key(key, dictionary):
 
 def find_innermost_value_from_dict(dictionary):
     try:
+        ret = list()
         if isinstance(dictionary, dict):
             for k, v in dictionary.items():
                 if isinstance(v, dict):
                     find_innermost_value_from_dict(v)
-            else:
-                return v
+                else:
+                    ret.append(v)
         else:
-            return dictionary
+            ret.apend(dictionary)
+        return ret
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
