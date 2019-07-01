@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 17:54:01 2019 (+0200)
+# Last-Updated: Mon Jul  1 17:59:38 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 220
+#     Update #: 222
 # URL:
 # Doc URL:
 # Keywords:
@@ -119,7 +119,6 @@ def samples(config):
             k = find_innermost_value_from_dict(config["SAMPLES"][x])
             for l in k:
                 ret.append(os.path.join(str(x),str(l)))
-            print('sret ',ret)
         return ret
 
     except Exception as err:
@@ -137,7 +136,11 @@ def sampleslong(config):
             for s in config["SAMPLES"][x]:
                 k = list_all_values_of_dict(config["SAMPLES"][x][s])
                 for v in k:
-                    ret.append(os.path.join(str(x),str(s),str(v)))
+                    if isinstance(v, list):
+                        for z in v:
+                            ret.append(os.path.join(str(x),str(s),str(z)))
+                    else:
+                        ret.append(os.path.join(str(x),str(s),str(v)))
         return ret
 
     except Exception as err:
