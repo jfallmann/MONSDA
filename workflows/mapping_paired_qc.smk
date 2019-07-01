@@ -53,7 +53,7 @@ rule fastqc_trimmed:
     shell: "for i in {input[0]}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input[0]} 2> {log};done"
 
 rule mapping:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_fastqc.zip" if config["QC"] == "ON" else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
+    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_fastqc.zip" if "ON" in config["QC"] else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
     output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}_unmapped.fastq"
     log:    "LOGS/{file}/mapping.log"
@@ -94,7 +94,7 @@ rule fastqc_mapped:
     shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input} 2> {log};done"
 
 rule sam2bam:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz", "QC/{file}_mapped_sorted_fastqc.zip" if config["QC"] == "ON" else "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
+    input:  "SORTED_MAPPED/{file}_mapped_sorted.sam.gz", "QC/{file}_mapped_sorted_fastqc.zip" if "ON" in config["QC"] else "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
     output: report("SORTED_MAPPED/{file}_mapped_sorted.bam", category="2BAM"),
             "SORTED_MAPPED/{file}_mapped_sorted.bam.bai"
     log:    "LOGS/{file}/sam2bam.log"
@@ -155,7 +155,7 @@ rule multiqc:
     shell: "OUT=$(dirname {output}); multiqc -k json -z -o $OUT . 2> {log}"
 
 rule themall:
-    input:  "QC/Multi/multiqc_report.html", "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam" if config["QC"] == "ON" else "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  "QC/Multi/multiqc_report.html", "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam" if "ON" in config["QC"] else "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: "DONE/{file}_processed"
     run:
         for f in output:

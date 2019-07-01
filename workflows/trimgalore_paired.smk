@@ -45,7 +45,7 @@
 
 # Code:
 rule trimgalore_trim_paired:
-    input:  "FASTQ/{file}.fastq.gz", "QC/{file}_fastqc.zip" if config["QC"] == "ON" else "FASTQ/{file}.fastq.gz"
+    input:  "FASTQ/{file}.fastq.gz", "QC/{file}_fastqc.zip" if "ON" in config["QC"] else "FASTQ/{file}.fastq.gz"
     output: "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/trimgalore.yaml"
