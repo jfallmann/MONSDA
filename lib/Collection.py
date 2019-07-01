@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 16:05:56 2019 (+0200)
+# Last-Updated: Mon Jul  1 16:07:06 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 135
+#     Update #: 136
 # URL:
 # Doc URL:
 # Keywords:
@@ -118,7 +118,7 @@ def samples(config):
         ret = list()
         for x,y in config["SOURCE"].items():
             for s in config["SAMPLES"][x]:
-                n = find_innermost_values_from_dict(s)
+                n = find_innermost_value_from_dict(s)
                 ret.append(os.path.join(str(x),str(n)))
         return ret
 
