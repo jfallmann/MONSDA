@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 16:00:00 2019 (+0200)
+# Last-Updated: Mon Jul  1 16:05:56 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 133
+#     Update #: 135
 # URL:
 # Doc URL:
 # Keywords:
@@ -424,25 +424,49 @@ def runstate_from_sample(sample):
 #########Python Subs##########
 ##############################
 def list_all_values_of_dict(dictionary):
-    for values in dictionary.values():
-        if isinstance(values, dict):
-          yield from list_all_values_of_dict(values)
-        else:
-          yield values
+    try:
+        for values in dictionary.values():
+            if isinstance(values, dict):
+                yield from list_all_values_of_dict(values)
+            else:
+                yield values
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
 
 def find_all_values_on_key(key, dictionary):
-    for k, v in dictionary.items():
-        if k == key:
-            yield v
-        if isinstance(v, dict):
-            yield from find_all_values_on_key(key, v)
+    try:
+        for k, v in dictionary.items():
+            if k == key:
+                yield v
+            if isinstance(v, dict):
+                yield from find_all_values_on_key(key, v)
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
 
 def find_innermost_value_from_dict(dictionary):
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            find_innermost_value_from_dict(v)
-        else:
-            return v
+    try:
+        for k, v in dictionary.items():
+            if isinstance(v, dict):
+                find_innermost_value_from_dict(v)
+            else:
+                return v
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
 
 def removekey(d, key):
     try:
