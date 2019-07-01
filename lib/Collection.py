@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jun 24 14:59:38 2019 (+0200)
+# Last-Updated: Mon Jul  1 15:52:11 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 112
+#     Update #: 130
 # URL:
 # Doc URL:
 # Keywords:
@@ -118,8 +118,8 @@ def samples(config):
         ret = list()
         for x,y in config["SOURCE"].items():
             for s in config["SAMPLES"][x]:
-                for n in config["SAMPLES"][x][s]:
-                    ret.append(os.path.join(str(x),str(n)))
+                n = find_innermost_values_from_dict(s)
+                ret.append(os.path.join(str(x),str(n)))
         return ret
 
     except Exception as err:
@@ -286,12 +286,14 @@ def mapping_params(sample, runstate, config):
     try:
         s = os.path.basename(str(sample))
         t = genome(s,config)
+        mp = list()
         if runstate is None:
-            runstate = str(os.path.split(source_from_sample(str(sample)))[-1])
+            runstate = str(os.path.split(runstate_from_sample(str(sample)))[-1])
         for k,v in config["MAPPING"].items():
             for g,p in v[runstate].items():
                 if str(g) == str(t):
-                    return str(p)
+                    mp.append()
+        return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -396,9 +398,53 @@ def anno_from_file(s, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
+def runstate_from_sample(sample):
+    try:
+        runstate = list()
+        for s in samples:
+            s = os.path.basename(s)
+            for k,v in config["SAMPLES"].items():
+                for g,l in list_all_values_of_dict(v):
+                        for s in l:
+                            for x, y in config["GENOME"].items():
+                                if g == y:
+                                    ret.append(os.path.join(str(x),str(y)))
+        return ret
+#        return sorted(list(set(ret)))
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+
 ##############################
 #########Python Subs##########
 ##############################
+def list_all_values_of_dict(dictionary):
+    for values in dictionary.values():
+        if isinstance(values, dict):
+          yield from list_all_values_of_dict(values)
+        else:
+          yield values
+
+def find_all_values_on_key(key, dictionary):
+    for k, v in dictionary.items():
+        if k == key:
+            yield v
+        if isinstance(v, dict):
+            yield from find_all_values_on_key(key, v)
+
+def find_innermost_value_from_dict(dictionary):
+    for k, v in dictionary.items():
+        for k, v in d.items():
+            if isinstance(v, dict):
+                myprint(v)
+            else:
+                return v
+
 def removekey(d, key):
     try:
         r = dict(d)
