@@ -41,7 +41,7 @@ rule mapping:
             index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
             mapp=MAPPERBIN
-    shell: "{params.mapp} {params.mpara} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{output[0]}) | grep -P '\t4\t' > {output[1]} 2> {log}"
+    shell: "for i in {{params.mpara}};do {params.mapp} $i {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{output[0]}) | grep -P '\t4\t' > {output[1]} 2> {log}"
 
 rule gzipsam:
     input: "MAPPED/{file}_mapped.sam",
