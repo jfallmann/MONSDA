@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 16:07:06 2019 (+0200)
+# Last-Updated: Mon Jul  1 16:11:02 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 136
+#     Update #: 137
 # URL:
 # Doc URL:
 # Keywords:
@@ -425,11 +425,15 @@ def runstate_from_sample(sample):
 ##############################
 def list_all_values_of_dict(dictionary):
     try:
-        for values in dictionary.values():
-            if isinstance(values, dict):
-                yield from list_all_values_of_dict(values)
-            else:
-                yield values
+        if isinstance(dictionary, dict):
+            for values in dictionary.values():
+                if isinstance(values, dict):
+                    yield from list_all_values_of_dict(values)
+                else:
+                    yield values
+        else:
+            yield dictionary
+
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -440,11 +444,14 @@ def list_all_values_of_dict(dictionary):
 
 def find_all_values_on_key(key, dictionary):
     try:
-        for k, v in dictionary.items():
-            if k == key:
-                yield v
-            if isinstance(v, dict):
-                yield from find_all_values_on_key(key, v)
+        if isinstance(dictionary, dict):
+            for k, v in dictionary.items():
+                if k == key:
+                    yield v
+                if isinstance(v, dict):
+                    yield from find_all_values_on_key(key, v)
+        else:
+            yield dictionary
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -455,11 +462,14 @@ def find_all_values_on_key(key, dictionary):
 
 def find_innermost_value_from_dict(dictionary):
     try:
-        for k, v in dictionary.items():
-            if isinstance(v, dict):
-                find_innermost_value_from_dict(v)
+        if isinstance(dictionary, dict):
+            for k, v in dictionary.items():
+                if isinstance(v, dict):
+                    find_innermost_value_from_dict(v)
             else:
                 return v
+        else:
+            return v
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
