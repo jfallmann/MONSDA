@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul  1 17:59:38 2019 (+0200)
+# Last-Updated: Tue Jul  2 10:30:37 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 222
+#     Update #: 234
 # URL:
 # Doc URL:
 # Keywords:
@@ -292,11 +292,11 @@ def mapping_params(sample, runstate, config):
         t = genome(s,config)
         mp = list()
         if runstate is None:
-            runstate = str(os.path.split(runstate_from_sample(str(sample)))[-1])
-        for k,v in config["MAPPING"].items():
-            for g,p in v[runstate].items():
-                if str(g) == str(t):
-                    mp.append()
+            runstate = runstate_from_sample(sample, config)
+        x = dict(os.path.split(source_from_sample(sample))
+        for k,v in config["MAPPING"][x]:
+            if k in runstate:
+                 mp.extend([k,v])
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -402,17 +402,15 @@ def anno_from_file(s, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def runstate_from_sample(sample):
+def runstate_from_sample(sample,config):
     try:
         runstate = list()
-        for s in samples:
+        for s in sample:
             s = os.path.basename(s)
             for k,v in config["SAMPLES"].items():
                 for g,l in list_all_values_of_dict(v):
-                        for s in l:
-                            for x, y in config["GENOME"].items():
-                                if g == y:
-                                    ret.append(os.path.join(str(x),str(y)))
+                    if s in l:
+                        ret.append(g)
         return ret
 #        return sorted(list(set(ret)))
     except Exception as err:
