@@ -1,4 +1,6 @@
 import glob, os, sys, inspect, snakemake
+from snakemake.utils import validate, min_version
+min_version("5.3.0")
 
 ###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
 ###--configfile Workflow/config_compare.json --directory ${PWD}
