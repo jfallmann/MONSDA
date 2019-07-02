@@ -24,10 +24,10 @@ if os.path.exists(SAMPLES[0]) is False:
     SAMPLES=sampleslong(config)
 
 rule fastqc_raw:
-    input: "FASTQ/{file}.fastq.gz"
+    input: expand("FASTQ/{file}.fastq.gz",file=SAMPLES)
     output: report("QC/{file}_qc.zip", category="QC")
-#    wildcard_constraints:
-#        file="trimmed{0}"
+    wildcard_constraints:
+        file="trimmed{0}"
     log:    "LOGS/{file}/fastqc_raw.log"
     conda:  "../envs/qc.yaml"
     threads: 20
@@ -35,9 +35,11 @@ rule fastqc_raw:
     shell: "for i in {input}; do OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input} 2> {log};done && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule fastqc_trimmed:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-            "QC/{file}_qc.zip"
+    input:  expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=SAMPLES),
+            expand("QC/{file}_qc.zip", file=SAMPLES)
     output: report("QC/{file}_trimmed_qc.zip", category="QC")
+    wildcard_constraints:
+        file="trimmed{1}"
     log:    "LOGS/{file}/fastqc_trimmed.log"
     conda:  "../envs/qc.yaml"
     threads: 20

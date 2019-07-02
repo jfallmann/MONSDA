@@ -33,17 +33,17 @@ rule all:
            "QC/Multi/DONE"
 
 rule mapping:
-    input:  "TRIMMED_FASTQ/{file}_trimmed.fastq.gz", "QC/{file}_trimmed_qc.zip" if "ON" in config["QC"] else "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
+    input:  rules.fastqc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
     output: report("MAPPED/{file}{runstate}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}{runstate}_unmapped.fastq"
-    log:    "LOGS/{file}/mapping.log"
+    log:    "LOGS/{file}/{runstate}mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
     params: mpara = lambda wildcards: mapping_params(wildcards.file, None ,config),
             index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
             mapp=MAPPERBIN,
-            of = lambda wildcards: "{out}".format(out="MAPPED/"+str"wildcards.file")
+            of = lambda wildcards: "{out}".format(out="MAPPED/"+str(wildcards.file))
     shell: "arr=({params.mpara});alen=$({#arr[@]});for i in \"${{!arr[@]}}\";do {params.mapp} {params.mpara[$i][1]} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{params.of}_{params.mpara[$i][1]}_mapped.sam) | grep -P '\t4\t' > UN{params.of}_{params.mpara[$i][1]}_unmapped.fastq) 2>> {log};done"
 #           arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done
 

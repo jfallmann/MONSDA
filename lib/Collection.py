@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jul  2 10:30:37 2019 (+0200)
+# Last-Updated: Tue Jul  2 11:35:02 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 234
+#     Update #: 236
 # URL:
 # Doc URL:
 # Keywords:
@@ -293,7 +293,8 @@ def mapping_params(sample, runstate, config):
         mp = list()
         if runstate is None:
             runstate = runstate_from_sample(sample, config)
-        x = dict(os.path.split(source_from_sample(sample))
+        x = source_from_sample(sample).split(os.sep)
+        print(x)
         for k,v in config["MAPPING"][x]:
             if k in runstate:
                  mp.extend([k,v])
