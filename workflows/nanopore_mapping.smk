@@ -1,29 +1,4 @@
-import glob, os, sys, inspect, snakemake
-from snakemake.utils import validate, min_version
-min_version("5.3.0")
-
-###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
-###--configfile Workflow/config_compare.json --directory ${PWD}
-###--printshellcmds 2> run.log
-
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
-from Collection import *
-
-QC=config["QC"]
-ADAPTERS=config["ADAPTERS"]
-REFERENCE=config["REFERENCE"]
-GENOME=config["GENOME"]
-NAME=config["NAME"] if config["NAME"] else ''
-BINS=config["BINS"]
-MAPPERENV=config["MAPPERENV"]
-MAPPERBIN=config["MAPPERBIN"]
-SOURCE=sources(config)
-SAMPLES=samples(config)
-if os.path.exists(SAMPLES[0]) is False:
-    SAMPLES=sampleslong(config)
+include: "header.smk"
 
 #include: "porechop.smk" #We lack a proper adapter trimming tool
 include: "fastqc.smk"           #Need alternative for really long reads
@@ -33,10 +8,10 @@ rule all:
            "QC/Multi/DONE"
 
 rule mapping:
-    input:  rules.fastqc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
+    input:  rules.fastqc_trimmed.input, rules.fastqc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
     output: report("MAPPED/{file}{runstate}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}{runstate}_unmapped.fastq"
-    log:    "LOGS/{file}/{runstate}mapping.log"
+    log:    "LOGS/{file}{runstate}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
     params: mpara = lambda wildcards: mapping_params(wildcards.file, None ,config),
@@ -44,7 +19,7 @@ rule mapping:
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
             mapp=MAPPERBIN,
             of = lambda wildcards: "{out}".format(out="MAPPED/"+str(wildcards.file))
-    shell: "arr=({params.mpara});alen=$({#arr[@]});for i in \"${{!arr[@]}}\";do {params.mapp} {params.mpara[$i][1]} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{params.of}_{params.mpara[$i][1]}_mapped.sam) | grep -P '\t4\t' > UN{params.of}_{params.mpara[$i][1]}_unmapped.fastq) 2>> {log};done"
+    shell: "arr=({params.mpara});alen=$({{#arr[@]}});for i in \"${{!arr[@]}}\";do {params.mapp} {params.mpara[$i][1]} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{params.of}_{params.mpara[$i][1]}_mapped.sam) | grep -P '\t4\t' > UN{params.of}_{params.mpara[$i][1]}_unmapped.fastq) 2>> {log};done"
 #           arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done
 
 rule gzipsam:
