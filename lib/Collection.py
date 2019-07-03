@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jul  3 10:21:44 2019 (+0200)
+# Last-Updated: Wed Jul  3 16:44:43 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 245
+#     Update #: 246
 # URL:
 # Doc URL:
 # Keywords:
@@ -422,7 +422,10 @@ def runstate_from_sample(sample,config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-
+def aggregate_input(wildcards):
+    return expand("post/{sample}/{i}.txt",
+           sample=wildcards.sample,
+           i=glob_wildcards(os.path.join(checkpoint_output, "{i}.txt")).i)
 ##############################
 #########Python Subs##########
 ##############################

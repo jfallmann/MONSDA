@@ -4,8 +4,8 @@ include: "header.smk"
 include: "fastqc.smk"           #Need alternative for really long reads
 
 rule all:
-    input: expand("DONE/{file}_mapped",file=SAMPLES),
-           "QC/Multi/DONE"
+    input: "QC/Multi/DONE"
+           #input: rules.multiqc.output #not working, rule multiqc not yet defined
 
 rule mapping:
     input:  rules.qc_trimmed.input, rules.qc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
@@ -79,19 +79,27 @@ rule sam2bamuniq:
            #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
 
 rule multiqc:
-    input: rules.qc_raw.output,
-           rules.qc_trimmed.output,
-           rules.qc_mapped.output,
-           rules.qc_uniquemapped.output
+    input:  snakemake.utils.listfiles("QC/{file}*_gc.zip", restriction=None, omit_value=None)
+#    input:  expand("QC/{file}_qc.zip", file=SAMPLES),
+#            expand("QC/{file}_trimmed_qc.zip", file=SAMPLES),
+#            expand("QC/{file}_mapped_sorted_qc.zip", file=SAMPLES),
+#            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=SAMPLES)
+#    input: rules.qc_raw.output,
+#           rules.qc_trimmed.output,
+#           rules.qc_mapped.output,
+#           rules.qc_uniquemapped.output
     output: report("QC/Multi/DONE", category="QC")
     log:    "LOGS/multiqc.log"
     conda:  "../envs/qc.yaml"
     shell:  "OUT=$(dirname {output}); multiqc -k json -z -o $OUT $PWD 2> {log} && touch QC/Multi/DONE"
 
-rule themall:
-    input:  rules.multiqc.output, rules.sam2bamuniq.output if "ON" in config["QC"] else rules.sam2bamuniq.output
-    output: "DONE/{file}_mapped"
-    run:
-        for f in output:
-            with open(f, "w") as out:
-                out.write("DONE")
+onsuccess:
+    print("Workflow finished, no error")
+
+#rule themall:
+#    input:  rules.multiqc.output, rules.sam2bamuniq.output if "ON" in config["QC"] else rules.sam2bamuniq.output
+#    output: "DONE/{file}_mapped"
+#    run:
+#        for f in output:
+#            with open(f, "w") as out:
+#                out.write("DONE")
