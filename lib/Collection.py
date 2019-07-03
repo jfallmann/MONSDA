@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jul  2 23:42:25 2019 (+0200)
+# Last-Updated: Wed Jul  3 10:21:44 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 238
+#     Update #: 245
 # URL:
 # Doc URL:
 # Keywords:
@@ -294,9 +294,10 @@ def mapping_params(sample, runstate, config):
         if runstate is None:
             runstate = runstate_from_sample(sample, config)
         x = source_from_sample(sample).split(os.sep)
-        for k,v in config["MAPPING"][x]:
-            if k in runstate:
-                 mp.extend([k,v])
+        for k in getFromDict(config["MAPPING"],x):
+            for r in runstate:
+                if r in k:
+                    mp.extend([r,k[r]])
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -404,12 +405,12 @@ def anno_from_file(s, config):
 
 def runstate_from_sample(sample,config):
     try:
-        runstate = list()
+        ret = list()
         for s in sample:
             s = os.path.basename(s)
             for k,v in config["SAMPLES"].items():
-                for g,l in list_all_values_of_dict(v):
-                    if s in l:
+                for g in list_all_values_of_dict(v):
+                    if s in find_all_values_on_key(g,v):
                         ret.append(g)
         return ret
 #        return sorted(list(set(ret)))
@@ -425,6 +426,15 @@ def runstate_from_sample(sample,config):
 ##############################
 #########Python Subs##########
 ##############################
+def getFromDict(dataDict, mapList):
+    for k in mapList: dataDict = dataDict[k]
+    return dataDict
+
+def nested_set(dic, keys, value):
+    for key in keys[:-1]:
+        dic = dic.setdefault(key, {})
+    dic[keys[-1]] = value
+
 def list_all_values_of_dict(dictionary):
     try:
         if isinstance(dictionary, dict):
