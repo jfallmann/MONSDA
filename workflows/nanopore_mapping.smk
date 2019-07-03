@@ -8,7 +8,7 @@ rule all:
            "QC/Multi/DONE"
 
 rule mapping:
-    input:  rules.fastqc_trimmed.input, rules.fastqc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
+    input:  rules.qc_trimmed.input, rules.qc_trimmed.output if "ON" in config["QC"] else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES)
     output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}_unmapped.fastq"
     log:    "LOGS/{file}/mapping.log"
@@ -79,17 +79,17 @@ rule sam2bamuniq:
            #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
 
 rule multiqc:
-    input: rules.fastqc_raw.output,
-           rules.fastqc_trimmed.output,
-           rules.fastqc_mapped.output,
-           rules.fastqc_uniquemapped.output
+    input: rules.qc_raw.output,
+           rules.qc_trimmed.output,
+           rules.qc_mapped.output,
+           rules.qc_uniquemapped.output
     output: report("QC/Multi/DONE", category="QC")
     log:    "LOGS/multiqc.log"
     conda:  "../envs/qc.yaml"
     shell:  "OUT=$(dirname {output}); multiqc -k json -z -o $OUT $PWD 2> {log} && touch QC/Multi/DONE"
 
 rule themall:
-    input:  "QC/Multi/DONE", "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam" if "ON" in config["QC"] else "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  rules.multiqc.output, rules.sam2bamuniq.output if "ON" in config["QC"] else rules.sam2bamuniq.output
     output: "DONE/{file}_mapped"
     run:
         for f in output:
