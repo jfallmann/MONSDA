@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jul  4 15:20:51 2019 (+0200)
+# Last-Updated: Thu Jul  4 17:45:32 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 285
+#     Update #: 290
 # URL:
 # Doc URL:
 # Keywords:
@@ -425,8 +425,7 @@ def samplecond(sample,config):
         ret = list()
         for s in sample:
             for r in runstate_from_sample([s],config):
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),"{s}".format(s=os.path.basename(s))))
-        print(ret)
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
         return ret
 
     except Exception as err:
