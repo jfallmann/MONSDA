@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jul  3 16:44:43 2019 (+0200)
+# Last-Updated: Thu Jul  4 15:20:51 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 246
+#     Update #: 285
 # URL:
 # Doc URL:
 # Keywords:
@@ -409,11 +409,26 @@ def runstate_from_sample(sample,config):
         for s in sample:
             s = os.path.basename(s)
             for k,v in config["SAMPLES"].items():
-                for g in list_all_values_of_dict(v):
-                    if s in find_all_values_on_key(g,v):
-                        ret.append(g)
+                for f in find_key_for_value(s,v):
+                    ret.append(f)
         return ret
-#        return sorted(list(set(ret)))
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+def samplecond(sample,config):
+    try:
+        ret = list()
+        for s in sample:
+            for r in runstate_from_sample([s],config):
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),"{s}".format(s=os.path.basename(s))))
+        print(ret)
+        return ret
+
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -438,6 +453,25 @@ def nested_set(dic, keys, value):
         dic = dic.setdefault(key, {})
     dic[keys[-1]] = value
 
+def list_all_keys_of_dict(dictionary):
+    try:
+        if isinstance(dictionary, dict):
+            for key in dictionary.keys():
+                if isinstance(key, dict):
+                    yield from list_all_keys_of_dict(key)
+                else:
+                    yield key
+        else:
+            yield dictionary
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
 def list_all_values_of_dict(dictionary):
     try:
         if isinstance(dictionary, dict):
@@ -461,12 +495,32 @@ def find_all_values_on_key(key, dictionary):
     try:
         if isinstance(dictionary, dict):
             for k, v in dictionary.items():
-                if k == key:
-                    yield v
                 if isinstance(v, dict):
                     yield from find_all_values_on_key(key, v)
+                elif k == key:
+                    yield v
+
         else:
-            yield dictionary
+            return dictionary
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+def find_key_for_value(val, dictionary):
+    try:
+        if isinstance(dictionary, dict):
+            for k, v in dictionary.items():
+                if isinstance(v, dict):
+                    yield from find_key_for_value(val, v)
+                elif v == val or val in v:
+                    yield k
+
+        else:
+            return dictionary
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
