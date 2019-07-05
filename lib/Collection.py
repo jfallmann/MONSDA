@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jul  4 17:45:32 2019 (+0200)
+# Last-Updated: Fri Jul  5 15:56:33 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 290
+#     Update #: 348
 # URL:
 # Doc URL:
 # Keywords:
@@ -190,18 +190,17 @@ def get_placeholder(config):
 
 def genomepath(s, config):
     try:
-        s = os.path.basename(str(s))
-        for k,v in config["SAMPLES"].items():
-            for g,l in v.items():
-                if s in l:
-                    for a,b in config["SOURCE"].items():
-                        for c,d in b.items():
-                            if g == c:
-                                for x, y in config["GENOME"].items():
-                                    if str(d) == str(y):
-                                        return os.path.join(str(x),str(y))
-                                    elif str(d) == str(x):
-                                        return os.path.join(str(x),str(y))
+        sa = os.path.basename(str(s))
+        cond= s.split(os.sep)[-2]
+        sk = find_key_for_value(sa, config["SAMPLES"])
+        for skey in sk:
+            klist = value_extract(skey, config["SOURCE"])
+            for k in klist:
+                for x, y in config["GENOME"].items():
+                    if str(k) == str(y):
+                        return os.path.join(str(x),str(y))
+                    elif str(k) == str(x):
+                        return os.path.join(str(x),str(y))
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -292,12 +291,13 @@ def mapping_params(sample, runstate, config):
         t = genome(s,config)
         mp = list()
         if runstate is None:
-            runstate = runstate_from_sample(sample, config)
+            runstate = runstate_from_sample([sample], config)
         x = source_from_sample(sample).split(os.sep)
         for k in getFromDict(config["MAPPING"],x):
             for r in runstate:
-                if r in k:
-                    mp.extend([r,k[r]])
+                y = find_key_for_value(k,config["MAPPING"])
+                if r in [z for z in y]:
+                    mp.extend(k)
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -444,8 +444,11 @@ def aggregate_input(wildcards):
 #########Python Subs##########
 ##############################
 def getFromDict(dataDict, mapList):
-    for k in mapList: dataDict = dataDict[k]
-    return dataDict
+    ret=list()
+    for k in mapList:
+        dataDict = dataDict[k]
+    ret.append(dataDict)
+    return ret
 
 def nested_set(dic, keys, value):
     for key in keys[:-1]:
@@ -520,6 +523,27 @@ def find_key_for_value(val, dictionary):
 
         else:
             return dictionary
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+def value_extract(key, var):
+    try:
+        if hasattr(var,'items'):
+            for k, v in var.items():
+                if k == key:
+                    yield v
+                if isinstance(v, dict):
+                    for result in value_extract(key, v):
+                        yield result
+                elif isinstance(v, list):
+                    for d in v:
+                        for result in value_extract(key, d):
+                            yield result
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

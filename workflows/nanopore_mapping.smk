@@ -1,35 +1,28 @@
 include: "header.smk"
 
-#include: "porechop.smk" #We lack a proper adapter trimming tool
-include: "fastqc.smk"           #Need alternative for really long reads
-
 rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
+           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES) if "ON" in config["QC"] else [],
            "QC/Multi/DONE"
-        #input: rules.multiqc.output #not working, rule multiqc not yet defined
+
+#include: "porechop.smk" #We lack a proper adapter trimming tool
+if 'ON' in config['QC']:
+    include: "fastqc.smk"           #Need alternative for really long reads
 
 rule mapping:
-    input:  r1 = expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=SAMPLES),
-            r2 = rules.qc_trimmed.output if "ON" in config["QC"] else r2 = []
-#    output: report(expand("MAPPED/{cond}/{{file}}_mapped.sam",cond=samplecond(SAMPLES, config)),  category="MAPPING"),
-#            expand("UNMAPPED/{cond}/{{file}}_unmapped.fastq",cond=samplecond(SAMPLES, config))
-#    log:    "LOGS/{cond}/{file}/mapping.log"
-    output: report(expand("MAPPED/{file}_mapped.sam",file=samplecond(SAMPLES,config)), category="MAPPING"),
-            expand("UNMAPPED/{file}_unmapped.fastq",file=samplecond(SAMPLES,config))
-    log:    expand("LOGS/{file}/mapping.log",file=samplecond(SAMPLES, config))
+    input:  expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz",rawfile=SAMPLES)
+    output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
+            "UNMAPPED/{file}_unmapped.fastq"
+    log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
-    params: mpara = lambda wildcards,input: mapping_params(input.r1, None ,config),
-            index = lambda wildcards,input: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(input.r1,config), name=NAME),
-            ref = lambda wildcards,input: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(input.r1,config), name=NAME['genomic'])),
-            mapp=MAPPERBIN,
-            of = lambda wildcards,input: "{out}".format(out="MAPPED/"+samplecond(input.r1,config))
-    shell: "arr=({params.mpara});alen=$({{#arr[@]}});for i in \"${{!arr[@]}}\";do {params.mapp} {params.mpara[$i][1]} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' >{params.of}_mapped.sam) | grep -P '\t4\t' > UN{params.of}_unmapped.fastq) 2>> {log};done"
-#           arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done
+    params: mpara = lambda wildcards: ''.join(mapping_params(wildcards.file, None ,config)[0]),
+            index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1])),
+            ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
+            mapp=MAPPERBIN
+    shell: "{params.mapp} {params.mpara} {params.index} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' > {output[0]} | grep -P '\t4\t' > {output[1]}) 2>> {log}"
 
 rule gzipsam:
-#    input: "MAPPED/{file}_mapped.sam",
-#           "UNMAPPED/{file}_unmapped.fastq"
     input:  rules.mapping.output
     output: report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT"),
             "UNMAPPED/{file}_unmapped.fastq.gz"
@@ -86,11 +79,11 @@ rule sam2bamuniq:
            #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
 
 rule multiqc:
-    input:  snakemake.utils.listfiles("QC/{file}*_gc.zip", restriction=None, omit_value=None)
-#    input:  expand("QC/{file}_qc.zip", file=SAMPLES),
-#            expand("QC/{file}_trimmed_qc.zip", file=SAMPLES),
-#            expand("QC/{file}_mapped_sorted_qc.zip", file=SAMPLES),
-#            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=SAMPLES)
+#    input:  snakemake.utils.listfiles("QC/{file}*_gc.zip", restriction=None, omit_value=None)
+    input:  expand("QC/{qcfile}_qc.zip", qcfile=SAMPLES),
+            expand("QC/{qcfile}_trimmed_qc.zip", qcfile=SAMPLES),
+            expand("QC/{file}_mapped_sorted_qc.zip", file=samplecond(SAMPLES,config)),
+            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=samplecond(SAMPLES,config))
 #    input: rules.qc_raw.output,
 #           rules.qc_trimmed.output,
 #           rules.qc_mapped.output,
@@ -104,7 +97,7 @@ onsuccess:
     print("Workflow finished, no error")
 
 rule themall:
-    input:  rules.multiqc.output, rules.sam2bamuniq.output if "ON" in config["QC"] else rules.sam2bamuniq.output
+    input:  rules.sam2bamuniq.output
     output: "DONE/{file}_mapped"
     run:
         for f in output:
