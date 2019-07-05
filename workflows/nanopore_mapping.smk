@@ -12,7 +12,7 @@ if 'ON' in config['QC']:
 rule mapping:
     input:  expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz",rawfile=SAMPLES)
     output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
-            "UNMAPPED/{file}_unmapped.fastq"
+            "UNMAPPED/{file}_unmapped.fastq.gz"
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
@@ -20,12 +20,11 @@ rule mapping:
             index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1])),
             ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
             mapp=MAPPERBIN
-    shell: "{params.mapp} {params.mpara} {params.index} {params.ref} {input[0]} | tee -a >(grep -v -P '\t4\t' > {output[0]} | grep -P '\t4\t' > {output[1]}) 2>> {log}"
+    shell: "{params.mapp} -t {threads} {params.mpara} {params.index} {params.ref} {input[0]} | tee >(grep -v -P '\t4\t' > {output[0]}) >(grep -P '\t4\t' |samtools fastq -n - | pigz > {output[1]}) 1>/dev/null 2>> {log}"
 
 rule gzipsam:
     input:  rules.mapping.output
-    output: report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT"),
-            "UNMAPPED/{file}_unmapped.fastq.gz"
+    output: report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT")
     log:    "LOGS/{file}/gzipsam.log"
     conda:  "../envs/base.yaml"
     threads: 20
