@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jul  5 18:19:49 2019 (+0200)
+# Last-Updated: Fri Jul  5 18:22:43 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 350
+#     Update #: 351
 # URL:
 # Doc URL:
 # Keywords:
@@ -1268,7 +1268,6 @@ def cluster2trna(seqs):
 
 def check_ref(reference):
     try:
-        print('ref ', reference)
         if os.path.exists(os.path.abspath(reference)):
             return reference
         elif os.path.exists(os.path.abspath(reference+'.gz')):
