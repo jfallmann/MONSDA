@@ -3,21 +3,21 @@ include: "header.smk"
 NAME=config["NAME"]["genomic"]
 
 rule all:
-    input:  expand("DONE/BED/{file}{type}",file=samplecond(SAMPLES,config), type=['_sorted',"_unique"])
+    input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 rule LinkBeds:
-    input:  "UCSC/{file}_mapped{type}.bed"
-    output: "BED/{file}{type}.bed.gz"
-    log:    "LOGS/Bed/linkbed{file}{type}.log"
+    input:  "UCSC/{file}_mapped_{type}.bed"
+    output: "BED/{file}_{type}.bed.gz"
+    log:    "LOGS/Bed/linkbed{file}_{type}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
     shell:  "ln -s {input} {output}"
 
 rule AddSequenceToBed:
     input:  rules.LinkBeds.output
-    output: "BED/{file}_seq{type}.bed.gz",
-            temp("BED/{file}_seq{type}.tmp")
-    log:    "LOGS/Beds/seq2bed{type}_{file}.log"
+    output: "BED/{file}_seq_{type}.bed.gz",
+            temp("BED/{file}_seq_{type}.tmp")
+    log:    "LOGS/Beds/seq2bed_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
@@ -25,8 +25,8 @@ rule AddSequenceToBed:
 
 rule AnnotateBed:
     input:  rules.AddSequenceToBed.output
-    output: "BED/{file}_anno{type}.bed.gz"
-    log:    "LOGS/Bed/seq2beds{type}_{file}.log"
+    output: "BED/{file}_anno_{type}.bed.gz"
+    log:    "LOGS/Bed/seq2beds_{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
@@ -36,7 +36,7 @@ rule AnnotateBed:
 
 rule themall:
     input:  rules.AnnotateBed.output
-    output: "DONE/BED/{file}{type}"
+    output: "DONE/BED/{file}_{type}"
     run:
         for f in output:
             with open(f, "w") as out:
