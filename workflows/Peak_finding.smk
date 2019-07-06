@@ -1,30 +1,10 @@
-import glob, os, sys, inspect, snakemake
-
-###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
-###--configfile Workflow/config_compare.json --directory ${PWD}
-###--printshellcmds 2> run.log
-
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
-from Collection import *
-
-ADAPTERS=config["ADAPTERS"]
-REFERENCE=config["REFERENCE"]
-GENOME=config["GENOME"]
-NAME=config["NAME"]
-BINS=config["BINS"]
-MAPPERENV=config["MAPPERENV"]
-MAPPERBIN=config["MAPPERBIN"]
-SOURCE=sources(config)
-SAMPLES=samples(config)
+include: "header.smk"
 
 wildcard_constraints:
     type="|_unique"
 
 rule all:
-    input:  expand("DONE/{file}_peaks{type}",file=SAMPLES, type=['',"_unique"])
+    input:  expand("DONE/{file}_peaks{type}",file=samplecond(SAMPLES,config), type=['',"_unique"])
 
 #rule bamtobedg:
 #    input:  "SORTED_MAPPED/{source}/{file}_mapped_sorted{condition}.bam",
@@ -47,8 +27,8 @@ rule bamtobed:
     shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
 
 rule index_fa:
-    input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),#"{ref}/{{org}}/{{gen}}_{name}.fa", ref=config["REFERENCE"], name =config["NAME"])#, gen=pathstogenomes(SAMPLES, config))
-    output: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)#"{ref}/{{org}}/{{gen}}_{name}.fa.fai", ref=config["REFERENCE"], name =config["NAME"])#, gen=pathstogenomes(SAMPLES, config))
+    input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),
+    output: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
     log:    "LOGS/{org}/{gen}/indexfa.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
@@ -66,7 +46,7 @@ rule get_chromsize_genomic:
 
 rule extendbed:
     input:  "PEAKS/{file}_mapped_sorted{type}.bed",
-            expand("{ref}/{org}{name}.chrom.sizes",ref=REFERENCE,org=genomepath(config["GENOME"],config), name=NAME)
+            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1]))
     output: "PEAKS/{file}_mapped_sorted_extended{type}.bed"
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"
