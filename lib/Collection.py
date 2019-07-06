@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sat Jul  6 23:45:51 2019 (+0200)
+# Last-Updated: Sun Jul  7 01:20:02 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 355
+#     Update #: 356
 # URL:
 # Doc URL:
 # Keywords:
@@ -387,7 +387,7 @@ def sample_from_path(path):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def anno_from_file(s, config):
+def anno_from_file(sample, config):
     try:
         for s in sample:
             s = os.path.basename(s)
