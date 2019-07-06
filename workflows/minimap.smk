@@ -1,4 +1,4 @@
-rule mini_mapping:
+rule mapping:
     input:  expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz",rawfile=SAMPLES)
     output: report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             "UNMAPPED/{file}_unmapped.fastq.gz"
