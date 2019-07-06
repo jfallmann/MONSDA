@@ -1,6 +1,6 @@
 include: "header.smk"
 
-UCNAME=config["UCSCNAME"]
+NAME=config["UCSCNAME"]
 
 rule all:
     input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
