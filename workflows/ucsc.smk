@@ -44,7 +44,7 @@ rule BedToBedg:
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
-    input:  rule.BedToBedg.output
+    input:  rules.BedToBedg.output
     output: "UCSC/{file}_mapped_sorted.fw.bw",
             "UCSC/{file}_mapped_sorted.re.bw",
             "UCSC/{file}_mapped_unique.fw.bw",
