@@ -1,6 +1,6 @@
 include: "header.smk"
 
-NAME=config["UCSCNAME"]["genomic"]
+NAME=config["NAME"]["genomic"]
 
 rule all:
     input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
