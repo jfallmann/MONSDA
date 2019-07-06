@@ -1,24 +1,4 @@
-import glob, os, sys, inspect, snakemake #, datetime
-
-###snakemake -k --use-conda --ri --latency-wait 120 -j 4 -s Workflow/workflows/preparegenomes.smk --configfile config_all.json --directory ${PWD}
-### optional with date
-###snakemake --use-conda --ri --latency-wait 120 -j 16 -s mapping.smk --configfile config_dicty.json --directory ${PWD}/`date +%d-%m-%Y` -k
-
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
-from Collection import *
-
-QC=config["QC"]
-ADAPTERS=config["ADAPTERS"]
-REFERENCE=config["REFERENCE"]
-GENOME=config["GENOME"]
-NAME=config["NAME"]
-BINS=config["BINS"]
-SOURCE=sources(config)
-SAMPLES=samples(config)
-
+include: "header.smk"
 #include: "cutadapt.smk"
 
 rule all:
