@@ -1,63 +1,42 @@
 {
-    "REFERENCE": "${PWD}/GENOMES", #where to find the reference genomes
-    "BINS": "scripts", #where to find the scripts used in the workflow
+    "REFERENCE": "GENOMES", #where to find the reference genomes
+    "BINS": "Workflow/scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
-                "H.sapiens" : "hg38"
+                "Hsa": "hg38"
               },
-    "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-              "genomic": "genomic"
+    "NAME": { #in case different types of reference are used, e.g. genomic, artificial, organelle ...
+              "genomic": ".extended"
             },
     "SOURCE": { #which organisms are to be parsed for which samples
-                "LE04": {
-                    "hg38"
+                "Gesamt": {
+                    "FAK22338": {
+                        "spliced": "hg38",
+                        "std": "hg38"
+                    }
                 }
               },
     "SAMPLES":{ #which samples to analyze
-                "LE04": {
-                    "hg38": ["01_R1_01", "01_R2_01", "02_R1_01"]
+                "Gesamt": {
+                    "FAK22338": {
+                        "spliced": ["fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_0", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_1", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_2"],
+                        "std": ["fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_0", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_1", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_2"]
+                    }
                 }
               },
 #Trimming options
     "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
     "READ_MINLEN": "25", # discard reads shorter than that
 #Mapping software options
-    "MAPPERENV": "segemehl3", # which conda env to use for mapping
-    "MAPPERBIN": "segemehl.x", #how the mapper binary is called
+    "MAPPERENV": "minimap", # which conda env to use for mapping
+    "MAPPERBIN": "minimap2", #how the mapper binary is called
     "MAPPING": { #options for mapping for each sample/condition
-                 "LE04": {
-                     "std" : {
-                         "hg38": "--silent --evalue 500 --differences 3 --maxinterval 1000 --accuracy 85"
+                 "Gesamt": {
+                     "FAK22338": {
+                         "spliced": ["-ax splice -k14 -ub -Y -L --MD -d", "_k14"],
+                         "std": ["-ax map-ont -ub -Y -L --MD -d", "_k21"]
                      }
                  }
                },
-    "QC": {
-        "ON": "" # comment this out if you do not want QC
-    },
-##These options are used for CLIP/RIP processing
-#    "CLIP":"iCLIP", # type of CLIP/RIP experiment, so far only iCLIP has specific meaning
-#    "MINPEAKRATIO": "0.5",
-#    "PEAKDISTANCE": "1",
-#    "PEAKWIDTH": "1",
-#    "PEAKCUTOFF": "0.7",
-#    "MINPEAKHEIGHT": "100",
-#    "USRLIMIT": "100",
-#    "COUNT": {
-##this is how you can specify the offset for CountEnds.py
-#       "LE04": {
-#            "hg38": "3",
-#        }
-#    },
-#    "TRNASCAN": {
-#this is how you can specify options for tRNAscan
-#        "LE04": {
-#            "genomic":{
-#                "hg38": "-E",
-#            },
-#            "mt":{
-#                "hg38": "-M vert",
-#            }
-#        },
-#       }
-#    },
-#    "FLANK": "10", #length of flank added to create pre-tRNAs and used for filtering
+    "QC": "fastqc" # Choose QC tool or insert 'OFF'
+    "TRIMM": "cutadapt" #see QC
 }

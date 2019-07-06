@@ -2,13 +2,14 @@ include: "header.smk"
 
 rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
-           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES) if "ON" in config["QC"] else [],
+           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES) if "OFF" not in config["QC"] else [],
            "QC/Multi/DONE"
 
 #include: "porechop.smk" #We lack a proper adapter trimming tool
-if 'ON' in config['QC']:
-    include: "fastqc.smk"           #Need alternative for really long reads
+if 'OFF' not in config['QC']:
+    include: str(config['QC'])+'.smk'
 
+include: str(config['TRIMM'])+'.smk'
 include: str(config['MAPPERENV'])+'.smk'
 
 rule gzipsam:
