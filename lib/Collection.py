@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jul  5 18:22:43 2019 (+0200)
+# Last-Updated: Sat Jul  6 23:45:51 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 351
+#     Update #: 355
 # URL:
 # Doc URL:
 # Keywords:
@@ -211,18 +211,17 @@ def genomepath(s, config):
 
 def genome(s, config):
     try:
-        s = os.path.basename(str(s))
-        for k,v in config["SAMPLES"].items():
-            for g,l in v.items():
-                if s in l:
-                    for a,b in config["SOURCE"].items():
-                        for c,d in b.items():
-                            if g == c:
-                                for x, y in config["GENOME"].items():
-                                    if str(d) == str(y):
-                                        return str(y)
-                                    elif str(d) == str(x):
-                                        return str(x)
+        sa = os.path.basename(str(s))
+        cond= s.split(os.sep)[-2]
+        sk = find_key_for_value(sa, config["SAMPLES"])
+        for skey in sk:
+            klist = value_extract(skey, config["SOURCE"])
+            for k in klist:
+                for x, y in config["GENOME"].items():
+                    if str(k) == str(y):
+                        return str(y)
+                    elif str(k) == str(x):
+                        return str(x)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -390,11 +389,11 @@ def sample_from_path(path):
 
 def anno_from_file(s, config):
     try:
-        s = str(s)
-        for k,v in config["ANNOTATION"].items():
-            for g,l in v.items():
-                if s == g:
-                    return str(l)
+        for s in sample:
+            s = os.path.basename(s)
+            g = genome(s)
+            p = genomepath(s)
+            return os.path.join(p,config["ANNOTATION"][g])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
