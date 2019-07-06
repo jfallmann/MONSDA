@@ -2,8 +2,7 @@ include: "header.smk"
 
 rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
-           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES) if "OFF" not in config["QC"] else [],
-           "QC/Multi/DONE"
+           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/DONE" if "OFF" not in config["QC"] else []
 
 #include: "porechop.smk" #We lack a proper adapter trimming tool
 if 'OFF' not in config['QC']:
@@ -40,10 +39,8 @@ rule sam2bam:
     conda: "../envs/samtools.yaml"
     threads: 20
     params: bins = BINS,
-#            sizes = lambda wildcards: "{ref}/{gen}.{name}.chrom.sizes".format(ref=REFERENCE, gen=genomepath(wildcards.file,config), name=NAME),
             fn = lambda wildcards: "{fn}".format(fn=str(sample_from_path(wildcards.file)))
     shell: "zcat {input[0]} | samtools view -bS - | samtools sort -T {params.fn} -o {output[0]} --threads {threads} && samtools index {output[0]} 2> {log}"
-        #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
 
 rule uniqsam:
     input: rules.sortsam.output,
@@ -64,21 +61,8 @@ rule sam2bamuniq:
     conda:   "../envs/samtools.yaml"
     threads: 20
     params: bins=BINS,
-            #           sizes = lambda wildcards: "{ref}/{gen}.{name}.chrom.sizes".format(ref=REFERENCE, gen=genomepath(wildcards.file,config), name=NAME),
             fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
     shell: "zcat {input[0]} | samtools view -bS - | samtools sort -T {params.fn} -o {output[0]} --threads {threads} && samtools index {output[0]} 2> {log}"
-           #"{params.bins}/Shells/Sam2Bam.sh {input[0]} {params.sizes} {output}"
-
-rule multiqc:
-#    input:  snakemake.utils.listfiles("QC/{file}*_gc.zip", restriction=None, omit_value=None)
-    input:  expand("QC/{qcfile}_qc.zip", qcfile=SAMPLES),
-            expand("QC/{qcfile}_trimmed_qc.zip", qcfile=SAMPLES),
-            expand("QC/{qcfile}_mapped_sorted_qc.zip", qcfile=samplecond(SAMPLES,config)),
-            expand("QC/{qcfile}_mapped_sorted_unique_qc.zip", qcfile=samplecond(SAMPLES,config))
-    output: report("QC/Multi/DONE", category="QC")
-    log:    "LOGS/multiqc.log"
-    conda:  "../envs/qc.yaml"
-    shell:  "OUT=$(dirname {output}); export LC_ALL=C.UTF-8;export LC_ALL=C.UTF-8; multiqc . -k json -z -o $OUT 2> {log} && touch QC/Multi/DONE"
 
 onsuccess:
     print("Workflow finished, no error")
