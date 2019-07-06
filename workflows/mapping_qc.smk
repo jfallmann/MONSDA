@@ -73,16 +73,12 @@ rule multiqc:
 #    input:  snakemake.utils.listfiles("QC/{file}*_gc.zip", restriction=None, omit_value=None)
     input:  expand("QC/{qcfile}_qc.zip", qcfile=SAMPLES),
             expand("QC/{qcfile}_trimmed_qc.zip", qcfile=SAMPLES),
-            expand("QC/{file}_mapped_sorted_qc.zip", file=samplecond(SAMPLES,config)),
-            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=samplecond(SAMPLES,config))
-#    input: rules.qc_raw.output,
-#           rules.qc_trimmed.output,
-#           rules.qc_mapped.output,
-#           rules.qc_uniquemapped.output
+            expand("QC/{qcfile}_mapped_sorted_qc.zip", qcfile=samplecond(SAMPLES,config)),
+            expand("QC/{qcfile}_mapped_sorted_unique_qc.zip", qcfile=samplecond(SAMPLES,config))
     output: report("QC/Multi/DONE", category="QC")
     log:    "LOGS/multiqc.log"
     conda:  "../envs/qc.yaml"
-    shell:  "OUT=$(dirname {output}); multiqc -k json -z -o $OUT $PWD 2> {log} && touch QC/Multi/DONE"
+    shell:  "OUT=$(dirname {output}); export LC_ALL=C.UTF-8;export LC_ALL=C.UTF-8; multiqc . -k json -z -o $OUT 2> {log} && touch QC/Multi/DONE"
 
 onsuccess:
     print("Workflow finished, no error")
