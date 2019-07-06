@@ -3,7 +3,7 @@ include: "header.smk"
 NAME=config["NAME"]["genomic"]
 
 rule all:
-    input:  expand("DONE/BED/{file}_peaks{type}",file=samplecond(SAMPLES,config), type=['_sorted',"_unique"])
+    input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['_sorted',"_unique"])
 
 rule LinkBeds:
     input:  "UCSC/{file}_mapped_{type}.bed"
@@ -26,7 +26,7 @@ rule AddSequenceToBed:
 rule AnnotateBed:
     input:  rules.AddSequenceToBed.output
     output: "BED/{file}_anno{type}.bed.gz"
-    log:    "LOGS/Bed/seq2peaks{type}_{file}.log"
+    log:    "LOGS/Bed/seq2beds{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
