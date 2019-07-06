@@ -30,8 +30,8 @@ rule get_chromsize_genomic:
     shell:  "cut -f1,2 {input} |sed 's/^chr//g' > {output} 2> {log}"
 
 rule BedToBedg:
-    input:  "UCSC/{file}_mapped_sorted.bed",
-            "UCSC/{file}_mapped_unique.bed"
+    input:  rules.bamtobed.output,
+            rules.get_chromsize_genomic.output
     output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
             "UCSC/{file}_mapped_sorted.re.bedg.gz",
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
@@ -44,10 +44,7 @@ rule BedToBedg:
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
-    input:  "UCSC/{file}_mapped_sorted.fw.bedg.gz",
-            "UCSC/{file}_mapped_sorted.re.bedg.gz",
-            "UCSC/{file}_mapped_unique.fw.bedg.gz",
-            "UCSC/{file}_mapped_unique.re.bedg.gz"
+    input:  rule.BedToBedg.output
     output: "UCSC/{file}_mapped_sorted.fw.bw",
             "UCSC/{file}_mapped_sorted.re.bw",
             "UCSC/{file}_mapped_unique.fw.bw",
@@ -61,10 +58,7 @@ rule BedgToUCSC:
     shell:  "export LC_ALL=C; zcat {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[4]} && bedGraphToBigWig {output[4]} {params.sizes} {output[0]} && zcat {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[5]} && bedGraphToBigWig {output[5]} {params.sizes} {output[1]} && zcat {input[2]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[6]} && bedGraphToBigWig {output[6]} {params.sizes} {output[2]} && zcat {input[3]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[7]} && bedGraphToBigWig {output[7]} {params.sizes} {output[3]}"
 
 rule themall:
-    input:  "UCSC/{file}_mapped_sorted.fw.bw",
-            "UCSC/{file}_mapped_sorted.re.bw",
-            "UCSC/{file}_mapped_sorted.fw.bedg.gz",
-            "UCSC/{file}_mapped_sorted.re.bedg.gz"
+    input:  rules.BedgToUCSC.output
     output: "DONE/{file}_tracks"
     run:
         for f in output:
