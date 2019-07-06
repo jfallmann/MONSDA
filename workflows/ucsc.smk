@@ -31,7 +31,7 @@ rule get_chromsize_genomic:
 
 rule BedToBedg:
     input:  rules.bamtobed.output,
-            rules.get_chromsize_genomic.output
+            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1]))
     output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
             "UCSC/{file}_mapped_sorted.re.bedg.gz",
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
