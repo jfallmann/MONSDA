@@ -3,10 +3,10 @@ include: "header.smk"
 NAME=config["NAME"]["genomic"]
 
 rule all:
-    input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['_sorted',"_unique"])
+    input:  expand("DONE/BED/{file}{type}",file=samplecond(SAMPLES,config), type=['_sorted',"_unique"])
 
 rule LinkBeds:
-    input:  "UCSC/{file}_mapped_{type}.bed"
+    input:  "UCSC/{file}_mapped{type}.bed"
     output: "BED/{file}{type}.bed.gz"
     log:    "LOGS/Bed/linkbed{file}{type}.log"
     conda:  "../envs/bedtools.yaml"
@@ -36,7 +36,7 @@ rule AnnotateBed:
 
 rule themall:
     input:  rules.AnnotateBed.output
-    output: "DONE/BED/{file}_{type}"
+    output: "DONE/BED/{file}{type}"
     run:
         for f in output:
             with open(f, "w") as out:
