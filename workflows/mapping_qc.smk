@@ -9,7 +9,9 @@ rule all:
 if 'OFF' not in config['QC']:
     include: str(config['QC'])+'.smk'
 
-include: str(config['TRIMM'])+'.smk'
+if 'OFF' not in config['QC']:
+    include: str(config['TRIMM'])+'.smk'
+
 include: str(config['MAPPERENV'])+'.smk'
 
 rule gzipsam:
