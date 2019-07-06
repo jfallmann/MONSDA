@@ -3,7 +3,7 @@ include: "header.smk"
 UCNAME=config["UCSCNAME"]
 
 rule all:
-    input:  expand("DONE/{file}_tracks",file=SAMPLES)
+    input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
 
 rule bamtobed:
     input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
@@ -37,8 +37,8 @@ rule BedToBedg:
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
             "UCSC/{file}_mapped_unique.re.bedg.gz"
     conda:  "../envs/perl.yaml"
-    params: out=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-            bins=BINS,
+    params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
+            bins = BINS,
             sizes = lambda wildcards: "{ref}/{gen}.{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=NAME)
     shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track"
 

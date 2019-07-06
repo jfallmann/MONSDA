@@ -4,13 +4,8 @@ channels:
   - bioconda
   - r
 dependencies:
-  - ca-certificates=2018.11.29
-  - libgcc-ng=7.3.0
-  - libpng=1.6.36
-  - libstdcxx-ng=7.3.0
-  - libuuid=2.32.1
   - mysql-connector-c=6.1.11
-  - openssl=1.0.2q
   - ucsc-bedgraphtobigwig=377
-  - zlib=1.2.11
+  - ucsc-fatotwobit=377
+  - ucsc-twobitinfo=377
 
