@@ -1,12 +1,12 @@
 #include: "header.smk"
 
 rule multiqc:
-    input:  rules.qc_raw.output,
-            rules.qc_trimmed.output,
-            rules.qc_mapped.output,
-            rules.qc_uniquemapped.output,
-            rules.sam2bam.output,
-            rules.sam2bamuniq.output
+    input: expand("QC/{qcfile}_qc.zip", qcfile=SAMPLES),
+           expand("QC/{qcfile}_trimmed_qc.zip", qcfile=SAMPLES),
+           expand("QC/{file}_mapped_sorted_qc.zip", file=samplecond(SAMPLES,config)),
+           expand("QC/{file}_mapped_sorted_unique_qc.zip", file=samplecond(SAMPLES,config))
+           expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config))
+           expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
     output: report("QC/Multi/DONE", category="QC"),
             temp("QC/Multi/qclist.txt")
     log:    "LOGS/multiqc.log"
