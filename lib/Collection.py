@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sun Jul  7 13:51:54 2019 (+0200)
+# Last-Updated: Sun Jul  7 13:57:02 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 367
+#     Update #: 368
 # URL:
 # Doc URL:
 # Keywords:
@@ -392,7 +392,7 @@ def anno_from_file(sample, config):
         g = genome(sample,config)
         p = os.path.dirname(genomepath(sample, config))
         s = os.path.basename(sample)
-        return os.path.join(p,config["ANNOTATION"][g])
+        return os.path.join(config["REFERENCE"],p,config["ANNOTATION"][g])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
