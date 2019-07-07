@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sun Jul  7 10:29:07 2019 (+0200)
+# Last-Updated: Sun Jul  7 11:01:22 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 361
+#     Update #: 364
 # URL:
 # Doc URL:
 # Keywords:
@@ -286,8 +286,8 @@ def pathstogenomes(samples, config):
 
 def mapping_params(sample, runstate, config):
     try:
+        t = genome(sample,config)
         s = os.path.basename(str(sample))
-        t = genome(s,config)
         mp = list()
         if runstate is None:
             runstate = runstate_from_sample([sample], config)
