@@ -17,7 +17,7 @@ rule LinkBeds:
 rule AddSequenceToBed:
     input:  rules.LinkBeds.output
     output: "BED/{file}_seq_{type}.bed.gz",
-            "BED/{file}_seq_{type}.tmp"
+            temp("BED/{file}_seq_{type}.tmp")
     log:    "LOGS/Beds/seq2bed_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
