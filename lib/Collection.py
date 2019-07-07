@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sun Jul  7 11:01:22 2019 (+0200)
+# Last-Updated: Sun Jul  7 13:51:54 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 364
+#     Update #: 367
 # URL:
 # Doc URL:
 # Keywords:
@@ -390,7 +390,7 @@ def sample_from_path(path):
 def anno_from_file(sample, config):
     try:
         g = genome(sample,config)
-        p = genomepath(sample, config)
+        p = os.path.dirname(genomepath(sample, config))
         s = os.path.basename(sample)
         return os.path.join(p,config["ANNOTATION"][g])
     except Exception as err:
