@@ -3,9 +3,11 @@ channels:
   - conda-forge
   - bioconda
   - defaults
+  - r
 dependencies:
-  - libgcc-ng=7.2.0
-  - libstdcxx-ng=7.2.0
+  - _libgcc_mutex=0.1
+  - libgcc-ng=9.1.0
+  - libstdcxx-ng=9.1.0
   - perl=5.26.2
   - perl-app-cpanminus=1.7044
   - perl-autoloader=5.74
@@ -31,10 +33,10 @@ dependencies:
   - perl-locale-maketext-simple=0.21
   - perl-math-cdf=0.1
   - perl-math-round=0.07
-  - perl-module-corelist=5.20181218
+  - perl-module-corelist=5.20190524
   - perl-module-load=0.32
   - perl-module-load-conditional=0.68
-  - perl-module-metadata=1.000033
+  - perl-module-metadata=1.000036
   - perl-params-check=0.38
   - perl-parent=0.236
   - perl-path-class=0.37
@@ -44,17 +46,14 @@ dependencies:
   - perl-pod-simple=3.35
   - perl-pod-usage=1.69
   - perl-posix=1.38_03
-  - perl-scalar-list-utils=1.45
   - perl-set-intervaltree=0.11
   - perl-socket=2.027
   - perl-symbol=1.07
   - perl-test=1.26
   - perl-test-harness=3.42
-  - perl-text-parsewords=3.30
-  - perl-threaded=5.26.0=0
   - perl-tie-hash=1.05
   - perl-tie-hash-indexed=0.05
-  - perl-time-hires=1.9758
+  - perl-time-hires=1.9760
   - perl-version=0.9924
   - perl-xsloader=0.24
   - zlib=1.2.11
