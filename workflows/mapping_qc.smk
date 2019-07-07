@@ -2,7 +2,7 @@ include: "header.smk"
 
 rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
-           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/DONE" if "OFF" not in config["QC"] else []
+           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/multiqc_report.html" if "OFF" not in config["QC"] else []
 
 #include: "porechop.smk" #We lack a proper adapter trimming tool
 if 'OFF' not in config['QC']:
