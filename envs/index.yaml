@@ -1,8 +1,7 @@
 name: index
 channels:
-  - bioconda
   - conda-forge
-  - r
+  - bioconda
   - defaults
 dependencies:
   - libdeflate=1.0

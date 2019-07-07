@@ -7,5 +7,4 @@ channels:
 dependencies:
   - infernal=1.1.2
   - trnascan-se=2.0
-  - libgcc-ng=7.2.0
   - perl=5.26.2

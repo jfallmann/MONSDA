@@ -11,7 +11,8 @@ rule LinkBeds:
     log:    "LOGS/Bed/linkbed{file}_{type}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    shell:  "ln -s {input} {output}"
+    params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed')
+    shell:  "ln -s {params.abs} {output}"
 
 rule AddSequenceToBed:
     input:  rules.LinkBeds.output
@@ -31,7 +32,7 @@ rule AnnotateBed:
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
             bins=BINS,
-            anno=lambda wildcards: anno_from_file(genome(wildcards.file, config), config)
+            anno=lambda wildcards: anno_from_file(wildcards.file, config)
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
 rule themall:

@@ -1,4 +1,4 @@
-name: trimm
+name: cutadapt
 channels:
   - conda-forge
   - bioconda

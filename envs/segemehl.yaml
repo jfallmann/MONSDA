@@ -1,4 +1,4 @@
-name: segemehl_020
+name: segemehl
 channels:
   - conda-forge
   - bioconda

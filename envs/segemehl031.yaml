@@ -1,10 +1,7 @@
-name: segemehl_020
+name: segemehl_031
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - segemehl=0.2.0
-  - libgcc-ng=7.2.0
-  - ncurses=5.9
-  - zlib=1.2.11
+  - segemehl=0.3.1

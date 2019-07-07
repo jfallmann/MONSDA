@@ -2,9 +2,8 @@ name: zip
 channels:
   - conda-forge
   - bioconda
-  - r
+  - defaults
 dependencies:
-  - libgcc-ng=7.3.0
   - pigz=2.3.4
   - zlib=1.2.11
 

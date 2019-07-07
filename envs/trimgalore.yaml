@@ -2,18 +2,13 @@ name: trimgalore
 channels:
   - bioconda
   - conda-forge
-  - r
+  - defaults
 dependencies:
   - bz2file=0.98
   - bzip2=1.0.6
-  - ca-certificates=2018.11.29
   - certifi=2018.11.29
   - cutadapt=1.18
   - fastqc=0.11.8
-  - libffi=3.2.1
-  - libgcc-ng=7.3.0
-  - libstdcxx-ng=7.3.0
-  - ncurses=6.1
   - openjdk=11.0.1
   - openssl=1.0.2p
   - perl=5.26.2
@@ -25,7 +20,3 @@ dependencies:
   - sqlite=3.26.0
   - tk=8.6.9
   - trim-galore=0.5.0
-  - wheel=0.33.1
-  - xopen=0.5.0
-  - xz=5.2.4
-  - zlib=1.2.11
