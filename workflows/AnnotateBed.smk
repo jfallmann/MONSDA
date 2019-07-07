@@ -32,7 +32,7 @@ rule AnnotateBed:
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
             bins=BINS,
-            anno=lambda wildcards: anno_from_file(wildcards.file, config)
+            anno=lambda wildcards: os.path.join(GENOME,anno_from_file(wildcards.file, config))
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
 rule themall:
