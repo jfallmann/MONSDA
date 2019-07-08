@@ -8,7 +8,7 @@ rule all:
 if 'OFF' not in config['QC']:
     include: str(config['QC'])+'.smk'
 
-if 'OFF' not in config['QC']:
+if 'OFF' not in config['TRIMM']:
     include: str(config['TRIMM'])+'.smk'
 
 include: str(config['MAPPERENV'])+'.smk'
