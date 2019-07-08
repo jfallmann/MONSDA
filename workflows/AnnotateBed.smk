@@ -27,13 +27,24 @@ rule AddSequenceToBed:
 rule AnnotateBed:
     input:  rules.AddSequenceToBed.output
     output: "BED/{file}_anno_{type}.bed.gz"
-    log:    "LOGS/Bed/seq2beds_{type}_{file}.log"
+    log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
             bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config)
-    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} |gzip > {output[0]}"
+    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} -w ON |gzip > {output[0]}"
+
+rule MergeAnnoBed:
+    input:  rules.AnnotateBed.output
+    output: "BED/{file}_anno_{type}_merged.bed.gz"
+    log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
+    conda:  "../envs/bedtools.yaml"
+    threads: 1
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+            bins=BINS,
+            anno=lambda wildcards: anno_from_file(wildcards.file, config)
+    shell:  "zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |gzip > {output[0]}"
 
 rule themall:
     input:  rules.AnnotateBed.output
