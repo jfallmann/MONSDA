@@ -30,10 +30,11 @@ rule AnnotateBed:
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
             bins=BINS,
-            anno=lambda wildcards: anno_from_file(wildcards.file, config)
-    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} -w ON |gzip > {output[0]}"
+            anno=lambda wildcards: anno_from_file(wildcards.file, config),
+            annop=lambda: config["ANNOTATE"]
+    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annop} |gzip > {output[0]}"
 
 rule MergeAnnoBed:
     input:  rules.AnnotateBed.output

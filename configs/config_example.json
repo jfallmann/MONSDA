@@ -4,7 +4,7 @@
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Hsa": "hg38"
               },
-    "NAME": { #in case different types of reference are used, e.g. genomic, artificial, organelle ...
+    "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "genomic": ".extended"
             },
     "SOURCE": { #which organisms are to be parsed for which samples
@@ -23,6 +23,10 @@
                     }
                 }
               },
+    "ANNOTATION":{ #which annotation to use
+                "hg38": "Homo_sapiens.GRCh38.95.gff3.gz"
+                 },
+    "ANNOTATE" : "-w ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
 #Trimming options
     "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
     "READ_MINLEN": "25", # discard reads shorter than that
@@ -37,6 +41,6 @@
                      }
                  }
                },
-    "QC": "fastqc" # Choose QC tool or insert 'OFF'
+    "QC": "fastqc", # add qc tool or set to 'OFF'
     "TRIMM": "cutadapt" #see QC
 }
