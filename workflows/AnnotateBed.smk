@@ -44,7 +44,7 @@ rule MergeAnnoBed:
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
             bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config)
-    shell:  "zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |gzip > {output[0]}"
+    shell:  "zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |sort -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule themall:
     input:  rules.AnnotateBed.output
