@@ -27,7 +27,7 @@ rule AnnotateBed:
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annop} |gzip > {output[0]}"
 
 rule AddSequenceToBed:
-    input:  rules.AddSequenceToBed.output
+    input:  rules.AnnotateBed.output
     output: "BED/{file}_seq_{type}.bed.gz",
             temp("BED/{file}_seq_{type}.tmp")
     log:    "LOGS/Beds/seq2bed_{type}_{file}.log"
@@ -37,7 +37,7 @@ rule AddSequenceToBed:
     shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
 
 rule MergeAnnoBed:
-    input:  rules.AnnotateBed.output
+    input:  rules.AddSequenceToBed.output
     output: "BED/{file}_anno_{type}_merged.bed.gz"
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
