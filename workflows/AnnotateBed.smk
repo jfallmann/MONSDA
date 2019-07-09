@@ -34,7 +34,7 @@ rule AddSequenceToBed:
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
-    shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
+    shell:  "fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
