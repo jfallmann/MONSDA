@@ -28,8 +28,8 @@ rule AnnotateBed:
 
 rule AddSequenceToBed:
     input:  rules.AnnotateBed.output
-    output: "BED/{file}_seq_{type}.bed.gz",
-            temp("BED/{file}_seq_{type}.tmp")
+    output: "BED/{file}_anno_seq_{type}.bed.gz",
+            temp("BED/{file}_anno_seq_{type}.tmp")
     log:    "LOGS/Beds/seq2bed_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
@@ -38,7 +38,7 @@ rule AddSequenceToBed:
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
-    output: "BED/{file}_anno_{type}_merged.bed.gz"
+    output: "BED/{file}_anno_seq_{type}_merged.bed.gz"
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
@@ -48,7 +48,7 @@ rule MergeAnnoBed:
     shell:  "zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |sort -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule themall:
-    input:  rules.AnnotateBed.output
+    input:  rules.MergeAnnoBed.output
     output: "DONE/BED/{file}_{type}"
     run:
         for f in output:
