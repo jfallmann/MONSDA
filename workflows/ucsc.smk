@@ -11,7 +11,7 @@ rule bamtobed:
     output: "UCSC/{file}_mapped_sorted.bed",
             "UCSC/{file}_mapped_unique.bed"
     conda:  "../envs/bedtools.yaml"
-    shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]}"
+    shell:  "export LC_ALL=C;bedtools bamtobed -i {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),

@@ -43,7 +43,7 @@ rule AddSequenceToBed:
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME),
-    shell:  "fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
+    shell:  "export LC_ALL=C; fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
@@ -54,7 +54,7 @@ rule MergeAnnoBed:
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
             bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config)
-    shell:  "zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |sort -k1,1 -k2,2n|gzip > {output[0]}"
+    shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..5],$F[-2],$F[-1])' |bedtools merge -s -c 7,8 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule themall:
     input:  rules.MergeAnnoBed.output
