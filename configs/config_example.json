@@ -36,8 +36,31 @@
     "MAPPING": { #options for mapping for each sample/condition
                  "Gesamt": {
                      "FAK22338": {
-                         "spliced": ["-ax splice -k14 -ub -Y -L --MD -d", "_k14"],
-                         "std": ["-ax map-ont -ub -Y -L --MD -d", "_k21"]
+                         "spliced":
+                         [
+                             {  # First part is for mapper
+                                 "-ax ": "splice",
+                                 "-k": "14",
+                                 "-ub": "",
+                                 "-Y": "",
+                                 "-L": "",
+                                 "--MD": "",
+                                 "-d": ""
+                             },
+                             "_k14" # Second part is name for index if required, leave empty string if not
+                         ]
+                         "std": # See above
+                         [
+                             {
+                                 "-ax ": "map-ont",
+                                 "-ub": "",
+                                 "-Y": "",
+                                 "-L": "",
+                                 "--MD": "",
+                                 "-d": ""
+                             },
+                             "_k21"
+                         ]
                      }
                  }
                },
