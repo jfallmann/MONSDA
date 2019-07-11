@@ -27,8 +27,8 @@ rule bamtobed:
     shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
 
 rule index_fa:
-    input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),
-    output: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
+    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
+    output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     log:    "LOGS/{org}/{gen}/indexfa.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
@@ -36,8 +36,8 @@ rule index_fa:
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
-    output: expand("{ref}/{{org}}/{{gen}}{name}.chrom.sizes",ref=REFERENCE, name=NAME)
+    input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
+    output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     log:    "LOGS/PrepareGenomes/{org}/{gen}/chromsize.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
@@ -51,7 +51,7 @@ rule extendbed:
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
@@ -62,7 +62,7 @@ rule bedtobedgraph:
     log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS,
             odir=lambda wildcards,output:(os.path.dirname(output[0]))
     shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
@@ -107,7 +107,7 @@ rule AddSequenceToPeak:
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
     shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
 
 rule AnnotatePeak:
@@ -116,7 +116,7 @@ rule AnnotatePeak:
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=config["NAME"]),
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS,
             anno=lambda wildcards: anno_from_file(genome(wildcards.file, config), config)
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
@@ -132,7 +132,7 @@ rule PeakToBedg:
     threads: 1
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
-            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=config["NAME"])
+            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]}"
 
 #rule QuantPeakToBedg:
@@ -153,7 +153,7 @@ rule PeakToUCSC:
             temp("UCSC/{file}_{type}re_tmp")
     conda:  "../envs/ucsc.yaml"
     threads: 1
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=config["NAME"])
+    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "zcat {input[0]} |sort -k1,1 -k2,2n > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} && zcat {input[1]} |sort -k1,1 -k2,2n > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]}"
 
 #rule QuantPeakToUCSC:

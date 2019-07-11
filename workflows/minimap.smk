@@ -5,8 +5,8 @@ rule mapping:
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
-    params: mpara = lambda wildcards: ''.join(mapping_params(wildcards.file, None ,config)[0]),
-            index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1])),
-            ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=NAME['genomic'])),
+    params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config)[0].items()),
+            index = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config)[1])),
+            ref = lambda wildcards: check_ref("{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))),
             mapp=MAPPERBIN
     shell: "{params.mapp} -t {threads} {params.mpara} {params.index} {params.ref} {input[0]} | tee >(grep -v -P '\t4\t' > {output[0]}) >(grep -P '[^@|\t4\t]' |samtools fastq -n - | pigz > {output[1]}) 1>/dev/null 2>> {log}"

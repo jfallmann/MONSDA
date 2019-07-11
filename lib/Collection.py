@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jul 10 15:28:06 2019 (+0200)
+# Last-Updated: Thu Jul 11 13:16:57 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 369
+#     Update #: 380
 # URL:
 # Doc URL:
 # Keywords:
@@ -263,6 +263,25 @@ def genomename(s, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
+def namefromfile(s, config):
+    try:
+        sa = os.path.basename(str(s))
+        cond= s.split(os.sep)[-2]
+        sk = find_key_for_value(sa, config["SAMPLES"])
+        for skey in sk:
+            klist = value_extract(skey, config["NAME"])
+            for k in klist:
+                    if str(skey) == str(cond):
+                        return str(k)
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+
 def pathstogenomes(samples, config):
     try:
         ret = list()
@@ -284,7 +303,7 @@ def pathstogenomes(samples, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def mapping_params(sample, runstate, config):
+def tool_params(sample, runstate, config):
     try:
         t = genome(sample,config)
         s = os.path.basename(str(sample))

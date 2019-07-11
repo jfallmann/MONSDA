@@ -1,7 +1,5 @@
 include: "header.smk"
 
-NAME=config["NAME"]["genomic"]
-
 rule all:
     input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
 
@@ -14,16 +12,16 @@ rule bamtobed:
     shell:  "export LC_ALL=C;bedtools bamtobed -i {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]}"
 
 rule index_fa:
-    input:  expand("{ref}/{{org}}/{{gen}}{name}.fa",ref=REFERENCE, name=NAME),
-    output: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
+    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
+    output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     conda:  "../envs/samtools.yaml"
     params: bins = BINS
     threads: 1
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input: expand("{ref}/{{org}}/{{gen}}{name}.fa.fai",ref=REFERENCE, name=NAME)
-    output: expand("{ref}/{{org}}/{{gen}}{name}.chrom.sizes",ref=REFERENCE, name=NAME)
+    input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
+    output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     conda:  "../envs/samtools.yaml"
     params: bins = BINS
     threads: 1
@@ -39,7 +37,7 @@ rule BedToBedg:
     conda:  "../envs/perl.yaml"
     params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
             bins = BINS,
-            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=NAME)
+            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track"
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
@@ -54,7 +52,7 @@ rule BedgToUCSC:
             temp("UCSC/{file}_unique_fw_tmp"),
             temp("UCSC/{file}_unique_re_tmp")
     conda:  "../envs/ucsc.yaml"
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=NAME)
+    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "export LC_ALL=C; zcat {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[4]} && bedGraphToBigWig {output[4]} {params.sizes} {output[0]} && zcat {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[5]} && bedGraphToBigWig {output[5]} {params.sizes} {output[1]} && zcat {input[2]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[6]} && bedGraphToBigWig {output[6]} {params.sizes} {output[2]} && zcat {input[3]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[7]} && bedGraphToBigWig {output[7]} {params.sizes} {output[3]}"
 
 rule themall:
