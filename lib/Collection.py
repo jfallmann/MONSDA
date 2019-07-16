@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jul 16 10:53:30 2019 (+0200)
+# Last-Updated: Tue Jul 16 17:51:39 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 383
+#     Update #: 411
 # URL:
 # Doc URL:
 # Keywords:
@@ -312,10 +312,12 @@ def tool_params(sample, runstate, config):
             runstate = runstate_from_sample([sample], config)
         x = source_from_sample(sample).split(os.sep)
         for k in getFromDict(config["MAPPING"],x):
+            y = find_key_for_value(k,config["MAPPING"])
             for r in runstate:
-                y = find_key_for_value(k,config["MAPPING"])
+                print(k,r)
                 if r in [z for z in y]:
-                    mp.extend(k)
+                    mp.extend(k[r])
+        print(mp)
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

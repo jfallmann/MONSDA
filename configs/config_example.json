@@ -2,59 +2,58 @@
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "Workflow/scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
-                "Hsa": "hg38"
+                "Dm6": "dm6"
               },
     "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-              "Gesamt": {
-                  "FAK22338": {
-                      "spliced": ".extended",
-                      "std": ".extended"
+              "Dm6":{
+                  "untreated": {
+                      "std": ""
                   }
               }
             },
     "SOURCE": { #which organisms are to be parsed for which samples
-                "Gesamt": {
-                    "FAK22338": {
-                        "spliced": "hg38",
-                        "std": "hg38"
+                "Dm6": {
+                    "untreated": {
+                        "std": "dm6"
                     }
                 }
               },
     "SAMPLES":{ #which samples to analyze
-                "Gesamt": {
-                    "FAK22338": {
-                        "spliced": ["fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_0", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_1", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_2"],
-                        "std": ["fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_0", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_1", "fastq_runid_60c92cbe2bde7e4ebf0106c1d4a670d32383fca5_2"]
+                "Dm6":{
+                    "untreated": {
+                        "std": ["GSM461177_untreat_paired_subset_1", "GSM461177_untreat_paired_subset_2"]
                     }
                 }
               },
-    "ANNOTATION":{ #which annotation to use
-                   "hg38": "Homo_sapiens.GRCh38.95.gff3.gz"
-                 },
-    "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+#QC options
+    "QC": "fastqc", # add qc tool or set to 'OFF'
 #Trimming options
     "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
-    "READ_MINLEN": "25", # discard reads shorter than that
+    "READ_MINLEN": "10", # discard reads shorter than that
+
+    "TRIMENV": "trimgalore", #see QC
+    "TRIMBIN": "trim-galore",
+    "TRIMMING": { #options for mapping for each sample/condition
+                  "Dm6": {
+                      "untreated": {
+                          "std": # See above
+                          [
+                              {  # trimming options here, --paired is not required, will be resolved by rules
+                                 "-q": "15",
+                                 "--length": "8",
+                                 "-e": "0.15"
+                              }
+                          ]
+                      }
+                  }
+                },
 #Mapping software options
-    "MAPPERENV": "minimap", # which conda env to use for mapping
-    "MAPPERBIN": "minimap2", #how the mapper binary is called
-    "MAPPING": "single", #choice=[single|paired] either single or paired end mapping
+    "MAPPERENV": "segemehl3", # which conda env to use for mapping
+    "MAPPERBIN": "segemehl.x", #how the mapper binary is called
+    "MAPPING": "paired", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
-                 "Gesamt": {
-                     "FAK22338": {
-                         "spliced":
-                         [
-                             {  # First part is for mapper
-                                "-ax": "splice",
-                                "-k": "14",
-                                "-ub": "",
-                                "-Y": "",
-                                "-L": "",
-                                "--MD": "",
-                                "-d": ""
-                             },
-                             "_k14" # Second part is name for index if required, leave empty string if not
-                         ],
+                 "Dm6": {
+                     "untreated": {
                          "std": # See above
                          [
                              {
@@ -64,35 +63,14 @@
                                  "-L": "",
                                  "--MD": "",
                                  "-d": ""
-                             },
-                             "_k21"
+                             }
                          ]
                      }
                  }
                },
-    "QC": "fastqc", # add qc tool or set to 'OFF'
-    "TRIMENV": "cutadapt", #see QC
-#    "TRIMBIN": "cutadapt",
-    "TRIMMING": { #options for mapping for each sample/condition
-                  "Gesamt": {
-                      "FAK22338": {
-                          "spliced":
-                          [
-                              {  # trimming options here, --paired is not required, will be resolved by rules
-                                 "-q": "25",
-                                 "--length": "8",
-                                 "-e": "0.15"
-                              }
-                          ],
-                          "std": # See above
-                          [
-                              {  # trimming options here, --paired is not required, will be resolved by rules
-                                 "-q": "25",
-                                 "--length": "8",
-                                 "-e": "0.15"
-                              }
-                          ]
-                      }
-                  }
-                },
+#Annotation options
+    "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+    "ANNOTATION":{ #which annotation to use
+                   "dm6": "dm6.gff.gz"
+                 },
 }

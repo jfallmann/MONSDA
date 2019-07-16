@@ -1,10 +1,9 @@
 include: "header.smk"
 
 rule all:
-    input:  "COUNTS/ENDS/Collect",
-            "COUNTS/ENDS/CollectFQ",
-            expand("COUNTS/{file}/Counts",file=samplecond(SAMPLES,config)),
-            expand("COUNTS/{rawfile}/Counts",rawfile=SAMPLES)
+    input:  expand("COUNTS/{file}/Counts",file=samplecond(SAMPLES,config)),
+            expand("COUNTS/{rawfile}/Counts",rawfile=SAMPLES),
+            "COUNTS/DONE"
 
 if config['MAPPING'] is 'paired':
     rule count_fastq:
@@ -43,12 +42,13 @@ rule summarize_counts:
     input:  "COUNTS/{file}_mapped.count",
             "COUNTS/{file}_mapped_unique.count",
             "COUNTS/{file}_mapped_phased.count",
-            "COUNTS/{file}_raw_fq.count"),
-            "COUNTS/{file}_trimmed_fq.count")
-    output: "COUNTS/{file}/Counts"
+            "COUNTS/{rawfile}_raw_fq.count"),
+            "COUNTS/{rawfile}_trimmed_fq.count")
+    output: "COUNTS/{file}/Counts",
+            "COUNTS/{rawfile}/Counts"
     conda:  "../envs/base.yaml"
     threads: 1
-    params: current = lambda w: w.file
+    params: current = lambda w,input: w.input
     shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done"
 
 rule themall:

@@ -4,7 +4,7 @@ rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
            expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/multiqc_report.html" if "OFF" not in config["QC"] else []
 
-if config['MAPPING'] is 'paired':
+if config['MAPPINGTYPE'] == 'paired':
     paired = '_paired'
 else:
     paired = ''
@@ -12,13 +12,13 @@ else:
 if 'OFF' not in config['QC']:
     include: str(config['QC'])+paired+'.smk'
 
-if 'OFF' not in config['TRIMMENV']:
-    include: str(config['TRIMMENV'])+paired+'.smk'
+if 'OFF' not in config['TRIMENV']:
+    include: str(config['TRIMENV'])+paired+'.smk'
 
 include: str(config['MAPPERENV'])+paired+'.smk'
 
 rule gzipsam:
-    input:  rules.mapping.output
+    input:  rules.mapping.output if paired == '' else rules.mapping_paired.output
     output: report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT")
     log:    "LOGS/{file}/gzipsam.log"
     conda:  "../envs/base.yaml"

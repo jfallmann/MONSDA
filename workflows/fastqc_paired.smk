@@ -2,7 +2,7 @@
 
 rule qc_raw_paired:
     input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",
-           r2 = "FASTQ/{rawfile}_r1.fastq.gz"
+           r2 = "FASTQ/{rawfile}_r2.fastq.gz"
     output: report("QC/{rawfile}_qc.zip", category="QC")
     wildcard_constraints:
         file="trimmed{0}"
@@ -13,9 +13,9 @@ rule qc_raw_paired:
     shell: "OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2> {log} && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule qc_trimmed_paired:
-    input:  r1 = "TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",
-            r2 = "TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz",
-            rules.qc_raw_paired.output
+    input:  rules.qc_raw_paired.output,
+            r1 = "TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",
+            r2 = "TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz"
     output: report("QC/{rawfile}_trimmed_qc.zip", category="QC")
     log:   "LOGS/{rawfile}/fastqc_trimmed.log"
     conda:  "../envs/qc.yaml"

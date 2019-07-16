@@ -7,9 +7,9 @@ rule trimgalore_trim_paired:
     conda: "../envs/"+TRIMENV+".yaml"
     threads: 1
     params: odir=lambda wildcards,output:os.path.dirname(output.r1[0]),
-            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config)[0].items()),
+            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.rawfile, None ,config)[0].items()),
             trim=TRIMBIN
-    shell:  "{params.trim} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input} > {logxs}"
+    shell:  "{params.trim} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input} > {log}"
 
 rule trimgalore_rename_paired:
     input:  "TRIMMED_FASTQ/{rawfile}_r1_val.fq.gz",
