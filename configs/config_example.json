@@ -5,12 +5,12 @@
                 "Hsa": "hg38"
               },
     "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-               "Gesamt": {
-                   "FAK22338": {
-                       "spliced": ".extended",
-                       "std": ".extended"
-                    }
-                }
+              "Gesamt": {
+                  "FAK22338": {
+                      "spliced": ".extended",
+                      "std": ".extended"
+                  }
+              }
             },
     "SOURCE": { #which organisms are to be parsed for which samples
                 "Gesamt": {
@@ -29,7 +29,7 @@
                 }
               },
     "ANNOTATION":{ #which annotation to use
-                "hg38": "Homo_sapiens.GRCh38.95.gff3.gz"
+                   "hg38": "Homo_sapiens.GRCh38.95.gff3.gz"
                  },
     "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
 #Trimming options
@@ -38,19 +38,20 @@
 #Mapping software options
     "MAPPERENV": "minimap", # which conda env to use for mapping
     "MAPPERBIN": "minimap2", #how the mapper binary is called
+    "MAPPING": "single", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Gesamt": {
                      "FAK22338": {
                          "spliced":
                          [
                              {  # First part is for mapper
-                                 "-ax": "splice",
-                                 "-k": "14",
-                                 "-ub": "",
-                                 "-Y": "",
-                                 "-L": "",
-                                 "--MD": "",
-                                 "-d": ""
+                                "-ax": "splice",
+                                "-k": "14",
+                                "-ub": "",
+                                "-Y": "",
+                                "-L": "",
+                                "--MD": "",
+                                "-d": ""
                              },
                              "_k14" # Second part is name for index if required, leave empty string if not
                          ],
@@ -70,5 +71,28 @@
                  }
                },
     "QC": "fastqc", # add qc tool or set to 'OFF'
-    "TRIMM": "cutadapt" #see QC
+    "TRIMENV": "cutadapt", #see QC
+#    "TRIMBIN": "cutadapt",
+    "TRIMMING": { #options for mapping for each sample/condition
+                  "Gesamt": {
+                      "FAK22338": {
+                          "spliced":
+                          [
+                              {  # trimming options here, --paired is not required, will be resolved by rules
+                                 "-q": "25",
+                                 "--length": "8",
+                                 "-e": "0.15"
+                              }
+                          ],
+                          "std": # See above
+                          [
+                              {  # trimming options here, --paired is not required, will be resolved by rules
+                                 "-q": "25",
+                                 "--length": "8",
+                                 "-e": "0.15"
+                              }
+                          ]
+                      }
+                  }
+                },
 }

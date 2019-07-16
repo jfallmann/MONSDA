@@ -4,14 +4,18 @@ rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
            expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/multiqc_report.html" if "OFF" not in config["QC"] else []
 
-#include: "porechop.smk" #We lack a proper adapter trimming tool
+if config['MAPPING'] is 'paired':
+    paired = '_paired'
+else:
+    paired = ''
+
 if 'OFF' not in config['QC']:
-    include: str(config['QC'])+'.smk'
+    include: str(config['QC'])+paired+'.smk'
 
-if 'OFF' not in config['TRIMM']:
-    include: str(config['TRIMM'])+'.smk'
+if 'OFF' not in config['TRIMMENV']:
+    include: str(config['TRIMMENV'])+paired+'.smk'
 
-include: str(config['MAPPERENV'])+'.smk'
+include: str(config['MAPPERENV'])+paired+'.smk'
 
 rule gzipsam:
     input:  rules.mapping.output

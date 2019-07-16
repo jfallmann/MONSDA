@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jul 11 13:16:57 2019 (+0200)
+# Last-Updated: Tue Jul 16 10:53:30 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 380
+#     Update #: 383
 # URL:
 # Doc URL:
 # Keywords:
@@ -440,7 +440,12 @@ def runstate_from_sample(sample,config):
 def samplecond(sample,config):
     try:
         ret = list()
+        paired = False
+        if config['MAPPING'] is 'paired':
+            paired = True
         for s in sample:
+            if paired:
+                s=re.sub(r'_[1|2]','',s)
             for r in runstate_from_sample([s],config):
                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
         return ret
