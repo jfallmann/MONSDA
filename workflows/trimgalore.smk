@@ -5,7 +5,7 @@ rule trimgalore_trim:
     conda: "../envs/"+TRIMENV+".yaml"
     threads: 1
     params: odir=lambda wildcards,output: os.path.dirname(output[0]),
-            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.rawfile, None ,config)[0].items()),
+            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.rawfile, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN
     shell:  "{params.trim} --no_report_file --gzip {params.tpara} -o {params.odir} {input} > {log}"
 

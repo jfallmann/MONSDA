@@ -2,7 +2,7 @@
 
 rule multiqc:
     input: expand("QC/{qcfile}_qc.zip", qcfile=SAMPLES),
-           expand("QC/{qcfile}_trimmed_qc.zip", qcfile=SAMPLES),
+           expand("QC/{file}_trimmed_qc.zip", file=samplecond(SAMPLES,config)),
            expand("QC/{file}_mapped_sorted_qc.zip", file=samplecond(SAMPLES,config)),
            expand("QC/{file}_mapped_sorted_unique_qc.zip", file=samplecond(SAMPLES,config)),
            expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),

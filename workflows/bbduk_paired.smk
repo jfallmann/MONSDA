@@ -7,6 +7,6 @@ rule bbduk_trim:
     conda: "../envs/"+TRIMENV+".yaml"
     threads: 1
     params: ada={ADAPTERS},
-            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config)[0].items()),
+            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim = TRIMBIN
     shell:  "{params.trim} in1={input.r1[0]} in2={input.r2[0]} out1={output.r1[0]} out2={output.r2[0]} ref={params.ada} {params.tpara}"

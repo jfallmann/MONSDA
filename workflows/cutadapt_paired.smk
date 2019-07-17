@@ -7,6 +7,6 @@ rule cutadapt_trim_paired:
     conda: "../envs/"+TRIMMENV+".yaml"
     threads: 4
     params: ada=ADAPTERS,
-            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config)[0].items()),
+            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMMBIN
     shell:  "{params.trim} -a file:{params.ada} {params.tpara} --cores {threads} -o {output.r1} -p {output.r2} {input.r1} {input.r2} > {log}"

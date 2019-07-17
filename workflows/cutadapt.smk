@@ -5,6 +5,6 @@ rule cutadapt_trim:
     conda: "../envs/"+TRIMENV+".yaml"
     threads: 1
     params: ada=ADAPTERS,
-            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config)[0].items()),
+            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN
     shell:  "{params.trim} -a file:{params.ada} {params.tpara} --cores {threads} -o {output} {input} > {log}"

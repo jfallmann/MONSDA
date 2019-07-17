@@ -2,7 +2,7 @@ include: "header.smk"
 
 rule all:
     input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),#file=SAMPLES),#samplecond(SAMPLES,config)),
-           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), "QC/Multi/multiqc_report.html" if "OFF" not in config["QC"] else []
+           expand("QC/{rawfile}_qc.zip", rawfile=SAMPLES), expand("QC/{file}_trimmed_qc.zip", file=samplecond(SAMPLES,config)), "QC/Multi/multiqc_report.html" if "OFF" not in config["QC"] else []
 
 if config['MAPPINGTYPE'] == 'paired':
     paired = '_paired'
@@ -11,6 +11,7 @@ else:
 
 if 'OFF' not in config['QC']:
     include: str(config['QC'])+paired+'.smk'
+    include: "multiqc.smk"
 
 if 'OFF' not in config['TRIMENV']:
     include: str(config['TRIMENV'])+paired+'.smk'

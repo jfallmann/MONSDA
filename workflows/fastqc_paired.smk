@@ -5,7 +5,7 @@ rule qc_raw_paired:
            r2 = "FASTQ/{rawfile}_r2.fastq.gz"
     output: report("QC/{rawfile}_qc.zip", category="QC")
     wildcard_constraints:
-        file="trimmed{0}"
+        file="!trimmed"
     log:    "LOGS/{rawfile}/fastqc_raw.log"
     conda:  "../envs/qc.yaml"
     threads: 20
@@ -13,14 +13,14 @@ rule qc_raw_paired:
     shell: "OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2> {log} && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule qc_trimmed_paired:
-    input:  rules.qc_raw_paired.output,
-            r1 = "TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",
-            r2 = "TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz"
-    output: report("QC/{rawfile}_trimmed_qc.zip", category="QC")
-    log:   "LOGS/{rawfile}/fastqc_trimmed.log"
+    input:  expand(rules.qc_raw_paired.output, rawfile=SAMPLES),
+            r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
+            r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
+    output: report("QC/{file}_trimmed_qc.zip", category="QC")
+    log:   "LOGS/{file}/fastqc_trimmed.log"
     conda:  "../envs/qc.yaml"
     threads: 20
-    params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile))
+    params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
     shell: "OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2> {log} && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule qc_mapped_paired:

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jul 16 17:51:39 2019 (+0200)
+# Last-Updated: Wed Jul 17 10:10:41 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 411
+#     Update #: 436
 # URL:
 # Doc URL:
 # Keywords:
@@ -303,7 +303,7 @@ def pathstogenomes(samples, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def tool_params(sample, runstate, config):
+def tool_params(sample, runstate, config, subconf):
     try:
         t = genome(sample,config)
         s = os.path.basename(str(sample))
@@ -311,13 +311,11 @@ def tool_params(sample, runstate, config):
         if runstate is None:
             runstate = runstate_from_sample([sample], config)
         x = source_from_sample(sample).split(os.sep)
-        for k in getFromDict(config["MAPPING"],x):
-            y = find_key_for_value(k,config["MAPPING"])
+        for k in getFromDict(config[subconf],x):
+            y = find_key_for_value(k,config[subconf])
             for r in runstate:
-                print(k,r)
                 if r in [z for z in y]:
-                    mp.extend(k[r])
-        print(mp)
+                    mp.extend(k)
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
