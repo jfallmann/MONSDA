@@ -1,11 +1,12 @@
+
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes
-    "BINS": "Workflow/scripts", #where to find the scripts used in the workflow
+    "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Dm6": "dm6"
               },
-    "NAME": { #in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-              "Dm6":{
+    "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
+              "Dm6": {
                   "untreated": {
                       "std": ""
                   }
@@ -19,9 +20,9 @@
                 }
               },
     "SAMPLES":{ #which samples to analyze
-                "Dm6":{
+                "Dm6": {
                     "untreated": {
-                        "std": ["GSM461177_untreat_paired_subset_1", "GSM461177_untreat_paired_subset_2"]
+                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]
                     }
                 }
               },
@@ -32,8 +33,8 @@
     "READ_MINLEN": "10", # discard reads shorter than that
 
     "TRIMENV": "trimgalore", #see QC
-    "TRIMBIN": "trim-galore",
-    "TRIMMING": { #options for mapping for each sample/condition
+    "TRIMBIN": "trim_galore",
+    "TRIMMING": { #options for trimming for each sample/condition
                   "Dm6": {
                       "untreated": {
                           "std": # See above
@@ -50,27 +51,31 @@
 #Mapping software options
     "MAPPERENV": "segemehl3", # which conda env to use for mapping
     "MAPPERBIN": "segemehl.x", #how the mapper binary is called
-    "MAPPING": "paired", #choice=[single|paired] either single or paired end mapping
+    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
-                         "std": # See above
+                         "std": # first entry in list is a dict of options, second can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                          [
                              {
-                                 "-ax": "map-ont",
-                                 "-ub": "",
-                                 "-Y": "",
-                                 "-L": "",
-                                 "--MD": "",
-                                 "-d": ""
-                             }
+                                 "--MEOP": "",
+                                 "--splits": "",
+                                 "--accuracy": "95",
+                                 "--differences": "1",
+                                 "--evalue": "5",
+                                 "--hitstrategy": "1",
+                                 "--minsize": "15",
+                                 "--minfraglen": "20",
+                                 "--fullname": ""
+                             },
+                             ""
                          ]
                      }
                  }
                },
 #Annotation options
     "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-    "ANNOTATION":{ #which annotation to use
-                   "dm6": "dm6.gff.gz"
-                 },
+    "ANNOTATION": { #which annotation to use
+                    "Dm6": "dm6.gff.gz"
+                 }
 }

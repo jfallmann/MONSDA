@@ -12,4 +12,4 @@ rule trimgalore_trim:
 rule trimgalore_rename:
     input:  "TRIMMED_FASTQ/{rawfile}_trimmed.fq.gz"
     output: "TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz"
-    shell:  "mv {input} {output}"
+    shell:  "mv {input[0]} {output[0]}"

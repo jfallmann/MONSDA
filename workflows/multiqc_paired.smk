@@ -1,8 +1,8 @@
 #include: "header.smk"
 
 rule multiqc:
-    input: expand("QC/{qcfile}_fastqc.zip", qcfile=SAMPLES),
-           expand("QC/{file}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config)),
+    input: expand("QC/{qcfile}_{read}_fastqc.zip", qcfile=SAMPLES, read=['r1','r2']),
+           expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['r1','r2']),
            expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
            expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),
            expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),

@@ -1,11 +1,12 @@
 rule generate_index:
     input: fa = expand("{ref}/{{org}}/{{gen}}.fa.gz", ref=config["REFERENCE"])#, gen=pathstogenomes(SAMPLES, config))
-    output: idx = "{ref}/{org}/{gen}_{}.idx"
+    output: idx = expand("{ref}/{org}/{gen}_{ksize}.idx",ksize=lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, "MAPPING")[1])),)
     log:    "LOGS/{ref}/{org}/{gen}_idx.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
-    params: mapp=MAPPERBIN
-    shell: "{params.mapp} -d {input.fa} -x {output.idx} --threads {threads} 2> {log}"
+    params: mapp=MAPPERBIN,
+            ksize = lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, "MAPPING")[1])),
+    shell: "{params.mapp} -k {params.ksize} -d {input.fa} -x {output.idx} --threads {threads} 2> {log}"
 
 rule mapping:
     input:  expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz",rawfile=SAMPLES)
