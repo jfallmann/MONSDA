@@ -1,11 +1,12 @@
-rule generate_index_paired:
-    input: fa = expand("{ref}/{{org}}/{{gen}}.fa.gz", ref=config["REFERENCE"])#, gen=pathstogenomes(SAMPLES, config))
-    output: idx = "{ref}/{org}/{gen}.idx"
-    log:    "LOGS/{ref}/{org}/{gen}_idx.log"
+rule generate_index:
+    input: fa = expand("{ref}/{{gen}}{{name}}.fa.gz", ref=config["REFERENCE"])
+    output: idx = expand("{ref}/{{gen}}{{name}}.idx", ref=config["REFERENCE"])
+    log:    expand("LOGS/{ref}/{{gen}}{{name}}_idx.log",ref=config["REFERENCE"])
     conda:  "../envs/"+MAPPERENV+".yaml"
     threads: 20
     params: mapp=MAPPERBIN
     shell: "{params.mapp} -d {input.fa} -x {output.idx} --threads {threads} 2> {log}"
+
 
 rule mapping_paired:
     input:  r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
