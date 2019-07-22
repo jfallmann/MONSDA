@@ -46,7 +46,7 @@ rule get_chromsize_genomic:
 
 rule extendbed:
     input:  "PEAKS/{file}_mapped_sorted{type}.bed",
-            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(mapping_params(wildcards.file, None ,config)[1]))
+            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
     output: "PEAKS/{file}_mapped_sorted_extended{type}.bed"
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"

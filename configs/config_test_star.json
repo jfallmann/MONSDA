@@ -19,10 +19,10 @@
                     }
                 }
               },
-    "SAMPLES":{ #which samples to analyze
+    "SAMPLES":{ #which samples to analyze, append _r1 _r2 for paired
                 "Dm6": {
                     "untreated": {
-                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]
+                        "std": ["GSM461177_untreat_paired_subset_r1", "GSM461177_untreat_paired_subset_r2"]
                     }
                 }
               },
@@ -49,25 +49,21 @@
                   }
                 },
 #Mapping software options
-    "MAPPERENV": "minimap", # which conda env to use for mapping
-    "MAPPERBIN": "minimap2", #how the mapper binary is called
+    "MAPPERENV": "star", # which conda env to use for mapping
+    "MAPPERBIN": "STAR", #how the mapper binary is called
     "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
                          "std": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                          [
-                             "",
                              {
-                                "-ax": "splice",
-                                 "-k": "14",
-                                 "-ub": "",
-                                 "-Y": "",
-                                 "-L": "",
-                                 "--MD": "",
-                                 "-d": ""
+                                 "--genomeSAindexNbases": "13"
                              },
-                             "k14"
+                             {
+                                 "--outSAMprimaryFlag AllBestScore": ""
+                             },
+                             ""
                          ]
                      }
                  }

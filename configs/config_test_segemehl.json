@@ -1,6 +1,6 @@
 
 {
-    "REFERENCE": "GENOMES", #where to find the reference genomes
+    "REFERENCE": "GENOMES", #where to find the reference genomes, usually just the topdir named GENOMES, rest of path is defined later
     "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Dm6": "dm6"
@@ -49,25 +49,27 @@
                   }
                 },
 #Mapping software options
-    "MAPPERENV": "minimap", # which conda env to use for mapping
-    "MAPPERBIN": "minimap2", #how the mapper binary is called
-    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
+    "MAPPERENV": "segemehl3", # which conda env to use for mapping
+    "MAPPERBIN": "sgemehl.x", #how the mapper binary is called
+    "MAPPINGTYPE": "paired", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
-                         "std": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                         "std": # first entry in list is a dict of options, second can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                          [
                              "",
                              {
-                                "-ax": "splice",
-                                 "-k": "14",
-                                 "-ub": "",
-                                 "-Y": "",
-                                 "-L": "",
-                                 "--MD": "",
-                                 "-d": ""
+                                 "--MEOP": "",
+                                 "--splits": "",
+                                 "--accuracy": "95",
+                                 "--differences": "1",
+                                 "--evalue": "5",
+                                 "--hitstrategy": "1",
+                                 "--minsize": "15",
+                                 "--minfraglen": "20",
+                                 "--fullname": ""
                              },
-                             "k14"
+                             ""
                          ]
                      }
                  }

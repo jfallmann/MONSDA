@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jul 17 10:10:41 2019 (+0200)
+# Last-Updated: Mon Jul 22 19:39:18 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 436
+#     Update #: 444
 # URL:
 # Doc URL:
 # Keywords:
@@ -306,7 +306,6 @@ def pathstogenomes(samples, config):
 def tool_params(sample, runstate, config, subconf):
     try:
         t = genome(sample,config)
-        s = os.path.basename(str(sample))
         mp = list()
         if runstate is None:
             runstate = runstate_from_sample([sample], config)
@@ -410,7 +409,6 @@ def anno_from_file(sample, config):
     try:
         g = genome(sample,config)
         p = os.path.dirname(genomepath(sample, config))
-        s = os.path.basename(sample)
         return os.path.join(config["REFERENCE"],p,config["ANNOTATION"][g])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
