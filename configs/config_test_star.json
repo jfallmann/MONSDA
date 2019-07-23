@@ -1,6 +1,6 @@
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes
-    "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
+    "BINS": "Workflow/scripts", #where to find the scripts used in the workflow
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Dm6": "dm6"
               },
@@ -21,8 +21,8 @@
     "SAMPLES":{ #which samples to analyze, append _r1 _r2 for paired
                 "Dm6": {
                     "untreated": {
-#                        "std": ["GSM461177_untreat_paired_subset_r1", "GSM461177_untreat_paired_subset_r2"] #unpaired
-                        "std": ["GSM461177_untreat_paired_subset"] #paired
+                        "std": ["GSM461177_untreat_paired_subset_r1", "GSM461177_untreat_paired_subset_r2"] #unpaired
+#                        "std": ["GSM461177_untreat_paired_subset"] #paired
                     }
                 }
               },
@@ -50,8 +50,8 @@
 #Mapping software options
     "MAPPERENV": "star", # which conda env to use for mapping
     "MAPPERBIN": "STAR", #how the mapper binary is called
-#    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
-    "MAPPINGTYPE": "paired", #choice=[single|paired] either single or paired end mapping
+    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
+#    "MAPPINGTYPE": "paired", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
