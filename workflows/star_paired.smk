@@ -10,7 +10,7 @@ rule generate_index:
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items()),
             anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,wildcards.dir,config["ANNOTATION"][wildcards.dir])),
             genpath = lambda wildcards: "{refe}/{genname}".format(refe=REFERENCE,genname=os.path.join(wildcards.src,wildcards.dir))
-    shell: "zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf STARTMP && {params.mapp} --runThreadN {threads} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} --sjdbGTFtagExonParentTranscript Parent  2> {log} && cat LOG.out >> {log} && rm -f LOG.out"
+    shell: "zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf STARTMP && {params.mapp} --runThreadN {threads} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} --sjdbGTFtagExonParentTranscript Parent  2> {log} && cat Log.out >> {log} && rm -f Log.out"
 
 rule mapping:
     input:  r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
