@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jul 22 19:39:18 2019 (+0200)
+# Last-Updated: Tue Jul 23 11:05:43 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 444
+#     Update #: 464
 # URL:
 # Doc URL:
 # Keywords:
@@ -324,6 +324,22 @@ def tool_params(sample, runstate, config, subconf):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
+def index_params(indexpath, config, subconf):
+    try:
+        s = indexpath.split(os.sep)
+        mp = list()
+        for k in getFromDict(config[subconf],s):
+            mp.extend(k)
+        return mp
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+
 def count_params(sample, config):
     try:
         s = os.path.basename(str(sample))
@@ -407,9 +423,9 @@ def sample_from_path(path):
 
 def anno_from_file(sample, config):
     try:
-        g = genome(sample,config)
         p = os.path.dirname(genomepath(sample, config))
-        return os.path.join(config["REFERENCE"],p,config["ANNOTATION"][g])
+        ret = os.path.join(config["REFERENCE"],p,config["ANNOTATION"][p])
+        return ret
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

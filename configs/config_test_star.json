@@ -1,4 +1,3 @@
-
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
@@ -71,6 +70,6 @@
 #Annotation options
     "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
     "ANNOTATION": { #which annotation to use
-                    "Dm6": "dm6.gff.gz"
+                    "Dm6": "dm6.new.gff3.gz"
                  }
 }
