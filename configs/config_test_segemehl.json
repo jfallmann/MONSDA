@@ -22,7 +22,8 @@
     "SAMPLES":{ #which samples to analyze
                 "Dm6": {
                     "untreated": {
-                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]
+#                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]#unpaired
+                        "std": ["GSM461177_untreat_paired_subset"]#paired
                     }
                 }
               },
@@ -31,7 +32,6 @@
 #Trimming options
     "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
     "READ_MINLEN": "10", # discard reads shorter than that
-
     "TRIMENV": "trimgalore", #see QC
     "TRIMBIN": "trim_galore",
     "TRIMMING": { #options for trimming for each sample/condition
@@ -50,14 +50,15 @@
                 },
 #Mapping software options
     "MAPPERENV": "segemehl3", # which conda env to use for mapping
-    "MAPPERBIN": "sgemehl.x", #how the mapper binary is called
+    "MAPPERBIN": "segemehl.x", #how the mapper binary is called
+#    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
     "MAPPINGTYPE": "paired", #choice=[single|paired] either single or paired end mapping
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
                          "std": # first entry in list is a dict of options, second can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                          [
-                             "",
+                             {},
                              {
                                  "--MEOP": "",
                                  "--splits": "",

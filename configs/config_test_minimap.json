@@ -21,7 +21,7 @@
     "SAMPLES":{ #which samples to analyze
                 "Dm6": {
                     "untreated": {
-                        "std": ["GSM461177_untreat_paired_subset"]
+                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]#unpaired
                     }
                 }
               },
@@ -30,7 +30,6 @@
 #Trimming options
     "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
     "READ_MINLEN": "10", # discard reads shorter than that
-
     "TRIMENV": "trimgalore", #see QC
     "TRIMBIN": "trim-galore",
     "TRIMMING": { #options for trimming for each sample/condition
@@ -48,14 +47,17 @@
                   }
                 },
 #Mapping software options
-    "MAPPERENV": "segemehl3", # which conda env to use for mapping
-    "MAPPERBIN": "segemehl.x", #how the mapper binary is called
-    "MAPPINGTYPE": "paired", #choice=[single|paired] either single or paired end mapping
+    "MAPPERENV": "minimap", # which conda env to use for mapping
+    "MAPPERBIN": "minimap2", #how the mapper binary is called
+    "MAPPINGTYPE": "single", #choice=single, no paired end in minimap
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
                          "std": # first entry in list is a dict of options, second can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                          [
+                             {
+                                 "-k": "14"#option for setting kmer size while indexing
+                             },
                              {
                                  "-ax": "map-ont",
                                  "-ub": "",
@@ -64,7 +66,7 @@
                                  "--MD": "",
                                  "-d": ""
                              },
-                             ""
+                             "_k14" #how to name the index after indexing and for mapping
                          ]
                      }
                  }

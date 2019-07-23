@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jul 23 11:05:43 2019 (+0200)
+# Last-Updated: Tue Jul 23 16:32:09 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 464
+#     Update #: 491
 # URL:
 # Doc URL:
 # Keywords:
@@ -281,6 +281,19 @@ def namefromfile(s, config):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
+def namefrompath(p, config):
+    try:
+        p = os.path.dirname(p).split(os.sep)
+        klist = getFromDict(config["NAME"],p)
+        for k in klist:
+            return str(k)
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
 
 def pathstogenomes(samples, config):
     try:
