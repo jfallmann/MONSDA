@@ -5,7 +5,7 @@ rule generate_index:
             tmpa = temp("TMPIDX/{src}/{dir}/{gen}{name}.anno")
     log:    expand("LOGS/{{src}}/{{dir}}/{{gen}}{{name}}_{map}.idx.log", map=MAPPERBIN)
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items()),
             anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,wildcards.dir,config["ANNOTATION"][wildcards.dir])),
@@ -21,7 +21,7 @@ rule mapping:
             tmp = temp("TMPSTAROUT/{file}")
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
             mapp=MAPPERBIN,
             genpath = lambda wildcards: "{ref}/{dir}/{map}/{src}".format(ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), map=MAPPERBIN),

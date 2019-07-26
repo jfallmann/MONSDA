@@ -5,7 +5,7 @@ rule trimgalore_trim_paired:
             o2 = "TRIMMED_FASTQ/{file}_r2_val_2.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/"+TRIMENV+".yaml"
-    threads: int(20/8)
+    threads: int(MAXTHREAD/8)
     params: odir=lambda wildcards,output:os.path.dirname(output.o1),
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN
@@ -15,4 +15,6 @@ rule trimgalore_rename_paired:
     input:  rules.trimgalore_trim_paired.output
     output: r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
             r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
+    conda: "../envs/"+TRIMENV+".yaml"
+    threads: 1
     shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"

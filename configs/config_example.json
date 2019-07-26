@@ -2,6 +2,7 @@
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
+    "MAXTHREADS": "20", #maximum number of cores to use
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Dm6": "dm6"
               },

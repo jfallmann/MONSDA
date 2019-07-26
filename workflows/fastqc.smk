@@ -7,7 +7,7 @@ rule qc_raw:
         file="!trimmed"
     log:    "LOGS/{rawfile}/fastqc_raw.log"
     conda:  "../envs/qc.yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile))
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.q1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
@@ -17,7 +17,7 @@ rule qc_trimmed:
     output: o1 = report("QC/{file}_trimmed_fastqc.zip", category="QC")
     log:   "LOGS/{file}/fastqc_trimmed.log"
     conda:  "../envs/qc.yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.q1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
@@ -27,7 +27,7 @@ rule qc_mapped:
     log: "LOGS/{file}/fastqc_mapped.log"
     params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
     conda: "../envs/qc.yaml"
-    threads: 20
+    threads: MAXTHREAD
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input.q1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
 rule qc_uniquemapped:
@@ -36,7 +36,7 @@ rule qc_uniquemapped:
     output: o1 = report("QC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
     log: "LOGS/{file}/fastqc_uniquemapped.log"
     conda: "../envs/qc.yaml"
-    threads: 20
+    threads: MAXTHREAD
     params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
 #    params: dir=expand("QC/{source}",source=SOURCE)
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input.q1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"

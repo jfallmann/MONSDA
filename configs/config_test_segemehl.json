@@ -1,6 +1,7 @@
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes, usually just the topdir named GENOMES, rest of path is defined later
     "BINS": "Workflow/scripts", #where to find the scripts used in the workflow
+    "MAXTHREADS": "20", #maximum number of cores to use
     "GENOME": { #which genomes to use and how the reference fasta is named
                 "Dm6": "dm6"
               },

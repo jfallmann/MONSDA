@@ -14,8 +14,9 @@ if config['MAPPING'] is 'paired':
         output: "COUNTS/{file}_raw_r1_fq.count",
                 "COUNTS/{file}_raw_r2_fq.count",
                 "COUNTS/{file}_trimmed_r1_fq.count",
-                "COUNTS/{file}_trimmed_r2_fq.count",
+                "COUNTS/{file}_trimmed_r2_fq.count"
         conda:  "../envs/base.yaml"
+        threads: 1
         shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done"
 
     else:
@@ -27,6 +28,7 @@ if config['MAPPING'] is 'paired':
                     "COUNTS/{file}_trimmed_fq.count",
                     "COUNTS/{file}_filtered_fq.count"
             conda:  "../envs/base.yaml"
+            threads: 1
             shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done"
 
 rule count_mappers:
@@ -35,7 +37,7 @@ rule count_mappers:
     output: "COUNTS/{file}_mapped.count",
             "COUNTS/{file}_mapped_unique.count"
     conda:  "../envs/samtools.yaml"
-    threads: 20
+    threads: MAXTHREAD
     shell:  "export LC_ALL=C; arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > ${{orr[$i]}};done"
 
 rule summarize_counts:

@@ -12,4 +12,5 @@ rule multiqc:
             "QC/Multi/qclist.txt"
     log:    "LOGS/multiqc.log"
     conda:  "../envs/qc.yaml"
+    threads: 1
     shell:  "OUT=$(dirname {output[0]}); for i in {input};do echo $(dirname \"${{i}}\") >> {output[1]};done; cat {output[1]} |sort -u > {output[2]};export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output[2]} 2> {log}"

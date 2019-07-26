@@ -3,7 +3,7 @@ rule cutadapt_trim:
     output: "TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz"
     log:    "LOGS/{rawfile}_trimmed.log"
     conda: "../envs/"+TRIMENV+".yaml"
-    threads: 1
+    threads: int(MAXTHREAD/4)
     params: ada=ADAPTERS,
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN

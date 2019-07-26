@@ -3,7 +3,7 @@ rule generate_index:
     output: idx = expand("{ref}/{{dir}}/{map}/{{src}}/{{gen}}{{name}}_{{ksize}}_{map}.idx", ref=REFERENCE, map=MAPPERBIN)
     log:    expand("LOGS/{{src}}/{{dir}}/{{gen}}{{name}}_{map}_{{ksize}}.idx.log", map=MAPPERBIN)
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: indexer=MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items()),
     shell: "{params.indexer} {params.ipara} -t {threads} -d {output.idx} {input.fa} 2> {log}"
@@ -16,7 +16,7 @@ rule mapping:
             unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
             mapp=MAPPERBIN
     shell: "{params.mapp} -t {threads} {params.mpara} {input.index} {input.ref} {input.query} | tee >(grep -v -P '\t4\t' > {output.mapped}) >(grep -P '[^@|\t4\t]' |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log}"

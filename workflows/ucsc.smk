@@ -9,6 +9,7 @@ rule bamtobed:
     output: "UCSC/{file}_mapped_sorted.bed",
             "UCSC/{file}_mapped_unique.bed"
     conda:  "../envs/bedtools.yaml"
+    threads: MAXTHREAD
     shell:  "export LC_ALL=C;bedtools bamtobed -i {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]}"
 
 rule index_fa:
@@ -23,8 +24,8 @@ rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     conda:  "../envs/samtools.yaml"
-    params: bins = BINS
     threads: 1
+    params: bins = BINS
     shell:  "cut -f1,2 {input} |sed 's/^chr//g' > {output} 2> {log}"
 
 rule BedToBedg:
@@ -35,6 +36,7 @@ rule BedToBedg:
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
             "UCSC/{file}_mapped_unique.re.bedg.gz"
     conda:  "../envs/perl.yaml"
+    threads: 1
     params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
             bins = BINS,
             sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
@@ -52,6 +54,7 @@ rule BedgToUCSC:
             temp("UCSC/{file}_unique_fw_tmp"),
             temp("UCSC/{file}_unique_re_tmp")
     conda:  "../envs/ucsc.yaml"
+    threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "export LC_ALL=C; zcat {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[4]} && bedGraphToBigWig {output[4]} {params.sizes} {output[0]} && zcat {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[5]} && bedGraphToBigWig {output[5]} {params.sizes} {output[1]} && zcat {input[2]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[6]} && bedGraphToBigWig {output[6]} {params.sizes} {output[2]} && zcat {input[3]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[7]} && bedGraphToBigWig {output[7]} {params.sizes} {output[3]}"
 

@@ -3,7 +3,7 @@ rule generate_index:
     output: idx = expand("{ref}/{{dir}}/{map}/{{src}}/{{gen}}{{name}}_{map}.idx", ref=REFERENCE, map=MAPPERBIN)
     log:    expand("LOGS/{{src}}/{{dir}}/{{gen}}{{name}}_{map}.idx.log", map=MAPPERBIN)
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items())
     shell: "{params.mapp} {params.ipara} -d {input.fa} -x {output.idx} --threads {threads} 2> {log}"
@@ -16,7 +16,7 @@ rule mapping:
             unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
     log:    "LOGS/{file}/mapping.log"
     conda:  "../envs/"+MAPPERENV+".yaml"
-    threads: 20
+    threads: MAXTHREAD
     params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
             mapp=MAPPERBIN
     shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.index} -q {input.query} --threads {threads} -o {output.mapped} -u {output.unmapped} 2> {log}"

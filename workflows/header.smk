@@ -22,6 +22,7 @@ MAPPERENV=config["MAPPERENV"]
 MAPPERBIN=config["MAPPERBIN"]
 TRIMENV=config["TRIMENV"]
 TRIMBIN=config["TRIMBIN"]
+MAXTHREAD=config["MAXTHREADS"]
 SOURCE=sources(config)
 SAMPLES=list(set(samples(config)))
 if os.path.exists(SAMPLES[0]) is False:

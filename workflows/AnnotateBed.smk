@@ -10,6 +10,7 @@ rule bamtobed:
             "UCSC/{file}_mapped_unique.bed.gz"
     log:    "LOGS/Bed/createbed{file}.log"
     conda:  "../envs/bedtools.yaml"
+    threads: 1
     shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]}"
 
 rule LinkBeds:
