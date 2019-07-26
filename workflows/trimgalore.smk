@@ -7,7 +7,7 @@ rule trimgalore_trim:
     params: odir=lambda wildcards,output: os.path.dirname(output.o1),
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN
-    shell:  "{params.trim} --no_report_file --gzip {params.tpara} -o {params.odir} {input} &> {log}"
+    shell:  "{params.trim} --no_report_file --gzip {params.tpara} -o {params.odir} {input[0]} &> {log}"
 
 rule trimgalore_rename:
     input:  rules.trimgalore_trim.output
