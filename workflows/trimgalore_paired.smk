@@ -13,6 +13,6 @@ rule trimgalore_trim_paired:
 
 rule trimgalore_rename_paired:
     input:  rules.trimgalore_trim_paired.output
-    output: "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
-            "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
-    shell:  "mv {input[0]} {output[0]} && mv {input[1]} {output[1]}"
+    output: r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
+            r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
+    shell:  "mv {input.r1} {output.r1} && mv {input.r2} {output.r2}"
