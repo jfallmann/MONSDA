@@ -10,7 +10,7 @@ rule trimgalore_trim:
     shell:  "{params.trim} --cores {threads} --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}"
 
 rule trimgalore_rename:
-    input:  o1 = expand(rules.trimgalore_trim.output, rawfile=SAMPLES)
+    input:  rules.trimgalore_trim.output
     output: r1 = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
     conda: "../envs/"+TRIMENV+".yaml"
     threads: int(MAXTHREAD/8)
