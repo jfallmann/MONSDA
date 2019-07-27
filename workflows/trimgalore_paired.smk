@@ -1,6 +1,6 @@
 rule trimgalore_trim_paired:
-    input:  r1 = "FASTQ/{rawfile}_r1.fastq.gz",
-            r2 = "FASTQ/{rawfile}_r2.fastq.gz"
+    input:  r1 = expand("FASTQ/{rawfile}_r1.fastq.gz", zip,rawfile=SAMPLES)
+            r2 = expand("FASTQ/{rawfile}_r2.fastq.gz", zip,rawfile=SAMPLES)
     output: o1 = "TRIMMED_FASTQ/{file}_r1_val_1.fq.gz",
             o2 = "TRIMMED_FASTQ/{file}_r2_val_2.fq.gz"
     log:    "LOGS/{file}_trim.log"
