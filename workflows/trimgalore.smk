@@ -1,5 +1,5 @@
 rule trimgalore_trim:
-    input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
     output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/"+TRIMENV+".yaml"
@@ -7,11 +7,11 @@ rule trimgalore_trim:
     params: odir=lambda wildcards,output: os.path.dirname(output.o1),
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN,
-    shell:  "{params.trim} --cores {threads} --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}"
+    shell:  "{params.trim} -j {threads} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
 
 rule trimgalore_rename:
-    input:  rules.trimgalore_trim.output
+    input:  o1 = rules.trimgalore_trim.output.o1
     output: r1 = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
     conda: "../envs/"+TRIMENV+".yaml"
-    threads: int(MAXTHREAD/8)
+    threads: 1
     shell:  "mv {input.o1} {output.r1}"
