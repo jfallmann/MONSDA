@@ -3,7 +3,7 @@ rule trimgalore_trim:
     output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/"+TRIMENV+".yaml"
-    threads: MAXTHREAD
+    threads: int(MAXTHREAD/2)
     params: odir=lambda wildcards,output: os.path.dirname(output.o1),
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN,
