@@ -1,16 +1,31 @@
 name: trimgalore
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
+  - r
   - defaults
 dependencies:
+  - _libgcc_mutex=0.1
   - bz2file=0.98
   - bzip2=1.0.6
-  - certifi=2018.11.29
+  - ca-certificates=2019.6.16
+  - certifi=2019.6.16
   - cutadapt=1.18
   - fastqc=0.11.8
+  - font-ttf-dejavu-sans-mono=2.37
+  - fontconfig=2.13.1
+  - freetype=2.10.0
+  - icu=64.2
+  - libffi=3.2.1
+  - libgcc-ng=9.1.0
+  - libiconv=1.15
+  - libpng=1.6.37
+  - libstdcxx-ng=9.1.0
+  - libuuid=2.32.1
+  - libxml2=2.9.9
+  - ncurses=6.1
   - openjdk=11.0.1
-  - openssl=1.0.2p
+  - openssl=1.0.2r
   - perl=5.26.2
   - pigz=2.3.4
   - pip=19.0.3
@@ -19,4 +34,10 @@ dependencies:
   - setuptools=40.8.0
   - sqlite=3.26.0
   - tk=8.6.9
-  - trim-galore=0.5.0
+  - trim-galore=0.6.3
+  - wheel=0.33.4
+  - xopen=0.7.3
+  - xz=5.2.4
+  - zlib=1.2.11
+prefix: /scr/jack/fall/anaconda3/envs/trimgalore
+
