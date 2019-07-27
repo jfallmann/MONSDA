@@ -1,5 +1,5 @@
 rule trimgalore_trim:
-    input:  r1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
+    input:  r1 = "FASTQ/{rawfile}.fastq.gz"
     output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/"+TRIMENV+".yaml"
