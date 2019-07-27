@@ -1,7 +1,7 @@
 rule cutadapt_trim:
     input:  "FASTQ/{rawfile}.fastq.gz"
-    output: "TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz"
-    log:    "LOGS/{rawfile}_trimmed.log"
+    output: "TRIMMED_FASTQ/{file}_trimmed.fastq.gz"
+    log:    "LOGS/{file}_trimmed.log"
     conda: "../envs/"+TRIMENV+".yaml"
     threads: int(MAXTHREAD/4)
     params: ada=ADAPTERS,

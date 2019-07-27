@@ -12,7 +12,7 @@ rule trimgalore_trim_paired:
     shell:  "{params.trim} --cores {threads} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2}&> {log}"
 
 rule trimgalore_rename_paired:
-    input:  rules.trimgalore_trim_paired.output
+    input:  expand(rules.trimgalore_trim_paired.output, rawfile=SAMPLES)
     output: r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
             r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
     conda: "../envs/"+TRIMENV+".yaml"
