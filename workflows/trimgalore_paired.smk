@@ -9,7 +9,7 @@ rule trimgalore_trim_paired:
     params: odir=lambda wildcards,output:os.path.dirname(output.o1),
             tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
             trim=TRIMBIN
-    shell:  "{params.trim} --cores {threads} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1[0]} {input.r2[0]}&> {log}"
+    shell:  "{params.trim} --cores {threads} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2}&> {log}"
 
 rule trimgalore_rename_paired:
     input:  rules.trimgalore_trim_paired.output
