@@ -29,8 +29,8 @@ rule get_chromsize_genomic:
     shell:  "cut -f1,2 {input} |sed 's/^chr//g' > {output} 2> {log}"
 
 rule BedToBedg:
-    input:  rules.bamtobed.output,
-            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+    input:  rules.bamtobed.output
+#            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
     output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
             "UCSC/{file}_mapped_sorted.re.bedg.gz",
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
