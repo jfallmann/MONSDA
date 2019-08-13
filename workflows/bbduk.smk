@@ -1,5 +1,5 @@
 rule bbduk_trim:
-    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+    input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
     output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
     log:    "LOGS/{file}_trim.log"
     conda: "../envs/"+TRIMENV+".yaml"
