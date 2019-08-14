@@ -6,7 +6,7 @@ rule generate_index:
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items())
-    shell: "{params.mapp} {params.ipara} -d {input.fa} -x {output.idx} --threads {threads} 2> {log}"
+    shell: "{params.mapp} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
 
 rule mapping:
     input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
