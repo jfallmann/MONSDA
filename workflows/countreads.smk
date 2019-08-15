@@ -9,74 +9,79 @@ rule all:
 
 if config['MAPPING'] is 'paired':
     rule count_fastq:
-        input:  expand("FASTQ/{rawfile}_r1.fastq.gz",rawfile=SAMPLE),
-                expand("FASTQ/{rawfile}_r2.fastq.gz",rawfile=SAMPLE),
-                expand("TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",rawfile=SAMPLE),
-                expand("TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz"rawfile=SAMPLE)
+        input:  expand("FASTQ/{rawfile}_r1.fastq.gz", rawfile=SAMPLES),
+                expand("FASTQ/{rawfile}_r2.fastq.gz", rawfile=SAMPLES),
+                expand("TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz", rawfile=SAMPLES),
+                expand("TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz", rawfile=SAMPLES)
         output: "COUNTS/{file}_raw_r1_fq.count",
                 "COUNTS/{file}_raw_r2_fq.count",
                 "COUNTS/{file}_trimmed_r1_fq.count",
                 "COUNTS/{file}_trimmed_r2_fq.count"
+        log:    "LOGS/{file}/countfastq.log"
         conda:  "../envs/base.yaml"
         threads: 1
-        shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done"
+        shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}} 2>> {log};done"
 
 else:
     rule count_fastq:
-        input:  expand("FASTQ/{rawfile}.fastq.gz",rawfile=SAMPLE),
-                expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz", rawfile=SAMPLE)
+        input:  expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES),
+                expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))
         output: "COUNTS/{file}_raw_fq.count",
                 "COUNTS/{file}_trimmed_fq.count"
+        log:    "LOGS/{file}/countfastq.log"
         conda:  "../envs/base.yaml"
         threads: 1
-        shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done"
+        shell:  "arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}} 2>> {log} ;done"
 
 rule count_mappers:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
-            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "COUNTS/{file}_mapped.count",
-            "COUNTS/{file}_mapped_unique.count"
+    input:  m = expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config))
+    output: m = "COUNTS/{file}_mapped.count"
+    log:    "LOGS/{file}/countmappers.log"
     conda:  "../envs/samtools.yaml"
     threads: MAXTHREAD
-    shell:  "export LC_ALL=C; arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > ${{orr[$i]}};done"
+    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > {output.m} ;done 2>> {log}"
+
+rule count_unique_mappers:
+    input:  u = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
+    output: u = "COUNTS/{file}_mapped_unique.count"
+    log:    "LOGS/{file}/countmappers.log"
+    conda:  "../envs/samtools.yaml"
+    threads: MAXTHREAD
+    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}};  for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > {output.u};done 2>> {log}"
 
 rule featurecount:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam"
+    input:  expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config))
     output: "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
-    conda:  "../envs/featurecount.yaml"
+    log:    "LOGS/{file}/featurecount.log"
+    conda:  "../envs/countreads.yaml"
     threads: MAXTHREAD
-    shell:  "featureCounts -O -M --fraction -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
+    params: anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]))
+    shell:  "featureCounts -O -M --fraction -T {threads} -t exon -a {params.anno} -o {output[0]} {input[0]} 2> {log}"
 
 rule featurecount_uniq:
-    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-            "COUNTS/MAPPING/{file}_readcounts.tsv"
+    input:  expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
     output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts"
-    conda:  "../envs/featurecount.yaml"
+    log:    "LOGS/{file}/featurecount_uniq.log"
+    conda:  "../envs/countreads.yaml"
     threads: MAXTHREAD
-    shell:  "featureCounts -O -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
+    params: anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]))
+    shell:  "featureCounts -O -T {threads} -t exon -a {params.anno} -o {output[0]} {input[0]} 2> {log}"
 
-rule summarize_raw_counts:
-    input:  expand(rules.count_fastq.output, rawfile=SAMPLES)
-    output: "COUNTS/{rawfile}/Counts"
-    conda:  "../envs/base.yaml"
-    threads: 1
-    params: current = lambda w,input: os.path.dirname(w.input)
-    shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done"
-
-rule summarize_map_counts:
-    input:  expand(rules.count_mappers.output, file=samplecond(SAMPLES,config)),
+rule summarize_counts:
+    input:  rules.count_fastq.output,
+            rules.count_mappers.output
+    log:    "LOGS/{file}/summarize_counts.log"
     output: "COUNTS/{file}/Counts"
     conda:  "../envs/base.yaml"
     threads: 1
-    params: current = lambda w,input: os.path.dirname(w.input)
-    shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done"
+    params: current = lambda w,input: os.path.dirname(input[0])
+    shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done 2 > {log}"
 
 onsuccess:
     print("Workflow finished, no error")
 
 rule themall:
-    input:  expand(rules.summarize_raw_counts.output, rawfile=SAMPLES),
-            expand(rules.summarize_map_counts.output, file=samplecond(SAMPLES,config)),
+    input:  expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config)),
             expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
             expand(rules.featurecount_uniq.output, file=samplecond(SAMPLES,config))
     output: "COUNTS/DONE"
