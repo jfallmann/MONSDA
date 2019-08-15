@@ -1,0 +1,12 @@
+name: countreads
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - _libgcc_mutex=0.1
+  - libgcc-ng=9.1.0
+  - subread=1.6.4
+  - zlib=1.2.11
+
