@@ -19,7 +19,7 @@ rule LinkBeds:
     log:    "LOGS/Bed/linkbed{file}_{type}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed')
+    params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
     shell:  "ln -s {params.abs} {output}"
 
 rule AnnotateBed:
