@@ -9,10 +9,10 @@ rule all:
 
 if config['MAPPING'] is 'paired':
     rule count_fastq:
-        input:  "FASTQ/{rawfile}_r1.fastq.gz",
-                "FASTQ/{rawfile}_r2.fastq.gz",
-                "TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",
-                "TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz"
+        input:  expand("FASTQ/{rawfile}_r1.fastq.gz",rawfile=SAMPLE),
+                expand("FASTQ/{rawfile}_r2.fastq.gz",rawfile=SAMPLE),
+                expand("TRIMMED_FASTQ/{rawfile}_r1_trimmed.fastq.gz",rawfile=SAMPLE),
+                expand("TRIMMED_FASTQ/{rawfile}_r2_trimmed.fastq.gz"rawfile=SAMPLE)
         output: "COUNTS/{file}_raw_r1_fq.count",
                 "COUNTS/{file}_raw_r2_fq.count",
                 "COUNTS/{file}_trimmed_r1_fq.count",
@@ -23,8 +23,8 @@ if config['MAPPING'] is 'paired':
 
 else:
     rule count_fastq:
-        input:  "FASTQ/{rawfile}.fastq.gz",
-                "TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz"
+        input:  expand("FASTQ/{rawfile}.fastq.gz",rawfile=SAMPLE),
+                expand("TRIMMED_FASTQ/{rawfile}_trimmed.fastq.gz", rawfile=SAMPLE)
         output: "COUNTS/{file}_raw_fq.count",
                 "COUNTS/{file}_trimmed_fq.count"
         conda:  "../envs/base.yaml"
@@ -56,7 +56,7 @@ rule featurecount_uniq:
     shell:  "featureCounts -O -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
 
 rule summarize_raw_counts:
-    input:  rules.count_fastq.output
+    input:  expand(rules.count_fastq.output, rawfile=SAMPLES)
     output: "COUNTS/{rawfile}/Counts"
     conda:  "../envs/base.yaml"
     threads: 1
@@ -64,7 +64,7 @@ rule summarize_raw_counts:
     shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done"
 
 rule summarize_map_counts:
-    input:  rules.count_mappers.output
+    input:  expand(rules.count_mappers.output, file=samplecond(SAMPLES,config)),
     output: "COUNTS/{file}/Counts"
     conda:  "../envs/base.yaml"
     threads: 1
@@ -75,10 +75,10 @@ onsuccess:
     print("Workflow finished, no error")
 
 rule themall:
-    input:  rules.summarize_raw_counts.output,
-            rules.summarize_map_counts.output,
-            rules.featurecount.output,
-            rules.featurecount_uniq.output
+    input:  expand(rules.summarize_raw_counts.output, rawfile=SAMPLES),
+            expand(rules.summarize_map_counts.output, file=samplecond(SAMPLES,config)),
+            expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
+            expand(rules.featurecount_uniq.output, file=samplecond(SAMPLES,config))
     output: "COUNTS/DONE"
     conda:  "../envs/base.yaml"
     threads: 1
