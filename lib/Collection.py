@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sat Jul 27 09:18:51 2019 (+0200)
+# Last-Updated: Thu Aug 15 17:54:44 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 492
+#     Update #: 498
 # URL:
 # Doc URL:
 # Keywords:
@@ -434,10 +434,10 @@ def sample_from_path(path):
         with open('error','a') as h:
             print(''.join(tbe.format()), file=h)
 
-def anno_from_file(sample, config):
+def anno_from_file(sample, config, step):
     try:
         p = os.path.dirname(genomepath(sample, config))
-        ret = os.path.join(config["REFERENCE"],p,config["ANNOTATION"][p])
+        ret = os.path.join(config["REFERENCE"],p,config["ANNOTATION"][p][step])
         return ret
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

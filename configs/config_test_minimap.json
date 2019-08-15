@@ -72,9 +72,34 @@
                      }
                  }
                },
+#Count options
+    "COUNTENV": "countreads", #see QC
+    "COUNTBIN": "featurecounts",
+    "COUNTING": { #options for trimming for each sample/condition
+                  "hg38": {
+                      "NGS_20190604": {
+                          "segemehl": # See above
+                          [
+                              {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                 "-f": "",
+                                 "--fraction": "",
+                                 "-p": "",
+                                 "-O": "",
+                                 "-M": "",
+                                 "-T": "5",
+                                 "-t": "miRNA"
+                              }
+                          ]
+                      }
+                  }
+                },
 #Annotation options
     "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
     "ANNOTATION": { #which annotation to use
-                    "Dm6": "dm6.gff.gz"
+                    "Dm6":{
+                        "mapping": "dm6.new.gff3.gz",
+                        "counting": "dm6.new.gff3.gz",
+                        "annotation": "dm6.new.gff3.gz"
+                    }
                  }
 }

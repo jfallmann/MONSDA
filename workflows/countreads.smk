@@ -51,21 +51,29 @@ rule count_unique_mappers:
 
 rule featurecount:
     input:  expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config))
-    output: "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
+    output: "COUNTS/Featurecounter/{file}_mapped_sorted.counts",
+            temp("COUNTS/Featurecounter/{file}.anno")
     log:    "LOGS/{file}/featurecount.log"
-    conda:  "../envs/countreads.yaml"
+    conda:  "../envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
-    params: anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]))
-    shell:  "featureCounts -O -M --fraction -T {threads} -t exon -a {params.anno} -o {output[0]} {input[0]} 2> {log}"
+    params: count = COUNTBIN,
+            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['featurecounts'])),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
+            paired = lambda: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
-rule featurecount_uniq:
+rule featurecount_unique:
     input:  expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
-    output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_uniq.log"
-    conda:  "../envs/countreads.yaml"
+    output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts",
+            temp("COUNTS/Featurecounterunique/{file}.anno")
+    log:    "LOGS/{file}/featurecount_unique.log"
+    conda:  "../envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
-    params: anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]))
-    shell:  "featureCounts -O -T {threads} -t exon -a {params.anno} -o {output[0]} {input[0]} 2> {log}"
+    params: count = COUNTBIN,
+            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['featurecounts'])),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
+            paired = lambda: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule summarize_counts:
     input:  rules.count_fastq.output,
@@ -83,7 +91,7 @@ onsuccess:
 rule themall:
     input:  expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config)),
             expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
-            expand(rules.featurecount_uniq.output, file=samplecond(SAMPLES,config))
+            expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
     output: "COUNTS/DONE"
     conda:  "../envs/base.yaml"
     threads: 1

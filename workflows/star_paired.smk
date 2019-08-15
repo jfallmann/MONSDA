@@ -8,7 +8,7 @@ rule generate_index:
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items()),
-            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,wildcards.dir,config["ANNOTATION"][wildcards.dir])),
+            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,wildcards.dir,config["ANNOTATION"][wildcards.dir]['mapping'])),
             genpath = lambda wildcards: "{ref}/{dir}/{map}/{src}".format(ref=REFERENCE, dir=wildcards.dir, map=MAPPERBIN, src = wildcards.src)
     shell:  "if [[ -f \"{params.genpath}/SAindex\" ]]; then touch {output.idx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf TMPSTAR && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outTmpDir TMPSTAR --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} --sjdbGTFtagExonParentTranscript Parent  2> {log} && touch {output.idx} && cat Log.out >> {log} && rm -f Log.out && rm -rf TMPSTAR ;fi"
 
@@ -26,6 +26,6 @@ rule mapping_paired:
     params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
             mapp=MAPPERBIN,
             genpath = lambda wildcards: "{ref}/{dir}/{map}/{src}".format(ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), map=MAPPERBIN),
-            anno = lambda wildcards: anno_from_file(wildcards.file, config),
+            anno = lambda wildcards: anno_from_file(wildcards.file, config, 'mapping'),
             tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
     shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {params.genpath} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp} 2>> {log} && cat {output.tmp}Aligned.out.sam | tee >(samtools view -h -F 4 - > {output.mapped}) >(samtools view -h -f 4 - |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && rm {output.tmp}Aligned.out.sam && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp} 2>>{log}"
