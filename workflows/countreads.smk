@@ -37,14 +37,14 @@ rule count_mappers:
     output: "COUNTS/{file}_mapped.count",
             "COUNTS/{file}_mapped_unique.count"
     conda:  "../envs/samtools.yaml"
-    threads: MAXTHREADS
+    threads: MAXTHREAD
     shell:  "export LC_ALL=C; arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > ${{orr[$i]}};done"
 
 rule featurecount:
     input:  "SORTED_MAPPED/{file}_mapped_sorted.bam"
     output: "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
     conda:  "../envs/featurecount.yaml"
-    threads: MAXTHREADS
+    threads: MAXTHREAD
     shell:  "featureCounts -O -M --fraction -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
 
 rule featurecount_uniq:
@@ -52,7 +52,7 @@ rule featurecount_uniq:
             "COUNTS/MAPPING/{file}_readcounts.tsv"
     output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts"
     conda:  "../envs/featurecount.yaml"
-    threads: MAXTHREADS
+    threads: MAXTHREAD
     shell:  "featureCounts -O -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
 
 rule summarize_counts:
