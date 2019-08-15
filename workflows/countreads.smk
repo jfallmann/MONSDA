@@ -55,11 +55,17 @@ rule featurecount_uniq:
     threads: MAXTHREAD
     shell:  "featureCounts -O -T {threads} -t exon -a {ANNOTATION} -o {output[0]} {input[0]}"
 
-rule summarize_counts:
-    input:  rules.count_fastq.output,
-            rules.count_mappers.output
-    output: "COUNTS/{file}/Counts",
-            "COUNTS/{rawfile}/Counts"
+rule summarize_raw_counts:
+    input:  rules.count_fastq.output
+    output: "COUNTS/{rawfile}/Counts"
+    conda:  "../envs/base.yaml"
+    threads: 1
+    params: current = lambda w,input: os.path.dirname(w.input)
+    shell:  "arr=({input}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> COUNTS/{params.current}/Counts && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> COUNTS/{params.current}/Counts; else echo '0' >> COUNTS/{params.current}/Counts;fi;done"
+
+rule summarize_map_counts:
+    input:  rules.count_mappers.output
+    output: "COUNTS/{file}/Counts"
     conda:  "../envs/base.yaml"
     threads: 1
     params: current = lambda w,input: os.path.dirname(w.input)
@@ -69,7 +75,8 @@ onsuccess:
     print("Workflow finished, no error")
 
 rule themall:
-    input:  rules.summarize_counts.output,
+    input:  rules.summarize_raw_counts.output,
+            rules.summarize_map_counts.output,
             rules.featurecount.output,
             rules.featurecount_uniq.output
     output: "COUNTS/DONE"
