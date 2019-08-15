@@ -57,7 +57,7 @@ rule featurecount:
     conda:  "../envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['featurecounts'])),
+            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['counting'])),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
             paired = lambda: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
@@ -70,7 +70,7 @@ rule featurecount_unique:
     conda:  "../envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['featurecounts'])),
+            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['counting'])),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
             paired = lambda: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
