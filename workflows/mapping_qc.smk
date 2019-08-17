@@ -1,5 +1,10 @@
 include: "header.smk"
 
+MAPPERENV=config["MAPPERENV"]
+MAPPERBIN=config["MAPPERBIN"]
+TRIMENV=config["TRIMENV"]
+TRIMBIN=config["TRIMBIN"]
+
 if config['MAPPINGTYPE'] == 'paired':
     paired = '_paired'
 else:

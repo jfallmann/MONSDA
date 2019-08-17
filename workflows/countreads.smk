@@ -1,5 +1,8 @@
 include: "header.smk"
 
+COUNTENV=config["COUNTENV"]
+COUNTBIN=config["COUNTBIN"]
+
 rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
             expand("COUNTS/Featurecounter/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
