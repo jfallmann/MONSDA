@@ -6,8 +6,8 @@ rule all:
 rule bamtobed:
     input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
             "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "UCSC/{file}_mapped_sorted.bed",
-            "UCSC/{file}_mapped_unique.bed"
+    output: "UCSC/{file}_mapped_sorted.bed.gz",
+            "UCSC/{file}_mapped_unique.bed.gz"
     log:    "LOGS/{file}_ucscbamtobed"
     conda:  "../envs/bedtools.yaml"
     threads: 1
