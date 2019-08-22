@@ -24,7 +24,7 @@ rule index_fa:
 
 rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)7
+    output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     log:    "LOGS/{org}/{gen}{name}_ucscgetcrom"
     conda:  "../envs/samtools.yaml"
     threads: 1
@@ -38,7 +38,7 @@ rule BedToBedg:
             "UCSC/{file}_mapped_sorted.re.bedg.gz",
             "UCSC/{file}_mapped_unique.fw.bedg.gz",
             "UCSC/{file}_mapped_unique.re.bedg.gz"
-    log:    "{file}_ucscbedtobedgraph"
+    log:    "LOGS/{file}_ucscbedtobedgraph"
     conda:  "../envs/perl.yaml"
     threads: 1
     params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
@@ -57,7 +57,7 @@ rule BedgToUCSC:
             temp("UCSC/{file}_re_tmp"),
             temp("UCSC/{file}_unique_fw_tmp"),
             temp("UCSC/{file}_unique_re_tmp")
-    log:    "{file}_bedgtoucsc"
+    log:    "LOGS/{file}_bedgtoucsc"
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
