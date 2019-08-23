@@ -11,7 +11,7 @@ rule bamtobed:
     log:    "LOGS/{file}_ucscbamtobed"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} &> {log}"
+    shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} 2> {log} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
