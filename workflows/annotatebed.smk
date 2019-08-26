@@ -38,7 +38,7 @@ rule AnnotateBed:
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation'),
-            annop=config["ANNOTATE"]
+            annop=config["ANNOTATE"],
             annof= lambda wildcards: "-s {feat}".format(feat=config["ANNOFEATURE"]) if config["ANNOFEATURE"] is not '' else ''
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
