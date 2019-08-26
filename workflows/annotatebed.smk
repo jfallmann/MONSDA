@@ -3,27 +3,34 @@ include: "header.smk"
 rule all:
     input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
-rule bamtobed:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
-            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "UCSC/{file}_mapped_sorted.bed.gz",
-            "UCSC/{file}_mapped_unique.bed.gz"
-    log:    "LOGS/Bed/createbed{file}.log"
-    conda:  "../envs/bedtools.yaml"
-    threads: 1
-    shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]}"
+checklist = list()
+for file in samplecond(SAMPLES,config):
+    for type in ['sorted','unique']:
+        checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
 
-rule LinkBeds:
-    input:  "UCSC/{file}_mapped_{type}.bed.gz"
-    output: "BED/{file}_{type}.bed.gz"
-    log:    "LOGS/Bed/linkbed{file}_{type}.log"
-    conda:  "../envs/bedtools.yaml"
-    threads: 1
-    params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
-    shell:  "ln -s {params.abs} {output}"
+if all(checklist):
+    rule BamToBed:
+        input:  "UCSC/{file}_mapped_{type}.bed.gz"
+        output: "BED/{file}_{type}.bed.gz"
+        log:    "LOGS/Bed/linkbed{file}_{type}.log"
+        conda:  "../envs/bedtools.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+else:
+    rule BamToBed:
+        input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+                "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+        output: "BED/{file}_mapped_sorted.bed.gz",
+                "BED/{file}_mapped_unique.bed.gz"
+        log:    "LOGS/Bed/createbed{file}.log"
+        conda:  "../envs/bedtools.yaml"
+        threads: 1
+        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]}"
 
 rule AnnotateBed:
-    input:  rules.LinkBeds.output
+    input:  rules.BamToBed.output
     output: "BED/{file}_anno_{type}.bed.gz"
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "../envs/perl.yaml"
@@ -32,7 +39,8 @@ rule AnnotateBed:
             bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation'),
             annop=config["ANNOTATE"]
-    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annop} |gzip > {output[0]}"
+            annof= lambda wildcards: "-s {feat}".format(feat=config["ANNOFEATURE"]) if config["ANNOFEATURE"] is not '' else ''
+    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule AddSequenceToBed:
     input:  rules.AnnotateBed.output
