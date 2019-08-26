@@ -11,7 +11,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist):
     rule BamToBed:
         input:  "UCSC/{file}_mapped_{type}.bed.gz"
-        output: "BED/{file}_{type}.bed.gz"
+        output: "BED/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "../envs/bedtools.yaml"
         threads: 1
