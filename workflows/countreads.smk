@@ -9,7 +9,7 @@ rule all:
             expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
             "COUNTS/DONE"
 
-if config['MAPPINGTYPE'] is 'paired':
+if config['MAPPINGTYPE'] == 'paired':
     rule count_fastq:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
