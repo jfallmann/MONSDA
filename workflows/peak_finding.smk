@@ -29,7 +29,7 @@ rule bamtobed:
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    log:    "LOGS/{org}/{gen}/indexfa.log"
+    log:    "LOGS/{org}/{gen}{name}/indexfa.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
