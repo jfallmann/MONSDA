@@ -56,7 +56,7 @@ rule extendbed:
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
 rule bedtobedgraph:
-    input:  "PEAKS/{file}_mapped_sorted_extended{type}.bed" if config["CLIP"] == 'iCLIP' else "PEAKS/{file}_mapped_sorted{type}.bed"
+    input:  "PEAKS/{file}_mapped_sorted_extended{type}.bed" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_sorted{type}.bed"
     output: "PEAKS/{file}_mapped_sorted{type}.bedg.gz"
 #            temp("PEAKS/{file}_unsrted{type}.bedg.gz")
     log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
