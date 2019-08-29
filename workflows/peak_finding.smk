@@ -43,7 +43,7 @@ else:
         shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} "
 
 rule index_fa:
-    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
+    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
     conda:  "../envs/samtools.yaml"
