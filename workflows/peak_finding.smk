@@ -72,18 +72,18 @@ rule extendbed:
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
 rule bedtobedgraph:
-    input:  "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz"
+    input:  beds = "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz",
+            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: "PEAKS/{file}_mapped_{type}.bedg.gz"
 #            temp("PEAKS/{file}_unsrted{type}.bedg.gz")
     log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
     #    conda:  "../envs/perl.yaml"
     conda:  "../envs/ucsc.yaml"
     threads: 1
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-            genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
+    params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
             bins=BINS,
             odir=lambda wildcards,output:(os.path.dirname(output[0]))
-    shell: "bedItemOverlapCount {params.genome} -chromSize={params.sizes} {input} |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
+    shell: "zcat {input.beds}| bedItemOverlapCount {params.genome} -chromSize={input.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
 #    shell: "bedtools genomecov -i {input[0]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.0} 2> {log} && bedtools genomecov -i {input[1]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.1} 2>> {log} && bedtools genomecov -i {input[2]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.2} 2>> {log} && bedtools genomecov -i {input[3]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.3} 2>> {log}"
 #    shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
 
