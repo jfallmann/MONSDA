@@ -3,15 +3,31 @@ include: "header.smk"
 rule all:
     input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
 
-rule bamtobed:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
-            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "UCSC/{file}_mapped_sorted.bed.gz",
-            "UCSC/{file}_mapped_unique.bed.gz"
-    log:    "LOGS/{file}_ucscbamtobed"
-    conda:  "../envs/bedtools.yaml"
-    threads: 1
-    shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} 2> {log} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} 2>> {log}"
+checklist = list()
+for file in samplecond(SAMPLES,config):
+    for type in ['sorted','unique']:
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
+
+if all(checklist):
+    rule BamToBed:
+        input:  "BED/{file}_mapped_{type}.bed.gz"
+        output: "UCSC/{file}_mapped_{type}.bed.gz"
+        log:    "LOGS/Bed/linkbed{file}_{type}.log"
+        conda:  "../envs/bedtools.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+else:
+    rule BamToBed:
+        input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+                "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+        output: "UCSC/{file}_mapped_sorted.bed.gz",
+                "UCSC/{file}_mapped_unique.bed.gz"
+        log:    "LOGS/{file}_ucscbamtobed"
+        conda:  "../envs/bedtools.yaml"
+        threads: 1
+        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} 2> {log} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
