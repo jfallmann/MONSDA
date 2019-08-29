@@ -6,30 +6,46 @@ wildcard_constraints:
 rule all:
     input:  expand("DONE/{file}_peaks{type}",file=samplecond(SAMPLES,config), type=['',"_unique"])
 
-#rule bamtobedg:
-#    input:  "SORTED_MAPPED/{source}/{file}_mapped_sorted{condition}.bam",
-#            "UNIQUE_MAPPED/{source}/{file}_mapped_sorted{condition}.bam"
-#    output: "PEAKS/{source}/{file}_mapped_sorted{condition}.bedg"
-#    log:    "LOGS/{source}/Peaks/bam2bedg_{file}.log"
-#    conda:  "../envs/bedtools.yaml"
-#    params: ref=REFERENCE,
-#            gen=GENOME
-#    shell:  "bedtools genomecov -bg -ibam {input} -g {params.ref}/{params.gen}/{params.gen}.chrom.sizes > {output}"
+checklist = list()
+checklist2 = list()
+for file in samplecond(SAMPLES,config):
+    for type in ['sorted','unique']:
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
 
-rule bamtobed:
-    input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
-            "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "PEAKS/{file}_mapped_sorted.bed",
-            "PEAKS/{file}_mapped_sorted_unique.bed"
-    log:    "LOGS/Peaks/bam2bed_{file}.log"
-    threads: 1
-    conda:  "../envs/bedtools.yaml"
-    shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
+if all(checklist):
+    rule BamToBed:
+        input:  "BED/{file}_mapped_{type}.bed.gz"
+        output: "PEAKS/{file}_mapped_{type}.bed.gz"
+        log:    "LOGS/Peaks/linkbed{file}_{type}.log"
+        conda:  "../envs/base.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        shell:  "ln -s {params.abs} {output}"
+elif all(checklist2):
+    rule BamToBed:
+        input:  "UCSC/{file}_mapped_{type}.bed.gz"
+        output: "PEAKS/{file}_mapped_{type}.bed.gz"
+        log:    "LOGS/Peaks/linkbed{file}_{type}.log"
+        conda:  "../envs/base.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        shell:  "ln -s {params.abs} {output}"
+else:
+    rule bamtobed:
+        input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+                "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+        output: "PEAKS/{file}_mapped_sorted.bed",
+                "PEAKS/{file}_mapped_sorted_unique.bed"
+        log:    "LOGS/Peaks/bam2bed_{file}.log"
+        threads: 1
+        conda:  "../envs/bedtools.yaml"
+        shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    log:    "LOGS/{org}/{gen}{name}/indexfa.log"
+    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -38,7 +54,7 @@ rule index_fa:
 rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
-    log:    "LOGS/PrepareGenomes/{org}/{gen}{name}/chromsize.log"
+    log:    "LOGS/Peaks/{org}/{gen}{name}/chromsize.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -131,13 +147,13 @@ rule PeakToBedg:
             "UCSC/{file}_peak{type}.re.bedg.gz",
             temp("UCSC/{file}_peak{type}.fw.tmp.gz"),
             temp("UCSC/{file}_peak{type}.re.tmp.gz"),
-
+    log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
             sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]}"
+    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
 #   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
@@ -192,3 +208,5 @@ rule themall:
         for f in output:
             with open(f, "w") as out:
                         out.write("DONE")
+onsuccess:
+    print("Workflow finished, no error")

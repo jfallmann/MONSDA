@@ -4,20 +4,30 @@ rule all:
     input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 checklist = list()
+checklist2 = list()
 for file in samplecond(SAMPLES,config):
     for type in ['sorted','unique']:
         checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
 
 if all(checklist):
     rule BamToBed:
         input:  "UCSC/{file}_mapped_{type}.bed.gz"
         output: "BED/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
-        conda:  "../envs/bedtools.yaml"
+        conda:  "../envs/base.yaml"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
-
+elif all(checklist2):
+    rule BamToBed:
+        input:  "PEAKS/{file}_mapped_{type}.bed.gz"
+        output: "BED/{file}_mapped_{type}.bed.gz"
+        log:    "LOGS/Bed/linkbed{file}_{type}.log"
+        conda:  "../envs/base.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        shell:  "ln -s {params.abs} {output}"
 else:
     rule BamToBed:
         input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
@@ -46,7 +56,7 @@ rule AddSequenceToBed:
     input:  rules.AnnotateBed.output
     output: "BED/{file}_anno_seq_{type}.bed.gz",
             temp("BED/{file}_anno_seq_{type}.tmp")
-    log:    "LOGS/Beds/seq2bed_{type}_{file}.log"
+    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
@@ -70,3 +80,5 @@ rule themall:
         for f in output:
             with open(f, "w") as out:
                         out.write("DONE")
+onsuccess:
+    print("Workflow finished, no error")
