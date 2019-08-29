@@ -186,7 +186,7 @@ rule PeakToUCSC:
 #   shell:  "gunzip -c {input[0]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.fw.bw && gunzip -c {input[1]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.re.bw && rm -f tmp"
 
 rule themall:
-    input:  "PEAKS/{file}_mapped_sorted_{type}.bedg.gz",
+    input:  "PEAKS/{file}_mapped_{type}.bedg.gz",
             "UCSC/{file}_peak_{type}.fw.bw",
             "UCSC/{file}_peak_{type}.re.bw",
             "UCSC/{file}_peak_{type}.fw.bedg.gz",
@@ -195,7 +195,7 @@ rule themall:
             "PEAKS/{file}_prepeak_{type}.bed.gz",
             "PEAKS/{file}_peak_seq_{type}.bed.gz",
             "PEAKS/{file}_peak_anno_{type}.bed.gz" if config["ANNOTATE"] == "ON" else
-            "PEAKS/{file}_mapped_sorted_{type}.bedg.gz",
+            "PEAKS/{file}_mapped_{type}.bedg.gz",
             "UCSC/{file}_peak_{type}.fw.bw",
             "UCSC/{file}_peak_{type}.re.bw",
             "UCSC/{file}_peak_{type}.fw.bedg.gz",
