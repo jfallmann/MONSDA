@@ -111,7 +111,7 @@ rule themall:
     conda:  "../envs/base.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "cat {input.f1}.summary >> {output.a} && cat {input.f2}.summary >> {output.u}"
+    shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done"
 
 ###rnacounter and cufflinks are to be added later
 #rule RNAcountReads:
