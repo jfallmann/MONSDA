@@ -23,3 +23,7 @@ SOURCE=sources(config)
 SAMPLES=list(set(samples(config)))
 if os.path.exists(SAMPLES[0]) is False:
     SAMPLES=list(set(sampleslong(config)))
+try:
+    CLIP=config["CLIP"]
+except NameError:
+    CLIP=''
