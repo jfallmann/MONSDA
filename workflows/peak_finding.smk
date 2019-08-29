@@ -15,8 +15,8 @@ for file in samplecond(SAMPLES,config):
 
 if all(checklist):
     rule BamToBed:
-        input:  "BED/{file}_mapped_{type}.bed.gz"
-        output: "PEAKS/{file}_mapped_{type}.bed.gz"
+        input:  "BED/{file}_mapped_sorted{type}.bed.gz"
+        output: "PEAKS/{file}_mapped_sorted{type}.bed.gz"
         log:    "LOGS/Peaks/linkbed{file}_{type}.log"
         conda:  "../envs/base.yaml"
         threads: 1
@@ -24,8 +24,8 @@ if all(checklist):
         shell:  "ln -s {params.abs} {output}"
 elif all(checklist2):
     rule BamToBed:
-        input:  "UCSC/{file}_mapped_{type}.bed.gz"
-        output: "PEAKS/{file}_mapped_{type}.bed.gz"
+        input:  "UCSC/{file}_mapped_sorted{type}.bed.gz"
+        output: "PEAKS/{file}_mapped_sorted{type}.bed.gz"
         log:    "LOGS/Peaks/linkbed{file}_{type}.log"
         conda:  "../envs/base.yaml"
         threads: 1
