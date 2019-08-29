@@ -38,7 +38,7 @@ rule index_fa:
 rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
-    log:    "LOGS/PrepareGenomes/{org}/{gen}/chromsize.log"
+    log:    "LOGS/PrepareGenomes/{org}/{gen}{name}/chromsize.log"
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
