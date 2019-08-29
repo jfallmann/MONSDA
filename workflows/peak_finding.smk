@@ -1,10 +1,10 @@
 include: "header.smk"
 
-wildcard_constraints:
-    type="|_unique"
+#wildcard_constraints:
+#    type="sorted|unique"
 
 rule all:
-    input:  expand("DONE/{file}_peaks_{type}",file=samplecond(SAMPLES,config), type=['sorted',"unique"])
+    input:  expand("DONE/{file}_peaks_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
