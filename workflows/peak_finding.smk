@@ -29,18 +29,18 @@ elif all(checklist2):
         log:    "LOGS/Peaks/linkbed{file}_{type}.log"
         conda:  "../envs/base.yaml"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
 else:
     rule bamtobed:
         input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
                 "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-        output: "PEAKS/{file}_mapped_sorted.bed",
-                "PEAKS/{file}_mapped_sorted_unique.bed"
+        output: "PEAKS/{file}_mapped_sorted.bed.gz",
+                "PEAKS/{file}_mapped_sorted_unique.bed.gz"
         log:    "LOGS/Peaks/bam2bed_{file}.log"
         threads: 1
         conda:  "../envs/bedtools.yaml"
-        shell:  "bedtools bamtobed -i {input[0]} > {output[0]} && bedtools bamtobed -i {input[1]} > {output[1]} "
+        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} "
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa",ref=REFERENCE),
@@ -61,9 +61,9 @@ rule get_chromsize_genomic:
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
 
 rule extendbed:
-    input:  "PEAKS/{file}_mapped_sorted{type}.bed",
+    input:  "PEAKS/{file}_mapped_sorted{type}.bed.gz",
             lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
-    output: "PEAKS/{file}_mapped_sorted_extended{type}.bed"
+    output: "PEAKS/{file}_mapped_sorted_extended{type}.bed.gz"
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
@@ -72,7 +72,7 @@ rule extendbed:
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
 rule bedtobedgraph:
-    input:  "PEAKS/{file}_mapped_sorted_extended{type}.bed" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_sorted{type}.bed"
+    input:  "PEAKS/{file}_mapped_sorted_extended{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_sorted{type}.bed.gz"
     output: "PEAKS/{file}_mapped_sorted{type}.bedg.gz"
 #            temp("PEAKS/{file}_unsrted{type}.bedg.gz")
     log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"

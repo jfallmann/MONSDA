@@ -26,7 +26,7 @@ elif all(checklist2):
         log:    "LOGS/UCSC/linkbed{file}_{type}.log"
         conda:  "../envs/base.yaml"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
 else:
     rule BamToBed:
