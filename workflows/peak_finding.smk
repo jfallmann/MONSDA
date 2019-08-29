@@ -64,7 +64,7 @@ rule bedtobedgraph:
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-            genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config))
+            genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
             bins=BINS,
             odir=lambda wildcards,output:(os.path.dirname(output[0]))
     shell: "bedItemOverlapCount {params.genome} -chromSize={params.sizes} {input} |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
