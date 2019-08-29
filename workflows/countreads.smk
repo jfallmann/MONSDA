@@ -7,7 +7,8 @@ rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
             expand("COUNTS/Featurecounter/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
             expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
-            "COUNTS/DONE"
+            "COUNTS/Collection",
+            "COUNTS/Collection_unique"
 
 if config['MAPPINGTYPE'] == 'paired':
     rule count_fastq:
@@ -102,14 +103,15 @@ onsuccess:
     print("Workflow finished, no error")
 
 rule themall:
-    input:  expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config)),
-            expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
-            expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
-    output: "COUNTS/DONE"
+    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config)),
+            f1 = expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
+            f2 = expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
+    output: a = "COUNTS/Collection",
+            u = "COUNTS/Collection_unique"
     conda:  "../envs/base.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "touch {output}"
+    shell:  "cat {input.f1}.summary >> {output.a} && cat {input.f2}.summary >> {output.u}"
 
 ###rnacounter and cufflinks are to be added later
 #rule RNAcountReads:
