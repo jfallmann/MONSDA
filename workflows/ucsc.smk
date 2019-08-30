@@ -1,7 +1,10 @@
 include: "header.smk"
 
+wildcard_constraints:
+    type="sorted|unique"
+
 rule all:
-    input:  expand("DONE/{file}_tracks",file=samplecond(SAMPLES,config))
+    input:  expand("DONE/UCSC/{file}_{type}_tracks",file=samplecond(SAMPLES,config),type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -70,7 +73,7 @@ if all(checklist):
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
                 lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{file}_ucscbedtobedgraph"
+        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
         #    conda:  "../envs/perl.yaml"
         threads: 1
@@ -82,7 +85,7 @@ elif all(checklist2):
         input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
                 lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{file}_ucscbedtobedgraph"
+        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
         #    conda:  "../envs/perl.yaml"
         threads: 1
@@ -91,13 +94,11 @@ elif all(checklist2):
 
 else:
     rule BedToBedg:
-        input:  rules.BamToBed.output,
+        input:  "UCSC/{file}_mapped_{type}.bed.gz",
                 lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
-        output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
-                "UCSC/{file}_mapped_sorted.re.bedg.gz",
-                "UCSC/{file}_mapped_unique.fw.bedg.gz",
-                "UCSC/{file}_mapped_unique.re.bedg.gz"
-        log:    "LOGS/UCSC/{file}_ucscbedtobedgraph"
+        output: "UCSC/{file}_mapped_{type}.fw.bedg.gz",
+                "UCSC/{file}_mapped_{type}.re.bedg.gz"
+        log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
         #    conda:  "../envs/perl.yaml"
         threads: 1
@@ -111,15 +112,11 @@ else:
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
     input:  rules.BedToBedg.output
-    output: "UCSC/{file}_mapped_sorted.fw.bw",
-            "UCSC/{file}_mapped_sorted.re.bw",
-            "UCSC/{file}_mapped_unique.fw.bw",
-            "UCSC/{file}_mapped_unique.re.bw",
-            temp("UCSC/{file}_fw_tmp"),
-            temp("UCSC/{file}_re_tmp"),
-            temp("UCSC/{file}_unique_fw_tmp"),
-            temp("UCSC/{file}_unique_re_tmp")
-    log:    "LOGS/UCSC/{file}_bedgtoucsc"
+    output: "UCSC/{file}_mapped_{type}.fw.bw",
+            "UCSC/{file}_mapped_{type}.re.bw",
+            temp("UCSC/{file}_{type}_fw_tmp"),
+            temp("UCSC/{file}_{type}_re_tmp")
+    log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
@@ -127,7 +124,7 @@ rule BedgToUCSC:
 
 rule themall:
     input:  rules.BedgToUCSC.output
-    output: "DONE/UCSC/{file}_tracks"
+    output: "DONE/UCSC/{file}_{type}_tracks"
     run:
         for f in output:
             with open(f, "w") as out:
