@@ -62,7 +62,7 @@ rule get_chromsize_genomic:
 
 rule extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
-            lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
     output: "PEAKS/{file}_mapped_extended_{type}.bed.gz"
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"
@@ -81,7 +81,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist) and CLIP != 'iCLIP':
     rule BedToBedg:
         input:  "UCSC/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
         conda:  "../envs/base.yaml"
@@ -92,7 +92,7 @@ if all(checklist) and CLIP != 'iCLIP':
 elif all(checklist2) and CLIP != 'iCLIP':
     rule BedToBedg:
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
         conda:  "../envs/base.yaml"

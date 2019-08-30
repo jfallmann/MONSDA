@@ -71,7 +71,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist):
     rule BedToBedg:
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
@@ -83,7 +83,7 @@ if all(checklist):
 elif all(checklist2):
     rule BedToBedg:
         input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
@@ -95,7 +95,7 @@ elif all(checklist2):
 else:
     rule BedToBedg:
         input:  "UCSC/{file}_mapped_{type}.bed.gz",
-                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_{type}.fw.bedg.gz",
                 "UCSC/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
