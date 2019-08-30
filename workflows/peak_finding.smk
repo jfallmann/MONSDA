@@ -71,21 +71,50 @@ rule extendbed:
             bins=BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
-rule bedtobedgraph:
-    input:  beds = "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz",
-            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
-    output: "PEAKS/{file}_mapped_{type}.bedg.gz"
-#            temp("PEAKS/{file}_unsrted{type}.bedg.gz")
-    log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
-    #    conda:  "../envs/perl.yaml"
-    conda:  "../envs/ucsc.yaml"
-    threads: 1
-    params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
-            bins=BINS,
-            odir=lambda wildcards,output:(os.path.dirname(output[0]))
-    shell: "zcat {input.beds}| bedItemOverlapCount {params.genome} -chromSize={input.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
-#    shell: "bedtools genomecov -i {input[0]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.0} 2> {log} && bedtools genomecov -i {input[1]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.1} 2>> {log} && bedtools genomecov -i {input[2]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.2} 2>> {log} && bedtools genomecov -i {input[3]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.3} 2>> {log}"
-#    shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
+checklist = list()
+checklist2 = list()
+for file in samplecond(SAMPLES,config):
+    for type in ['sorted','unique'] and orient in ['fw','rw']:
+        checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+
+if all(checklist) and CLIP != 'iCLIP':
+    rule BedToBedg:
+        input:  "UCSC/{file}_mapped_{type}.{orient}.bedg.gz",
+                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+        output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
+        log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
+        conda:  "../envs/base.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+elif all(checklist2) and CLIP != 'iCLIP':
+    rule BedToBedg:
+        input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
+                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+        output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
+        log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
+        conda:  "../envs/base.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+else:
+    rule BedToBedg:
+        input:  beds = "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz",
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+        output: "PEAKS/{file}_mapped_{type}.bedg.gz"
+        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        #    conda:  "../envs/perl.yaml"
+        conda:  "../envs/ucsc.yaml"
+        threads: 1
+        params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
+                bins=BINS,
+                odir=lambda wildcards,output:(os.path.dirname(output[0]))
+        shell: "zcat {input.beds}| bedItemOverlapCount {params.genome} -chromSize={input.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
+        #    shell: "bedtools genomecov -i {input[0]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.0} 2> {log} && bedtools genomecov -i {input[1]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.1} 2>> {log} && bedtools genomecov -i {input[2]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.2} 2>> {log} && bedtools genomecov -i {input[3]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.3} 2>> {log}"
+        #    shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule PreprocessPeaks:
     input:  "PEAKS/{file}_mapped_{type}.bedg.gz"

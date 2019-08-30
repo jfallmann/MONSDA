@@ -57,7 +57,39 @@ rule get_chromsize_genomic:
     params: bins = BINS
     shell:  "cut -f1,2 {input} |sed 's/^chr//g' > {output} 2> {log}"
 
-rule BedToBedg:
+checklist = list()
+checklist2 = list()
+for file in samplecond(SAMPLES,config):
+    for type in ['sorted','unique'] and orient in ['fw','rw']:
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+
+if all(checklist):
+    rule BedToBedg:
+        input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
+                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+        output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
+        log:    "LOGS/UCSC/{file}_ucscbedtobedgraph"
+        conda:  "../envs/ucsc.yaml"
+        #    conda:  "../envs/perl.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+elif all(checklist2):
+    rule BedToBedg:
+        input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
+                lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+        output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
+        log:    "LOGS/UCSC/{file}_ucscbedtobedgraph"
+        conda:  "../envs/ucsc.yaml"
+        #    conda:  "../envs/perl.yaml"
+        threads: 1
+        params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
+        shell:  "ln -s {params.abs} {output}"
+
+else:
+    rule BedToBedg:
     input:  rules.bamtobed.output
             lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
     output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
