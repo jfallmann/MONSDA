@@ -60,9 +60,10 @@ rule get_chromsize_genomic:
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
-    for type in ['sorted','unique'] and orient in ['fw','rw']:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+    for type in ['sorted','unique']:
+        for orient in ['fw','rw']:
+            checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
 
 if all(checklist):
     rule BedToBedg:
@@ -90,7 +91,7 @@ elif all(checklist2):
 
 else:
     rule BedToBedg:
-        input:  rules.bamtobed.output
+        input:  rules.bamtobed.output,
                 lambda wildcards: "{ref}/{gen}{name}.idx".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
         output: "UCSC/{file}_mapped_sorted.fw.bedg.gz",
                 "UCSC/{file}_mapped_sorted.re.bedg.gz",
