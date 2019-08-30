@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Aug 15 17:54:44 2019 (+0200)
+# Last-Updated: Fri Aug 30 15:07:06 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 498
+#     Update #: 520
 # URL:
 # Doc URL:
 # Keywords:
@@ -326,7 +326,7 @@ def tool_params(sample, runstate, config, subconf):
         for k in getFromDict(config[subconf],x):
             y = find_key_for_value(k,config[subconf])
             for r in runstate:
-                if r in [z for z in y]:
+                if r in sample.split(os.sep) and r in [z for z in y]:
                     mp.extend(k)
         return mp
     except Exception as err:
