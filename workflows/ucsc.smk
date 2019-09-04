@@ -71,7 +71,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist):
     rule BedToBedg:
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
@@ -83,7 +83,7 @@ if all(checklist):
 elif all(checklist2):
     rule BedToBedg:
         input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
-                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "../envs/ucsc.yaml"
@@ -95,7 +95,8 @@ elif all(checklist2):
 else:
     rule BedToBedg:
         input:  bed = "UCSC/{file}_mapped_{type}.bed.gz",
-                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: fw = "UCSC/{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
@@ -103,15 +104,14 @@ else:
         #    conda:  "../envs/perl.yaml"
         threads: 1
         params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
-                bins = BINS,
-                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-                #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
-        shell: "bedtools genomecov -i {input.bed} -bga -split -strand + -g {params.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bga -split -strand - -g {params.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.re} 2>> {log}"
+                bins = BINS
+        shell: "bedtools genomecov -i {input.bed} -bga -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bga -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.re} 2>> {log}"
+        #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
         #    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track 2> {log} && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track 2>> {log}"
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
-    input:  rules.BedToBedg.output
+    input:  rules.BedToBedg.output,
     output: "UCSC/{file}_mapped_{type}.fw.bw",
             "UCSC/{file}_mapped_{type}.re.bw",
             temp("UCSC/{file}_{type}_fw_tmp"),
