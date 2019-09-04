@@ -107,13 +107,14 @@ else:
         output: "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
         #    conda:  "../envs/perl.yaml"
-        conda:  "../envs/ucsc.yaml"
+        conda:  "../envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
                 bins=BINS,
                 odir=lambda wildcards,output:(os.path.dirname(output[0]))
-        shell: "zcat {input.beds}| bedItemOverlapCount {params.genome} -chromSize={input.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
-        #    shell: "bedtools genomecov -i {input[0]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.0} 2> {log} && bedtools genomecov -i {input[1]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.1} 2>> {log} && bedtools genomecov -i {input[2]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.2} 2>> {log} && bedtools genomecov -i {input[3]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.3} 2>> {log}"
+#        shell: "zcat {input.beds}| bedItemOverlapCount {params.genome} -chromSize={input.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log}"
+        shell: "bedtools genomecov -i {input.bed} -bga -split -strand + -g {params.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bga -split -strand - -g {params.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.re} 2>> {log}"
+               #    shell: "bedtools genomecov -i {input[0]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.0} 2> {log} && bedtools genomecov -i {input[1]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.1} 2>> {log} && bedtools genomecov -i {input[2]} -dz -split -strand + |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.2} 2>> {log} && bedtools genomecov -i {input[3]} -dz -split -strand - |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|gzip > {output.3} 2>> {log}"
         #    shell:  "{params.bins}/Universal/Bed2Bedgraph.pl -v on -c {params.sizes} -o {params.odir} -f {input[0]} -x {output[1]} -y {output[1]} && zcat {output[1]} |sort -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule PreprocessPeaks:
