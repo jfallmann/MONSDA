@@ -58,7 +58,7 @@ rule get_chromsize_genomic:
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "cut -f1,2 {input} |sed 's/^chr//g' > {output} 2> {log}"
+    shell:  "cut -f1,2 {input} > {output} 2> {log}"
 
 checklist = list()
 checklist2 = list()
@@ -105,7 +105,7 @@ else:
         threads: 1
         params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
                 bins = BINS
-        shell: "bedtools genomecov -i {input.bed} -bga -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bga -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort -V |gzip > {output.re} 2>> {log}"
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bga -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'| sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bga -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
         #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
         #    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track 2> {log} && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track 2>> {log}"
 
@@ -113,21 +113,30 @@ else:
 rule BedgToUCSC:
     input:  rules.BedToBedg.output,
     output: "UCSC/{file}_mapped_{type}.fw.bw",
-            "UCSC/{file}_mapped_{type}.re.bw",
-            temp("UCSC/{file}_{type}_fw_tmp"),
-            temp("UCSC/{file}_{type}_re_tmp")
+            "UCSC/{file}_mapped_{type}.re.bw"
     log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "export LC_ALL=C; zcat {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[4]} 2> {log} && bedGraphToBigWig {output[4]} {params.sizes} {output[0]} 2>> {log} && zcat {input[1]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[5]} 2>> {log} && bedGraphToBigWig {output[5]} {params.sizes} {output[1]} 2>> {log} && zcat {input[2]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[6]} 2>> {log} && bedGraphToBigWig {output[6]} {params.sizes} {output[2]} 2>> {log} && zcat {input[3]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n > {output[7]} 2>> {log} && bedGraphToBigWig {output[7]} {params.sizes} {output[3]} 2>> {log}"
+    shell:  "bedGraphToBigWig {input[0]} {params.sizes} {output[0]} 2>> {log} && bedGraphToBigWig {input[1]} {params.sizes} {output[1]} 2>> {log}"
+
+rule GenerateTrack:
+    input:  rules.BedgToUCSC.output
+    output: "UCSC/{file}_mapped_{type}.fw.bw.trackdone",
+            "UCSC/{file}_mapped_{type}.re.bw.trackdone"
+    conda: "../envs/base.yaml"
+    threads: 1
+    params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
+            bins = BINS,
+            gen = lambda wildcards: genomepath(wildcards.file,config)
+    shell: "cd {params.bwdir} && ls *.bw| {params.bins}/GenerateTrackDb.py -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub -x True && for i in *.bw; do touch $i\.trackdone;done"
 
 rule themall:
-    input:  rules.BedgToUCSC.output
+    input:  rules.GenerateTrack.output
     output: "DONE/UCSC/{file}_{type}_tracks"
     run:
         for f in output:
             with open(f, "w") as out:
-                        out.write("DONE")
+                out.write("DONE")
 onsuccess:
     print("Workflow finished, no error")

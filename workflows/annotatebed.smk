@@ -45,8 +45,7 @@ rule AnnotateBed:
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-            bins=BINS,
+    params: bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation'),
             annop=config["ANNOTATE"],
             annof= lambda wildcards: "-s {feat}".format(feat=config["ANNOFEATURE"]) if config["ANNOFEATURE"] is not '' else ''
