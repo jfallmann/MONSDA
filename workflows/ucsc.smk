@@ -40,9 +40,9 @@ else:
         log:    "LOGS/UCSC/{file}_ucscbamtobed"
         conda:  "../envs/bedtools.yaml"
         threads: 1
-        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
-        # Here I use the strand of the first read in pair as the one determining the strand                   #     shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
-
+        # Here I use the strand of the first read in pair as the one determining the strand
+        shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
+        #        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
@@ -110,16 +110,18 @@ else:
         #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
         #    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track 2> {log} && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track 2>> {log}"
 
-### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
+### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
     input:  rules.BedToBedg.output,
     output: "UCSC/{file}_mapped_{type}.fw.bw",
-            "UCSC/{file}_mapped_{type}.re.bw"
+            "UCSC/{file}_mapped_{type}.re.bw",
+            temp("UCSC/{file}_mapped_{type}.fw.tmp"),
+            temp("UCSC/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "bedGraphToBigWig <(zcat {input[0]}) {params.sizes} {output[0]} 2>> {log} && bedGraphToBigWig <(zcat {input[1]}) {params.sizes} {output[1]} 2>> {log}"
+    shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2> {log} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]}) {params.sizes} {output[1]} 2>> {log}"
 
 rule GenerateTrack:
     input:  rules.BedgToUCSC.output
