@@ -36,7 +36,7 @@ else:
         input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
                 "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
         output: "PEAKS/{file}_mapped_sorted.bed.gz",
-                "PEAKS/{file}_mapped_sorted_unique.bed.gz"
+                "PEAKS/{file}_mapped_unique.bed.gz"
         log:    "LOGS/Peaks/bam2bed_{file}.log"
         threads: 1
         conda:  "../envs/bedtools.yaml"
@@ -74,15 +74,16 @@ rule extendbed:
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
-    for type in ['sorted','unique'] and orient in ['fw','rw']:
-        checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+    for type in ['sorted','unique']:
+        for orient in ['fw','rw']:
+            checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist2.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
 
 if all(checklist) and CLIP != 'iCLIP':
     rule BedToBedg:
-        input:  "UCSC/{file}_mapped_{type}.{orient}.bedg.gz",
+        input:  "UCSC/{file}_mapped_{type}_{orient}.bedg.gz",
                 lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
-        output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
+        output: "PEAKS/{file}_mapped_{type}_{orient}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
         conda:  "../envs/base.yaml"
         threads: 1
@@ -91,9 +92,9 @@ if all(checklist) and CLIP != 'iCLIP':
 
 elif all(checklist2) and CLIP != 'iCLIP':
     rule BedToBedg:
-        input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
+        input:  "BED/{file}_mapped_{type}_{orient}.bedg.gz",
                 lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
-        output: "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz"
+        output: "PEAKS/{file}_mapped_{type}_{orient}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_ucscbedtobedgraph"
         conda:  "../envs/base.yaml"
         threads: 1
