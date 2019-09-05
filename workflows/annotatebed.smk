@@ -37,7 +37,9 @@ else:
         log:    "LOGS/Bed/createbed{file}.log"
         conda:  "../envs/bedtools.yaml"
         threads: 1
-        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]}"
+        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
+        #        shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
+
 
 rule AnnotateBed:
     input:  rules.BamToBed.output

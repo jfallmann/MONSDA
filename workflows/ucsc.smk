@@ -40,7 +40,8 @@ else:
         log:    "LOGS/UCSC/{file}_ucscbamtobed"
         conda:  "../envs/bedtools.yaml"
         threads: 1
-        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} 2> {log} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} 2>> {log}"
+        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
+        # Here I use the strand of the first read in pair as the one determining the strand                   #     shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2/){{if ($F[5] == \"+\"){{$F[5] = \"-\"}}elsif($F[5] == \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
@@ -118,7 +119,7 @@ rule BedgToUCSC:
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "bedGraphToBigWig {input[0]} {params.sizes} {output[0]} 2>> {log} && bedGraphToBigWig {input[1]} {params.sizes} {output[1]} 2>> {log}"
+    shell:  "bedGraphToBigWig <(zcat {input[0]}) {params.sizes} {output[0]} 2>> {log} && bedGraphToBigWig <(zcat {input[1]}) {params.sizes} {output[1]} 2>> {log}"
 
 rule GenerateTrack:
     input:  rules.BedgToUCSC.output

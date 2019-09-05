@@ -40,7 +40,7 @@ else:
         log:    "LOGS/Peaks/bam2bed_{file}.log"
         threads: 1
         conda:  "../envs/bedtools.yaml"
-        shell:  "bedtools bamtobed -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -i {input[1]} |gzip > {output[1]} "
+        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]} "
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
