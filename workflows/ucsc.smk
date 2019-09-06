@@ -121,7 +121,7 @@ rule BedgToUCSC:
     conda:  "../envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2> {log} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]}) {params.sizes} {output[1]} 2>> {log}"
+    shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2> {log} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]} 2>> {log}"
 
 rule GenerateTrack:
     input:  rules.BedgToUCSC.output
