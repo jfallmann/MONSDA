@@ -121,7 +121,7 @@ else:
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
                 bins=BINS,
                 odir=lambda wildcards,output:(os.path.dirname(output[0]))
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bga -split -g {input.sizes} |perl -wlane 'print join(\"\t\",$F[0],$F[1],$F[1]+1,$F[2])'| sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log}"
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -g {input.sizes} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log}"
 
 rule PreprocessPeaks:
     input:  "PEAKS/{file}_mapped_{type}.bedg.gz"
@@ -164,7 +164,7 @@ rule AddSequenceToPeak:
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-    shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
+    shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
