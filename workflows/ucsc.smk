@@ -113,26 +113,28 @@ else:
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
     input:  rules.BedToBedg.output,
-    output: "UCSC/{file}_mapped_{type}.fw.bw",
-            "UCSC/{file}_mapped_{type}.re.bw",
-            temp("UCSC/{file}_mapped_{type}.fw.tmp"),
-            temp("UCSC/{file}_mapped_{type}.re.tmp")
+    output: fw = "UCSC/{file}_mapped_{type}.fw.bw",
+            re = "UCSC/{file}_mapped_{type}.re.bw",
+            t1 = temp("UCSC/{file}_mapped_{type}.fw.tmp"),
+            t2 = temp("UCSC/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
     conda:  "../envs/ucsc.yaml"
     threads: 1
+    priority: 100               # This should be finished before we generate tracks
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2> {log} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]} 2>> {log}"
+    shell:  "zcat {input[0]} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log} && zcat {input[1]} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}"
 
 rule GenerateTrack:
     input:  rules.BedgToUCSC.output
     output: "UCSC/{file}_mapped_{type}.fw.bw.trackdone",
             "UCSC/{file}_mapped_{type}.re.bw.trackdone"
-    conda: "../envs/base.yaml"
+    log:    "LOGS/UCSC/{file}_track_{type}.log"
+    conda:  "../envs/base.yaml"
     threads: 1
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
-            bins = BINS,
+            bins = os.path.abspath(BINS),
             gen = lambda wildcards: genomepath(wildcards.file,config)
-    shell: "cd {params.bwdir} && ls *.bw| {params.bins}/GenerateTrackDb.py -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub -x True && for i in *.bw; do touch $i\.trackdone;done"
+    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub -x True && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
 
 rule themall:
     input:  rules.GenerateTrack.output
