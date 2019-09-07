@@ -177,7 +177,8 @@ rule AnnotatePeak:
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
 rule PeakToBedg:
-    input:  "PEAKS/{file}_peak_{type}.bed.gz"
+    input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
+            pa = rules.AnnotatePeak.output
     output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
             "UCSC/{file}_peak_{type}.re.bedg.gz",
             temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
@@ -188,7 +189,7 @@ rule PeakToBedg:
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
             sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
 #   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
