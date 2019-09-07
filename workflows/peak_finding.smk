@@ -163,7 +163,7 @@ rule AddSequenceToPeak:
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa.gz".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
     shell:  "fastaFromBed -fi {params.fasta} -bed {input[0]} -name -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
 
 rule AnnotatePeak:
