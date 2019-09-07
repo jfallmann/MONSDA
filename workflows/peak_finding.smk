@@ -159,12 +159,12 @@ rule Find_Peaks:
 rule AddSequenceToPeak:
     input:  "PEAKS/{file}_peak_{type}.bed.gz"
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
-            pt = temp("PEAKS/{file}_peak_seq_{type}.tmp"),
-            fasta = temp(lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)))
+            pt = temp("PEAKS/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    shell:  "if [[ ! -f \"{output.fasta}\" ]];then zcat {output.fasta}.gz > {output.fasta};fi && fastaFromBed -fi {params.fasta} -bed {input[0]} -name -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output[0]}"
+    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+    shell:  "if [[ ! -f \"{params.fasta}\" ]];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed {input[0]} -name -tab -s -fullHeader -fo {output.pt} && cut -d$'\t' -f2 {output.pt}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output.peak}"
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
@@ -172,8 +172,7 @@ rule AnnotatePeak:
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-            bins=BINS,
+    params: bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation')
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
