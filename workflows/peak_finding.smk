@@ -97,7 +97,7 @@ if all(checklist) and CLIP != 'iCLIP':
 
 elif all(checklist2) and CLIP != 'iCLIP':
     rule BedToBedg:
-        input:  expand("BED/{file}_mapped_{type}_{{orient}}.bedg.gz",orient=['fw','rw']),
+        input:  expand("BED/{{file}}_mapped_{{type}}.{orient}.bedg.gz",orient=['fw','rw']),
                 lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: fwd = "PEAKS/{file}_mapped_{type}.fw.bedg.gz",
                 rev = "PEAKS/{file}_mapped_{type}.re.bedg.gz",
