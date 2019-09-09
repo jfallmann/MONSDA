@@ -130,7 +130,7 @@ rule PreprocessPeaks:
     conda:  "../envs/perl.yaml"
     threads: 1
     params:  bins=BINS
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} |sort -k1,1 -k2,2n | gzip > {output[0]}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]}"
 
 rule Find_Peaks:
     input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
@@ -145,7 +145,7 @@ rule Find_Peaks:
             cutoff=config["MINPEAKHEIGHT"],
             userlimit=config["USRLIMIT"],
             bins=BINS
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort -k1,1 -k2,2n  |gzip > {output[0]}"
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]}"
 
 #rule QuantPeaks:
 #   input:  "PEAKS/{source}/Peak_{file}.bed.gz"
@@ -163,18 +163,19 @@ rule UnzipGenome:
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^?chr/ ? $F[0] : \"chr\".$F[0]; print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
     input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
             fa = lambda wildcards: "{ref}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
-            pt = temp("PEAKS/{file}_peak_seq_{type}.tmp")
+            pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),
+            ps = temp("PEAKS/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "fastaFromBed -fi {input.fa} -bed {input.pk} -name -tab -s -fullHeader -fo {output.pt} && cut -d$'\t' -f2 {output.pt}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^?chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F)' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
@@ -199,7 +200,7 @@ rule PeakToBedg:
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
             sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
 #   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
