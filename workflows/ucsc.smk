@@ -134,7 +134,7 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),
             gen = lambda wildcards: genomepath(wildcards.file,config)
-    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub -x True && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
+    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
 
 rule themall:
     input:  rules.GenerateTrack.output

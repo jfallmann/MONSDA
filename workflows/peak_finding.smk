@@ -156,15 +156,25 @@ rule Find_Peaks:
 #       ratio=config["PEAKCUTOFF}
 #   shell:
 
+rule UnzipGenome:
+    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
+    output: fa = expand("{ref}/{{org}}/{{gen}}{{name}}_fastafrombed.fa",ref=REFERENCE)
+    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
+    conda:  "../envs/samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+
 rule AddSequenceToPeak:
-    input:  "PEAKS/{file}_peak_{type}.bed.gz"
+    input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
+            fa = lambda wildcards: "{ref}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
     conda:  "../envs/bedtools.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
-    shell:  "if [[ ! -f \"{params.fasta}\" ]];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed {input[0]} -name -tab -s -fullHeader -fo {output.pt} && cut -d$'\t' -f2 {output.pt}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|gzip  > {output.peak}"
+    params: bins=BINS
+    shell:  "fastaFromBed -fi {input.fa} -bed {input.pk} -name -tab -s -fullHeader -fo {output.pt} && cut -d$'\t' -f2 {output.pt}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
