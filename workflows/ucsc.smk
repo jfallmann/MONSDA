@@ -10,8 +10,8 @@ checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
     for type in ['sorted','unique']:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
 
 if all(checklist):
     rule BamToBed:
@@ -134,7 +134,7 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),
             gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config))
-    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u {params.bwdir} -g {params.gen} -b UCSCHub && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
+    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u '' -g {params.gen} -b UCSCHub && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
 
 rule themall:
     input:  rules.GenerateTrack.output
