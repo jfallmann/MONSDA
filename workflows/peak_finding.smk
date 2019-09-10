@@ -10,8 +10,8 @@ checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
     for type in ['sorted','unique']:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
 
 if all(checklist):
     rule BamToBed:
@@ -163,7 +163,7 @@ rule UnzipGenome:
     conda:  "../envs/samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1); print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
     input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
@@ -175,7 +175,7 @@ rule AddSequenceToPeak:
     conda:  "../envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1); print join(\"\\t\",@F)' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F)' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
