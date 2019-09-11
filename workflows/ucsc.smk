@@ -131,7 +131,7 @@ rule GenerateTrack:
             "UCSC/{file}_mapped_{type}.re.bw.trackdone"
     log:    "LOGS/UCSC/{file}_track_{type}.log"
     conda:  "../envs/base.yaml"
-    threads: 1
+    threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),
             gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config))
