@@ -1,6 +1,14 @@
 # snakes
 
 Collection of snakemake workflows for NGS analysis from mapping to featurecount and track generation
+Contains sumodule so clone with ```git clone --recursive``` or if already cloned with pull submodules with 
+```
+git submodule init
+git submodule update 
+```
+
+See [stackoverflow](https://stackoverflow.com/questions/25200231/cloning-a-git-repo-with-all-submodules) and 
+[git docs](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for details.
 
 ## HowTo
 
