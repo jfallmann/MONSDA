@@ -125,7 +125,8 @@ rule BedgToUCSC:
     shell:  "zcat {input[0]} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log} && zcat {input[1]} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}"
 
 rule GenerateTrack:
-    input:  rules.BedgToUCSC.output
+    input:  fw = rules.BedgToUCSC.output.fw,
+            re = rules.BedgToUCSC.output.re
     output: "UCSC/{file}_mapped_{type}.fw.bw.trackdone",
             "UCSC/{file}_mapped_{type}.re.bw.trackdone"
     log:    "LOGS/UCSC/{file}_track_{type}.log"
@@ -134,7 +135,7 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),
             gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config))
-    shell: "ls {params.bwdir}/*.bw|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u '' -g {params.gen} -b UCSCHub && for i in {params.bwdir}/*.bw; do touch $i\.trackdone;done 2> {log}"
+    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u '' -g {params.gen} -b UCSCHub && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
 
 rule themall:
     input:  rules.GenerateTrack.output
