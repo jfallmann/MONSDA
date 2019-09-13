@@ -1,4 +1,5 @@
-import glob, os, sys, inspect, snakemake
+import glob, os, sys, inspect, snakemake, json
+from collections import defaultdict
 from snakemake.utils import validate, min_version
 min_version("5.3.0")
 
@@ -13,7 +14,6 @@ if cmd_subfolder not in sys.path:
 from Collection import *
 
 QC=config["QC"]
-ADAPTERS=config["ADAPTERS"]
 REFERENCE=config["REFERENCE"]
 GENOME=config["GENOME"]
 NAME=config["NAME"]

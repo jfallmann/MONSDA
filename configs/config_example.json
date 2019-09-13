@@ -1,82 +1,92 @@
-
 {
     "REFERENCE": "GENOMES", #where to find the reference genomes
-    "BINS": "Workflow_dev/scripts", #where to find the scripts used in the workflow
+    "BINS": "Workflow/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
-    "GENOME": { #which genomes to use and how the reference fasta is named
-                "Dm6": "dm6"
-              },
+    "GENOME": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta
+        "Dm6": "dm6"
+    },
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-              "Dm6": {
-                  "untreated": {
-                      "std": ""
-                  }
-              }
-            },
-    "SOURCE": { #which organisms are to be parsed for which samples
-                "Dm6": {
-                    "untreated": {
-                        "std": "dm6"
-                    }
+        "Dm6": {#first key should be same than for GENOME
+            "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+            }
+        }
+    },
+    "SOURCE": {  #which organisms are to be parsed for which samples
+        "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. untreated with setting std will use dm6 here
+            "untreated": {
+                "std": "dm6"
+            }
+        }
+    },
+    "SAMPLES":{  #which samples to analyze
+        "Dm6": { #key for source and genome
+            "untreated": {      # sample id
+                "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+            }
+        }
+    },
+    #QC options
+    "QC":{
+        "RUN": "ON", #set to 'OFF' to skip QC
+        "Dm6": { #key for source and genome
+            "untreated": {      # sample id
+                "std": {
+                    "QCENV" : "fastqc" # add qc tool
                 }
-              },
-    "SAMPLES":{ #which samples to analyze
-                "Dm6": {
-                    "untreated": {
-                        "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"]
-                    }
-                }
-              },
-#QC options
-    "QC": "fastqc", # add qc tool or set to 'OFF'
-#Trimming options
-    "ADAPTERS": "adapters.fa", #path to adapter fasta used for trimming
-    "READ_MINLEN": "10", # discard reads shorter than that
-
-    "TRIMENV": "trimgalore", #see QC
-    "TRIMBIN": "trim_galore",
+            }
+        }
+    },
+    #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-                  "Dm6": {
-                      "untreated": {
-                          "std": # See above
-                          [
-                              {  # trimming options here, --paired is not required, will be resolved by rules
-                                 "-q": "15",
-                                 "--length": "8",
-                                 "-e": "0.15"
-                              }
-                          ]
-                      }
-                  }
-                },
-#Mapping software options
-    "MAPPERENV": "minimap", # which conda env to use for mapping
-    "MAPPERBIN": "minimap2", #how the mapper binary is called
-    "MAPPINGTYPE": "single", #choice=[single|paired] either single or paired end mapping
+        "RUN": ON", # set to 'OFF' if no trimming wanted
+        "Dm6": {
+            "untreated": {
+                "std": { # See above
+                    "TRIMENV": "trimgalore",
+                    "TRIMBIN": "trim_galore",
+                    "OPTIONS":
+                    [
+                        {  # trimming options here, --paired is not required, will be resolved by rules
+                            "-a": "adapters.fa",#path to adapter fasta used for trimming if needed
+                            "-q": "15",
+                            "--length": "8", #READ_MINLEN discard reads shorter than that
+                            "-e": "0.15"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    #Mapping software options
     "MAPPING": { #options for mapping for each sample/condition
-                 "Dm6": {
-                     "untreated": {
-                         "std": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                         [
-                             "",
-                             {
-                                "-ax": "splice",
-                                 "-k": "14",
-                                 "-ub": "",
-                                 "-Y": "",
-                                 "-L": "",
-                                 "--MD": "",
-                                 "-d": ""
-                             },
-                             "k14"
-                         ]
-                     }
-                 }
-               },
-#Annotation options
+        "Dm6": {
+            "untreated": {
+                "std": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                    "MAPPERENV": "minimap", # which conda env to use for mapping
+                    "MAPPERBIN": "minimap2", #how the mapper binary is called
+                    "OPTIONS":
+                    [
+                        "",
+                        {
+                            "-ax": "splice",
+                            "-k": "14",
+                            "-ub": "",
+                            "-Y": "",
+                            "-L": "",
+                            "--MD": "",
+                            "-d": ""
+                        },
+                        "k14"
+                    ]
+                }
+            }
+        }
+    },
+    #Annotation options
     "ANNOTATE" : "-w ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
     "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
     "ANNOTATION": { #which annotation to use
-                    "Dm6": "dm6.gff.gz"
-                 }
+        "Dm6": "dm6.gff.gz"
+    }
 }

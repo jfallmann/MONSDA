@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Aug 30 15:07:06 2019 (+0200)
+# Last-Updated: Fri Sep 13 15:52:45 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 520
+#     Update #: 521
 # URL:
 # Doc URL:
 # Keywords:
@@ -498,6 +498,12 @@ def getFromDict(dataDict, mapList):
         dataDict = dataDict[k]
     ret.append(dataDict)
     return ret
+
+def subDict(dataDict, mapList):
+    ret=dict()
+    for k in mapList:
+        dataDict = dataDict[k]
+    return dataDict
 
 def nested_set(dic, keys, value):
     for key in keys[:-1]:

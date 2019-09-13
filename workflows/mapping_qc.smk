@@ -1,29 +1,24 @@
 include: "header.smk"
 
-MAPPERENV=config["MAPPERENV"]
-MAPPERBIN=config["MAPPERBIN"]
-TRIMENV=config["TRIMENV"]
-TRIMBIN=config["TRIMBIN"]
+#MAPPERENV=config["MAPPERENV"]
+#MAPPERBIN=config["MAPPERBIN"]
+#TRIMENV=config["TRIMENV"]
+#TRIMBIN=config["TRIMBIN"]
+#
 
-if config['MAPPINGTYPE'] == 'paired':
-    paired = '_paired'
-else:
-    paired = ''
-
-if 'OFF' not in config['QC']:
-    include: str(config['QC'])+paired+'.smk'
+if 'OFF' not in config['QC']['RUN']:
+    include: 'qc.smk'
     rule all:
         input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config)),
                rules.multiqc.output
-
 else:
     rule all:
         input: expand("DONE/{file}_mapped", file=samplecond(SAMPLES,config))
 
-if 'OFF' not in config['TRIMENV']:
-    include: str(config['TRIMENV'])+paired+'.smk'
+if 'OFF' not in config['TRIMMING']['RUN']:
+    include: 'trimming.smk'
 
-include: str(config['MAPPERENV'])+paired+'.smk'
+include: 'mappingsub.smk'
 
 rule gzipsam:
     input:  mapps = rules.mapping.output if paired == '' else rules.mapping_paired.output
