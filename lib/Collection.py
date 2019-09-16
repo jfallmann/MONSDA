@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Sep 13 15:52:45 2019 (+0200)
+# Last-Updated: Mon Sep 16 17:08:44 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 521
+#     Update #: 528
 # URL:
 # Doc URL:
 # Keywords:
@@ -197,9 +197,7 @@ def genomepath(s, config):
             klist = value_extract(skey, config["SOURCE"])
             for k in klist:
                 for x, y in config["GENOME"].items():
-                    if str(k) == str(y):
-                        return os.path.join(str(x),str(y))
-                    elif str(k) == str(x):
+                    if str(k) == str(y) or str(k) == str(x):
                         return os.path.join(str(x),str(y))
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -217,11 +215,11 @@ def genome(s, config):
         for skey in sk:
             klist = value_extract(skey, config["SOURCE"])
             for k in klist:
-                for x, y in config["GENOME"].items():
-                    if str(k) == str(y):
-                        return str(y)
-                    elif str(k) == str(x):
-                        return str(x)
+                if k in sa :
+                    for x, y in config["GENOME"].items():
+                        print(s,sa,cond,skey,k,x,y)
+                        if str(k) == str(x):
+                            return str(y)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -575,7 +573,6 @@ def find_key_for_value(val, dictionary):
                     yield from find_key_for_value(val, v)
                 elif v == val or val in v:
                     yield k
-
         else:
             return dictionary
     except Exception as err:
