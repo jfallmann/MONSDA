@@ -4,14 +4,12 @@ for conditions in samplecond(SAMPLES,config)):
     tempconf = defaultdict()
     for key in ['REFERENCE', 'BINS','MAXTHREADS']:
         tempconf[key] = config[key]
-    for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', 'QC']:
+    for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', 'TRIMMING']:
         tempconf[key][src][treat][setup] = config[key][src][treat][setup]
 
     with open('subworkflow.json', 'w') as outfile:
         json.dump(tempconf, outfile)
 
-    print(tool, src, treat, setup, tempconf)
-
-subworkflow sampleqc:
-    snakefile: "/"+str(tool)+".smk"
-    configfile: 'subworkflow.json'
+    subworkflow sampleqc:
+        snakefile: str(tool)+'.smk'
+        configfile: 'subworkflow.json'

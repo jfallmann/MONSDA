@@ -32,7 +32,8 @@
         "Dm6": { #key for source and genome
             "untreated": {      # sample id
                 "std": {
-                    "QCENV" : "fastqc" # add qc tool
+                    "QCENV" : "fastqc"  // name of conda env for QC
+                    "QCBIN" : "fastqc" // binary for trimming
                 }
             }
         }
@@ -43,8 +44,8 @@
         "Dm6": {
             "untreated": {
                 "std": { # See above
-                    "TRIMENV": "trimgalore",
-                    "TRIMBIN": "trim_galore",
+                    "TRIMENV": "trimgalore", // name of conda env for trimming
+                    "TRIMBIN": "trim_galore", // name of binary for trimming
                     "OPTIONS":
                     [
                         {  # trimming options here, --paired is not required, will be resolved by rules
