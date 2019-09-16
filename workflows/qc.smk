@@ -10,6 +10,8 @@ for conditions in samplecond(SAMPLES,config)):
     with open('subworkflow.json', 'w') as outfile:
         json.dump(tempconf, outfile)
 
-    subworkflow sampleqc:
-        snakefile: "./"+str(tool)+".smk"
-        configfile: 'subworkflow.json'
+    print(tool, src, treat, setup, tempconf)
+
+subworkflow sampleqc:
+    snakefile: "/"+str(tool)+".smk"
+    configfile: 'subworkflow.json'
