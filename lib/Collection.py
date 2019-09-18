@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Sep 16 17:08:44 2019 (+0200)
+# Last-Updated: Wed Sep 18 20:02:56 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 528
+#     Update #: 544
 # URL:
 # Doc URL:
 # Keywords:
@@ -217,7 +217,6 @@ def genome(s, config):
             for k in klist:
                 if k in sa :
                     for x, y in config["GENOME"].items():
-                        print(s,sa,cond,skey,k,x,y)
                         if str(k) == str(x):
                             return str(y)
     except Exception as err:
@@ -271,6 +270,34 @@ def namefromfile(s, config):
             for k in klist:
                     if str(skey) == str(cond):
                         return str(k)
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        with open('error','a') as h:
+            print(''.join(tbe.format()), file=h)
+
+def create_subworkflow(config, subwork, conditions):
+    try:
+        toollist = list()
+        configs = list()
+        for condition in conditions:
+            env = str(subDict(config[subwork],condition)['ENV'])
+            exe = str(subDict(config[subwork],condition)['BIN'])
+            src, treat, setup = condition
+            tempconf = defaultdict()
+            for key in ['REFERENCE', 'BINS','MAXTHREADS']:
+                tempconf[key] = config[key]
+            for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', subwork]:
+                tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+            tempconf[subwork+'ENV'] = env
+            tempconf[subwork+'BIN'] = exe
+            toollist.append([env,exe])
+            configs.append(tempconf)
+
+        return toollist, configs
+
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

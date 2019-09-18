@@ -7,9 +7,16 @@ for conditions in samplecond(SAMPLES,config)):
     for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', 'TRIMMING']:
         tempconf[key][src][treat][setup] = config[key][src][treat][setup]
 
-    with open('subworkflow.json', 'w') as outfile:
+    log.debug(tool, src, treat, setup, tempconf)
+    with open('qcsubworkflow.json', 'w') as outfile:
         json.dump(tempconf, outfile)
 
-    subworkflow sampleqc:
-        snakefile: str(tool)+'.smk'
-        configfile: 'subworkflow.json'
+    makeoutdir("subworkflow")
+    shutil.copy(str(tool)+".smk", "subworkflow/Snakefile")
+
+
+subworkflow sampleqc:
+    snakefile: tool+".smk"
+    configfile: "qcsubworkflow.json"
+
+include: 'multiqc.smk'

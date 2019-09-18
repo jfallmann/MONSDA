@@ -1,15 +1,6 @@
-for conditions in samplecond(SAMPLES,config)):
-    tool = subDict(config['TRIMMING'],conditions)['TRIMENV']
-    src, treat, setup = conditions
-    tempconf = defaultdict()
-    for key in ['REFERENCE', 'BINS','MAXTHREADS']:
-        tempconf[key] = config[key]
-    for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', 'TRIMMING']:
-        tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+subworkflow sampleqc:
+    snakefile: lambda wildcards: create_subworkflow(wildcards.file, config, "TRIMMING")
+    configfile: lambda wildcards: create_subconfig(wildcards.file, config, "TRIMMING")
 
-    with open('subworkflow.json', 'w') as outfile:
-        json.dump(tempconf, outfile)
-
-    subworkflow sampleqc:
-        snakefile: str(tool)+'.smk'
-        configfile: 'subworkflow.json'
+rule all_trim:
+    input: sampleqc("TRIMMED_FASTQ/{file}_trimmed.fastq.gz")

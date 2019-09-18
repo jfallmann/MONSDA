@@ -1,4 +1,5 @@
 {
+    "WORKFLOWS": "QC,TRIMMING,MAPPING,COUNTING,UCSC,ANNOTATE", #which workflows do you want to run, consider order of workflows, i.e. QC > TRIMMING > MAPPING > rest
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "Workflow/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -32,8 +33,8 @@
         "Dm6": { #key for source and genome
             "untreated": {      # sample id
                 "std": {
-                    "QCENV" : "fastqc"  // name of conda env for QC
-                    "QCBIN" : "fastqc" // binary for trimming
+                    "ENV" : "fastqc",  # name of conda env for QC
+                    "BIN" : "fastqc" # binary for trimming
                 }
             }
         }
@@ -44,8 +45,8 @@
         "Dm6": {
             "untreated": {
                 "std": { # See above
-                    "TRIMENV": "trimgalore", // name of conda env for trimming
-                    "TRIMBIN": "trim_galore", // name of binary for trimming
+                    "ENV": "trimgalore", # name of conda env for trimming
+                    "BIN": "trim_galore", # name of binary for trimming
                     "OPTIONS":
                     [
                         {  # trimming options here, --paired is not required, will be resolved by rules
@@ -64,8 +65,8 @@
         "Dm6": {
             "untreated": {
                 "std": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                    "MAPPERENV": "minimap", # which conda env to use for mapping
-                    "MAPPERBIN": "minimap2", #how the mapper binary is called
+                    "ENV": "minimap", # which conda env to use for mapping
+                    "BIN": "minimap2", #how the mapper binary is called
                     "OPTIONS":
                     [
                         "",

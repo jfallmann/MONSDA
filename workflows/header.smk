@@ -1,7 +1,7 @@
-import glob, os, sys, inspect, snakemake, json
+import glob, os, sys, inspect, snakemake, json, shutil
 from collections import defaultdict
 from snakemake.utils import validate, min_version
-min_version("5.3.0")
+min_version("5.5.2")
 
 ###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
 ###--configfile Workflow/config_compare.json --directory ${PWD}
@@ -12,6 +12,9 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
 from Collection import *
+from Logger import *
+
+log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
 
 QC=config["QC"]
 REFERENCE=config["REFERENCE"]
