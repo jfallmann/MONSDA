@@ -40,7 +40,7 @@ try:
     except KeyError:
         CLIP=''
 
-    conditions = list(set([samplecond(x,config) for x in SAMPLES]))
+    conditions = list(set([join(os.sep,samplecond(x,config)) for x in SAMPLES]))
 
     for subwork in subworkflows:
         listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
@@ -52,6 +52,7 @@ try:
             subworkflow sampleqc:
                 snakefile: 'workflows/'+toolenv+'.smk'
                 configfile: '_'.join([toolenv,'_'.join(conditions),'subworkflow.json'])
+                workdir: '.'
 
         rule all:
             input: sampleqc(expand("DONE/{file}"+toolenv, file=samplecond(SAMPLES,config)))
