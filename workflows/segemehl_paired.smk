@@ -1,3 +1,6 @@
+MAPSAMPLES = list(set(samples(config)))
+MAPPERBIN, MAPPERENV = env_bin_from_config(MAPSAMPLES)
+
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
     output: idx = expand("{ref}/{{dir}}/{map}/{{src}}/{{gen}}{{name}}_{map}.idx", ref=REFERENCE, map=MAPPERBIN)

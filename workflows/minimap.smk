@@ -1,9 +1,5 @@
-for conditions in samplecond(SAMPLES,config)):
-    MAPPERENV = subDict(config['QC'],conditions)['MAPPERENV']
-    MAPPERBIN = subDict(config['QC'],conditions)['MAPPERBIN']
-
-
 MAPSAMPLES = list(set(samples(config)))
+MAPPERBIN, MAPPERENV = env_bin_from_config(MAPSAMPLES)
 
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)

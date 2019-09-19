@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Sep 19 15:44:44 2019 (+0200)
+# Last-Updated: Thu Sep 19 19:17:35 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 612
+#     Update #: 614
 # URL:
 # Doc URL:
 # Keywords:
@@ -382,6 +382,20 @@ def index_params(indexpath, config, subconf):
         )
         log.error(''.join(tbe.format()))
 
+def env_bin_from_config(samples, config, subconf):
+    try:
+        s = samples[0].split(os.sep)[:-1]
+        mb,me = [None,None]
+        for k in getFromDict(config[subconf],s):
+            mb, me = k['BIN'], k['ENV']
+        return mb,me
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
 
 def count_params(sample, config):
     try:
@@ -458,7 +472,7 @@ def sample_from_path(path):
         )
         log.error(''.join(tbe.format()))
 
-def anno_from_file(sample, config, step):
+def anno_from_file(sample, config, step):  # NEED OVERHAUL
     try:
         p = os.path.dirname(genomepath(sample, config))
         ret = os.path.join(config["REFERENCE"],p,config["ANNOTATION"][p][step])
