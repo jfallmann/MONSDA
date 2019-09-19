@@ -1,6 +1,6 @@
 QCSAMPLES=list(set(samples(config)))
 
-if any('_r1' in s for s in QCSAMPLES) and any('_r2' in s for s in QCSAMPLES):
+if paired is not '':
     rule multiqc:
         input: expand("QC/{file}_{read}_fastqc.zip", file=QCSAMPLES, read=['r1','r2']),
                expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(QCSAMPLES,config),read=['r1','r2']),

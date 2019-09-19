@@ -1,5 +1,6 @@
 {
-    "WORKFLOWS": "QC,TRIMMING,MAPPING,COUNTING,UCSC,ANNOTATE", #which workflows do you want to run ####consider order of workflows, i.e. QC > TRIMMING > MAPPING
+    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run !!! consider order of workflows, i.e. QC < TRIMMING < MAPPING !!!
+    "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -30,7 +31,7 @@
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                "untreated": {      # sample id
-                   "std": "single" # or paired
+                   "std": "single" # setup and sequencing type, either paired or single
                }
         }
     },
@@ -120,6 +121,8 @@
          "Dm6": {
             "untreated": {
                 "std": { # See above
+                    "ENV" : "annotatebed",
+                    "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
                     [
                         "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
@@ -134,6 +137,8 @@
          "Dm6": {
             "untreated": {
                 "std": { # See above
+                    "ENV" : "ucsc",
+                    "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
                     [
                         "-n": "DM6 Standard Mapping", #name of the hub

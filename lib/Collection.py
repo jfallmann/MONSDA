@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Sep 19 13:01:56 2019 (+0200)
+# Last-Updated: Thu Sep 19 15:44:44 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 609
+#     Update #: 612
 # URL:
 # Doc URL:
 # Keywords:
@@ -49,6 +49,7 @@
 # cmd_folder = os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) ))
 # if cmd_folder not in sys.path:
 #     sys.path.insert(0, cmd_folder)
+
 #
 # # Use this if you want to include modules from a subfolder
 # cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"lib")
@@ -278,7 +279,6 @@ def create_subworkflow(config, subwork, conditions):
             except:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
                 exe = ''
-            log.debug(logid+str(condition))
             src, treat, setup = condition
             log.debug(logid+str([env,exe,src,treat,setup]))
             tempconf = NestedDefaultDict()
@@ -495,6 +495,7 @@ def samplecond(sample,config):
         paired = False
         for s in sample:
             check = os.path.dirname(s).split(os.sep)
+            log.debug(logid+str(check))
             for r in runstate_from_sample([s],config):
                 tmplist = check
                 tmplist.append(r)
@@ -512,6 +513,29 @@ def samplecond(sample,config):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
+
+def checkpaired(sample,config):
+    try:
+        logid = 'checkpaired: '
+        ret = list()
+        paired = False
+        for s in sample:
+            check = os.path.dirname(s).split(os.sep)
+            log.debug(logid+str(check))
+            for r in runstate_from_sample([s],config):
+                tmplist = check
+                tmplist.append(r)
+                if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
+                    paired = True
+        return paired
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
 
 def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",

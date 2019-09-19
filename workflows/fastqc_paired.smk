@@ -1,5 +1,3 @@
-#include: "header.smk"
-
 rule qc_raw_paired:
     input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",
            r2 = "FASTQ/{rawfile}_r2.fastq.gz"
@@ -44,5 +42,3 @@ rule qc_uniquemapped_paired:
     params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
 #    params: dir=expand("QC/{source}",source=SOURCE)
     shell: "OUT=$(dirname {output});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input[0]} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
-
-include: "multiqc_paired.smk"

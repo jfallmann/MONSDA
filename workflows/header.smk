@@ -30,3 +30,7 @@ try:
     CLIP=config["CLIP"]
 except KeyError:
     CLIP=''
+
+paired = ''
+if checkpaired(SAMPLES, config):
+    paired = 'paired'
