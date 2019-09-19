@@ -8,22 +8,22 @@ min_version("5.5.2")
 ###--configfile Workflow/configs/config_example.json --directory ${PWD}
 ###--printshellcmds &> LOGS/run.log
 
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
-from lib.Collection import *
 from lib.Logger import *
+from lib.Collection import *
 
 try:
     log = setup_logger(name='Snakemake', log_file='LOGS/Snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
-
+    logid = 'Main Snakefile: '
     subworkflows = config['WORKFLOWS'].split(',')
+    #postprocess = config['POSTPROCESS'].split(',')  # we keep this separate because not all postprocessing steps need extra configuration
 
     try:
         all([config[x] for x in subworkflows])
     except KeyError:
-        log.error('Not all subworkflows have configuration in the config file')
+        log.warning('Not all required subworkflows have configuration in the config file')
+
+    #subworkflows.extend(postprocess)  # Concatenate to get the full list of steps to process
+    log.debug(subworkflows)
 
     QC=config["QC"]
     REFERENCE=config["REFERENCE"]
@@ -37,25 +37,33 @@ try:
         SAMPLES=list(set(sampleslong(config)))
     try:
         CLIP=config["CLIP"]
-    except KeyError:
+    except:
         CLIP=''
 
-    conditions = list(set([join(os.sep,samplecond(x,config)) for x in SAMPLES]))
+    log.debug(logid+str(SAMPLES))
+    conditions = samplecond(SAMPLES,config)
+    log.debug(logid+str(conditions))
 
     for subwork in subworkflows:
         listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
         for i in range(0,len(listoftools)):
-            toolenv, toolbin = listoftools[i]
+            toolenv, toolbin = map(str,listoftools[i])
             subconf = listofconfigs[i]
-            with open('_'.join(['subconfig',toolenv,'_'.join(conditions),'subworkflow.json']), 'w') as outfile:
+            subname = toolenv+'.smk'
+            print(str(toolenv),str(subname),'_'.join([toolenv,'_'.join(conditions),'subworkflow.json']))
+            makeoutdir(toolenv)
+            os.symlink('snakes/workflows/'+subname,toolenv/subname)
+            with open('_'.join([toolenv+'subconfig',toolenv,'_'.join(conditions),'subworkflow.json']), 'w') as outfile:
                 json.dump(tempconf, outfile)
-            subworkflow sampleqc:
-                snakefile: 'workflows/'+toolenv+'.smk'
-                configfile: '_'.join([toolenv,'_'.join(conditions),'subworkflow.json'])
-                workdir: '.'
 
-        rule all:
-            input: sampleqc(expand("DONE/{file}"+toolenv, file=samplecond(SAMPLES,config)))
+    rule all:
+        input: "DONE"
+
+    #            input: lambda wildcards: do_work(expand("DONE/{file}"+toolenv, file=samplecond(SAMPLES,config)))
+    #        subworkflow do_work:
+    #            workdir: '../'+str(toolenv)
+    #            snakefile: subname
+    #            configfile: '_'.join([toolenv,'_'.join(conditions),'subworkflow.json'])
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()

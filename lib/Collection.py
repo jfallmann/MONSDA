@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Sep 18 20:02:56 2019 (+0200)
+# Last-Updated: Thu Sep 19 12:01:35 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 544
+#     Update #: 585
 # URL:
 # Doc URL:
 # Keywords:
@@ -75,28 +75,14 @@ from Bio import SeqIO
 import gzip
 import math
 import collections
+from lib.Logger import *
+
+log = setup_logger(name='Snakemake', log_file='LOGS/Snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
 
 # Code:All subs from here on
-
 ##############################
 ########Snakemake Subs########
 ##############################
-#def sources(config):
-#    try:
-#        ret = list()
-#        for x,y in config["SOURCE"].items():
-#            if x in list(config["SAMPLES"]):
-#                ret.append(str(y))
-#        return ret
-#
-#    except Exception as err:
-#        exc_type, exc_value, exc_tb = sys.exc_info()
-#        tbe = tb.TracebackException(
-#            exc_type, exc_value, exc_tb,
-#        )
-#        with open('error','a') as h:
-#            print(''.join(tbe.format()), file=h)
-
 def sources(config):
     try:
         ret = list()
@@ -109,8 +95,7 @@ def sources(config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def samples(config):
     try:
@@ -126,8 +111,7 @@ def samples(config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def sampleslong(config):
     try:
@@ -148,8 +132,7 @@ def sampleslong(config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SOURCE!
@@ -166,8 +149,7 @@ def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SO
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def get_placeholder(config):
     try:
@@ -184,8 +166,7 @@ def get_placeholder(config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def genomepath(s, config):
@@ -204,8 +185,7 @@ def genomepath(s, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def genome(s, config):
     try:
@@ -224,8 +204,7 @@ def genome(s, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def fullgenomepath(sa, config):
     try:
@@ -239,8 +218,7 @@ def fullgenomepath(sa, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def genomename(s, config):
     try:
@@ -257,8 +235,7 @@ def genomename(s, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def namefromfile(s, config):
     try:
@@ -275,17 +252,25 @@ def namefromfile(s, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def create_subworkflow(config, subwork, conditions):
     try:
         toollist = list()
         configs = list()
         for condition in conditions:
-            env = str(subDict(config[subwork],condition)['ENV'])
-            exe = str(subDict(config[subwork],condition)['BIN'])
+            try:
+                env = str(subDict(config[subwork],condition)['ENV'])
+            except:
+                log.warning('Key ENV not found for '+subwork+' this can be intentional')
+                env = ''
+            try:
+                exe = str(subDict(config[subwork],condition)['BIN'])
+            except:
+                log.warning('Key BIN not found for '+subwork+' this can be intentional')
+                exe = ''
             src, treat, setup = condition
+            log.debug(env,exe,src,treat,setup)
             tempconf = defaultdict()
             for key in ['REFERENCE', 'BINS','MAXTHREADS']:
                 tempconf[key] = config[key]
@@ -303,8 +288,7 @@ def create_subworkflow(config, subwork, conditions):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def namefrompath(p, config):
     try:
@@ -317,8 +301,7 @@ def namefrompath(p, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def pathstogenomes(samples, config):
     try:
@@ -338,8 +321,7 @@ def pathstogenomes(samples, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def tool_params(sample, runstate, config, subconf):
     try:
@@ -359,8 +341,7 @@ def tool_params(sample, runstate, config, subconf):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def index_params(indexpath, config, subconf):
     try:
@@ -374,8 +355,7 @@ def index_params(indexpath, config, subconf):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def count_params(sample, config):
@@ -391,8 +371,7 @@ def count_params(sample, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def trnascan_params(s, runstate, config):
     try:
@@ -405,8 +384,7 @@ def trnascan_params(s, runstate, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def index(w, t, config):
     try:
@@ -417,8 +395,7 @@ def index(w, t, config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def rmempty(check):
     try:
@@ -432,8 +409,7 @@ def rmempty(check):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def source_from_sample(sample):
     try:
@@ -444,8 +420,7 @@ def source_from_sample(sample):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def sample_from_path(path):
     try:
@@ -456,8 +431,7 @@ def sample_from_path(path):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def anno_from_file(sample, config, step):
     try:
@@ -469,16 +443,17 @@ def anno_from_file(sample, config, step):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def runstate_from_sample(sample,config):
     try:
+        logid = 'runstate_from_sample: '
         ret = list()
         for s in sample:
             s = os.path.basename(s)
             for k,v in config["SAMPLES"].items():
                 for f in find_key_for_value(s,v):
+                    log.debug(logid+f)
                     ret.append(f)
         return ret
     except Exception as err:
@@ -486,20 +461,24 @@ def runstate_from_sample(sample,config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def samplecond(sample,config):
     try:
+        logid = 'samplecond: '
         ret = list()
         paired = False
-        if config['MAPPING'] is 'paired':
-            paired = True
         for s in sample:
-            if paired:
-                s=re.sub(r'_[1|2]','',s)
+            check = os.path.dirname(s).split(os.sep)
             for r in runstate_from_sample([s],config):
+                tmplist = check
+                tmplist.append(r)
+                if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
+                    paired = True
+                if paired:
+                    s=re.sub(r'_[1|2]','',s)
                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+        log.debug(logid+str([sample,ret]))
         return ret
 
     except Exception as err:
@@ -507,8 +486,7 @@ def samplecond(sample,config):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",
@@ -518,10 +496,12 @@ def aggregate_input(wildcards):
 #########Python Subs##########
 ##############################
 def getFromDict(dataDict, mapList):
+    logid = 'getFromDict: '
     ret=list()
     for k in mapList:
         dataDict = dataDict[k]
     ret.append(dataDict)
+    log.debug(logid+str(ret))
     return ret
 
 def subDict(dataDict, mapList):
@@ -551,8 +531,7 @@ def list_all_keys_of_dict(dictionary):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def list_all_values_of_dict(dictionary):
     try:
@@ -570,8 +549,7 @@ def list_all_values_of_dict(dictionary):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def find_all_values_on_key(key, dictionary):
     try:
@@ -589,8 +567,7 @@ def find_all_values_on_key(key, dictionary):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def find_key_for_value(val, dictionary):
     try:
@@ -607,8 +584,7 @@ def find_key_for_value(val, dictionary):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def value_extract(key, var):
     try:
@@ -628,8 +604,7 @@ def value_extract(key, var):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def find_innermost_value_from_dict(dictionary):
     try:
@@ -647,8 +622,7 @@ def find_innermost_value_from_dict(dictionary):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def removekey(d, key):
     try:
@@ -660,8 +634,7 @@ def removekey(d, key):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def getlowest_list(a, n):
     try:
@@ -678,8 +651,7 @@ def getlowest_list(a, n):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def gethighest_list(a, n):
     try:
@@ -696,8 +668,7 @@ def gethighest_list(a, n):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def getlowest_dict(a, n):
     try:
@@ -714,8 +685,7 @@ def getlowest_dict(a, n):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def gethighest_dict(a, n):
     try:
@@ -732,8 +702,7 @@ def gethighest_dict(a, n):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def toarray(file, ulim):
     try:
@@ -744,8 +713,7 @@ def toarray(file, ulim):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def convertcol(entry):
     try:
@@ -759,32 +727,7 @@ def convertcol(entry):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
-
-def eprint(*args, **kwargs):
-    try:
-        with open('error', 'a') as e:
-            print(*args, file=e, **kwargs)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
-
-def printlog(msg):
-    try:
-        with open ('log','a') as l:
-            print(str(msg), file = l )
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def parse_annotation_bed(bed, annotated=None):
     try:
@@ -812,8 +755,7 @@ def parse_annotation_bed(bed, annotated=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def readConstraintsFromBed(bed, linewise=None):
     cons = defaultdict(list)
@@ -833,8 +775,7 @@ def readConstraintsFromBed(bed, linewise=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def readPairedConstraintsFromBed(bed, linewise=None):
     cons = defaultdict(list)
@@ -857,8 +798,7 @@ def readPairedConstraintsFromBed(bed, linewise=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def readConstraintsFromCSV(csv, linewise=None):
@@ -879,8 +819,7 @@ def readConstraintsFromCSV(csv, linewise=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def readConstraintsFromGeneric(generic, linewise=None):
     cons = defaultdict(
@@ -906,8 +845,7 @@ def readConstraintsFromGeneric(generic, linewise=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def isvalid(x=None):
     try:
@@ -923,8 +861,7 @@ def isvalid(x=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def isinvalid(x=None):
     try:
@@ -940,8 +877,7 @@ def isinvalid(x=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def makeoutdir(outdir):
     try:
@@ -955,8 +891,7 @@ def makeoutdir(outdir):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def parseseq(sequence):
     try:
@@ -986,8 +921,7 @@ def parseseq(sequence):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def plot_data(fa, raw, consu, consp, const, xs, cons, saveas, outdir):
     try:
@@ -1032,8 +966,7 @@ def plot_data(fa, raw, consu, consp, const, xs, cons, saveas, outdir):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def plot_temp(fa, raw, temp, xs, saveas, outdir):
     try:
@@ -1065,8 +998,7 @@ def plot_temp(fa, raw, temp, xs, saveas, outdir):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def calc_gibbs(fc):
     try:
@@ -1075,9 +1007,8 @@ def calc_gibbs(fc):
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        )
+        log.error(''.join(tbe.format()))
 
 def get_bppm(tmp, start, end):
     try:
@@ -1092,16 +1023,14 @@ def get_bppm(tmp, start, end):
                     tbe = tb.TracebackException(
                         exc_type, exc_value, exc_tb,
                         )
-                    with open('error','a') as h:
-                        print(''.join(tbe.format()), file=h)
+                    log.error(''.join(tbe.format()))
         return bppm
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def calc_bpp(bppm):
     bpp = 0.0
@@ -1116,8 +1045,7 @@ def calc_bpp(bppm):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def calc_nrg(bpp):
     try:
@@ -1133,8 +1061,7 @@ def calc_nrg(bpp):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def print_region_up(data, seqlength=None, region=None):
@@ -1160,8 +1087,7 @@ def print_region_up(data, seqlength=None, region=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def print_up(data=None, seqlength=None, region=None):
     #   pp = pprint.PrettyPrinter(indent=4)#use with pp.pprint(datastructure)
@@ -1185,8 +1111,7 @@ def print_up(data=None, seqlength=None, region=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 
 def up_to_array(data=None, region=None, seqlength=None):
@@ -1216,8 +1141,7 @@ def up_to_array(data=None, region=None, seqlength=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def npprint(a, o=None):#, format_string ='{0:.2f}'):
     try:
@@ -1235,8 +1159,7 @@ def npprint(a, o=None):#, format_string ='{0:.2f}'):
         tbe = tb.TracebackException(
         exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def printdiff(a, o=None):
     try:
@@ -1246,8 +1169,7 @@ def printdiff(a, o=None):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def read_precalc_plfold(data, name, seq):
     try:
@@ -1266,10 +1188,9 @@ def read_precalc_plfold(data, name, seq):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-        exc_type, exc_value, exc_tb,
+            exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
     return 1
 
 def pl_to_array(name, ulim):
@@ -1285,10 +1206,9 @@ def pl_to_array(name, ulim):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-        exc_type, exc_value, exc_tb,
+            exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def idfromfa(id):
     goi, chrom, strand = [None, None, None]
@@ -1342,8 +1262,7 @@ def cluster2trna(seqs):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
+        log.error(''.join(tbe.format()))
 
 def check_ref(reference):
     try:
@@ -1357,9 +1276,7 @@ def check_ref(reference):
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        with open('error','a') as h:
-            print(''.join(tbe.format()), file=h)
-
+        log.error(''.join(tbe.format()))
 
 #
 # Collection.py ends here
