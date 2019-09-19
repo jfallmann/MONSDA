@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Sep 19 12:01:35 2019 (+0200)
+# Last-Updated: Thu Sep 19 13:01:56 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 585
+#     Update #: 609
 # URL:
 # Doc URL:
 # Keywords:
@@ -74,10 +74,18 @@ from io import StringIO
 from Bio import SeqIO
 import gzip
 import math
-import collections
+from collections import defaultdict
 from lib.Logger import *
 
 log = setup_logger(name='Snakemake', log_file='LOGS/Snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+
+#Class
+class NestedDefaultDict(defaultdict):
+    def __init__(self, *args, **kwargs):
+        super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
+
+    def __repr__(self):
+        return repr(dict(self))
 
 # Code:All subs from here on
 ##############################
@@ -256,6 +264,7 @@ def namefromfile(s, config):
 
 def create_subworkflow(config, subwork, conditions):
     try:
+        logid = 'create_subworkflow: '
         toollist = list()
         configs = list()
         for condition in conditions:
@@ -269,18 +278,34 @@ def create_subworkflow(config, subwork, conditions):
             except:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
                 exe = ''
+            log.debug(logid+str(condition))
             src, treat, setup = condition
-            log.debug(env,exe,src,treat,setup)
-            tempconf = defaultdict()
-            for key in ['REFERENCE', 'BINS','MAXTHREADS']:
-                tempconf[key] = config[key]
-            for key in ['GENOME', 'NAME', 'SOURCE', 'SAMPLES', subwork]:
-                tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+            log.debug(logid+str([env,exe,src,treat,setup]))
+            tempconf = NestedDefaultDict()
+            try:
+                for key in ['REFERENCE', 'BINS','MAXTHREADS']:
+                    tempconf[key] = config[key]
+            except KeyError:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tbe = tb.TracebackException(
+                    exc_type, exc_value, exc_tb,
+                )
+                log.error(''.join(tbe.format()))
+            try:
+                for key in ['GENOME', 'NAME']:
+                    tempconf[key][src] = config[key][src]
+                for key in ['SOURCE', 'SAMPLES', subwork]:
+                    tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+            except KeyError:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tbe = tb.TracebackException(
+                    exc_type, exc_value, exc_tb,
+                )
+                log.error(''.join(tbe.format()))
             tempconf[subwork+'ENV'] = env
             tempconf[subwork+'BIN'] = exe
             toollist.append([env,exe])
             configs.append(tempconf)
-
         return toollist, configs
 
     except Exception as err:

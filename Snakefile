@@ -41,7 +41,7 @@ try:
         CLIP=''
 
     log.debug(logid+str(SAMPLES))
-    conditions = samplecond(SAMPLES,config)
+    conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
     log.debug(logid+str(conditions))
 
     for subwork in subworkflows:
@@ -50,20 +50,18 @@ try:
             toolenv, toolbin = map(str,listoftools[i])
             subconf = listofconfigs[i]
             subname = toolenv+'.smk'
-            print(str(toolenv),str(subname),'_'.join([toolenv,'_'.join(conditions),'subworkflow.json']))
-            makeoutdir(toolenv)
-            os.symlink('snakes/workflows/'+subname,toolenv/subname)
-            with open('_'.join([toolenv+'subconfig',toolenv,'_'.join(conditions),'subworkflow.json']), 'w') as outfile:
-                json.dump(tempconf, outfile)
+            log.debug([toolenv,subname,conditions])
+            if not (os.path.islink(subname) or os.path.isfile(subname)):
+                os.symlink(os.path.join('snakes','workflows',subname),subname)
+            with open('_'.join(['subconfig',toolenv,'_'.join(conditions[i]),'subworkflow.json']), 'w') as outfile:
+                json.dump(subconf, outfile)
+            subworkflow do_work:
+                workdir: '../.'
+                snakefile: subname
+                configfile: '_'.join(['subconfig',toolenv,'_'.join(conditions[i]),'subworkflow.json'])
 
-    rule all:
-        input: "DONE"
-
-    #            input: lambda wildcards: do_work(expand("DONE/{file}"+toolenv, file=samplecond(SAMPLES,config)))
-    #        subworkflow do_work:
-    #            workdir: '../'+str(toolenv)
-    #            snakefile: subname
-    #            configfile: '_'.join([toolenv,'_'.join(conditions),'subworkflow.json'])
+            rule all:
+                input: do_work(expand("DONE/{file}"+toolenv, file=samplecond(SAMPLES,config)))
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
