@@ -63,7 +63,7 @@
                             "-q": "15",
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
-                        }
+                        },
                         ""
                     ]
                 }
@@ -113,7 +113,7 @@
                            "-M": "",
                            "-T": "5",
                            "-t": "exon"
-                        }
+                        },
                         ""
                     ]
                }
