@@ -1,9 +1,9 @@
-TRIMSAMPLES=list(set(samples(config)))
+TRIMBIN, TRIMENV = env_bin_from_config2(SAMPLES,config,'TRIMMING')
 
-if any('_r1' in s for s in QCSAMPLES) and any('_r2' in s for s in TRIMSAMPLES):
-	rule trimgalore_trim_paired:
-	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in TRIMSAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-	            r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in TRIMSAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+if paired is 'paired':
+	rule trimgalore_trim:
+	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+	            r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
 	    output: o1 = "TRIMMED_FASTQ/{file}_r1_val_1.fq.gz",
 	            o2 = "TRIMMED_FASTQ/{file}_r2_val_2.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
@@ -15,9 +15,9 @@ if any('_r1' in s for s in QCSAMPLES) and any('_r2' in s for s in TRIMSAMPLES):
 	            cores = min(int(MAXTHREAD/4),4)
 	    shell:  "{params.trim} --cores {params.cores} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
 
-	rule trimgalore_rename_paired:
-	    input:  o1 = rules.trimgalore_trim_paired.output.o1,
-	            o2 = rules.trimgalore_trim_paired.output.o2
+	rule trimgalore_rename:
+	    input:  o1 = rules.trimgalore_trim.output.o1,
+	            o2 = rules.trimgalore_trim.output.o2
 	    output: r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
 	            r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
 	    conda: "../envs/"+TRIMENV+".yaml"
@@ -26,7 +26,7 @@ if any('_r1' in s for s in QCSAMPLES) and any('_r2' in s for s in TRIMSAMPLES):
 
 else:
 	rule trimgalore_trim:
-	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in TRIMSAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
 	    output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
 	    conda: "../envs/"+TRIMENV+".yaml"

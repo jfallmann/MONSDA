@@ -1,5 +1,5 @@
 MAPSAMPLES = list(set(samples(config)))
-MAPPERBIN, MAPPERENV = env_bin_from_config(MAPSAMPLES)
+MAPPERBIN, MAPPERENV = env_bin_from_config2(MAPSAMPLES,config,'MAPPING')
 
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)

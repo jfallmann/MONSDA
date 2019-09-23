@@ -70,6 +70,9 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         SAMPLES=list(set(samples(config)))
         if os.path.exists(SAMPLES[0]) is False:
             SAMPLES=list(set(sampleslong(config)))
+        paired = ''
+        if checkpaired(SAMPLES, config):
+            paired = '_paired'
         try:
             CLIP=config["CLIP"]
         except:
@@ -80,40 +83,41 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         log.debug(logid+'CONDITIONS: '+str(conditions))
 
         for condition in conditions:
-            if 'MAPPING' in subworkflows:
-                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(smk.read())
-
-                smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
-                with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(smk.read())
+            smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+            with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    smkout.write(smk.read())
+                smkout.write('\n\n')
 
             if 'QC' in subworkflows:
                 smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                 with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
+                    smkout.write('\n\n')
 
-            subconf = NestedDefaultDict()
-            for subwork in subworkflows:
-                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-                for i in range(0,len(listoftools)):
-                    toolenv, toolbin = map(str,listoftools[i])
-                    subconf.update(listofconfigs[i])
-                    subsamples = list(set(sampleslong(subconf)))
-                    paired = ''
-                    if checkpaired(SAMPLES, config):
-                        paired = '_paired'
-                    subname = toolenv+paired+'.smk'
-                    log.debug(logid+'SUBWORKFLOW: '+str([toolenv,subname,condition, subsamples, subconf]))
+            if 'MAPPING' in subworkflows:
+                subconf = NestedDefaultDict()
+                for subwork in subworkflows:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                    for i in range(0,len(listoftools)):
+                        toolenv, toolbin = map(str,listoftools[i])
+                        subconf.update(listofconfigs[i])
+                        subsamples = list(set(sampleslong(subconf)))
+                        subname = toolenv+paired+'.smk'
+                        log.debug(logid+'SUBWORKFLOW: '+str([toolenv,subname,condition, subsamples, subconf]))
 
-                    smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                    with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(smk.read())
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(smk.read())
+                            smkout.write('\n\n')
+
+                smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
+                with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(smk.read())
+                    smkout.write('\n\n')
 
             with open('_'.join(['_'.join(condition),'subconfig.json']), 'a') as confout:
                 json.dump(subconf, confout)
@@ -163,8 +167,9 @@ if __name__ == '__main__':
     logid = scriptname+'.main: '
     try:
         args=parseargs()
-        if args.loglevel != 'WARNING':
-          log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname, logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+        streamlog = setup_logger(name='stream', log_file='stdout', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname, logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+
         log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
 
         run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs)

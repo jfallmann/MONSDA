@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Sep 19 19:17:35 2019 (+0200)
+# Last-Updated: Mon Sep 23 15:17:50 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 614
+#     Update #: 622
 # URL:
 # Doc URL:
 # Keywords:
@@ -76,9 +76,15 @@ from Bio import SeqIO
 import gzip
 import math
 from collections import defaultdict
-from lib.Logger import *
+import inspect
 
-log = setup_logger(name='Snakemake', log_file='LOGS/Snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from Logger import *
+
+log = setup_logger(name='Collection', log_file='LOGS/Snakemake_Collection.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
 
 #Class
 class NestedDefaultDict(defaultdict):
@@ -294,7 +300,7 @@ def create_subworkflow(config, subwork, conditions):
             try:
                 for key in ['GENOME', 'NAME']:
                     tempconf[key][src] = config[key][src]
-                for key in ['SOURCE', 'SAMPLES', subwork]:
+                for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
             except KeyError:
                 exc_type, exc_value, exc_tb = sys.exc_info()
@@ -396,6 +402,17 @@ def env_bin_from_config(samples, config, subconf):
         )
         log.error(''.join(tbe.format()))
 
+def env_bin_from_config2(samples, config, subconf):
+    try:
+        mb, me = config[subconf+'BIN'], config[subconf+'ENV']
+        log.debug(mb,me)
+        return mb,me
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
 
 def count_params(sample, config):
     try:
