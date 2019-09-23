@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Sep 23 15:14:26 2019 (+0200)
+# Last-Updated: Mon Sep 23 17:45:29 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 62
+#     Update #: 63
 # URL:
 # Doc URL:
 # Keywords:
@@ -60,7 +60,7 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
-    if log_file is not 'stdout' and not 'stderr':
+    if log_file is not 'stdout' and log_file is not 'stderr':
         handler = logging.FileHandler(log_file, mode=filemode)
     else:
         handler = logging.StreamHandler()

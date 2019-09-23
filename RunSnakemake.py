@@ -1,4 +1,4 @@
-#!/usr/bin/envs python3
+#!/usr/bin/env python3
 
 import glob, os, sys, inspect, snakemake, json, shutil
 from collections import defaultdict
@@ -9,13 +9,9 @@ import argparse
 import subprocess
 min_version("5.5.2")
 
-###snakemake -n -j 20 --use-conda -s Workflow/Snakefile
-###--configfile Workflow/configs/config_example.json --directory ${PWD}
-###--printshellcmds &> LOGS/run.log
-
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
+#cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
+#if cmd_subfolder not in sys.path:
+#    sys.path.insert(0, cmd_subfolder)
 
 from lib.Collection import *
 from lib.Logger import *
@@ -24,9 +20,9 @@ scriptname=os.path.basename(__file__)
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
-    parser.add_argument("-g", "--debug-dag", type=bool, default=False, help='Should the debug-dag be printed')
+    parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
-    parser.add_argument("-u", "--use-conda", type=bool, default=True, help='Should conda be used')
+    parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
     parser.add_argument("-v", "--loglevel", type=str, default='WARNING', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -70,9 +66,6 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         SAMPLES=list(set(samples(config)))
         if os.path.exists(SAMPLES[0]) is False:
             SAMPLES=list(set(sampleslong(config)))
-        paired = ''
-        if checkpaired(SAMPLES, config):
-            paired = '_paired'
         try:
             CLIP=config["CLIP"]
         except:
@@ -104,7 +97,7 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
-                        subname = toolenv+paired+'.smk'
+                        subname = toolenv+'.smk'
                         log.debug(logid+'SUBWORKFLOW: '+str([toolenv,subname,condition, subsamples, subconf]))
 
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
@@ -167,9 +160,8 @@ if __name__ == '__main__':
     logid = scriptname+'.main: '
     try:
         args=parseargs()
-        streamlog = setup_logger(name='stream', log_file='stdout', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname, logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
-
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+        log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
         log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
 
         run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs)
