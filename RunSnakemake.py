@@ -37,8 +37,12 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         config = load_configfile(configfile)
         if useconda :
             useconda = "--use-conda"
+        else:
+            useconda = ''
         if debugdag :
             debugdag = "--debug-dag"
+        else:
+            debugdag = ''
 
         subworkflows = config['WORKFLOWS'].split(',')
         postprocess = config['POSTPROCESSING'].split(',')  # we keep this separate because not all postprocessing steps need extra configuration

@@ -1,6 +1,6 @@
 if paired is 'paired':
     rule multiqc:
-        input: expand("QC/{file}_{read}_fastqc.zip", file=SAMPLES, read=['r1','r2']),
+        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['r1','r2']),
                expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['r1','r2']),
                expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),
@@ -16,7 +16,7 @@ if paired is 'paired':
 
 else:
     rule multiqc:
-        input: expand("QC/{file}_fastqc.zip", file=SAMPLES),
+        input: expand("QC/{rawfile}_fastqc.zip", rawfile=SAMPLES),
                expand("QC/{file}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),

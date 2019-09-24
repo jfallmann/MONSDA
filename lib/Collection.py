@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Sep 23 15:17:50 2019 (+0200)
+# Last-Updated: Tue Sep 24 10:39:00 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 622
+#     Update #: 651
 # URL:
 # Doc URL:
 # Keywords:
@@ -404,9 +404,15 @@ def env_bin_from_config(samples, config, subconf):
 
 def env_bin_from_config2(samples, config, subconf):
     try:
-        mb, me = config[subconf+'BIN'], config[subconf+'ENV']
-        log.debug(mb,me)
-        return mb,me
+        logid='env_bin_from_config2'
+        for s in samples:
+            log.debug(logid+': '+s)
+            log.debug(str(config[subconf]))
+            for k in getFromDict(config[subconf],conditiononly(s,config)):
+                mb = k['BIN']
+                me = k['ENV']
+        log.debug([str(mb),str(me)])
+        return mb, me
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -545,6 +551,26 @@ def samplecond(sample,config):
         )
         log.error(''.join(tbe.format()))
 
+def conditiononly(sample,config):
+    try:
+        logid = 'conditiononly: '
+        ret = list()
+        paired = False
+        check = os.path.dirname(sample).split(os.sep)
+        log.debug(logid+str(check))
+        for r in runstate_from_sample([sample],config):
+            ret.extend(check)
+            ret.append(r)
+        log.debug(logid+str([sample,ret]))
+        return ret
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
 def checkpaired(sample,config):
     try:
         logid = 'checkpaired: '
@@ -572,6 +598,7 @@ def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",
            sample=wildcards.sample,
            i=glob_wildcards(os.path.join(checkpoint_output, "{i}.txt")).i)
+
 ##############################
 #########Python Subs##########
 ##############################

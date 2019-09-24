@@ -1,10 +1,15 @@
+        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        #        r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        #input:  raw1 = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        #        raw2 = lambda wildcards: expand(rules.qc_raw.output.o2, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        #input:  raw = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+
 if paired is 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
         input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",
                r2 = "FASTQ/{rawfile}_r2.fastq.gz"
-        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-        #        r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
         output: o1 = report("QC/{rawfile}_r1_fastqc.zip",category="QC"),
                 o2 = report("QC/{rawfile}_r2_fastqc.zip",category="QC")
         wildcard_constraints:
@@ -17,8 +22,6 @@ if paired is 'paired':
 
     rule qc_trimmed:
         input:  expand(rules.qc_raw_paired.output, rawfile=SAMPLES),
-        #input:  raw1 = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-        #        raw2 = lambda wildcards: expand(rules.qc_raw.output.o2, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
         output: o1 = report("QC/{file}_r1_trimmed_fastqc.zip", category="QC"),
@@ -51,8 +54,7 @@ if paired is 'paired':
 
 else:
     rule qc_raw:
-        input: q1 = "FASTQ/{rawfile}.fastq.gz"
-        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        input: q1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
         output: o1 = report("QC/{rawfile}_fastqc.zip", category="QC")
         wildcard_constraints:
             rawfile="!trimmed"
@@ -63,8 +65,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_trimmed:
-        input: expand(rules.qc_raw.output.o1, rawfile=SAMPLES),
-        #input:  raw = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        input:  #expand(rules.qc_raw.output, rawfile=SAMPLES),
                 q1 = expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz",file=samplecond(SAMPLES,config)),
         output: o1 = report("QC/{file}_trimmed_fastqc.zip", category="QC")
         log:   "LOGS/{file}/fastqc_trimmed.log"

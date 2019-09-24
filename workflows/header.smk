@@ -14,8 +14,8 @@ from Collection import *
 from Logger import *
 
 log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
-log.debug(cmd_subfolder)
-log.debug(sys.path)
+#log.debug(cmd_subfolder)
+#log.debug(sys.path)
 
 QC=config["QC"]
 REFERENCE=config["REFERENCE"]
