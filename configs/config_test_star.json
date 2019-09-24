@@ -73,9 +73,9 @@
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "untreated": {
-                         "std": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                    "ENV": "minimap", # which conda env to use for mapping
-                    "BIN": "minimap2", #how the mapper binary is called
+                         "std": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                            "ENV": "star", # which conda env to use for mapping
+                    "BIN": "STAR", #how the mapper binary is called
                     "OPTIONS":
                          [
                              {
@@ -87,8 +87,10 @@
                              ""
                          ]
                      }
+
                  }
-               },
+               }
+},
     #Count options
     "COUNTING": { #options for trimming for each sample/condition
          "Dm6": {
