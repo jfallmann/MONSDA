@@ -15,7 +15,7 @@ if all(checklist):
         input:  "UCSC/{file}_mapped_{type}.bed.gz"
         output: "BED/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
-        conda:  "../envs/base.yaml"
+        conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -24,7 +24,7 @@ elif all(checklist2):
         input:  "PEAKS/{file}_mapped_{type}.bed.gz"
         output: "BED/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
-        conda:  "../envs/base.yaml"
+        conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -35,7 +35,7 @@ else:
         output: "BED/{file}_mapped_sorted.bed.gz",
                 "BED/{file}_mapped_unique.bed.gz"
         log:    "LOGS/Bed/createbed{file}.log"
-        conda:  "../envs/bedtools.yaml"
+        conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         # Here I use the strand of the first read in pair as the one determining the strand
         shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
@@ -45,7 +45,7 @@ rule AnnotateBed:
     input:  rules.BamToBed.output
     output: "BED/{file}_anno_{type}.bed.gz"
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
-    conda:  "../envs/perl.yaml"
+    conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS,
             anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation'),
@@ -58,7 +58,7 @@ rule AddSequenceToBed:
     output: "BED/{file}_anno_seq_{type}.bed.gz",
             temp("BED/{file}_anno_seq_{type}.tmp")
     log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
-    conda:  "../envs/bedtools.yaml"
+    conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
     shell:  "export LC_ALL=C; fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
@@ -67,7 +67,7 @@ rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
     output: "BED/{file}_anno_seq_{type}_merged.bed.gz"
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
-    conda:  "../envs/bedtools.yaml"
+    conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS,

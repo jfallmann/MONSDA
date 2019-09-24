@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Sep 23 17:45:29 2019 (+0200)
+# Last-Updated: Tue Sep 24 16:53:41 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 63
+#     Update #: 64
 # URL:
 # Doc URL:
 # Keywords:
@@ -61,6 +61,7 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
 
     logger = logging.getLogger(name)
     if log_file is not 'stdout' and log_file is not 'stderr':
+        makelogdir(os.path.dirname(log_file))
         handler = logging.FileHandler(log_file, mode=filemode)
     else:
         handler = logging.StreamHandler()

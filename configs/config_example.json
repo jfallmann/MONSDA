@@ -5,51 +5,51 @@
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
     "GENOME": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta
-        "Dm6": "dm6"
-    },
+                "Dm6": "dm6"
+              },
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
-        "Dm6": {#first key should be same than for GENOME
-            "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
-            }
-        }
-    },
+              "Dm6": {#first key should be same than for GENOME
+                      "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                                     "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                   }
+                     }
+            },
     "SOURCE": {  #which organisms are to be parsed for which samples
-        "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. untreated with setting std will use dm6 here
-            "untreated": {
-                "std": "dm6"
-            }
-        }
-    },
+                 "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. untreated with setting std will use dm6 here
+                          "untreated": {
+                              "std": "Dm6"
+                          }
+                        }
+              },
     "SAMPLES": {  #which samples to analyze
-        "Dm6": { #key for source and genome
-            "untreated": {      # sample id
-                "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                  "Dm6": { #key for source and genome
+                           "untreated": {      # sample id
+                                               "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                                        }
                          }
-               }
-    },
+               },
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
-               "untreated": {      # sample id
-                   "std": "single" # setup and sequencing type, either paired or single
+                 "untreated": {      # sample id
+                                     "std": "single" # setup and sequencing type, either paired or single
+                              }
                }
-        }
     },
-    #QC options
+#QC options
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
-            "untreated": {      # sample id
-                "std": {
-                    "ENV" : "fastqc",  # name of conda env for QC
-                    "BIN" : "fastqc" # binary for trimming
-                }
-            }
-        }
+                 "untreated": {      # sample id
+                                     "std": {
+                                         "ENV" : "fastqc",  # name of conda env for QC
+                                         "BIN" : "fastqc" # binary for trimming
+                                     }
+                              }
+               }
     },
-    #Trimming options
+#Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-        "RUN": ON", # set to 'OFF' if no trimming wanted
+                  "RUN": ON", # set to 'OFF' if no trimming wanted
         "Dm6": {
             "untreated": {
                 "std": { # See above
@@ -57,9 +57,9 @@
                     "BIN": "trim_galore", # name of binary for trimming
                     "OPTIONS":
                     [
-                        "",
+                        {
+                        },
                         {  # trimming options here, --paired is not required, will be resolved by rules
-                            "-a": "adapters.fa",#path to adapter fasta used for trimming if needed
                             "-q": "15",
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
@@ -79,15 +79,16 @@
                     "BIN": "minimap2", #how the mapper binary is called
                     "OPTIONS":
                     [
-                        "",
                         {
-                            "-ax": "splice",
-                            "-k": "14",
+                            "-k": "14"#option for setting kmer size while indexing
+                        },
+                        {
+                            "-ax": "map-ont",
                             "-ub": "",
                             "-Y": "",
                             "-L": "",
-                            "--MD": "",
-                            "-d": ""
+                           "--MD": "",
+                           "-d": ""
                         },
                         "k14"
                     ]
@@ -104,7 +105,8 @@
                     "BIN": "featurecounts",
                     "OPTIONS":
                     [
-                        "",
+                        {
+                        },
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
@@ -129,7 +131,8 @@
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
                     [
-                        "",
+                        {
+                        },
                         {
                             "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
                             "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
@@ -149,7 +152,8 @@
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
                     [
-                        "",
+                        {
+                        },
                         {
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub

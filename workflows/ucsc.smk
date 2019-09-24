@@ -18,7 +18,7 @@ if all(checklist):
         input:  "BED/{file}_mapped_{type}.bed.gz"
         output: "UCSC/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/UCSC/linkbed{file}_{type}.log"
-        conda:  "../envs/base.yaml"
+        conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -27,7 +27,7 @@ elif all(checklist2):
         input:  "PEAKS/{file}_mapped_{type}.bed.gz"
         output: "UCSC/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/UCSC/linkbed{file}_{type}.log"
-        conda:  "../envs/base.yaml"
+        conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -38,7 +38,7 @@ else:
         output: "UCSC/{file}_mapped_sorted.bed.gz",
                 "UCSC/{file}_mapped_unique.bed.gz"
         log:    "LOGS/UCSC/{file}_ucscbamtobed"
-        conda:  "../envs/bedtools.yaml"
+        conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         # Here I use the strand of the first read in pair as the one determining the strand
         shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
@@ -47,7 +47,7 @@ rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     log:    "LOGS/UCSC/{org}/{gen}{name}_ucscindexfa"
-    conda:  "../envs/samtools.yaml"
+    conda:  "snakes/envs/samtools.yaml"
     params: bins = BINS
     threads: 1
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
@@ -56,7 +56,7 @@ rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     log:    "LOGS/UCSC/{org}/{gen}{name}_ucscgetcrom"
-    conda:  "../envs/samtools.yaml"
+    conda:  "snakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
@@ -75,8 +75,8 @@ if all(checklist):
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
-        conda:  "../envs/ucsc.yaml"
-        #    conda:  "../envs/perl.yaml"
+        conda:  "snakes/envs/ucsc.yaml"
+        #    conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -87,8 +87,8 @@ elif all(checklist2):
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
-        conda:  "../envs/ucsc.yaml"
-        #    conda:  "../envs/perl.yaml"
+        conda:  "snakes/envs/ucsc.yaml"
+        #    conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -101,8 +101,8 @@ else:
         output: fw = "UCSC/{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
-        conda:  "../envs/bedtools.yaml"
-        #    conda:  "../envs/perl.yaml"
+        conda:  "snakes/envs/bedtools.yaml"
+        #    conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
                 bins = BINS
@@ -118,7 +118,7 @@ rule BedgToUCSC:
             t1 = temp("UCSC/{file}_mapped_{type}.fw.tmp"),
             t2 = temp("UCSC/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
-    conda:  "../envs/ucsc.yaml"
+    conda:  "snakes/envs/ucsc.yaml"
     threads: 1
     priority: 100               # This should be finished before we generate tracks
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
@@ -130,7 +130,7 @@ rule GenerateTrack:
     output: "UCSC/{file}_mapped_{type}.fw.bw.trackdone",
             "UCSC/{file}_mapped_{type}.re.bw.trackdone"
     log:    "LOGS/UCSC/{file}_track_{type}.log"
-    conda:  "../envs/base.yaml"
+    conda:  "snakes/envs/base.yaml"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 24 12:08:37 2019 (+0200)
+# Last-Updated: Tue Sep 24 17:03:19 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 673
+#     Update #: 724
 # URL:
 # Doc URL:
 # Keywords:
@@ -204,14 +204,18 @@ def genomepath(s, config):
 
 def genome(s, config):
     try:
+        logid='genome: '
         sa = os.path.basename(str(s))
+        sp = source_from_sample(str(s)).split(os.sep)[0]
         cond= s.split(os.sep)[-2]
         sk = find_key_for_value(sa, config["SAMPLES"])
         for skey in sk:
             klist = value_extract(skey, config["SOURCE"])
             for k in klist:
-                if k in sa :
+                if str(k) == sp:
+                    log.debug(logid+'k is sp')
                     for x, y in config["GENOME"].items():
+                        log.debug(logid+str([k, x, y]))
                         if str(k) == str(x):
                             return str(y)
     except Exception as err:
@@ -354,20 +358,56 @@ def pathstogenomes(samples, config):
         )
         log.error(''.join(tbe.format()))
 
+#def tool_params(sample, runstate, config, subconf):
+#    try:
+#        logid='tool_params: '
+#        t = genome(sample,config)
+#        mp = list()
+#        if runstate is None:
+#            runstate = runstate_from_sample([sample], config)
+#        x = source_from_sample(sample).split(os.sep)
+#        for k in getFromDict(config[subconf],x):
+#            log.debug(logid+str(k))
+#            y = find_key_for_value(k,config[subconf])
+#            for r in runstate:
+#                if r in sample.split(os.sep) and r in [z for z in y]:
+#                    mp.extend(k)
+#        log.debug(logid+str(mp))
+#        return mp
+#    except Exception as err:
+#        exc_type, exc_value, exc_tb = sys.exc_info()
+#        tbe = tb.TracebackException(
+#            exc_type, exc_value, exc_tb,
+#        )
+#        log.error(''.join(tbe.format()))
+
+#def index_params(indexpath, config, subconf):
+#    try:
+#        s = indexpath.split(os.sep)
+#        mp = list()
+#        for k in getFromDict(config[subconf],s):
+#            mp.extend(k)
+#        return mp
+#    except Exception as err:
+#        exc_type, exc_value, exc_tb = sys.exc_info()
+#        tbe = tb.TracebackException(
+#            exc_type, exc_value, exc_tb,
+#        )
+#        log.error(''.join(tbe.format()))
+
 def tool_params(sample, runstate, config, subconf):
     try:
         logid='tool_params: '
         t = genome(sample,config)
-        mp = list()
+        mp = OrderedDict()
         if runstate is None:
-            runstate = runstate_from_sample([sample], config)
+            runstate = runstate_from_sample([sample], config)[0]
         x = source_from_sample(sample).split(os.sep)
-        for k in getFromDict(config[subconf],x):
-            log.debug(logid+str(k))
-            y = find_key_for_value(k,config[subconf])
-            for r in runstate:
-                if r in sample.split(os.sep) and r in [z for z in y]:
-                    mp.extend(k)
+        log.debug(logid+str([sample,runstate,subconf,t,x]))
+        if runstate not in x:
+            x.append(runstate)
+        mp = subDict(config[subconf],x)
+        log.debug(logid+'DONE: '+str(mp))
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -378,10 +418,11 @@ def tool_params(sample, runstate, config, subconf):
 
 def index_params(indexpath, config, subconf):
     try:
+        logid='index_params: '
         s = indexpath.split(os.sep)
-        mp = list()
-        for k in getFromDict(config[subconf],s):
-            mp.extend(k)
+        mp = OrderedDict()
+        mp = subDict(config[subconf],s)
+        log.debug(logid+str([s,mp]))
         return mp
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -607,7 +648,6 @@ def aggregate_input(wildcards):
 def dict_inst(d):
     try:
         loginfo='dict_inst: '
-        log.debug(loginfo+str(d))
         if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict):
             return True
     except Exception as err:
@@ -699,6 +739,7 @@ def find_key_for_value(val, dictionary):
         if dict_inst(dictionary):
             for k, v in dictionary.items():
                 if dict_inst(v):
+                    log.debug(logid+'item'+str(v))
                     yield from find_key_for_value(val, v)
                 elif v == val or val in v:
                     yield k
@@ -713,6 +754,8 @@ def find_key_for_value(val, dictionary):
 
 def value_extract(key, var):
     try:
+        logid='value_extract: '
+        log.debug(logid+str(var))
         if hasattr(var,'items'):
             for k, v in var.items():
                 if k == key:

@@ -20,7 +20,7 @@ scriptname=os.path.basename(__file__)
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
-    parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
+    parser.add_argument("-g", "--debug-dag", action="store_false", help='Should the debug-dag be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
     parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
@@ -75,9 +75,9 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         except:
             CLIP=''
 
-        log.debug(logid+'SAMPLES: '+str(SAMPLES))
+        log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
         conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
-        log.debug(logid+'CONDITIONS: '+str(conditions))
+        log.info(logid+'CONDITIONS: '+str(conditions))
 
         for condition in conditions:
             smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
@@ -136,17 +136,24 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
                     subsamples = list(set(sampleslong(subconf)))
                     log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
 
+#                    smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+#                    with open('_'.join(['_'.join(condition),toolbin,'subsnake.smk']), 'a') as smkout:
+#                        with open(smkf,'r') as smk:
+#                            smkout.write(smk.read())
+#                            smkout.write('\n\n')
                     smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                     with open('_'.join(['_'.join(condition),toolbin,'subsnake.smk']), 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(smk.read())
+                            smkout.write('\n\n')
                     with open('_'.join(['_'.join(condition),toolbin,'subconfig.json']), 'a') as confout:
                         json.dump(subconf, confout)
 
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=MAXTHREAD,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),'subconfig.json']),d=workdir,g=debugdag)
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),'subconfig.json']),d=workdir,g=debugdag)
                     o = subprocess.run(jobtorun, shell=True, check=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     if o.stderr:
-                        log.error(o.sterr)
+                        log.error(o.stderr)
+
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
