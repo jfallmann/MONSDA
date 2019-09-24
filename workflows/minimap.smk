@@ -12,7 +12,7 @@ rule generate_index:
 
 rule mapping:
     input:  query = lambda wildcards: "TRIMMED_FASTQ/{file}_trimmed.fastq.gz".format(file=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-            index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERBIN, ksize=''.join(tool_params(wildcards.file, None ,config, "MAPPING")[2])[1:]),
+            index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERBIN, ksize=''.join(tool_params(wildcards.file, None ,config, "MAPPING")["OPTIONS"][0])),
             ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
     output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"

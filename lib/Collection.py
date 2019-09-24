@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 24 10:39:00 2019 (+0200)
+# Last-Updated: Tue Sep 24 12:08:37 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 651
+#     Update #: 673
 # URL:
 # Doc URL:
 # Keywords:
@@ -75,7 +75,7 @@ from io import StringIO
 from Bio import SeqIO
 import gzip
 import math
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import inspect
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
@@ -356,12 +356,14 @@ def pathstogenomes(samples, config):
 
 def tool_params(sample, runstate, config, subconf):
     try:
+        logid='tool_params: '
         t = genome(sample,config)
         mp = list()
         if runstate is None:
             runstate = runstate_from_sample([sample], config)
         x = source_from_sample(sample).split(os.sep)
         for k in getFromDict(config[subconf],x):
+            log.debug(logid+str(k))
             y = find_key_for_value(k,config[subconf])
             for r in runstate:
                 if r in sample.split(os.sep) and r in [z for z in y]:
@@ -602,8 +604,22 @@ def aggregate_input(wildcards):
 ##############################
 #########Python Subs##########
 ##############################
+def dict_inst(d):
+    try:
+        loginfo='dict_inst: '
+        log.debug(loginfo+str(d))
+        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict):
+            return True
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
 def getFromDict(dataDict, mapList):
     logid = 'getFromDict: '
+    log.debug(logid+str(mapList))
     ret=list()
     for k in mapList:
         dataDict = dataDict[k]
@@ -624,9 +640,9 @@ def nested_set(dic, keys, value):
 
 def list_all_keys_of_dict(dictionary):
     try:
-        if isinstance(dictionary, dict):
+        if dict_inst(dictionary):
             for key in dictionary.keys():
-                if isinstance(key, dict):
+                if dict_inst(key):
                     yield from list_all_keys_of_dict(key)
                 else:
                     yield key
@@ -642,9 +658,9 @@ def list_all_keys_of_dict(dictionary):
 
 def list_all_values_of_dict(dictionary):
     try:
-        if isinstance(dictionary, dict):
+        if dict_inst(dictionary):
             for values in dictionary.values():
-                if isinstance(values, dict):
+                if dict_inst(values):
                     yield from list_all_values_of_dict(values)
                 else:
                     yield values
@@ -660,9 +676,9 @@ def list_all_values_of_dict(dictionary):
 
 def find_all_values_on_key(key, dictionary):
     try:
-        if isinstance(dictionary, dict):
+        if dict_inst(dictionary):
             for k, v in dictionary.items():
-                if isinstance(v, dict):
+                if dict_inst(v):
                     yield from find_all_values_on_key(key, v)
                 elif k == key:
                     yield v
@@ -678,9 +694,11 @@ def find_all_values_on_key(key, dictionary):
 
 def find_key_for_value(val, dictionary):
     try:
-        if isinstance(dictionary, dict):
+        logid='find_key_for_value: '
+        log.debug(logid+str(val))
+        if dict_inst(dictionary):
             for k, v in dictionary.items():
-                if isinstance(v, dict):
+                if dict_inst(v):
                     yield from find_key_for_value(val, v)
                 elif v == val or val in v:
                     yield k
@@ -699,7 +717,7 @@ def value_extract(key, var):
             for k, v in var.items():
                 if k == key:
                     yield v
-                if isinstance(v, dict):
+                if dict_inst(v):
                     for result in value_extract(key, v):
                         yield result
                 elif isinstance(v, list):
@@ -715,9 +733,9 @@ def value_extract(key, var):
 
 def find_innermost_value_from_dict(dictionary):
     try:
-        if isinstance(dictionary, dict):
+        if dict_inst(dictionary):
             for k, v in dictionary.items():
-                if isinstance(v, dict):
+                if dict_inst(v):
                      return(find_innermost_value_from_dict(v))
                 else:
                     return v
