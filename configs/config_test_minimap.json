@@ -80,7 +80,7 @@
                     "OPTIONS":
                     [
                         {
-                            "-k": "14"#option for setting kmer size while indexing
+                            "-k": "7"#option for setting kmer size while indexing
                         },
                         {
                             "-ax": "map-ont",
@@ -90,7 +90,7 @@
                            "--MD": "",
                            "-d": ""
                         },
-                        "k14"
+                        "k7"
                     ]
                 }
             }

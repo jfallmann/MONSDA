@@ -36,7 +36,7 @@ if paired == 'paired':
 
 else:
 	rule mapping:
-	    input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+	    input:  r1 = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
 	            index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERBIN),
 	            ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
 	    output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
@@ -50,4 +50,4 @@ else:
 	            genpath = lambda wildcards: "{ref}/{dir}/{map}/{src}".format(ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], src=str.join(os.sep, source_from_sample(wildcards.file).split(os.sep)[1:]), map=MAPPERBIN),
 	            anno = lambda wildcards: anno_from_file(wildcards.file, config, 'mapping'),
 	            tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-	    shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {params.genpath} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp} --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}Aligned.out.sam {output.mapped} 2>> {log} && cat  {output.tmp}Unmapped.out.mate* > {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp} 2>>{log}"
+	    shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {params.genpath} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp} --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}Aligned.out.sam {output.mapped} 2>> {log} && cat  {output.tmp}Unmapped.out.mate* > {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp} 2>>{log}"
