@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Sep 25 17:30:02 2019 (+0200)
+# Last-Updated: Wed Sep 25 18:23:58 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 731
+#     Update #: 746
 # URL:
 # Doc URL:
 # Keywords:
@@ -539,10 +539,30 @@ def sample_from_path(path):
         )
         log.error(''.join(tbe.format()))
 
-def anno_from_file(sample, config, step):  # NEED OVERHAUL
+def anno_from_file(sample, config, step):
     try:
+        logid = 'anno_from_file: '
         p = os.path.dirname(genomepath(sample, config))
-        ret = os.path.join(config["REFERENCE"],p,config["ANNOTATION"][p][step])
+        s = source_from_sample(sample)
+        ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
+        log.debug(logid+str(ret))
+        return ret
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
+def anno_from_source(source, config, step):
+    try:
+        logid = 'anno_from_source: '
+        p = source[0]
+        lst = list()
+        lst.append(p)
+        lst.extend(source[1].split(os.sep))
+        ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
+        log.debug(logid+str(ret))
         return ret
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

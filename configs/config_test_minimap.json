@@ -129,6 +129,7 @@
                 "minimap": { # See above
                     "ENV" : "annotatebed",
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
+                    "MAPPING" : "dm6.gff3.gz",
                     "OPTIONS":
                     [
                         {
@@ -136,7 +137,7 @@
                         {
                             "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
                             "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                            "ANNOTATIONFILE": "dm6.gff.gz"
+                            "ANNOTATIONFILE": "dm6.gff3.gz"
                         },
                         ""
                     ]
@@ -150,6 +151,7 @@
                 "minimap": { # See above
                     "ENV" : "ucsc",
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                    "MAPPING" : "dm6.gff3.gz",
                     "OPTIONS":
                     [
                         {
@@ -159,7 +161,7 @@
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
                           "-b" : "UCSC dm6 minimap", #short name for track
-                          "ANNOTATION": "dm6.gff.gz"
+                          "ANNOTATION": "dm6.gff3.gz"
                        },
                        ""
                     ]
