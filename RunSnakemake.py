@@ -35,11 +35,11 @@ def parseargs():
 def run_snakemake (configfile, debugdag, workdir, useconda, procs):
     try:
         config = load_configfile(configfile)
-        if useconda :
+        if useconda:
             useconda = "--use-conda"
         else:
             useconda = ''
-        if debugdag :
+        if debugdag:
             debugdag = "--debug-dag"
         else:
             debugdag = ''
@@ -120,10 +120,15 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
                 json.dump(subconf, confout)
 
         for condition in conditions:
+            log.info(logid+'Starting runs for condition '+str(condition))
             jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),'subconfig.json']),d=workdir,g=debugdag)
-            o = subprocess.run(jobtorun, shell=True, check=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            o = subprocess.run(jobtorun, shell=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # check=True,
+            if o.stdout:
+                log.info(o.stdout)
             if o.stderr:
                 log.error(o.stderr)
+
+        log.info(logid+'Starting runs for postprocessing')
 
         for condition in conditions:
             subconf = NestedDefaultDict()
@@ -149,8 +154,10 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
                     with open('_'.join(['_'.join(condition),toolbin,'subconfig.json']), 'a') as confout:
                         json.dump(subconf, confout)
 
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),'subconfig.json']),d=workdir,g=debugdag)
-                    o = subprocess.run(jobtorun, shell=True, check=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),toolbin,'subconfig.json']),d=workdir,g=debugdag)
+                    o = subprocess.run(jobtorun, shell=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # check=True,
+                    if o.stdout:
+                        log.info(o.stdout)
                     if o.stderr:
                         log.error(o.stderr)
 

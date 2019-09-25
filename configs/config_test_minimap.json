@@ -9,29 +9,29 @@
               },
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "Dm6": {#first key should be same than for GENOME
-                      "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                     "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                      "unpaired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                                     "minimap": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
                                    }
                      }
             },
     "SOURCE": {  #which organisms are to be parsed for which samples
-                 "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. untreated with setting std will use dm6 here
-                          "untreated": {
-                              "std": "Dm6"
+                 "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. unpaired with setting minimap will use dm6 here
+                          "unpaired": {
+                              "minimap": "Dm6"
                           }
                         }
               },
     "SAMPLES": {  #which samples to analyze
                   "Dm6": { #key for source and genome
-                           "untreated": {      # sample id
-                                               "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                           "unpaired": {      # sample id
+                                               "minimap": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
                                         }
                          }
                },
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
-                 "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single
+                 "unpaired": {      # sample id
+                                     "minimap": "single" # setup and sequencing type, either paired or single
                               }
                }
     },
@@ -39,8 +39,8 @@
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
-                 "untreated": {      # sample id
-                                     "std": {
+                 "unpaired": {      # sample id
+                                     "minimap": {
                                          "ENV" : "fastqc",  # name of conda env for QC
                                          "BIN" : "fastqc" # binary for trimming
                                      }
@@ -51,8 +51,8 @@
     "TRIMMING": { #options for trimming for each sample/condition
                   "RUN": ON", # set to 'OFF' if no trimming wanted
         "Dm6": {
-            "untreated": {
-                "std": { # See above
+            "unpaired": {
+                "minimap": { # See above
                     "ENV": "trimgalore", # name of conda env for trimming
                     "BIN": "trim_galore", # name of binary for trimming
                     "OPTIONS":
@@ -73,8 +73,8 @@
     #Mapping software options
     "MAPPING": { #options for mapping for each sample/condition
         "Dm6": {
-            "untreated": {
-                "std": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+            "unpaired": {
+                "minimap": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                     "ENV": "minimap", # which conda env to use for mapping
                     "BIN": "minimap2", #how the mapper binary is called
                     "OPTIONS":
@@ -99,8 +99,8 @@
     #Count options
     "COUNTING": { #options for trimming for each sample/condition
          "Dm6": {
-            "untreated": {
-                "std": {# See above
+            "unpaired": {
+                "minimap": {# See above
                     "ENV": "countreads", #see QC
                     "BIN": "featurecounts",
                     "OPTIONS":
@@ -125,8 +125,8 @@
     #Annotation options
     "ANNOTATE" : {
          "Dm6": {
-            "untreated": {
-                "std": { # See above
+            "unpaired": {
+                "minimap": { # See above
                     "ENV" : "annotatebed",
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
@@ -146,8 +146,8 @@
      },
     "UCSC" : {
          "Dm6": {
-            "untreated": {
-                "std": { # See above
+            "unpaired": {
+                "minimap": { # See above
                     "ENV" : "ucsc",
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
                     "OPTIONS":
@@ -158,7 +158,7 @@
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 std", #short name for track
+                          "-b" : "UCSC dm6 minimap", #short name for track
                           "ANNOTATION": "dm6.gff.gz"
                        },
                        ""

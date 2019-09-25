@@ -5,7 +5,7 @@
         #input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
         #input:  raw = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
 
-if paired is 'paired':
+if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
         input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",

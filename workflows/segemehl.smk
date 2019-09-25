@@ -10,7 +10,7 @@ rule generate_index:
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, 'MAPPING')['OPTIONS'][0].items())
     shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
 
-if paired is 'paired':
+if paired == 'paired':
 	rule mapping:
 	    input:  r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
 	            r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz",

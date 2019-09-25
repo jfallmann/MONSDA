@@ -1,6 +1,6 @@
 TRIMBIN, TRIMENV = env_bin_from_config2(SAMPLES,config,'TRIMMING')
 
-if paired is 'paired':
+if paired == 'paired':
 	rule cutadapt_trim:
 	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
 	            r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])

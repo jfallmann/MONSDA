@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 24 17:03:19 2019 (+0200)
+# Last-Updated: Wed Sep 25 14:06:33 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 724
+#     Update #: 726
 # URL:
 # Doc URL:
 # Keywords:
@@ -625,8 +625,9 @@ def checkpaired(sample,config):
             for r in runstate_from_sample([s],config):
                 tmplist = check
                 tmplist.append(r)
-                if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
+                if getFromDict(config['SEQUENCING'],tmplist) == 'paired':
                     paired = True
+        log.debug(logid+paired)
         return paired
 
     except Exception as err:

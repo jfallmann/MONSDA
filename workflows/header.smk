@@ -35,3 +35,6 @@ except KeyError:
 paired = ''
 if checkpaired(SAMPLES, config):
     paired = 'paired'
+
+if paired == 'paired':
+    log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')

@@ -14,7 +14,7 @@ rule generate_index:
             genpath = lambda wildcards: "{ref}/{dir}/{map}/{src}".format(ref=REFERENCE, dir=wildcards.dir, map=MAPPERBIN, src = wildcards.src)
     shell:  "if [[ -f \"{params.genpath}/SAindex\" ]]; then touch {output.idx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf TMPSTAR && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outTmpDir TMPSTAR --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} --sjdbGTFtagExonParentTranscript Parent  2> {log} && touch {output.idx} && cat Log.out >> {log} && rm -f Log.out && rm -rf TMPSTAR ;fi"
 
-if paired is 'paired':
+if paired == 'paired':
     rule mapping:
     input:  r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
             r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz",

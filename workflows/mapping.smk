@@ -1,5 +1,8 @@
+rule mapall:
+    input: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
+
 rule gzipsam:
-    input:  mapps = rules.mapping.output if paired == '' else rules.mapping_paired.output
+    input:  mapps = rules.mapping.output.mapped
     output: gzipped = report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT")
     log:    "LOGS/{file}/gzipsam.log"
     conda:  "snakes/envs/base.yaml"
