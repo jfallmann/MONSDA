@@ -6,9 +6,9 @@ rule generate_index:
     log:    expand("LOGS/{{src}}/{{dir}}/{{gen}}{{name}}_{map}.idx.log", map=MAPPERBIN)
     conda:  "snakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
-    params: mapp = MAPPERBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, "MAPPING")[0].items())
-    shell: "{params.mapp} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
+    params:  indexer = MAPPERBIN,
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, 'MAPPING')['OPTIONS'][0].items())
+    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
 
 if paired is 'paired':
 	rule mapping:
@@ -21,7 +21,7 @@ if paired is 'paired':
 	    log:    "LOGS/{file}/mapping.log"
 	    conda:  "snakes/envs/"+MAPPERENV+".yaml"
 	    threads: MAXTHREAD
-	    params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
+	    params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
 	            mapp=MAPPERBIN
 	    shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.index} -q {input.r1} -p {input.r2} --threads {threads} -o {output.mapped} -u {output.unmapped} 2> {log}"
 
@@ -35,6 +35,6 @@ else:
 	    log:    "LOGS/{file}/mapping.log"
 	    conda:  "snakes/envs/"+MAPPERENV+".yaml"
 	    threads: MAXTHREAD
-	    params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "MAPPING")[1].items()),
+	    params:  mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
 	            mapp=MAPPERBIN
 	    shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.index} -q {input.query} --threads {threads} -o {output.mapped} -u {output.unmapped} 2> {log}"
