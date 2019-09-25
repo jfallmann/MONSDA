@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Sep 25 14:06:33 2019 (+0200)
+# Last-Updated: Wed Sep 25 17:30:02 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 726
+#     Update #: 731
 # URL:
 # Doc URL:
 # Keywords:
@@ -77,6 +77,7 @@ import gzip
 import math
 from collections import defaultdict, OrderedDict
 import inspect
+import subprocess
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 if cmd_subfolder not in sys.path:
@@ -625,9 +626,9 @@ def checkpaired(sample,config):
             for r in runstate_from_sample([s],config):
                 tmplist = check
                 tmplist.append(r)
-                if getFromDict(config['SEQUENCING'],tmplist) == 'paired':
+                if 'paired' in getFromDict(config['SEQUENCING'],tmplist):
                     paired = True
-        log.debug(logid+paired)
+        log.debug(logid+str(paired))
         return paired
 
     except Exception as err:
@@ -1446,6 +1447,9 @@ def check_ref(reference):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
+
+def runjob(jobtorun):
+    return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
 
 #
 # Collection.py ends here

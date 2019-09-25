@@ -21,7 +21,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_trimmed:
-        input:  expand(rules.qc_raw_paired.output, rawfile=SAMPLES),
+        input:  expand(rules.qc_raw.output, rawfile=SAMPLES),
                 r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
         output: o1 = report("QC/{file}_r1_trimmed_fastqc.zip", category="QC"),

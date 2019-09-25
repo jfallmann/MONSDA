@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import glob, os, sys, inspect, snakemake, json, shutil
+import glob, os, sys, inspect, json, shutil
 from collections import defaultdict
 import traceback as tb
-from snakemake.utils import validate, min_version
+#import snakemake
 from snakemake import load_configfile
+from snakemake.utils import validate, min_version
 import argparse
 import subprocess
-min_version("5.5.2")
+#min_version("5.6.0") #Not working with beta version, need to wait for new release
 
 #cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 #if cmd_subfolder not in sys.path:
@@ -122,7 +123,7 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
         for condition in conditions:
             log.info(logid+'Starting runs for condition '+str(condition))
             jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),'subconfig.json']),d=workdir,g=debugdag)
-            o = subprocess.run(jobtorun, shell=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # check=True,
+            o = runjob(jobtorun)
             if o.stdout:
                 log.info(o.stdout)
             if o.stderr:
@@ -155,11 +156,11 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
                         json.dump(subconf, confout)
 
                         jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s='_'.join(['_'.join(condition),'subsnake.smk']),c='_'.join(['_'.join(condition),toolbin,'subconfig.json']),d=workdir,g=debugdag)
-                    o = subprocess.run(jobtorun, shell=True, universal_newlines=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # check=True,
-                    if o.stdout:
-                        log.info(o.stdout)
-                    if o.stderr:
-                        log.error(o.stderr)
+                        o = runjob(jobtorun)
+                        if o.stdout:
+                            log.info(o.stdout)
+                        if o.stderr:
+                            log.error(o.stderr)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -180,6 +181,10 @@ if __name__ == '__main__':
         args=parseargs()
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
         log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
+        MIN_PYTHON = (3,7)
+        if sys.version_info < MIN_PYTHON:
+            log.error("This script requires Python version >= 3.7")
+            sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
 
         run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs)
