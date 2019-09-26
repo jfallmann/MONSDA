@@ -28,10 +28,6 @@ SOURCE=sources(config)
 SAMPLES=list(set(samples(config)))
 if os.path.exists(SAMPLES[0]) is False:
     SAMPLES=list(set(sampleslong(config)))
-try:
-    CLIP=config["CLIP"]
-except KeyError:
-    CLIP=''
 
 paired = ''
 if checkpaired(SAMPLES, config):
@@ -39,3 +35,5 @@ if checkpaired(SAMPLES, config):
 
 if paired == 'paired':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
+
+CLIP = checkclip(SAMPLES, config)

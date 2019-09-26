@@ -212,10 +212,10 @@
          "Dm6": {
             "unpaired": {
                 "segemehl": { # See above
-                    "ENV" : "annotatebed",
-                    "BIN" : "annotate", #dummy as annotate.smk has no direct bin but we need the key
+                    "ENV": "annotatebed",
+                    "BIN": "annotate", #dummy as annotate.smk has no direct bin but we need the key
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                    "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' or 'gene'
                     "OPTIONS":
                     [
                         {
@@ -229,10 +229,10 @@
             },
             "paired": {
                 "segemehl": { # See above
-                    "ENV" : "annotatebed",
-                    "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
+                    "ENV": "annotatebed",
+                    "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                    "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' or 'gene'
                     "OPTIONS":
                     [
                         {
@@ -258,10 +258,10 @@
                         {
                         },
                         {
-                          "-n": "DM6 Standard Mapping", #name of the hub
-                          "-s" : "dm6_st", #short name for hub
-                          "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 segemehl" #short name for track
+                          "-n" : "DM6_Standard_Mapping", #name of the hub, replace space with _
+                          "-s" : "dm6_st", #short name for hub, replace space with _
+                          "-l" : "UCSC_DM6_Standard_Mapping", #long name for track, replace space with _
+                          "-b" : "UCSC_dm6_segemehl" #short name for track, replace space with _
                        },
                        ""
                     ]
@@ -277,13 +277,45 @@
                         {
                         },
                         {
-                          "-n": "DM6 Standard Mapping", #name of the hub
-                          "-s" : "dm6_st", #short name for hub
-                          "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 segemehl" #short name for track
+                          "-n" : "DM6_paired_Mapping", #name of the hub, replace space with _
+                          "-s" : "dm6_st", #short name for hub, replace space with _
+                          "-l" : "UCSC_DM6_paired_Mapping", #long name for track, replace space with _
+                          "-b" : "UCSC_dm6_segemehl" #short name for track, replace space with _
                        },
                        ""
                     ]
+                }
+            }
+         }
+     },
+    "PEAKS" : {
+         "Dm6": {
+            "unpaired": {
+                "segemehl": { # See above
+                    "ENV" : "peaks",
+                    "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
+                    "MINPEAKRATIO": "0.6",
+                    "PEAKDISTANCE": "1",
+                    "PEAKWIDTH": "5",
+                    "PEAKCUTOFF": "0.8",
+                    "MINPEAKHEIGHT": "100",
+                    "USRLIMIT": "100",
+                    "CLIP": "iCLIP"
+                }
+            },
+            "paired": {
+                "segemehl": { # See above
+                    "ENV" : "peaks",
+                    "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
+                    "MINPEAKRATIO": "0.6",
+                    "PEAKDISTANCE": "1",
+                    "PEAKWIDTH": "5",
+                    "PEAKCUTOFF": "0.8",
+                    "MINPEAKHEIGHT": "100",
+                    "USRLIMIT": "100",
+                    "CLIP": "iCLIP"
                 }
             }
          }

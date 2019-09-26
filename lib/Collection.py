@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Sep 26 11:09:29 2019 (+0200)
+# Last-Updated: Thu Sep 26 21:55:12 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 767
+#     Update #: 768
 # URL:
 # Doc URL:
 # Keywords:
@@ -648,6 +648,28 @@ def checkpaired(sample,config):
         )
         log.error(''.join(tbe.format()))
 
+def checkclip(sample,config):
+    try:
+        logid = 'checkclip: '
+        ret = list()
+        clip = ''
+        for s in sample:
+            check = os.path.dirname(s).split(os.sep)
+            log.debug(logid+str(check))
+            for r in runstate_from_sample([s],config):
+                tmplist = check
+                tmplist.append(r)
+                if 'CLIP' in getFromDict(config['PEAKS'],tmplist):
+                    clip = getFromDict(config['PEAKS'],tmplist)['CLIP']
+        log.debug(logid+str(clip))
+        return clip
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
 
 def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",

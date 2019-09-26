@@ -73,6 +73,17 @@ rule extendbed:
             bins=BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
+rule rev_extendbed:
+    input:  "PEAKS/{file}_mapped_{type}.bed.gz",
+            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+    output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
+    log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
+    conda:  "snakes/envs/perl.yaml"
+    threads: 1
+    params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+            bins=BINS
+    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input[0]} -o {output[0]} -g {params.gen}"
+
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
@@ -109,9 +120,37 @@ elif all(checklist2) and CLIP != 'iCLIP':
                 absr = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
         shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} {params.absr} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
+elif CLIP = 'iCLIP':
+    rule BedToBedg:
+        input:  bed = "PEAKS/{file}_mapped_extended_{type}.bed.gz",
+                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+        output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
+        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        conda:  "snakes/envs/bedtools.yaml"
+        threads: 1
+        params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
+                bins=BINS,
+                odir=lambda wildcards,output:(os.path.dirname(output[0]))
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -g {input.sizes} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log}"
+
+elif CLIP = 'revCLIP':
+    rule BedToBedg:
+        input:  bed = "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz",
+                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+        output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
+        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        conda:  "snakes/envs/bedtools.yaml"
+        threads: 1
+        params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
+                bins=BINS,
+                odir=lambda wildcards,output:(os.path.dirname(output[0]))
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -g {input.sizes} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log}"
+
 else:
     rule BedToBedg:
-        input:  bed = "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz",
+        input:  bed = "PEAKS/{file}_mapped_{type}.bed.gz",
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
