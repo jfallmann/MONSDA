@@ -1,5 +1,3 @@
-include: "header.smk"
-
 rule all:
     input:  expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
@@ -48,9 +46,9 @@ rule AnnotateBed:
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS,
-            anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation'),
-            annop=config["ANNOTATE"],
-            annof= lambda wildcards: "-s {feat}".format(feat=config["ANNOFEATURE"]) if config["ANNOFEATURE"] is not '' else ''
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOTATION'])),
+            annop = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'ANNOTATE')['OPTIONS'][1].items()),
+            annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOFEATURE']
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule AddSequenceToBed:
@@ -69,9 +67,6 @@ rule MergeAnnoBed:
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-            bins=BINS,
-            anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation')
     shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule themall:

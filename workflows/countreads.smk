@@ -1,7 +1,4 @@
-include: "header.smk"
-
-COUNTENV=config["COUNTENV"]
-COUNTBIN=config["COUNTBIN"]
+COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
@@ -11,7 +8,7 @@ rule all:
             "COUNTS/Features_unique",
             "COUNTS/Summary"
 
-if config['MAPPINGTYPE'] == 'paired':
+if paired == 'paired':
     rule count_fastq:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
@@ -61,22 +58,22 @@ rule featurecount:
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['counting'])),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
-            paired = lambda x: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][1].items()),
+            paired = lambda x: '-p' if paired == 'paired' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts",
-            temp("COUNTS/Featurecounterunique/{file}.anno")
+            temp("COUNTS/Featurecounter/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno = lambda wildcards: "{annotation}".format(annotation=os.path.join(REFERENCE,source_from_sample(wildcards.file).split(os.sep)[0],config["ANNOTATION"][source_from_sample(wildcards.file).split(os.sep)[0]]['counting'])),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")[0].items()),
-            paired = lambda x: '-p' if config['MAPPINGTYPE'] == 'paired' else ''
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][1].items()),
+            paired = lambda x: '-p' if paired == 'paired' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule summarize_counts:

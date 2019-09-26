@@ -1,5 +1,3 @@
-include: "header.smk"
-
 wildcard_constraints:
     type="sorted|unique"
 
@@ -41,7 +39,7 @@ else:
         conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         # Here I use the strand of the first read in pair as the one determining the strand
-        shell:  "bedtools bamtobed -split -i {input[0]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -wlane \'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])\' |gzip > {output[1]} 2>> {log}"
+        shell:  "bedtools bamtobed -split -i {input[0]} |perl -F'\t' -wlane 'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |perl -F'\t' -wlane 'if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
         #        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
@@ -104,8 +102,6 @@ else:
         conda:  "snakes/envs/bedtools.yaml"
         #    conda:  "snakes/envs/perl.yaml"
         threads: 1
-        params: out=lambda wildcards: expand("QC/{source}",source=source_from_sample(wildcards.file)),
-                bins = BINS
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
         #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
         #    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track 2> {log} && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track 2>> {log}"
@@ -134,8 +130,9 @@ rule GenerateTrack:
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
             bins = os.path.abspath(BINS),
-            gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config))
-    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -n AutoHub -s AutoHub -l 'UCSC track AutoGen' -u '' -g {params.gen} -b UCSCHub && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
+            gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
+            options = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'UCSC')['OPTIONS'][1].items())
+    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
 
 rule themall:
     input:  rules.GenerateTrack.output

@@ -17,7 +17,8 @@ log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%
 #log.debug(cmd_subfolder)
 #log.debug(sys.path)
 
-QC=config["QC"]
+if 'QC' in config:
+    QC=config["QC"]
 REFERENCE=config["REFERENCE"]
 GENOME=config["GENOME"]
 NAME=config["NAME"]

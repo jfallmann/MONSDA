@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run !!! consider order of workflows, i.e. QC < TRIMMING < MAPPING !!!
+    "WORKFLOWS": "MAPPING,TRIMMING,QC", \\which workflows do you want to run !!! consider order of workflows, i.e. QC < TRIMMING < MAPPING !!!
     "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
@@ -111,6 +111,7 @@
                          "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                             "ENV": "star", # which conda env to use for mapping
                             "BIN": "STAR", #how the mapper binary is called
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                          [
                              {
@@ -127,6 +128,7 @@
                          "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                             "ENV": "star", # which conda env to use for mapping
                     "BIN": "STAR", #how the mapper binary is called
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                          [
                              {
@@ -148,6 +150,7 @@
                 "star": {# See above
                     "ENV": "countreads", #see QC
                     "BIN": "featurecounts",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
                         {
@@ -155,6 +158,7 @@
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
+                           "-g": "Name",
                            "-p": "",
                            "-O": "",
                            "-M": "",
@@ -169,6 +173,7 @@
                 "star": {# See above
                     "ENV": "countreads", #see QC
                     "BIN": "featurecounts",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
                         {
@@ -176,6 +181,7 @@
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
+                           "-g": "Name",
                            "-p": "",
                            "-O": "",
                            "-M": "",
@@ -196,14 +202,14 @@
                     "ENV" : "annotatebed",
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
                     "MAPPING" : "dm6.gff3.gz",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                    "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
                     "OPTIONS":
                     [
                         {
                         },
                         {
-                            "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                            "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                            "ANNOTATIONFILE": "dm6.gff3.gz"
+                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
                         },
                         ""
                     ]
@@ -213,15 +219,14 @@
                 "star": { # See above
                     "ENV" : "annotatebed",
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING" : "dm6.gff3.gz",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                    "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
                     "OPTIONS":
                     [
                         {
                         },
                         {
-                            "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                            "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                            "ANNOTATIONFILE": "dm6.gff3.gz"
+                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
                         },
                         ""
                     ]
@@ -235,7 +240,7 @@
                 "star": { # See above
                     "ENV" : "ucsc",
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING" : "dm6.gff3.gz",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
                         {
@@ -244,8 +249,7 @@
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 star", #short name for track
-                          "ANNOTATION": "dm6.gff3.gz"
+                          "-b" : "UCSC dm6 star" #short name for track
                        },
                        ""
                     ]
@@ -255,7 +259,7 @@
                 "star": { # See above
                     "ENV" : "ucsc",
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING" : "dm6.gff3.gz",
+                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
                         {
@@ -264,8 +268,7 @@
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 star", #short name for track
-                          "ANNOTATION": "dm6.gff3.gz"
+                          "-b" : "UCSC dm6 star" #short name for track
                        },
                        ""
                     ]
