@@ -119,7 +119,7 @@
                              {
                                  "--outSAMprimaryFlag AllBestScore": ""
                              },
-                             ""
+                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
                      }
                      },
@@ -135,7 +135,7 @@
                              {
                                  "--outSAMprimaryFlag AllBestScore": ""
                              },
-                             ""
+                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
                      }
                  }

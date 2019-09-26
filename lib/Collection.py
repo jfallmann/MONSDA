@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Sep 25 18:23:58 2019 (+0200)
+# Last-Updated: Thu Sep 26 11:09:29 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 746
+#     Update #: 767
 # URL:
 # Doc URL:
 # Keywords:
@@ -417,21 +417,6 @@ def tool_params(sample, runstate, config, subconf):
         )
         log.error(''.join(tbe.format()))
 
-def index_params(indexpath, config, subconf):
-    try:
-        logid='index_params: '
-        s = indexpath.split(os.sep)
-        mp = OrderedDict()
-        mp = subDict(config[subconf],s)
-        log.debug(logid+str([s,mp]))
-        return mp
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
 def env_bin_from_config(samples, config, subconf):
     try:
         s = samples[0].split(os.sep)[:-1]
@@ -557,10 +542,15 @@ def anno_from_file(sample, config, step):
 def anno_from_source(source, config, step):
     try:
         logid = 'anno_from_source: '
-        p = source[0]
+        s = source.split(os.sep)[0:-1]
+        p = s[0]
+        samp = source.split(os.sep)[-1]
+        log.debug(logid+str(s))
+        runstate = runstate_from_sample([samp], config)[0]
         lst = list()
-        lst.append(p)
-        lst.extend(source[1].split(os.sep))
+        lst.extend(s)
+        lst.append(runstate)
+        log.debug(logid+str(lst))
         ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
         log.debug(logid+str(ret))
         return ret

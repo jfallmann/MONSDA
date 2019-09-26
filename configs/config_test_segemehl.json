@@ -82,7 +82,7 @@
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
                         },
-                        ""
+                        "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                     ]
                 }
             },
@@ -99,7 +99,7 @@
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
                         },
-                        ""
+                        "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                     ]
                 }
             }
@@ -126,7 +126,7 @@
                                  "--minfraglen": "20",
                                  "--fullname": ""
                              },
-                             ""
+                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
                      }
                  },
@@ -148,7 +148,7 @@
                                  "--minfraglen": "20",
                                  "--fullname": ""
                              },
-                             ""
+                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
                      }
                  }
