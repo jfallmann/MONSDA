@@ -6,11 +6,13 @@ channels:
   - r
 dependencies:
   - _libgcc_mutex=0.1
+  - libgcc=7.2.0
   - libgcc-ng=9.1.0
   - libstdcxx-ng=9.1.0
   - perl=5.26.2
   - perl-app-cpanminus=1.7044
   - perl-autoloader=5.74
+  - perl-bioperl=1.6.924
   - perl-capture-tiny=0.48
   - perl-carp=1.38
   - perl-constant=1.33
@@ -46,14 +48,17 @@ dependencies:
   - perl-pod-simple=3.35
   - perl-pod-usage=1.69
   - perl-posix=1.38_03
-  - perl-set-intervaltree=0.11
+  - perl-set-intervaltree=0.12
   - perl-socket=2.027
   - perl-symbol=1.07
   - perl-test=1.26
   - perl-test-harness=3.42
+  - perl-threaded=5.26.0
   - perl-tie-hash=1.05
   - perl-tie-hash-indexed=0.05
   - perl-time-hires=1.9760
   - perl-version=0.9924
   - perl-xsloader=0.24
+  - perl-yaml=1.29
   - zlib=1.2.11
+

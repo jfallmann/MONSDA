@@ -1,4 +1,5 @@
 import glob, os, sys, inspect, snakemake, json, shutil
+import traceback as tb
 from collections import defaultdict
 from snakemake.utils import validate, min_version
 #min_version("5.6.0") #need to add back later
@@ -18,8 +19,6 @@ log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%
 #log.debug(cmd_subfolder)
 #log.debug(sys.path)
 
-if 'QC' in config:
-    QC=config["QC"]
 REFERENCE=config["REFERENCE"]
 GENOME=config["GENOME"]
 NAME=config["NAME"]
@@ -37,4 +36,25 @@ if checkpaired(SAMPLES, config):
 if paired == 'paired':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
 
-CLIP = checkclip(SAMPLES, config)
+if 'QC' in config:
+    QC=config["QC"]
+
+if 'PEAKS' in config:
+    CLIP = checkclip(SAMPLES, config)
+    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
+    try:
+        all([x in peakconf for x in ['ANNOTATION', 'MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', ['MINPEAKHEIGHT', 'USRLIMIT']]])
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error('Not all required options defined in config!\n'+''.join(tbe.format()))
+
+    ANNOTATION = peakconf['ANNOTATION']
+    MINPEAKRATIO = peakconf['MINPEAKRATIO']
+    PEAKDISTANCE = peakconf['PEAKDISTANCE']
+    PEAKWIDTH = peakconf['PEAKWIDTH']
+    PEAKCUTOFF = peakconf['PEAKCUTOFF']
+    MINPEAKHEIGHT = peakconf['MINPEAKHEIGHT']
+    USRLIMIT = peakconf['USRLIMIT']

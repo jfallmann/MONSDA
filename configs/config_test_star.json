@@ -282,28 +282,38 @@
                 "star": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "MINPEAKRATIO": "0.6",
-                    "PEAKDISTANCE": "1",
-                    "PEAKWIDTH": "5",
-                    "PEAKCUTOFF": "0.8",
-                    "MINPEAKHEIGHT": "100",
-                    "USRLIMIT": "100",
-                    "CLIP": "iCLIP"
+                    "OPTIONS":
+                    [
+                      {
+                        "ANNOTATION": "dm6.gff3.gz",
+                        "MINPEAKRATIO": "0.6",
+                        "PEAKDISTANCE": "1",
+                        "PEAKWIDTH": "5",
+                        "PEAKCUTOFF": "0.8",
+                        "MINPEAKHEIGHT": "3",
+                        "USRLIMIT": "3",
+                        "CLIP": "iCLIP"
+                      }
+                   ]
                 }
             },
             "paired": {
                 "star": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "MINPEAKRATIO": "0.6",
-                    "PEAKDISTANCE": "1",
-                    "PEAKWIDTH": "5",
-                    "PEAKCUTOFF": "0.8",
-                    "MINPEAKHEIGHT": "100",
-                    "USRLIMIT": "100",
-                    "CLIP": "iCLIP"
+                    "OPTIONS":
+                    [
+                      {
+                        "ANNOTATION": "dm6.gff3.gz",
+                        "MINPEAKRATIO": "0.6",
+                        "PEAKDISTANCE": "1",
+                        "PEAKWIDTH": "5",
+                        "PEAKCUTOFF": "0.8",
+                        "MINPEAKHEIGHT": "3",
+                        "USRLIMIT": "3",
+                        "CLIP": "iCLIP"
+                      }
+                   ]
                 }
             }
          }
