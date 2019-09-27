@@ -51,15 +51,36 @@ rule AnnotateBed:
             annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOFEATURE']
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
+rule UnzipGenome:
+    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
+    output: fa = expand("{ref}/{{org}}/{{gen}}{{name}}_fastafrombed.fa",ref=REFERENCE)
+    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
+    conda:  "snakes/envs/samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+
 rule AddSequenceToBed:
-    input:  rules.AnnotateBed.output
-    output: "BED/{file}_anno_seq_{type}.bed.gz",
-            temp("BED/{file}_anno_seq_{type}.tmp")
-    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
+    input:  bd = rules.AnnotateBed.output,
+            fa = lambda wildcards: "{ref}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+    output: bed = "BED/{file}_anno_seq_{type}.bed.gz",
+            bt = temp("BED/{file}_bed_chr_{type}.tmp"),
+            bs = temp("BED/{file}_bed_seq_{type}.tmp")
+    log:    "LOGS/BED/seq2bed{type}_{file}.log"
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
-    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-    shell:  "export LC_ALL=C; fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
+    params: bins=BINS
+    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && fastaFromBed -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+
+#rule AddSequenceToBed:
+#    input:  rules.AnnotateBed.output
+#    output: "BED/{file}_anno_seq_{type}.bed.gz",
+#            temp("BED/{file}_anno_seq_{type}.tmp")
+#    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
+#    conda:  "snakes/envs/bedtools.yaml"
+#    threads: 1
+#    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+#    shell:  "export LC_ALL=C; if [ ! -f \"{params.fasta}\" ] && [ -f \"{params.fasta}.gz\" ];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output

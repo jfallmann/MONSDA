@@ -21,9 +21,10 @@ scriptname=os.path.basename(__file__)
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
-    parser.add_argument("-g", "--debug-dag", action="store_false", help='Should the debug-dag be printed')
+    parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
     parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
+    parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
     parser.add_argument("-v", "--loglevel", type=str, default='WARNING', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -33,7 +34,7 @@ def parseargs():
 
     return parser.parse_args()
 
-def run_snakemake (configfile, debugdag, workdir, useconda, procs):
+def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
     try:
         config = load_configfile(configfile)
         if useconda:
@@ -44,6 +45,16 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs):
             debugdag = "--debug-dag"
         else:
             debugdag = ''
+
+        if unlock:
+            log.info(logid+'Unlocking directory')
+            jobtorun = 'snakemake --unlock -s {s} --configfile {c}'.format(s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
+            log.info(logid+'RUNNING '+str(jobtorun))
+            o = runjob(jobtorun)
+            if o.stdout:
+                log.info(o.stdout)
+            if o.stderr:
+                log.error(o.stderr)
 
         subworkflows = config['WORKFLOWS'].split(',')
         postprocess = config['POSTPROCESSING'].split(',')  # we keep this separate because not all postprocessing steps need extra configuration
@@ -194,7 +205,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
 
-        run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs)
+        run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs, args.unlock)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

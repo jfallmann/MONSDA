@@ -184,7 +184,8 @@
                     "PEAKWIDTH": "5",
                     "PEAKCUTOFF": "0.8",
                     "MINPEAKHEIGHT": "100",
-                    "USRLIMIT": "100"
+                    "USRLIMIT": "100",
+                    "CLIP": "iCLIP"
                 }
             },
          }

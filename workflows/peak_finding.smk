@@ -214,7 +214,7 @@ rule AddSequenceToPeak:
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F)' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) -|gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5x])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
