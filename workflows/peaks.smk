@@ -4,7 +4,7 @@ wildcard_constraints:
     type="sorted|unique"
 
 rule all:
-    input:  expand("DONE/{file}_peaks_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+    input:  expand("DONE/PEAKS/{file}_peaks_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -92,7 +92,7 @@ for file in samplecond(SAMPLES,config):
             checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
             checklist2.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
 
-if all(checklist) and CLIP != 'iCLIP':
+if all(checklist) and CLIP not in ['iCLIP', 'revCLIP']:
     rule BedToBedg:
         input:  expand("UCSC/{{file}}_mapped_{{type}}.{orient}.bedg.gz",orient=['fw','rw']),
                 lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
@@ -106,7 +106,7 @@ if all(checklist) and CLIP != 'iCLIP':
                 absr = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
         shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} {params.absr} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
-elif all(checklist2) and CLIP != 'iCLIP':
+elif all(checklist2) and CLIP not in ['iCLIP', 'revCLIP']:
     rule BedToBedg:
         input:  expand("BED/{{file}}_mapped_{{type}}.{orient}.bedg.gz",orient=['fw','rw']),
                 lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
@@ -120,7 +120,7 @@ elif all(checklist2) and CLIP != 'iCLIP':
                 absr = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
         shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} {params.absr} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
-elif CLIP = 'iCLIP':
+elif CLIP == 'iCLIP':
     rule BedToBedg:
         input:  bed = "PEAKS/{file}_mapped_extended_{type}.bed.gz",
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
@@ -134,7 +134,7 @@ elif CLIP = 'iCLIP':
                 odir=lambda wildcards,output:(os.path.dirname(output[0]))
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -g {input.sizes} | sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log}"
 
-elif CLIP = 'revCLIP':
+elif CLIP == 'revCLIP':
     rule BedToBedg:
         input:  bed = "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz",
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
@@ -289,7 +289,7 @@ rule themall:
             "PEAKS/{file}_peak_{type}.bed.gz",
             "PEAKS/{file}_prepeak_{type}.bed.gz",
             "PEAKS/{file}_peak_seq_{type}.bed.gz"
-    output: "DONE/{file}_peaks_{type}"
+    output: "DONE/PEAKS/{file}_peaks_{type}"
     run:
         for f in output:
             with open(f, "w") as out:
