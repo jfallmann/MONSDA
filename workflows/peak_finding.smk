@@ -69,7 +69,7 @@ rule extendbed:
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "../envs/perl.yaml"
     threads: 1
-    params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+    params: gen = lambda wildcards: "{ref}/{dir}/{gen}{name}.chrom.sizes".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config)),
             bins=BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
 
@@ -84,7 +84,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist) and CLIP != 'iCLIP':
     rule BedToBedg:
         input:  expand("UCSC/{{file}}_mapped_{{type}}.{orient}.bedg.gz",orient=['fw','rw']),
-                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                fai = lambda wildcards: "{ref}/{dir}/{gen}{name}.fa.fai".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: fwd = "PEAKS/{file}_mapped_{type}.fw.bedg.gz",
                 rev = "PEAKS/{file}_mapped_{type}.re.bedg.gz",
                 concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
@@ -98,7 +98,7 @@ if all(checklist) and CLIP != 'iCLIP':
 elif all(checklist2) and CLIP != 'iCLIP':
     rule BedToBedg:
         input:  expand("BED/{{file}}_mapped_{{type}}.{orient}.bedg.gz",orient=['fw','rw']),
-                lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                fai = lambda wildcards: "{ref}/{dir}/{gen}{name}.fa.fai".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: fwd = "PEAKS/{file}_mapped_{type}.fw.bedg.gz",
                 rev = "PEAKS/{file}_mapped_{type}.re.bedg.gz",
                 concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
@@ -112,8 +112,8 @@ elif all(checklist2) and CLIP != 'iCLIP':
 else:
     rule BedToBedg:
         input:  bed = "PEAKS/{file}_mapped_extended_{type}.bed.gz" if CLIP == 'iCLIP' else "PEAKS/{file}_mapped_{type}.bed.gz",
-                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                fai = lambda wildcards: "{ref}/{dir}/{gen}{name}.fa.fai".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config)),
+                sizes = lambda wildcards: "{ref}/{dir}/{gen}{name}.chrom.sizes".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
         conda:  "../envs/bedtools.yaml"
@@ -167,7 +167,7 @@ rule UnzipGenome:
 
 rule AddSequenceToPeak:
     input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
-            fa = lambda wildcards: "{ref}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+            fa = lambda wildcards: "{ref}/{dir}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{file}_peak_seq_{type}.tmp")
@@ -199,7 +199,7 @@ rule PeakToBedg:
     threads: 1
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
-            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
+
     shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
@@ -220,7 +220,7 @@ rule PeakToUCSC:
             temp("UCSC/{file}_{type}re_tmp")
     conda:  "../envs/ucsc.yaml"
     threads: 1
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
+    params: sizes = lambda wildcards: "{ref}/{dir}/{gen}{name}.chrom.sizes".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
     shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]}"
 
 #rule QuantPeakToUCSC:
