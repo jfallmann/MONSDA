@@ -199,7 +199,7 @@ rule PeakToBedg:
     threads: 1
     params: out=expand("UCSC/{source}",source=SOURCE),
             bins=BINS,
-
+            sizes = lambda wildcards: "{ref}/{dir}/{gen}{name}.chrom.sizes".format(ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
     shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
