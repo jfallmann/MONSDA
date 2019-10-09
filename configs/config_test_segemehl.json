@@ -294,10 +294,12 @@
                 "segemehl": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
                     "OPTIONS":
                     [
+                        {
+                        },
                       {
-                        "ANNOTATION": "dm6.gff3.gz",
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",
                         "PEAKWIDTH": "5",
@@ -313,10 +315,12 @@
                 "segemehl": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
                     "OPTIONS":
                     [
+                        {
+                        },
                       {
-                        "ANNOTATION": "dm6.gff3.gz",
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",
                         "PEAKWIDTH": "5",

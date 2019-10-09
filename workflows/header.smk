@@ -41,9 +41,9 @@ if 'QC' in config:
 
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
-    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
+    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][1]
     try:
-        all([x in peakconf for x in ['ANNOTATION', 'MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', ['MINPEAKHEIGHT', 'USRLIMIT']]])
+        all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', ['MINPEAKHEIGHT', 'USRLIMIT']]])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -51,7 +51,6 @@ if 'PEAKS' in config:
         )
         log.error('Not all required options defined in config!\n'+''.join(tbe.format()))
 
-    ANNOTATION = peakconf['ANNOTATION']
     MINPEAKRATIO = peakconf['MINPEAKRATIO']
     PEAKDISTANCE = peakconf['PEAKDISTANCE']
     PEAKWIDTH = peakconf['PEAKWIDTH']

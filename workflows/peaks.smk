@@ -219,11 +219,11 @@ rule AddSequenceToPeak:
 rule AnnotatePeak:
     input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
     output: "PEAKS/{file}_peak_anno_{type}.bed.gz"
-    log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
+    log:    "LOGS/Peaks/annotatepeaks{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS,
-            anno=lambda wildcards: anno_from_file(wildcards.file, config, 'annotation')
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'PEAKS')['ANNOTATION']])
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
 rule PeakToBedg:
@@ -257,10 +257,11 @@ rule PeakToUCSC:
             "UCSC/{file}_peak_{type}.re.bw",
             temp("UCSC/{file}_{type}fw_tmp"),
             temp("UCSC/{file}_{type}re_tmp")
+    log:    "LOGS/Peaks/peak2ucsc{file}_{type}.log"
     conda:  "snakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "zcat {input[0]} > {output[2]} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} && zcat {input[1]} > {output[3]} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]}"
+    shell:  "zcat {input[0]} > {output[2]} 2>> {log} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2>> {log} && zcat {input[1]} > {output[3]} 2>> {log} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]} 2>> {log}"
 
 #rule QuantPeakToUCSC:
 #   input:  "UCSC/{source}/Peak_{file}.fw.bedg.gz",
