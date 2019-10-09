@@ -105,6 +105,7 @@
             }
         }
     },
+#MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "unpaired": {
@@ -115,9 +116,9 @@
                     "OPTIONS":
                          [
                              {
-                                 "--genomeSAindexNbases": "13"
+                                 "--genomeSAindexNbases": "13" #indexing options
                              },
-                             {
+                             {#mapping options
                                  "--outSAMprimaryFlag AllBestScore": ""
                              },
                              "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
@@ -201,7 +202,6 @@
                 "star": { # See above
                     "ENV": "annotatebed",
                     "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING": "dm6.gff3.gz",
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
                     "OPTIONS":
@@ -234,6 +234,7 @@
             }
          }
      },
+#UCSC track generation options
     "UCSC" : {
          "Dm6": {
             "unpaired": {
@@ -275,17 +276,18 @@
                 }
             }
          }
-     }
+     },
+#Peak finding options
     "PEAKS" : {
          "Dm6": {
             "unpaired": {
                 "star": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
                     "OPTIONS":
                     [
                       {
-                        "ANNOTATION": "dm6.gff3.gz",
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",
                         "PEAKWIDTH": "5",
@@ -301,10 +303,10 @@
                 "star": { # See above
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff3.gz",
                     "OPTIONS":
                     [
                       {
-                        "ANNOTATION": "dm6.gff3.gz",
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",
                         "PEAKWIDTH": "5",

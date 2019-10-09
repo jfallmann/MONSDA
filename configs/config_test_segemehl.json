@@ -105,7 +105,7 @@
             }
         }
     },
-    #Mapping software options
+#Mapping software options
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "unpaired": {
@@ -115,8 +115,8 @@
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                          [
-                             {},
-                             {
+                             {}, #indexing options
+                             {#mapping options
                                  "--MEOP": "",
                                  "--splits": "",
                                  "--accuracy": "95",
@@ -246,6 +246,7 @@
             }
          }
      },
+#UCSC track generation options
     "UCSC" : {
          "Dm6": {
             "unpaired": {
@@ -288,6 +289,7 @@
             }
          }
      },
+#Peak finding options
     "PEAKS" : {
          "Dm6": {
             "unpaired": {
