@@ -55,6 +55,8 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                 log.info(o.stdout)
             if o.stderr:
                 log.error(o.stderr)
+                if any(x in o.stderr for x in ['ERROR','Error','error']):
+                    sys.exit(o.stderr)
 
         subworkflows = config['WORKFLOWS'].split(',')
         postprocess = config['POSTPROCESSING'].split(',')  # we keep this separate because not all postprocessing steps need extra configuration
@@ -142,7 +144,8 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                 log.info(o.stdout)
             if o.stderr:
                 log.error(o.stderr)
-
+                if any(x in o.stderr for x in ['ERROR','Error','error']):
+                    sys.exit(o.stderr)
         log.info(logid+'Starting runs for postprocessing')
 
         for condition in conditions:
@@ -179,6 +182,8 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                         log.info(o.stdout)
                     if o.stderr:
                         log.error(o.stderr)
+                        if any(x in o.stderr for x in ['ERROR','Error','error']):
+                            sys.exit(o.stderr)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
