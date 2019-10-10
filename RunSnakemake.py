@@ -8,7 +8,7 @@ from snakemake import load_configfile
 from snakemake.utils import validate, min_version
 import argparse
 import subprocess
-#min_version("5.6.0") #Not working with beta version, need to wait for new release
+min_version("5.7.0")
 
 #cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 #if cmd_subfolder not in sys.path:
@@ -26,7 +26,7 @@ def parseargs():
     parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
-    parser.add_argument("-v", "--loglevel", type=str, default='WARNING', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
+    parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
         parser.print_help(sys.stderr)
@@ -184,6 +184,8 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                         log.error(o.stderr)
                         if any(x in o.stderr for x in ['ERROR','Error','error']):
                             sys.exit(o.stderr)
+
+        log.info('Workflows executed without error!')
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
