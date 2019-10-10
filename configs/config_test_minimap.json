@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run !!! consider order of workflows, i.e. QC < TRIMMING < MAPPING !!!
+    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run, consider order of workflows, i.e. QC \< TRIMMING \< MAPPING
     "POSTPROCESSING" : "COUNTING,UCSC,PEAK,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
@@ -10,8 +10,8 @@
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "Dm6": {#first key should be same than for GENOME
                       "unpaired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                     "minimap": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
-                                   }
+                                    "minimap": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                  }
                      }
             },
     "SOURCE": {  #which organisms are to be parsed for which samples
@@ -24,15 +24,15 @@
     "SAMPLES": {  #which samples to analyze
                   "Dm6": { #key for source and genome
                            "unpaired": {      # sample id
-                                               "minimap": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
-                                        }
+                                              "minimap": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                                       }
                          }
                },
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "unpaired": {      # sample id
-                                     "minimap": "single" # setup and sequencing type, either paired or single
-                              }
+                                    "minimap": "single" # setup and sequencing type, either paired or single
+                             }
                }
     },
 #QC options
@@ -40,159 +40,161 @@
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
                  "unpaired": {      # sample id
-                                     "minimap": {
-                                         "ENV" : "fastqc",  # name of conda env for QC
-                                         "BIN" : "fastqc" # binary for trimming
-                                     }
-                              }
+                                    "minimap": {
+                                        "ENV" : "fastqc",  # name of conda env for QC
+                                        "BIN" : "fastqc" # binary for trimming
+                                    }
+                             }
                }
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-                  "RUN": ON", # set to 'OFF' if no trimming wanted
-        "Dm6": {
-            "unpaired": {
-                "minimap": { # See above
-                    "ENV": "trimgalore", # name of conda env for trimming
-                    "BIN": "trim_galore", # name of binary for trimming
-                    "OPTIONS":
-                    [
-                        {
-                        },
-                        {  # trimming options here, --paired is not required, will be resolved by rules
-                            "-q": "15",
-                            "--length": "8", #READ_MINLEN discard reads shorter than that
-                            "-e": "0.15"
-                        },
-                        ""
-                    ]
-                }
-            }
-        }
-    },
-    #Mapping software options
-    "MAPPING": { #options for mapping for each sample/condition
-        "Dm6": {
-            "unpaired": {
-                "minimap": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                    "ENV": "minimap", # which conda env to use for mapping
-                    "BIN": "minimap2", #how the mapper binary is called
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "OPTIONS":
-                    [
-                        {
-                            "-k": "7"#option for setting kmer size while indexing
-                        },
-                        {
-                            "-ax": "map-ont",
-                            "-ub": "",
-                            "-Y": "",
-                            "-L": "",
-                           "--MD": "",
-                           "-d": ""
-                        },
-                        "k7"
-                    ]
-                }
-            }
-        }
-    },
-    #Count options
-    "COUNTING": { #options for trimming for each sample/condition
-         "Dm6": {
-            "unpaired": {
-                "minimap": {# See above
-                    "ENV": "countreads", #see QC
-                    "BIN": "featurecounts",
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "OPTIONS":
-                    [
-                        {
-                        },
-                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                           "-f": "",
-                           "--fraction": "",
-                           "-g": "Name",
-                           "-p": "",
-                           "-O": "",
-                           "-M": "",
-                           "-T": "5",
-                           "-t": "exon"
-                        },
-                        ""
-                    ]
-               }
-           }
-       }
-    },
-    #Annotation options
-    "ANNOTATE" : {
-         "Dm6": {
-            "unpaired": {
-                "minimap": { # See above
-                    "ENV" : "annotatebed",
-                    "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING" : "dm6.gff3.gz",
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "ANNOFEATURE" : "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                    "OPTIONS":
-                    [
-                        {
-                        },
-                        {
-                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                      },
-                        ""
-                    ]
-                }
-            }
-         }
-     },
-    "UCSC" : {
-         "Dm6": {
-            "unpaired": {
-                "minimap": { # See above
-                    "ENV" : "ucsc",
-                    "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "MAPPING" : "dm6.gff3.gz",
-                    "ANNOTATION": "dm6.gff3.gz"
-                    "OPTIONS":
-                    [
-                        {
-                        },
-                        {
-                          "-n": "DM6_Standard_Mapping", #name of the hub, replace space with _
-                          "-s" : "dm6_st", #short name for hub, replace space with _
-                          "-l" : "UCSC_DM6_Standard_Mapping", #long name for track, replace space with _
-                          "-b" : "UCSC_dm6_minimap" #short name for track, replace space with _
-                       },
-                       ""
-                    ]
-                }
-            }
-         }
-     }
-    "PEAKS" : {
-         "Dm6": {
-            "unpaired": {
-                "minimap": { # See above
-                    "ENV" : "peaks",
-                    "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
-                    "OPTIONS":
-                    [
-                      {
-                        "ANNOTATION": "dm6.gff3.gz",
-                        "MINPEAKRATIO": "0.6",
-                        "PEAKDISTANCE": "1",
-                        "PEAKWIDTH": "5",
-                        "PEAKCUTOFF": "0.8",
-                        "MINPEAKHEIGHT": "3",
-                        "USRLIMIT": "3",
-                        "CLIP": "iCLIP"
+                  "RUN": "ON", # set to 'OFF' if no trimming wanted
+                  "Dm6": {
+                      "unpaired": {
+                          "minimap": { # See above
+                                       "ENV": "trimgalore", # name of conda env for trimming
+                                       "BIN": "trim_galore", # name of binary for trimming
+                                       "OPTIONS":
+                                       [
+                                           {
+                                           },
+                                           {  # trimming options here, --paired is not required, will be resolved by rules
+                                              "-q": "15",
+                                              "--length": "8", #READ_MINLEN discard reads shorter than that
+                                              "-e": "0.15"
+                                           },
+                                           ""
+                                       ]
+                                     }
                       }
-                   ]
-                }
+                  }
+                },
+#Mapping software options
+    "MAPPING": { #options for mapping for each sample/condition
+                 "Dm6": {
+                     "unpaired": {
+                         "minimap": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                     "ENV": "minimap", # which conda env to use for mapping
+                                     "BIN": "minimap2", #how the mapper binary is called
+                                     "ANNOTATION": "dm6.gff3.gz",
+                                     "OPTIONS":
+                                     [
+                                         {
+                                             "-k": "7"#option for setting kmer size while indexing
+                                         },
+                                         {
+                                             "-ax": "map-ont",
+                                             "-ub": "",
+                                             "-Y": "",
+                                             "-L": "",
+                                             "--MD": "",
+                                             "-d": ""
+                                         },
+                                         "k7"
+                                     ]
+                                    }
+                     }
+                 }
+               },
+#Count options
+    "COUNTING": { #options for trimming for each sample/condition
+                  "Dm6": {
+                      "unpaired": {
+                          "minimap": {# See above
+                                      "ENV": "countreads", #see QC
+                                      "BIN": "featurecounts",
+                                      "ANNOTATION": "dm6.gff3.gz",
+                                      "OPTIONS":
+                                      [
+                                          {
+                                          },
+                                          {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                             "-f": "",
+                                             "--fraction": "",
+                                             "-g": "Name",
+                                             "-p": "",
+                                             "-O": "",
+                                             "-M": "",
+                                             "-T": "5",
+                                             "-t": "exon"
+                                          },
+                                          ""
+                                      ]
+                                     }
+                      }
+                  }
+                },
+#Annotation options
+    "ANNOTATE" : {
+        "Dm6": {
+            "unpaired": {
+                "minimap": { # See above
+                             "ENV" : "annotatebed",
+                             "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
+                             "ANNOTATION": "dm6.gff3.gz",
+                             "ANNOFEATURE" : "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
+                             "OPTIONS":
+                             [
+                                 {
+                                 },
+                                 {
+                                     "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                                 },
+                                 ""
+                             ]
+                           }
+            }
+        }
+    },
+    #Track building options
+    "UCSC" : {
+        "Dm6": {
+            "unpaired": {
+                "minimap": { # See above
+                             "ENV" : "ucsc",
+                             "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                             "ANNOTATION": "dm6.gff3.gz",
+                             "OPTIONS":
+                             [
+                                 {
+                                 },
+                                 {
+                                     "-n": "DM6_Standard_Mapping", #name of the hub, replace space with _
+                                     "-s" : "dm6_st", #short name for hub, replace space with _
+                                     "-l" : "UCSC_DM6_Standard_Mapping", #long name for track, replace space with _
+                                     "-b" : "UCSC_dm6_minimap" #short name for track, replace space with _
+                                 },
+                                 ""
+                             ]
+                           }
+            }
+        }
+    },
+    "PEAKS" : {
+        "Dm6": {
+            "unpaired": {
+                "minimap": { # See above
+                             "ENV" : "peaks",
+                             "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                             "ANNOTATION": "dm6.gff3.gz",
+                             "OPTIONS":
+                             [
+                                 {
+                                 },
+                                 {
+                                     "ANNOTATION": "dm6.gff3.gz",
+                                     "MINPEAKRATIO": "0.6",
+                                     "PEAKDISTANCE": "1",
+                                     "PEAKWIDTH": "5",
+                                     "PEAKCUTOFF": "0.8",
+                                     "MINPEAKHEIGHT": "3",
+                                     "USRLIMIT": "3",
+                                     "CLIP": "iCLIP"
+                                 }
+                             ]
+                           }
             },
-         }
-     }
+        }
+    }
 }

@@ -13,7 +13,7 @@
                                     "segemehl": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
                                   },
                       "paired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                          "segemehl": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                  "segemehl": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
                                 }
                      }
             },
@@ -22,7 +22,7 @@
                           "unpaired": {
                               "segemehl": "Dm6"
                           },
-                           "paired": {
+                          "paired": {
                               "segemehl": "Dm6"
                           }
                         }
@@ -30,21 +30,21 @@
     "SAMPLES": {  #which samples to analyze
                   "Dm6": { #key for source and genome
                            "unpaired": {      # sample id
-                                               "segemehl": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                                              "segemehl": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
                                        },
                            "paired": {      # sample id
-                                               "segemehl": ["GSM461177_untreat_paired_subset"] # setup and list of samples you whish to analyze
-                                       },
+                                            "segemehl": ["GSM461177_untreat_paired_subset"] # setup and list of samples you whish to analyze
+                                     },
                          }
                },
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "unpaired": {      # sample id
-                                     "segemehl": "single" # setup and sequencing type, either paired or single
+                                    "segemehl": "single" # setup and sequencing type, either paired or single
                              },
                  "paired": {      # sample id
-                                    "segemehl": "paired" # setup and sequencing type, either paired or single
-                             }
+                                  "segemehl": "paired" # setup and sequencing type, either paired or single
+                           }
                }
     },
 #QC options
@@ -52,17 +52,17 @@
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
                  "unpaired": {      # sample id
-                                     "segemehl": {
-                                         "ENV" : "fastqc",  # name of conda env for QC
-                                         "BIN" : "fastqc" # binary for trimming
-                                     }
+                                    "segemehl": {
+                                        "ENV" : "fastqc",  # name of conda env for QC
+                                        "BIN" : "fastqc" # binary for trimming
+                                    }
                              },
                  "paired": {      # sample id
-                                     "segemehl": {
-                                         "ENV" : "fastqc",  # name of conda env for QC
-                                         "BIN" : "fastqc" # binary for trimming
-                                     }
-                                   }
+                                  "segemehl": {
+                                      "ENV" : "fastqc",  # name of conda env for QC
+                                      "BIN" : "fastqc" # binary for trimming
+                                  }
+                           }
                }
     },
 #Trimming options
@@ -171,7 +171,7 @@
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
-                           "-g": "Name",
+                           "-g": "Parent",
                            "-p": "",
                            "-O": "",
                            "-M": "",
@@ -194,7 +194,7 @@
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
-                           "-g": "Name",
+                           "-g": "Parent",
                            "-p": "",
                            "-O": "",
                            "-M": "",

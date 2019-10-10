@@ -7,7 +7,7 @@ rule generate_index:
     conda:  "snakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer=MAPPERBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in index_params(str.join(os.sep,[wildcards.dir,wildcards.src]), config, 'MAPPING')['OPTIONS'][0].items())
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
     shell: "{params.indexer} {params.ipara} -t {threads} -d {output.idx} {input.fa} 2> {log}"
 
 rule mapping:
