@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Sep 27 13:41:33 2019 (+0200)
+# Last-Updated: Mon Oct 14 16:54:53 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 770
+#     Update #: 771
 # URL:
 # Doc URL:
 # Keywords:
@@ -593,7 +593,7 @@ def samplecond(sample,config):
                 if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
                     paired = True
                 if paired:
-                    s=re.sub(r'_[1|2]','',s)
+                    s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
         log.debug(logid+str([sample,ret]))
         return ret

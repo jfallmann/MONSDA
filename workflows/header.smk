@@ -2,7 +2,7 @@ import glob, os, sys, inspect, snakemake, json, shutil
 import traceback as tb
 from collections import defaultdict
 from snakemake.utils import validate, min_version
-#min_version("5.6.0") #need to add back later
+min_version("5.7.0") #need to add back later
 
 ###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
 ###--configfile Workflow/config_compare.json --directory ${PWD}
