@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run, consider order of workflows, i.e. QC \< TRIMMING \< MAPPING
+    "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run
     "POSTPROCESSING" : "COUNTING,UCSC,PEAK,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path

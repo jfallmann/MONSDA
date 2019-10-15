@@ -123,8 +123,6 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
                             smkout.write('\n\n')
-                listoftools, listofconfigs = create_subworkflow(config, "ANNOTATE", [condition])
-                subconf.update(listofconfigs[i])
 
                 smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
                 with open('_'.join(['_'.join(condition),'subsnake.smk']), 'a') as smkout:
