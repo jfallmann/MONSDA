@@ -9,7 +9,7 @@ from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
-min_version("5.7.0")
+min_version("5.7.1")
 
 #cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 #if cmd_subfolder not in sys.path:
@@ -23,6 +23,7 @@ def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
     parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
+    parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
     parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
@@ -35,7 +36,7 @@ def parseargs():
 
     return parser.parse_args()
 
-def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock):
     try:
         subdir = 'SubSnakes'
         makeoutdir(subdir)
@@ -49,6 +50,10 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
             debugdag = "--debug-dag"
         else:
             debugdag = ''
+        if filegraph:
+            filegraph = "--filegraph|dot|display"
+        else:
+            filegraph = ''
 
         if unlock:
             log.info(logid+'Unlocking directory')
@@ -144,7 +149,7 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
 
         for condition in conditions:
             log.info(logid+'Starting runs for condition '+str(condition))
-            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,g=debugdag)
+            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
             log.info(logid+'RUNNING '+str(jobtorun))
             o = runjob(jobtorun)
             if o.stdout:
@@ -157,6 +162,10 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                 if any(x in o.stderr for x in ['ERROR','Error','error']):
                     sys.exit(o.stderr)
         log.info(logid+'Starting runs for postprocessing')
+
+        if 'PEAKS' in config:
+            CLIP = checkclip(SAMPLES, config)
+            log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
         for condition in conditions:
             subconf = NestedDefaultDict()
@@ -185,7 +194,7 @@ def run_snakemake (configfile, debugdag, workdir, useconda, procs, unlock):
                     with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
                         json.dump(subconf, confout)
 
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds {g}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,g=debugdag)
+                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
                     log.info(logid+'RUNNING '+str(jobtorun))
                     o = runjob(jobtorun)
                     if o.stdout:
@@ -226,7 +235,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
 
-        run_snakemake(args.configfile, args.debug_dag, args.directory, args.use_conda, args.procs, args.unlock)
+        run_snakemake(args.configfile, args.debug_dag, args.filegraph, args.directory, args.use_conda, args.procs, args.unlock)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

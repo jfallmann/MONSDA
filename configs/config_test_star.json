@@ -285,6 +285,7 @@
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
                     "ANNOTATION": "dm6.gff3.gz",
+                    "CLIP": "iCLIP",
                     "OPTIONS":
                     [
                       {
@@ -295,8 +296,7 @@
                         "PEAKWIDTH": "5",
                         "PEAKCUTOFF": "0.8",
                         "MINPEAKHEIGHT": "3",
-                        "USRLIMIT": "3",
-                        "CLIP": "iCLIP"
+                        "USRLIMIT": "3"
                       }
                    ]
                 }
@@ -306,6 +306,7 @@
                     "ENV" : "peaks",
                     "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
                     "ANNOTATION": "dm6.gff3.gz",
+                    "CLIP": "revCLIP",
                     "OPTIONS":
                     [
                       {
@@ -316,8 +317,7 @@
                         "PEAKWIDTH": "5",
                         "PEAKCUTOFF": "0.8",
                         "MINPEAKHEIGHT": "3",
-                        "USRLIMIT": "3",
-                        "CLIP": "iCLIP"
+                        "USRLIMIT": "3"
                       }
                    ]
                 }
