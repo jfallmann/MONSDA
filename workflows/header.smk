@@ -42,8 +42,12 @@ if 'QC' in config:
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
     peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][1]
+    if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
+        ANNOPEAK = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
+    else:
+        ANNOPEAK = None
     try:
-        all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', ['MINPEAKHEIGHT', 'USRLIMIT']]])
+        all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

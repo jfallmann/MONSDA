@@ -73,7 +73,7 @@ rule extendbed:
 
 rule rev_extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
-            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
@@ -216,30 +216,46 @@ rule AddSequenceToPeak:
     params: bins=BINS
     shell:  "export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
-rule AnnotatePeak:
-    input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
-    output: "PEAKS/{file}_peak_anno_{type}.bed.gz"
-    log:    "LOGS/Peaks/annotatepeaks{type}_{file}.log"
-    conda:  "snakes/envs/perl.yaml"
-    threads: 1
-    params: bins=BINS,
-            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'PEAKS')['ANNOTATION']])
-    shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
+if ANNOPEAK is not None:
+    rule AnnotatePeak:
+        input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
+        output: "PEAKS/{file}_peak_anno_{type}.bed.gz"
+        log:    "LOGS/Peaks/annotatepeaks{type}_{file}.log"
+        conda:  "snakes/envs/perl.yaml"
+        threads: 1
+        params: bins=BINS,
+                anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'PEAKS')['ANNOTATION']])
+        shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
 
-rule PeakToBedg:
-    input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
-            pa = rules.AnnotatePeak.output
-    output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
-            "UCSC/{file}_peak_{type}.re.bedg.gz",
-            temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
-            temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
-    log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
-    conda:  "snakes/envs/perl.yaml"
-    threads: 1
-    params: out=expand("UCSC/{source}",source=SOURCE),
-            bins=BINS,
-            sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+    rule PeakToBedg:
+        input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
+                pa = rules.AnnotatePeak.output
+        output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
+                "UCSC/{file}_peak_{type}.re.bedg.gz",
+                temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
+                temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+        log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
+        conda:  "snakes/envs/perl.yaml"
+        threads: 1
+        params: out=expand("UCSC/{source}",source=SOURCE),
+                bins=BINS,
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+
+else:
+    rule PeakToBedg:
+        input:  pk = "PEAKS/{file}_peak_{type}.bed.gz"
+        output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
+                "UCSC/{file}_peak_{type}.re.bedg.gz",
+                temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
+                temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+        log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
+        conda:  "snakes/envs/perl.yaml"
+        threads: 1
+        params: out=expand("UCSC/{source}",source=SOURCE),
+                bins=BINS,
+                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
 #   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
@@ -281,7 +297,7 @@ rule themall:
             "PEAKS/{file}_peak_{type}.bed.gz",
             "PEAKS/{file}_prepeak_{type}.bed.gz",
             "PEAKS/{file}_peak_seq_{type}.bed.gz",
-            "PEAKS/{file}_peak_anno_{type}.bed.gz" if config["ANNOTATE"] == "ON" else
+            "PEAKS/{file}_peak_anno_{type}.bed.gz" if ANNOPEAK is not None else
             "PEAKS/{file}_mapped_{type}.bedg.gz",
             "UCSC/{file}_peak_{type}.fw.bw",
             "UCSC/{file}_peak_{type}.re.bw",
