@@ -96,10 +96,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
         SAMPLES=list(set(samples(config)))
         if os.path.exists(SAMPLES[0]) is False:
             SAMPLES=list(set(sampleslong(config)))
-        try:
-            CLIP=config["CLIP"]
-        except:
-            CLIP=''
 
         log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
         conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]

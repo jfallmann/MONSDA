@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 14 16:54:53 2019 (+0200)
+# Last-Updated: Thu Oct 17 15:27:34 2019 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 771
+#     Update #: 776
 # URL:
 # Doc URL:
 # Keywords:
@@ -656,11 +656,14 @@ def checkclip(sample,config):
         for s in sample:
             check = os.path.dirname(s).split(os.sep)
             log.debug(logid+str(check))
-            for r in runstate_from_sample([s],config):
-                tmplist = check
-                tmplist.append(r)
-                if 'CLIP' in getFromDict(config['PEAKS'],tmplist):
-                    clip = getFromDict(config['PEAKS'],tmplist)['CLIP']
+            r = runstate_from_sample([s],config)
+            tmplist = check
+            tmplist.extend(r)
+            log.debug(logid+str(tmplist))
+            if 'CLIP' in getFromDict(config['PEAKS'],tmplist):
+                clip = subDict(config['PEAKS'],tmplist)['CLIP']
+            else:
+                log.debug(logid+'Key CLIP not found in config')
         log.debug(logid+str(clip))
         return clip
 
