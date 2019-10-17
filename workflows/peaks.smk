@@ -168,8 +168,9 @@ rule PreprocessPeaks:
     log:    "LOGS/Peaks/prepeak_{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
-    params:  bins=BINS
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]}"
+    params:  bins=BINS,
+             opts=PREPROCESS
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]}"
 
 rule Find_Peaks:
     input:  "PEAKS/{file}_prepeak_{type}.bed.gz"

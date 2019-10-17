@@ -61,3 +61,8 @@ if 'PEAKS' in config:
     PEAKCUTOFF = peakconf['PEAKCUTOFF']
     MINPEAKHEIGHT = peakconf['MINPEAKHEIGHT']
     USRLIMIT = peakconf['USRLIMIT']
+
+    if 'PREPROCESS' in peakconf:
+        PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
+    else:
+        PREPROCESS = ''
