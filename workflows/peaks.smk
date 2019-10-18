@@ -15,7 +15,7 @@ if all(checklist):
     rule BamToBed:
         input:  "BED/{file}_mapped_{type}.bed.gz"
         output: "PEAKS/{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/Peaks/linkbed{file}_{type}.log"
+        log:    "LOGS/PEAKS/linkbed{file}_{type}.log"
         conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
@@ -24,7 +24,7 @@ elif all(checklist2):
     rule BamToBed:
         input:  "UCSC/{file}_mapped_{type}.bed.gz"
         output: "PEAKS/{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/Peaks/linkbed{file}_{type}.log"
+        log:    "LOGS/PEAKS/linkbed{file}_{type}.log"
         conda:  "snakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
@@ -35,7 +35,7 @@ else:
                 "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
         output: "PEAKS/{file}_mapped_sorted.bed.gz",
                 "PEAKS/{file}_mapped_unique.bed.gz"
-        log:    "LOGS/Peaks/bam2bed_{file}.log"
+        log:    "LOGS/PEAKS/bam2bed_{file}.log"
         threads: 1
         conda:  "snakes/envs/bedtools.yaml"
         # Here I use the strand of the first read in pair as the one determining the strand
@@ -45,7 +45,7 @@ else:
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
+    log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
     conda:  "snakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -54,7 +54,7 @@ rule index_fa:
 rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
-    log:    "LOGS/Peaks/{org}/{gen}{name}/chromsize.log"
+    log:    "LOGS/PEAKS/{org}/{gen}{name}/chromsize.log"
     conda:  "snakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -64,7 +64,7 @@ rule extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
             lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
     output: "PEAKS/{file}_mapped_extended_{type}.bed.gz"
-    log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
+    log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
@@ -75,7 +75,7 @@ rule rev_extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
             lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
-    log:    "LOGS/Peaks/bam2bed{type}_{file}.log"
+    log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
@@ -124,7 +124,7 @@ elif CLIP == 'iCLIP':
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
-        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
         conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
@@ -138,7 +138,7 @@ elif CLIP == 'revCLIP':
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
-        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
         conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
@@ -152,7 +152,7 @@ else:
                 fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
-        log:    "LOGS/Peaks/bed2bedgraph{type}_{file}.log"
+        log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
         conda:  "snakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
@@ -165,7 +165,7 @@ else:
 rule PreprocessPeaks:
     input:  "PEAKS/{file}_mapped_{type}.bedg.gz"
     output: "PEAKS/{file}_prepeak_{type}.bed.gz",
-    log:    "LOGS/Peaks/prepeak_{type}_{file}.log"
+    log:    "LOGS/PEAKS/prepeak_{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
@@ -175,7 +175,7 @@ rule PreprocessPeaks:
 rule Find_Peaks:
     input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
     output: "PEAKS/{file}_peak_{type}.bed.gz"
-    log:    "LOGS/Peaks/findpeaks{type}_{file}.log"
+    log:    "LOGS/PEAKS/findpeaks{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
     params: limitratio=MINPEAKRATIO,
@@ -199,7 +199,7 @@ rule Find_Peaks:
 rule UnzipGenome:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: fa = expand("{ref}/{{org}}/{{gen}}{{name}}_fastafrombed.fa",ref=REFERENCE)
-    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
+    log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
     conda:  "snakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -211,7 +211,7 @@ rule AddSequenceToPeak:
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{file}_peak_seq_{type}.tmp")
-    log:    "LOGS/Peaks/seq2peaks{type}_{file}.log"
+    log:    "LOGS/PEAKS/seq2peaks{type}_{file}.log"
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
@@ -221,7 +221,7 @@ if ANNOPEAK is not None:
     rule AnnotatePeak:
         input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
         output: "PEAKS/{file}_peak_anno_{type}.bed.gz"
-        log:    "LOGS/Peaks/annotatepeaks{type}_{file}.log"
+        log:    "LOGS/PEAKS/annotatepeaks{type}_{file}.log"
         conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
@@ -235,13 +235,13 @@ if ANNOPEAK is not None:
                 "UCSC/{file}_peak_{type}.re.bedg.gz",
                 temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
                 temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
+        log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
         conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: out=expand("UCSC/{source}",source=SOURCE),
                 bins=BINS,
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 else:
     rule PeakToBedg:
@@ -250,13 +250,13 @@ else:
                 "UCSC/{file}_peak_{type}.re.bedg.gz",
                 temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
                 temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/Peaks/peak2bedg{file}_{type}.log"
+        log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
         conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: out=expand("UCSC/{source}",source=SOURCE),
                 bins=BINS,
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -v on -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
 
 #rule QuantPeakToBedg:
 #   input:  "PEAKS/{source}/QuantPeak_{file}.bed.gz"
@@ -274,7 +274,7 @@ rule PeakToUCSC:
             "UCSC/{file}_peak_{type}.re.bw",
             temp("UCSC/{file}_{type}fw_tmp"),
             temp("UCSC/{file}_{type}re_tmp")
-    log:    "LOGS/Peaks/peak2ucsc{file}_{type}.log"
+    log:    "LOGS/PEAKS/peak2ucsc{file}_{type}.log"
     conda:  "snakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
