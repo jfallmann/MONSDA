@@ -154,12 +154,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             o = runjob(jobtorun)
             if o.stdout:
                 log.info(o.stdout)
-                if not 'Workflow finished, no error' in o.stdout:
+                if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
                     sys.exit(o.stdout)
 
             if o.stderr:
                 log.error(o.stderr)
-                if any(x in o.stderr for x in ['ERROR','Error','error']):
+                if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                     sys.exit(o.stderr)
 
         log.info(logid+'Starting runs for postprocessing')
@@ -200,13 +200,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                     o = runjob(jobtorun)
                     if o.stdout:
                         log.info(o.stdout)
-                        if not 'Workflow finished, no error' in o.stdout:
+                        if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
                             #if any(x in o.stdout for x in ['ERROR','Error','error']):
                             sys.exit(o.stdout)
 
                     if o.stderr:
                         log.error(o.stderr)
-                        if any(x in o.stderr for x in ['ERROR','Error','error']):
+                        if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                             sys.exit(o.stderr)
 
         log.info('Workflows executed without error!')
