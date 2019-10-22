@@ -36,9 +36,6 @@ if checkpaired(SAMPLES, config):
 if paired == 'paired':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
 
-if 'QC' in config:
-    QC=config["QC"]
-
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
     peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][1]

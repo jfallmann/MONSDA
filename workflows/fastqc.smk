@@ -1,10 +1,3 @@
-        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-        #        r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-        #input:  raw1 = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-        #        raw2 = lambda wildcards: expand(rules.qc_raw.output.o2, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-        #input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-        #input:  raw = lambda wildcards: expand(rules.qc_raw.output.o1, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:

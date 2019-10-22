@@ -38,8 +38,8 @@ def parseargs():
 
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock):
     try:
-        subdir = 'SubSnakes'
-        makeoutdir(subdir)
+        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'RAW', 'QC', 'LOGS']:
+            makeoutdir(subdir)
 
         config = load_configfile(configfile)
         if useconda:
@@ -86,7 +86,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             os.rename(oldfile,oldfile+'.bak')
 
         try:
-            all([config[x] for x in subworkflows])
+            all([config[x] for x in subworkflows if x != 'TRIMMING'])
         except KeyError:
             log.warning(logid+'Not all required subworkflows have configuration in the config file')
 
@@ -117,12 +117,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
 
+            if 'TRIMMING' not in subworkflows or ('TRIMMING' in config and config['TRIMMING']['RUN'] == "OFF"):
+                log.info(logid+'Simulating read trimming as trimming was set to OFF or is not part of the workflow!')
+                smkf = os.path.abspath(os.path.join('snakes','workflows','simulatetrim.smk'))
+                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                    smkout.write('\n\n')
+
             if 'MAPPING' in subworkflows:
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
-                    if 'RUN' in config[subwork]:
-                        if config[subwork]['RUN'] == "OFF":
-                            continue
+                    if 'RUN' in config[subwork] and config[subwork]['RUN'] == "OFF":
+                        log.info(logid+'Workflowstep '+subwork+' set to OFF, will be skipped')
+                        continue
                     else:
                         listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                         for i in range(0,len(listoftools)):
