@@ -5,6 +5,7 @@ channels:
   - defaults
   - r
 dependencies:
+  - grep=2.14
   - _libgcc_mutex=0.1
   - libgcc=7.2.0
   - libgcc-ng=9.1.0

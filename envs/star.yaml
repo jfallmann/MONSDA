@@ -9,6 +9,7 @@ dependencies:
   - bzip2=1.0.8
   - ca-certificates=2019.6.16
   - curl=7.65.3
+  - grep=2.14
   - krb5=1.16.3
   - libcurl=7.65.3
   - libdeflate=1.0
