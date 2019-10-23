@@ -25,6 +25,15 @@ For distribution of jobs one can either rely on local hardware, use scheduling s
 
 This manual will only show examples on local and SGE usage, but more information on how to use other scheduling software is available elsewhere.
 
+### Run a job with one of the test configs
+
+This repository hosts the executable ```RunSnakemake.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file. 
+The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```RunSnakemake.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
+
+Depending on the ```config.json```, ```RunSnakemake.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
+
+
+
 ### Create config.json
 
 TODO
