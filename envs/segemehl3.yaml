@@ -7,6 +7,7 @@ dependencies:
   - bzip2=1.0.6
   - ca-certificates=2019.3.9
   - curl=7.64.0
+  - grep=2.14
   - htslib=1.9
   - krb5=1.16.3
   - libcurl=7.64.0

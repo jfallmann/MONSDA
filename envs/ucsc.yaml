@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - grep=2.14
   - mysql-connector-c=6.1.11
   - ucsc-bedgraphtobigwig=377
   - ucsc-fatotwobit=377
