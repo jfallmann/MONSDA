@@ -10,7 +10,7 @@ if paired == 'paired':
 	    conda: "snakes/envs/"+TRIMENV+".yaml"
 	    threads: int(MAXTHREAD/8)
 	    params: odir=lambda wildcards,output:os.path.dirname(output.o1),
-	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[1].items()),
+	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
 	            trim=TRIMBIN
 	    shell:  "{params.trim} -a file:{params.ada} {params.tpara} --cores {threads} -o {output.r1} -p {output.r2} {input.r1} {input.r2} &> {log}"
 
@@ -31,7 +31,7 @@ else:
 	    conda: "snakes/envs/"+TRIMENV+".yaml"
 	    threads: int(MAXTHREAD/8)
 	    params: odir=lambda wildcards,output: os.path.dirname(output.o1),
-	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[1].items()),
+	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
 	            trim=TRIMBIN,
 	    shell:  "{params.trim} -a file:{params.ada} {params.tpara} --cores {threads} -o {output.o1} {input.r1} > {log}"
 
