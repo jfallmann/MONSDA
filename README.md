@@ -10,8 +10,6 @@ git submodule update
 See [stackoverflow](https://stackoverflow.com/questions/25200231/cloning-a-git-repo-with-all-submodules) and 
 [git docs](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for details.
 
-## HowTo
-
 For details on ```snakemake``` and it's features please refer to the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
 
 In general it is necessary to write a configuration file containing information on paths, files to process and settings beyond default for mapping tools and others.
@@ -25,76 +23,40 @@ For distribution of jobs one can either rely on local hardware, use scheduling s
 
 This manual will only show examples on local and SGE usage, but more information on how to use other scheduling software is available elsewhere.
 
-### Run a job with one of the test configs
+## What is happening
 
 This repository hosts the executable ```RunSnakemake.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file. 
 The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```RunSnakemake.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
 
-Depending on the ```config.json```, ```RunSnakemake.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
+To successfully run an analysis pipeline, a few steps have to be followed:
+  * Clone this repository to you working directory, or symlink it there. *DO NOT CHANGE THE NAME OF THE REPO!!!* This is needed for subworkflow generation.
+  * Directory structure: The structure for the directories is dictated by the config file
+  * Config file: This is the central part of the analysis. Depending on this file ```RunSnakemake.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
 
+## Create config.json
 
+The configuration file follows standard ```json``` format and contains all the information needed to run the analysis.
+It consists of multiple sections which will be explained in detail.
+For examples please refer to the ```config``` directory of the repo.
 
-### Create config.json
+### Cluster config
+This is separate from the main configuration, for details please follow the explanations in the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
+For an example have a look at the ```cluster``` directory.
 
-TODO
+## Run the pipeline
+Simply run
 
-### Mapping
-#### No cluster
 ```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/mapping_qc.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/mapping.log
-```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/mapping.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/mapping.log
-```
-
-### Generating UCSC tracks
-#### No cluster
-```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/ucsc.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/ucsc.log
-```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/ucsc.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/ucsc.log
+python snakes/RunSnakemake.py
 ```
 
-### Annotating Bed Files
-#### No cluster
-```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/annotatebed.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/annotate.log
-```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/annotatebed.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/annotate.log
-```
+to see the help and available options that will be passed through to ```snakemake```.
 
-### Counting features
-#### No cluster
+To start a simple run call
 ```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/countreads.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/counting.log
+python snakes/RunSnakemake.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json --directory ${PWD}
 ```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/countreads.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/counting.log
-```
+or add additional arguments for ```snakemake``` as you see fit.
 
-### Simple Peak calling
-#### No cluster
-```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/peak_finding.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/peaks.log
-```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/peak_finding.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/peaks.log
-```
-
-### DE analysis (upcoming)
-#### No cluster
-```
-snakemake -j ${THREADS} --configfile config.json --snakefile workflows/de_analysis.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/de_analysis.log
-```
-#### Cluster SGE
-```
-snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/de_analysis.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/de_analysis.log
-```
-
+[//]: # (#### Cluster SGE)
+[//]: #(```snakemake --cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript Workflow/cluster/sge.sh -j ${THREADS} --configfile config.json --snakefile workflows/mapping.smk --use-conda --directory ${PWD} --printshellcmds &> LOGS/mapping.log```)

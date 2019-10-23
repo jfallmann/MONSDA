@@ -75,14 +75,11 @@
                     "BIN": "trim_galore", # name of binary for trimming
                     "OPTIONS":
                     [
-                        {
-                        },
                         {  # trimming options here, --paired is not required, will be resolved by rules
                             "-q": "15",
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
-                        },
-                        ""
+                        }
                     ]
                 }
             },
@@ -92,14 +89,11 @@
                     "BIN": "trim_galore", # name of binary for trimming
                     "OPTIONS":
                     [
-                        {
-                        },
                         {  # trimming options here, --paired is not required, will be resolved by rules
                             "-q": "15",
                             "--length": "8", #READ_MINLEN discard reads shorter than that
                             "-e": "0.15"
-                        },
-                        ""
+                        }
                     ]
                 }
             }
@@ -154,8 +148,6 @@
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
-                        {
-                        },
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
@@ -165,8 +157,7 @@
                            "-M": "",
                            "-T": "5",
                            "-t": "exon"
-                        },
-                        ""
+                        }
                     ]
                }
            },
@@ -177,8 +168,6 @@
                     "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                     "OPTIONS":
                     [
-                        {
-                        },
                         {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                            "-f": "",
                            "--fraction": "",
@@ -188,8 +177,7 @@
                            "-M": "",
                            "-T": "5",
                            "-t": "exon"
-                        },
-                        ""
+                        }
                     ]
                }
            }
@@ -207,11 +195,8 @@
                     "OPTIONS":
                     [
                         {
-                        },
-                        {
                             "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                        },
-                        ""
+                        }
                     ]
                 }
             },
@@ -224,11 +209,8 @@
                     "OPTIONS":
                     [
                         {
-                        },
-                        {
                             "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                        },
-                        ""
+                        }
                     ]
                 }
             }
@@ -245,14 +227,11 @@
                     "OPTIONS":
                     [
                         {
-                        },
-                        {
                           "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
                           "-s" : "dm6_st", #short name for hub, replace space with _
                           "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
                           "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                       },
-                       ""
+                       }
                     ]
                 }
             },
@@ -264,14 +243,11 @@
                     "OPTIONS":
                     [
                         {
-                        },
-                        {
                           "-n" : "DM6_paired_Mapping", #name of the hub, replace space with _
                           "-s" : "dm6_st", #short name for hub, replace space with _
                           "-l" : "UCSC_DM6_paired_Mapping", #long name for track, replace space with _
                           "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                       },
-                       ""
+                       }
                     ]
                 }
             }
@@ -288,8 +264,6 @@
                     "CLIP": "iCLIP",
                     "OPTIONS":
                     [
-                      {
-                      },
                       {
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",
@@ -309,8 +283,6 @@
                     "CLIP": "revCLIP",
                     "OPTIONS":
                     [
-                      {
-                      },
                       {
                         "MINPEAKRATIO": "0.6",
                         "PEAKDISTANCE": "1",

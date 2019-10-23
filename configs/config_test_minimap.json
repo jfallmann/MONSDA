@@ -57,14 +57,11 @@
                                        "BIN": "trim_galore", # name of binary for trimming
                                        "OPTIONS":
                                        [
-                                           {
-                                           },
                                            {  # trimming options here, --paired is not required, will be resolved by rules
                                               "-q": "15",
                                               "--length": "8", #READ_MINLEN discard reads shorter than that
                                               "-e": "0.15"
-                                           },
-                                           ""
+                                           }
                                        ]
                                      }
                       }
@@ -107,8 +104,6 @@
                                       "ANNOTATION": "dm6.gff3.gz",
                                       "OPTIONS":
                                       [
-                                          {
-                                          },
                                           {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                              "-f": "",
                                              "--fraction": "",
@@ -118,8 +113,7 @@
                                              "-M": "",
                                              "-T": "5",
                                              "-t": "exon"
-                                          },
-                                          ""
+                                          }
                                       ]
                                      }
                       }
@@ -137,17 +131,14 @@
                              "OPTIONS":
                              [
                                  {
-                                 },
-                                 {
                                      "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                                 },
-                                 ""
+                                 }
                              ]
                            }
             }
         }
     },
-    #Track building options
+#Track building options
     "UCSC" : {
         "Dm6": {
             "unpaired": {
@@ -158,14 +149,11 @@
                              "OPTIONS":
                              [
                                  {
-                                 },
-                                 {
                                      "-n": "DM6_Standard_Mapping", #name of the hub, replace space with _
                                      "-s" : "dm6_st", #short name for hub, replace space with _
                                      "-l" : "UCSC_DM6_Standard_Mapping", #long name for track, replace space with _
                                      "-b" : "UCSC_dm6_minimap" #short name for track, replace space with _
-                                 },
-                                 ""
+                                 }
                              ]
                            }
             }
@@ -181,8 +169,6 @@
                              "CLIP": "iCLIP",
                              "OPTIONS":
                              [
-                                 {
-                                 },
                                  {
                                      "ANNOTATION": "dm6.gff3.gz",
                                      "MINPEAKRATIO": "0.6",
