@@ -86,9 +86,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
 
         try:
-            all([config[x] for x in subworkflows if x != 'TRIMMING'])
+            all([config[x] or x == 'TRIMMING' for x in subworkflows])
         except KeyError:
             log.warning(logid+'Not all required subworkflows have configuration in the config file')
+
+        try:
+            all([config[x] for x in postprocess])
+        except KeyError:
+            log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
 
         #subworkflows.extend(postprocess)  # Concatenate to get the full list of steps to process
         log.debug(logid+'WORKFLOWS: '+str(subworkflows))
