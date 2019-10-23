@@ -38,7 +38,7 @@ if paired == 'paired':
 
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
-    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][1]
+    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
     if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
         ANNOPEAK = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
     else:

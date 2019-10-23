@@ -79,11 +79,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
         oldsmk = os.path.abspath(os.path.join(subdir,'*_subsnake.smk'))
         oldcnf = os.path.abspath(os.path.join(subdir,'*_subconfig.json'))
         for oldfile in glob.glob(oldsmk):
-            log.warning(logid+'Found old snakemake file'+oldfile+', will be moved to '+oldfile+'.bak')
             os.rename(oldfile,oldfile+'.bak')
+            log.warning(logid+'Found old snakemake file'+oldfile+', was moved to '+oldfile+'.bak')
         for oldfile in glob.glob(oldcnf):
-            log.warning(logid+'Found old config file'+oldfile+', will be moved to '+oldfile+'.bak')
             os.rename(oldfile,oldfile+'.bak')
+            log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
 
         try:
             all([config[x] for x in subworkflows if x != 'TRIMMING'])
