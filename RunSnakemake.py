@@ -130,32 +130,32 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
 
+            subconf = NestedDefaultDict()
+            for subwork in subworkflows:
+                if 'RUN' in config[subwork] and config[subwork]['RUN'] == "OFF":
+                    log.info(logid+'Workflowstep '+subwork+' set to OFF, will be skipped')
+                    continue
+                else:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                    for i in range(0,len(listoftools)):
+                        toolenv, toolbin = map(str,listoftools[i])
+                        subconf.update(listofconfigs[i])
+                        subsamples = list(set(sampleslong(subconf)))
+                        subname = toolenv+'.smk'
+                        log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
+
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+
             if 'MAPPING' in subworkflows:
-                subconf = NestedDefaultDict()
-                for subwork in subworkflows:
-                    if 'RUN' in config[subwork] and config[subwork]['RUN'] == "OFF":
-                        log.info(logid+'Workflowstep '+subwork+' set to OFF, will be skipped')
-                        continue
-                    else:
-                        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-                        for i in range(0,len(listoftools)):
-                            toolenv, toolbin = map(str,listoftools[i])
-                            subconf.update(listofconfigs[i])
-                            subsamples = list(set(sampleslong(subconf)))
-                            subname = toolenv+'.smk'
-                            log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
-
-                            smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                                with open(smkf,'r') as smk:
-                                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                smkout.write('\n\n')
-
                 smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
                 with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                    smkout.write('\n\n')
+                        smkout.write('\n\n')
 
             with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))), 'a') as confout:
                 json.dump(subconf, confout)
