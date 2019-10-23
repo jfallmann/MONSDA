@@ -71,7 +71,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                     sys.exit(o.stderr)
 
         subworkflows = config['WORKFLOWS'].split(',')
-        postprocess = config['POSTPROCESSING'].split(',')  # we keep this separate because not all postprocessing steps need extra configuration
+        if len(subworkflows) == 0 or subworkflows[0] == '':
+            subworkflows = None
+
+        postprocess = config['POSTPROCESSING'].split(',') # we keep this separate because not all postprocessing steps need extra configuration
+        if len(postprocess) == 0 or postprocess[0] == '':
+            postprocess = None
 
         threads = min(int(config['MAXTHREADS']), procs)
 
@@ -85,15 +90,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
 
-        try:
-            all([config[x] or x == 'TRIMMING' for x in subworkflows])
-        except KeyError:
-            log.warning(logid+'Not all required subworkflows have configuration in the config file')
+        if subworkflows:
+            try:
+                all([config[x] or x == 'TRIMMING' or x == '' for x in subworkflows])
+            except KeyError:
+                log.warning(logid+'Not all required subworkflows have configuration in the config file')
 
-        try:
-            all([config[x] for x in postprocess])
-        except KeyError:
-            log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
+        if postprocess:
+            try:
+                all([config[x] or x == '' for x in postprocess])
+            except KeyError:
+                log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
 
         #subworkflows.extend(postprocess)  # Concatenate to get the full list of steps to process
         log.debug(logid+'WORKFLOWS: '+str(subworkflows))
@@ -108,119 +115,126 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
 
         condapath=re.compile(r'conda:\s+"')
 
-        for condition in conditions:
-            smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                smkout.write('\n\n')
-
-            if 'QC' in subworkflows and config['QC']['RUN'] == "ON":
-                smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
+        if subworkflows:
+            for condition in conditions:
+                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
                 with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
 
-            if 'TRIMMING' not in subworkflows or ('TRIMMING' in config and config['TRIMMING']['RUN'] == "OFF"):
-                log.info(logid+'Simulating read trimming as trimming was set to OFF or is not part of the workflow!')
-                smkf = os.path.abspath(os.path.join('snakes','workflows','simulatetrim.smk'))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                    smkout.write('\n\n')
+                if 'QC' in subworkflows and config['QC']['RUN'] == "ON":
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
 
-            subconf = NestedDefaultDict()
-            for subwork in subworkflows:
-                if 'RUN' in config[subwork] and config[subwork]['RUN'] == "OFF":
-                    log.info(logid+'Workflowstep '+subwork+' set to OFF, will be skipped')
-                    continue
-                else:
+                if 'MAPPING' in subworkflows and ('TRIMMING' not in subworkflows or ('TRIMMING' in config and config['TRIMMING']['RUN'] == "OFF")):
+                    log.info(logid+'Simulating read trimming as trimming was set to OFF or is not part of the workflow!')
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','simulatetrim.smk'))
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+
+                subconf = NestedDefaultDict()
+                for subwork in subworkflows:
+                    if 'RUN' in config[subwork] and config[subwork]['RUN'] == "OFF":
+                        log.info(logid+'Workflowstep '+subwork+' set to OFF, will be skipped')
+                        continue
+                    else:
+                        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                        for i in range(0,len(listoftools)):
+                            toolenv, toolbin = map(str,listoftools[i])
+                            subconf.update(listofconfigs[i])
+                            subsamples = list(set(sampleslong(subconf)))
+                            subname = toolenv+'.smk'
+                            log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
+
+                            smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                                with open(smkf,'r') as smk:
+                                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write('\n\n')
+
+                if 'MAPPING' in subworkflows:
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+
+                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))), 'a') as confout:
+                    json.dump(subconf, confout)
+
+            for condition in conditions:
+                log.info(logid+'Starting runs for condition '+str(condition))
+                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
+                log.info(logid+'RUNNING '+str(jobtorun))
+                o = runjob(jobtorun)
+                if o.stdout:
+                    log.info(o.stdout)
+                    if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                        sys.exit(o.stdout)
+
+                if o.stderr:
+                    log.error(o.stderr)
+                    if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                        sys.exit(o.stderr)
+        else:
+            log.warning(logid+'No subworkflows defined! Nothing to do!')
+
+        if postprocess:
+            log.info(logid+'Starting runs for postprocessing')
+
+            if 'PEAKS' in config and 'PEAKS' in postprocess:
+                CLIP = checkclip(SAMPLES, config)
+                log.info(logid+'Running Peak finding for '+CLIP+' protocol')
+
+            for condition in conditions:
+                subconf = NestedDefaultDict()
+                for subwork in postprocess:
+                    log.debug(logid+'SUBWORK: '+str(subwork))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                    log.debug(logid+str([listoftools,listofconfigs]))
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
-                        subsamples = list(set(sampleslong(subconf)))
                         subname = toolenv+'.smk'
-                        log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
-
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                        subsamples = list(set(sampleslong(subconf)))
+                        log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                                smkout.write('\n\n')
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write('\n\n')
+                        listoftools, listofconfigs = create_subworkflow(config, "ANNOTATE", [condition])
+                        subconf.update(listofconfigs[i])
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
+                            json.dump(subconf, confout)
 
-            if 'MAPPING' in subworkflows:
-                smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
+                        log.info(logid+'RUNNING '+str(jobtorun))
+                        o = runjob(jobtorun)
+                        if o.stdout:
+                            log.info(o.stdout)
+                            if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                                #if any(x in o.stdout for x in ['ERROR','Error','error']):
+                                sys.exit(o.stdout)
 
-            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))), 'a') as confout:
-                json.dump(subconf, confout)
+                        if o.stderr:
+                            log.error(o.stderr)
+                            if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                                sys.exit(o.stderr)
 
-        for condition in conditions:
-            log.info(logid+'Starting runs for condition '+str(condition))
-            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
-            log.info(logid+'RUNNING '+str(jobtorun))
-            o = runjob(jobtorun)
-            if o.stdout:
-                log.info(o.stdout)
-                if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                    sys.exit(o.stdout)
-
-            if o.stderr:
-                log.error(o.stderr)
-                if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
-                    sys.exit(o.stderr)
-
-        log.info(logid+'Starting runs for postprocessing')
-
-        if 'PEAKS' in config:
-            CLIP = checkclip(SAMPLES, config)
-            log.info(logid+'Running Peak finding for '+CLIP+' protocol')
-
-        for condition in conditions:
-            subconf = NestedDefaultDict()
-            for subwork in postprocess:
-                log.debug(logid+'SUBWORK: '+str(subwork))
-                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-                log.debug(logid+str([listoftools,listofconfigs]))
-                for i in range(0,len(listoftools)):
-                    toolenv, toolbin = map(str,listoftools[i])
-                    subconf.update(listofconfigs[i])
-                    subname = toolenv+'.smk'
-                    subsamples = list(set(sampleslong(subconf)))
-                    log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
-                    listoftools, listofconfigs = create_subworkflow(config, "ANNOTATE", [condition])
-                    subconf.update(listofconfigs[i])
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
-                        json.dump(subconf, confout)
-
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
-                    log.info(logid+'RUNNING '+str(jobtorun))
-                    o = runjob(jobtorun)
-                    if o.stdout:
-                        log.info(o.stdout)
-                        if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                            #if any(x in o.stdout for x in ['ERROR','Error','error']):
-                            sys.exit(o.stdout)
-
-                    if o.stderr:
-                        log.error(o.stderr)
-                        if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
-                            sys.exit(o.stderr)
+        else:
+            log.warning(logid+'No postprocessing steps defined! Nothing to do!')
 
         log.info('Workflows executed without error!')
 
