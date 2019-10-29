@@ -7,7 +7,7 @@ rule gzipsam:
     log:    "LOGS/{file}/gzipsam.log"
     conda:  "snakes/envs/base.yaml"
     threads: MAXTHREAD
-    shell: "pigz -k -p {threads} -f {input.mapps} > {output.gzipped} 2> {log}"
+    shell: "pigz -k -p {threads} -f {input.mapps} > {output.gzipped} 2> {log} && touch {input.mapps}"
 
 rule sortsam:
     input:  gzipped = rules.gzipsam.output
