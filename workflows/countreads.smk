@@ -92,7 +92,7 @@ rule themall:
             f2 = expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
     output: a = "COUNTS/Features",
             u = "COUNTS/Features_unique",
-            c = "COUNTS/Summary".
+            c = "COUNTS/Summary",
             t = expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
     conda:  "snakes/envs/base.yaml"
     threads: 1

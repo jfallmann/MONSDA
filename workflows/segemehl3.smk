@@ -6,9 +6,9 @@ rule generate_index:
     log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
     conda:  "snakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
-    params: mapp = MAPPERBIN,
+    params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items())
-    shell: "{params.mapp} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
+    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} 2> {log}"
 
 if paired == 'paired':
     rule mapping:
@@ -17,7 +17,7 @@ if paired == 'paired':
                 index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][2]),
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
+                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
         conda:  "snakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
@@ -31,7 +31,7 @@ else:
                 index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][2]),
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file).split(os.sep)[0], gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
+                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
         conda:  "snakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
