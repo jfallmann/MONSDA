@@ -92,11 +92,12 @@ rule themall:
             f2 = expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
     output: a = "COUNTS/Features",
             u = "COUNTS/Features_unique",
-            c = "COUNTS/Summary"
+            c = "COUNTS/Summary".
+            t = expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
     conda:  "snakes/envs/base.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done"
+    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done && touch {output.t}"
 
 onsuccess:
     print("Workflow finished, no error")
