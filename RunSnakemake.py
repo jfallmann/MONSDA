@@ -25,7 +25,7 @@ def parseargs():
     parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
     parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
-    parser.add_argument("-u", "--use-conda", action="store_true", help='Should conda be used')
+    parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
@@ -36,7 +36,7 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock, optionalargs=None):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
     try:
         for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'RAW', 'QC', 'LOGS']:
             makeoutdir(subdir)
@@ -49,9 +49,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             argslist.append("--debug-dag")
         if filegraph:
             argslist.append("--filegraph|dot|display")
-        if optionalargs:
-            for optionname, option in optionalargs.items():
-                argslist.append("--{n} {p}".format(n=optionname, p=option)
+        if optionalargs and len(optionalargs) > 0:
+            argslist.extend(optionalargs)
 
         if unlock:
             log.info(logid+'Unlocking directory')
@@ -254,17 +253,18 @@ if __name__ == '__main__':
     try:
         args=parseargs()
         knownargs=args[0]
-        optionalargs=args[1:])
+        optionalargs=args[1:]
         makelogdir('LOGS')
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
         log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
+
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.unlock, optionalargs)
+        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.unlock, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
