@@ -38,9 +38,10 @@ def parseargs():
 
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
     try:
-        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'RAW', 'QC', 'LOGS']:
+        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'QC', 'LOGS']:
             makeoutdir(subdir)
 
+        subdir = 'SubSnakes'
         config = load_configfile(configfile)
         argslist = list()
         if useconda:
