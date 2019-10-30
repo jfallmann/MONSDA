@@ -34,26 +34,24 @@ def parseargs():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    return parser.parse_args()
+    return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock, optionalargs=None):
     try:
         for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'RAW', 'QC', 'LOGS']:
             makeoutdir(subdir)
 
         config = load_configfile(configfile)
+        argslist = list()
         if useconda:
-            useconda = "--use-conda"
-        else:
-            useconda = ''
+            argslist.append("--use-conda")
         if debugdag:
-            debugdag = "--debug-dag"
-        else:
-            debugdag = ''
+            argslist.append("--debug-dag")
         if filegraph:
-            filegraph = "--filegraph|dot|display"
-        else:
-            filegraph = ''
+            argslist.append("--filegraph|dot|display")
+        if optionalargs:
+            for optionname, option in optionalargs.items():
+                argslist.append("--{n} {p}".format(n=optionname, p=option)
 
         if unlock:
             log.info(logid+'Unlocking directory')
@@ -170,7 +168,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
 
             for condition in conditions:
                 log.info(logid+'Starting runs for condition '+str(condition))
-                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
+                jobtorun = 'snakemake -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 o = runjob(jobtorun)
                 if o.stdout:
@@ -219,7 +217,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {g} {f}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,g=debugdag,f=filegraph)
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         o = runjob(jobtorun)
                         if o.stdout:
@@ -255,16 +253,18 @@ if __name__ == '__main__':
     logid = scriptname+'.main: '
     try:
         args=parseargs()
+        knownargs=args[0]
+        optionalargs=args[1:])
         makelogdir('LOGS')
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
         log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
-        log.info(logid+'Running '+scriptname+' on '+str(args.procs)+' cores')
+        log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        run_snakemake(args.configfile, args.debug_dag, args.filegraph, args.directory, args.use_conda, args.procs, args.unlock)
+        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.unlock, optionalargs)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
