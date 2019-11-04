@@ -124,8 +124,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 if 'QC' in subworkflows and config['QC']['RUN'] == "ON":
                     if 'MAPPING' in subworkflows:
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                        smkout.write('rule all:\ninput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
-\n\n')
+                            smkout.write('rule all:\n\tinput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))\n\n')
 
                     smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                     with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
