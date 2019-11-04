@@ -1,4 +1,4 @@
-rule all:
+rule mapall:
     input: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
 
 rule gzipsam:
