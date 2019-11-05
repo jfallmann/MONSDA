@@ -10,8 +10,9 @@ if paired == 'paired':
         log:    "LOGS/{rawfile}/fastqc_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile))
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_trimmed:
         input:  expand(rules.qc_raw.output, rawfile=SAMPLES),
@@ -22,17 +23,19 @@ if paired == 'paired':
         log:   "LOGS/{file}/fastqc_trimmed.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_mapped:
         input:  r1 = "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
         output: o1 = report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_mapped.log"
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
         conda: "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_uniquemapped:
         input:  r1 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
@@ -41,9 +44,10 @@ if paired == 'paired':
         log: "LOGS/{file}/fastqc_uniquemapped.log"
         conda: "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
+        params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
     #    params: dir=expand("QC/{source}",source=SOURCE)
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input.r1} 2> {log}"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
 
 else:
     rule qc_raw:
@@ -54,8 +58,9 @@ else:
         log:    "LOGS/{rawfile}/fastqc_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile))
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_trimmed:
         input:  expand(rules.qc_raw.output.o1, rawfile=SAMPLES),
@@ -64,17 +69,19 @@ else:
         log:   "LOGS/{file}/fastqc_trimmed.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_mapped:
         input:   r1 = expand("SORTED_MAPPED/{file}_mapped_sorted.sam.gz",file=samplecond(SAMPLES,config))
         output:  o1 = report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_mapped.log"
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
         conda: "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f sam_mapped {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_uniquemapped:
         input:  r1 = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",file=samplecond(SAMPLES,config)),
@@ -83,5 +90,6 @@ else:
         log: "LOGS/{file}/fastqc_uniquemapped.log"
         conda: "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file))
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract -f bam {input.r1} 2> {log}"
+        params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file)),
+                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
