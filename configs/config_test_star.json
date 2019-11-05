@@ -54,7 +54,7 @@
                  "unpaired": {      # sample id
                                     "star": {
                                         "ENV" : "fastqc",  # name of conda env for QC
-                                        "BIN" : "fastqc" # binary for trimming
+                                        "BIN" : "fastqc", # binary for trimming
                                         "OPTIONS":
                                         [
                                             {}
@@ -64,7 +64,7 @@
                  "paired": {      # sample id
                                   "star": {
                                       "ENV" : "fastqc",  # name of conda env for QC
-                                      "BIN" : "fastqc" # binary for trimming
+                                      "BIN" : "fastqc", # binary for trimming
                                       "OPTIONS":
                                       [
                                           {}

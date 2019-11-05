@@ -42,7 +42,7 @@
                  "unpaired": {      # sample id
                                     "minimap": {
                                         "ENV" : "fastqc",  # name of conda env for QC
-                                        "BIN" : "fastqc" # binary for trimming
+                                        "BIN" : "fastqc", # binary for trimming
                                         "OPTIONS":
                                         [
                                             {}
