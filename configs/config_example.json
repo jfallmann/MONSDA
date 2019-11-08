@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run
-    "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
+    "POSTPROCESSING" : "COUNTING,DE,UCSC,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -114,6 +114,24 @@
                            "-M": "",
                            "-T": "5",
                            "-t": "exon"
+                        }
+                    ]
+               }
+           }
+       }
+    },
+    #DE options, depend on COUNTING options!!!
+    "DE": { #options for DE Analysis of samples,
+         "Dm6": {
+            "untreated": {
+                "std": {# See above
+                    "ENV": "deseq2", #see QC
+                    "BIN": "deseq2",
+                    "OPTIONS":
+                    [
+                        { # options for table generation, no need to add additional options in general
+                        },
+                        {  # options for deseq2 run, handled by Rscript, should not be needed to add anything
                         }
                     ]
                }
