@@ -194,20 +194,23 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 CLIP = checkclip(SAMPLES, config)
                 log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
-            if 'DE' in config and 'DE' in postprocess:
-                postprocess.remove('DE')  # need to make sure that counting happens before DE
+            if 'DE' in config and 'DE' in postprocess and not 'COUNTING' in postprocess:
+                #postprocess.remove('DE')  # need to make sure that counting happens before DE
                 postprocess.append('COUNTING')
-                postprocess.append('DE')
+                #postprocess.append('DE')
 
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
-                    log.debug(logid+'SUBWORK: '+str(subwork))
+                    if subwork == 'DE':
+                        continue
+                    log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
                     if listoftools is None:
                         log.warning(logid+'No entry fits condition '+str(condition)+' for postprocessing step '+str(subwork))
                         continue
+
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
@@ -241,6 +244,49 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                             log.error(o.stderr)
                             if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                                 sys.exit(o.stderr)
+
+            #THIS SECTION IS FOR DE ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
+            if 'DE' in config:
+                subwork = 'DE'
+                subconf = NestedDefaultDict()
+                log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
+
+                listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+                log.debug(logid+str([listoftools,listofconfigs]))
+                if listoftools is None:
+                    log.error(logid+'No entry fits condition '+str(condition)+' for postprocessing step '+str(subwork))
+                toolenv, toolbin = map(str,listoftools[0])
+                subconf.update(listofconfigs[i])
+                subname = toolenv+'.smk'
+                subsamples = list(set(sampleslong(subconf)))
+                log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
+                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+                smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+
+                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
+                    json.dump(subconf, confout)
+
+                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                log.info(logid+'RUNNING '+str(jobtorun))
+                o = runjob(jobtorun)
+                if o.stdout:
+                    log.info(o.stdout)
+                    if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                        #if any(x in o.stdout for x in ['ERROR','Error','error']):
+                        sys.exit(o.stdout)
+
+                if o.stderr:
+                    log.error(o.stderr)
+                    if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                        sys.exit(o.stderr)
 
 
         else:

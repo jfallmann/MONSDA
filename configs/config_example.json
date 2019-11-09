@@ -196,8 +196,8 @@
             "Dm6": {
                 "unpaired": {
                     "star": {# See above
-                             "ENV": "countreads", #see QC
-                             "BIN": "featureCounts",
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
                              "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                              "OPTIONS":
                              [
@@ -208,8 +208,8 @@
                 },
                 "paired": {
                     "star": {# See above
-                             "ENV": "countreads", #see QC
-                             "BIN": "featureCounts",
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
                              "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
                              "OPTIONS":
                              [
