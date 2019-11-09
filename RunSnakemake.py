@@ -38,7 +38,7 @@ def parseargs():
 
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
     try:
-        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'QC', 'LOGS']:
+        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'QC', 'LOGS']:  # Add RAW for nanopore preprocessing
             makeoutdir(subdir)
 
         subdir = 'SubSnakes'
@@ -194,12 +194,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 CLIP = checkclip(SAMPLES, config)
                 log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
+            if 'DE' in config and 'DE' in postprocess:
+                postprocess.remove('DE')  # need to make sure that counting happens before DE
+                postprocess.append('COUNTING')
+                postprocess.append('DE')
+
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
                     log.debug(logid+'SUBWORK: '+str(subwork))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for postprocessing step '+str(subwork))
+                        continue
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
@@ -216,8 +224,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                                 smkout.write('\n\n')
-                        listoftools, listofconfigs = create_subworkflow(config, "ANNOTATE", [condition])
-                        subconf.update(listofconfigs[i])
+
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
                             json.dump(subconf, confout)
 
@@ -234,6 +241,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                             log.error(o.stderr)
                             if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                                 sys.exit(o.stderr)
+
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')

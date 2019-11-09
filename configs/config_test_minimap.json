@@ -85,12 +85,10 @@
                                              "-k": "7"#option for setting kmer size while indexing
                                          },
                                          {
-                                             "-ax": "map-ont",
-                                             "-ub": "",
+                                             "-ax": "splice",
+                                             "-uf": "",
                                              "-Y": "",
-                                             "-L": "",
-                                             "--MD": "",
-                                             "-d": ""
+                                             "-L": ""
                                          },
                                          "k7"
                                      ]
@@ -104,7 +102,7 @@
                       "unpaired": {
                           "minimap": {# See above
                                       "ENV": "countreads", #see QC
-                                      "BIN": "featurecounts",
+                                      "BIN": "featureCounts",
                                       "ANNOTATION": "dm6.gff3.gz",
                                       "OPTIONS":
                                       [

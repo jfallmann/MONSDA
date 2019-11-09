@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run
-    "POSTPROCESSING" : "COUNTING,DE,UCSC,ANNOTATE", # no specific order needed
+    "POSTPROCESSING" : "COUNTING,UCSC,PEAKS,ANNOTATE,DE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -9,172 +9,328 @@
               },
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "Dm6": {#first key should be same than for GENOME
-                      "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                     "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
-                                   }
+                      "unpaired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                                    "star": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                  },
+                      "paired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                                  "star": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                }
                      }
             },
     "SOURCE": {  #which organisms are to be parsed for which samples
-                 "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. untreated with setting std will use dm6 here
-                          "untreated": {
-                              "std": "Dm6"
+                 "Dm6": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. unpaired with setting star will use dm6 here
+                          "unpaired": {
+                              "star": "Dm6"
+                          },
+                          "paired": {
+                              "star": "Dm6"
                           }
                         }
               },
     "SAMPLES": {  #which samples to analyze
                   "Dm6": { #key for source and genome
-                           "untreated": {      # sample id
-                                               "std": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
-                                        }
+                           "unpaired": {      # sample id
+                                              "star": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # setup and list of samples you whish to analyze
+                                       },
+                           "paired": {      # sample id
+                                            "star": ["GSM461177_untreat_paired_subset"] # setup and list of samples you whish to analyze
+                                     }
                          }
                },
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
-                 "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single
-                              }
+                 "unpaired": {      # sample id
+                                    "star": "single" # setup and sequencing type, either paired or single
+                             },
+                 "paired": {      # sample id
+                                  "star": "paired" # setup and sequencing type, either paired or single
+                           }
                }
     },
 #QC options
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
-                 "untreated": {      # sample id
-                                     "std": {
-                                         "ENV" : "fastqc",  # name of conda env for QC
-                                         "BIN" : "fastqc", # binary for trimming
-                                         "OPTIONS":
-                                         [
-                                             {}
-                                         ]
-                                     }
-                              }
+                 "unpaired": {      # sample id
+                                    "star": {
+                                        "ENV" : "fastqc",  # name of conda env for QC
+                                        "BIN" : "fastqc", # binary for trimming
+                                        "OPTIONS":
+                                        [
+                                            {}
+                                        ]
+                                    }
+                             },
+                 "paired": {      # sample id
+                                  "star": {
+                                      "ENV" : "fastqc",  # name of conda env for QC
+                                      "BIN" : "fastqc", # binary for trimming
+                                      "OPTIONS":
+                                      [
+                                          {}
+                                      ]
+                                  }
+                           }
                }
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-                  "RUN": ON", # set to 'OFF' if no trimming wanted
-        "Dm6": {
-            "untreated": {
-                "std": { # See above
-                    "ENV": "trimgalore", # name of conda env for trimming
-                    "BIN": "trim_galore", # name of binary for trimming
-                    "OPTIONS":
-                    [
-                        {  # trimming options here, --paired is not required, will be resolved by rules
-                            "-q": "15",
-                            "--length": "8", #READ_MINLEN discard reads shorter than that
-                            "-e": "0.15"
-                        }
-                    ]
-                }
-            }
-        }
-    },
-    #Mapping software options
+                  "RUN": "ON", # set to 'OFF' if no trimming wanted
+                  "Dm6": {
+                      "unpaired": {
+                          "star": { # See above
+                                    "ENV": "trimgalore", # name of conda env for trimming
+                                    "BIN": "trim_galore", # name of binary for trimming
+                                    "OPTIONS":
+                                    [
+                                        {  # trimming options here, --paired is not required, will be resolved by rules
+                                           "-q": "15",
+                                           "--length": "8", #READ_MINLEN discard reads shorter than that
+                                           "-e": "0.15"
+                                        }
+                                    ]
+                                  }
+                      },
+                      "paired": {
+                          "star": { # See above
+                                    "ENV": "trimgalore", # name of conda env for trimming
+                                    "BIN": "trim_galore", # name of binary for trimming
+                                    "OPTIONS":
+                                    [
+                                        {  # trimming options here, --paired is not required, will be resolved by rules
+                                           "-q": "15",
+                                           "--length": "8", #READ_MINLEN discard reads shorter than that
+                                           "-e": "0.15"
+                                        }
+                                    ]
+                                  }
+                      }
+                  }
+                },
+#MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
-        "Dm6": {
-            "untreated": {
-                "std": {# first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                    "ENV": "minimap", # which conda env to use for mapping
-                    "BIN": "minimap2", #how the mapper binary is called
-                    "OPTIONS":
-                    [
-                        {
-                            "-k": "14"#option for setting kmer size while indexing
-                        },
-                        {
-                            "-ax": "map-ont",
-                            "-ub": "",
-                            "-Y": "",
-                            "-L": "",
-                           "--MD": "",
-                           "-d": ""
-                        },
-                        "k14"
-                    ]
+                 "Dm6": {
+                     "unpaired": {
+                         "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                   "ENV": "star", # which conda env to use for mapping
+                                   "BIN": "STAR", #how the mapper binary is called
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {
+                                           "--genomeSAindexNbases": "13" #indexing options
+                                       },
+                                       {#mapping options
+                                        "--outSAMprimaryFlag AllBestScore": ""
+                                       },
+                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                   ]
+                                 }
+                     },
+                     "paired": {
+                         "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                   "ENV": "star", # which conda env to use for mapping
+                                   "BIN": "STAR", #how the mapper binary is called
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {
+                                           "--genomeSAindexNbases": "13"
+                                       },
+                                       {
+                                           "--outSAMprimaryFlag AllBestScore": ""
+                                       },
+                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                   ]
+                                 }
+                     }
+                 }
+               },
+#Count options
+    "COUNTING": { #options for trimming for each sample/condition
+                  "Dm6": {
+                      "unpaired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "Parent",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "exon"
+                                       }
+                                   ]
+                                  }
+                      },
+                      "paired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "Parent",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "exon"
+                                       }
+                                   ]
+                                  }
+                      }
+                  }
+                },
+#DE options
+    "DE": { #options for trimming for each sample/condition
+            "Dm6": {
+                "unpaired": {
+                    "star": {# See above
+                             "ENV": "countreads", #see QC
+                             "BIN": "featureCounts",
+                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                             "OPTIONS":
+                             [
+                                 {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                 }
+                             ]
+                            }
+                },
+                "paired": {
+                    "star": {# See above
+                             "ENV": "countreads", #see QC
+                             "BIN": "featureCounts",
+                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                             "OPTIONS":
+                             [
+                                 {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                 }
+                             ]
+                            }
                 }
+            }
+          },
+#Annotation options
+    "ANNOTATE" : {
+        "Dm6": {
+            "unpaired": {
+                "star": { # See above
+                          "ENV": "annotatebed",
+                          "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                          "OPTIONS":
+                          [
+                              {
+                                  "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                              }
+                          ]
+                        }
+            },
+            "paired": {
+                "star": { # See above
+                          "ENV": "annotatebed",
+                          "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
+                          "OPTIONS":
+                          [
+                              {
+                                  "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                              }
+                          ]
+                        }
             }
         }
     },
-    #Count options
-    "COUNTING": { #options for trimming for each sample/condition
-         "Dm6": {
-            "untreated": {
-                "std": {# See above
-                    "ENV": "countreads", #see QC
-                    "BIN": "featurecounts",
-                    "OPTIONS":
-                    [
-                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                           "-f": "",
-                           "--fraction": "",
-                           "-p": "",
-                           "-O": "",
-                           "-M": "",
-                           "-T": "5",
-                           "-t": "exon"
-                        }
-                    ]
-               }
-           }
-       }
-    },
-    #DE options, depend on COUNTING options!!!
-    "DE": { #options for DE Analysis of samples,
-         "Dm6": {
-            "untreated": {
-                "std": {# See above
-                    "ENV": "deseq2", #see QC
-                    "BIN": "deseq2",
-                    "OPTIONS":
-                    [
-                        { # options for table generation, no need to add additional options in general
-                        },
-                        {  # options for deseq2 run, handled by Rscript, should not be needed to add anything
-                        }
-                    ]
-               }
-           }
-       }
-    },
-    #Annotation options
-    "ANNOTATE" : {
-         "Dm6": {
-            "untreated": {
-                "std": { # See above
-                    "ENV" : "annotatebed",
-                    "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "OPTIONS":
-                    [
-                        {
-                            "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                            "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                            "ANNOTATIONFILE": "dm6.gff.gz"
-                        }
-                    ]
-                }
-            }
-         }
-     },
+#UCSC track generation options
     "UCSC" : {
-         "Dm6": {
-            "untreated": {
-                "std": { # See above
-                    "ENV" : "ucsc",
-                    "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "OPTIONS":
-                    [
-                        {
-                          "-n": "DM6 Standard Mapping", #name of the hub
-                          "-s" : "dm6_st", #short name for hub
-                          "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 std", #short name for track
-                          "ANNOTATION": "dm6.gff.gz"
-                       }
-                    ]
-                }
+        "Dm6": {
+            "unpaired": {
+                "star": { # See above
+                          "ENV" : "ucsc",
+                          "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "OPTIONS":
+                          [
+                              {
+                                  "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
+                                  "-s" : "dm6_st", #short name for hub, replace space with _
+                                  "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
+                                  "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                              }
+                          ]
+                        }
+            },
+            "paired": {
+                "star": { # See above
+                          "ENV" : "ucsc",
+                          "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "OPTIONS":
+                          [
+                              {
+                                  "-n" : "DM6_paired_Mapping", #name of the hub, replace space with _
+                                  "-s" : "dm6_st", #short name for hub, replace space with _
+                                  "-l" : "UCSC_DM6_paired_Mapping", #long name for track, replace space with _
+                                  "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                              }
+                          ]
+                        }
             }
-         }
-     }
+        }
+    },
+#Peak finding options
+    "PEAKS" : {
+        "Dm6": {
+            "unpaired": {
+                "star": { # See above
+                          "ENV" : "peaks",
+                          "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz",
+                          "CLIP": "iCLIP",
+                          "OPTIONS":
+                          [
+                              {
+                                  "MINPEAKRATIO": "0.6",
+                                  "PEAKDISTANCE": "1",
+                                  "PEAKWIDTH": "5",
+                                  "PEAKCUTOFF": "0.8",
+                                  "MINPEAKHEIGHT": "3",
+                                  "USRLIMIT": "3"
+                              }
+                          ]
+                        }
+            },
+            "paired": {
+                "star": { # See above
+                          "ENV" : "peaks",
+                          "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz",
+                          "CLIP": "revCLIP",
+                          "OPTIONS":
+                          [
+                              {
+                                  "MINPEAKRATIO": "0.6",
+                                  "PEAKDISTANCE": "1",
+                                  "PEAKWIDTH": "5",
+                                  "PEAKCUTOFF": "0.8",
+                                  "MINPEAKHEIGHT": "3",
+                                  "USRLIMIT": "3"
+                              }
+                          ]
+                        }
+            }
+        }
+    }
 }

@@ -75,233 +75,252 @@
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-                  "RUN": ON", # set to 'OFF' if no trimming wanted
-            "Dm6": {
-            "unpaired": {
-                "star": { # See above
-                    "ENV": "trimgalore", # name of conda env for trimming
-                    "BIN": "trim_galore", # name of binary for trimming
-                    "OPTIONS":
-                    [
-                        {  # trimming options here, --paired is not required, will be resolved by rules
-                            "-q": "15",
-                            "--length": "8", #READ_MINLEN discard reads shorter than that
-                            "-e": "0.15"
-                        }
-                    ]
-                }
-            },
-            "paired": {
-                "star": { # See above
-                    "ENV": "trimgalore", # name of conda env for trimming
-                    "BIN": "trim_galore", # name of binary for trimming
-                    "OPTIONS":
-                    [
-                        {  # trimming options here, --paired is not required, will be resolved by rules
-                            "-q": "15",
-                            "--length": "8", #READ_MINLEN discard reads shorter than that
-                            "-e": "0.15"
-                        }
-                    ]
-                }
-            }
-        }
-    },
+                  "RUN": "ON", # set to 'OFF' if no trimming wanted
+                  "Dm6": {
+                      "unpaired": {
+                          "star": { # See above
+                                    "ENV": "trimgalore", # name of conda env for trimming
+                                    "BIN": "trim_galore", # name of binary for trimming
+                                    "OPTIONS":
+                                    [
+                                        {  # trimming options here, --paired is not required, will be resolved by rules
+                                           "-q": "15",
+                                           "--length": "8", #READ_MINLEN discard reads shorter than that
+                                           "-e": "0.15"
+                                        }
+                                    ]
+                                  }
+                      },
+                      "paired": {
+                          "star": { # See above
+                                    "ENV": "trimgalore", # name of conda env for trimming
+                                    "BIN": "trim_galore", # name of binary for trimming
+                                    "OPTIONS":
+                                    [
+                                        {  # trimming options here, --paired is not required, will be resolved by rules
+                                           "-q": "15",
+                                           "--length": "8", #READ_MINLEN discard reads shorter than that
+                                           "-e": "0.15"
+                                        }
+                                    ]
+                                  }
+                      }
+                  }
+                },
 #MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
                  "Dm6": {
                      "unpaired": {
                          "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                            "ENV": "star", # which conda env to use for mapping
-                            "BIN": "STAR", #how the mapper binary is called
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                         [
-                             {
-                                 "--genomeSAindexNbases": "13" #indexing options
-                             },
-                             {#mapping options
-                                 "--outSAMprimaryFlag AllBestScore": ""
-                             },
-                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
-                         ]
-                     }
+                                   "ENV": "star", # which conda env to use for mapping
+                                   "BIN": "STAR", #how the mapper binary is called
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {
+                                           "--genomeSAindexNbases": "13" #indexing options
+                                       },
+                                       {#mapping options
+                                        "--outSAMprimaryFlag AllBestScore": ""
+                                       },
+                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                   ]
+                                 }
                      },
                      "paired": {
                          "star": { # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                            "ENV": "star", # which conda env to use for mapping
-                    "BIN": "STAR", #how the mapper binary is called
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                         [
-                             {
-                                 "--genomeSAindexNbases": "13"
-                             },
-                             {
-                                 "--outSAMprimaryFlag AllBestScore": ""
-                             },
-                             "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
-                         ]
+                                   "ENV": "star", # which conda env to use for mapping
+                                   "BIN": "STAR", #how the mapper binary is called
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {
+                                           "--genomeSAindexNbases": "13"
+                                       },
+                                       {
+                                           "--outSAMprimaryFlag AllBestScore": ""
+                                       },
+                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                   ]
+                                 }
                      }
                  }
-               }
-    },
-    #Count options
+               },
+#Count options
     "COUNTING": { #options for trimming for each sample/condition
-         "Dm6": {
-            "unpaired": {
-                "star": {# See above
-                    "ENV": "countreads", #see QC
-                    "BIN": "featureCounts",
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                    [
-                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                           "-f": "",
-                           "--fraction": "",
-                           "-g": "Parent",
-                           "-p": "",
-                           "-O": "",
-                           "-M": "",
-                           "-T": "5",
-                           "-t": "exon"
-                        }
-                    ]
-               }
-           },
-            "paired": {
-                "star": {# See above
-                    "ENV": "countreads", #see QC
-                    "BIN": "featureCounts",
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                    [
-                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                           "-f": "",
-                           "--fraction": "",
-                           "-g": "Parent",
-                           "-p": "",
-                           "-O": "",
-                           "-M": "",
-                           "-T": "5",
-                           "-t": "exon"
-                        }
-                    ]
-               }
-           }
-       }
-    },
-    #Annotation options
+                  "Dm6": {
+                      "unpaired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "Parent",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "exon"
+                                       }
+                                   ]
+                                  }
+                      },
+                      "paired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "Parent",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "exon"
+                                       }
+                                   ]
+                                  }
+                      }
+                  }
+                },
+#DE options
+    "DE": { #options for DE Analysis, in principal just a list of conditions that should be compared
+            "Dm6": {
+                "unpaired": {
+                    "star": { # See above
+                              "ENV": "deseq2",
+                              "BIN": "deseq2", #dummy as ucsc has no direct bin but we need the key
+                              "COMBINATIONS": [["Dm6","unpaired","star"],["Dm6","paired","star"]]
+                            }
+                },
+                "paired": {
+                    "star": { # See above
+                              "ENV": "deseq2",
+                              "BIN": "deseq2", #dummy as ucsc has no direct bin but we need the key
+                              "COMBINATIONS": [["Dm6","unpaired","star"],["Dm6","paired","star"]]
+                            }
+                }
+            }
+          },
+#Annotation options
     "ANNOTATE" : {
-         "Dm6": {
+        "Dm6": {
             "unpaired": {
                 "star": { # See above
-                    "ENV": "annotatebed",
-                    "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
-                    "OPTIONS":
-                    [
-                        {
-                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                          "ENV": "annotatebed",
+                          "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                          "OPTIONS":
+                          [
+                              {
+                                  "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                              }
+                          ]
                         }
-                    ]
-                }
             },
             "paired": {
                 "star": { # See above
-                    "ENV": "annotatebed",
-                    "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                    "OPTIONS":
-                    [
-                        {
-                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                          "ENV": "annotatebed",
+                          "BIN": "annotate", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
+                          "OPTIONS":
+                          [
+                              {
+                                  "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                              }
+                          ]
                         }
-                    ]
-                }
             }
-         }
-     },
+        }
+    },
 #UCSC track generation options
     "UCSC" : {
-         "Dm6": {
+        "Dm6": {
             "unpaired": {
                 "star": { # See above
-                    "ENV" : "ucsc",
-                    "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                    [
-                        {
-                          "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
-                          "-s" : "dm6_st", #short name for hub, replace space with _
-                          "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
-                          "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                       }
-                    ]
-                }
+                          "ENV" : "ucsc",
+                          "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "OPTIONS":
+                          [
+                              {
+                                  "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
+                                  "-s" : "dm6_st", #short name for hub, replace space with _
+                                  "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
+                                  "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                              }
+                          ]
+                        }
             },
             "paired": {
                 "star": { # See above
-                    "ENV" : "ucsc",
-                    "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                    "OPTIONS":
-                    [
-                        {
-                          "-n" : "DM6_paired_Mapping", #name of the hub, replace space with _
-                          "-s" : "dm6_st", #short name for hub, replace space with _
-                          "-l" : "UCSC_DM6_paired_Mapping", #long name for track, replace space with _
-                          "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                       }
-                    ]
-                }
+                          "ENV" : "ucsc",
+                          "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                          "OPTIONS":
+                          [
+                              {
+                                  "-n" : "DM6_paired_Mapping", #name of the hub, replace space with _
+                                  "-s" : "dm6_st", #short name for hub, replace space with _
+                                  "-l" : "UCSC_DM6_paired_Mapping", #long name for track, replace space with _
+                                  "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                              }
+                          ]
+                        }
             }
-         }
-     },
+        }
+    },
 #Peak finding options
     "PEAKS" : {
-         "Dm6": {
+        "Dm6": {
             "unpaired": {
                 "star": { # See above
-                    "ENV" : "peaks",
-                    "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "CLIP": "iCLIP",
-                    "OPTIONS":
-                    [
-                      {
-                        "MINPEAKRATIO": "0.6",
-                        "PEAKDISTANCE": "1",
-                        "PEAKWIDTH": "5",
-                        "PEAKCUTOFF": "0.8",
-                        "MINPEAKHEIGHT": "3",
-                        "USRLIMIT": "3"
-                      }
-                   ]
-                }
+                          "ENV" : "peaks",
+                          "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz",
+                          "CLIP": "iCLIP",
+                          "OPTIONS":
+                          [
+                              {
+                                  "MINPEAKRATIO": "0.6",
+                                  "PEAKDISTANCE": "1",
+                                  "PEAKWIDTH": "5",
+                                  "PEAKCUTOFF": "0.8",
+                                  "MINPEAKHEIGHT": "3",
+                                  "USRLIMIT": "3"
+                              }
+                          ]
+                        }
             },
             "paired": {
                 "star": { # See above
-                    "ENV" : "peaks",
-                    "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
-                    "ANNOTATION": "dm6.gff3.gz",
-                    "CLIP": "revCLIP",
-                    "OPTIONS":
-                    [
-                      {
-                        "MINPEAKRATIO": "0.6",
-                        "PEAKDISTANCE": "1",
-                        "PEAKWIDTH": "5",
-                        "PEAKCUTOFF": "0.8",
-                        "MINPEAKHEIGHT": "3",
-                        "USRLIMIT": "3"
-                      }
-                   ]
-                }
+                          "ENV" : "peaks",
+                          "BIN" : "peaks", #dummy as ucsc has no direct bin but we need the key
+                          "ANNOTATION": "dm6.gff3.gz",
+                          "CLIP": "revCLIP",
+                          "OPTIONS":
+                          [
+                              {
+                                  "MINPEAKRATIO": "0.6",
+                                  "PEAKDISTANCE": "1",
+                                  "PEAKWIDTH": "5",
+                                  "PEAKCUTOFF": "0.8",
+                                  "MINPEAKHEIGHT": "3",
+                                  "USRLIMIT": "3"
+                              }
+                          ]
+                        }
             }
-         }
-     }
+        }
+    }
 }
