@@ -191,35 +191,6 @@
                       }
                   }
                 },
-#DE options
-    "DE": { #options for trimming for each sample/condition
-            "Dm6": {
-                "unpaired": {
-                    "star": {# See above
-                             "ENV": "deseq2", #see QC
-                             "BIN": "deseq2",
-                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                             "OPTIONS":
-                             [
-                                 {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                                 }
-                             ]
-                            }
-                },
-                "paired": {
-                    "star": {# See above
-                             "ENV": "deseq2", #see QC
-                             "BIN": "deseq2",
-                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
-                             "OPTIONS":
-                             [
-                                 {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
-                                 }
-                             ]
-                            }
-                }
-            }
-          },
 #Annotation options
     "ANNOTATE" : {
         "Dm6": {
@@ -332,5 +303,36 @@
                         }
             }
         }
-    }
+    },
+    #DE options
+    "DE": { #options for trimming for each sample/condition
+            "Dm6": {
+                "unpaired": {
+                    "star": {# See above
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
+                             "CONDITION":  ["WT","WT"],
+                             "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"],
+                             "OPTIONS":
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                },
+                "paired": {
+                    "star": {# See above
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
+                             "CONDITION":  ["KO","KO"],
+                             "REPLICATES": ["GSM461177_untreat_paired_subset","GSM461177_untreat_paired_subset"],
+                             "OPTIONS":
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                }
+            }
+          }
 }

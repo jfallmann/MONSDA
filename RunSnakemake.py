@@ -38,6 +38,7 @@ def parseargs():
 
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
     try:
+        logid = scriptname+'.run_snakemake: '
         for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'QC', 'LOGS']:  # Add RAW for nanopore preprocessing
             makeoutdir(subdir)
 

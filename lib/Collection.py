@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sat Nov  9 22:38:38 2019 (-0300)
+# Last-Updated: Sun Nov 10 12:02:48 2019 (-0300)
 #           By: Joerg Fallmann
-#     Update #: 783
+#     Update #: 785
 # URL:
 # Doc URL:
 # Keywords:
@@ -401,6 +401,7 @@ def pathstogenomes(samples, config):
 def tool_params(sample, runstate, config, subconf):
     try:
         logid='tool_params: '
+        log.debug(logid+'Samples: '+str(sample))
         t = genome(sample,config)
         mp = OrderedDict()
         if runstate is None:

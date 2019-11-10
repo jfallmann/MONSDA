@@ -1,31 +1,19 @@
 DEBIN, DEENV = list(env_bin_from_config2(SAMPLES,config,'DE'))[0:2]
-conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
-log.info('SAMPLES: '+str(samplecond(SAMPLES,config)))
-#combilist = [os.path.join(x) for x in tool_params(input[0], None, config, 'DE')['COMBINATIONS'])]  # Need to adjust for list of lists
-
-##get files with specified pattern
-#one = [os.path.abspath(os.path.join(x, "*_mapped_sorted_unique.counts")) for x in combilist[0]]
-#two = [os.path.abspath(os.path.join(x, "*_mapped_sorted_unique.counts")) for x in combilist[1]]
-#
-##search for files
-#cond_one = [re.sub('\_mapped\_sorted\_unique\.counts', '', x) for x in natsorted(glob.glob(one), key=lambda y: y.lower())]
-#cond_two = [re.sub('\_mapped\_sorted\_unique\.counts', '', x) for x in natsorted(glob.glob(two), key=lambda y: y.lower())]
 
 rule all:
     input:  expand("DE/DESEQ2/{file}.csv",file=samplecond(SAMPLES,config)),
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
-    output:  tbl = "DE/Tables/{file}.tbl",
-             tc  = temp("DE/Tables/{file}.csv")
-    log:     "LOGS/DE/{file}.log"
+    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl"
+    log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params:  #decombi = lambda wildcards, input: tool_params(input[0], None, config, 'DE')['COMBINATIONS']),
-             bins = BINS,
-             cond = lambda wildcards: str.join(os.sep,wildcards.file.split(os.sep)[:-1]),
-             tpe  = lambda wildcards: wildcards.file.split(os.sep)[-2]
-    shell: "for i in {input.cnd}; do echo \"{params.cond} {params.tpe} ${{i}}\"> {output.tc};done && python2 {params.bins}/Analysis/DE/build_DESeq_table.py -l {output.tc} -n >> {output.tbl} 2> {log}"
+    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
+             dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
+             samples = lambda wildcards, input: str.join(',',input.cnd),
+             bins = BINS
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} 1> {output.tbl} 2> {log}"
 
 rule run_deseq2:
     input:  cnt = expand(rules.prepare_count_table.output, file=samplecond(SAMPLES,config))
