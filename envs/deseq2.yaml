@@ -30,7 +30,6 @@ dependencies:
   - bzip2=1.0.8
   - ca-certificates=2019.9.11
   - cairo=1.16.0
-  - certifi=2019.9.11
   - curl=7.65.3
   - fontconfig=2.13.1
   - freetype=2.10.0
@@ -72,10 +71,8 @@ dependencies:
   - openssl=1.1.1d
   - pango=1.42.4
   - pcre=8.43
-  - pip=19.3.1
   - pixman=0.38.0
   - pthread-stubs=0.4
-  - python=2.7.15
   - r-acepack=1.4.1
   - r-assertthat=0.2.1
   - r-backports=1.1.5
@@ -163,11 +160,8 @@ dependencies:
   - r-zeallot=0.1.0
   - readline=8.0
   - sed=4.7
-  - setuptools=41.6.0
-  - sqlite=3.30.1
   - tk=8.6.9
   - tktable=2.10
-  - wheel=0.33.6
   - xorg-kbproto=1.0.7
   - xorg-libice=1.0.10
   - xorg-libsm=1.2.3
@@ -182,4 +176,3 @@ dependencies:
   - xz=5.2.4
   - zlib=1.2.11
   - zstd=1.4.3
-

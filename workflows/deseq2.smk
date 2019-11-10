@@ -1,11 +1,13 @@
 DEBIN, DEENV = list(env_bin_from_config2(SAMPLES,config,'DE'))[0:2]
 
 rule all:
-    input:  expand("DE/DESEQ2/{file}.csv",file=samplecond(SAMPLES,config)),
+    input:  "DE/DESEQ2/Results.csv"
+        #expand("DE/DESEQ2/Results.csv",file=samplecond(SAMPLES,config)),
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
-    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl"
+    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl",
+             anno = "DE/Tables/RUN_DE_Analysis.anno"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
@@ -13,16 +15,18 @@ rule prepare_count_table:
              dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
              samples = lambda wildcards, input: str.join(',',input.cnd),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} 1> {output.tbl} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_deseq2:
-    input:  cnt = expand(rules.prepare_count_table.output, file=samplecond(SAMPLES,config))
-    output: csv = "DE/DESEQ2/{file}.csv"
-    log:    "LOGS/DE/{file}.log"
+    input:  cnt = rules.prepare_count_table.output.tbl,
+            anno = rules.prepare_count_table.output.anno,
+    output: csv = "DE/DESEQ2/Results.csv"
+    log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params: bins = BINS
-    shell: "Rscript {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.cnt} {output.csv} 2> {log}"
+    params: bins = BINS,
+            outdir = lambda wildcards, output: os.path.dirname(output.csv)
+    shell: "Rscript {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {output.csv} 2> {log}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output
