@@ -232,6 +232,44 @@ This should become clear having a look at the different processing steps.
      }
 }
 ```
+
+The pipeline now also supports DE-Analysis as postprocessing step for a defined set of samples. The config for this step looks as follows:
+
+```
+    #DE options
+    "DE": { #options for each sample/condition
+            "Dm6": {
+                "unpaired": {
+                    "star": {
+                             "ENV": "deseq2", #choose which environment to use (currently only deseq2 is supported, others will follow)
+                             "BIN": "deseq2", #choose which binary to use (currently only deseq2 is supported, others will follow)
+                             "CONDITION":  ["WT","WT"], # define the conditions per sample as list of same lenght as replicates
+                             "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"], #this are the replicates for each condition, length has to match with CONDITION 
+                             "OPTIONS": #This is not needed currently, other DE pipelines may need this later on
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                },
+                "paired": {#see above, in principle conditions can also be mixed between subsets, this example tests all unpaired reads as WT versus all paired reads as KO
+                    "star": {
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
+                             "CONDITION":  ["KO","KO"],
+                             "REPLICATES": ["GSM461177_untreat_paired_subset","GSM461177_untreat_paired_subset"],
+                             "OPTIONS":
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                }
+            }
+          }
+
+```
+
 Keep in mind that every workflow/postprocessing step needs a corresponding entry in the config file or ```RunSnakemake.py``` will throw an error.
 
 
@@ -259,4 +297,4 @@ or add additional arguments for ```snakemake``` as you see fit.
 Define the cluster config file and for SGE support simply append ```--cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript snakes/cluster/sge.sh```
 
 ## TODO
-Implementation of DE pipeline, Slurm support, Isoform analysis, you name it
+Implementation of Slurm support, Isoform analysis, you name it

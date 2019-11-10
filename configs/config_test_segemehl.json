@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run
-    "POSTPROCESSING" : "COUNTING,UCSC,PEAKS,ANNOTATE", # no specific order needed
+    "POSTPROCESSING" : "COUNTING,DE,UCSC,PEAKS,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -315,5 +315,36 @@
                 }
             }
          }
-     }
+     },
+    #DE options
+    "DE": { #options for trimming for each sample/condition
+            "Dm6": {
+                "unpaired": {
+                    "segemehl": {# See above
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
+                             "CONDITION":  ["WT","WT"],
+                             "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"],
+                             "OPTIONS":
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                },
+                "paired": {
+                    "segemehl": {# See above
+                             "ENV": "deseq2", #see QC
+                             "BIN": "deseq2",
+                             "CONDITION":  ["KO","KO"],
+                             "REPLICATES": ["GSM461177_untreat_paired_subset","GSM461177_untreat_paired_subset"],
+                             "OPTIONS":
+                             [
+                                 {  #Should not be needed
+                                 }
+                             ]
+                            }
+                }
+            }
+          }
 }
