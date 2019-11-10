@@ -1,6 +1,6 @@
-DEBIN, DEENV = list(set(env_bin_from_config2(SAMPLES,config,'DE')))
+DEBIN, DEENV = list(env_bin_from_config2(SAMPLES,config,'DE'))[0:2]
 conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
-
+log.info('SAMPLES: '+str(samplecond(SAMPLES,config)))
 #combilist = [os.path.join(x) for x in tool_params(input[0], None, config, 'DE')['COMBINATIONS'])]  # Need to adjust for list of lists
 
 ##get files with specified pattern
@@ -15,7 +15,7 @@ rule all:
     input:  expand("DE/DESEQ2/{file}.csv",file=samplecond(SAMPLES,config)),
 
 rule prepare_count_table:
-    input:   cnd = expand("{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
+    input:   cnd = expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
     output:  tbl = "DE/Tables/{file}.tbl",
              tc  = temp("DE/Tables/{file}.csv")
     log:     "LOGS/DE/{file}.log"
@@ -23,9 +23,9 @@ rule prepare_count_table:
     threads: 1
     params:  #decombi = lambda wildcards, input: tool_params(input[0], None, config, 'DE')['COMBINATIONS']),
              bins = BINS,
-             cond = lambda wildcards, input: str.split(os.sep,input.cnd)[:-1],
-             tpe  = lambda wildcards, input: str.split(os.sep,input.cnd)[-1]
-    shell: "for i in {input.cnd}; do echo \"{params.cond} {params.tpe} \$i\"> {output.tc};done && python2 {params.bins}/Analysis/DE/build_DESeq_table.py -l {output.tc} -n >> {output.tbl} 2> {log}"
+             cond = lambda wildcards: str.join(os.sep,wildcards.file.split(os.sep)[:-1]),
+             tpe  = lambda wildcards: wildcards.file.split(os.sep)[-2]
+    shell: "for i in {input.cnd}; do echo \"{params.cond} {params.tpe} ${{i}}\"> {output.tc};done && python2 {params.bins}/Analysis/DE/build_DESeq_table.py -l {output.tc} -n >> {output.tbl} 2> {log}"
 
 rule run_deseq2:
     input:  cnt = expand(rules.prepare_count_table.output, file=samplecond(SAMPLES,config))

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Oct 17 15:49:08 2019 (+0200)
+# Last-Updated: Sat Nov  9 22:38:38 2019 (-0300)
 #           By: Joerg Fallmann
-#     Update #: 778
+#     Update #: 783
 # URL:
 # Doc URL:
 # Keywords:
@@ -75,9 +75,11 @@ from io import StringIO
 from Bio import SeqIO
 import gzip
 import math
-from collections import defaultdict, OrderedDict
 import inspect
 import subprocess
+import collections
+from collections import defaultdict, OrderedDict
+import six
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 if cmd_subfolder not in sys.path:
@@ -714,6 +716,25 @@ def nested_set(dic, keys, value):
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
     dic[keys[-1]] = value
+
+def merge_dicts(d,u):
+    # https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+    # python 3.8+ compatibility
+    try:
+        collectionsAbc = collections.abc
+    except:
+        collectionsAbc = collections
+
+    for k, v in six.iteritems(u):
+        dv = d.get(k, {})
+        if not isinstance(dv, collectionsAbc.Mapping):
+            d[k] = v
+        elif isinstance(v, collectionsAbc.Mapping):
+            d[k] = merge_dicts(dv, v)
+        else:
+            d[k] = v
+    return d
+
 
 def list_all_keys_of_dict(dictionary):
     try:
