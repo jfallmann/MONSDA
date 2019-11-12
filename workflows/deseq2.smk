@@ -26,7 +26,7 @@ rule run_deseq2:
     params: bins = BINS,
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
             #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
-    shell: "Rscript {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} 2> {log} && touch {output.csv}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} 2> {log} && touch {output.csv}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output
