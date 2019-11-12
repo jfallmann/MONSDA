@@ -1,8 +1,7 @@
 DEBIN, DEENV = list(env_bin_from_config2(SAMPLES,config,'DE'))[0:2]
 
 rule all:
-    input:  "DE/DESEQ2/Results.csv"
-        #expand("DE/DESEQ2/Results.csv",file=samplecond(SAMPLES,config)),
+    input:  "DE/DESEQ2/DONE"
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
@@ -20,13 +19,14 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: csv = "DE/DESEQ2/Results.csv"
+    output: csv = "DE/DESEQ2/DONE"
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params: bins = BINS,
-            outdir = lambda wildcards, output: os.path.dirname(output.csv)
-    shell: "Rscript {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {output.csv} 2> {log}"
+            outdir = lambda wildcards, output: os.path.dirname(output.csv),
+            #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
+    shell: "Rscript {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} 2> {log} && touch {output.csv}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output

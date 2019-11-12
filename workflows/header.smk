@@ -1,6 +1,7 @@
 import glob, os, sys, inspect, snakemake, json, shutil
 import traceback as tb
 from collections import defaultdict
+from itertools import combinations
 from snakemake.utils import validate, min_version
 min_version("5.7.0") #need to add back later
 
