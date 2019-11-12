@@ -189,7 +189,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
             log.warning(logid+'No subworkflows defined! Nothing to do!')
 
         if postprocess:
-            log.info(logid+'Starting runs for postprocessing')
+            log.info(logid+'STARTING POSTPROCESSING')
 
             if 'PEAKS' in config and 'PEAKS' in postprocess:
                 CLIP = checkclip(SAMPLES, config)
@@ -248,6 +248,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
 
             #THIS SECTION IS FOR DE ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             if 'DE' in config:
+                log.info(logid+'STARTING DE Analysis')
                 subwork = 'DE'
                 subconf = NestedDefaultDict()
                 log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
@@ -260,7 +261,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 for x in range(1,len(listofconfigs)):
                     subconf = merge_dicts(subconf,listofconfigs[x])
 
-                log.info(logid+'DE-CONFIG: '+str(subconf))
                 subname = toolenv+'.smk'
                 subsamples = sampleslong(subconf)
                 log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
