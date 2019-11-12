@@ -1,4 +1,4 @@
-DEBIN, DEENV = list(env_bin_from_config2(SAMPLES,config,'DE'))[0:2]
+DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
 
 rule all:
     input:  "DE/DESEQ2/DONE"
