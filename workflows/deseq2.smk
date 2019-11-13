@@ -5,8 +5,8 @@ rule all:
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
-    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl",
-             anno = "DE/Tables/RUN_DE_Analysis.anno"
+    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl.gz",
+             anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
