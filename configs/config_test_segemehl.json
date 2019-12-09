@@ -43,7 +43,7 @@
                                     "segemehl": "single" # setup and sequencing type, either paired or single
                              },
                  "paired": {      # sample id
-                                  "segemehl": "paired" # setup and sequencing type, either paired or single
+                                  "segemehl": "paired,fr" # setup and sequencing type, either paired or single
                            }
                }
     },

@@ -30,12 +30,13 @@ SAMPLES=list(set(samples(config)))
 if os.path.exists(SAMPLES[0]) is False:
     SAMPLES=list(set(sampleslong(config)))
 
-paired = ''
-if checkpaired(SAMPLES, config):
-    paired = 'paired'
-
-if paired == 'paired':
+paired = checkpaired(SAMPLES, config)
+if paired != '':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
+
+stranded = checkstranded(SAMPLES, config)
+if stranded != '':
+    log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)

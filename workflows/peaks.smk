@@ -30,17 +30,26 @@ elif all(checklist2):
         params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
 else:
-    rule BamtoBed:
-        input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
-                "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-        output: "PEAKS/{file}_mapped_sorted.bed.gz",
-                "PEAKS/{file}_mapped_unique.bed.gz"
-        log:    "LOGS/PEAKS/bam2bed_{file}.log"
-        threads: 1
-        conda:  "snakes/envs/bedtools.yaml"
-        # Here I use the strand of the first read in pair as the one determining the strand
-        shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
-        #        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]} "
+    if not stranded or stranded == 'fr':
+        rule BamToBed:
+            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+            output: "PEAKS/{file}_mapped_sorted.bed.gz",
+                    "PEAKS/{file}_mapped_unique.bed.gz"
+            log:    "LOGS/PEAKS/bam2bed_{file}.log"
+            threads: 1
+            conda:  "snakes/envs/bedtools.yaml"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+    elif stranded and stranded == 'rf':
+        rule BamToBed:
+            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+            output: "PEAKS/{file}_mapped_sorted.bed.gz",
+                    "PEAKS/{file}_mapped_unique.bed.gz"
+            log:    "LOGS/PEAKS/bam2bed_{file}.log"
+            threads: 1
+            conda:  "snakes/envs/bedtools.yaml"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
@@ -62,7 +71,7 @@ rule get_chromsize_genomic:
 
 rule extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
-            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=''.join(tool_params(wildcards.file, None ,config, 'MAPPING')[2]))
+            lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))#''.join(tool_params(wildcards.file, None ,config, 'PEAKS')[2]))
     output: "PEAKS/{file}_mapped_extended_{type}.bed.gz"
     log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
     conda:  "snakes/envs/perl.yaml"

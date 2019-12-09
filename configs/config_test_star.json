@@ -43,7 +43,7 @@
                                     "star": "single" # setup and sequencing type, either paired or single
                              },
                  "paired": {      # sample id
-                                  "star": "paired" # setup and sequencing type, either paired or single
+                                  "star": "paired,fr" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                            }
                }
     },
@@ -323,7 +323,7 @@
             }
         }
     },
-        #DE options
+#DE options
     "DE": { #options for trimming for each sample/condition
             "Dm6": {
                 "unpaired": {

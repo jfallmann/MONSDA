@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sun Nov 10 12:02:48 2019 (-0300)
+# Last-Updated: Mon Dec  9 16:33:57 2019 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 785
+#     Update #: 810
 # URL:
 # Doc URL:
 # Keywords:
@@ -632,17 +632,38 @@ def checkpaired(sample,config):
     try:
         logid = 'checkpaired: '
         ret = list()
-        paired = False
+        paired = ''
         for s in sample:
             check = os.path.dirname(s).split(os.sep)
-            log.debug(logid+str(check))
             for r in runstate_from_sample([s],config):
                 tmplist = check
                 tmplist.append(r)
-                if 'paired' in getFromDict(config['SEQUENCING'],tmplist):
-                    paired = True
-        log.debug(logid+str(paired))
+                if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                    paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+        log.debug(logid+'PAIRED: '+str(paired))
         return paired
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
+def checkstranded(sample,config):
+    try:
+        logid = 'checkstranded: '
+        ret = list()
+        stranded = ''
+        for s in sample:
+            check = os.path.dirname(s).split(os.sep)
+            for r in runstate_from_sample([s],config):
+                tmplist = check
+                tmplist.append(r)
+                if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                    stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
+        log.debug(logid+'STRANDEDNESS: '+str(stranded))
+        return stranded
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
