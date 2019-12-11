@@ -96,7 +96,6 @@ elif all(checklist2):
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
         conda:  "snakes/envs/ucsc.yaml"
-        #    conda:  "snakes/envs/perl.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -116,9 +115,21 @@ else:
         #        shell:  "awk '{{if($6==\"+\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[0]} 2> {log} && awk '{{if($6==\"-\") print}}' {input[0]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[1]} 2>> {log} && awk '{{if($6==\"+\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[2]} 2>> {log} && awk '{{if($6==\"-\") print}}' {input[1]} | bedItemOverlapCount {params.genome} -chromSize={params.sizes} stdin |sort -k1,1 -k2,2n|gzip > {output[3]} 2>> {log}"
         #    shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[0]} -c {params.sizes} -v on -x {output[0]} -y {output[1]} -a track 2> {log} && perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input[1]} -c {params.sizes} -v on -x {output[2]} -y {output[3]} -a track 2>> {log}"
 
+### This step normalized the bedg files for comparison in the browser
+rule NormalizeBedg:
+    input:  fw = rules.BedToBedg.output.fw,
+            re = rules.BedToBedg.output.re
+    output: fw = "UCSC/{file}_mapped_{type}.fw.norm.bedg.gz",
+            re = "UCSC/{file}_mapped_{type}.re.norm.bedg.gz"
+    log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
+    conda:  "snakes/envs/perl.yaml"
+    threads: 1
+    shell: "scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/\$ARGV[1])' <(zcat input.fw) \"$scale\" |gzip > {output.fw} && scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/\$ARGV[1])' <(zcat input.re) \"$scale\" |gzip > {output.re} "
+
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
-    input:  rules.BedToBedg.output,
+    input:  fw = rules.NormalizeBedg.output.fw,
+            re = rules.NormalizeBedg.output.re,
     output: fw = "UCSC/{file}_mapped_{type}.fw.bw",
             re = "UCSC/{file}_mapped_{type}.re.bw",
             t1 = temp("UCSC/{file}_mapped_{type}.fw.tmp"),
@@ -128,7 +139,7 @@ rule BedgToUCSC:
     threads: 1
     priority: 100               # This should be finished before we generate tracks
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "zcat {input[0]} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log} && zcat {input[1]} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log} && zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}"
 
 rule GenerateTrack:
     input:  fw = rules.BedgToUCSC.output.fw,
