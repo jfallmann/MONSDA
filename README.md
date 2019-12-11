@@ -1,13 +1,13 @@
 # snakes
 
 Collection of snakemake workflows for NGS analysis from mapping to featurecount and track generation
-Contains sumodule so clone with ```git clone --recursive``` or if already cloned with pull submodules with 
+Contains sumodule so clone with ```git clone --recursive``` or if already cloned with pull submodules with
 ```
 git submodule init
-git submodule update 
+git submodule update
 ```
 
-See [stackoverflow](https://stackoverflow.com/questions/25200231/cloning-a-git-repo-with-all-submodules) and 
+See [stackoverflow](https://stackoverflow.com/questions/25200231/cloning-a-git-repo-with-all-submodules) and
 [git docs](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for details.
 
 For details on ```snakemake``` and it's features please refer to the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
@@ -25,7 +25,7 @@ This manual will only show examples on local and SGE usage, but more information
 
 ## What is happening
 
-This repository hosts the executable ```RunSnakemake.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file. 
+This repository hosts the executable ```RunSnakemake.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file.
 The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```RunSnakemake.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
 
 To successfully run an analysis pipeline, a few steps have to be followed:
@@ -46,7 +46,7 @@ It starts with a key/value pair defining which workflows and postprocessing step
 
 ```
 {
-    "WORKFLOWS": "MAPPING,TRIMMING,QC", # Here you define which main workflow steps should be run, 
+    "WORKFLOWS": "MAPPING,TRIMMING,QC", # Here you define which main workflow steps should be run,
     "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
@@ -83,6 +83,7 @@ The next part defines the samples to run the analysis on, just add a list of sam
 In case of single-end sequencing make sure to include the _r1 _r2 tag, in case of paired end skip those as the pipeline will look for _r1 and _r2 tags to find read pairs.
 *Make sure the naming of you samples follows this _r1 _r2 convention when running paired-end analysis!*
 The *SEQUENCING* key allows you to define *single* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
+You can also specify strandedness of the protocol used, if unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
 
 ```
     "SAMPLES": {  #which samples to analyze
@@ -95,7 +96,8 @@ The *SEQUENCING* key allows you to define *single* or *paired* as values to enab
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single
+                                     "std": "single" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, if stranded see below
+									 #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
     },
@@ -244,7 +246,7 @@ The pipeline now also supports DE-Analysis as postprocessing step for a defined 
                              "ENV": "deseq2", #choose which environment to use (currently only deseq2 is supported, others will follow)
                              "BIN": "deseq2", #choose which binary to use (currently only deseq2 is supported, others will follow)
                              "CONDITION":  ["WT","WT"], # define the conditions per sample as list of same lenght as replicates
-                             "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"], #this are the replicates for each condition, length has to match with CONDITION 
+                             "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"], #this are the replicates for each condition, length has to match with CONDITION
                              "OPTIONS": #This is not needed currently, other DE pipelines may need this later on
                              [
                                  {  #Should not be needed
