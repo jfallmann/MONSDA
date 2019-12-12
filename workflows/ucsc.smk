@@ -124,7 +124,7 @@ rule NormalizeBedg:
     log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
-    shell: "scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/\$ARGV[1])' <(zcat input.fw) \"$scale\" |gzip > {output.fw} && scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/\$ARGV[1])' <(zcat input.re) \"$scale\" |gzip > {output.re} "
+    shell: "scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$ARGV[1])' <(zcat {input.fw}) \"$scale\" |gzip > {output.fw} && scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u)\") && perl -wlane 'print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$ARGV[1])' <(zcat {input.re}) \"$scale\" |gzip > {output.re} "
 
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
