@@ -1,13 +1,13 @@
 DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
 
 rule all:
-    input:  "DE/DESEQ2/DONE"
+    input:  "DE/EDGER/DONE"
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
-    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl.gz",
-             anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
-    log:     "LOGS/DE/prepare_count_table.log"
+    output:  tbl = "DE/EDGER/Tables/RUN_DE_Analysis.tbl.gz",
+             anno = "DE/EDGER/Tables/RUN_DE_Analysis.anno.gz"
+    log:     "LOGS/DE/EDGER/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
@@ -19,8 +19,8 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: csv = "DE/DESEQ2/DONE"
-    log:    "LOGS/DE/run_deseq2.log"
+    output: csv = "DE/EDGER/DONE"
+    log:    "LOGS/DE/run_edger.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params: bins = BINS,
