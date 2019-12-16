@@ -148,6 +148,10 @@
                },
 #Count options
     "COUNTING": { #options for trimming for each sample/condition
+                  "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
+                      "exon": "Parent",
+                      "gene": "ID"
+                  },
                   "Dm6": {
                       "unpaired": {
                           "star": {# See above
@@ -159,12 +163,10 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-g": "Parent",
                                           "-p": "",
                                           "-O": "",
                                           "-M": "",
                                           "-T": "5",
-                                          "-t": "exon"
                                        }
                                    ]
                                   }
@@ -179,12 +181,10 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-g": "Parent",
                                           "-p": "",
                                           "-O": "",
                                           "-M": "",
                                           "-T": "5",
-                                          "-t": "exon"
                                        }
                                    ]
                                   }

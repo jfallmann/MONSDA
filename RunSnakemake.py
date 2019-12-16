@@ -203,9 +203,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 CLIP = checkclip(SAMPLES, config)
                 log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
-            if 'DE' in config and 'DE' in postprocess and not 'COUNTING' in postprocess:
+            #if 'DE' in config and 'DE' in postprocess and not 'COUNTING' in postprocess:
                 #postprocess.remove('DE')  # need to make sure that counting happens before DE
-                postprocess.append('COUNTING')
+                #postprocess.append('COUNTING')
                 #postprocess.append('DE')
 
             for condition in conditions:
@@ -262,12 +262,18 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
 
                 listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
-                if listoftools is None:
-                    log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork))
+                listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                if listoftools is None or listoftoolscount is None:
+                    log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
+
                 toolenv, toolbin = map(str,listoftools[0])
+                countenv, countbin = map(str,listoftoolscount[0])
+
                 subconf = listofconfigs[0]
                 for x in range(1,len(listofconfigs)):
                     subconf = merge_dicts(subconf,listofconfigs[x])
+                for x in range(0,len(listofconfigscount)):
+                    subconf = merge_dicts(subconf,listofconfigscount[x])
 
                 subname = toolenv+'.smk'
                 subsamples = sampleslong(subconf)

@@ -2,9 +2,9 @@ COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
-            expand("COUNTS/Featurecounter/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
-            expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
-            expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
+            "COUNTS/Summary",
+            "COUNTS/Features_{region}",
+            "COUNTS/Features_unique_{region}"
 
 if paired == 'paired':
     rule count_fastq:
@@ -57,11 +57,10 @@ rule featurecount:
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+'-t '+wildcards.region+' -g '+config['COUNTING']['FEATURES'][wildcards.region],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            outfile = lambda wildcards: expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts",file = wildcards.file, region = tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0]['-t'])
-    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {params.outfile} {input[0]} 2> {log}"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -72,35 +71,38 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+'-t '+wildcards.region+' -g '+config['COUNTING']['FEATURES'][wildcards.region],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            outfile = lambda wildcards: expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts",file = wildcards.file, region = tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0]['-t'])
-    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {params.outfile} {input[0]} 2> {log}"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} 4-a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule summarize_counts:
     input:  f = rules.count_fastq.output,
-            m =rules.count_mappers.output,
-            u =rules.count_unique_mappers.output
+            m = rules.count_mappers.output,
+            u = rules.count_unique_mappers.output
     output: "COUNTS/{file}.summary"
     log:    "LOGS/{file}/summarize_counts.log"
     conda:  "snakes/envs/base.yaml"
     threads: 1
     shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 
-rule themall:
+rule count_summary:
     input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-            f1 = expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),#expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
-            f2 = expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))#expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
-    output: a = "COUNTS/Features_{region}",
-            u = "COUNTS/Features_unique_{region}",
-            c = "COUNTS/Summary",
-            t = expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
+    output: c = "COUNTS/Summary"
     conda:  "snakes/envs/base.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && touch {output.t}"
-    #shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done && touch {output.t}"
+    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done"
+
+rule themall:
+    input:  f1 = expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config),region=list(config['COUNTING']['FEATURES'].keys())),#expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
+            f2 = expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config),region=list(config['COUNTING']['FEATURES'].keys()))#expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
+    output: a = "COUNTS/Features_{region}",
+            u = "COUNTS/Features_unique_{region}"
+    conda:  "snakes/envs/base.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done && for i in {input.e1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.e};fi;done && for i in {input.e2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.eu};fi;done"
 
 onsuccess:
     print("Workflow finished, no error")

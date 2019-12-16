@@ -3,8 +3,22 @@ DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
 rule all:
     input:  "DE/DESEQ2/DONE"
 
+rule featurecount_unique:
+    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: "COUNTS/Featurecounter_gene/{file}_mapped_sorted_unique.counts",
+            temp("COUNTS/Featurecounter_gene/{file}_unique.anno")
+    log:    "LOGS/{file}/featurecount_de_gene_unique.log"
+    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: count = COUNTBIN,
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+'-t gene -g '+config['COUNTING']['FEATURES']['gene'],
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} 4-a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+
 rule prepare_count_table:
-    input:   cnd = expand("COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
+    input:   cnd = expand("COUNTS/Featurecounter_gene/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
     output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl.gz",
              anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
     log:     "LOGS/DE/prepare_count_table.log"
