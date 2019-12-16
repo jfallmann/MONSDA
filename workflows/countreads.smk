@@ -2,8 +2,10 @@ COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
-            expand("COUNTS/Featurecounter/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
-            expand("COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
+            expand("COUNTS/Featurecounter_genes/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
+            expand("COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
+            expand("COUNTS/Featurecounter_exons/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
+            expand("COUNTS/Featurecounter_exons/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
             expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
