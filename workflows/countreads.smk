@@ -3,8 +3,8 @@ COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 rule all:
     input:  expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
             "COUNTS/Summary",
-            "COUNTS/Features_{region}",
-            "COUNTS/Features_unique_{region}"
+            expand("COUNTS/Features_{region}", region=list(config['COUNTING']['FEATURES'].keys())),
+            expand("COUNTS/Features_unique_{region}"region=list(config['COUNTING']['FEATURES'].keys()))
 
 if paired == 'paired':
     rule count_fastq:
