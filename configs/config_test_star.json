@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "MAPPING,TRIMMING,QC", #which workflows do you want to run
-    "POSTPROCESSING" : "COUNTING,DE,UCSC,PEAKS,ANNOTATE", # no specific order needed
+    "POSTPROCESSING" : "COUNTING_GENES,COUNTING_EXONS,DE,UCSC,PEAKS,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link the snake git to Workflow, use this path
     "MAXTHREADS": "20", #maximum number of cores to use
@@ -142,7 +142,7 @@
                  }
                },
 #Count options
-    "COUNTING": { #options for trimming for each sample/condition
+    "COUNTING_GENES": { #options for counting for each sample/condition, if multiple regions should be counted add them as list
                   "Dm6": {
                       "unpaired": {
                           "star": {# See above
@@ -154,7 +154,51 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-g": "Parent",
+                                          "-g": "ID",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "gene"
+                                       }
+                                   ]
+                                  }
+                      },
+                      "paired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "ID",
+                                          "-p": "",
+                                          "-O": "",
+                                          "-M": "",
+                                          "-T": "5",
+                                          "-t": "gene"
+                                       }
+                                   ]
+                                  }
+                      }
+                  }
+                },
+    "COUNTING_EXONS": { #options for counting for each sample/condition, if multiple regions should be counted add them as list
+                  "Dm6": {
+                      "unpaired": {
+                          "star": {# See above
+                                   "ENV": "countreads", #see QC
+                                   "BIN": "featureCounts",
+                                   "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                   "OPTIONS":
+                                   [
+                                       {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                          "-f": "",
+                                          "--fraction": "",
+                                          "-g": "transcript_id",
                                           "-p": "",
                                           "-O": "",
                                           "-M": "",
@@ -174,7 +218,7 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-g": "Parent",
+                                          "-g": "transcript_id",
                                           "-p": "",
                                           "-O": "",
                                           "-M": "",
