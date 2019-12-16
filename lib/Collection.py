@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Dec  9 16:33:57 2019 (+0100)
+# Last-Updated: Mon Dec 16 15:11:28 2019 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 810
+#     Update #: 813
 # URL:
 # Doc URL:
 # Keywords:
@@ -697,6 +697,15 @@ def checkclip(sample,config):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
+
+def check_tool_params(sample, runstate, config, subconf, idx):
+    try:
+        return tool_params(sample, runstate ,config, subconf)['OPTIONS'][idx]
+    except:
+        if subconf == 'MAPPING':
+            return 'std'
+        else:
+            return ''
 
 def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",

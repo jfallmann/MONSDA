@@ -10,10 +10,10 @@
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "Dm6": {#first key should be same than for GENOME
                       "unpaired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                    "star": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                    "star": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                   },
                       "paired": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                  "star": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                  "star": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                 }
                      }
             },
@@ -64,11 +64,7 @@
                  "paired": {      # sample id
                                   "star": {
                                       "ENV" : "fastqc",  # name of conda env for QC
-                                      "BIN" : "fastqc", # binary for trimming
-                                      "OPTIONS":
-                                      [
-                                          {}
-                                      ]
+                                      "BIN" : "fastqc" # binary for trimming, if no OPTIONS ARE NEEDED THIS CAN BE LEFT EMPTY
                                   }
                            }
                }
@@ -139,8 +135,7 @@
                                        },
                                        {
                                            "--outSAMprimaryFlag AllBestScore": ""
-                                       },
-                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                       } #name extension for index can also be skipped, will be set to std by default
                                    ]
                                  }
                      }
@@ -191,25 +186,6 @@
                       }
                   }
                 },
-#DE options
-    "DE": { #options for DE Analysis, in principal just a list of conditions that should be compared
-            "Dm6": {
-                "unpaired": {
-                    "star": { # See above
-                              "ENV": "deseq2",
-                              "BIN": "deseq2", #dummy as ucsc has no direct bin but we need the key
-                              "COMBINATIONS": [["Dm6","unpaired","star"],["Dm6","paired","star"]]
-                            }
-                },
-                "paired": {
-                    "star": { # See above
-                              "ENV": "deseq2",
-                              "BIN": "deseq2", #dummy as ucsc has no direct bin but we need the key
-                              "COMBINATIONS": [["Dm6","unpaired","star"],["Dm6","paired","star"]]
-                            }
-                }
-            }
-          },
 #Annotation options
     "ANNOTATE" : {
         "Dm6": {
