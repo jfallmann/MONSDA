@@ -50,31 +50,60 @@ rule count_unique_mappers:
 
 rule featurecount:
     input: "SORTED_MAPPED/{file}_mapped_sorted.bam"
-    output: "COUNTS/Featurecounter/{file}_mapped_sorted.counts",
-            temp("COUNTS/Featurecounter/{file}.anno")
-    log:    "LOGS/{file}/featurecount.log"
+    output: "COUNTS/Featurecounter_genes/{file}_mapped_sorted.counts",
+            temp("COUNTS/Featurecounter_genes/{file}.anno")
+    log:    "LOGS/{file}/featurecountgenes.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene',
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts",
-            temp("COUNTS/Featurecounter/{file}_unique.anno")
-    log:    "LOGS/{file}/featurecount_unique.log"
+    output: "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts",
+            temp("COUNTS/Featurecounter_genes/{file}_unique.anno")
+    log:    "LOGS/{file}/featurecount_genesunique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene',
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+
+rule featurecount_exons:
+    input: "SORTED_MAPPED/{file}_mapped_sorted.bam"
+    output: "COUNTS/Featurecounter_exons/{file}_mapped_sorted.counts",
+            temp("COUNTS/Featurecounter_exons/{file}.anno")
+    log:    "LOGS/{file}/featurecountexons.log"
+    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: count = COUNTBIN,
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t exon',
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+
+rule featurecount_unique_exons:
+    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: "COUNTS/Featurecounter_exons/{file}_mapped_sorted_unique.counts",
+            temp("COUNTS/Featurecounter_exons/{file}_unique.anno")
+    log:    "LOGS/{file}/featurecount_exonsunique.log"
+    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: count = COUNTBIN,
+            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t exon',
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+
 
 rule summarize_counts:
     input:  f = rules.count_fastq.output,
@@ -89,15 +118,19 @@ rule summarize_counts:
 rule themall:
     input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config)),
             f1 = expand(rules.featurecount.output, file=samplecond(SAMPLES,config)),
-            f2 = expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config))
-    output: a = "COUNTS/Features",
-            u = "COUNTS/Features_unique",
+            f2 = expand(rules.featurecount_unique.output, file=samplecond(SAMPLES,config)),
+            e1 = expand(rules.featurecount_exons.output, file=samplecond(SAMPLES,config)),
+            e2 = expand(rules.featurecount_unique_exons.output, file=samplecond(SAMPLES,config))
+    output: a = "COUNTS/Features_genes",
+            u = "COUNTS/Features_genes_unique",
+            e = "COUNTS/Features_exons",
+            eu = "COUNTS/Features_exons_unique",
             c = "COUNTS/Summary",
             t = expand("COUNTS/{file}_DONE",file=samplecond(SAMPLES,config))
     conda:  "snakes/envs/base.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done && touch {output.t}"
+    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done && for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.u};fi;done && for i in {input.e1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.e};fi;done && for i in {input.e2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {output.eu};fi;done && touch {output.t}"
 
 onsuccess:
     print("Workflow finished, no error")
