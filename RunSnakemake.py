@@ -28,7 +28,7 @@ def parseargs():
     parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
-    parser.add_argument("--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
+    parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -37,7 +37,7 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
@@ -341,7 +341,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.unlock, optionalargs[0])
+        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.unlock, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
