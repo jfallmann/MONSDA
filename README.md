@@ -66,7 +66,7 @@ In the *SOURCE* section you then define which condition/setting should use which
     "NAME": { #extension for genome file name in case different typed of reference are used, e.g. genomic, artificial, organelle ...
               "Dm6": {#first key should be same than for GENOME
                       "untreated": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                     "std": ""  #Identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ...
+                                     "std": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                    }
                      }
             },
@@ -107,9 +107,10 @@ Now the actual workflow section begins, where you can define for each combinatio
 This follow the same scheme for each step, optionally define *RUN* ON/OFF or simply skip the key in the *WORKFLOW*/*POSTPROCESSING* section and here if not needed.
 The *ENV* key defines the conda environment to load from the *env* directory of this repository, feel free to add you own environment.yaml files there.
 The *BIN* key defines the name of the executable, this is needed in case the env and the bin differ as e.g. for the mapping tool ```segemehl/segemehl.x```.
-The enxt key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single/paired* end sequencing, this is done automatically.
+The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single/paired* end sequencing, this is done automatically.
 To add parameters simply add the *OPTION* key which holds as value a list of hashes. Parameters are defined in this hashes again as key/value pairs corresponding to the parameter name and the setting.
 This should become clear having a look at the different processing steps.
+If there are no options just do not add the *OPTION*
 
 ```
 #QC options
@@ -164,7 +165,7 @@ This should become clear having a look at the different processing steps.
                            "--MD": "",
                            "-d": ""
                         },
-                        "k14"
+                        "k14" #name the index that is generated, if this is left empty the index will have the extention 'std'
                     ]
                 }
             }
@@ -200,13 +201,12 @@ This should become clear having a look at the different processing steps.
                 "std": { # See above
                     "ENV" : "annotatebed",
                     "BIN" : "annotate", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
+                    "ANNOTATIONFILE": "dm6.gff.gz",
                     "OPTIONS":
                     [
                         {
-                            "-w": "ON", #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
-                            "ANNOFEATURE" : "", #You can specify a set of certain features to annotate here, e.g. 'exon' will only annotate exon overlaps, disable specific feature annotation by adding empty string ("") as value
-                            "ANNOTATIONFILE": "dm6.gff.gz"
-                        }
+                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value                        }
                     ]
                 }
             }
@@ -218,6 +218,7 @@ This should become clear having a look at the different processing steps.
                 "std": { # See above
                     "ENV" : "ucsc",
                     "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need the key
+                    "ANNOTATION": "dm6.gff.gz",
                     "OPTIONS":
                     [
                         {
@@ -225,7 +226,6 @@ This should become clear having a look at the different processing steps.
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
                           "-b" : "UCSC dm6 std", #short name for track
-                          "ANNOTATION": "dm6.gff.gz"
                        }
                     ]
                 }

@@ -28,6 +28,7 @@ def parseargs():
     parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
+    parser.add_argument("--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -39,8 +40,13 @@ def parseargs():
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
-        for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'TRIMMED_FASTQ', 'QC', 'LOGS']:  # Add RAW for nanopore preprocessing
-            makeoutdir(subdir)
+        if skeleton:
+            for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
+                makeoutdir(subdir)
+            sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
+        else:
+            for subdir in ['SubSnakes', 'LOGS']:  # Add RAW for nanopore preprocessing
+                makeoutdir(subdir)
 
         subdir = 'SubSnakes'
         config = load_configfile(configfile)
@@ -123,6 +129,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                     smkout.write('\n\n')
 
                 if 'QC' in subworkflows and config['QC']['RUN'] == "ON":
+                    makeoutdir('QC')
                     if 'MAPPING' in subworkflows:
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
                             smkout.write('rule all:\n\tinput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))\n\n')
@@ -135,6 +142,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
 
                 if 'MAPPING' in subworkflows and ('TRIMMING' not in subworkflows or ('TRIMMING' in config and config['TRIMMING']['RUN'] == "OFF")):
                     log.info(logid+'Simulating read trimming as trimming was set to OFF or is not part of the workflow!')
+                    makeoutdir('TRIMMED_FASTQ')
                     smkf = os.path.abspath(os.path.join('snakes','workflows','simulatetrim.smk'))
                     with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
                         with open(smkf,'r') as smk:
@@ -219,20 +227,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                         subsamples = list(set(sampleslong(subconf)))
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
                         smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                                 smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))), 'a') as smkout:
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                                 smkout.write('\n\n')
 
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))), 'a') as confout:
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))), 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         o = runjob(jobtorun)
                         if o.stdout:
@@ -265,20 +273,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, un
                 subsamples = sampleslong(subconf)
                 log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
                 smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([toolbin,'subsnake.smk']))), 'a') as smkout:
+                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
                 smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([toolbin,'subsnake.smk']))), 'a') as smkout:
+                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
 
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([toolbin,'subconfig.json']))), 'a') as confout:
+                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json']))), 'a') as confout:
                     json.dump(subconf, confout)
 
-                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 o = runjob(jobtorun)
                 if o.stdout:
