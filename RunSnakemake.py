@@ -224,7 +224,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         if subwork == 'COUNTING':
-                            subconf.update(config['COUNTING']['FEATURES'])
+                            subconf['COUNTING'].update(config['COUNTING']['FEATURES'])
                         subname = toolenv+'.smk'
                         subsamples = list(set(sampleslong(subconf)))
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
