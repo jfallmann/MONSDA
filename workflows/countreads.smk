@@ -49,7 +49,7 @@ rule count_unique_mappers:
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T SORTTMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule featurecount:
-    input: "SORTED_MAPPED/{file}_mapped_sorted.bam"
+    input: expand("SORTED_MAPPED/{file}_mapped_sorted.bam",file=samplecond(SAMPLES,config))
     output: "COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts",
             temp("COUNTS/Featurecounter_{region}/{file}.anno")
     log:    "LOGS/{file}/featurecount_{region}.log"
@@ -63,7 +63,7 @@ rule featurecount:
     shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
 rule featurecount_unique:
-    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",file=samplecond(SAMPLES,config))
     output: "COUNTS/Featurecounter_{region}/{file}_mapped_sorted_unique.counts",
             temp("COUNTS/Featurecounter_{region}/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_{region}_unique.log"
