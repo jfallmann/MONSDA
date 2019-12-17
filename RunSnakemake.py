@@ -9,7 +9,7 @@ from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
-min_version("5.7.1")
+min_version("5.8.2")
 
 #cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 #if cmd_subfolder not in sys.path:
