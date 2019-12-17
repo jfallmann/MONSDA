@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Dec 16 15:11:28 2019 (+0100)
+# Last-Updated: Mon Dec 16 23:38:31 2019 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 813
+#     Update #: 814
 # URL:
 # Doc URL:
 # Keywords:
@@ -309,12 +309,16 @@ def create_subworkflow(config, subwork, conditions):
                     tempconf[key][src] = config[key][src]
                 for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+                if 'COUNTING' in config:
+                    tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
+
             except KeyError:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 tbe = tb.TracebackException(
                     exc_type, exc_value, exc_tb,
                 )
                 log.error(''.join(tbe.format()))
+
             tempconf[subwork+'ENV'] = env
             tempconf[subwork+'BIN'] = exe
             toollist.append([env,exe])

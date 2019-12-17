@@ -1,7 +1,7 @@
 DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
 
 rule all:
-    input:  "DE/DESEQ2/DONE"
+    input:  "DE/EDGER/DONE"
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -12,16 +12,17 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene -g '+config['COUNTING']['FEATURES']['gene'],
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} 4-a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            outfile = lambda wildcards: expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts",file = wildcards.file, region = 'gene')
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} 4-a {output[1]} -o {params.outfile} {input[0]} 2> {log}"
 
 rule prepare_count_table:
     input:   cnd = expand("COUNTS/Featurecounter_gene/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
-    output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl.gz",
-             anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
-    log:     "LOGS/DE/prepare_count_table.log"
+    output:  tbl = "DE/EDGER/Tables/RUN_DE_Analysis.tbl.gz",
+             anno = "DE/EDGER/Tables/RUN_DE_Analysis.anno.gz"
+    log:     "LOGS/DE/EDGER/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
@@ -33,8 +34,8 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: csv = "DE/DESEQ2/DONE"
-    log:    "LOGS/DE/run_deseq2.log"
+    output: csv = "DE/EDGER/DONE"
+    log:    "LOGS/DE/run_edger.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params: bins = BINS,
