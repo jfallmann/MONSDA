@@ -1,7 +1,7 @@
 # snakes
 
 Collection of snakemake workflows for NGS analysis from mapping to featurecount and track generation
-Contains sumodule so clone with ```git clone --recursive``` or if already cloned with pull submodules with
+Contains sumodule so clone with ```git clone --recursive``` or if already cloned pull submodules with
 ```
 git submodule init
 git submodule update
@@ -97,7 +97,7 @@ You can also specify strandedness of the protocol used, if unstranded leave empt
         "Dm6": { #key for source and genome
                  "untreated": {      # sample id
                                      "std": "single" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, if stranded see below
-									 #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
+                                     #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
     },
@@ -162,8 +162,8 @@ If there are no options just do not add the *OPTION*
                             "-ub": "",
                             "-Y": "",
                             "-L": "",
-                           "--MD": "",
-                           "-d": ""
+                            "--MD": "",
+                            "-d": ""
                         },
                         "k14" #name the index that is generated, if this is left empty the index will have the extention 'std'
                     ]
@@ -173,6 +173,10 @@ If there are no options just do not add the *OPTION*
     },
     #Count options
     "COUNTING": { #options for trimming for each sample/condition
+        "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
+            "exon": "Parent",
+            "gene": "ID"
+        },
          "Dm6": {
             "untreated": {
                 "std": {# See above
@@ -180,14 +184,13 @@ If there are no options just do not add the *OPTION*
                     "BIN": "featurecounts",
                     "OPTIONS":
                     [
-                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from ANNOTATION option, feature and group is resolved by the FEATURES key
                            "-f": "",
                            "--fraction": "",
                            "-p": "",
                            "-O": "",
                            "-M": "",
-                           "-T": "5",
-                           "-t": "exon"
+                           "-T": "5"
                         }
                     ]
                }

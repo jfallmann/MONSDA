@@ -98,6 +98,10 @@
                },
 #Count options
     "COUNTING": { #options for trimming for each sample/condition
+                  "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
+                                "exon": "Parent",
+                                "gene": "ID"
+                              },
                   "Dm6": {
                       "unpaired": {
                           "minimap": {# See above
