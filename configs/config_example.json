@@ -149,9 +149,9 @@
 #Count options
     "COUNTING": { #options for trimming for each sample/condition
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
-                      "exon": "Parent",
-                      "gene": "ID"
-                  },
+                                "exon": "Parent",
+                                "gene": "ID"
+                              },
                   "Dm6": {
                       "unpaired": {
                           "star": {# See above
@@ -304,7 +304,7 @@
             }
         }
     },
-    #DE options
+#DE options
     "DE": { #options for trimming for each sample/condition
             "Dm6": {
                 "unpaired": {
