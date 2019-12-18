@@ -104,12 +104,11 @@ rule themall:
     input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
             f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys())
     output: a = "COUNTS/DONE"
-            #u = "COUNTS/Features_{feat}s_unique",
     conda:  "snakes/envs/base.yaml"
     threads: 1
     params: bins = BINS,
-            a = lambda: expand("COUNTS/Features_{feat}s",feat=config['COUNTING']['FEATURES'].keys()),
-            u = lambda: expand("COUNTS/Features_{feat}s_unique",config['COUNTING']['FEATURES'].keys())
+            a = lambda x: expand("COUNTS/Features_{feat}s",feat=config['COUNTING']['FEATURES'].keys()),
+            u = lambda x: expand("COUNTS/Features_{feat}s_unique",feat=config['COUNTING']['FEATURES'].keys())
     shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {params.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {params.u};fi;done && touch {output.a}"
 
 #f1 = expand("COUNTS/Featurecounter_{{feat}}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),

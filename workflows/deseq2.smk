@@ -1,4 +1,5 @@
 DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
+COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 rule all:
     input:  "DE/DESEQ2/DONE"
