@@ -148,8 +148,8 @@
 #Count options
     "COUNTING": { #options for counting for each sample/condition, if multiple regions should be counted add them as list
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
-                                "exon": "Parent",
-                                "gene": "ID"
+                                "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3 file
+                                "gene": "ID" #same here
                               },
                   "Dm6": {
                       "unpaired": {
@@ -162,7 +162,6 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-p": "",
                                           "-O": "",
                                           "-M": "",
                                           "-T": "5"
@@ -180,7 +179,6 @@
                                        {  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
                                           "-f": "",
                                           "--fraction": "",
-                                          "-p": "",
                                           "-O": "",
                                           "-M": "",
                                           "-T": "5"

@@ -8,9 +8,9 @@ log.warning('KEYS: '+str(list(config['COUNTING']['FEATURES'].keys())))
 rule all:
     input:  #expand("COUNTS/Features_{feat}s", feat=config['COUNTING']['FEATURES'].keys()),
             #expand("COUNTS/Features_{feat}s_unique", feat=config['COUNTING']['FEATURES'].keys()),
-            expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config)),
-            "COUNTS/Summary",
-            "COUNTS/DONE"
+            #"COUNTS/Summary",
+            "COUNTS/DONE",
+            expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
     rule count_fastq:
@@ -92,31 +92,35 @@ rule summarize_counts:
     threads: 1
     shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 
-rule count_summary:
-    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-    output: c = "COUNTS/Summary"
-    conda:  "snakes/envs/base.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done"
-
 rule themall:
     input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys())
+            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
+            c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
     output: a = "COUNTS/DONE"
     conda:  "snakes/envs/base.yaml"
     threads: 1
-    params: bins = BINS,
-            a = lambda x: expand("COUNTS/Features_{feat}s",feat=config['COUNTING']['FEATURES'].keys()),
-            u = lambda x: expand("COUNTS/Features_{feat}s_unique",feat=config['COUNTING']['FEATURES'].keys())
-    shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {params.a};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then cat $i\.summary >> {params.u};fi;done && touch {output.a}"
-
-#f1 = expand("COUNTS/Featurecounter_{{feat}}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config)),
-            #f2 = expand("COUNTS/Featurecounter_{{feat}}/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)),
-            #,feat=list(config['COUNTING']['FEATURES'].keys()))#,feat=list(config['COUNTING']['FEATURES'].keys())),
+    params: bins = BINS
+    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> COUNTS/Summary;fi;done;touch {output.a}"
 
 onsuccess:
     print("Workflow finished, no error")
+
+#rule count_summary:
+#    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
+#    output: c = lambda x,input: expand("COUNTS/{cdir}/Summary", cdir=os.path.dirname(wildcards.input.c[0]))
+#    conda:  "snakes/envs/base.yaml"
+#    threads: 1
+#    params: bins = BINS
+#    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done"
+#
+#rule themall:
+#    input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
+#            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys())
+#    output: a = "COUNTS/DONE"
+#    conda:  "snakes/envs/base.yaml"
+#    threads: 1
+#    params: bins = BINS
+#    shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}}_unique;fi;done && touch {output.a}"
 
 ###rnacounter and cufflinks are to be added later
 #rule RNAcountReads:

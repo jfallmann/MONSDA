@@ -5,8 +5,8 @@ rule all:
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "COUNTS/Featurecounter_gene/{file}_mapped_sorted_unique.counts",
-            temp("COUNTS/Featurecounter_gene/{file}_unique.anno")
+    output: "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts",
+            temp("COUNTS/Featurecounter_genes/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_de_gene_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -16,10 +16,10 @@ rule featurecount_unique:
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             outfile = lambda wildcards: expand("COUNTS/Featurecounter_{region}/{file}_mapped_sorted.counts",file = wildcards.file, region = 'gene')
-    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} 4-a {output[1]} -o {params.outfile} {input[0]} 2> {log}"
+    shell:  "zcat {params.anno} > {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {params.outfile} {input[0]} 2> {log}"
 
 rule prepare_count_table:
-    input:   cnd = expand("COUNTS/Featurecounter_gene/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
+    input:   cnd = expand("COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
     output:  tbl = "DE/EDGER/Tables/RUN_DE_Analysis.tbl.gz",
              anno = "DE/EDGER/Tables/RUN_DE_Analysis.anno.gz"
     log:     "LOGS/DE/EDGER/prepare_count_table.log"

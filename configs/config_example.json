@@ -153,8 +153,8 @@
 #Count options
     "COUNTING": { #options for trimming for each sample/condition
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
-                      "exon": "Parent",
-                      "gene": "ID"
+                      "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3 file
+                      "gene": "ID" #same here
                   },
                   "Dm6": {
                       "unpaired": {
