@@ -118,12 +118,16 @@
                                    "OPTIONS":
                                    [
                                        {
+                                           "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                           "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
                                            "--genomeSAindexNbases": "13" #indexing options
                                        },
                                        {#mapping options
+                                        "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                        "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
                                         "--outSAMprimaryFlag AllBestScore": ""
                                        },
-                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
+                                       "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index, can be empty or removed
                                    ]
                                  }
                      },

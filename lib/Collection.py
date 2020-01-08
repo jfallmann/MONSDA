@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Dec 16 23:38:31 2019 (+0100)
+# Last-Updated: Wed Jan  8 14:14:54 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 814
+#     Update #: 815
 # URL:
 # Doc URL:
 # Keywords:
@@ -704,7 +704,13 @@ def checkclip(sample,config):
 
 def check_tool_params(sample, runstate, config, subconf, idx):
     try:
-        return tool_params(sample, runstate ,config, subconf)['OPTIONS'][idx]
+        par = tool_params(sample, runstate ,config, subconf)['OPTIONS'][idx]
+        if par is not '':
+            return par
+        elif subconf == 'MAPPING':
+            return 'std'
+        else:
+            return ''
     except:
         if subconf == 'MAPPING':
             return 'std'

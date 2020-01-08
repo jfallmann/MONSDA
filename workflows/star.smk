@@ -12,7 +12,7 @@ rule generate_index:
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]),
             genpath = lambda wildcards: "{ref}/{dir}/{map}".format(ref=REFERENCE, dir=wildcards.dir, map=MAPPERENV)
-    shell:  "if [[ -f \"{params.genpath}/SAindex\" ]]; then touch {output.idx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf TMPSTAR && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outTmpDir TMPSTAR --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} --sjdbGTFtagExonParentTranscript Parent 2> {log} && touch {output.idx} && cat Log.out >> {log} && rm -f Log.out && rm -rf TMPSTAR ;fi"
+    shell:  "if [[ -f \"{params.genpath}/SAindex\" ]]; then touch {output.idx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && rm -rf TMPSTAR && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outTmpDir TMPSTAR --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && touch {output.idx} && cat Log.out >> {log} && rm -f Log.out && rm -rf TMPSTAR ;fi"
 
 if paired == 'paired':
     rule mapping:
@@ -26,7 +26,7 @@ if paired == 'paired':
         log:    "LOGS/{file}/mapping.log"
         conda:  "snakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params:  mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 genpath = lambda wildcards: "{ref}/{dir}/{map}/".format(ref=REFERENCE, dir=source_from_sample(wildcards.file).split(os.sep)[0], map=MAPPERENV),
                 anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'MAPPING')['ANNOTATION']]),
