@@ -27,5 +27,4 @@ dependencies:
   - tk=8.6.10
   - xz=5.2.4
   - zlib=1.2.11
-prefix: /home/fall/anaconda3/envs/bwa
 

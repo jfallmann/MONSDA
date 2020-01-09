@@ -120,9 +120,8 @@
                              {
                                  "-a": "bwtsw"
                              }, #indexing options
-                             {#mapping options
-                                 "-a": "",
-                                 "-C": ""
+                             {#mapping options, be careful with -C option, may cause problems when format of fastq is not correct
+                                 "-a": ""
                              },
                              "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
@@ -138,9 +137,8 @@
                              {
                                  "-a": "bwtsw"
                              }, #indexing options
-                             {#mapping options
-                                 "-a": "",
-                                 "-C": ""
+                             {#mapping options, be careful with -C option, may cause problems when format of fastq is not correct
+                                 "-a": ""
                              },
                              "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index
                          ]
@@ -205,7 +203,7 @@
                     "OPTIONS":
                     [
                         {
-                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                            "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or remove the line
                         }
                     ]
                 }
