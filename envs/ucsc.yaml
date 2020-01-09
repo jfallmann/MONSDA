@@ -3,10 +3,24 @@ channels:
   - conda-forge
   - bioconda
   - defaults
+  - r
 dependencies:
+  - _libgcc_mutex=0.1
+  - bc=1.07.1
+  - ca-certificates=2019.11.28
   - grep=2.14
+  - libgcc-ng=9.2.0
+  - libgomp=9.2.0
+  - libpng=1.6.37
+  - libstdcxx-ng=9.2.0
+  - libuuid=2.32.1
   - mysql-connector-c=6.1.11
+  - openmp_impl=4.5
+  - openssl=1.0.2u
+  - pcre=8.43
   - ucsc-bedgraphtobigwig=377
+  - ucsc-beditemoverlapcount=377
   - ucsc-fatotwobit=377
   - ucsc-twobitinfo=377
-  - ucsc-beditemoverlapcount=377
+  - zlib=1.2.11
+
