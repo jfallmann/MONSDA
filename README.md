@@ -19,6 +19,14 @@ For ```snakemake``` to be fully FAIR, one needs to use ```conda``` or similar en
 
 This workflow collection makes heavy use of ```conda``` and especially the [bioconda](https://bioconda.github.io) channel.
 
+To create a working environment for this repository please install the snakemake environment as found in the ```envs``` directory like so:
+
+```
+conda env create -n snakemake -f snakes/envs/snakemake.yaml
+```
+
+The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically when needed.
+
 For distribution of jobs one can either rely on local hardware, use scheduling software like the [SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html) or [Slurm](https://slurm.schedmd.com/documentation.html).
 
 This manual will only show examples on local and SGE usage, but more information on how to use other scheduling software is available elsewhere.
