@@ -1,7 +1,0 @@
-name: segemehl_031
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - segemehl=0.3.1

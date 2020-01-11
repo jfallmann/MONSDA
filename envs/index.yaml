@@ -21,4 +21,5 @@ dependencies:
   - tk=8.6.8
   - xz=5.2.4
   - zlib=1.2.11
+  - pigz=2.3.4
 

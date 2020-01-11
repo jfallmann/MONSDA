@@ -13,6 +13,7 @@ dependencies:
   - libstdcxx-ng=7.2.0
   - ncurses=6.1
   - openssl=1.0.2p
+  - pigz=2.3.4
   - pip=18.0
   - python=3.6.6
   - readline=7.0

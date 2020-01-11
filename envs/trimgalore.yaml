@@ -39,5 +39,4 @@ dependencies:
   - xopen=0.7.3
   - xz=5.2.4
   - zlib=1.2.11
-prefix: /scr/jack/fall/anaconda3/envs/trimgalore
 

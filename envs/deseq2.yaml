@@ -71,6 +71,7 @@ dependencies:
   - openssl=1.1.1d
   - pango=1.42.4
   - pcre=8.43
+  - pigz=2.3.4
   - pixman=0.38.0
   - pthread-stubs=0.4
   - r-acepack=1.4.1
@@ -181,5 +182,4 @@ dependencies:
   - xz=5.2.4
   - zlib=1.2.11
   - zstd=1.4.3
-prefix: /home/fall/anaconda3/envs/deseq2
 

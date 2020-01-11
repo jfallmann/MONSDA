@@ -9,3 +9,4 @@ dependencies:
   - libgcc-ng=7.2.0
   - ncurses=5.9
   - zlib=1.2.11
+  - pigz=2.3.4

@@ -10,4 +10,5 @@ dependencies:
   - libgcc-ng=9.1.0
   - subread=1.6.4
   - zlib=1.2.11
+  - pigz=2.3.4
 

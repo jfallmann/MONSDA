@@ -19,10 +19,10 @@ dependencies:
   - libstdcxx-ng=9.1.0
   - ncurses=6.1
   - openssl=1.1.1c
+  - pigz=2.3.4
   - samtools=1.9
   - star=2.7.1a
   - tk=8.6.9
   - xz=5.2.4
   - zlib=1.2.11
-prefix: /home/fall/anaconda3/envs/star
 

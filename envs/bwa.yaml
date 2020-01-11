@@ -6,6 +6,7 @@ channels:
   - r
 dependencies:
   - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
   - bwa=0.7.17
   - bzip2=1.0.8
   - ca-certificates=2019.11.28
@@ -19,10 +20,12 @@ dependencies:
   - libgomp=9.2.0
   - libssh2=1.8.2
   - libstdcxx-ng=9.2.0
+  - llvm-openmp=8.0.1
   - ncurses=6.1
-  - openmp_impl=4.5
+  - openmp=8.0.1
   - openssl=1.1.1d
   - perl=5.26.2
+  - pigz=2.3.4
   - samtools=1.9
   - tk=8.6.10
   - xz=5.2.4

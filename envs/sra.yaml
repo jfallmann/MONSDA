@@ -5,4 +5,5 @@ channels:
   - r
 dependencies:
   - sra-tools=2.9.1_1
+  - pigz=2.3.4
 
