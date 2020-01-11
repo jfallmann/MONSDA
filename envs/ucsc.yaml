@@ -6,6 +6,7 @@ channels:
   - r
 dependencies:
   - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
   - bc=1.07.1
   - ca-certificates=2019.11.28
   - grep=2.14
@@ -15,7 +16,7 @@ dependencies:
   - libstdcxx-ng=9.2.0
   - libuuid=2.32.1
   - mysql-connector-c=6.1.11
-  - openmp_impl=4.5
+  - openmp=8.0.1
   - openssl=1.0.2u
   - pcre=8.43
   - ucsc-bedgraphtobigwig=377
