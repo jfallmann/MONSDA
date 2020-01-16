@@ -9,7 +9,7 @@ rule all:
     input:  #expand("COUNTS/Features_{feat}s", feat=config['COUNTING']['FEATURES'].keys()),
             #expand("COUNTS/Features_{feat}s_unique", feat=config['COUNTING']['FEATURES'].keys()),
             #"COUNTS/Summary",
-            "COUNTS/DONE",
+            expand("DONE/{file}/counts_{feat}", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
             expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
@@ -96,7 +96,7 @@ rule themall:
     input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
             f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
             c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-    output: a = "COUNTS/DONE"
+    output: a = "DONE/{file}/counts_{feat}"
     conda:  "snakes/envs/base.yaml"
     threads: 1
     params: bins = BINS
