@@ -309,6 +309,7 @@
                              "ENV": "deseq2", #see QC
                              "BIN": "deseq2",
                              "CONDITION":  ["WT","WT"],
+                             "TYPE":  ["single","single"],
                              "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"],
                              "OPTIONS":
                              [
@@ -322,6 +323,7 @@
                              "ENV": "deseq2", #see QC
                              "BIN": "deseq2",
                              "CONDITION":  ["KO","KO"],
+                             "TYPE":  ["paired","paired"],
                              "REPLICATES": ["GSM461177_untreat_paired_subset","GSM461177_untreat_paired_subset"],
                              "OPTIONS":
                              [
