@@ -17,12 +17,12 @@ for analysis in ['DE', 'DEU', 'DAS']:
             conda:  "snakes/envs/"+COUNTENV+".yaml"
             threads: MAXTHREAD
             params: count = COUNTBIN,
-                    anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+                    anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]),
                     cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t exon -g ParentGene',
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS
-            shell:  "{params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py {params.anno} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+            shell:  "{params.bins}/Analysis/"+analysis+"/prepare_dexseq_annotation2.py {params.anno} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
     rule prepare_count_table:
         input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
@@ -35,11 +35,12 @@ for analysis in ['DE', 'DEU', 'DAS']:
                  dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, analysis)['REPLICATES']) for x in input.cnd]),
                  samples = lambda wildcards, input: str.join(',',input.cnd),
                  bins = BINS
-        shell: "{params.bins}/Analysis/"+analysis+"/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} --table {output.tbl} --anno {output.anno} 2> {log}"
+        shell: "{params.bins}/Analysis/"+analysis+"/build_DEXSeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} --table {output.tbl} --anno {output.anno} 2> {log}"
 
     rule run_deseq2:
         input:  cnt = rules.prepare_count_table.output.tbl,
                 anno = rules.prepare_count_table.output.anno,
+                flat = expand("COUNTS/Featurecounter_dexseq/{file}_unique.anno",file=samplecond(SAMPLES,config))
         output: csv = analysis+"/DEXSEQ/DONE"
         log:    "LOGS/"+analysis+"/run_deseq2.log"
         conda:  "snakes/envs/"+DEUENV+".yaml"
