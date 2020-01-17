@@ -22,7 +22,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS
-            shell:  "{params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -g {params.anno} -o {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+            shell:  "{params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py {params.anno} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
     rule prepare_count_table:
         input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
