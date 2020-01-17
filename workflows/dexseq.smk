@@ -12,7 +12,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         rule featurecount_unique:
             input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
-                    temp("COUNTS/Featurecounter_dexseq/{file}_unique.anno")
+                    "COUNTS/Featurecounter_dexseq/{file}_unique.anno"
             log:    "LOGS/{file}/featurecount_"+analysis+"_dexseq_unique.log"
             conda:  "snakes/envs/"+COUNTENV+".yaml"
             threads: MAXTHREAD
@@ -22,7 +22,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS
-            shell:  "{params.bins}/Analysis/DEU/prepare_dexseq_annotation.py -g {params.anno} -o {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+            shell:  "{params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -g {params.anno} -o {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
 
     rule prepare_count_table:
         input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
