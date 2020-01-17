@@ -2,6 +2,8 @@ for analysis in ['DE', 'DEU', 'DAS']:
     if analysis in config:
         DEUBIN, DEUENV = env_bin_from_config2(SAMPLES,config,analysis)
         COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+    else:
+        continue
 
     rule all:
         input:  analysis+"/DEXSEQ/DONE"
@@ -16,7 +18,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
             threads: MAXTHREAD
             params: count = COUNTBIN,
                     anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-                    cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene -g ParentGene',
+                    cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t exon -g ParentGene',
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS
@@ -27,7 +29,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         output:  tbl = analysis+"/Tables/RUN_"+analysis+"_Analysis.tbl.gz",
                  anno = analysis+"/Tables/RUN_DEU_"+analysis+".anno.gz"
         log:     "LOGS/"+analysis+"/prepare_count_table.log"
-        conda:   "snakes/envs/"+DEENV+".yaml"
+        conda:   "snakes/envs/"+DEUENV+".yaml"
         threads: 1
         params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, analysis)['CONDITION']) for x in input.cnd]),
                  dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, analysis)['REPLICATES']) for x in input.cnd]),
@@ -40,7 +42,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                 anno = rules.prepare_count_table.output.anno,
         output: csv = analysis+"/DEXSEQ/DONE"
         log:    "LOGS/"+analysis+"/run_deseq2.log"
-        conda:  "snakes/envs/"+DEENV+".yaml"
+        conda:  "snakes/envs/"+DEUENV+".yaml"
         threads: 1
         params: bins = BINS,
                 outdir = lambda wildcards, output: os.path.dirname(output.csv),
@@ -55,5 +57,5 @@ for analysis in ['DE', 'DEU', 'DAS']:
 #    params: bins = BINS
 #    shell:  "touch {output}"
 
-onsuccess:
-    print("Workflow finished, no error")
+    onsuccess:
+        print("Workflow "+analysis+"finished, no error")
