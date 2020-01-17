@@ -24,7 +24,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS,
                     tmpgtf = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')
-            shell:  "if [ ! -f \"{params.tmpgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py {params.anno} {params.tmpgtf} ;fi && ln -s {params.tmpgtf} {output[1]} && zcat {params.tmpgtf} > {output[2]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[1]} -o {output[0]} {input[0]} 2> {log}"
+            shell:  "if [ ! -f \"{params.tmpgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py {params.anno} {params.tmpgtf} ;fi && ln -s {params.tmpgtf} {output[1]} && zcat {params.tmpgtf} > {output[2]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output[2]} -o {output[0]} {input[0]} 2> {log}"
 
         rule prepare_count_table:
             input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
