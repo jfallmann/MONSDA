@@ -3,8 +3,6 @@ COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 #wildcard_constraints:
 #    feat="!os.sep()"
 
-log.warning('KEYS: '+str(list(config['COUNTING']['FEATURES'].keys())))
-
 rule all:
     input:  #expand("COUNTS/Features_{feat}s", feat=config['COUNTING']['FEATURES'].keys()),
             #expand("COUNTS/Features_{feat}s_unique", feat=config['COUNTING']['FEATURES'].keys()),
