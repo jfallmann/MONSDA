@@ -12,7 +12,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         rule featurecount_unique:
             input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
-                    temp("COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf.gz")
+                    temp("COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf")
             log:    "LOGS/{file}/featurecount_"+analysis+"_dexseq_unique.log"
             conda:  "snakes/envs/"+COUNTENV+".yaml"
             threads: MAXTHREAD
