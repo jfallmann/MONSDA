@@ -36,7 +36,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
             threads: 1
             params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['CONDITION']) for x in input.cnd]),
                      dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['REPLICATES']) for x in input.cnd]),
-                     detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['TYPES']) for x in input.cnd]) if 'TYPES' in config['DEU'] else '',
+                     detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['TYPES']) for x in input.cnd])# if 'TYPES' in tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU') else ''
                      samples = lambda wildcards, input: str.join(',',input.cnd),
                      bins = BINS
             shell: "{params.bins}/Analysis/DEU/build_DEXSeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
