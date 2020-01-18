@@ -25,7 +25,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     bins = BINS,
                     countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
                     dexgff = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_flat_fc.gff'))
-            shell:  "if [ ! -f \"{params.tmpgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgff} ;fi && ln -s {params.dexgff} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.countgtf} -o {output[0]} {input[0]} 2> {log}"
+            shell:  "if [ ! -f \"{params.dexgff}\" || ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgff} ;fi && ln -s {params.dexgff} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.countgtf} -o {output[0]} {input[0]} 2> {log}"
 
         rule prepare_count_table:
             input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
