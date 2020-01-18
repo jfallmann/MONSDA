@@ -34,8 +34,8 @@ for analysis in ['DE', 'DEU', 'DAS']:
             log:     "LOGS/DEU/prepare_count_table.log"
             conda:   "snakes/envs/"+DEUENV+".yaml"
             threads: 1
-            params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, analysis)['CONDITION']) for x in input.cnd]),
-                     dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, analysis)['REPLICATES']) for x in input.cnd]),
+            params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['CONDITION']) for x in input.cnd]),
+                     dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['REPLICATES']) for x in input.cnd]),
                      samples = lambda wildcards, input: str.join(',',input.cnd),
                      bins = BINS
             shell: "{params.bins}/Analysis/DEU/build_DEXSeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} --table {output.tbl} --anno {output.anno} 2> {log}"
