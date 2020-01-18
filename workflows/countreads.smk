@@ -54,8 +54,8 @@ rule count_unique_mappers:
 
 rule featurecount:
     input:  s = "SORTED_MAPPED/{file}_mapped_sorted.bam",
-    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted.counts",
-            t = temp("COUNTS/Featurecounter_{feat}s/{file}.anno")
+    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted.counts"
+            #t = temp("COUNTS/Featurecounter_{feat}s/{file}.anno")
     log:    "LOGS/{file}/featurecount_{feat}s.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -64,12 +64,12 @@ rule featurecount:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "zcat {params.anno} > {output.t} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output.t} -o {output.c} {input.s} 2> {log}"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.c} {input.s} 2> {log}"
 
 rule featurecount_unique:
     input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted_unique.counts",
-            t = temp("COUNTS/Featurecounter_{feat}s/{file}_unique.anno")
+    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted_unique.counts"
+            #t = temp("COUNTS/Featurecounter_{feat}s/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -78,7 +78,7 @@ rule featurecount_unique:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "zcat {params.anno} > {output.t} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output.t} -o {output.c} {input.u} 2> {log}"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.c} {input.u} 2> {log}"
 
 rule summarize_counts:
     input:  f = rules.count_fastq.output,
