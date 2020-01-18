@@ -27,10 +27,10 @@ rule prepare_count_table:
     threads: 1
     params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
              dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
-             detypes = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['TYPES']) for x in input.cnd]),
+             detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['TYPES']) for x in input.cnd]) if 'TYPES' in config['DEU'] else '',
              samples = lambda wildcards, input: str.join(',',input.cnd),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} -t {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,
