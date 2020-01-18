@@ -10,10 +10,10 @@ for analysis in ['DE', 'DEU', 'DAS']:
 
     if analysis == 'DEU':
         rule featurecount_unique:
-            input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-            output: "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
-                    "COUNTS/Featurecounter_dexseq/{file}_dexseq.gff.gz"
-                    #temp("COUNTS/Featurecounter_dexseq/{file}_anno.tmp")
+            input:  in = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+            output: cts = "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
+                    anno = "COUNTS/Featurecounter_dexseq/{file}_dexseq.gff.gz"
+                    tan = temp("COUNTS/Featurecounter_dexseq/{file}_anno.tmp")
             log:    "LOGS/{file}/featurecount_"+analysis+"_dexseq_unique.log"
             conda:  "snakes/envs/"+COUNTENV+".yaml"
             threads: MAXTHREAD
@@ -23,9 +23,9 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS,
-                    countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
-                    dexgff = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_flat_fc.gff'))
-            shell:  "if [ ! -f \"{params.dexgff}\" || ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgff} ;fi && ln -s {params.dexgff} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.countgtf} -o {output[0]} {input[0]} 2> {log}"
+                    countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_fc_dexseq.gtf')),
+                    dexgff = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gff'))
+            shell:  "if [ ! -f \"{params.dexgff}\" || ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgff} ;fi && ln -s {params.dexgff} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.countgtf} -o {output.cts} {input.in} 2> {log}"
 
         rule prepare_count_table:
             input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
@@ -43,7 +43,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         rule run_deseq2:
             input:  cnt = rules.prepare_count_table.output.tbl,
                     anno = rules.prepare_count_table.output.anno,
-                    flat = expand("COUNTS/Featurecounter_dexseq/{file}_dexseq.gff.gz",file=samplecond(SAMPLES,config))
+                    flat = expand(rules.featurecount_unique.output.anno,file=samplecond(SAMPLES,config))
             output: csv = analysis+"/DEXSEQ/DONE"
             log:    "LOGS/"+analysis+"/run_deseq2.log"
             conda:  "snakes/envs/"+DEUENV+".yaml"
