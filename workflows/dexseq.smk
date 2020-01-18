@@ -43,7 +43,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         rule run_deseq2:
             input:  cnt = rules.prepare_count_table.output.tbl,
                     anno = rules.prepare_count_table.output.anno,
-                    flat = expand("COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf.gz",file=samplecond(SAMPLES,config))
+                    flat = expand("COUNTS/Featurecounter_dexseq/{file}_dexseq.gff.gz",file=samplecond(SAMPLES,config))
             output: csv = analysis+"/DEXSEQ/DONE"
             log:    "LOGS/"+analysis+"/run_deseq2.log"
             conda:  "snakes/envs/"+DEUENV+".yaml"
