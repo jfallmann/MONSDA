@@ -23,7 +23,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
                     paired = lambda x: '-p' if paired == 'paired' else '',
                     stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                     bins = BINS,
-                    countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
+                    countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
                     dexgff = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_flat_fc.gff'))
             shell:  "if [ ! -f \"{params.tmpgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgff} ;fi && ln -s {params.dexgff} {output[1]} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.countgtf} -o {output[0]} {input[0]} 2> {log}"
 
