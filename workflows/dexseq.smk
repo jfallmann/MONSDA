@@ -12,7 +12,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
         rule featurecount_unique:
             input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: cts = "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
-                    anno = "COUNTS/Featurecounter_dexseq/{file}_dexseq.gff.gz"
+                    anno = "COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf.gz"
                     #tan = temp("COUNTS/Featurecounter_dexseq/{file}_anno.tmp")
             log:    "LOGS/{file}/featurecount_"+analysis+"_dexseq_unique.log"
             conda:  "snakes/envs/"+COUNTENV+".yaml"
@@ -48,11 +48,12 @@ for analysis in ['DE', 'DEU', 'DAS']:
             output: csv = "DEU/DEXSEQ/DONE"
             log:    "LOGS/DEU/run_deseq2.log"
             conda:  "snakes/envs/"+DEUENV+".yaml"
-            threads: 1
+            threads: MAXTHREAD
             params: bins = BINS,
                     outdir = lambda wildcards, output: os.path.dirname(output.csv),
+                    flat = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
                     #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
-            shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DEU/DEXSeq.R {input.anno} {input.cnt} {params.outdir} 2> {log} && touch {output.csv}"
+            shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DEU/DEXSeq.R {input.anno} {input.cnt} {params.flat} {params.outdir} {threads} 2> {log} && touch {output.csv}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output
