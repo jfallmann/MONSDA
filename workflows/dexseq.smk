@@ -48,7 +48,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
             output: csv = "DEU/DEXSEQ/DONE"
             log:    "LOGS/DEU/run_deseq2.log"
             conda:  "snakes/envs/"+DEUENV+".yaml"
-            threads: MAXTHREAD
+            threads: lambda x: min(int(MAXTHREAD/4),6) if min(int(MAXTHREAD/4),6) >= 1 else 1
             params: bins = BINS,
                     outdir = lambda wildcards, output: os.path.dirname(output.csv),
                     flat = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
