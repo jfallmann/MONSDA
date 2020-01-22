@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan  8 14:14:54 2020 (+0100)
+# Last-Updated: Wed Jan 22 22:57:27 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 815
+#     Update #: 818
 # URL:
 # Doc URL:
 # Keywords:
@@ -265,10 +265,10 @@ def namefromfile(s, config):
         cond= s.split(os.sep)[-2]
         sk = find_key_for_value(sa, config["SAMPLES"])
         for skey in sk:
-            klist = value_extract(skey, config["NAME"])
+            klist = value_extract(skey, config["NAME"]) if 'NAME' in config else list()
             for k in klist:
-                    if str(skey) == str(cond):
-                        return str(k)
+                if str(skey) == str(cond):
+                    return str(k)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -306,7 +306,7 @@ def create_subworkflow(config, subwork, conditions):
                 log.error(''.join(tbe.format()))
             try:
                 for key in ['GENOME', 'NAME']:
-                    tempconf[key][src] = config[key][src]
+                    tempconf[key][src] = config[key][src] if key in config else continue
                 for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
                 if 'COUNTING' in config:
@@ -335,7 +335,7 @@ def create_subworkflow(config, subwork, conditions):
 def namefrompath(p, config):
     try:
         p = os.path.dirname(p).split(os.sep)
-        klist = getFromDict(config["NAME"],p)
+        klist = getFromDict(config["NAME"],p) if 'NAME' in config else ''
         for k in klist:
             return str(k)
     except Exception as err:
