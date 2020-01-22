@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan 22 22:57:27 2020 (+0100)
+# Last-Updated: Wed Jan 22 23:15:04 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 818
+#     Update #: 820
 # URL:
 # Doc URL:
 # Keywords:
@@ -305,8 +305,9 @@ def create_subworkflow(config, subwork, conditions):
                 )
                 log.error(''.join(tbe.format()))
             try:
-                for key in ['GENOME', 'NAME']:
-                    tempconf[key][src] = config[key][src] if key in config else continue
+                tempconf['GENOME'][src] = config['GENOME'][src]
+                if 'NAME' in config:
+                    tempconf['NAME'][src] = config['NAME'][src]
                 for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
                 if 'COUNTING' in config:
