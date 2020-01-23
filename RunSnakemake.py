@@ -83,7 +83,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if len(postprocess) == 0 or postprocess[0] == '':
             postprocess = None
 
-        threads = min(int(config['MAXTHREADS']), procs)
+        threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
 
         # CLEANUP
         oldsmk = os.path.abspath(os.path.join(subdir,'*_subsnake.smk'))
