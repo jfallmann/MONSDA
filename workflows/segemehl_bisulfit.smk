@@ -3,7 +3,7 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
     output: idx1 = expand("{ref}/{{dir}}/{map}/{{gen}}{{name}}_{{extension}}_{map}.idx", ref=REFERENCE, map=MAPPERENV),
-			idx2 = expand("{ref}/{{dir}}/{map}/{{gen}}{{name}}_{{extension}}_{map}_second.idx", ref=REFERENCE, map=MAPPERENV)
+	    idx2 = expand("{ref}/{{dir}}/{map}/{{gen}}{{name}}_{{extension}}_{map}_second.idx", ref=REFERENCE, map=MAPPERENV)
     log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
     conda:  "snakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
