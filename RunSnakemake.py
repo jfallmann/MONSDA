@@ -41,7 +41,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
-            for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
@@ -75,6 +75,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if any(x in o.stderr for x in ['ERROR','Error','error']):
                     sys.exit(o.stderr)
 
+        preprocess = config['PREPROCESSING'].split(',') # we keep this separate because not all preprocessing steps need extra configuration
+        if len(preprocess) == 0 or preprocess[0] == '':
+            preprocess = None
+
         subworkflows = config['WORKFLOWS'].split(',')
         if len(subworkflows) == 0 or subworkflows[0] == '':
             subworkflows = None
@@ -94,6 +98,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         for oldfile in glob.glob(oldcnf):
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
+
+        if preprocess:
+            try:
+                all([config[x] or x == '' for x in preprocess])
+            except KeyError:
+                log.warning(logid+'Not all required preprocessing steps have configuration in the config file')
 
         if subworkflows:
             try:
@@ -119,6 +129,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         condapath=re.compile(r'conda:\s+"')
+
+        if preprocess:
+            """Do stuff here
+            """
+
 
         if subworkflows:
             for condition in conditions:
