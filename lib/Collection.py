@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan 22 23:15:04 2020 (+0100)
+# Last-Updated: Mon Feb 10 15:09:41 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 820
+#     Update #: 822
 # URL:
 # Doc URL:
 # Keywords:
@@ -96,6 +96,9 @@ class NestedDefaultDict(defaultdict):
 
     def __repr__(self):
         return repr(dict(self))
+
+    def merge(self, *args):
+        self = merge_dicts(self,*args)
 
 # Code:All subs from here on
 ##############################
@@ -729,7 +732,7 @@ def aggregate_input(wildcards):
 def dict_inst(d):
     try:
         loginfo='dict_inst: '
-        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict):
+        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
             return True
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

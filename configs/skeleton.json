@@ -6,31 +6,31 @@
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, per default the scripts git repository that comes as gitmodule with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use
     "GENOME": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta without file ending .fa.gz, we always asume files to be gzipped
-                "Genome": "Genomefile"
+                "genome": "Genomefile"
               },
     "NAME": { #extension for genome file name in case different types of reference are used, e.g. genomic, artificial, organelle ...
-              "Genome": {#first key is the same than for GENOME
+              "genome": {#first key is the same than for GENOME
                       "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
                                     "setting": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                   }
                      }
             },
     "SOURCE": {  #which organisms are to be parsed for which samples
-                 "Genome": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. condition with setting star will use the file listed under Genome here
+                 "genome": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. condition with setting star will use the file listed under Genome here
                              "condition": {
-                                 "setting": "Genome"
+                                 "setting": "genome"
                              }
                            }
               },
     "SAMPLES": {  #which samples to analyze
-                  "Genome": { #key for source and genome
+                  "genome": { #key for source and genome
                               "condition": { # sample id
                                              "setting": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
                       }
                   }
                },
     "SEQUENCING" : {
-        "Genome": { #key for source and genome
+        "genome": { #key for source and genome
                     "condition": { # sample id
                                    "setting": "single" # setup and sequencing type, either paired or single
                                  }
@@ -39,7 +39,7 @@
 #QC options
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
-        "Genome": { #key for source and genome
+        "genome": { #key for source and genome
                     "condition": { # sample id
                                    "setting": {
                                        "ENV" : "fastqc",  # name of conda env for QC
@@ -55,7 +55,7 @@
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
                   "RUN": "ON", # set to 'OFF' if no trimming wanted
-                  "Genome": {
+                  "genome": {
                       "condition": {
                           "setting": { # See above
                                        "ENV": "trimgalore", # name of conda env for trimming
@@ -74,7 +74,7 @@
                 },
 #MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
-                 "Genome": {
+                 "genome": {
                      "condition": {
                          "setting": {
                              "ENV": "star", # which conda env to use for mapping
@@ -104,7 +104,7 @@
                       "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3 file
                       "gene": "ID" #same here
                   },
-                  "Genome": {
+                  "genome": {
                       "condition": {
                           "setting": {  # See above
                                         "ENV": "countreads", #see above
@@ -127,7 +127,7 @@
                 },
 #Annotation options using the built in AnnotateBed.pl in the scripts directory, use at own risk, output can become very large
     "ANNOTATE" : {
-        "Genome": {
+        "genome": {
             "condition": {
                 "setting": { # See above
                              "ENV": "annotatebed",
@@ -146,7 +146,7 @@
     },
 #UCSC track generation options
     "UCSC" : {
-        "Genome": {
+        "genome": {
             "condition": {
                 "setting": {  # See above
                               "ENV" : "ucsc",
@@ -167,7 +167,7 @@
     },
 #Peak finding options, uses PAR-iCLIP Peak finder scripts adopted from https://dx.doi.org/10.15252/msb.20156628 use at own risk or replace with your own scripts, will need tweaking of workflow!
     "PEAKS" : {
-        "Genome": {
+        "genome": {
             "condition": {
                 "setting": {  # See above
                               "ENV" : "peaks",
@@ -191,7 +191,7 @@
     },
 #DE options for Differential Expression Analysis for each sample/condition
     "DE": {
-        "Genome": {
+        "genome": {
             "condition": {
                 "setting": {  # See above
                               "ENV": "deseq2", #see QC
@@ -210,7 +210,7 @@
     },
 #DEU Analysis options for Differential Exon Usage
     "DEU" : {
-        "Genome": {
+        "genome": {
             "condition": {
                 "setting": {
                     "ENV": "dexseq",
