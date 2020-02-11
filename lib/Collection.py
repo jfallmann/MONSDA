@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 11 10:47:49 2020 (+0100)
+# Last-Updated: Tue Feb 11 14:46:43 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 839
+#     Update #: 847
 # URL:
 # Doc URL:
 # Keywords:
@@ -805,11 +805,13 @@ def list_all_keys_of_dict(dictionary):
 def list_all_values_of_dict(dictionary):
     try:
         if dict_inst(dictionary):
-            for values in dictionary.values():
-                if dict_inst(values):
-                    yield from list_all_values_of_dict(values)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_values_of_dict(value)
                 else:
-                    yield values
+                    yield (key, value)
+                    yield ('last','value')
         else:
             yield dictionary
 
