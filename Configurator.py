@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 10 17:16:45 2020 (+0100)
+# Last-Updated: Tue Feb 11 12:13:33 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 293
+#     Update #: 349
 # URL:
 # Doc URL:
 # Keywords:
@@ -92,6 +92,8 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 
     config = load_configfile(os.path.abspath(skeleton))
     newconf = NestedDefaultDict()
+    oldconf = NestedDefaultDict()
+    gcslist = list()
 
     todos = ','.join([x for x in [preprocess,workflows,postprocess] if x is not '' ]).split(',')
     for x in todos:
@@ -101,6 +103,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 
     log.info(logid+'Creating config json for steps '+str(todos))
 
+    genmap = list()
     if genomemap:
         genmap = [x.split(':') for x in genomemap.split(',')]
     else:
@@ -108,8 +111,39 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
             log.error(logid+'No mapping of genome to genome fasta found, please provide -m option')
             sys.exit()
 
+    genext=list()
     if genomeext:
         genext = [x.split(':') for x in genomeext.split(',')]
+
+    if gcs or append:
+        if append:
+            oldconf = load_configfile(os.path.abspath(os.path.join(configfile)))
+            iteration = -1
+            gcstemp = ''
+            for k,v in list_all_keys_of_dict(oldconf['SAMPLES']):
+                iteration+=1
+                if k == 'last':
+                    gcslist.append(gcstemp[:-1])
+                    if iteration >= 3:
+                        gcstemp = gcstemp.split(':')[0]+':'
+                        iteration = -1
+                    else:
+                        gcstemp=''
+                        iteration = -1
+                else:
+                    gcstemp+=k+':'
+            if gcs:
+                for x in gcs.split(','):
+                    if x not in gcslist:
+                        gcslist.append(x)
+        else:
+            gcslist = gcs.split(',')
+    else:
+        log.error(logid+'GenomeConditionSetting (gcs) not defined!')
+        sys.exit()
+
+    log.debug(logid+'List of GenomeConditionSettings: '+str(gcslist))
+
 
     if not append:
         #newconf.merge(config)
@@ -123,8 +157,27 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         for g in genmap:
             newconf['GENOME'][str(g[0])] = str(g[1])
 
+        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
+            for genome,condition,setting in [x.split(':') for x in gcslist]:
+                if key == 'NAME':
+                    if genomeext:
+                        for x in genext:
+                            if str(x[1]) is None or str(x[1]) == 'None':
+                                x[1] = ''
+                            newconf[key][genome][condition][setting] = str(x[1])
+                    else:
+                        newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
+                elif key == 'SOURCE':
+                    if genomemap:
+                        for x in genmap:
+                            newconf[key][genome][condition][setting] = str(x[1])
+                    else:
+                        newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
+                else:
+                    newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
+
+
     else:
-        oldconfig = load_configfile(os.path.abspath(os.path.join(configfile)))
         #newconf.merge(oldconfig)
 
         if preprocess and preprocess not in newconf['PREPROCESSING']:
@@ -136,40 +189,47 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         if refdir and refdir != oldconf['REFERENCE']:
             newconf['REFERENCE'] = refdir
         else:
-            newconf['REFERENCE'].merge(oldconf['REFERENCE'])
+            newconf['REFERENCE'] = str(oldconf['REFERENCE'])
         if binaries and binaries != oldconf['BINS']:
             newconf['BINS'] = binaries
         else:
-            newconf['BINS'].merge(oldconf['BINS'])
+            newconf['BINS'] = str(oldconf['BINS'])
         if procs and procs != oldconf['MAXTHREADS']:
             newconf['MAXTHREADS'] = str(procs)
         else:
-            newconf['MAXTHREADS'].merge(oldconf['MAXTHREADS'])
-        if genomemap and genmap[0] not in newconf['GENOME'] or newconf['GENOME'][genmap[0]] != genmap[1]:
+            newconf['MAXTHREADS'] = str(oldconf['MAXTHREADS'])
+
+        log.debug(logid+'GENOMEMAP: '+str(genomemap)+'\t'+str(genmap))
+        if genomemap and any([x not in newconf['GENOME'] for x in genmap[0]]) or any([[x not in newconf['GENOME'][y] for x in genmap[y]] for y in genmap]):
             newconf['GENOME'] = NestedDefaultDict()
+            newconf['GENOME'].merge(oldconf['GENOME'])
             for g in genmap:
                 newconf['GENOME'][str(g[0])] = str(g[1])
         else:
-            newconf['GENOME'] = oldconf['GENOME']
+            newconf['GENOME'] = str(oldconf['GENOME'])
 
-        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
+        log.debug(logid+'GENOMEMAPCONF: '+str(newconf['GENOME']))
+
+        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:  # SOURCE SHOULD POINT TO GENOME KEY NOT VAL
             for genome,condition,setting in [x.split(':') for x in gcslist]:
+                log.debug(logid+'FIXING: '+str([genome,condition,setting]))
+                if genome not in newconf['GENOME']:
+                    log.error(logid+'New genome found in GCS list, but information on GenomeMap missing, please provide with \'-m\' parameter')
+                    sys.exit()
                 if key == 'NAME':
                     if genomeext:
                         for x in genext:
-                            if str(genome) == str(x[0]):
-                                if str(x[1]) != oldconfig[key][genome][condition][setting]:
-                                    newconf[key][genome][condition][setting] = str(x[1])
-                                else:
-                                    newconf[key][genome][condition][setting] = oldconf[key][genome][condition][setting]
+                            if str(x[1]) != oldconf[key][genome][condition][setting]:
+                                newconf[key][genome][condition][setting] = str(x[1])
+                            else:
+                                newconf[key][genome][condition][setting] = oldconf[key][genome][condition][setting]
                 elif key == 'SOURCE':
                     if genomemap:
                         for x in genmap:
-                            if str(genome) == str(x[0]) :
-                                if str(x[1]) != oldconfig[key][genome][condition][setting]:
-                                    newconf[key][genome][condition][setting] = str(x[1])
-                                else:
-                                    newconf[key][genome][condition][setting] = oldconf[key][genome][condition][setting]
+                            if str(x[1]) != oldconfig[key][genome][condition][setting]:
+                                newconf[key][genome][condition][setting] = str(x[1])
+                            else:
+                                newconf[key][genome][condition][setting] = oldconf[key][genome][condition][setting]
                 else:
                     newconf[key][genome][condition][setting] = oldconf[key][genome][condition][setting]
 
@@ -178,42 +238,6 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
                 newconf[do].merge(oldconf[do])
 
     """Now we replace the placeholders in the skeleton config with the actual ones or update an existing config with new workflows"""
-
-    if gcs or append:
-        if append:
-            gcstemplist = list_all_keys_of_dict(oldconf['SAMPLES'])
-            log.debug(logid+'OLDCONF: '+str(oldconf["SAMPLES"]))
-            for g in gcstemplist:
-                print(g)
-            sys.exit()
-        else:
-            gcslist = gcs.split(',')
-    else:
-        log.error(logid+'GenomeConditionSetting (gcs) not defined!')
-        sys.exit()
-
-    log.debug(logid+'List of GenomeConditionSettings: '+str(gcs)+'\t'+str(gcslist))
-
-    for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
-        for genome,condition,setting in [x.split(':') for x in gcslist]:
-            if key == 'NAME':
-                if genomeext and not append:
-                    for x in genext:
-                        if str(genome) == str(x[0]) :
-                            if str(x[1]) is None or str(x[1]) == 'None':
-                                x[1] = ''
-                            newconf[key][genome][condition][setting] = str(x[1])
-                else:
-                    newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
-            elif key == 'SOURCE':
-                if genomemap:
-                    for x in genmap:
-                        if str(genome) == str(x[0]) :
-                            newconf[key][genome][condition][setting] = str(x[1])
-                else:
-                    newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
-            else:
-                newconf[key][genome][condition][setting] = config[key]['genome']['condition']['setting']
 
     for do in todos:
         if do not in newconf:
@@ -245,7 +269,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 @check_run
 def print_json(paramdict,ofn):
     with open(ofn,'w') as jsonout:
-        json.dump(paramdict,jsonout)
+        print(json.dumps(paramdict,indent=4),file=jsonout)
 
 ####################
 ####    MAIN    ####

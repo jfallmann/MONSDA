@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 10 15:09:41 2020 (+0100)
+# Last-Updated: Tue Feb 11 10:47:49 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 822
+#     Update #: 839
 # URL:
 # Doc URL:
 # Keywords:
@@ -782,13 +782,16 @@ def merge_dicts(d,u):
 
 
 def list_all_keys_of_dict(dictionary):
+    logid = 'list_all_keys_of_dict: '
     try:
         if dict_inst(dictionary):
-            for key in dictionary.keys():
-                if dict_inst(key):
-                    yield from list_all_keys_of_dict(key)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_keys_of_dict(value)
                 else:
-                    yield key
+                    yield (key, value)
+                    yield ('last','key')
         else:
             yield dictionary
 
