@@ -27,9 +27,10 @@ rule prepare_count_table:
     threads: 1
     params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
              dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
+             detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['TYPES']) for x in input.cnd]),# if 'TYPES' in tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU') else '',
              samples = lambda wildcards, input: str.join(',',input.cnd),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} --table {output.tbl} --anno {output.anno} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,
@@ -37,11 +38,11 @@ rule run_deseq2:
     output: csv = "DE/DESEQ2/DONE"
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
-    threads: 1
+    threads: lambda x: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins = BINS,
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
             #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} 2> {log} && touch {output.csv}"
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} {threads} 2> {log} && touch {output.csv}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output

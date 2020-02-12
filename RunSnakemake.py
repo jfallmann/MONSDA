@@ -83,7 +83,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if len(postprocess) == 0 or postprocess[0] == '':
             postprocess = None
 
-        threads = min(int(config['MAXTHREADS']), procs)
+        threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
 
         # CLEANUP
         oldsmk = os.path.abspath(os.path.join(subdir,'*_subsnake.smk'))
@@ -211,7 +211,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
-                    if subwork == 'DE':
+                    if subwork == 'DE' or subwork == 'DEU' or subwork == 'DAS':
                         continue
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -254,58 +254,58 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                                 sys.exit(o.stderr)
 
-            #THIS SECTION IS FOR DE ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
-            if 'DE' in config:
-                log.info(logid+'STARTING DE Analysis')
-                subwork = 'DE'
-                subconf = NestedDefaultDict()
-                log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
+            #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
+            for analysis in ['DE', 'DEU', 'DAS']:
+                if analysis in config:
+                    log.info(logid+'STARTING '+analysis+' Analysis')
+                    subwork = analysis
+                    subconf = NestedDefaultDict()
+                    log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
 
-                listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
-                listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
-                if listoftools is None or listoftoolscount is None:
-                    log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+                    listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                    if listoftools is None or listoftoolscount is None:
+                        log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
-                toolenv, toolbin = map(str,listoftools[0])
-                countenv, countbin = map(str,listoftoolscount[0])
+                    toolenv, toolbin = map(str,listoftools[0])
+                    countenv, countbin = map(str,listoftoolscount[0])
 
-                subconf = listofconfigs[0]
-                for x in range(1,len(listofconfigs)):
-                    subconf = merge_dicts(subconf,listofconfigs[x])
-                for x in range(0,len(listofconfigscount)):
-                    subconf = merge_dicts(subconf,listofconfigscount[x])
+                    subconf = listofconfigs[0]
+                    for x in range(1,len(listofconfigs)):
+                        subconf = merge_dicts(subconf,listofconfigs[x])
+                    for x in range(0,len(listofconfigscount)):
+                        subconf = merge_dicts(subconf,listofconfigscount[x])
 
-                subname = toolenv+'.smk'
-                subsamples = sampleslong(subconf)
-                log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
-                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
-                smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                    subname = toolenv+'.smk'
+                    subsamples = sampleslong(subconf)
+                    log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+                    smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
 
-                with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json']))), 'a') as confout:
-                    json.dump(subconf, confout)
+                    with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json']))), 'a') as confout:
+                        json.dump(subconf, confout)
 
-                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
-                log.info(logid+'RUNNING '+str(jobtorun))
-                o = runjob(jobtorun)
-                if o.stdout:
-                    log.info(o.stdout)
-                    if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                        #if any(x in o.stdout for x in ['ERROR','Error','error']):
-                        sys.exit(o.stdout)
+                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                    log.info(logid+'RUNNING '+str(jobtorun))
+                    o = runjob(jobtorun)
+                    if o.stdout:
+                        log.info(o.stdout)
+                        if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                            #if any(x in o.stdout for x in ['ERROR','Error','error']):
+                            sys.exit(o.stdout)
 
-                if o.stderr:
-                    log.error(o.stderr)
-                    if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
-                        sys.exit(o.stderr)
-
+                    if o.stderr:
+                        log.error(o.stderr)
+                        if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                            sys.exit(o.stderr)
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
