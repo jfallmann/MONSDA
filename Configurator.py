@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 11 15:02:03 2020 (+0100)
+# Last-Updated: Wed Feb 12 10:25:11 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 424
+#     Update #: 492
 # URL:
 # Doc URL:
 # Keywords:
@@ -51,9 +51,9 @@ def parseargs():
     parser.add_argument("-l", "--postprocess", type=str, default='', help='Which workflow steps to conduct,choices are any of or combinations of [\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\']')
     parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
     parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
-    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. hg38:hg38,01012020:dm6')
     parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. hg38:hg38,01012020:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
-    parser.add_argument("-x", "--genomeext", type=str, default='hg38:None', help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
+    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. hg38:hg38,01012020:dm6')
+    parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
     parser.add_argument("--binaries", type=str, default='snakes/scripts', help='Path to binary directory')
     parser.add_argument("-b", "--scripts", type=str, default='snakes/scripts', help='Path to script for execution')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Maximum number of parallel processes to start snakemake with, represented by MAXTHREADS in config')
@@ -104,26 +104,28 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 
     log.info(logid+'Creating config json for steps '+str(todos))
 
-    genmap = list()
+    genmap = defaultdict()
     if genomemap:
-        genmap = [x.split(':') for x in genomemap.split(',')]
+        genmap = {key: value for (key, value) in [x.split(':') for x in genomemap.split(',')]}
+        log.debug(logid+'GENOMEMAP: '+str(genmap))
     else:
         if not append:
             log.error(logid+'No mapping of sample-ID to genome-ID found, please provide -m option')
             sys.exit()
 
-    gens = list()
+    gens = defaultdict()
     if genomes:
-        gens = [x.split(':') for x in genomes.split(',')]
+        gens = {key: value for (key, value) in [x.split(':') for x in genomes.split(',')]}
+        log.debug(logid+'GENOMES: '+str(gens))
     else:
         if not append:
             log.error(logid+'No mapping of genome to genome fasta found, please provide -g option')
             sys.exit()
 
-    genext=list()
+    genext = defaultdict()
     if genomeext:
-        genext = [x.split(':') for x in genomeext.split(',')]
-
+        genext = {key: value for (key, value) in [x.split(':') for x in genomeext.split(',')]}
+        log.debug(logid+'GENOMEEXTENSION: '+str(genext))
     if ics or append:
         if append:
             oldconf = load_configfile(os.path.abspath(os.path.join(configfile)))
@@ -163,24 +165,24 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         newconf['BINS'] = binaries
         newconf['MAXTHREADS'] = str(procs)
         newconf['GENOME'] = NestedDefaultDict()
-        for g in gens:
-            newconf['GENOME'][str(g[0])] = str(g[1])
+        for k,v in gens.items():
+            newconf['GENOME'][str(k)] = str(v)
 
         for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
             for id,condition,setting in [x.split(':') for x in icslist]:
                 if key == 'NAME':
                     if genomeext:
-                        for x in genext:
-                            if str(x[1]) is None or str(x[1]) == 'None':
-                                x[1] = ''
-                            newconf[key][id][condition][setting] = str(x[1])
+                        for k,v in genext.items():
+                            if str(v) is None or str(v) == 'None':
+                                v = ''
+                            newconf[key][id][condition][setting] = str(v)
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SOURCE':
                     if genomemap:
-                        for x in genmap:
-                            if x[0] == id:
-                                newconf[key][id][condition][setting] = str(x[1])
+                        for k,v in genmap.items():
+                            if k == id:
+                                newconf[key][id][condition][setting] = str(v)
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:
@@ -210,11 +212,11 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
             newconf['MAXTHREADS'] = str(oldconf['MAXTHREADS'])
 
         log.debug(logid+'GENOMEMAP: '+str(genomemap)+'\t'+str(genmap))
-        if genomes and any([x not in newconf['GENOME'] for x in gens[0]]) or any([[x not in newconf['GENOME'][y] for x in gens[y]] for y in gens]):
+        if genomes and any([x not in newconf['GENOME'] for x in list(gens.keys())]) or any([[x not in newconf['GENOME'][y] for x in gens[y]] for y in gens.keys()]):
             newconf['GENOME'] = NestedDefaultDict()
             newconf['GENOME'].merge(oldconf['GENOME'])
-            for g in gens:
-                newconf['GENOME'][str(g[0])] = str(g[1])
+            for k,v in gens.items():
+                newconf['GENOME'][str(k)] = str(v)
         else:
             newconf['GENOME'] = str(oldconf['GENOME'])
 
@@ -223,25 +225,27 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
             for id,condition,setting in [x.split(':') for x in icslist]:
                 if key == 'NAME' or key == 'SOURCE':
-                    #log.debug(logid+'COMPARE: '+str([id,condition,setting])+'\t'+str([y for y in list_all_values_of_dict(oldconf[key])]))
-                    if all([x in [y for y in list_all_values_of_dict(oldconf[key])] for x in [id,condition,setting]]):  # HERE IS SOMETHING WRONG!!!
-                        log.debug(logid+'ALLIN: '+str([x in [y for y in list_all_values_of_dict(oldconf[key])] for x in [id,condition,setting]]))
+                    try:
+                        checkkey=getFromDict(oldconf[key],[id,condition,setting])
+                    except:
+                        checkkey=list()
+                    if len(checkkey) > 0:
                         if key == 'NAME':
                             if genomeext:
-                                for x in genext:
-                                    if x[0] == genome:
-                                        if str(x[1]) != oldconf[key][id][condition][setting]:
-                                            newconf[key][id][condition][setting] = str(x[1])
+                                for k,v in genext.items():
+                                    if id in [x for x in find_key_for_value(k,genmap)]:
+                                        if str(v) != oldconf[key][id][condition][setting]:
+                                            newconf[key][id][condition][setting] = str(v)
                                         else:
                                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
                             else:
                                 newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                         elif key == 'SOURCE':
                             if genomemap:
-                                for x in genmap:
-                                    if x[0] == genome:
-                                        if str(x[1]) != oldconfig[key][id][condition][setting]:
-                                            newconf[key][id][condition][setting] = str(x[1])
+                                for k,v in genmap.items():
+                                    if k == id:
+                                        if str(v) != oldconf[key][id][condition][setting]:
+                                            newconf[key][id][condition][setting] = str(v)
                                         else:
                                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
                             else:
@@ -257,8 +261,6 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
             if do not in newconf and do in oldconf:
                 newconf[do].merge(oldconf[do])
 
-
-    sys.exit()
     """Now we replace the placeholders in the skeleton config with the actual ones or update an existing config with new workflows"""
 
     log.debug(logid+'NEW: '+str(newconf))
