@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan 22 23:15:04 2020 (+0100)
+# Last-Updated: Tue Feb 11 14:46:43 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 820
+#     Update #: 847
 # URL:
 # Doc URL:
 # Keywords:
@@ -96,6 +96,9 @@ class NestedDefaultDict(defaultdict):
 
     def __repr__(self):
         return repr(dict(self))
+
+    def merge(self, *args):
+        self = merge_dicts(self,*args)
 
 # Code:All subs from here on
 ##############################
@@ -261,14 +264,17 @@ def genomename(s, config):
 
 def namefromfile(s, config):
     try:
-        sa = os.path.basename(str(s))
-        cond= s.split(os.sep)[-2]
-        sk = find_key_for_value(sa, config["SAMPLES"])
-        for skey in sk:
-            klist = value_extract(skey, config["NAME"]) if 'NAME' in config else list()
-            for k in klist:
-                if str(skey) == str(cond):
-                    return str(k)
+        if 'NAME' not in config:
+            return ''
+        else:
+            sa = os.path.basename(str(s))
+            cond= s.split(os.sep)[-2]
+            sk = find_key_for_value(sa, config["SAMPLES"])
+            for skey in sk:
+                klist = value_extract(skey, config["NAME"])
+                for k in klist:
+                    if str(skey) == str(cond):
+                        return str(k)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -336,7 +342,7 @@ def create_subworkflow(config, subwork, conditions):
 def namefrompath(p, config):
     try:
         p = os.path.dirname(p).split(os.sep)
-        klist = getFromDict(config["NAME"],p) if 'NAME' in config else ''
+        klist = getFromDict(config["NAME"],p) if 'NAME' in config else list('')
         for k in klist:
             return str(k)
     except Exception as err:
@@ -450,45 +456,6 @@ def env_bin_from_config2(samples, config, subconf):
                 me = k['ENV']
         log.debug([str(mb),str(me)])
         return mb, me
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def count_params(sample, config):
-    try:
-        s = os.path.basename(str(sample))
-        t = genome(s,config)
-        for k,v in config["COUNT"].items():
-            for g,p in v.items():
-                if g == t:
-                    return str(p)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def trnascan_params(s, runstate, config):
-    try:
-        for k,v in config["TRNASCAN"].items():
-            for g,p in v[runstate].items():
-                if g == s:
-                    return str(p)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def index(w, t, config):
-    try:
-        gen = genome(str(w),config)
-        return expand("{ref}/{gen}.{name}_all_withoutPseudo_cluster.idx",ref=REFERENCE,gen=gen, name=NAME[t])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -729,7 +696,7 @@ def aggregate_input(wildcards):
 def dict_inst(d):
     try:
         loginfo='dict_inst: '
-        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict):
+        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
             return True
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -779,13 +746,16 @@ def merge_dicts(d,u):
 
 
 def list_all_keys_of_dict(dictionary):
+    logid = 'list_all_keys_of_dict: '
     try:
         if dict_inst(dictionary):
-            for key in dictionary.keys():
-                if dict_inst(key):
-                    yield from list_all_keys_of_dict(key)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_keys_of_dict(value)
                 else:
-                    yield key
+                    yield (key, value)
+                    yield ('last','key')
         else:
             yield dictionary
 
@@ -799,11 +769,13 @@ def list_all_keys_of_dict(dictionary):
 def list_all_values_of_dict(dictionary):
     try:
         if dict_inst(dictionary):
-            for values in dictionary.values():
-                if dict_inst(values):
-                    yield from list_all_values_of_dict(values)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_values_of_dict(value)
                 else:
-                    yield values
+                    yield (key, value)
+                    yield ('last','value')
         else:
             yield dictionary
 

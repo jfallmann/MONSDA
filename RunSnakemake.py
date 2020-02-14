@@ -41,7 +41,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
-            for subdir in ['SubSnakes', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
@@ -75,6 +75,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if any(x in o.stderr for x in ['ERROR','Error','error']):
                     sys.exit(o.stderr)
 
+        preprocess = config['PREPROCESSING'].split(',') # we keep this separate because not all preprocessing steps need extra configuration
+        if len(preprocess) == 0 or preprocess[0] == '':
+            preprocess = None
+
         subworkflows = config['WORKFLOWS'].split(',')
         if len(subworkflows) == 0 or subworkflows[0] == '':
             subworkflows = None
@@ -94,6 +98,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         for oldfile in glob.glob(oldcnf):
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
+
+        if preprocess:
+            try:
+                all([config[x] or x == '' for x in preprocess])
+            except KeyError:
+                log.warning(logid+'Not all required preprocessing steps have configuration in the config file')
 
         if subworkflows:
             try:
@@ -120,6 +130,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         condapath=re.compile(r'conda:\s+"')
 
+        if preprocess:
+            """Do stuff here
+            """
+
+
         if subworkflows:
             for condition in conditions:
                 smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
@@ -134,11 +149,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
                             smkout.write('rule all:\n\tinput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))\n\n')
 
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows and ('TRIMMING' not in subworkflows or ('TRIMMING' in config and config['TRIMMING']['RUN'] == "OFF")):
                     log.info(logid+'Simulating read trimming as trimming was set to OFF or is not part of the workflow!')
@@ -162,6 +177,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             subsamples = list(set(sampleslong(subconf)))
                             subname = toolenv+'.smk'
                             log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
+
+                            if 'TRIMMING' and not 'MAPPING' in subworkflows:
+                                subname = toolenv+'_trim.smk'
+
+                            if not 'TRIMMING' and not 'MAPPING' in subworkflows:
+                                subname = toolenv+'_raw.smk'
 
                             smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                             with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
