@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan  8 14:14:54 2020 (+0100)
+# Last-Updated: Tue Feb 11 14:46:43 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 815
+#     Update #: 847
 # URL:
 # Doc URL:
 # Keywords:
@@ -96,6 +96,9 @@ class NestedDefaultDict(defaultdict):
 
     def __repr__(self):
         return repr(dict(self))
+
+    def merge(self, *args):
+        self = merge_dicts(self,*args)
 
 # Code:All subs from here on
 ##############################
@@ -265,10 +268,10 @@ def namefromfile(s, config):
         cond= s.split(os.sep)[-2]
         sk = find_key_for_value(sa, config["SAMPLES"])
         for skey in sk:
-            klist = value_extract(skey, config["NAME"])
+            klist = value_extract(skey, config["NAME"]) if 'NAME' in config else list()
             for k in klist:
-                    if str(skey) == str(cond):
-                        return str(k)
+                if str(skey) == str(cond):
+                    return str(k)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -305,8 +308,9 @@ def create_subworkflow(config, subwork, conditions):
                 )
                 log.error(''.join(tbe.format()))
             try:
-                for key in ['GENOME', 'NAME']:
-                    tempconf[key][src] = config[key][src]
+                tempconf['GENOME'][src] = config['GENOME'][src]
+                if 'NAME' in config:
+                    tempconf['NAME'][src] = config['NAME'][src]
                 for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
                 if 'COUNTING' in config:
@@ -335,7 +339,7 @@ def create_subworkflow(config, subwork, conditions):
 def namefrompath(p, config):
     try:
         p = os.path.dirname(p).split(os.sep)
-        klist = getFromDict(config["NAME"],p)
+        klist = getFromDict(config["NAME"],p) if 'NAME' in config else ''
         for k in klist:
             return str(k)
     except Exception as err:
@@ -728,7 +732,7 @@ def aggregate_input(wildcards):
 def dict_inst(d):
     try:
         loginfo='dict_inst: '
-        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict):
+        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
             return True
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -778,13 +782,16 @@ def merge_dicts(d,u):
 
 
 def list_all_keys_of_dict(dictionary):
+    logid = 'list_all_keys_of_dict: '
     try:
         if dict_inst(dictionary):
-            for key in dictionary.keys():
-                if dict_inst(key):
-                    yield from list_all_keys_of_dict(key)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_keys_of_dict(value)
                 else:
-                    yield key
+                    yield (key, value)
+                    yield ('last','key')
         else:
             yield dictionary
 
@@ -798,11 +805,13 @@ def list_all_keys_of_dict(dictionary):
 def list_all_values_of_dict(dictionary):
     try:
         if dict_inst(dictionary):
-            for values in dictionary.values():
-                if dict_inst(values):
-                    yield from list_all_values_of_dict(values)
+            for key, value in dictionary.items():
+                if dict_inst(value):
+                    yield (key, value)
+                    yield from list_all_values_of_dict(value)
                 else:
-                    yield values
+                    yield (key, value)
+                    yield ('last','value')
         else:
             yield dictionary
 

@@ -8,12 +8,11 @@ if paired == 'paired':
                 o2 = "TRIMMED_FASTQ/{file}_r2_val_2.fq.gz"
         log:   "LOGS/{file}_trim.log"
         conda: "snakes/envs/"+TRIMENV+".yaml"
-        threads: int(MAXTHREAD/2)
+        threads: lambda x: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir=lambda wildcards,output:os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")['OPTIONS'][0].items()),
-                trim=TRIMBIN,
-                cores = min(int(MAXTHREAD/4),4)
-        shell:  "{params.trim} --cores {params.cores} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
+                trim=TRIMBIN
+        shell:  "{params.trim} --cores {threads} --paired --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
 
     rule trimgalore_rename:
         input:  o1 = rules.trimgalore_trim.output.o1,
@@ -30,12 +29,11 @@ else:
         output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
         log:    "LOGS/{file}_trim.log"
         conda: "snakes/envs/"+TRIMENV+".yaml"
-        threads: int(MAXTHREAD/2)
+        threads: lambda x: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir=lambda wildcards,output: os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")['OPTIONS'][0].items()),
-                trim=TRIMBIN,
-                cores = min(int(MAXTHREAD/4),4)
-        shell:  "{params.trim} --cores {params.cores} --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}"
+                trim=TRIMBIN
+        shell:  "{params.trim} --cores {threads} --no_report_file --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}"
 
     rule trimgalore_rename:
         input:  o1 = rules.trimgalore_trim.output.o1
