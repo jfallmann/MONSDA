@@ -1,3 +1,11 @@
+Welcome to NextSnakes's documentation!
+======================================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+
 # snakes
 
 Collection of snakemake workflows for NGS analysis from mapping to featurecount and track generation
@@ -340,3 +348,14 @@ Define the cluster config file and for SGE support simply append ```--cluster "q
 
 ## TODO
 Implementation of Slurm support, Isoform analysis, you name it
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+NextSnake.rst (END)
+
+
