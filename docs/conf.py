@@ -28,7 +28,7 @@ release = '01.03.2020'
 # -- General configuration ---------------------------------------------------
 #Master file to be generated
 
-master_doc = 'NextSnake'
+master_doc = 'index'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
