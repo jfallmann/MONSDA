@@ -22,7 +22,7 @@ copyright = '2020, Joerg Fallmann'
 author = 'Joerg Fallmann'
 
 # The full version, including alpha/beta/rc tags
-release = '01.03.2020'
+release = '1.0'
 
 
 # -- General configuration ---------------------------------------------------
