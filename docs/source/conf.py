@@ -31,6 +31,7 @@ release = '01.03.2020'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+'recommonmark'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
