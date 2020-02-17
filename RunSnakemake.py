@@ -277,7 +277,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
-                if analysis in config:
+                if analysis in config and analysis in postprocess:
                     log.info(logid+'STARTING '+analysis+' Analysis')
                     subwork = analysis
                     subconf = NestedDefaultDict()
