@@ -1,0 +1,231 @@
+{
+    "PREPROCESSING" : "", # which preprocessing steps do you want to run
+    "WORKFLOWS": "", #which workflows do you want to run
+    "POSTPROCESSING" : "", # which postprocessing steps do you want to run
+    "REFERENCE": "GENOMES", #where to find the reference genomes, default is a directory GENOMES
+    "BINS": "snakes/scripts", #where to find the scripts used in the workflow, per default the scripts git repository that comes as gitmodule with the snakes repository
+    "MAXTHREADS": "20", #maximum number of cores to use
+    "GENOME": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta without file ending .fa.gz, we always asume files to be gzipped
+                "genome": "Genomefile"
+              },
+    "NAME": { #extension for genome file name in case different types of reference are used, e.g. genomic, artificial, organelle ...
+              "genome": {#first key is the same than for GENOME
+                      "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                                    "setting": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
+                                  }
+                     }
+            },
+    "SOURCE": {  #which organisms are to be parsed for which samples
+                 "genome": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. condition with setting star will use the file listed under Genome here
+                             "condition": {
+                                 "setting": "genome"
+                             }
+                           }
+              },
+    "SAMPLES": {  #which samples to analyze
+                  "genome": { #key for source and genome
+                              "condition": { # sample id
+                                             "setting": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
+                      }
+                  }
+               },
+    "SEQUENCING" : {
+        "genome": { #key for source and genome
+                    "condition": { # sample id
+                                   "setting": "single" # setup and sequencing type, either paired or single
+                                 }
+                  }
+    },
+#QC options
+    "QC": {
+        "RUN": "ON", #set to 'OFF' to skip QC
+        "genome": { #key for source and genome
+                    "condition": { # sample id
+                                   "setting": {
+                                       "ENV" : "fastqc",  # name of conda env for QC
+                                       "BIN" : "fastqc", # binary for QC
+                                       "OPTIONS":
+                                       [  #QC options here if any, paired is not required, will be resolved by rules
+                                          {}
+                                       ]
+                                   }
+                             }
+                  }
+    },
+#Trimming options
+    "TRIMMING": { #options for trimming for each sample/condition
+                  "RUN": "ON", # set to 'OFF' if no trimming wanted
+                  "genome": {
+                      "condition": {
+                          "setting": { # See above
+                                       "ENV": "trimgalore", # name of conda env for trimming
+                                       "BIN": "trim_galore", # name of binary for trimming
+                                       "OPTIONS":
+                                       [
+                                           {  # trimming options here, --paired is not required, will be resolved by rules
+                                              "-q": "15",
+                                              "--length": "8", #READ_MINLEN discard reads shorter than that
+                                              "-e": "0.15"
+                                           }
+                                       ]
+                                     }
+                      }
+                  }
+                },
+#MAPPING options
+    "MAPPING": { #options for mapping for each sample/condition
+                 "genome": {
+                     "condition": {
+                         "setting": {
+                             "ENV": "star", # which conda env to use for mapping
+                             "BIN": "STAR", #how the mapper binary is called
+                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                             "OPTIONS": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                             [
+                                 {  #indexing options
+                                    "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                    "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
+                                    "--genomeSAindexNbases": "13" #indexing options
+                                 },
+                                 {  #mapping options
+                                    "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                    "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
+                                    "--outSAMprimaryFlag AllBestScore": ""
+                                 },
+                                 "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index, can be empty or skipped
+                             ]
+                         }
+                     }
+                 }
+               },
+#Count options
+    "COUNTING": { #options for counting for each sample/condition
+                  "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
+                      "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3 file
+                      "gene": "ID" #same here
+                  },
+                  "genome": {
+                      "condition": {
+                          "setting": {  # See above
+                                        "ENV": "countreads", #see above
+                                        "BIN": "featureCounts",
+                                        "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                                        "OPTIONS":
+                                        [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                           {
+                                               "-f": "",
+                                               "--fraction": "",
+                                               "-p": "",
+                                               "-O": "",
+                                               "-M": "",
+                                               "-T": "5",
+                                           }
+                                        ]
+                                     }
+                      }
+                  }
+                },
+#Annotation options using the built in AnnotateBed.pl in the scripts directory, use at own risk, output can become very large
+    "ANNOTATE" : {
+        "genome": {
+            "condition": {
+                "setting": { # See above
+                             "ENV": "annotatebed",
+                             "BIN": "annotate", #default, if you have a specific binary for annotation state here, may need extra tweaking of workflow though
+                             "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                             "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                             "OPTIONS":
+                             [
+                                 {
+                                     "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                                 }
+                             ]
+                           }
+            }
+        }
+    },
+#UCSC track generation options
+    "UCSC" : {
+        "genome": {
+            "condition": {
+                "setting": {  # See above
+                              "ENV" : "ucsc",
+                              "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need some placeholder key
+                              "ANNOTATION": "dm6.gff3.gz", #should only be relevant for star, but who knows
+                              "OPTIONS":
+                              [
+                                  {
+                                      "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
+                                      "-s" : "dm6_st", #short name for hub, replace space with _
+                                      "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
+                                      "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                                  }
+                              ]
+                           }
+            }
+        }
+    },
+#Peak finding options, uses PAR-iCLIP Peak finder scripts adopted from https://dx.doi.org/10.15252/msb.20156628 use at own risk or replace with your own scripts, will need tweaking of workflow!
+    "PEAKS" : {
+        "genome": {
+            "condition": {
+                "setting": {  # See above
+                              "ENV" : "peaks",
+                              "BIN" : "peaks", #dummy as Peaks has no direct bin but we need the key
+                              "ANNOTATION": "dm6.gff3.gz",
+                              "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
+                              "OPTIONS":
+                              [
+                                  {
+                                      "MINPEAKRATIO": "0.6",
+                                      "PEAKDISTANCE": "1",
+                                      "PEAKWIDTH": "5",
+                                      "PEAKCUTOFF": "0.8",
+                                      "MINPEAKHEIGHT": "3",
+                                      "USRLIMIT": "3"
+                                  }
+                              ]
+                           }
+            }
+        }
+    },
+#DE options for Differential Expression Analysis for each sample/condition
+    "DE": {
+        "genome": {
+            "condition": {
+                "setting": {  # See above
+                              "ENV": "deseq2", #see QC
+                              "BIN": "deseq2",
+                              "CONDITION":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                              "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
+                              "TYPES": ["single","single"], #sequencing type or additional condition to compare to
+                              "OPTIONS":
+                              [
+                                  {  #Should not be needed
+                                  }
+                              ]
+                           }
+            }
+        }
+    },
+#DEU Analysis options for Differential Exon Usage
+    "DEU" : {
+        "genome": {
+            "condition": {
+                "setting": {
+                    "ENV": "dexseq",
+                    "BIN": "dexseq",
+                    "ANNOTATION": "Homo_Anno.gtf.gz",
+                    "CONDITION":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
+                    "TYPES": ["single","single"], #sequencing type or additional condition to compare to
+                    "OPTIONS":
+                    [
+                        {  #Should not be needed
+                        }
+                    ]
+                }
+            }
+        }
+    }
+} #End of support for now
