@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 14:41:36 2020 (+0100)
+# Last-Updated: Tue Feb 18 17:15:36 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 905
+#     Update #: 985
 # URL:
 # Doc URL:
 # Keywords:
@@ -80,15 +80,15 @@ import subprocess
 import collections
 from collections import defaultdict, OrderedDict
 import six
+import logging
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
-from Logger import *
-
 try:
-    log = setup_logger(name='Collection', log_file='LOGS/Snakemake_Collection.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+    scriptname = os.path.basename(inspect.stack()[-1].filename)
+    log=logging.getLogger(scriptname)
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -113,6 +113,7 @@ class NestedDefaultDict(defaultdict):
 ##############################
 def check_run(func):
     def func_wrapper(*args, **kwargs):
+        logid=scriptname+'.Collection_func_wrapper: '
         try:
             return func(*args, **kwargs)
 
@@ -121,12 +122,12 @@ def check_run(func):
             tbe = tb.TracebackException(
                 exc_type, exc_value, exc_tb,
             )
-            log.error(''.join(tbe.format()))
+            log.error(logid+''.join(tbe.format()))
     return func_wrapper
 
 @check_run
 def sources(config):
-    logid='sources: '
+    logid=scriptname+'.Collection_sources: '
     ret = list()
     for key in config["SOURCE"] and config["SAMPLES"]:
         ret.append(str(key))
@@ -135,7 +136,7 @@ def sources(config):
 
 @check_run
 def samples(config):
-    logid='samples: '
+    logid=scriptname+'.Collection_samples: '
     ret = list()
     for x,y in config["SOURCE"].items():
         k = find_innermost_value_from_dict(config["SAMPLES"][x])
@@ -146,29 +147,29 @@ def samples(config):
 
 @check_run
 def get_samples_from_dir(id, condition, setting, config):
-    logid = 'get_samples_from_dir: '
+    logid = scriptname+'.Collection_get_samples_from_dir: '
     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
     log.info(logid+str(pat))
-    r = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    if len(r) >0:
+    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
+    if len(ret) >0:
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'unpaired' not in x:
-                r = list(set([re.sub('_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in r]))
-                renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in r]
+                ret = list(set([re.sub('_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in ret]
                 for i in range(len(renamelist)):
-                    if renamelist[i] != r[i]:
-                        os.rename(r[i],renamelist[i])
+                    if renamelist[i] != ret[i]:
+                        os.rename(ret[i],renamelist[i])
             else:
-                r = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in r]))
+                ret = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in ret]))
     else:
-        r = None
-    log.debug(logid+str(r))
-    return r
+        ret = None
+    log.debug(logid+str(ret))
+    return list(set(ret))
 
 @check_run
 def sampleslong(config):
-    logid = 'sampleslong: '
+    logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     for x,y in config["SOURCE"].items():
         for s in config["SAMPLES"][x]:
@@ -185,6 +186,7 @@ def sampleslong(config):
                                 ret.append(os.path.join(str(x),str(s),str(z)))
                 else:
                     ret.append(os.path.join(str(x),str(s),str(v)))
+    ret = list(set([x for x in ret if os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz'))]))
     log.debug(logid+str(ret))
     return ret
 
@@ -221,7 +223,7 @@ def genomepath(s, config):
 
 @check_run
 def genome(s, config):
-    logid='genome: '
+    logid=scriptname+'.Collection_genome: '
     sa = os.path.basename(str(s))
     sp = source_from_sample(str(s)).split(os.sep)[0]
     cond= s.split(os.sep)[-2]
@@ -270,7 +272,8 @@ def namefromfile(s, config):
 
 @check_run
 def create_subworkflow(config, subwork, conditions, stage=''):
-    logid = 'create_subworkflow: '
+    logid = scriptname+'.Collection_create_subworkflow: '
+    log.debug(logid+str([config, subwork, conditions, stage]))
     toollist = list()
     configs = list()
     for condition in conditions:
@@ -297,7 +300,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
         try:
-            tempconf['GENOME'][src] = config['GENOME'][src]
+            matchinggenome=config['SOURCE'][src][treat][setup]
+            tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
             if 'NAME' in config:
                 tempconf['NAME'][src] = config['NAME'][src]
             for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
@@ -343,7 +347,7 @@ def pathstogenomes(samples, config):
 
 @check_run
 def tool_params(sample, runstate, config, subconf):
-    logid='tool_params: '
+    logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     t = genome(sample,config)
     mp = OrderedDict()
@@ -367,7 +371,7 @@ def env_bin_from_config(samples, config, subconf):
 
 @check_run
 def env_bin_from_config2(samples, config, subconf):
-    logid='env_bin_from_config2'
+    logid=scriptname+'.Collection_env_bin_from_config2'
     for s in samples:
         log.debug(logid+': '+s)
         log.debug(str(config[subconf]))
@@ -397,7 +401,7 @@ def sample_from_path(path):
 
 @check_run
 def anno_from_file(sample, config, step):
-    logid = 'anno_from_file: '
+    logid = scriptname+'.Collection_anno_from_file: '
     p = os.path.dirname(genomepath(sample, config))
     s = source_from_sample(sample)
     ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
@@ -406,7 +410,7 @@ def anno_from_file(sample, config, step):
 
 @check_run
 def anno_from_source(source, config, step):
-    logid = 'anno_from_source: '
+    logid = scriptname+'.Collection_anno_from_source: '
     s = source.split(os.sep)[0:-1]
     p = s[0]
     samp = source.split(os.sep)[-1]
@@ -422,7 +426,7 @@ def anno_from_source(source, config, step):
 
 @check_run
 def runstate_from_sample(sample,config):
-    logid = 'runstate_from_sample: '
+    logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
         s = os.path.basename(s)
@@ -434,7 +438,7 @@ def runstate_from_sample(sample,config):
 
 @check_run
 def samplecond(sample,config):
-    logid = 'samplecond: '
+    logid = scriptname+'.Collection_samplecond: '
     ret = list()
     paired = False
     for s in sample:
@@ -443,17 +447,18 @@ def samplecond(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
+            log.debug(logid+str(tmplist))
             if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
                 paired = True
             if paired:
                 s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-    log.debug(logid+str([sample,ret]))
+    log.debug(logid+str(ret))
     return ret
 
 @check_run
 def conditiononly(sample,config):
-    logid = 'conditiononly: '
+    logid = scriptname+'.Collection_conditiononly: '
     ret = list()
     paired = False
     check = os.path.dirname(sample).split(os.sep)
@@ -466,7 +471,7 @@ def conditiononly(sample,config):
 
 @check_run
 def checkpaired(sample,config):
-    logid = 'checkpaired: '
+    logid = scriptname+'.Collection_checkpaired: '
     ret = list()
     paired = ''
     for s in sample:
@@ -481,7 +486,7 @@ def checkpaired(sample,config):
 
 @check_run
 def checkstranded(sample,config):
-    logid = 'checkstranded: '
+    logid = scriptname+'.Collection_checkstranded: '
     ret = list()
     stranded = ''
     for s in sample:
@@ -496,7 +501,7 @@ def checkstranded(sample,config):
 
 @check_run
 def checkclip(sample,config):
-    logid = 'checkclip: '
+    logid = scriptname+'.Collection_checkclip: '
     ret = list()
     clip = ''
     for s in sample:
@@ -540,13 +545,13 @@ def aggregate_input(wildcards):
 ##############################
 @check_run
 def dict_inst(d):
-    loginfo='dict_inst: '
+    logid=scriptname+'.Collection_dict_inst: '
     if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
         return True
 
 @check_run
 def getFromDict(dataDict, mapList):
-    logid = 'getFromDict: '
+    logid = scriptname+'.Collection_getFromDict: '
     log.debug(logid+str(mapList))
     ret=list()
     for k in mapList:
@@ -589,7 +594,7 @@ def merge_dicts(d,u):
 
 @check_run
 def list_all_keys_of_dict(dictionary):
-    logid = 'list_all_keys_of_dict: '
+    logid = scriptname+'.Collection_list_all_keys_of_dict: '
     if dict_inst(dictionary):
         for key, value in dictionary.items():
             if dict_inst(value):
@@ -628,7 +633,7 @@ def find_all_values_on_key(key, dictionary):
 
 @check_run
 def find_key_for_value(val, dictionary):
-    logid='find_key_for_value: '
+    logid=scriptname+'.Collection_find_key_for_value: '
     log.debug(logid+str(val))
     if dict_inst(dictionary):
         for k, v in dictionary.items():
@@ -642,7 +647,7 @@ def find_key_for_value(val, dictionary):
 
 @check_run
 def value_extract(key, var):
-    logid='value_extract: '
+    logid=scriptname+'.Collection_value_extract: '
     log.debug(logid+str(var))
     if hasattr(var,'items'):
         for k, v in var.items():
@@ -658,6 +663,7 @@ def value_extract(key, var):
 
 @check_run
 def find_innermost_value_from_dict(dictionary):
+    logid=scriptname+'.Collection_find_innermost_value_from_dict: '
     if dict_inst(dictionary):
         for k, v in dictionary.items():
             if dict_inst(v):
@@ -670,6 +676,7 @@ def find_innermost_value_from_dict(dictionary):
 
 @check_run
 def removekey(d, key):
+    logid=scriptname+'.Collection_removekey: '
     r = dict(d)
     del r[key]
     return r

@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 14:30:03 2020 (+0100)
+# Last-Updated: Tue Feb 18 17:43:49 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 547
+#     Update #: 559
 # URL:
 # Doc URL:
 # Keywords:
@@ -102,17 +102,22 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if any(x in o.stderr for x in ['ERROR','Error','error']):
                     sys.exit(o.stderr)
 
-        preprocess = config['PREPROCESSING'].split(',') # we keep this separate because not all preprocessing steps need extra configuration
-        if len(preprocess) == 0 or preprocess[0] == '':
-            preprocess = None
+        preprocess = subworkflows = postprocess = None
 
-        subworkflows = config['WORKFLOWS'].split(',')
-        if len(subworkflows) == 0 or subworkflows[0] == '':
-            subworkflows = None
+        if 'PREPROCESSING' in config:
+            preprocess = config['PREPROCESSING'].split(',') # we keep this separate because not all preprocessing steps need extra configuration
+            if len(preprocess) == 0 or preprocess[0] == '':
+                preprocess = None
+        if 'WORKFLOWS' in config:
+            subworkflows = config['WORKFLOWS'].split(',')
+            if len(subworkflows) == 0 or subworkflows[0] == '':
+                subworkflows = None
+        if 'POSTPROCESSING' in config:
+            postprocess = config['POSTPROCESSING'].split(',') # we keep this separate because not all postprocessing steps need extra configuration
+            if len(postprocess) == 0 or postprocess[0] == '':
+                postprocess = None
 
-        postprocess = config['POSTPROCESSING'].split(',') # we keep this separate because not all postprocessing steps need extra configuration
-        if len(postprocess) == 0 or postprocess[0] == '':
-            postprocess = None
+        log.debug(logid+str([preprocess,subworkflows,postprocess]))
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
 
@@ -190,11 +195,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         if subwork == 'QC':
                             subname = toolenv+'_raw.smk'
-                            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                                smkf = os.path.abspath(os.path.join('snakes','workflows','premultiqc.smk'))
-                                with open(smkf,'r') as smk:
-                                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                    smkout.write('\n\n')
+                        #    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                        #        smkf = os.path.abspath(os.path.join('snakes','workflows','premultiqc.smk'))
+                        #        with open(smkf,'r') as smk:
+                        #            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        #            smkout.write('\n\n')
 
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
@@ -222,6 +227,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
 
         if subworkflows:
+            log.info(logid+'STARTING PROCESSING')
             for condition in conditions:
                 smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
                 with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
@@ -260,10 +266,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         subname = toolenv+'.smk'
                         log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
 
-                        if subwork == 'QC' and 'TRIMMING' and not 'MAPPING' in subworkflows:
+                        if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             subname = toolenv+'_trim.smk'
 
-                        if subwork == 'QC' and not 'TRIMMING' and not 'MAPPING' in subworkflows:
+                        if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             subname = toolenv+'_raw.smk'
 
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
@@ -431,7 +437,7 @@ if __name__ == '__main__':
         optionalargs=args[1:]
         makelogdir('LOGS')
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
+        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:

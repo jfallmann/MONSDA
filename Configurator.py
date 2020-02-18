@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 12:28:00 2020 (+0100)
+# Last-Updated: Tue Feb 18 17:00:57 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 516
+#     Update #: 521
 # URL:
 # Doc URL:
 # Keywords:
@@ -184,7 +184,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                     if genomemap:
                         for k,v in genmap.items():
                             if k == id:
-                                newconf[key][id][condition][setting] = str(v)
+                                newconf[key][id][condition][setting] = str(gens[v])
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SEQUENCING':
@@ -194,13 +194,13 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SAMPLES':
                     samplelist = get_samples_from_dir(id, condition, setting, newconf)
-                    if samplelist:
+                    log.debug(logid+'SAMPLELIST: '+str(samplelist))
+                    if len(samplelist) > 0:
                         newconf[key][id][condition][setting] = samplelist
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:
                     newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-
 
     else:
         #newconf.merge(oldconfig)
@@ -258,7 +258,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                                 for k,v in genmap.items():
                                     if k == id:
                                         if str(v) != oldconf[key][id][condition][setting]:
-                                            newconf[key][id][condition][setting] = str(v)
+                                            newconf[key][id][condition][setting] = str(gens[v])
                                         else:
                                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
                             else:
