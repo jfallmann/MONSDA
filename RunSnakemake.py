@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 11:52:10 2020 (+0100)
+# Last-Updated: Tue Feb 18 14:30:03 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 507
+#     Update #: 547
 # URL:
 # Doc URL:
 # Keywords:
@@ -148,8 +148,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.debug(logid+'WORKFLOWS: '+str(subworkflows))
 
         SAMPLES=list(set(samples(config)))
-        if os.path.exists(SAMPLES[0]) is False:
-            SAMPLES=list(set(sampleslong(config)))
+        if any([os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz')) for x in SAMPLES]) is False:
+            SAMPLES=list(set([x for x in sampleslong(config) if os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz'))]))
+        if any([os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz')) for x in SAMPLES]) is False:
+            log.error(logid+'No samples found, please check config file')
+            sys.exit()
 
         log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
         conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
@@ -158,54 +161,62 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         condapath=re.compile(r'conda:\s+"')
 
         if preprocess:
+            log.info(logid+'STARTING PREPROCESSING')
+            if 'QC' in preprocess and 'QC' in config:
+                makeoutdir('QC')
             for condition in conditions:
-                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                    smkout.write('\n\n')
-
-                if 'QC' in preprocess and 'QC' in config:
-                    makeoutdir('QC')
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','premultiqc.smk'))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
-
                 subconf = NestedDefaultDict()
-                for prework in preprocess:
-                    listoftools, listofconfigs = create_subworkflow(config, prework, [condition],'PRE')
+                for subwork in preprocess:
+
+                    log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                    log.debug(logid+str([listoftools,listofconfigs]))
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for preprocessing step '+str(subwork))
+                        continue
+
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
                         subname = toolenv+'.smk'
-                        log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
+                        log.debug(logid+'PREPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))), 'a') as smkout:
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                                smkout.write('\n\n')
 
-                with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))), 'a') as confout:
-                    json.dump(subconf, confout)
+                        if subwork == 'QC':
+                            subname = toolenv+'_raw.smk'
+                            with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                                smkf = os.path.abspath(os.path.join('snakes','workflows','premultiqc.smk'))
+                                with open(smkf,'r') as smk:
+                                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                    smkout.write('\n\n')
 
-            for condition in conditions:
-                log.info(logid+'Starting preprocessing runs for condition '+str(condition))
-                jobtorun = 'snakemake -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
-                log.info(logid+'PREPROCESSING '+str(jobtorun))
-                o = runjob(jobtorun)
-                if o.stdout:
-                    log.info(o.stdout)
-                    if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                        sys.exit(o.stdout)
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write('\n\n')
 
-                if o.stderr:
-                    log.error(o.stderr)
-                    if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
-                        sys.exit(o.stderr)
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subconfig.json']))), 'a') as confout:
+                            json.dump(subconf, confout)
+
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        log.info(logid+'RUNNING '+str(jobtorun))
+                        o = runjob(jobtorun)
+                        if o.stdout:
+                            log.info(o.stdout)
+                            if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                                sys.exit(o.stdout)
+
+                        if o.stderr:
+                            log.error(o.stderr)
+                            if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                                sys.exit(o.stderr)
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
 
@@ -295,17 +306,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 CLIP = checkclip(SAMPLES, config)
                 log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
-            #if 'DE' in config and 'DE' in postprocess and not 'COUNTING' in postprocess:
-                #postprocess.remove('DE')  # need to make sure that counting happens before DE
-                #postprocess.append('COUNTING')
-                #postprocess.append('DE')
-
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
                     if subwork == 'DE' or subwork == 'DEU' or subwork == 'DAS':
                         continue
-                    log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(condition))
+                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
                     if listoftools is None:
