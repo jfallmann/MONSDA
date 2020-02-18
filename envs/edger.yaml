@@ -8,53 +8,43 @@ dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=0_gnu
   - _r-mutex=1.0.1=anacondar_1
-  - binutils_impl_linux-64=2.33.1=he1b5a44_7
+  - binutils_impl_linux-64=2.33.1=h53a641e_8
   - binutils_linux-64=2.33.1=h9595d00_16
   - bioconductor-edger=3.28.0=r36he1b5a44_0
   - bioconductor-limma=3.42.0=r36h516909a_0
   - bwidget=1.9.14=0
   - bzip2=1.0.8=h516909a_2
   - ca-certificates=2019.11.28=hecc5488_0
-  - cairo=1.16.0=h18b612c_1001
-  - curl=7.65.3=hf8cf82a_0
-  - cyrus-sasl=2.1.27=he38ecfd_0
-  - dbus=1.13.6=he372182_0
-  - expat=2.2.5=he1b5a44_1004
-  - font-ttf-dejavu-sans-mono=2.37=hab24e00_0
-  - font-ttf-inconsolata=2.001=hab24e00_0
-  - font-ttf-source-code-pro=2.030=hab24e00_0
-  - font-ttf-ubuntu=0.83=hab24e00_0
-  - fontconfig=2.13.1=he4413a7_1000
-  - fonts-anaconda=1=h8fa9717_0
+  - cairo=1.16.0=hfb77d84_1002
+  - curl=7.68.0=hf8cf82a_0
+  - fontconfig=2.13.1=h86ecdb6_1001
   - freetype=2.10.0=he983fc9_1
-  - gcc_impl_linux-64=7.3.0=hd420e75_4
+  - fribidi=1.0.5=h516909a_1002
+  - gcc_impl_linux-64=7.3.0=hd420e75_5
   - gcc_linux-64=7.3.0=h553295d_16
   - gettext=0.19.8.1=hc5be6a0_1002
-  - gfortran_impl_linux-64=7.3.0=hdf63c60_4
+  - gfortran_impl_linux-64=7.3.0=hdf63c60_5
   - gfortran_linux-64=7.3.0=h553295d_16
   - glib=2.58.3=h6f030ca_1002
   - graphite2=1.3.13=hf484d3e_1000
-  - gsl=2.5=h294904e_1
-  - gst-plugins-base=1.14.5=h0935bb2_0
-  - gstreamer=1.14.5=h36ae1b5_0
-  - gxx_impl_linux-64=7.3.0=hdf63c60_4
+  - gsl=2.6=h294904e_0
+  - gxx_impl_linux-64=7.3.0=hdf63c60_5
   - gxx_linux-64=7.3.0=h553295d_16
-  - harfbuzz=2.4.0=h37c48d4_1
-  - icu=58.2=hf484d3e_1000
+  - harfbuzz=2.4.0=h9f30f68_3
+  - icu=64.2=he1b5a44_1
   - jpeg=9c=h14c3975_1001
   - krb5=1.16.4=h2fd8d38_0
-  - ld_impl_linux-64=2.33.1=h53a641e_7
+  - ld_impl_linux-64=2.33.1=h53a641e_8
   - libblas=3.8.0=14_openblas
   - libcblas=3.8.0=14_openblas
-  - libcurl=7.65.3=hda55be3_0
+  - libcurl=7.68.0=hda55be3_0
   - libedit=3.1.20170329=hf8c457e_1001
   - libffi=3.2.1=he1b5a44_1006
   - libgcc-ng=9.2.0=h24d8f2e_2
-  - libgfortran-ng=7.3.0=hdf63c60_4
+  - libgfortran-ng=7.3.0=hdf63c60_5
   - libgomp=9.2.0=h24d8f2e_2
   - libiconv=1.15=h516909a_1005
   - liblapack=3.8.0=14_openblas
-  - libntlm=1.4=h14c3975_1002
   - libopenblas=0.3.7=h5ec1e0e_6
   - libpng=1.6.37=hed695b0_0
   - libssh2=1.8.2=h22169c7_2
@@ -62,117 +52,24 @@ dependencies:
   - libtiff=4.1.0=hc3755c2_3
   - libuuid=2.32.1=h14c3975_1000
   - libxcb=1.13=h14c3975_1002
-  - libxml2=2.9.9=h13577e0_2
+  - libxml2=2.9.10=hee79883_0
   - lz4-c=1.8.3=he1b5a44_1001
   - make=4.2.1=h14c3975_2004
   - ncurses=6.1=hf484d3e_1002
-  - openjdk=8.0.192=h14c3975_1003
   - openssl=1.1.1d=h516909a_0
-  - pandoc=2.9.1.1=0
-  - pango=1.40.14=he7ab937_1005
-  - pcre=8.43=he1b5a44_0
+  - pango=1.42.4=ha030887_1
+  - pcre=8.44=he1b5a44_0
   - pixman=0.38.0=h516909a_1003
   - pthread-stubs=0.4=h14c3975_1001
-  - qt=5.6.3=h8bf5577_3
-  - r-askpass=1.1=r36hcdcec82_1
-  - r-assertthat=0.2.1=r36h6115d3f_1
-  - r-backports=1.1.5=r36hcdcec82_0
-  - r-base=3.6.1=h8900bf8_2
-  - r-base64enc=0.1_3=r36hcdcec82_1003
-  - r-bit=1.1_15.1=r36hcdcec82_0
-  - r-bit64=0.9_7=r36hcdcec82_1001
-  - r-bitops=1.0_6=r36hcdcec82_1003
-  - r-blob=1.2.1=r36h6115d3f_0
-  - r-catools=1.18.0=r36h0357c0b_0
-  - r-cellranger=1.1.0=r36h6115d3f_1002
-  - r-cli=2.0.1=r36h6115d3f_0
-  - r-clipr=0.7.0=r36h6115d3f_0
-  - r-config=0.3=r36h6115d3f_1002
-  - r-crayon=1.3.4=r36h6115d3f_1002
-  - r-curl=4.3=r36hcdcec82_0
-  - r-dbi=1.1.0=r36h6115d3f_0
-  - r-dbplyr=1.4.2=r36h6115d3f_1
-  - r-digest=0.6.23=r36h0357c0b_0
-  - r-dplyr=0.8.3=r36h0357c0b_3
-  - r-ellipsis=0.3.0=r36hcdcec82_0
-  - r-evaluate=0.14=r36h6115d3f_1
-  - r-fansi=0.4.1=r36hcdcec82_0
-  - r-fastmap=1.0.1=r36h0357c0b_0
-  - r-forcats=0.4.0=r36h6115d3f_1
-  - r-forge=0.2.0=r36h6115d3f_1
-  - r-generics=0.0.2=r36h6115d3f_1002
-  - r-glue=1.3.1=r36hcdcec82_1
-  - r-haven=2.2.0=r36hde08347_0
-  - r-highr=0.8=r36h6115d3f_1
-  - r-hms=0.5.3=r36h6115d3f_0
-  - r-htmltools=0.4.0=r36h0357c0b_0
-  - r-htmlwidgets=1.5.1=r36h6115d3f_0
-  - r-httpuv=1.5.2=r36h0357c0b_1
-  - r-httr=1.4.1=r36h6115d3f_1
-  - r-jsonlite=1.6=r36hcdcec82_1001
-  - r-knitr=1.27=r36h6115d3f_0
-  - r-later=1.0.0=r36h0357c0b_0
+  - r-base=3.6.2=h7ed4ef7_1
   - r-lattice=0.20_38=r36hcdcec82_1002
-  - r-lifecycle=0.1.0=r36h6115d3f_0
   - r-locfit=1.5_9.1=r36h516909a_1004
-  - r-magrittr=1.5=r36h6115d3f_1002
-  - r-markdown=1.1=r36hcdcec82_0
-  - r-mime=0.8=r36hcdcec82_0
-  - r-miniui=0.1.1.1=r36h6115d3f_1001
-  - r-mongolite=2.1.0=r36hcdcec82_1
-  - r-odbc=1.2.2=r36h0357c0b_0
-  - r-openssl=1.4.1=r36h9c8475f_0
-  - r-packrat=0.5.0=r36h6115d3f_1001
-  - r-pillar=1.4.3=r36h6115d3f_0
-  - r-pkgconfig=2.0.3=r36h6115d3f_0
-  - r-pki=0.1_5.1=r36hcdcec82_1003
-  - r-plogr=0.2.0=r36h6115d3f_1002
-  - r-prettyunits=1.1.0=r36h6115d3f_0
-  - r-profvis=0.3.6=r36hcdcec82_1
-  - r-progress=1.2.2=r36h6115d3f_1
-  - r-promises=1.1.0=r36h0357c0b_0
-  - r-purrr=0.3.3=r36hcdcec82_0
-  - r-r2d3=0.2.3=r36h6115d3f_1001
-  - r-r6=2.4.1=r36h6115d3f_0
-  - r-rappdirs=0.3.1=r36hcdcec82_1003
   - r-rcpp=1.0.3=r36h0357c0b_0
-  - r-rcurl=1.98_1.1=r36hcdcec82_0
-  - r-readr=1.3.1=r36h0357c0b_1002
-  - r-readxl=1.3.1=r36h0357c0b_2
-  - r-rematch=1.0.1=r36h6115d3f_1002
-  - r-rjava=0.9_11=r36hcdcec82_1
-  - r-rjdbc=0.2_7.1=r36h6115d3f_0
-  - r-rjsonio=1.3_1.4=r36h0357c0b_0
-  - r-rlang=0.4.2=r36hcdcec82_0
-  - r-rmarkdown=2.1=r36h6115d3f_0
-  - r-rprojroot=1.3_2=r36h6115d3f_1002
-  - r-rsconnect=0.8.16=r36h6115d3f_0
-  - r-rstudioapi=0.10=r36h6115d3f_2
-  - r-shiny=1.4.0=r36h6115d3f_0
-  - r-sourcetools=0.1.7=r36he1b5a44_1001
-  - r-sparklyr=1.1.0=r36h6115d3f_0
-  - r-stringi=1.4.3=r36h0357c0b_2
-  - r-stringr=1.4.0=r36h6115d3f_1
-  - r-sys=3.3=r36hcdcec82_0
-  - r-tibble=2.1.3=r36hcdcec82_1
-  - r-tidyr=1.0.0=r36h0357c0b_0
-  - r-tidyselect=0.2.5=r36h0357c0b_1001
-  - r-tinytex=0.19=r36h6115d3f_0
-  - r-utf8=1.1.4=r36hcdcec82_1001
-  - r-vctrs=0.2.1=r36hcdcec82_0
-  - r-withr=2.1.2=r36h6115d3f_1001
-  - r-xfun=0.12=r36h6115d3f_0
-  - r-xml2=1.2.2=r36h0357c0b_0
-  - r-xtable=1.8_4=r36h6115d3f_2
-  - r-yaml=2.2.0=r36hcdcec82_1002
-  - r-zeallot=0.1.0=r36h6115d3f_1001
+  - r-statmod=1.4.33=r36h6e990d7_0
   - readline=8.0=hf8c457e_0
-  - rstudio=1.1.456=h6bb024c_1
   - sed=4.7=h1bed415_1000
-  - sqlite=3.30.1=hcee41ef_0
   - tk=8.6.10=hed695b0_0
   - tktable=2.10=h555a92e_3
-  - unixodbc=2.3.7=h227dcee_1000
   - xorg-kbproto=1.0.7=h14c3975_1002
   - xorg-libice=1.0.10=h516909a_0
   - xorg-libsm=1.2.3=h84519dc_1000
