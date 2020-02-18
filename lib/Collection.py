@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 11:38:23 2020 (+0100)
+# Last-Updated: Tue Feb 18 12:32:01 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 873
+#     Update #: 878
 # URL:
 # Doc URL:
 # Keywords:
@@ -143,11 +143,13 @@ def get_samples_from_dir(id, condition, setting, config):
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'unpaired' not in x:
-                r = [re.sub('_r1|_r2','',os.path.basename(s)) for s in r]
+                r = list(set([re.sub('_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in r]))
                 renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in r]
                 for i in range(len(renamelist)):
                     if renamelist[i] != r[i]:
                         os.rename(r[i],renamelist[i])
+            else:
+                r = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in r]))
     else:
         r = None
     return r
