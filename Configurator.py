@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 12 10:25:11 2020 (+0100)
+# Last-Updated: Tue Feb 18 09:09:32 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 492
+#     Update #: 495
 # URL:
 # Doc URL:
 # Keywords:
@@ -46,7 +46,7 @@ def parseargs():
     parser.add_argument("-c", "--configfile", type=str, default='configurator.json', help='Configuration json to write to, can be called together with --append option to append new workflows to existing config')
     parser.add_argument("-a", "--append", action="store_true", help='If set configuration will be appended to existing json')
     parser.add_argument("-s", "--skeleton", type=str, default='snakes/configs/skeleton.json', help='Skeleton config to build from, per default the one that comes with this repository, change only when you know what you do')
-    parser.add_argument("-f", "--preprocess", type=str, default='', help='Which preprocessing steps to conduct, choices are any or combinations of [\'SRA\', \'BASECALL\']. NOT IMPLEMENTED YET!!!')
+    parser.add_argument("-p", "--preprocess", type=str, default='', help='Which preprocessing steps to conduct, choices are any or combinations of [\'SRA\', \'BASECALL\']. NOT IMPLEMENTED YET!!!')
     parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'MAPPING\', \'TRIMMING\', \'QC\']')
     parser.add_argument("-l", "--postprocess", type=str, default='', help='Which workflow steps to conduct,choices are any of or combinations of [\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\']')
     parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
@@ -183,6 +183,14 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
                         for k,v in genmap.items():
                             if k == id:
                                 newconf[key][id][condition][setting] = str(v)
+                    else:
+                        newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                else:
+                    newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                elif key == 'SAMPLES':
+                    samplelist = get_samples_from_dir(id, condition, setting)
+                    if samplelist:
+                        newconf[key][id][condition][setting] = ','.join(samplelist)
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:

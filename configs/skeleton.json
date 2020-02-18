@@ -32,16 +32,17 @@
     "SEQUENCING" : {
         "id": { #key for source and genome
                     "condition": { # sample id
-                                   "setting": "paired,fr" # setup and sequencing type, either paired or single
+                                   "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
                                  }
                   }
     },
 #QC options
     "QC": {
-        "RUN": "ON", #set to 'OFF' to skip QC
         "id": { #key for source and genome
                     "condition": { # sample id
                                    "setting": {
+                                       "PREENV" : "fastqc",  # name of conda env for QC in PREPROCESSING
+                                       "PREBIN" : "fastqc", # binary for QC in PREPROCESSING
                                        "ENV" : "fastqc",  # name of conda env for QC
                                        "BIN" : "fastqc", # binary for QC
                                        "OPTIONS":
@@ -54,7 +55,6 @@
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
-                  "RUN": "ON", # set to 'OFF' if no trimming wanted
                   "id": {
                       "condition": {
                           "setting": { # See above

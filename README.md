@@ -119,7 +119,7 @@ In the *SOURCE* section you then define which condition/setting should use which
 The next part defines the samples to run the analysis on, just add a list of sample names as innermost value to the *SAMPLES* key for each condition.
 In case of single-end sequencing make sure to include the _r1 _r2 tag, in case of paired end skip those as the pipeline will look for _r1 and _r2 tags to find read pairs.
 *Make sure the naming of you samples follows this _r1 _r2 convention when running paired-end analysis!*
-The *SEQUENCING* key allows you to define *single* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
+The *SEQUENCING* key allows you to define *unpaired* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
 You can also specify strandedness of the protocol used, if unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
 
 ```
@@ -133,7 +133,7 @@ You can also specify strandedness of the protocol used, if unstranded leave empt
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, if stranded see below
+                                     "std": "unpaired" # setup and sequencing type, either paired or unpaires, stranded or unstranded, if unstranded leave empty, if stranded see below
                                      #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
@@ -144,7 +144,7 @@ Now the actual workflow section begins, where you can define for each combinatio
 This follow the same scheme for each step, optionally define *RUN* ON/OFF or simply skip the key in the *WORKFLOW*/*POSTPROCESSING* section and here if not needed.
 The *ENV* key defines the conda environment to load from the *env* directory of this repository, feel free to add you own environment.yaml files there.
 The *BIN* key defines the name of the executable, this is needed in case the env and the bin differ as e.g. for the mapping tool ```segemehl/segemehl.x```.
-The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single/paired* end sequencing, this is done automatically.
+The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *unpaired/paired* end sequencing, this is done automatically.
 To add parameters simply add the *OPTION* key which holds as value a list of hashes. Parameters are defined in this hashes again as key/value pairs corresponding to the parameter name and the setting.
 This should become clear having a look at the different processing steps.
 If there are no options just do not add the *OPTION*

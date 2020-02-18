@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 11 14:46:43 2020 (+0100)
+# Last-Updated: Tue Feb 18 09:16:40 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 847
+#     Update #: 850
 # URL:
 # Doc URL:
 # Keywords:
@@ -104,56 +104,53 @@ class NestedDefaultDict(defaultdict):
 ##############################
 ########Snakemake Subs########
 ##############################
+def check_run(func):
+    def func_wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+
+        except Exception as err:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error(''.join(tbe.format()))
+    return func_wrapper
+
+@check_run
 def sources(config):
-    try:
-        ret = list()
-        for key in config["SOURCE"] and config["SAMPLES"]:
-            ret.append(str(key))
-        return ret
+    ret = list()
+    for key in config["SOURCE"] and config["SAMPLES"]:
+        ret.append(str(key))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def samples(config):
-    try:
-        ret = list()
-        for x,y in config["SOURCE"].items():
-            k = find_innermost_value_from_dict(config["SAMPLES"][x])
-            for l in k:
-                ret.append(os.path.join(str(x),str(l)))
-        return ret
+    ret = list()
+    for x,y in config["SOURCE"].items():
+        k = find_innermost_value_from_dict(config["SAMPLES"][x])
+        for l in k:
+            ret.append(os.path.join(str(x),str(l)))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+@check_run
+def get_samples_from_dir(id, condition, setting):
+    pat = os.path.abspath(os.path.join(id, condition, setting, '*.fastq.gz'))
 
+
+@check_run
 def sampleslong(config):
-    try:
-        ret = list()
-        for x,y in config["SOURCE"].items():
-            for s in config["SAMPLES"][x]:
-                k = list_all_values_of_dict(config["SAMPLES"][x][s])
-                for v in k:
-                    if isinstance(v, list):
-                        for z in v:
-                            ret.append(os.path.join(str(x),str(s),str(z)))
-                    else:
-                        ret.append(os.path.join(str(x),str(s),str(v)))
-        return ret
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    ret = list()
+    for x,y in config["SOURCE"].items():
+        for s in config["SAMPLES"][x]:
+            k = list_all_values_of_dict(config["SAMPLES"][x][s])
+            for v in k:
+                if isinstance(v, list):
+                    for z in v:
+                        ret.append(os.path.join(str(x),str(s),str(z)))
+                else:
+                    ret.append(os.path.join(str(x),str(s),str(v)))
+    return ret
 
 
 def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SOURCE!
@@ -282,19 +279,21 @@ def namefromfile(s, config):
         )
         log.error(''.join(tbe.format()))
 
-def create_subworkflow(config, subwork, conditions):
+
+
+def create_subworkflow(config, subwork, conditions, stage=''):
     try:
         logid = 'create_subworkflow: '
         toollist = list()
         configs = list()
         for condition in conditions:
             try:
-                env = str(subDict(config[subwork],condition)['ENV'])
+                env = str(subDict(config[subwork],condition)[stage+'ENV'])
             except:
                 log.warning('Key ENV not found for '+subwork+' this can be intentional')
                 env = ''
             try:
-                exe = str(subDict(config[subwork],condition)['BIN'])
+                exe = str(subDict(config[subwork],condition)[stage+'BIN'])
             except:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
                 exe = ''
