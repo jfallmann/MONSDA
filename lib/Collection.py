@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 09:16:40 2020 (+0100)
+# Last-Updated: Tue Feb 18 11:38:23 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 850
+#     Update #: 873
 # URL:
 # Doc URL:
 # Keywords:
@@ -134,9 +134,23 @@ def samples(config):
     return ret
 
 @check_run
-def get_samples_from_dir(id, condition, setting):
-    pat = os.path.abspath(os.path.join(id, condition, setting, '*.fastq.gz'))
-
+def get_samples_from_dir(id, condition, setting, config):
+    logid = 'get_samples_from_dir'
+    pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
+    log.info(logid+str(pat))
+    r = natsorted(glob.glob(pat), key=lambda y: y.lower())
+    if len(r) >0:
+        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
+        for x in seqtype:
+            if 'unpaired' not in x:
+                r = [re.sub('_r1|_r2','',os.path.basename(s)) for s in r]
+                renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in r]
+                for i in range(len(renamelist)):
+                    if renamelist[i] != r[i]:
+                        os.rename(r[i],renamelist[i])
+    else:
+        r = None
+    return r
 
 @check_run
 def sampleslong(config):

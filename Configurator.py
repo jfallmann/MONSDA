@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 09:09:32 2020 (+0100)
+# Last-Updated: Tue Feb 18 11:37:09 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 495
+#     Update #: 505
 # URL:
 # Doc URL:
 # Keywords:
@@ -168,7 +168,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         for k,v in gens.items():
             newconf['GENOME'][str(k)] = str(v)
 
-        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
+        for key in ['NAME','SOURCE','SEQUENCING','SAMPLES']:
             for id,condition,setting in [x.split(':') for x in icslist]:
                 if key == 'NAME':
                     if genomeext:
@@ -185,12 +185,10 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
                                 newconf[key][id][condition][setting] = str(v)
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-                else:
-                    newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SAMPLES':
-                    samplelist = get_samples_from_dir(id, condition, setting)
+                    samplelist = get_samples_from_dir(id, condition, setting, newconf)
                     if samplelist:
-                        newconf[key][id][condition][setting] = ','.join(samplelist)
+                        newconf[key][id][condition][setting] = samplelist
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:
