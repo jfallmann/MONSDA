@@ -8,9 +8,9 @@
 # Created: Wed Feb 19 12:31:13 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 13:40:24 2020 (+0100)
+# Last-Updated: Wed Feb 19 14:45:47 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 42
+#     Update #: 73
 # URL:
 # Doc URL:
 # Keywords:
@@ -62,13 +62,20 @@ for x in cmd_subfolder:
 from Collection import *
 from Logger import *
 
-log = setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+print(sys.argv)
+
+if len(sys.argv) < 2:
+    level = 'DEBUG'
+else:
+    level = sys.argv[1]
+
+log = setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=level)
 logid = 'TESTER: '
 
-config = load_configfile('/home/fall/Work/Tests/SnakemakeTest/SubSnakes/Dm6_unpaired_std_subconfig.json')
+config = load_configfile('/home/fall/Work/Tests/SnakemakeTest/SubSnakes/ID_unpaired_std_subconfig.json')
 REFERENCE=config['REFERENCE']
 
-file=r'Dm6/unpaired/std/GSM461177_untreat_paired_subset_r1'
+file=r'ID/unpaired/std/GSM461177_untreat_paired_subset_r1'
 dir = 'Dm6'
 
 SAMPLES=list()
@@ -76,16 +83,23 @@ SAMPLES.append(file)
 
 print(logid+'SAMPLES: '+str(SAMPLES))
 
-MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 print(logid+'GENOME: '+genome(file, config))
+
+print(logid+'TESTOPTIONS: '+str(tool_params(file, None, config, 'MAPPING')))
 
 print(logid+'OPTIONS: '+' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()))
 
-#print(logid+'ANNO: '+str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]))
+print(logid+'ANNO: '+str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]))
 
+MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+#print(logid+'ENV/BIN: '+str([MAPPERENV,MAPPERBIN]))
 #print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))
 
-#print(logid+)
+print(logid+'ref: '+"{ref}/{dir}/{gen}{name}".format(ref=REFERENCE, dir = source_from_sample(SAMPLES[0],config), gen =genome(file, config), name=namefromfile(file, config)))
+
+print(logid+'idx: '+"{ref}/{dir}/{gen}{name}/{map}_{extension}".format(ref=REFERENCE, dir=source_from_sample(file,config), gen=genome(file, config), name=namefromfile(file, config), map=MAPPERENV, extension=check_tool_params(file, None ,config, 'MAPPING',2)))
+
+
 
 #print(logid+)
 

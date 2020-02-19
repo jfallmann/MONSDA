@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 13:40:01 2020 (+0100)
+# Last-Updated: Wed Feb 19 14:46:02 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1019
+#     Update #: 1044
 # URL:
 # Doc URL:
 # Keywords:
@@ -228,7 +228,7 @@ def genomepath(s, config):
 def genome(s, config):
     logid=scriptname+'.Collection_genome: '
     sa = os.path.basename(str(s))
-    sp = source_from_sample(str(s)).split(os.sep)[0]
+    sp = source_from_sample(str(s),config)
     cond= s.split(os.sep)[-2]
     sk = find_key_for_value(sa, config['SAMPLES'])
     for skey in sk:
@@ -355,12 +355,13 @@ def tool_params(sample, runstate, config, subconf):
     log.debug(logid+'Samples: '+str(sample))
     t = genome(sample,config)
     mp = OrderedDict()
+    x = sample.split(os.sep)[:-1]
+    #x = source_from_sample(sample,config)
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
-    x = source_from_sample(sample).split(os.sep)
-    log.debug(logid+str([sample,runstate,subconf,t,x]))
     if runstate not in x:
         x.append(runstate)
+    log.debug(logid+str([sample,runstate,subconf,t,x]))
     mp = subDict(config[subconf],x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
@@ -378,8 +379,7 @@ def env_bin_from_config(samples, config, subconf):
 def env_bin_from_config2(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config2: '
     for s in samples:
-        log.debug(logid+s)
-        log.debug(logid+str(config[subconf]))
+        log.debug(logid+str(s))
         for k in getFromDict(config[subconf],conditiononly(s,config)):
             mb = k['BIN']
             me = k['ENV']
@@ -395,8 +395,12 @@ def rmempty(check):
     return ret
 
 @check_run
-def source_from_sample(sample):
-    ret = str(os.path.join(*os.path.split(str(sample))[0:-1]))
+def source_from_sample(sample, config):
+    logid=scriptname+'.Collection_source_from_sample: '
+    s = os.path.dirname(str(sample))
+    cond= s.split(os.sep)
+    log.debug(logid+str([s,cond]))
+    ret = getFromDict(config["SOURCE"],cond)[0]
     return ret
 
 @check_run
@@ -408,7 +412,7 @@ def sample_from_path(path):
 def anno_from_file(sample, config, step):
     logid = scriptname+'.Collection_anno_from_file: '
     p = os.path.dirname(genomepath(sample, config))
-    s = source_from_sample(sample)
+    s = source_from_sample(sample,config)
     ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
     log.debug(logid+str(ret))
     return ret
@@ -569,10 +573,13 @@ def getFromDict(dataDict, mapList):
 
 @check_run
 def subDict(dataDict, mapList):
-    ret=dict()
+    logid = scriptname+'.Collection_subDict: '
+    log.debug(logid+str(mapList))
+    ret = dataDict
     for k in mapList:
-        if k in dataDict:
-            ret = dataDict[k]
+        log.debug(logid+'k: '+str(k))
+        if k in ret:
+            ret = ret[k]
     return ret
 
 @check_run
