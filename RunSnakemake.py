@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 15:56:33 2020 (+0100)
+# Last-Updated: Wed Feb 19 19:54:16 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 582
+#     Update #: 598
 # URL:
 # Doc URL:
 # Keywords:
@@ -148,15 +148,18 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         #subworkflows.extend(postprocess)  # Concatenate to get the full list of steps to process
         log.debug(logid+'WORKFLOWS: '+str(subworkflows))
 
-        SAMPLES=list(set(samples(config)))
-        check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+        SAMPLES=[os.path.join(x) for x in list(set(samples(config)))]
+        check = [os.path.join('FASTQ',x+'*.fastq.gz') for x in SAMPLES]
         log.debug(logid+'SAMPLECHECK: '+str(check))
-        sampletest = [glob.glob(x) for x in check][0]
+        sampletest = [glob.glob(os.path.abspath(x)) for x in check][0]
         log.debug(logid+'SAMPLETEST: '+str(sampletest))
         if len(sampletest) < 1:
-            SAMPLES=list(set([x for x in sampleslong(config)]))
+            SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+            log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
             check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
-            sampletest = [glob.glob(x) for x in check][0]
+            log.debug(logid+'SAMPLECHECK_LONG: '+str(check))
+            log.debug(logid+'SAMPLECHECK_LONG: '+str([glob.glob(os.path.abspath(x)) for x in check][0]))
+            sampletest = [glob.glob(os.path.abspath(x)) for x in check][0]
             log.debug(logid+'SAMPLETEST_LONG: '+str(sampletest))
             if len(sampletest) < 1:
                 log.error(logid+'No samples found, please check config file')

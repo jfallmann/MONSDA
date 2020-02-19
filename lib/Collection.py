@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 16:01:08 2020 (+0100)
+# Last-Updated: Wed Feb 19 20:04:41 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1049
+#     Update #: 1072
 # URL:
 # Doc URL:
 # Keywords:
@@ -168,25 +168,16 @@ def get_samples_from_dir(id, condition, setting, config):
     return list(set(ret))
 
 @check_run
-def sampleslong(config):        # DEBUG HERE
+def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
-    for x,y in config["SOURCE"].items():
-        for s in config["SAMPLES"][x]:
-            if s in y:
-                log.debug(logid+str([x,y,s]))
-                k = list_all_values_of_dict(config["SAMPLES"][x][s])
-                for v in k:
-                    if isinstance(v, list) or isinstance(v, tuple) or isinstance(z, dict):
-                        for z in v:
-                            if isinstance(z, list) or isinstance(z, tuple) or isinstance(z, dict):
-                                for a in z:
-                                    ret.append(os.path.join(str(x),str(s),str(a)))
-                            else:
-                                ret.append(os.path.join(str(x),str(s),str(z)))
-                else:
-                    ret.append(os.path.join(str(x),str(s),str(v)))
-    ret = list(set(ret))
+    tosearch = list()
+    for k,v in list_all_keys_of_dict(config['SAMPLES']):
+        if k != 'last':
+            tosearch.append(k)
+    log.debug(logid+'keys: '+str(tosearch))
+    for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
+        ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
     log.debug(logid+str(ret))
     return ret
 
