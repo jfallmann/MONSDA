@@ -38,16 +38,45 @@ The ```config.json``` holds all the information that is needed to run the jobs a
 
 To successfully run an analysis pipeline, a few steps have to be followed:
   * Clone this repository to you working directory, or symlink it there. *DO NOT CHANGE THE NAME OF THE REPO!!!* This is needed for subworkflow generation.
-  * Directory structure: The structure for the directories is dictated by the config file
+  * Directory structure: The structure for the directories is dictated by the ICS (IdentifierConditionSetting relationship) in the config file
   * Config file: This is the central part of the analysis. Depending on this file ```RunSnakemake.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
 
-## Create config.json
+## The ICS (IdentifierConditionSetting relationship)
+For each id to work on you can define one or multiple conditions and settings that will be used for the analysis). The ICS also sets the file structure to follow for the FASTQ directory, where the ID is the first level and the Condition the second. Setting is used by ```RunSnakemake.py``` to enable processing of the same samples under different settings like mapping tools, trimming tools and later also postprocessing tools or commandline options for these tools.
 
-The configuration file follows standard ```json``` format and contains all the information needed to run the analysis.
-It consists of multiple sections which will be explained in detail.
-For examples please refer to the ```config``` directory of the repo.
+As an example, I want to analyse samples retreived from LabA on 01012020 (yes that happens), with the mapping tools star and segemehl, my ICS would look like this ```LabA:01012020:star,LabA:01012020:segemehl``` and my FASTQ directory would resemble that like ```FASTQ/LabA/01012020```. The '01012020' directory would thereby contain all the fastq.gz files I need for analysis. This works of course also if you want to analyze samples from different dates and same lab with same settings or different labs and so on.
+
+## Create config.json with ```Configurator.py```
+
+To enable users easy ```snakemake``` configuration, we host the executable ```Configurator.py``` which generates a ```config.json``` file based on the users needs. This ```config.json``` follows standard ```json``` format and contains all the information needed to run the analysis.
+Making use of ```Configurator.py``` allows to start with a simple ```config.json``` and append workflows as needed step by step, or create the full configuration at once.
+Usually a user will start an analysis running only Quality Control on raw files. Although ```RunSnakemake.py``` will run QC (when enabled) also for trimming and mapping steps, this will be used as first step explaining ```Configurator.py```.
+
+To list all options and available choices for each option simply run:
+```
+./snakes/Configurator.py
+```
+
+To create an initial dummy ```config.json``` simply run:
+```
+./snakes/Configurator.py -w QC -i hs:01012020:std -c config_basic.json -m hs:hg38 -g hg38:hg38genomefile -x hg36:all_chromosomes
+```
+
+Where ```-w``` is the option to add 'QC' as workflow step, ```-i``` sets the IdentifierConditionSetting relationship ```-c``` names the output file where the configuration is written to and so on, please refer to the help of the tools for more information.
+
+After 'QC', the user wants to start trimming and mapping and also add new ICSs so we append to the just created config to make ```RunSnakemake.py``` aware of that.
+
+```
+./snakes/Configurator.py -w QC,TRIMMING,MAPPING -i hs:01012020:std,newlab:12012020,otherspecies:24032003 -c config_basic.json -m hs:hg38,newlab:hg38,otherspecies:dm6 -g hg38:hg38genomefile,dm6:dm6genomefile -x hg36:all_chromosomes
+```
+
+And ```Configurator.py``` will append to the existing ```config.json``` everything that is new and overwrite what has changed and keep the rest intact.
+Following this procedure the user can stepwise analyse samples one by one, step by step or run the whole pipeline at once with all samples and processing steps. It is also possible to append to another existing ```config.json```, simply change the filename of the ```-c``` option.
 
 ### The config.json explained
+It consists of multiple sections which will be explained in detail.
+For examples please refer to the ```config``` directory of the repo.
+The ```skeleton.json``` is the default blueprint for a config file used by ```Configurator.py```.
 
 The config file contains all the information needed to run stated workflows and to find the sample/genome files.
 It starts with a key/value pair defining which workflows and postprocessing steps to run. Be aware that every worklow and postproccessing value has to correspond to a key later in the config.json that defines parameters specific for the job:
@@ -90,7 +119,7 @@ In the *SOURCE* section you then define which condition/setting should use which
 The next part defines the samples to run the analysis on, just add a list of sample names as innermost value to the *SAMPLES* key for each condition.
 In case of single-end sequencing make sure to include the _r1 _r2 tag, in case of paired end skip those as the pipeline will look for _r1 and _r2 tags to find read pairs.
 *Make sure the naming of you samples follows this _r1 _r2 convention when running paired-end analysis!*
-The *SEQUENCING* key allows you to define *single* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
+The *SEQUENCING* key allows you to define *unpaired* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
 You can also specify strandedness of the protocol used, if unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
 
 ```
@@ -104,7 +133,7 @@ You can also specify strandedness of the protocol used, if unstranded leave empt
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, if stranded see below
+                                     "std": "unpaired" # setup and sequencing type, either paired or unpaires, stranded or unstranded, if unstranded leave empty, if stranded see below
                                      #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
@@ -115,7 +144,7 @@ Now the actual workflow section begins, where you can define for each combinatio
 This follow the same scheme for each step, optionally define *RUN* ON/OFF or simply skip the key in the *WORKFLOW*/*POSTPROCESSING* section and here if not needed.
 The *ENV* key defines the conda environment to load from the *env* directory of this repository, feel free to add you own environment.yaml files there.
 The *BIN* key defines the name of the executable, this is needed in case the env and the bin differ as e.g. for the mapping tool ```segemehl/segemehl.x```.
-The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single/paired* end sequencing, this is done automatically.
+The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *unpaired/paired* end sequencing, this is done automatically.
 To add parameters simply add the *OPTION* key which holds as value a list of hashes. Parameters are defined in this hashes again as key/value pairs corresponding to the parameter name and the setting.
 This should become clear having a look at the different processing steps.
 If there are no options just do not add the *OPTION*
