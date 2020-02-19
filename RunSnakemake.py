@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 12:01:58 2020 (+0100)
+# Last-Updated: Wed Feb 19 15:56:33 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 562
+#     Update #: 582
 # URL:
 # Doc URL:
 # Keywords:
@@ -149,11 +149,18 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.debug(logid+'WORKFLOWS: '+str(subworkflows))
 
         SAMPLES=list(set(samples(config)))
-        if any([os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz')) for x in SAMPLES]) is False:
-            SAMPLES=list(set([x for x in sampleslong(config) if os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz'))]))
-        if any([os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz')) for x in SAMPLES]) is False:
-            log.error(logid+'No samples found, please check config file')
-            sys.exit()
+        check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+        log.debug(logid+'SAMPLECHECK: '+str(check))
+        sampletest = [glob.glob(x) for x in check][0]
+        log.debug(logid+'SAMPLETEST: '+str(sampletest))
+        if len(sampletest) < 1:
+            SAMPLES=list(set([x for x in sampleslong(config)]))
+            check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+            sampletest = [glob.glob(x) for x in check][0]
+            log.debug(logid+'SAMPLETEST_LONG: '+str(sampletest))
+            if len(sampletest) < 1:
+                log.error(logid+'No samples found, please check config file')
+                sys.exit()
 
         log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
         conditions = [x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]

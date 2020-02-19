@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 14:46:02 2020 (+0100)
+# Last-Updated: Wed Feb 19 16:01:08 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1044
+#     Update #: 1049
 # URL:
 # Doc URL:
 # Keywords:
@@ -168,7 +168,7 @@ def get_samples_from_dir(id, condition, setting, config):
     return list(set(ret))
 
 @check_run
-def sampleslong(config):
+def sampleslong(config):        # DEBUG HERE
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     for x,y in config["SOURCE"].items():
@@ -177,16 +177,16 @@ def sampleslong(config):
                 log.debug(logid+str([x,y,s]))
                 k = list_all_values_of_dict(config["SAMPLES"][x][s])
                 for v in k:
-                    if isinstance(v, list) or isinstance(v, tuple):
+                    if isinstance(v, list) or isinstance(v, tuple) or isinstance(z, dict):
                         for z in v:
-                            if isinstance(z, list) or isinstance(z, tuple):
+                            if isinstance(z, list) or isinstance(z, tuple) or isinstance(z, dict):
                                 for a in z:
                                     ret.append(os.path.join(str(x),str(s),str(a)))
                             else:
                                 ret.append(os.path.join(str(x),str(s),str(z)))
                 else:
                     ret.append(os.path.join(str(x),str(s),str(v)))
-    ret = list(set([x for x in ret if os.path.exists(os.path.join('FASTQ',str(x)+'.fastq.gz'))]))
+    ret = list(set(ret))
     log.debug(logid+str(ret))
     return ret
 

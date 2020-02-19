@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 17:00:57 2020 (+0100)
+# Last-Updated: Wed Feb 19 15:38:33 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 521
+#     Update #: 532
 # URL:
 # Doc URL:
 # Keywords:
@@ -52,8 +52,8 @@ def parseargs():
     parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
     parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
     parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr,unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
-    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. hg38:hg38,01012020:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
-    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. hg38:hg38,01012020:dm6')
+    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
+    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38,Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
     parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
     parser.add_argument("--binaries", type=str, default='snakes/scripts', help='Path to binary directory')
     parser.add_argument("-b", "--scripts", type=str, default='snakes/scripts', help='Path to script for execution')
@@ -183,8 +183,8 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                 elif key == 'SOURCE':
                     if genomemap:
                         for k,v in genmap.items():
-                            if k == id:
-                                newconf[key][id][condition][setting] = str(gens[v])
+                            if v in newconf['GENOME']:
+                                newconf[key][id][condition][setting] = str(v)
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SEQUENCING':
@@ -256,9 +256,9 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                         elif key == 'SOURCE':
                             if genomemap:
                                 for k,v in genmap.items():
-                                    if k == id:
-                                        if str(v) != oldconf[key][id][condition][setting]:
-                                            newconf[key][id][condition][setting] = str(gens[v])
+                                    if v in newconf['GENOME']:
+                                        if str(v) != str(oldconf[key][id][condition][setting]):
+                                            newconf[key][id][condition][setting] = str(v)
                                         else:
                                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
                             else:
@@ -324,14 +324,13 @@ if __name__ == '__main__':
 
         makelogdir('LOGS')
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
+        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
-
 
         create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.scripts, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
     except Exception as err:
@@ -340,7 +339,5 @@ if __name__ == '__main__':
             exc_type, exc_value, exc_tb,
         )
         log.error(logid+''.join(tbe.format()))
-
-
 
 # Configurator.py ends here
