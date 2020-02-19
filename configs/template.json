@@ -5,23 +5,23 @@
     "REFERENCE": "GENOMES", #where to find the reference genomes, default is a directory GENOMES
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, per default the scripts git repository that comes as gitmodule with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use
-    "ID": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta without file ending .fa.gz, we always asume files to be gzipped
-                "id": "Genomefile"
+    "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fasta.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
+                "organism": "Genomefile"
+              },
+    "SOURCE": {  #which organisms are to be parsed for which samples, organisms need to have subdirectories in you 'REFERENCE' directory and contain the corresponding fasta files
+                 "id": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. for id 'id' and condition 'condition' with setting 'setting' the genome defined for organism in the 'GENOME' section of the config will be used
+                             "condition": {
+                                 "setting": "organism"
+                             }
+                           }
               },
     "NAME": { #extension for genome file name in case different types of reference are used, e.g. genomic, artificial, organelle ...
-              "id": {#first key is the same than for GENOME
+              "id": {#first key is Sample ID defined by IdConditionSetting in Configurator.py
                       "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
                                     "setting": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                   }
                      }
             },
-    "SOURCE": {  #which organisms are to be parsed for which samples
-                 "id": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. condition with setting star will use the file listed under Genome here
-                             "condition": {
-                                 "setting": "id"
-                             }
-                           }
-              },
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
                               "condition": { # sample id

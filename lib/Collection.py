@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 17:15:36 2020 (+0100)
+# Last-Updated: Wed Feb 19 13:40:01 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 985
+#     Update #: 1019
 # URL:
 # Doc URL:
 # Keywords:
@@ -211,13 +211,16 @@ def get_placeholder(config):
 
 @check_run
 def genomepath(s, config):
+    logid=scriptname+'.Collection_genomepath: '
     sa = os.path.basename(str(s))
     cond= s.split(os.sep)[-2]
     sk = find_key_for_value(sa, config["SAMPLES"])
+    log.debug(logid+'GENOMEPATH: '+str([sa,cond,sk]))
     for skey in sk:
         klist = value_extract(skey, config["SOURCE"])
         for k in klist:
             for x, y in config["GENOME"].items():
+                log.debug(logid+'GENOMEPATH: '+str([x,y,k]))
                 if str(k) == str(y) or str(k) == str(x):
                     return os.path.join(str(x),str(y))
 
@@ -227,16 +230,17 @@ def genome(s, config):
     sa = os.path.basename(str(s))
     sp = source_from_sample(str(s)).split(os.sep)[0]
     cond= s.split(os.sep)[-2]
-    sk = find_key_for_value(sa, config["SAMPLES"])
+    sk = find_key_for_value(sa, config['SAMPLES'])
     for skey in sk:
-        klist = value_extract(skey, config["SOURCE"])
+        klist = value_extract(skey, config['SOURCE'])
         for k in klist:
-            if str(k) == sp:
-                log.debug(logid+'k is sp')
-                for x, y in config["GENOME"].items():
-                    log.debug(logid+str([k, x, y]))
-                    if str(k) == str(x):
-                        return str(y)
+            #log.debug(logid+'there: '+str([k,skey,sp,sa,cond]))
+            #if str(k) == config['SOURCE'][sp][cond]:
+            #log.debug(logid+'k is sp')
+            for x, y in config['GENOME'].items():
+                log.debug(logid+str([k, x, y]))
+                if str(k) == str(x):
+                    return str(y)
 
 @check_run
 def fullgenomepath(sa, config):
@@ -363,6 +367,7 @@ def tool_params(sample, runstate, config, subconf):
 
 @check_run
 def env_bin_from_config(samples, config, subconf):
+    logid=scriptname+'.Collection_env_bin_from_config: '
     s = samples[0].split(os.sep)[:-1]
     mb,me = [None,None]
     for k in getFromDict(config[subconf],s):
@@ -371,14 +376,14 @@ def env_bin_from_config(samples, config, subconf):
 
 @check_run
 def env_bin_from_config2(samples, config, subconf):
-    logid=scriptname+'.Collection_env_bin_from_config2'
+    logid=scriptname+'.Collection_env_bin_from_config2: '
     for s in samples:
-        log.debug(logid+': '+s)
-        log.debug(str(config[subconf]))
+        log.debug(logid+s)
+        log.debug(logid+str(config[subconf]))
         for k in getFromDict(config[subconf],conditiononly(s,config)):
             mb = k['BIN']
             me = k['ENV']
-    log.debug([str(mb),str(me)])
+    log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
 @check_run
@@ -464,9 +469,11 @@ def conditiononly(sample,config):
     check = os.path.dirname(sample).split(os.sep)
     log.debug(logid+str(check))
     for r in runstate_from_sample([sample],config):
+        log.debug(logid+str(r))
         ret.extend(check)
-        ret.append(r)
-    log.debug(logid+str([sample,ret]))
+        if r not in ret:
+            ret.append(r)
+    log.debug(logid+str(ret))
     return ret
 
 @check_run
@@ -564,8 +571,9 @@ def getFromDict(dataDict, mapList):
 def subDict(dataDict, mapList):
     ret=dict()
     for k in mapList:
-        dataDict = dataDict[k]
-    return dataDict
+        if k in dataDict:
+            ret = dataDict[k]
+    return ret
 
 @check_run
 def nested_set(dic, keys, value):

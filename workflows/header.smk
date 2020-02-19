@@ -2,12 +2,7 @@ import glob, os, sys, inspect, snakemake, json, shutil
 import traceback as tb
 from collections import defaultdict
 from itertools import combinations
-from snakemake.utils import validate, min_version
-min_version("5.7.0") #need to add back later
 
-###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_paired.smk
-###--configfile Workflow/config_compare.json --directory ${PWD}
-###--printshellcmds 2> run.log
 cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../snakes/lib"),os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"snakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 for x in cmd_subfolder:
     if x not in sys.path:
@@ -17,8 +12,6 @@ from Collection import *
 from Logger import *
 
 log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
-#log.debug(cmd_subfolder)
-#log.debug(sys.path)
 
 REFERENCE=config["REFERENCE"]
 GENOME=config["GENOME"]
@@ -29,6 +22,8 @@ SOURCE=sources(config)
 SAMPLES=list(set(samples(config)))
 if os.path.exists(SAMPLES[0]) is False:
     SAMPLES=list(set(sampleslong(config)))
+
+log.debug('SAMPLES: '+str(SAMPLES))
 
 paired = checkpaired(SAMPLES, config)
 if paired != '':

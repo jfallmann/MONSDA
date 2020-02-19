@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 17:43:49 2020 (+0100)
+# Last-Updated: Wed Feb 19 12:01:58 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 559
+#     Update #: 562
 # URL:
 # Doc URL:
 # Keywords:
@@ -38,12 +38,8 @@ import subprocess
 import re
 min_version("5.8.2")
 
-#cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-#if cmd_subfolder not in sys.path:
-#    sys.path.insert(0, cmd_subfolder)
-
 from lib.Collection import *
-from lib.Logger import *
+from lib.Logger import *        # Switch to snakemake logger?
 scriptname=os.path.basename(__file__)
 
 def parseargs():

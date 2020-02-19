@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 18 16:24:33 2020 (+0100)
+# Last-Updated: Wed Feb 19 12:26:19 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 79
+#     Update #: 81
 # URL:
 # Doc URL:
 # Keywords:
@@ -62,7 +62,7 @@ def check_run(func):
             log.error(''.join(tbe.format()))
     return func_wrapper
 
-@check_run
+#@check_run
 def makelogdir(logdir):
     if not os.path.isabs(logdir):
         logdir =  os.path.abspath(logdir)
@@ -70,7 +70,7 @@ def makelogdir(logdir):
         os.makedirs(logdir)
     return logdir
 
-@check_run
+#@check_run
 def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING'):
     """Function setup as many loggers as you want"""
 
