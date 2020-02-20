@@ -149,11 +149,11 @@ rule GenerateTrack:
     log:    "LOGS/UCSC/{file}_track_{type}.log"
     conda:  "snakes/envs/base.yaml"
     threads: MAXTHREAD
-    params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file)),
+    params: bwdir = lambda wildcards: "UCSC/{src}".format(src=source_from_sample(wildcards.file,config)),
             bins = os.path.abspath(BINS),
             gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
             options = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'UCSC')['OPTIONS'][0].items()),
-            uid = lambda wildcards: "{src}".format(src='_'.join(source_from_sample(wildcards.file).split(os.sep)))
+            uid = lambda wildcards: "{src}".format(src='_'.join(source_from_sample(wildcards.file,config).split(os.sep)))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
 
 rule themall:
