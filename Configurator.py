@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 15:38:33 2020 (+0100)
+# Last-Updated: Thu Feb 20 10:28:24 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 532
+#     Update #: 535
 # URL:
 # Doc URL:
 # Keywords:
@@ -55,8 +55,7 @@ def parseargs():
     parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
     parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38,Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
     parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
-    parser.add_argument("--binaries", type=str, default='snakes/scripts', help='Path to binary directory')
-    parser.add_argument("-b", "--scripts", type=str, default='snakes/scripts', help='Path to script for execution')
+    parser.add_argument("-b", "--binaries", type=str, default='snakes/scripts', help='Path to script for execution')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Maximum number of parallel processes to start snakemake with, represented by MAXTHREADS in config')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -84,7 +83,7 @@ def check_run(func):
     return func_wrapper
 
 @check_run
-def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, scripts, genomemap, genomes, genomeext, sequencing, optionalargs=None):
+def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, optionalargs=None):
 
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
@@ -332,7 +331,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.scripts, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
+        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
