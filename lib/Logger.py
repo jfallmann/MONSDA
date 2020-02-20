@@ -1,15 +1,15 @@
-# logger.py ---
+# Logger.py ---
 #
-# Filename: logger.py
+# Filename: Logger.py
 # Description:
 # Author: Joerg Fallmann
 # Maintainer:
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 24 16:53:41 2019 (+0200)
+# Last-Updated: Wed Feb 19 12:26:19 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 64
+#     Update #: 81
 # URL:
 # Doc URL:
 # Keywords:
@@ -49,6 +49,20 @@ import multiprocessing
 import os, sys, inspect
 import traceback as tb
 
+def check_run(func):
+    def func_wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+
+        except Exception as err:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error(''.join(tbe.format()))
+    return func_wrapper
+
+#@check_run
 def makelogdir(logdir):
     if not os.path.isabs(logdir):
         logdir =  os.path.abspath(logdir)
@@ -56,6 +70,7 @@ def makelogdir(logdir):
         os.makedirs(logdir)
     return logdir
 
+#@check_run
 def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING'):
     """Function setup as many loggers as you want"""
 
@@ -102,4 +117,4 @@ if __name__ == '__main__':
         logging.error(''.join(tbe.format()))
 
 
-# log.py ends here
+# Logger.py ends here
