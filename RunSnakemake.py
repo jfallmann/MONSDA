@@ -231,7 +231,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
 
-
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:

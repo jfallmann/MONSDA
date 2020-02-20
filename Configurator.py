@@ -84,7 +84,6 @@ def check_run(func):
 
 @check_run
 def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, optionalargs=None):
-
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
     for oldfile in glob.glob(oldcnf):
@@ -166,6 +165,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
         newconf['BINS'] = binaries
         newconf['MAXTHREADS'] = str(procs)
         newconf['GENOME'] = NestedDefaultDict()
+
         for k,v in gens.items():
             newconf['GENOME'][str(k)] = str(v)
 
@@ -224,6 +224,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
             newconf['MAXTHREADS'] = str(oldconf['MAXTHREADS'])
 
         log.debug(logid+'GENOMEMAP: '+str(genomemap)+'\t'+str(genmap))
+
         if genomes and any([x not in newconf['GENOME'] for x in list(gens.keys())]) or any([[x not in newconf['GENOME'][y] for x in gens[y]] for y in gens.keys()]):
             newconf['GENOME'] = NestedDefaultDict()
             newconf['GENOME'].merge(oldconf['GENOME'])
@@ -283,6 +284,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
 
     for key in todos:
         log.debug(logid+'OLD: '+str(key)+'\t'+str(config[key]))
+
         for id,condition,setting in [x.split(':') for x in icslist]:
             if id not in newconf[key]:
                 newconf[key][id] = NestedDefaultDict()
@@ -332,6 +334,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
         create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
+
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
