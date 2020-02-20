@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 20:04:41 2020 (+0100)
+# Last-Updated: Thu Feb 20 09:40:31 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1072
+#     Update #: 1077
 # URL:
 # Doc URL:
 # Keywords:
@@ -151,7 +151,8 @@ def get_samples_from_dir(id, condition, setting, config):
     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
     log.info(logid+str(pat))
     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    if len(ret) >0:
+    log.debug(logid+str(ret))
+    if len(ret) > 0:
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'unpaired' not in x:
@@ -162,10 +163,9 @@ def get_samples_from_dir(id, condition, setting, config):
                         os.rename(ret[i],renamelist[i])
             else:
                 ret = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in ret]))
+        return list(set(ret))
     else:
-        ret = None
-    log.debug(logid+str(ret))
-    return list(set(ret))
+        return list()
 
 @check_run
 def sampleslong(config):
@@ -372,9 +372,15 @@ def env_bin_from_config2(samples, config, subconf):
     for s in samples:
         log.debug(logid+str(s))
         for k in getFromDict(config[subconf],conditiononly(s,config)):
-            mb = k['BIN']
-            me = k['ENV']
-    log.debug(logid+str([str(mb),str(me)]))
+            if 'BIN' in k:
+                mb = k['BIN']
+            else:
+                mb = ''
+            if 'ENV' in k:
+                me = k['ENV']
+            else:
+                me = ''
+        log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
 @check_run

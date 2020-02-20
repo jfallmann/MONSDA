@@ -144,33 +144,12 @@
             }
         }
     },
-#UCSC track generation options
-    "UCSC" : {
-        "id": {
-            "condition": {
-                "setting": {  # See above
-                              "ENV" : "ucsc",
-                              "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need some placeholder key
-                              "OPTIONS":
-                              [
-                                  {
-                                      "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
-                                      "-s" : "dm6_st", #short name for hub, replace space with _
-                                      "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
-                                      "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                                  }
-                              ]
-                           }
-            }
-        }
-    },
 #Peak finding options, uses PAR-iCLIP Peak finder scripts adopted from https://dx.doi.org/10.15252/msb.20156628 use at own risk or replace with your own scripts, will need tweaking of workflow!
     "PEAKS" : {
         "id": {
             "condition": {
                 "setting": {  # See above
                               "ENV" : "peaks",
-                              "BIN" : "peaks", #dummy as Peaks has no direct bin but we need the key
                               "ANNOTATION": "genome_or_other.gff3.gz",
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
@@ -221,6 +200,26 @@
                     "OPTIONS":
                     [
                         {  #Should not be needed
+                        }
+                    ]
+                }
+            }
+        }
+    },
+#UCSC track generation options
+    "UCSC":{
+        "id": {
+            "condition": {
+                "setting": {
+                    "ENV" : "ucsc",
+                    "ANNOTATION": "genome_or_other.gff3.gz",
+                    "OPTIONS":
+                    [
+                        {
+                            "-n" : "UCSC_Hub", #name of the hub, replace space with _
+                            "-s" : "Hub", #short name for hub, replace space with _
+                            "-l" : "ID_condition_setting", #long name for track, replace space with _
+                            "-b" : "ID" #short name for track, replace space with _
                         }
                     ]
                 }
