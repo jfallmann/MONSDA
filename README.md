@@ -27,9 +27,10 @@ conda env create -n snakemake -f snakes/envs/snakemake.yaml
 
 The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically when needed.
 
-For distribution of jobs one can either rely on local hardware, use scheduling software like the [SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html) or [Slurm](https://slurm.schedmd.com/documentation.html).
+For distribution of jobs one can either rely on local hardware, use scheduling software like [Slurm](https://slurm.schedmd.com/documentation.html) or the [SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html) or follow any other integration of [Snakemake](https://snakemake.readthedocs.io/en/stable/executing/cluster-cloud.html) although most of these are not tested for this repository.
 
-This manual will only show examples on local and SGE usage, but more information on how to use other scheduling software is available elsewhere.
+This manual will only show examples on local and SLURM usage, but more information on how to use other scheduling software is available under the link above.
+We also provide an example for SGE integration, this however dates back to the times before ```snakemake``` profiles.
 
 ## What is happening
 
@@ -317,7 +318,7 @@ Keep in mind that every workflow/postprocessing step needs a corresponding entry
 
 ### Cluster config
 This is separate from the main configuration, for details please follow the explanations in the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
-For an example have a look at the ```cluster``` directory.
+For a example configs for ```SLURM``` and ```SGE``` have a look at the ```cluster``` directory.
 
 ## Run the pipeline
 Simply run
@@ -335,6 +336,16 @@ python snakes/RunSnakemake.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json -
 or add additional arguments for ```snakemake``` as you see fit.
 
 ### Run on cluster
+
+####SLURM
+
+You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that comes with this repository, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. To use the preconfigured example that comes with this repository simply adapt the call below to your needs.
+
+```python snakes/RunSnakemake.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile snakes/slurm --cluster-config snakes/cluster/config_slurm.yamlx```
+
+Further adaptions like grouping of jobs and advanced configs for rule based performance increase will follow.
+
+####SGE(outdated)
 
 Define the cluster config file and for SGE support simply append ```--cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript snakes/cluster/sge.sh```
 
