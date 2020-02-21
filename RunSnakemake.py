@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 21 11:09:21 2020 (+0100)
+# Last-Updated: Fri Feb 21 11:56:20 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 632
+#     Update #: 637
 # URL:
 # Doc URL:
 # Keywords:
@@ -205,7 +205,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                smkout.write('\n\n')
+                            smkout.write('\n\n')
 
                         if subwork == 'QC':
                             subname = toolenv+'_raw.smk'
@@ -219,7 +219,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                smkout.write('\n\n')
+                            smkout.write('\n\n')
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subconfig.json'])))
                         if os.path.exists(confo):
@@ -307,7 +307,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json'])))
                 if os.path.exists(confo):
                     os.rename(confo,confo+'.bak')
-                with open(confout, 'a') as confout:
+                with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
             for condition in conditions:
@@ -359,12 +359,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                smkout.write('\n\n')
+                            smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                                smkout.write('\n\n')
+                            smkout.write('\n\n')
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json'])))
                         if os.path.exists(confo):
@@ -419,12 +419,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                        smkout.write('\n\n')
                     smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                     with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                        smkout.write('\n\n')
 
                     confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json'])))
                     if os.path.exists(confo):
