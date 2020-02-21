@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 21 10:52:57 2020 (+0100)
+# Last-Updated: Fri Feb 21 11:09:21 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 625
+#     Update #: 632
 # URL:
 # Doc URL:
 # Keywords:
@@ -83,10 +83,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if filegraph:
             argslist.append("--filegraph|dot|display")
         if optionalargs and len(optionalargs) > 0:
+            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-
-        if 'profile' in optionalargs:
-            if 'slurm' in optionalargs['profile']:
+            if '--profile' in optionalargs and 'snakes/slurm' in optionalargs:
                 makeoutdir('LOGS/SLURM')
 
         if unlock:

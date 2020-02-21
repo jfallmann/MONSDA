@@ -6,5 +6,5 @@ __default__:
   error: "LOGS/SLURM/slurm-%j.%N-%x.err"
   #mail-type: "ALL"
   #mail-user: "user@address"
-  account: \${{USER}}
+  account: "snakemake" 
   mem: 10000
