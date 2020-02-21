@@ -1,5 +1,10 @@
 __default__:
-  constraint: mem500MB
-  
-large_memory_requirement_job:
-  constraint: mem2000MB
+  time: "18000"
+  partition : "main"
+  job-name : "{rule}"
+  output: "LOGS/SLURM/slurm-%j.%N-%x.out"
+  error: "LOGS/SLURM/slurm-%j.%N-%x.err"
+  #mail-type: "ALL"
+  #mail-user: "user@address"
+  account: \${{USER}}
+  mem: 10000

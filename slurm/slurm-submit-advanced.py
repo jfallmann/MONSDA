@@ -32,9 +32,13 @@ def _get_cluster_configuration(partition):
     res = subprocess.run(cmd, check=True, shell=True, stdout=subprocess.PIPE)
     m = re.search("(?P<partition>\S+)\s+(?P<cpus>\d+)\s+(?P<memory>\S+)\s+((?P<days>\d+)-)?(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)\s+(?P<size>\S+)\s+(?P<maxcpus>\S+)",
                   res.stdout.decode())
+    if m is None:
+        m = re.search("(?P<partition>\S+)\s+(?P<cpus>\d+)\s+(?P<memory>\S+)\s+(?P<time>\S+)\s+(?P<size>\S+)\s+(?P<maxcpus>\S+)",
+                      res.stdout.decode())
     d = m.groupdict()
-    if not 'days' in d or not d['days']:
-        d['days'] = 0
+    if not 'days' in d or not d['days'] or 'time' in d and d['time'] == 'infinite':
+        d['days'] = 30
+        d['hours'] = d['minutes'] = d['seconds'] = 0
     d["time"] = int(d['days']) * 24 * 60 + \
         int(d['hours']) * 60 + int(d['minutes']) + \
         math.ceil(int(d['seconds']) / 60)
@@ -286,4 +290,3 @@ try:
 except Exception as e:
     print(e)
     raise
-
