@@ -27,9 +27,10 @@ conda env create -n snakemake -f snakes/envs/snakemake.yaml
 
 The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically when needed.
 
-For distribution of jobs one can either rely on local hardware, use scheduling software like the [SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html) or [Slurm](https://slurm.schedmd.com/documentation.html).
+For distribution of jobs one can either rely on local hardware, use scheduling software like [Slurm](https://slurm.schedmd.com/documentation.html) or the [SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html) or follow any other integration of [Snakemake](https://snakemake.readthedocs.io/en/stable/executing/cluster-cloud.html) although most of these are not tested for this repository.
 
-This manual will only show examples on local and SGE usage, but more information on how to use other scheduling software is available elsewhere.
+This manual will only show examples on local and SLURM usage, but more information on how to use other scheduling software is available under the link above.
+We also provide an example for SGE integration, this however dates back to the times before ```snakemake``` profiles.
 
 ## What is happening
 
@@ -119,7 +120,7 @@ In the *SOURCE* section you then define which condition/setting should use which
 The next part defines the samples to run the analysis on, just add a list of sample names as innermost value to the *SAMPLES* key for each condition.
 In case of single-end sequencing make sure to include the _r1 _r2 tag, in case of paired end skip those as the pipeline will look for _r1 and _r2 tags to find read pairs.
 *Make sure the naming of you samples follows this _r1 _r2 convention when running paired-end analysis!*
-The *SEQUENCING* key allows you to define *single* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
+The *SEQUENCING* key allows you to define *unpaired* or *paired* as values to enable analysis of a mix of single/paired end sequences at once, defined by condition/setting.
 You can also specify strandedness of the protocol used, if unstranded leave empty, else add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
 
 ```
@@ -133,7 +134,7 @@ You can also specify strandedness of the protocol used, if unstranded leave empt
     "SEQUENCING" : {
         "Dm6": { #key for source and genome
                  "untreated": {      # sample id
-                                     "std": "single" # setup and sequencing type, either paired or single, stranded or unstranded, if unstranded leave empty, if stranded see below
+                                     "std": "unpaired" # setup and sequencing type, either paired or unpaires, stranded or unstranded, if unstranded leave empty, if stranded see below
                                      #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
@@ -144,7 +145,7 @@ Now the actual workflow section begins, where you can define for each combinatio
 This follow the same scheme for each step, optionally define *RUN* ON/OFF or simply skip the key in the *WORKFLOW*/*POSTPROCESSING* section and here if not needed.
 The *ENV* key defines the conda environment to load from the *env* directory of this repository, feel free to add you own environment.yaml files there.
 The *BIN* key defines the name of the executable, this is needed in case the env and the bin differ as e.g. for the mapping tool ```segemehl/segemehl.x```.
-The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single/paired* end sequencing, this is done automatically.
+The next key is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *unpaired/paired* end sequencing, this is done automatically.
 To add parameters simply add the *OPTION* key which holds as value a list of hashes. Parameters are defined in this hashes again as key/value pairs corresponding to the parameter name and the setting.
 This should become clear having a look at the different processing steps.
 If there are no options just do not add the *OPTION*
@@ -317,7 +318,7 @@ Keep in mind that every workflow/postprocessing step needs a corresponding entry
 
 ### Cluster config
 This is separate from the main configuration, for details please follow the explanations in the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
-For an example have a look at the ```cluster``` directory.
+For a example configs for ```SLURM``` and ```SGE``` have a look at the ```cluster``` directory.
 
 ## Run the pipeline
 Simply run
@@ -335,6 +336,16 @@ python snakes/RunSnakemake.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json -
 or add additional arguments for ```snakemake``` as you see fit.
 
 ### Run on cluster
+
+####SLURM
+
+You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that comes with this repository, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. To use the preconfigured example that comes with this repository simply adapt the call below to your needs.
+
+```python snakes/RunSnakemake.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile snakes/slurm --cluster-config snakes/cluster/config_slurm.yamlx```
+
+Further adaptions like grouping of jobs and advanced configs for rule based performance increase will follow.
+
+####SGE(outdated)
 
 Define the cluster config file and for SGE support simply append ```--cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript snakes/cluster/sge.sh```
 

@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 12 10:25:11 2020 (+0100)
+# Last-Updated: Thu Feb 20 10:28:24 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 492
+#     Update #: 535
 # URL:
 # Doc URL:
 # Keywords:
@@ -28,7 +28,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import glob, os, sys, inspect, json, shutil
-from collections import defaultdict
+from collections import defaultdict, deque
 import traceback as tb
 from snakemake import load_configfile
 from snakemake.utils import validate, min_version
@@ -45,17 +45,17 @@ def parseargs():
     parser = argparse.ArgumentParser(description='Helper to create initial config file used for workflow processing')
     parser.add_argument("-c", "--configfile", type=str, default='configurator.json', help='Configuration json to write to, can be called together with --append option to append new workflows to existing config')
     parser.add_argument("-a", "--append", action="store_true", help='If set configuration will be appended to existing json')
-    parser.add_argument("-s", "--skeleton", type=str, default='snakes/configs/skeleton.json', help='Skeleton config to build from, per default the one that comes with this repository, change only when you know what you do')
-    parser.add_argument("-f", "--preprocess", type=str, default='', help='Which preprocessing steps to conduct, choices are any or combinations of [\'SRA\', \'BASECALL\']. NOT IMPLEMENTED YET!!!')
+    parser.add_argument("-t", "--template", type=str, default='snakes/configs/template.json', help='Template config to build from, per default the one that comes with this repository, change only when you know what you do')
+    parser.add_argument("-p", "--preprocess", type=str, default='', help='Which preprocessing steps to conduct, choices are any or combinations of [\'SRA\', \'BASECALL\']. NOT IMPLEMENTED YET!!!')
     parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'MAPPING\', \'TRIMMING\', \'QC\']')
     parser.add_argument("-l", "--postprocess", type=str, default='', help='Which workflow steps to conduct,choices are any of or combinations of [\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\']')
     parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
     parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
-    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. hg38:hg38,01012020:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
-    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. hg38:hg38,01012020:dm6')
+    parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr,unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
+    parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
+    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38,Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
     parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
-    parser.add_argument("--binaries", type=str, default='snakes/scripts', help='Path to binary directory')
-    parser.add_argument("-b", "--scripts", type=str, default='snakes/scripts', help='Path to script for execution')
+    parser.add_argument("-b", "--binaries", type=str, default='snakes/scripts', help='Path to script for execution')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Maximum number of parallel processes to start snakemake with, represented by MAXTHREADS in config')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -83,15 +83,14 @@ def check_run(func):
     return func_wrapper
 
 @check_run
-def create_json_config(configfile, append, skeleton, preprocess, workflows, postprocess, ics, refdir, binaries, procs, scripts, genomemap, genomes, genomeext, optionalargs=None):
-
+def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, optionalargs=None):
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
     for oldfile in glob.glob(oldcnf):
         shutil.copy2(oldfile,oldfile+'.bak')
         log.warning(logid+'Found old config file'+oldfile+' created backup of old config '+oldfile+'.bak')
 
-    config = load_configfile(os.path.abspath(skeleton))
+    config = load_configfile(os.path.abspath(template))
     newconf = NestedDefaultDict()
     oldconf = NestedDefaultDict()
     icslist = list()
@@ -99,7 +98,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
     todos = ','.join([x for x in [preprocess,workflows,postprocess] if x is not '' ]).split(',')
     for x in todos:
         if x not in config:
-            log.error(logid+'Key '+str(x)+' not found in skeleton, please check for typos!')
+            log.error(logid+'Key '+str(x)+' not found in template, please check for typos!')
             sys.exit()
 
     log.info(logid+'Creating config json for steps '+str(todos))
@@ -155,6 +154,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 
     log.debug(logid+'List of IdentifierConditionSettings: '+str(icslist))
 
+    seqlist = [s.replace(':',',') for s in sequencing.split(',')]
 
     if not append:
         #newconf.merge(config)
@@ -165,10 +165,11 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
         newconf['BINS'] = binaries
         newconf['MAXTHREADS'] = str(procs)
         newconf['GENOME'] = NestedDefaultDict()
+
         for k,v in gens.items():
             newconf['GENOME'][str(k)] = str(v)
 
-        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
+        for key in ['NAME','SOURCE','SEQUENCING','SAMPLES']:
             for id,condition,setting in [x.split(':') for x in icslist]:
                 if key == 'NAME':
                     if genomeext:
@@ -181,13 +182,24 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
                 elif key == 'SOURCE':
                     if genomemap:
                         for k,v in genmap.items():
-                            if k == id:
+                            if v in newconf['GENOME']:
                                 newconf[key][id][condition][setting] = str(v)
+                    else:
+                        newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                elif key == 'SEQUENCING':
+                    if len(seqlist) > 0:
+                        newconf[key][id][condition][setting] = deque(seqlist).popleft()
+                    else:
+                        newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                elif key == 'SAMPLES':
+                    samplelist = get_samples_from_dir(id, condition, setting, newconf)
+                    log.debug(logid+'SAMPLELIST: '+str(samplelist))
+                    if len(samplelist) > 0:
+                        newconf[key][id][condition][setting] = samplelist
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:
                     newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-
 
     else:
         #newconf.merge(oldconfig)
@@ -212,6 +224,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
             newconf['MAXTHREADS'] = str(oldconf['MAXTHREADS'])
 
         log.debug(logid+'GENOMEMAP: '+str(genomemap)+'\t'+str(genmap))
+
         if genomes and any([x not in newconf['GENOME'] for x in list(gens.keys())]) or any([[x not in newconf['GENOME'][y] for x in gens[y]] for y in gens.keys()]):
             newconf['GENOME'] = NestedDefaultDict()
             newconf['GENOME'].merge(oldconf['GENOME'])
@@ -243,8 +256,8 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
                         elif key == 'SOURCE':
                             if genomemap:
                                 for k,v in genmap.items():
-                                    if k == id:
-                                        if str(v) != oldconf[key][id][condition][setting]:
+                                    if v in newconf['GENOME']:
+                                        if str(v) != str(oldconf[key][id][condition][setting]):
                                             newconf[key][id][condition][setting] = str(v)
                                         else:
                                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
@@ -261,7 +274,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
             if do not in newconf and do in oldconf:
                 newconf[do].merge(oldconf[do])
 
-    """Now we replace the placeholders in the skeleton config with the actual ones or update an existing config with new workflows"""
+    """Now we replace the placeholders in the template config with the actual ones or update an existing config with new workflows"""
 
     log.debug(logid+'NEW: '+str(newconf))
 
@@ -271,6 +284,7 @@ def create_json_config(configfile, append, skeleton, preprocess, workflows, post
 
     for key in todos:
         log.debug(logid+'OLD: '+str(key)+'\t'+str(config[key]))
+
         for id,condition,setting in [x.split(':') for x in icslist]:
             if id not in newconf[key]:
                 newconf[key][id] = NestedDefaultDict()
@@ -311,7 +325,7 @@ if __name__ == '__main__':
 
         makelogdir('LOGS')
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stdout))  # streamlog
+        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:
@@ -319,15 +333,13 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
+        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
 
-        create_json_config(knownargs.configfile, knownargs.append, knownargs.skeleton, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.scripts, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
         log.error(logid+''.join(tbe.format()))
-
-
 
 # Configurator.py ends here

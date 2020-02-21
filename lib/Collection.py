@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 11 14:46:43 2020 (+0100)
+# Last-Updated: Thu Feb 20 09:40:31 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 847
+#     Update #: 1077
 # URL:
 # Doc URL:
 # Keywords:
@@ -80,14 +80,21 @@ import subprocess
 import collections
 from collections import defaultdict, OrderedDict
 import six
+import logging
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
-from Logger import *
-
-log = setup_logger(name='Collection', log_file='LOGS/Snakemake_Collection.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+try:
+    scriptname = os.path.basename(inspect.stack()[-1].filename)
+    log=logging.getLogger(scriptname)
+except Exception as err:
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tbe = tb.TracebackException(
+        exc_type, exc_value, exc_tb,
+    )
+    log.error(''.join(tbe.format()))
 
 #Class
 class NestedDefaultDict(defaultdict):
@@ -104,608 +111,422 @@ class NestedDefaultDict(defaultdict):
 ##############################
 ########Snakemake Subs########
 ##############################
+def check_run(func):
+    def func_wrapper(*args, **kwargs):
+        logid=scriptname+'.Collection_func_wrapper: '
+        try:
+            return func(*args, **kwargs)
+
+        except Exception as err:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error(logid+''.join(tbe.format()))
+    return func_wrapper
+
+@check_run
 def sources(config):
-    try:
-        ret = list()
-        for key in config["SOURCE"] and config["SAMPLES"]:
-            ret.append(str(key))
-        return ret
+    logid=scriptname+'.Collection_sources: '
+    ret = list()
+    for key in config["SOURCE"] and config["SAMPLES"]:
+        ret.append(str(key))
+    log.debug(logid+str(ret))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def samples(config):
-    try:
-        ret = list()
-        for x,y in config["SOURCE"].items():
-            k = find_innermost_value_from_dict(config["SAMPLES"][x])
-            for l in k:
-                ret.append(os.path.join(str(x),str(l)))
-        return ret
+    logid=scriptname+'.Collection_samples: '
+    ret = list()
+    for x,y in config["SOURCE"].items():
+        k = find_innermost_value_from_dict(config["SAMPLES"][x])
+        for l in k:
+            ret.append(os.path.join(str(x),str(l)))
+    log.debug(logid+str(ret))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+@check_run
+def get_samples_from_dir(id, condition, setting, config):
+    logid = scriptname+'.Collection_get_samples_from_dir: '
+    pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
+    log.info(logid+str(pat))
+    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
+    log.debug(logid+str(ret))
+    if len(ret) > 0:
+        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
+        for x in seqtype:
+            if 'unpaired' not in x:
+                ret = list(set([re.sub('_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in ret]
+                for i in range(len(renamelist)):
+                    if renamelist[i] != ret[i]:
+                        os.rename(ret[i],renamelist[i])
+            else:
+                ret = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in ret]))
+        return list(set(ret))
+    else:
+        return list()
 
+@check_run
 def sampleslong(config):
-    try:
-        ret = list()
-        for x,y in config["SOURCE"].items():
-            for s in config["SAMPLES"][x]:
-                k = list_all_values_of_dict(config["SAMPLES"][x][s])
-                for v in k:
-                    if isinstance(v, list):
-                        for z in v:
-                            ret.append(os.path.join(str(x),str(s),str(z)))
-                    else:
-                        ret.append(os.path.join(str(x),str(s),str(v)))
-        return ret
+    logid = scriptname+'.Collection_sampleslong: '
+    ret = list()
+    tosearch = list()
+    for k,v in list_all_keys_of_dict(config['SAMPLES']):
+        if k != 'last':
+            tosearch.append(k)
+    log.debug(logid+'keys: '+str(tosearch))
+    for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
+        ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
+    log.debug(logid+str(ret))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-
+@check_run
 def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SOURCE!
-    try:
-        ret = list()
-        for x,y in config["SOURCE"].items():
-            for s in config["SAMPLES"][x]:
-                for n in config["SAMPLES"][x][s]:
-                    ret.append(str(n))
-        return ret
+    ret = list()
+    for x,y in config["SOURCE"].items():
+        for s in config["SAMPLES"][x]:
+            for n in config["SAMPLES"][x][s]:
+                ret.append(str(n))
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def get_placeholder(config):
-    try:
-        ret = list()
-        if 'PH' in (config):
-            for x in config['PH']:
-                ret.append(str(x))
-        else:
-            ret.append('_')
-        return ret
+    ret = list()
+    if 'PH' in (config):
+        for x in config['PH']:
+            ret.append(str(x))
+    else:
+        ret.append('_')
+    return ret
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-
+@check_run
 def genomepath(s, config):
-    try:
-        sa = os.path.basename(str(s))
-        cond= s.split(os.sep)[-2]
-        sk = find_key_for_value(sa, config["SAMPLES"])
-        for skey in sk:
-            klist = value_extract(skey, config["SOURCE"])
-            for k in klist:
-                for x, y in config["GENOME"].items():
-                    if str(k) == str(y) or str(k) == str(x):
-                        return os.path.join(str(x),str(y))
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_genomepath: '
+    sa = os.path.basename(str(s))
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config["SAMPLES"])
+    log.debug(logid+'GENOMEPATH: '+str([sa,cond,sk]))
+    for skey in sk:
+        klist = value_extract(skey, config["SOURCE"])
+        for k in klist:
+            for x, y in config["GENOME"].items():
+                log.debug(logid+'GENOMEPATH: '+str([x,y,k]))
+                if str(k) == str(y) or str(k) == str(x):
+                    return os.path.join(str(x),str(y))
 
+@check_run
 def genome(s, config):
-    try:
-        logid='genome: '
+    logid=scriptname+'.Collection_genome: '
+    sa = os.path.basename(str(s))
+    sp = source_from_sample(str(s),config)
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config['SAMPLES'])
+    for skey in sk:
+        klist = value_extract(skey, config['SOURCE'])
+        for k in klist:
+            #log.debug(logid+'there: '+str([k,skey,sp,sa,cond]))
+            #if str(k) == config['SOURCE'][sp][cond]:
+            #log.debug(logid+'k is sp')
+            for x, y in config['GENOME'].items():
+                log.debug(logid+str([k, x, y]))
+                if str(k) == str(x):
+                    return str(y)
+
+@check_run
+def fullgenomepath(sa, config):
+    ret=list()
+    for s in sa:
+        l = config["GENOME"][s]
+        ret.append(os.path.join(str(s),str(l)))
+    return ret
+
+@check_run
+def genomename(s, config):
+    s = os.path.basename(str(s))
+    for k,v in config["SAMPLES"].items():
+        for g,l in v.items():
+            if s in l:
+                for x, y in config["GENOME"].items():
+                    if g == y:
+                        return str(x)
+
+@check_run
+def namefromfile(s, config):
+    if 'NAME' not in config:
+        return ''
+    else:
         sa = os.path.basename(str(s))
-        sp = source_from_sample(str(s)).split(os.sep)[0]
         cond= s.split(os.sep)[-2]
         sk = find_key_for_value(sa, config["SAMPLES"])
         for skey in sk:
-            klist = value_extract(skey, config["SOURCE"])
+            klist = value_extract(skey, config["NAME"])
             for k in klist:
-                if str(k) == sp:
-                    log.debug(logid+'k is sp')
-                    for x, y in config["GENOME"].items():
-                        log.debug(logid+str([k, x, y]))
-                        if str(k) == str(x):
-                            return str(y)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+                if str(skey) == str(cond):
+                    return str(k)
 
-def fullgenomepath(sa, config):
-    try:
-        ret=list()
-        for s in sa:
-            l = config["GENOME"][s]
-            ret.append(os.path.join(str(s),str(l)))
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+@check_run
+def create_subworkflow(config, subwork, conditions, stage=''):
+    logid = scriptname+'.Collection_create_subworkflow: '
+    log.debug(logid+str([config, subwork, conditions, stage]))
+    toollist = list()
+    configs = list()
+    for condition in conditions:
+        try:
+            env = str(subDict(config[subwork],condition)[stage+'ENV'])
+        except:
+            log.warning('Key ENV not found for '+subwork+' this can be intentional')
+            env = ''
+        try:
+            exe = str(subDict(config[subwork],condition)[stage+'BIN'])
+        except:
+            log.warning('Key BIN not found for '+subwork+' this can be intentional')
+            exe = ''
+        src, treat, setup = condition
+        log.debug(logid+str([env,exe,src,treat,setup]))
+        tempconf = NestedDefaultDict()
+        try:
+            for key in ['REFERENCE', 'BINS','MAXTHREADS']:
+                tempconf[key] = config[key]
+        except KeyError:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error(''.join(tbe.format()))
+        try:
+            matchinggenome=config['SOURCE'][src][treat][setup]
+            tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
+            if 'NAME' in config:
+                tempconf['NAME'][src] = config['NAME'][src]
+            for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
+                tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+            if 'COUNTING' in config:
+                tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
 
-def genomename(s, config):
-    try:
-        s = os.path.basename(str(s))
+        except KeyError:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error(''.join(tbe.format()))
+
+        tempconf[subwork+'ENV'] = env
+        tempconf[subwork+'BIN'] = exe
+        toollist.append([env,exe])
+        configs.append(tempconf)
+
+    log.debug(logid+str([toollist,configs]))
+
+    return toollist, configs
+
+@check_run
+def namefrompath(p, config):
+    p = os.path.dirname(p).split(os.sep)
+    klist = getFromDict(config["NAME"],p) if 'NAME' in config else list('')
+    for k in klist:
+        return str(k)
+
+@check_run
+def pathstogenomes(samples, config):
+    ret = list()
+    for s in samples:
+        s = os.path.basename(s)
         for k,v in config["SAMPLES"].items():
             for g,l in v.items():
                 if s in l:
                     for x, y in config["GENOME"].items():
                         if g == y:
-                            return str(x)
+                            ret.append(os.path.join(str(x),str(y)))
+    return sorted(list(set(ret)))
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def namefromfile(s, config):
-    try:
-        sa = os.path.basename(str(s))
-        cond= s.split(os.sep)[-2]
-        sk = find_key_for_value(sa, config["SAMPLES"])
-        for skey in sk:
-            klist = value_extract(skey, config["NAME"]) if 'NAME' in config else list()
-            for k in klist:
-                if str(skey) == str(cond):
-                    return str(k)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def create_subworkflow(config, subwork, conditions):
-    try:
-        logid = 'create_subworkflow: '
-        toollist = list()
-        configs = list()
-        for condition in conditions:
-            try:
-                env = str(subDict(config[subwork],condition)['ENV'])
-            except:
-                log.warning('Key ENV not found for '+subwork+' this can be intentional')
-                env = ''
-            try:
-                exe = str(subDict(config[subwork],condition)['BIN'])
-            except:
-                log.warning('Key BIN not found for '+subwork+' this can be intentional')
-                exe = ''
-            src, treat, setup = condition
-            log.debug(logid+str([env,exe,src,treat,setup]))
-            tempconf = NestedDefaultDict()
-            try:
-                for key in ['REFERENCE', 'BINS','MAXTHREADS']:
-                    tempconf[key] = config[key]
-            except KeyError:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                tbe = tb.TracebackException(
-                    exc_type, exc_value, exc_tb,
-                )
-                log.error(''.join(tbe.format()))
-            try:
-                tempconf['GENOME'][src] = config['GENOME'][src]
-                if 'NAME' in config:
-                    tempconf['NAME'][src] = config['NAME'][src]
-                for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
-                    tempconf[key][src][treat][setup] = config[key][src][treat][setup]
-                if 'COUNTING' in config:
-                    tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
-
-            except KeyError:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                tbe = tb.TracebackException(
-                    exc_type, exc_value, exc_tb,
-                )
-                log.error(''.join(tbe.format()))
-
-            tempconf[subwork+'ENV'] = env
-            tempconf[subwork+'BIN'] = exe
-            toollist.append([env,exe])
-            configs.append(tempconf)
-        return toollist, configs
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def namefrompath(p, config):
-    try:
-        p = os.path.dirname(p).split(os.sep)
-        klist = getFromDict(config["NAME"],p) if 'NAME' in config else ''
-        for k in klist:
-            return str(k)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def pathstogenomes(samples, config):
-    try:
-        ret = list()
-        for s in samples:
-            s = os.path.basename(s)
-            for k,v in config["SAMPLES"].items():
-                for g,l in v.items():
-                    if s in l:
-                        for x, y in config["GENOME"].items():
-                            if g == y:
-                                ret.append(os.path.join(str(x),str(y)))
-        return sorted(list(set(ret)))
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-#def tool_params(sample, runstate, config, subconf):
-#    try:
-#        logid='tool_params: '
-#        t = genome(sample,config)
-#        mp = list()
-#        if runstate is None:
-#            runstate = runstate_from_sample([sample], config)
-#        x = source_from_sample(sample).split(os.sep)
-#        for k in getFromDict(config[subconf],x):
-#            log.debug(logid+str(k))
-#            y = find_key_for_value(k,config[subconf])
-#            for r in runstate:
-#                if r in sample.split(os.sep) and r in [z for z in y]:
-#                    mp.extend(k)
-#        log.debug(logid+str(mp))
-#        return mp
-#    except Exception as err:
-#        exc_type, exc_value, exc_tb = sys.exc_info()
-#        tbe = tb.TracebackException(
-#            exc_type, exc_value, exc_tb,
-#        )
-#        log.error(''.join(tbe.format()))
-
-#def index_params(indexpath, config, subconf):
-#    try:
-#        s = indexpath.split(os.sep)
-#        mp = list()
-#        for k in getFromDict(config[subconf],s):
-#            mp.extend(k)
-#        return mp
-#    except Exception as err:
-#        exc_type, exc_value, exc_tb = sys.exc_info()
-#        tbe = tb.TracebackException(
-#            exc_type, exc_value, exc_tb,
-#        )
-#        log.error(''.join(tbe.format()))
-
+@check_run
 def tool_params(sample, runstate, config, subconf):
-    try:
-        logid='tool_params: '
-        log.debug(logid+'Samples: '+str(sample))
-        t = genome(sample,config)
-        mp = OrderedDict()
-        if runstate is None:
-            runstate = runstate_from_sample([sample], config)[0]
-        x = source_from_sample(sample).split(os.sep)
-        log.debug(logid+str([sample,runstate,subconf,t,x]))
-        if runstate not in x:
-            x.append(runstate)
-        mp = subDict(config[subconf],x)
-        log.debug(logid+'DONE: '+str(mp))
-        return mp
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_tool_params: '
+    log.debug(logid+'Samples: '+str(sample))
+    t = genome(sample,config)
+    mp = OrderedDict()
+    x = sample.split(os.sep)[:-1]
+    #x = source_from_sample(sample,config)
+    if runstate is None:
+        runstate = runstate_from_sample([sample], config)[0]
+    if runstate not in x:
+        x.append(runstate)
+    log.debug(logid+str([sample,runstate,subconf,t,x]))
+    mp = subDict(config[subconf],x)
+    log.debug(logid+'DONE: '+str(mp))
+    return mp
 
+@check_run
 def env_bin_from_config(samples, config, subconf):
-    try:
-        s = samples[0].split(os.sep)[:-1]
-        mb,me = [None,None]
-        for k in getFromDict(config[subconf],s):
-            mb, me = k['BIN'], k['ENV']
-        return mb,me
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_env_bin_from_config: '
+    s = samples[0].split(os.sep)[:-1]
+    mb,me = [None,None]
+    for k in getFromDict(config[subconf],s):
+        mb, me = k['BIN'], k['ENV']
+    return mb,me
 
+@check_run
 def env_bin_from_config2(samples, config, subconf):
-    try:
-        logid='env_bin_from_config2'
-        for s in samples:
-            log.debug(logid+': '+s)
-            log.debug(str(config[subconf]))
-            for k in getFromDict(config[subconf],conditiononly(s,config)):
-                mb = k['BIN']
-                me = k['ENV']
-        log.debug([str(mb),str(me)])
-        return mb, me
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def count_params(sample, config):
-    try:
-        s = os.path.basename(str(sample))
-        t = genome(s,config)
-        for k,v in config["COUNT"].items():
-            for g,p in v.items():
-                if g == t:
-                    return str(p)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def trnascan_params(s, runstate, config):
-    try:
-        for k,v in config["TRNASCAN"].items():
-            for g,p in v[runstate].items():
-                if g == s:
-                    return str(p)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def index(w, t, config):
-    try:
-        gen = genome(str(w),config)
-        return expand("{ref}/{gen}.{name}_all_withoutPseudo_cluster.idx",ref=REFERENCE,gen=gen, name=NAME[t])
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def rmempty(check):
-    try:
-        ret = list()
-        for f in check:
-            if os.path.isfile(f):
-                ret.append(f)
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def source_from_sample(sample):
-    try:
-        ret = str(os.path.join(*os.path.split(str(sample))[0:-1]))
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def sample_from_path(path):
-    try:
-        ret = str(os.path.join(os.path.split(str(path))[-1]))
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def anno_from_file(sample, config, step):
-    try:
-        logid = 'anno_from_file: '
-        p = os.path.dirname(genomepath(sample, config))
-        s = source_from_sample(sample)
-        ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
-        log.debug(logid+str(ret))
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def anno_from_source(source, config, step):
-    try:
-        logid = 'anno_from_source: '
-        s = source.split(os.sep)[0:-1]
-        p = s[0]
-        samp = source.split(os.sep)[-1]
+    logid=scriptname+'.Collection_env_bin_from_config2: '
+    for s in samples:
         log.debug(logid+str(s))
-        runstate = runstate_from_sample([samp], config)[0]
-        lst = list()
-        lst.extend(s)
-        lst.append(runstate)
-        log.debug(logid+str(lst))
-        ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
-        log.debug(logid+str(ret))
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def runstate_from_sample(sample,config):
-    try:
-        logid = 'runstate_from_sample: '
-        ret = list()
-        for s in sample:
-            s = os.path.basename(s)
-            for k,v in config["SAMPLES"].items():
-                for f in find_key_for_value(s,v):
-                    log.debug(logid+f)
-                    ret.append(f)
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def samplecond(sample,config):
-    try:
-        logid = 'samplecond: '
-        ret = list()
-        paired = False
-        for s in sample:
-            check = os.path.dirname(s).split(os.sep)
-            log.debug(logid+str(check))
-            for r in runstate_from_sample([s],config):
-                tmplist = check
-                tmplist.append(r)
-                if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
-                    paired = True
-                if paired:
-                    s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-        log.debug(logid+str([sample,ret]))
-        return ret
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def conditiononly(sample,config):
-    try:
-        logid = 'conditiononly: '
-        ret = list()
-        paired = False
-        check = os.path.dirname(sample).split(os.sep)
-        log.debug(logid+str(check))
-        for r in runstate_from_sample([sample],config):
-            ret.extend(check)
-            ret.append(r)
-        log.debug(logid+str([sample,ret]))
-        return ret
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def checkpaired(sample,config):
-    try:
-        logid = 'checkpaired: '
-        ret = list()
-        paired = ''
-        for s in sample:
-            check = os.path.dirname(s).split(os.sep)
-            for r in runstate_from_sample([s],config):
-                tmplist = check
-                tmplist.append(r)
-                if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                    paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-        log.debug(logid+'PAIRED: '+str(paired))
-        return paired
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def checkstranded(sample,config):
-    try:
-        logid = 'checkstranded: '
-        ret = list()
-        stranded = ''
-        for s in sample:
-            check = os.path.dirname(s).split(os.sep)
-            for r in runstate_from_sample([s],config):
-                tmplist = check
-                tmplist.append(r)
-                if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                    stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
-        log.debug(logid+'STRANDEDNESS: '+str(stranded))
-        return stranded
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def checkclip(sample,config):
-    try:
-        logid = 'checkclip: '
-        ret = list()
-        clip = ''
-        for s in sample:
-            check = os.path.dirname(s).split(os.sep)
-            log.debug(logid+str(check))
-            r = runstate_from_sample([s],config)
-            tmplist = check
-            tmplist.extend(r)
-            log.debug(logid+str(tmplist))
-            if 'CLIP' in subDict(config['PEAKS'],tmplist):
-                clip = subDict(config['PEAKS'],tmplist)['CLIP']
+        for k in getFromDict(config[subconf],conditiononly(s,config)):
+            if 'BIN' in k:
+                mb = k['BIN']
             else:
-                log.debug(logid+'Key CLIP not found in config')
-        log.debug(logid+str(clip))
-        return str(clip)
+                mb = ''
+            if 'ENV' in k:
+                me = k['ENV']
+            else:
+                me = ''
+        log.debug(logid+str([str(mb),str(me)]))
+    return mb, me
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+@check_run
+def rmempty(check):
+    ret = list()
+    for f in check:
+        if os.path.isfile(f):
+            ret.append(f)
+    return ret
 
+@check_run
+def source_from_sample(sample, config):
+    logid=scriptname+'.Collection_source_from_sample: '
+    s = os.path.dirname(str(sample))
+    cond= s.split(os.sep)
+    log.debug(logid+str([s,cond]))
+    ret = getFromDict(config["SOURCE"],cond)[0]
+    return ret
+
+@check_run
+def sample_from_path(path):
+    ret = str(os.path.join(os.path.split(str(path))[-1]))
+    return ret
+
+@check_run
+def anno_from_file(sample, config, step):
+    logid = scriptname+'.Collection_anno_from_file: '
+    p = os.path.dirname(genomepath(sample, config))
+    s = source_from_sample(sample,config)
+    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def anno_from_source(source, config, step):
+    logid = scriptname+'.Collection_anno_from_source: '
+    s = source.split(os.sep)[0:-1]
+    p = s[0]
+    samp = source.split(os.sep)[-1]
+    log.debug(logid+str(s))
+    runstate = runstate_from_sample([samp], config)[0]
+    lst = list()
+    lst.extend(s)
+    lst.append(runstate)
+    log.debug(logid+str(lst))
+    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def runstate_from_sample(sample,config):
+    logid = scriptname+'.Collection_runstate_from_sample: '
+    ret = list()
+    for s in sample:
+        s = os.path.basename(s)
+        for k,v in config["SAMPLES"].items():
+            for f in find_key_for_value(s,v):
+                log.debug(logid+f)
+                ret.append(f)
+    return ret
+
+@check_run
+def samplecond(sample,config):
+    logid = scriptname+'.Collection_samplecond: '
+    ret = list()
+    paired = False
+    for s in sample:
+        check = os.path.dirname(s).split(os.sep)
+        log.debug(logid+str(check))
+        for r in runstate_from_sample([s],config):
+            tmplist = check
+            tmplist.append(r)
+            log.debug(logid+str(tmplist))
+            if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
+                paired = True
+            if paired:
+                s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
+            ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def conditiononly(sample,config):
+    logid = scriptname+'.Collection_conditiononly: '
+    ret = list()
+    paired = False
+    check = os.path.dirname(sample).split(os.sep)
+    log.debug(logid+str(check))
+    for r in runstate_from_sample([sample],config):
+        log.debug(logid+str(r))
+        ret.extend(check)
+        if r not in ret:
+            ret.append(r)
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def checkpaired(sample,config):
+    logid = scriptname+'.Collection_checkpaired: '
+    ret = list()
+    paired = ''
+    for s in sample:
+        check = os.path.dirname(s).split(os.sep)
+        for r in runstate_from_sample([s],config):
+            tmplist = check
+            tmplist.append(r)
+            if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+    log.debug(logid+'PAIRED: '+str(paired))
+    return paired
+
+@check_run
+def checkstranded(sample,config):
+    logid = scriptname+'.Collection_checkstranded: '
+    ret = list()
+    stranded = ''
+    for s in sample:
+        check = os.path.dirname(s).split(os.sep)
+        for r in runstate_from_sample([s],config):
+            tmplist = check
+            tmplist.append(r)
+            if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
+    log.debug(logid+'STRANDEDNESS: '+str(stranded))
+    return stranded
+
+@check_run
+def checkclip(sample,config):
+    logid = scriptname+'.Collection_checkclip: '
+    ret = list()
+    clip = ''
+    for s in sample:
+        check = os.path.dirname(s).split(os.sep)
+        log.debug(logid+str(check))
+        r = runstate_from_sample([s],config)
+        tmplist = check
+        tmplist.extend(r)
+        log.debug(logid+str(tmplist))
+        if 'CLIP' in subDict(config['PEAKS'],tmplist):
+            clip = subDict(config['PEAKS'],tmplist)['CLIP']
+        else:
+            log.debug(logid+'Key CLIP not found in config')
+    log.debug(logid+str(clip))
+    return str(clip)
+
+@check_run
 def check_tool_params(sample, runstate, config, subconf, idx):
     try:
         par = tool_params(sample, runstate ,config, subconf)['OPTIONS'][idx]
@@ -721,6 +542,7 @@ def check_tool_params(sample, runstate, config, subconf, idx):
         else:
             return ''
 
+@check_run
 def aggregate_input(wildcards):
     return expand("post/{sample}/{i}.txt",
            sample=wildcards.sample,
@@ -729,20 +551,15 @@ def aggregate_input(wildcards):
 ##############################
 #########Python Subs##########
 ##############################
+@check_run
 def dict_inst(d):
-    try:
-        loginfo='dict_inst: '
-        if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
-            return True
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_dict_inst: '
+    if isinstance(d,dict) or isinstance(d,OrderedDict) or isinstance(d,defaultdict) or isinstance(d,NestedDefaultDict):
+        return True
 
+@check_run
 def getFromDict(dataDict, mapList):
-    logid = 'getFromDict: '
+    logid = scriptname+'.Collection_getFromDict: '
     log.debug(logid+str(mapList))
     ret=list()
     for k in mapList:
@@ -751,17 +568,24 @@ def getFromDict(dataDict, mapList):
     log.debug(logid+str(ret))
     return ret
 
+@check_run
 def subDict(dataDict, mapList):
-    ret=dict()
+    logid = scriptname+'.Collection_subDict: '
+    log.debug(logid+str(mapList))
+    ret = dataDict
     for k in mapList:
-        dataDict = dataDict[k]
-    return dataDict
+        log.debug(logid+'k: '+str(k))
+        if k in ret:
+            ret = ret[k]
+    return ret
 
+@check_run
 def nested_set(dic, keys, value):
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
     dic[keys[-1]] = value
 
+@check_run
 def merge_dicts(d,u):
     # https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     # python 3.8+ compatibility
@@ -780,712 +604,218 @@ def merge_dicts(d,u):
             d[k] = v
     return d
 
-
+@check_run
 def list_all_keys_of_dict(dictionary):
-    logid = 'list_all_keys_of_dict: '
-    try:
-        if dict_inst(dictionary):
-            for key, value in dictionary.items():
-                if dict_inst(value):
-                    yield (key, value)
-                    yield from list_all_keys_of_dict(value)
-                else:
-                    yield (key, value)
-                    yield ('last','key')
-        else:
-            yield dictionary
+    logid = scriptname+'.Collection_list_all_keys_of_dict: '
+    if dict_inst(dictionary):
+        for key, value in dictionary.items():
+            if dict_inst(value):
+                yield (key, value)
+                yield from list_all_keys_of_dict(value)
+            else:
+                yield (key, value)
+                yield ('last','key')
+    else:
+        yield dictionary
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def list_all_values_of_dict(dictionary):
-    try:
-        if dict_inst(dictionary):
-            for key, value in dictionary.items():
-                if dict_inst(value):
-                    yield (key, value)
-                    yield from list_all_values_of_dict(value)
-                else:
-                    yield (key, value)
-                    yield ('last','value')
-        else:
-            yield dictionary
+    if dict_inst(dictionary):
+        for key, value in dictionary.items():
+            if dict_inst(value):
+                #yield (key, value)
+                yield from list_all_values_of_dict(value)
+            else:
+                yield (key, value)
+                #yield ('last','value')
+    else:
+        yield dictionary
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def find_all_values_on_key(key, dictionary):
-    try:
-        if dict_inst(dictionary):
-            for k, v in dictionary.items():
-                if dict_inst(v):
-                    yield from find_all_values_on_key(key, v)
-                elif k == key:
-                    yield v
+    if dict_inst(dictionary):
+        for k, v in dictionary.items():
+            if dict_inst(v):
+                yield from find_all_values_on_key(key, v)
+            elif k == key:
+                yield v
 
-        else:
-            return dictionary
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    else:
+        return dictionary
 
+@check_run
 def find_key_for_value(val, dictionary):
-    try:
-        logid='find_key_for_value: '
-        log.debug(logid+str(val))
-        if dict_inst(dictionary):
-            for k, v in dictionary.items():
-                if dict_inst(v):
-                    log.debug(logid+'item'+str(v))
-                    yield from find_key_for_value(val, v)
-                elif v == val or val in v:
-                    yield k
-        else:
-            return dictionary
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_find_key_for_value: '
+    log.debug(logid+str(val))
+    if dict_inst(dictionary):
+        for k, v in dictionary.items():
+            if dict_inst(v):
+                log.debug(logid+'item'+str(v))
+                yield from find_key_for_value(val, v)
+            elif v == val or val in v:
+                yield k
+    else:
+        return dictionary
 
+@check_run
 def value_extract(key, var):
-    try:
-        logid='value_extract: '
-        log.debug(logid+str(var))
-        if hasattr(var,'items'):
-            for k, v in var.items():
-                if k == key:
-                    yield v
-                if dict_inst(v):
-                    for result in value_extract(key, v):
+    logid=scriptname+'.Collection_value_extract: '
+    log.debug(logid+str(var))
+    if hasattr(var,'items'):
+        for k, v in var.items():
+            if k == key:
+                yield v
+            if dict_inst(v):
+                for result in value_extract(key, v):
+                    yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in value_extract(key, d):
                         yield result
-                elif isinstance(v, list):
-                    for d in v:
-                        for result in value_extract(key, d):
-                            yield result
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
 
+@check_run
 def find_innermost_value_from_dict(dictionary):
-    try:
-        if dict_inst(dictionary):
-            for k, v in dictionary.items():
-                if dict_inst(v):
-                     return(find_innermost_value_from_dict(v))
-                else:
-                    return v
-        else:
-            return dictionary
-        return ret
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_find_innermost_value_from_dict: '
+    if dict_inst(dictionary):
+        for k, v in dictionary.items():
+            if dict_inst(v):
+                 return(find_innermost_value_from_dict(v))
+            else:
+                return v
+    else:
+        return dictionary
+    return ret
 
+@check_run
 def removekey(d, key):
-    try:
-        r = dict(d)
-        del r[key]
-        return r
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    logid=scriptname+'.Collection_removekey: '
+    r = dict(d)
+    del r[key]
+    return r
 
+@check_run
 def getlowest_list(a, n):
-    try:
-        if n > len(a) - 1:
-            b = len(a) - 1
-        else:
-            b = n
-        if len(a) > 0 and n > 0:
-            return list(np.partition(a, b)[:n])
-        else:
-            return list(None for i in range(n))
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    if n > len(a) - 1:
+        b = len(a) - 1
+    else:
+        b = n
+    if len(a) > 0 and n > 0:
+        return list(np.partition(a, b)[:n])
+    else:
+        return list(None for i in range(n))
 
+@check_run
 def gethighest_list(a, n):
-    try:
-        if len(a)-n < 0:
-            b = len(a)-1
-        else:
-            b = len(a)-n
-        if len(a) > 0 and n > 0:
-            return list(np.partition(a, b)[-n:])
-        else:
-            return list(None for i in range(n))
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    if len(a)-n < 0:
+        b = len(a)-1
+    else:
+        b = len(a)-n
+    if len(a) > 0 and n > 0:
+        return list(np.partition(a, b)[-n:])
+    else:
+        return list(None for i in range(n))
 
+@check_run
 def getlowest_dict(a, n):
-    try:
-        if n > len(a):
-            b = len(a)
-        else:
-            b = n
-        if len(a) > 0:
-            return dict(heapq.nsmallest(b,a.items(), key=itemgetter(1)))
-        else:
-            return dict({i:None for i in range(n)})
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    if n > len(a):
+        b = len(a)
+    else:
+        b = n
+    if len(a) > 0:
+        return dict(heapq.nsmallest(b,a.items(), key=itemgetter(1)))
+    else:
+        return dict({i:None for i in range(n)})
 
+@check_run
 def gethighest_dict(a, n):
-    try:
-        if n > len(a):
-            b = len(a)
-        else:
-            b = n
-        if len(a) > 0:
-            return dict(heapq.nlargest(b,a.items(), key=itemgetter(1)))
-        else:
-            return dict({i:None for i in range(n)})
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    if n > len(a):
+        b = len(a)
+    else:
+        b = n
+    if len(a) > 0:
+        return dict(heapq.nlargest(b,a.items(), key=itemgetter(1)))
+    else:
+        return dict({i:None for i in range(n)})
 
+@check_run
 def toarray(file, ulim):
-    try:
-        x = np.loadtxt(str(file), usecols = (ulim), delimiter = '\t', unpack = True, converters = {ulim: lambda s: convertcol(s.decode("utf-8"))})
-        return x
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    x = np.loadtxt(str(file), usecols = (ulim), delimiter = '\t', unpack = True, converters = {ulim: lambda s: convertcol(s.decode("utf-8"))})
+    return x
 
+@check_run
 def convertcol(entry):
-    try:
-        if isinvalid(entry):
-#       if entry is None or entry == 'NA' or entry == 'nan' or entry is np.nan:
-            return np.nan
-        else:
-            return float(entry)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    if isinvalid(entry):
+        #       if entry is None or entry == 'NA' or entry == 'nan' or entry is np.nan:
+        return np.nan
+    else:
+        return float(entry)
 
-def parse_annotation_bed(bed, annotated=None):
-    try:
-        anno = defaultdict(list)
-        if os.path.isfile(os.path.abspath(bed)):
-            if '.gz' in bed:
-                f = gzip.open(bed,'rt')
-            else:
-                f = open(bed,'rt')
-        else:
-            f = bed
-        for line in f:
-            entries = line.rstrip().split('\t')
-            goi = entries[3]
-            if annotated:
-                start = int(entries[10])
-                end   = int(entries[11])-1
-            else:
-                start = int(entries[1])
-                end   = int(entries[2])-1
-            anno[str(goi)].append('-'.join([str(start),str(end)]))
-        return anno
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def readConstraintsFromBed(bed, linewise=None):
-    cons = defaultdict(list)
-    try:
-        for line in bed:
-            entries = line.rstrip().split('\t')
-            start = int(entries[1])+1
-            end = entries[2]
-            goi = entries[3]
-            if linewise:
-                cons['lw'].append('-'.join([str(start),str(end)]))
-            else:
-                cons[str(goi)].append('-'.join([str(start),str(end)]))
-        return cons
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def readPairedConstraintsFromBed(bed, linewise=None):
-    cons = defaultdict(list)
-    try:
-        for line in bed:
-            entries = line.rstrip().split('\t')
-            if entries[1] > -1 and entries[8] > -1:
-                start_one = int(entries[1])+1
-                end_one = entries[2]
-                goi = entries[3]
-                start_two = int(entries[8])+1
-                end_two = entries[9]
-                if linewise:
-                    cons['lw'].append('-'.join([str(start_one),str(end_one),str(start_two),str(end_two)]))
-                else:
-                    cons[str(goi)].append('-'.join([str(start_one),str(end_one),str(start_two),str(end_two)]))
-        return cons
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-
-def readConstraintsFromCSV(csv, linewise=None):
-    cons = defaultdict(
-        lambda: defaultdict(list)
-    )
-
-    try:
-        for line in csv:
-            entries = split(',',line.rstrip())
-            if linewise:
-                cons['def'].append('-'.join([str(entries[1]),str(entries[2])]))
-            else:
-                cons[entries[3]].append('-'.join([str(entries[1]),str(entries[2])]))
-        return cons
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def readConstraintsFromGeneric(generic, linewise=None):
-    cons = defaultdict(
-        lambda: defaultdict(list)
-    )
-
-    try:
-        for line in csv:
-            entries = re.split(r'[ ,|;"]+', line.rstrip())
-            if len(entries > 2):
-                if linewise:
-                    cons['lw'].append('-'.join([str(entries[1]),str(entries[2])]))
-                else:
-                    cons[entries[0]].append('-'.join([str(entries[1]),str(entries[2])]))
-            else:
-                if linewise:
-                    cons['lw'].append('-'.join([str(entries[1]),str(entries[2])]))
-                else:
-                    cons['generic'].append('-'.join(str(entries[1:2])))
-        return cons
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def isvalid(x=None):
-    try:
-        if x:
-            if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
-                return False
-            else:
-                return True
-        else:
+    if x:
+        if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
             return False
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def isinvalid(x=None):
-    try:
-        if x:
-            if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
-                return True
-            else:
-                return False
         else:
             return True
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    else:
+        return False
 
+@check_run
+def isinvalid(x=None):
+
+    if x:
+        if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
+            return True
+        else:
+            return False
+    else:
+        return True
+
+@check_run
 def makeoutdir(outdir):
-    try:
-        if not os.path.isabs(outdir):
-            outdir =  os.path.abspath(outdir)
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        return outdir
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
 
+    if not os.path.isabs(outdir):
+        outdir =  os.path.abspath(outdir)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    return outdir
+
+@check_run
 def parseseq(sequence):
-    try:
-        if (isinstance(sequence, StringIO)):
-            seq = sequence
+    if (isinstance(sequence, StringIO)):
+        seq = sequence
 
-        elif ( isinstance(sequence, str) and sequence == 'random' ):
-            rand = "\n".join(createrandseq(length, gc, number, alphabet))
-            seq = StringIO(rand)
-            o = gzip.open('Random.fa.gz','wb')
-            o.write(bytes(rand,encoding='UTF-8'))
-            o.close()
+    elif ( isinstance(sequence, str) and sequence == 'random' ):
+        rand = "\n".join(createrandseq(length, gc, number, alphabet))
+        seq = StringIO(rand)
+        o = gzip.open('Random.fa.gz','wb')
+        o.write(bytes(rand,encoding='UTF-8'))
+        o.close()
 
-        elif (isinstance(sequence, str) and os.path.isfile(sequence)):
-            if '.gz' in sequence :
-                seq = gzip.open(sequence,'rt')
-            else:
-                seq = open(sequence,'rt')
+    elif (isinstance(sequence, str) and os.path.isfile(sequence)):
+        if '.gz' in sequence :
+            seq = gzip.open(sequence,'rt')
         else:
-            header = ">Seq1:default:nochrom:(.)"
-            s = sequence
-            seq = StringIO("{header}\n{s}".format(header=header, s=s))
+            seq = open(sequence,'rt')
+    else:
+        header = ">Seq1:default:nochrom:(.)"
+        s = sequence
+        seq = StringIO("{header}\n{s}".format(header=header, s=s))
 
-        return seq
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
+    return seq
 
-def plot_data(fa, raw, consu, consp, const, xs, cons, saveas, outdir):
-    try:
-        anime = []
-        #define xs for constraint line
-        consl = []
-        for x in const:
-            consl.append(1.25)
-        width = 16/100*len(fa.seq)
-        height = 9
-        fig = plt.figure(figsize=(width,height),dpi=80)
-        ax1 = fig.add_subplot(111)
-
-        ax2 = ax1.twiny()
-    #   line, = ax.plot([], [], lw=2)
-        plt.title("Blue-- = Unconstraint, Green-. = Unpaired, Red = Paired, Gray = Constraint",y=1.075)
-        ax1.set_ylabel('Prob unpaired')
-        ax1.set_xlabel('Nucleotides')
-    #   plt.xticks(range(0,len(fa.seq)+1),(' '+fa.seq),size='small')
-    #add lines to plot
-        ax1.plot(xs, raw, 'b-', xs, consu, 'g-', xs, consp, 'r-', const, consl, 'k-')
-        ax1.set_xlim(0,len(fa.seq)+1)
-        ax2.set_xlim(ax1.get_xlim())
-        ax1.set_xticks(range(0,len(fa.seq)+1))
-        ax1.set_xticklabels((' '+fa.seq), ha="right")
-    #   ax2.set_xlabel(r"Modified x-axis: $1/(1+X)$")
-        ax2.set_xticks(range(1,len(fa.seq)+1))
-        ax2.set_xticklabels(range(1,len(fa.seq)+1), rotation=45, ha="right")
-    # We change the fontsize of minor ticks label
-        ax1.tick_params(axis='both', which='major', labelsize=8)
-        ax1.tick_params(axis='both', which='minor', labelsize=4)
-        ax2.tick_params(axis='both', which='major', labelsize=5)
-        ax2.tick_params(axis='both', which='minor', labelsize=3)
-        goi, chrom = fa.id.split(':')[::2]
-        strand = str(fa.id.split(':')[3].split('(')[1][0])
-        fig.savefig('StruCons_'+goi+'_'+cons+'.'+saveas)
-        plt.close()
-    #   anime.append(plt.plot(xs, raw, 'b-', xs, consu, 'g-', xs, consp, 'r-', const, consl, 'k-'))
-    #   return anime
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def plot_temp(fa, raw, temp, xs, saveas, outdir):
-    try:
-        anime = []
-        #define xs for constraint line
-        width = 16/100*len(fa.seq)
-        height = 9
-        fig = plt.figure(figsize=(width,height),dpi=80)
-        ax1 = fig.add_subplot(111)
-        plt.title("Blue-- = "+temp+" degree",y=1.075)
-        ax1.set_ylabel('Prob unpaired')
-        ax1.set_xlabel('Nucleotides')
-    #add lines to plot
-        ax1.plot(xs, raw, 'b-')
-        ax1.set_xlim(0,len(fa.seq)+1)
-        ax1.set_xticks(range(0,len(fa.seq)+1))
-        ax1.set_xticklabels((' '+fa.seq))
-    # We change the fontsize of minor ticks label
-        ax1.tick_params(axis='both', which='major', labelsize=8)
-        ax1.tick_params(axis='both', which='minor', labelsize=4)
-        goi, chrom = fa.id.split(':')[::2]
-        strand = str(fa.id.split(':')[3].split('(')[1][0])
-        fig.savefig('TempCons_'+goi+'_'+temp+'.'+saveas)
-        plt.close()
-    #   anime.append(plt.plot(xs, raw, 'b-', xs, consu, 'g-', xs, consp, 'r-', const, consl, 'k-'))
-    #   return anime
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def calc_gibbs(fc):
-    try:
-        return fc.pf()[1]
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def get_bppm(tmp, start, end):
-    try:
-        bppm = []
-        for item in tmp:
-            for i in range(int(start),int(end)+1):
-                try:
-                    if item[i] > 0.0:
-                        bppm.append(str.join('\t',[str(tmp.index(item)), str(i), str(item[i])]))
-                except Exception as err:
-                    exc_type, exc_value, exc_tb = sys.exc_info()
-                    tbe = tb.TracebackException(
-                        exc_type, exc_value, exc_tb,
-                        )
-                    log.error(''.join(tbe.format()))
-        return bppm
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def calc_bpp(bppm):
-    bpp = 0.0
-    try:
-        for entry in bppm:
-            base, mate, prob = map(float,entry.split('\t'))
-            bpp += prob
-        return bpp
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def calc_nrg(bpp):
-    try:
-        #set kT for nrg2prob and vice versa calcs
-        kT = 0.61632077549999997
-
-        nrg = 0.0;
-        if bpp > 0.0:
-            nrg = -1 * kT * math.log(bpp)
-        return nrg
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-
-def print_region_up(data, seqlength=None, region=None):
-    #   pp = pprint.PrettyPrinter(indent=4)#use with pp.pprint(datastructure)
-    #   pp.pprint(data)
-    try:
-        if data:
-            ups=''
-            x = int(region)
-            for i in range(int(seqlength)):
-                if isinvalid(data[i][x]):
-                    data[i][x] = np.nan
-                else:
-                    data[i][x] = round(data[i][x],7)
-                ups+=str(i+1)+"\t"+str(data[i][x])+"\n"
-            return ups
-        else:
-            eprint('No up data to print')
-            return ups
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def print_up(data=None, seqlength=None, region=None):
-    #   pp = pprint.PrettyPrinter(indent=4)#use with pp.pprint(datastructure)
-    #   pp.pprint(data)
-    try:
-        if data:
-            ups=''
-            for i in range(int(seqlength)):
-                for x in range(1,region+1):
-                    if isinvalid(data[i][x]):
-                        data[i][x] = np.nan
-                    else:
-                        data[i][x] = round(data[i][x],7)
-                ups+=str(i+1)+"\t"+"\t".join(map(str,data[i][1:region+1]))+"\n"
-            return ups
-        else:
-            eprint('No up data to print')
-            return ups
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-
-def up_to_array(data=None, region=None, seqlength=None):
-    #   pp = pprint.PrettyPrinter(indent=4)#use with pp.pprint(datastructure)
-    #   pp.pprint(data[165553:165588])
-    try:
-        if data:
-            entries=[]
-            if not seqlength:
-                seqlength = len(data)
-            if not region:
-                region = slice(1,len(data[0]))
-            for i in range(seqlength):
-                entries.append([])
-                for e in range(len(data[i])):
-                    if isinvalid(data[i][e]):
-                        data[i][e] = np.nan
-                    else:
-                        data[i][e] = round(data[i][e],8)
-                entries[i].extend(data[i][region])
-            return np.array(entries)
-        else:
-            eprint('No up data to print')
-            return np.array()
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def npprint(a, o=None):#, format_string ='{0:.2f}'):
-    try:
-        out = ''
-        it = np.nditer(a, flags=['f_index'])
-        while not it.finished:
-            out += "%d\t%0.7f" % (it.index+1,it[0])+"\n"
-            it.iternext()
-        if o:
-            o.write(bytes(out,encoding='UTF-8'))
-        else:
-            print(out)
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-        exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def printdiff(a, o=None):
-    try:
-        np.savetxt(o, a, delimiter='\t')
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
-def read_precalc_plfold(data, name, seq):
-    try:
-        for i in range(len(seq)):
-            data.append([])
-            data[i] = []
-        with gzip.open(name,'rt') as o:
-            for line in o:
-                cells = line.rstrip().split('\t')
-                data[int(cells[0])-1].append([])
-                data[int(cells[0])-1][0] = None
-                for a in range(1,len(cells)):
-                    data[int(cells[0])-1].append([])
-                    data[int(cells[0])-1][a] = float(cells[a])
-        return data
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-    return 1
-
-def pl_to_array(name, ulim):
-    try:
-        printlog(name)
-        return np.array(np.loadtxt(name, usecols=ulim, unpack=True, delimiter='\t'))
-#        data = []
-#        with gzip.open(name,'rt') as o:
-#            for line in o:
-#                cells = line.rstrip().split('\t')
-#                data.append(float(cells[ulim]))
-#        return data
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+    out = ''
+    it = np.nditer(a, flags=['f_index'])
+    while not it.finished:
+        out += "%d\t%0.7f" % (it.index+1,it[0])+"\n"
+        it.iternext()
+    if o:
+        o.write(bytes(out,encoding='UTF-8'))
+    else:
+        print(out)
+@check_run
 def idfromfa(id):
     goi, chrom, strand = [None, None, None]
     try:
@@ -1501,59 +831,46 @@ def idfromfa(id):
     else:
         sys.exit('Could not assign any value from fasta header, please check your fasta files')
 
+@check_run
 def cluster2trna(seqs):
-    try:
-        translater = collections.OrderedDict()
-        translater['cluster'] = collections.OrderedDict()
-        translater['tRNA'] = collections.OrderedDict()
+    translater = collections.OrderedDict()
+    translater['cluster'] = collections.OrderedDict()
+    translater['tRNA'] = collections.OrderedDict()
 
-        for fa in SeqIO.parse(seqs,'fasta'):
-            head = str(fa.id).upper()           # cluster1:chr19.tRNA5-LysCTT(+) cluster2:NC_007091.3.tRNA25-ArgTCT
-            cluster, info = head.split(':')
-            chrom, trna = (info.split('.')[0], info.split('.')[-1].split('(')[0])
-            strand = 'u'
-            if '(+)' in info or '(-)' in info:
-                strand = re.sub('[()]', '_', info.split('.')[-1]).split('_')[1]
+    for fa in SeqIO.parse(seqs,'fasta'):
+        head = str(fa.id).upper()           # cluster1:chr19.tRNA5-LysCTT(+) cluster2:NC_007091.3.tRNA25-ArgTCT
+        cluster, info = head.split(':')
+        chrom, trna = (info.split('.')[0], info.split('.')[-1].split('(')[0])
+        strand = 'u'
+        if '(+)' in info or '(-)' in info:
+            strand = re.sub('[()]', '_', info.split('.')[-1]).split('_')[1]
 
-            if cluster in translater['cluster']:
-                translater['cluster'][cluster].append(trna)
+        if cluster in translater['cluster']:
+            translater['cluster'][cluster].append(trna)
+        else:
+            translater['cluster'][cluster] = list()
+            translater['cluster'][cluster].append(trna)
+        if chrom in translater['tRNA']:
+            if strand in translater['tRNA'][chrom]:
+                translater['tRNA'][chrom][strand].append(trna)
             else:
-                translater['cluster'][cluster] = list()
-                translater['cluster'][cluster].append(trna)
-            if chrom in translater['tRNA']:
-                if strand in translater['tRNA'][chrom]:
-                    translater['tRNA'][chrom][strand].append(trna)
-                else:
-                    translater['tRNA'][chrom][strand] = list()
-                    translater['tRNA'][chrom][strand].append(trna)
-            else:
-                translater['tRNA'][chrom] = collections.OrderedDict()
                 translater['tRNA'][chrom][strand] = list()
                 translater['tRNA'][chrom][strand].append(trna)
+        else:
+            translater['tRNA'][chrom] = collections.OrderedDict()
+            translater['tRNA'][chrom][strand] = list()
+            translater['tRNA'][chrom][strand].append(trna)
 
-        return translater
+    return translater
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def check_ref(reference):
-    try:
-        if os.path.exists(os.path.abspath(reference)):
-            return reference
-        elif os.path.exists(os.path.abspath(reference+'.gz')):
-            return reference+'.gz'
+    if os.path.exists(os.path.abspath(reference)):
+        return reference
+    elif os.path.exists(os.path.abspath(reference+'.gz')):
+        return reference+'.gz'
 
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
+@check_run
 def runjob(jobtorun):
     return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
 

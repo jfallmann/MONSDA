@@ -13,7 +13,7 @@ if paired == 'paired':
         log:    "LOGS/{rawfile}/fastqc_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile)),
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
@@ -37,7 +37,7 @@ else:
         log:    "LOGS/{rawfile}/fastqc_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
-        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile)),
+        params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
