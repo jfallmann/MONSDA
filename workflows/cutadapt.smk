@@ -8,7 +8,7 @@ if paired == 'paired':
 	            o2 = "TRIMMED_FASTQ/{file}_r2_val_2.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
 	    conda: "snakes/envs/"+TRIMENV+".yaml"
-	    threads: lambda x: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/8),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
+	    threads: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/8),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
 	    params: odir=lambda wildcards,output:os.path.dirname(output.o1),
 	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
 	            trim=TRIMBIN
@@ -29,7 +29,7 @@ else:
 	    output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
 	    conda: "snakes/envs/"+TRIMENV+".yaml"
-	    threads: lambda x: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
+	    threads: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
 	    params: odir=lambda wildcards,output: os.path.dirname(output.o1),
 	            tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")[0].items()),
 	            trim=TRIMBIN,
