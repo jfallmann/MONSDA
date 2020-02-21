@@ -1,0 +1,5 @@
+__default__:
+  constraint: mem500MB
+  
+large_memory_requirement_job:
+  constraint: mem2000MB

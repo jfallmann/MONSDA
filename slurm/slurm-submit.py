@@ -32,7 +32,7 @@ slurm_parser.add_argument(
     "-D", "--workdir", help="set working directory for batch script")
 slurm_parser.add_argument(
     "-e", "--error", help="file for batch script's standard error",
-    default="snakemake.err" if "snakemake.err" else None)
+    default="" if "" else None)
 slurm_parser.add_argument(
     "-J", "--job-name", help="name of job")
 slurm_parser.add_argument(
@@ -45,7 +45,7 @@ slurm_parser.add_argument(
     "-N", "--nodes", help="number of nodes on which to run (N = min[-max])")
 slurm_parser.add_argument(
     "-o", "--output", help="file for batch script's standard output",
-    default="snakemake.out" if "snakemake.out" else None)
+    default="" if "" else None)
 slurm_parser.add_argument(
     "-p", "--partition", help="partition requested")
 slurm_parser.add_argument(
@@ -105,18 +105,18 @@ opt_keys = ["array", "account", "begin", "cpus_per_task",
 
 # Set default partition
 if arg_dict["partition"] is None:
-    if not "main":
+    if not "":
         # partitions and SLURM - If not specified, the default behavior is to
         # allow the slurm controller to select the default partition as
         # designated by the system administrator.
         opt_keys.remove("partition")
     else:
-        arg_dict["partition"] = "main"
+        arg_dict["partition"] = ""
 
 # Set default account
 if arg_dict["account"] is None:
-    if os.environ["USER"] != "":
-        arg_dict["account"] = os.environ["USER"]
+    if "" != "":
+        arg_dict["account"] = ""
 
 # Ensure output folder for Slurm log files exist.
 # This is a bit hacky; will run for every Slurm submission...

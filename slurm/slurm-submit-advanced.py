@@ -13,8 +13,8 @@ from snakemake.utils import read_job_properties
 ##############################
 def _get_default_partition():
     """Retrieve default partition for cluster"""
-    if "main":
-        return "main"
+    if "":
+        return ""
     cmd = "sinfo -O \"partition\""
     res = subprocess.run(cmd, check=True, shell=True,
                          stdout=subprocess.PIPE)
@@ -126,7 +126,7 @@ slurm_parser.add_argument(
     "-D", "--workdir", help="set working directory for batch script")
 slurm_parser.add_argument(
     "-e", "--error", help="file for batch script's standard error",
-    default="snakemake.err" if "snakemake.err" else None)
+    default="" if "" else None)
 slurm_parser.add_argument(
     "-J", "--job-name", help="name of job")
 slurm_parser.add_argument(
@@ -140,7 +140,7 @@ slurm_parser.add_argument(
     type=int)
 slurm_parser.add_argument(
     "-o", "--output", help="file for batch script's standard output",
-    default="snakemake.out" if "snakemake.out" else None)
+    default="" if "" else None)
 slurm_parser.add_argument(
     "-p", "--partition", help="partition requested",
     default=_get_default_partition(), type=str)
@@ -181,8 +181,8 @@ arg_dict = dict(args.__dict__)
 
 # Set default account
 if arg_dict["account"] is None:
-    if os.environ["USER"] != "":
-        arg_dict["account"] = os.environ["USER"]
+    if "" != "":
+        arg_dict["account"] = ""
 
 
 # Ensure output folder for Slurm log files exist.
@@ -286,3 +286,4 @@ try:
 except Exception as e:
     print(e)
     raise
+
