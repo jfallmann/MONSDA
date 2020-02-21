@@ -1,0 +1,17 @@
+sphinx
+sphinxcontrib-napoleon
+sphinx-argparse
+sphinx_rtd_theme
+docutils
+autodoc
+doctest
+intersphinx
+todo
+coverage
+mathjax
+ifconfig
+viewcode
+githubpages
+recommonmark
+configargparse
+appdirs
