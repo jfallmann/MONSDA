@@ -2,15 +2,10 @@ sphinx
 sphinxcontrib-napoleon
 sphinx-argparse
 sphinx_rtd_theme
+pytest-sphinx
 docutils
 autodoc
-intersphinx
-todo
-coverage
 mathjax
-ifconfig
-viewcode
-githubpages
 recommonmark
 configargparse
 appdirs
