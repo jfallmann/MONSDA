@@ -1,15 +1,15 @@
-Welcome to NextSnakes's documentation!
+Welcome to the NextSnakes documentation
 ======================================
 
-INTRODUCTION
-============
-
-This is the README of NextSnakes
-
-README
-======
-
 .. toctree::
-     :maxdepth:  2 
-  
-     source/index.rst
+   :maxdepth: 4
+
+   source/intro
+   source/getit
+   source/howitworks
+   source/ics
+   source/configurator
+   source/theconfig
+   source/runsmk
+   source/cluster
+   source/contribute
