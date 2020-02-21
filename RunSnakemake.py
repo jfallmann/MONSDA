@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb 20 20:05:13 2020 (+0100)
+# Last-Updated: Fri Feb 21 10:52:57 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 622
+#     Update #: 625
 # URL:
 # Doc URL:
 # Keywords:
@@ -76,12 +76,18 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         argslist = list()
         if useconda:
             argslist.append("--use-conda")
+        else:
+            log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. Tou can also preinstall all conda environments appending the --use-conda and the --create-envs-only arguments.')
         if debugdag:
             argslist.append("--debug-dag")
         if filegraph:
             argslist.append("--filegraph|dot|display")
         if optionalargs and len(optionalargs) > 0:
             argslist.extend(optionalargs)
+
+        if 'profile' in optionalargs:
+            if 'slurm' in optionalargs['profile']:
+                makeoutdir('LOGS/SLURM')
 
         if unlock:
             log.info(logid+'Unlocking directory')
