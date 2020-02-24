@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 16:08:53 2020 (+0100)
+# Last-Updated: Mon Feb 24 22:16:48 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1121
+#     Update #: 1244
 # URL:
 # Doc URL:
 # Keywords:
@@ -65,6 +65,7 @@
 import glob, os, snakemake
 import numpy as np
 import heapq
+import itertools
 from operator import itemgetter
 from natsort import natsorted, ns
 import traceback as tb
@@ -201,15 +202,17 @@ def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     tosearch = list()
-    for k,v in list_all_keys_of_dict(config['SAMPLES']):  # Fix here
+    for k in list_all_keys_of_dict(config['SAMPLES']):  # Fix here
+        log.debug(logid+'DAFAK: '+str(k))
         if k != 'last':
             tosearch.append(k)
-            log.debug(logid+'keys: '+str(tosearch))
-            for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
-                ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
         else:
             tosearch = list()
+        log.debug(logid+'keys: '+str(tosearch))
+    for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
+        ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
     log.debug(logid+str(ret))
+    sys.exit()
     return ret
 
 @check_run
@@ -636,19 +639,48 @@ def merge_dicts(d,u):
     return d
 
 @check_run
-def list_all_keys_of_dict(dictionary):  # FIX NEEDED
-    logid = scriptname+'.Collection_list_all_keys_of_dict: '
-    ret = list()                # rewrite to list
+def keys_from_dict(dictionary,level=0,ret=list()):
+    logid = scriptname+'.Collection_keys_from_dict: '
+
     if dict_inst(dictionary):
-        for key, value in dictionary.items():
-            if dict_inst(value):
-                yield (key, value)
-                yield from list_all_keys_of_dict(value)
-            else:
-                yield (key, value)
-                yield ('last','key')
+        d = get_key_depth(dictionary)
+        ret = list()
+        for i in range(len(d)):
+            level += i
+            for k,v in dictionary.items():
+                ret.append([level,k])
+                if dict_inst(v):
+                    keys_from_dict(v,level=level,ret=ret)
+        print(ret)
     else:
-        yield dictionary
+        print(ret)
+
+@check_run
+def get_key_depth(d, start=0, ret=list()):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            ret.append([key, start + 1])
+            return get_key_depth(value, start=start+1, ret=ret)
+        else:
+            start = 0
+            return ret
+
+@check_run
+def depth(d):
+    if isinstance(d, dict):
+        return 1 + (max(map(depth, d.values())) if d else 0)
+    return 0
+
+
+@check_run
+def list_all_keys_of_dict(dictionary):
+    logid = scriptname+'.Collection_list_all_keys_of_dict: '
+    for key, value in dictionary.items():
+        if type(value) is dict:
+            yield key
+            yield from recursive_items(value)
+        else:
+            yield key
 
 @check_run
 def list_all_values_of_dict(dictionary):
@@ -906,6 +938,5 @@ def check_ref(reference):
 @check_run
 def runjob(jobtorun):
     return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-
 #
 # Collection.py ends here
