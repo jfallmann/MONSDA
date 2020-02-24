@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 15:08:08 2020 (+0100)
+# Last-Updated: Mon Feb 24 16:08:53 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1113
+#     Update #: 1121
 # URL:
 # Doc URL:
 # Keywords:
@@ -129,7 +129,7 @@ def check_run(func):
 def sources(config):
     logid = scriptname+'.Collection_sources: '
     ret = list()
-    search =  [x[0] for x in list_all_keys_of_dict(config["SOURCE"]) if x[0] != 'last']
+    search =  [x[0] for x in list_all_keys_of_dict(config["SOURCE"]) if x[0] != 'last']  # Fix here
     if len(getFromDict(config['SAMPLES'],search)) > 0:
         ret.extend(search)
     log.debug(logid+str(ret))
@@ -162,15 +162,16 @@ def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
     search  = list()
-    for k,v in list_all_keys_of_dict(config['SOURCE']):
+    for k,v in list_all_keys_of_dict(config['SOURCE']):  # This does not work for nested dict on same level
         if k != 'last':
             search.append(k)
-            log.debug(logid+'keys: '+str(search))
         else:
             ret.append(search)
-            search = list()
+            if k in config['SOURCE']:
+                search = list(search[0])
+            else:
+                search = list()
     log.debug(logid+str(ret))
-
     return ret
 
 @check_run
@@ -200,7 +201,7 @@ def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     tosearch = list()
-    for k,v in list_all_keys_of_dict(config['SAMPLES']):
+    for k,v in list_all_keys_of_dict(config['SAMPLES']):  # Fix here
         if k != 'last':
             tosearch.append(k)
             log.debug(logid+'keys: '+str(tosearch))
@@ -635,8 +636,9 @@ def merge_dicts(d,u):
     return d
 
 @check_run
-def list_all_keys_of_dict(dictionary):
+def list_all_keys_of_dict(dictionary):  # FIX NEEDED
     logid = scriptname+'.Collection_list_all_keys_of_dict: '
+    ret = list()                # rewrite to list
     if dict_inst(dictionary):
         for key, value in dictionary.items():
             if dict_inst(value):
