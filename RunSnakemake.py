@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 21 11:56:20 2020 (+0100)
+# Last-Updated: Mon Feb 24 10:39:30 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 637
+#     Update #: 638
 # URL:
 # Doc URL:
 # Keywords:
@@ -64,11 +64,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
-            for subdir in ['SubSnakes', 'RAW', 'GENOMES', 'FASTQ', 'LOGS']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', 'GENOMES', 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
-            for subdir in ['SubSnakes', 'LOGS']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
 
         subdir = 'SubSnakes'

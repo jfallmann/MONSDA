@@ -1,4 +1,5 @@
 import glob, os, sys, inspect, snakemake, json, shutil
+import tempfile
 import traceback as tb
 from collections import defaultdict
 from itertools import combinations

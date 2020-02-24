@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb 20 10:28:24 2020 (+0100)
+# Last-Updated: Mon Feb 24 10:14:43 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 535
+#     Update #: 545
 # URL:
 # Doc URL:
 # Keywords:
@@ -55,6 +55,7 @@ def parseargs():
     parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
     parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38,Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
     parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
+    parser.add_argument("-f", "--annotation", type=str, default='', help='Name of annotation gff3.gz to use in rules. Be aware, some rules may need different annotation, consider this a placeholder!')
     parser.add_argument("-b", "--binaries", type=str, default='snakes/scripts', help='Path to script for execution')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Maximum number of parallel processes to start snakemake with, represented by MAXTHREADS in config')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
@@ -83,7 +84,7 @@ def check_run(func):
     return func_wrapper
 
 @check_run
-def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, optionalargs=None):
+def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, annotation, optionalargs=None):
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
     for oldfile in glob.glob(oldcnf):
@@ -304,13 +305,15 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                 log.debug(logid+'TODO: '+str(key)+'\t'+str(config[key])+'\t'+str(newconf[key]))
                 newconf[key][id][condition][setting].update(config[key]['id']['condition']['setting'])
 
-    print_json(newconf,configfile)
+    print_json(newconf,configfile,annotation)
 
 @check_run
-def print_json(paramdict,ofn):
+def print_json(paramdict,ofn,annotation=''):
     with open(ofn,'w') as jsonout:
-        print(json.dumps(paramdict,indent=4),file=jsonout)
-
+        if annotation != '' and 'gff.gz' in annotation or 'gff3.gz' in annotation:
+            print(re.sub('genome_or_other.gff3.gz',annotation,json.dumps(paramdict,indent=4)),file=jsonout)
+        else:
+            print(json.dumps(paramdict,indent=4),file=jsonout)
 ####################
 ####    MAIN    ####
 ####################
@@ -333,7 +336,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, optionalargs[0])
+        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, knownargs.annotation, optionalargs[0])
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

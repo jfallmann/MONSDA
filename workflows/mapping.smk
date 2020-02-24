@@ -13,11 +13,11 @@ rule sortsam:
     input:  gzipped = rules.gzipsam.output
     output: sortedsam = report("SORTED_MAPPED/{file}_mapped_sorted.sam.gz", category="SORTING"),
             tmphead = temp("SORTED_MAPPED/{file}_mapped_header.gz"),
-            tmpfile = temp("SORTTMP/{file}")
+            tmpfile = temp("TMP/{file}")
     log:    "LOGS/{file}/sortsam.log"
     conda: "snakes/envs/samtools.yaml"
     threads: MAXTHREAD
-    shell: "set +o pipefail;samtools view -H {input.gzipped}|grep -P '^@HD' |pigz -p {threads} -f > {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@RG'|pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} ; export LC_ALL=C;zcat {input.gzipped} | grep -v \"^@\"|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} ; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2> {log}"
+    shell: "set +o pipefail;samtools view -H {input.gzipped}|grep -P '^@HD' |pigz -p {threads} -f > {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@RG'|pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.gzipped}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} ; export LC_ALL=C;zcat {input.gzipped} | grep -v \"^@\"|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} ; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2> {log}"
 
 rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam
