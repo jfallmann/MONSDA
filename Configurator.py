@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 10:14:43 2020 (+0100)
+# Last-Updated: Mon Feb 24 15:03:40 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 545
+#     Update #: 547
 # URL:
 # Doc URL:
 # Keywords:
@@ -266,6 +266,13 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                                 newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                         else:
                             newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
+                    else:
+                        newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                elif key == 'SAMPLES':
+                    samplelist = get_samples_from_dir(id, condition, setting, oldconf)
+                    log.debug(logid+'SAMPLELIST: '+str(samplelist))
+                    if len(samplelist) > 0:
+                        newconf[key][id][condition][setting] = samplelist
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 else:

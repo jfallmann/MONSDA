@@ -12,19 +12,31 @@ for x in cmd_subfolder:
 from Collection import *
 from Logger import *
 
-log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')
+log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', level='DEBUG')
 
+logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]
 GENOME=config["GENOME"]
 NAME=config["NAME"]
 BINS=config["BINS"]
 MAXTHREAD=int(config["MAXTHREADS"])
 SOURCE=sources(config)
-SAMPLES=list(set(samples(config)))
-if os.path.exists(SAMPLES[0]) is False:
-    SAMPLES=list(set(sampleslong(config)))
 
-log.debug('SAMPLES: '+str(SAMPLES))
+SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+SAMPLES = list()
+for s in check:
+    log.debug(logid+'SEARCHING: '+s)
+    f = glob.glob(s)
+    log.debug(logid+'SAMPLECHECK: '+str(f))
+    if f:
+        SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
+log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
+if len(SAMPLES) < 1:
+    log.error(logid+'No samples found, please check config file')
+    sys.exit()
+
+log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
 paired = checkpaired(SAMPLES, config)
 if paired != '':

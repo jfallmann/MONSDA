@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb 20 09:40:31 2020 (+0100)
+# Last-Updated: Mon Feb 24 15:08:08 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1077
+#     Update #: 1113
 # URL:
 # Doc URL:
 # Keywords:
@@ -127,22 +127,50 @@ def check_run(func):
 
 @check_run
 def sources(config):
-    logid=scriptname+'.Collection_sources: '
+    logid = scriptname+'.Collection_sources: '
     ret = list()
-    for key in config["SOURCE"] and config["SAMPLES"]:
-        ret.append(str(key))
+    search =  [x[0] for x in list_all_keys_of_dict(config["SOURCE"]) if x[0] != 'last']
+    if len(getFromDict(config['SAMPLES'],search)) > 0:
+        ret.extend(search)
     log.debug(logid+str(ret))
     return ret
 
 @check_run
-def samples(config):
-    logid=scriptname+'.Collection_samples: '
+def get_samples(config):
+    logid = scriptname+'.Collection_samples: '
     ret = list()
-    for x,y in config["SOURCE"].items():
-        k = find_innermost_value_from_dict(config["SAMPLES"][x])
-        for l in k:
-            ret.append(os.path.join(str(x),str(l)))
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    SAMPLES = list()
+    for s in check:
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
+    if len(SAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
+    return ret
+
+@check_run
+def get_conditions(samples, config):
+    logid = scriptname+'.Collection_conditions: '
+    ret = list()
+    search  = list()
+    for k,v in list_all_keys_of_dict(config['SOURCE']):
+        if k != 'last':
+            search.append(k)
+            log.debug(logid+'keys: '+str(search))
+        else:
+            ret.append(search)
+            search = list()
     log.debug(logid+str(ret))
+
     return ret
 
 @check_run
@@ -175,9 +203,11 @@ def sampleslong(config):
     for k,v in list_all_keys_of_dict(config['SAMPLES']):
         if k != 'last':
             tosearch.append(k)
-    log.debug(logid+'keys: '+str(tosearch))
-    for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
-        ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
+            log.debug(logid+'keys: '+str(tosearch))
+            for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
+                ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
+        else:
+            tosearch = list()
     log.debug(logid+str(ret))
     return ret
 
@@ -438,28 +468,28 @@ def runstate_from_sample(sample,config):
         s = os.path.basename(s)
         for k,v in config["SAMPLES"].items():
             for f in find_key_for_value(s,v):
-                log.debug(logid+f)
-                ret.append(f)
+                log.debug(logid+'SEARCHING: '+f)
+                if f not in ret:
+                    ret.append(f)
+    log.debug(logid+'RETURN: '+str(ret))
     return ret
 
 @check_run
 def samplecond(sample,config):
     logid = scriptname+'.Collection_samplecond: '
     ret = list()
-    paired = False
     for s in sample:
+        s = s.replace('.fastq.gz','')
         check = os.path.dirname(s).split(os.sep)
-        log.debug(logid+str(check))
+        log.debug(logid+'CHECK: '+str(check))
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            log.debug(logid+str(tmplist))
+            log.debug(logid+'TMPLIST: '+str(tmplist))
             if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
-                paired = True
-            if paired:
                 s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-    log.debug(logid+str(ret))
+    log.debug(logid+'RETURN: '+str(ret))
     return ret
 
 @check_run
@@ -649,6 +679,7 @@ def find_key_for_value(val, dictionary):
     log.debug(logid+str(val))
     if dict_inst(dictionary):
         for k, v in dictionary.items():
+            log.debug(logid+'DICT: '+str(k)+' ; '+str(v))
             if dict_inst(v):
                 log.debug(logid+'item'+str(v))
                 yield from find_key_for_value(val, v)
