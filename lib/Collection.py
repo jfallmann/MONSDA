@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 22:16:48 2020 (+0100)
+# Last-Updated: Tue Feb 25 18:14:09 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1244
+#     Update #: 1449
 # URL:
 # Doc URL:
 # Keywords:
@@ -130,7 +130,7 @@ def check_run(func):
 def sources(config):
     logid = scriptname+'.Collection_sources: '
     ret = list()
-    search =  [x[0] for x in list_all_keys_of_dict(config["SOURCE"]) if x[0] != 'last']  # Fix here
+    search =  [x[0] for x in keysets_from_dict(config["SOURCE"]) if x[0] != 'last']
     if len(getFromDict(config['SAMPLES'],search)) > 0:
         ret.extend(search)
     log.debug(logid+str(ret))
@@ -162,16 +162,8 @@ def get_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    search  = list()
-    for k,v in list_all_keys_of_dict(config['SOURCE']):  # This does not work for nested dict on same level
-        if k != 'last':
-            search.append(k)
-        else:
-            ret.append(search)
-            if k in config['SOURCE']:
-                search = list(search[0])
-            else:
-                search = list()
+    for k in keysets_from_dict(config['SOURCE']):  # This does not work for nested dict on same level
+        ret.append(k)
     log.debug(logid+str(ret))
     return ret
 
@@ -202,17 +194,14 @@ def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     tosearch = list()
-    for k in list_all_keys_of_dict(config['SAMPLES']):  # Fix here
-        log.debug(logid+'DAFAK: '+str(k))
-        if k != 'last':
-            tosearch.append(k)
-        else:
-            tosearch = list()
-        log.debug(logid+'keys: '+str(tosearch))
-    for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
-        ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
+    for k in keysets_from_dict(config['SAMPLES']):
+        tosearch.append(k)
+    log.debug(logid+'keys: '+str(tosearch))
+    for search in tosearch:
+        for x in list(set(getFromDict(config['SAMPLES'],search)[0])):
+            ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
+    ret= list(set(ret))
     log.debug(logid+str(ret))
-    sys.exit()
     return ret
 
 @check_run
@@ -595,12 +584,19 @@ def dict_inst(d):
 def getFromDict(dataDict, mapList):
     logid = scriptname+'.Collection_getFromDict: '
     log.debug(logid+str(mapList))
-    ret=list()
+    ret = dataDict
     for k in mapList:
-        dataDict = dataDict[k]
-    ret.append(dataDict)
-    log.debug(logid+str(ret))
-    return ret
+        if k in dataDict:
+            log.debug(logid+'k: '+str(k))
+            dataDict = dataDict[k]
+        else:
+            return list([])
+
+    if ret != dataDict:
+        log.debug(logid+str(dataDict))
+        return list([dataDict])
+    else:
+        return list([])
 
 @check_run
 def subDict(dataDict, mapList):
@@ -639,35 +635,55 @@ def merge_dicts(d,u):
     return d
 
 @check_run
-def keys_from_dict(dictionary,level=0,ret=list()):
-    logid = scriptname+'.Collection_keys_from_dict: '
+def keysets_from_dict(dictionary,original=None):  # Only works for equal depth keysets, needs tweaking for other use cases
+    logid = scriptname+'.Collection_keysets_from_dict: '
 
+    keylist = list()
     if dict_inst(dictionary):
-        d = get_key_depth(dictionary)
+        for k,v in keys_from_dict(dictionary).items():
+            keylist.append(v)
+        log.debug(logid+'kl:'+str(keylist))
+        combis = list(itertools.product(*keylist))
+        log.debug(logid+'cs:'+str(combis))
         ret = list()
-        for i in range(len(d)):
-            level += i
-            for k,v in dictionary.items():
-                ret.append([level,k])
-                if dict_inst(v):
-                    keys_from_dict(v,level=level,ret=ret)
-        print(ret)
+        for combi in combis:
+            log.debug(logid+'combi: '+str(combi))
+            if len(getFromDict(dictionary,combi)) >= 1:
+                log.debug(logid+'found: '+str(combi))
+                ret.append(combi)
+            else:
+                continue
+        return ret
     else:
-        print(ret)
+        return keylist
 
 @check_run
-def get_key_depth(d, start=0, ret=list()):
-    for key, value in d.items():
-        if isinstance(value, dict):
-            ret.append([key, start + 1])
-            return get_key_depth(value, start=start+1, ret=ret)
-        else:
-            start = 0
-            return ret
+def keys_from_dict(dictionary,first=True,lvl=0,save=None):
+    logid = scriptname+'.Collection_keys_from_dict: '
+
+    if first:
+        first = False
+        end = depth(dictionary)
+        save = defaultdict(list)
+        log.debug(logid+'END:'+str(end))
+
+    if dict_inst(dictionary):
+        log.debug(logid+'dictDEPTH: '+str(depth(dictionary)))
+        log.debug(logid+'dictLEVEL: '+str(lvl))
+        for k,v in dictionary.items():
+            save[lvl].append(k)
+            log.debug(logid+str(save))
+            if dict_inst(v):
+                save = keys_from_dict(v,first,lvl+1,save)
+            else:
+                continue
+        return save
+    else:
+        return save
 
 @check_run
 def depth(d):
-    if isinstance(d, dict):
+    if dict_inst(d):
         return 1 + (max(map(depth, d.values())) if d else 0)
     return 0
 
@@ -938,5 +954,6 @@ def check_ref(reference):
 @check_run
 def runjob(jobtorun):
     return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+
 #
 # Collection.py ends here
