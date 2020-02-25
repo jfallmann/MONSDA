@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 15:08:08 2020 (+0100)
+# Last-Updated: Tue Feb 25 21:54:51 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1113
+#     Update #: 1459
 # URL:
 # Doc URL:
 # Keywords:
@@ -65,6 +65,7 @@
 import glob, os, snakemake
 import numpy as np
 import heapq
+import itertools
 from operator import itemgetter
 from natsort import natsorted, ns
 import traceback as tb
@@ -129,7 +130,7 @@ def check_run(func):
 def sources(config):
     logid = scriptname+'.Collection_sources: '
     ret = list()
-    search =  [x[0] for x in list_all_keys_of_dict(config["SOURCE"]) if x[0] != 'last']
+    search =  [x[0] for x in keysets_from_dict(config["SOURCE"]) if x[0] != 'last']
     if len(getFromDict(config['SAMPLES'],search)) > 0:
         ret.extend(search)
     log.debug(logid+str(ret))
@@ -161,16 +162,9 @@ def get_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    search  = list()
-    for k,v in list_all_keys_of_dict(config['SOURCE']):
-        if k != 'last':
-            search.append(k)
-            log.debug(logid+'keys: '+str(search))
-        else:
-            ret.append(search)
-            search = list()
+    for k in keysets_from_dict(config['SOURCE']):  # This does not work for nested dict on same level
+        ret.append(k)
     log.debug(logid+str(ret))
-
     return ret
 
 @check_run
@@ -200,14 +194,13 @@ def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()
     tosearch = list()
-    for k,v in list_all_keys_of_dict(config['SAMPLES']):
-        if k != 'last':
-            tosearch.append(k)
-            log.debug(logid+'keys: '+str(tosearch))
-            for x in list(set(getFromDict(config['SAMPLES'],tosearch)[0])):
-                ret.append(os.path.join(str.join(os.sep,tosearch[:-1]),x))
-        else:
-            tosearch = list()
+    for k in keysets_from_dict(config['SAMPLES']):
+        tosearch.append(k)
+    log.debug(logid+'keys: '+str(tosearch))
+    for search in tosearch:
+        for x in list(set(getFromDict(config['SAMPLES'],search)[0])):
+            ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
+    ret= list(set(ret))
     log.debug(logid+str(ret))
     return ret
 
@@ -400,8 +393,11 @@ def env_bin_from_config(samples, config, subconf):
 def env_bin_from_config2(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config2: '
     for s in samples:
-        log.debug(logid+str(s))
-        for k in getFromDict(config[subconf],conditiononly(s,config)):
+        log.debug(logid+'S: '+str(s))
+        log.debug(logid+'C: '+str(conditiononly(s,config)))
+        check = conditiononly(s,config)
+
+        for k in getFromDict(config[subconf],check):
             if 'BIN' in k:
                 mb = k['BIN']
             else:
@@ -501,9 +497,11 @@ def conditiononly(sample,config):
     log.debug(logid+str(check))
     for r in runstate_from_sample([sample],config):
         log.debug(logid+str(r))
-        ret.extend(check)
-        if r not in ret:
-            ret.append(r)
+        if len(ret) < 3:
+            ret.extend(check)
+            if r not in ret:
+                if len(ret) < 3:
+                    ret.append(r)
     log.debug(logid+str(ret))
     return ret
 
@@ -517,8 +515,8 @@ def checkpaired(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+            if 'paired' in getFromDict(config['SEQUENCING'],tmplist):
+                paired = getFromDict(config['SEQUENCING'],tmplist).split(',')[0]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
@@ -532,8 +530,8 @@ def checkstranded(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
+            if ',' in getFromDict(config['SEQUENCING'],tmplist):
+                stranded = getFromDict(config['SEQUENCING'],tmplist).split(',')[1]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
@@ -591,12 +589,19 @@ def dict_inst(d):
 def getFromDict(dataDict, mapList):
     logid = scriptname+'.Collection_getFromDict: '
     log.debug(logid+str(mapList))
-    ret=list()
+    ret = dataDict
     for k in mapList:
-        dataDict = dataDict[k]
-    ret.append(dataDict)
-    log.debug(logid+str(ret))
-    return ret
+        if k in dataDict:
+            log.debug(logid+'k: '+str(k))
+            dataDict = dataDict[k]
+        else:
+            return list([])
+
+    if ret != dataDict:
+        log.debug(logid+str(dataDict))
+        return list([dataDict])
+    else:
+        return list([])
 
 @check_run
 def subDict(dataDict, mapList):
@@ -635,18 +640,68 @@ def merge_dicts(d,u):
     return d
 
 @check_run
+def keysets_from_dict(dictionary,original=None):  # Only works for equal depth keysets, needs tweaking for other use cases
+    logid = scriptname+'.Collection_keysets_from_dict: '
+
+    keylist = list()
+    if dict_inst(dictionary):
+        for k,v in keys_from_dict(dictionary).items():
+            keylist.append(v)
+        log.debug(logid+'kl:'+str(keylist))
+        combis = list(itertools.product(*keylist))
+        log.debug(logid+'cs:'+str(combis))
+        ret = list()
+        for combi in combis:
+            log.debug(logid+'combi: '+str(combi))
+            if len(getFromDict(dictionary,combi)) >= 1:
+                log.debug(logid+'found: '+str(combi))
+                ret.append(combi)
+            else:
+                continue
+        return ret
+    else:
+        return keylist
+
+@check_run
+def keys_from_dict(dictionary,first=True,lvl=0,save=None):
+    logid = scriptname+'.Collection_keys_from_dict: '
+
+    if first:
+        first = False
+        end = depth(dictionary)
+        save = defaultdict(list)
+        log.debug(logid+'END:'+str(end))
+
+    if dict_inst(dictionary):
+        log.debug(logid+'dictDEPTH: '+str(depth(dictionary)))
+        log.debug(logid+'dictLEVEL: '+str(lvl))
+        for k,v in dictionary.items():
+            save[lvl].append(k)
+            log.debug(logid+str(save))
+            if dict_inst(v):
+                save = keys_from_dict(v,first,lvl+1,save)
+            else:
+                continue
+        return save
+    else:
+        return save
+
+@check_run
+def depth(d):
+    if dict_inst(d):
+        return 1 + (max(map(depth, d.values())) if d else 0)
+    return 0
+
+
+@check_run
 def list_all_keys_of_dict(dictionary):
     logid = scriptname+'.Collection_list_all_keys_of_dict: '
-    if dict_inst(dictionary):
-        for key, value in dictionary.items():
-            if dict_inst(value):
-                yield (key, value)
-                yield from list_all_keys_of_dict(value)
-            else:
-                yield (key, value)
-                yield ('last','key')
-    else:
-        yield dictionary
+    for key, value in dictionary.items():
+        if type(value) is dict:
+            yield key
+            yield from recursive_items(value)
+        else:
+            yield key
 
 @check_run
 def list_all_values_of_dict(dictionary):
