@@ -8,9 +8,9 @@
 # Created: Wed Feb 19 12:31:13 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 14:45:47 2020 (+0100)
+# Last-Updated: Tue Feb 25 21:31:50 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 73
+#     Update #: 79
 # URL:
 # Doc URL:
 # Keywords:
@@ -72,7 +72,7 @@ else:
 log = setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=level)
 logid = 'TESTER: '
 
-config = load_configfile('/home/fall/Work/Tests/SnakemakeTest/SubSnakes/ID_unpaired_std_subconfig.json')
+config = load_configfile('/home/fall/Work/Tests/SnakemakeTest/SubSnakes/ID_unpaired_std_subconfig.json') if len(sys.argv) < 3 else load_configfile(sys.argv[2])
 REFERENCE=config['REFERENCE']
 
 file=r'ID/unpaired/std/GSM461177_untreat_paired_subset_r1'
@@ -92,12 +92,20 @@ print(logid+'OPTIONS: '+' '.join("{!s} {!s}".format(key,val) for (key,val) in to
 print(logid+'ANNO: '+str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]))
 
 MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
-#print(logid+'ENV/BIN: '+str([MAPPERENV,MAPPERBIN]))
-#print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))
+print(logid+'ENV/BIN: '+str([MAPPERENV,MAPPERBIN]))
+print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))
 
 print(logid+'ref: '+"{ref}/{dir}/{gen}{name}".format(ref=REFERENCE, dir = source_from_sample(SAMPLES[0],config), gen =genome(file, config), name=namefromfile(file, config)))
 
 print(logid+'idx: '+"{ref}/{dir}/{gen}{name}/{map}_{extension}".format(ref=REFERENCE, dir=source_from_sample(file,config), gen=genome(file, config), name=namefromfile(file, config), map=MAPPERENV, extension=check_tool_params(file, None ,config, 'MAPPING',2)))
+
+test = {'a':{'a1':{'a11':{'a111'},'a12':{'a121'}},'a2':{'a22'}},'b':{'b1':{'b2':{'b3'}}}}
+
+print(logid+'Keysettest: '+str(test))
+#print(keys_from_dict(test))
+print(logid+'Keyset: '+str(keysets_from_dict(test)))
+
+print(logid+'DEBINENV: '+str(env_bin_from_config2(SAMPLES,config,'MAPPING')))
 
 
 

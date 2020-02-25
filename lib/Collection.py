@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 25 18:14:09 2020 (+0100)
+# Last-Updated: Tue Feb 25 21:54:51 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1449
+#     Update #: 1459
 # URL:
 # Doc URL:
 # Keywords:
@@ -393,8 +393,11 @@ def env_bin_from_config(samples, config, subconf):
 def env_bin_from_config2(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config2: '
     for s in samples:
-        log.debug(logid+str(s))
-        for k in getFromDict(config[subconf],conditiononly(s,config)):
+        log.debug(logid+'S: '+str(s))
+        log.debug(logid+'C: '+str(conditiononly(s,config)))
+        check = conditiononly(s,config)
+
+        for k in getFromDict(config[subconf],check):
             if 'BIN' in k:
                 mb = k['BIN']
             else:
@@ -494,9 +497,11 @@ def conditiononly(sample,config):
     log.debug(logid+str(check))
     for r in runstate_from_sample([sample],config):
         log.debug(logid+str(r))
-        ret.extend(check)
-        if r not in ret:
-            ret.append(r)
+        if len(ret) < 3:
+            ret.extend(check)
+            if r not in ret:
+                if len(ret) < 3:
+                    ret.append(r)
     log.debug(logid+str(ret))
     return ret
 
@@ -510,8 +515,8 @@ def checkpaired(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+            if 'paired' in getFromDict(config['SEQUENCING'],tmplist):
+                paired = getFromDict(config['SEQUENCING'],tmplist).split(',')[0]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
@@ -525,8 +530,8 @@ def checkstranded(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
+            if ',' in getFromDict(config['SEQUENCING'],tmplist):
+                stranded = getFromDict(config['SEQUENCING'],tmplist).split(',')[1]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
