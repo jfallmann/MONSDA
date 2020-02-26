@@ -34,7 +34,7 @@ for s in check:
 log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
-    sys.exit()
+    sys.exit(logid+'ERROR: No samples found, please check config file')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
