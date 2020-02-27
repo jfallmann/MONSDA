@@ -1,5 +1,6 @@
 rule qcall:
-    input: expand("QC/Multi/RAW/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))
+    input: expand("QC/Multi/RAW/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))
+    #input: expand("QC/Multi/RAW/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))
 
 if paired == 'paired':
     log.info('Running paired mode QC')

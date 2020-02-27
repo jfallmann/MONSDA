@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Feb 25 21:54:51 2020 (+0100)
+# Last-Updated: Thu Feb 27 17:01:50 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1459
+#     Update #: 1498
 # URL:
 # Doc URL:
 # Keywords:
@@ -89,7 +89,14 @@ if cmd_subfolder not in sys.path:
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename)
-    log=logging.getLogger(scriptname)
+    if any([x in  scriptname for x in ['Configurator','RunSnakemake']]):
+        log=logging.getLogger(scriptname)
+    else:
+        log=logging.getLogger(scriptname)
+        handler = logging.FileHandler('LOGS/RunSnakemake.py.log', mode='a')
+        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M'))
+        log.addHandler(handler)
+
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -139,9 +146,10 @@ def sources(config):
 @check_run
 def get_samples(config):
     logid = scriptname+'.Collection_samples: '
-    ret = list()
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    paired = checkpaired([SAMPLES[0]],config)
+    log.debug(logid+'PAIRED: '+str(paired))
     check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
     SAMPLES = list()
     for s in check:
@@ -149,14 +157,18 @@ def get_samples(config):
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
-            SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
+            if paired == 'paired':
+                SAMPLES.extend(list(set([re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in f])))
+                log.debug(logid+'PAIREDSAMPLES: '+str(f))
+            else:
+                SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
     if len(SAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
         sys.exit()
 
-    log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
-    return ret
+    log.info(logid+'SAMPLES: '+str(SAMPLES))
+    return SAMPLES
 
 @check_run
 def get_conditions(samples, config):
@@ -178,13 +190,13 @@ def get_samples_from_dir(id, condition, setting, config):
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'unpaired' not in x:
-                ret = list(set([re.sub('_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-                renamelist = [re.sub('_R\d', lambda pat: pat.group(1).lower(), s) for s in ret]
+                ret = list(set([re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub(r'_R\d', lambda pat: pat.group(1).lower(), s) for s in ret]
                 for i in range(len(renamelist)):
                     if renamelist[i] != ret[i]:
                         os.rename(ret[i],renamelist[i])
             else:
-                ret = list(set([re.sub('.fastq.gz','',os.path.basename(s)) for s in ret]))
+                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
         return list(set(ret))
     else:
         return list()
@@ -320,11 +332,9 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
-            if 'NAME' in config:
-                tempconf['NAME'][src] = config['NAME'][src]
-            for key in ['SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
+            for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 tempconf[key][src][treat][setup] = config[key][src][treat][setup]
-            if 'COUNTING' in config:
+            if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]) and 'COUNTING' in config:
                 tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
 
         except KeyError:
@@ -476,6 +486,7 @@ def samplecond(sample,config):
     ret = list()
     for s in sample:
         s = s.replace('.fastq.gz','')
+        log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
         log.debug(logid+'CHECK: '+str(check))
         for r in runstate_from_sample([s],config):
@@ -515,8 +526,8 @@ def checkpaired(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if 'paired' in getFromDict(config['SEQUENCING'],tmplist):
-                paired = getFromDict(config['SEQUENCING'],tmplist).split(',')[0]
+            if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
@@ -530,8 +541,8 @@ def checkstranded(sample,config):
         for r in runstate_from_sample([s],config):
             tmplist = check
             tmplist.append(r)
-            if ',' in getFromDict(config['SEQUENCING'],tmplist):
-                stranded = getFromDict(config['SEQUENCING'],tmplist).split(',')[1]
+            if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
@@ -588,7 +599,7 @@ def dict_inst(d):
 @check_run
 def getFromDict(dataDict, mapList):
     logid = scriptname+'.Collection_getFromDict: '
-    log.debug(logid+str(mapList))
+    log.debug(logid+'MAPLIST: '+str(mapList))
     ret = dataDict
     for k in mapList:
         if k in dataDict:
@@ -596,11 +607,12 @@ def getFromDict(dataDict, mapList):
             dataDict = dataDict[k]
         else:
             return list([])
-
+    log.debug(logid+'MIDRET: '+str(ret))
     if ret != dataDict:
-        log.debug(logid+str(dataDict))
+        log.debug(logid+'RET: '+str(dataDict))
         return list([dataDict])
     else:
+        log.debug(logid+'RET: '+str(list([])))
         return list([])
 
 @check_run

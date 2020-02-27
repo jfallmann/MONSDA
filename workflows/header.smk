@@ -23,26 +23,17 @@ MAXTHREAD=int(config["MAXTHREADS"])
 SOURCE=sources(config)
 
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
-SAMPLES = list()
-for s in check:
-    log.debug(logid+'SEARCHING: '+s)
-    f = glob.glob(s)
-    log.debug(logid+'SAMPLECHECK: '+str(f))
-    if f:
-        SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
-log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
-paired = checkpaired(SAMPLES, config)
-if paired != '':
+paired = checkpaired([SAMPLES[0]], config)
+if paired == 'paired':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
 
-stranded = checkstranded(SAMPLES, config)
+stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 

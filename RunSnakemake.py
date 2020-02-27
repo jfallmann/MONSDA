@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 26 13:28:44 2020 (+0100)
+# Last-Updated: Thu Feb 27 15:17:23 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 684
+#     Update #: 690
 # URL:
 # Doc URL:
 # Keywords:
@@ -118,25 +118,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
 
-        log.debug(logid+str([preprocess,subworkflows,postprocess]))
-
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
-
-        # CLEANUP
-        #oldsmk = os.path.abspath(os.path.join(subdir,'*_subsnake.smk'))
-        #oldcnf = os.path.abspath(os.path.join(subdir,'*_subconfig.json'))
-        #for oldfile in glob.glob(oldsmk):
-        #    os.rename(oldfile,oldfile+'.bak')
-        #    log.warning(logid+'Found old snakemake file'+oldfile+', was moved to '+oldfile+'.bak')
-        #for oldfile in glob.glob(oldcnf):
-        #    os.rename(oldfile,oldfile+'.bak')
-        #    log.warning(logid+'Found old config file'+oldfile+', was moved to '+oldfile+'.bak')
-
-        if preprocess:
-            try:
-                all([config[x] or x == '' for x in preprocess])
-            except KeyError:
-                log.warning(logid+'Not all required preprocessing steps have configuration in the config file')
 
         if preprocess:
             try:
@@ -156,15 +138,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             except KeyError:
                 log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
 
-        #subworkflows.extend(postprocess)  # Concatenate to get the full list of steps to process
-        log.debug(logid+'WORKFLOWS: '+str(subworkflows))
+        log.debug(logid+'WORKFLOWS: '+str([preprocess,subworkflows,postprocess]))
 
-        #SAMPLES=[os.path.join(x) for x in list(set(samples(config)))]
-        #check = [os.path.join('FASTQ',x+'*.fastq.gz') for x in SAMPLES]
-        #log.debug(logid+'SAMPLECHECK: '+str(check))
-        #sampletest = [glob.glob(x) for x in check][0]
-        #log.debug(logid+'SAMPLETEST: '+str(sampletest))
-        #if sampletest is None or len(sampletest) < 1:
         SAMPLES = get_samples(config)
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
@@ -176,9 +151,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
             for condition in conditions:
-                subconf = NestedDefaultDict()
                 for subwork in preprocess:
-
+                    subconf = NestedDefaultDict()
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
@@ -187,6 +161,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         continue
 
                     for i in range(0,len(listoftools)):
+
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
@@ -204,11 +179,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         if subwork == 'QC':
                             subname = toolenv+'_raw.smk'
-                        #    with open(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                        #        smkf = os.path.abspath(os.path.join('snakes','workflows','premultiqc.smk'))
-                        #        with open(smkf,'r') as smk:
-                        #            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        #            smkout.write('\n\n')
 
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(smko, 'a') as smkout:
