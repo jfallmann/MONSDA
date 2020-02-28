@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb 27 17:01:50 2020 (+0100)
+# Last-Updated: Fri Feb 28 08:57:41 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1498
+#     Update #: 1527
 # URL:
 # Doc URL:
 # Keywords:
@@ -467,16 +467,24 @@ def anno_from_source(source, config, step):
     return ret
 
 @check_run
-def runstate_from_sample(sample,config):
+def runstate_from_sample(sample,config):  # DEBUG HERE!!!
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
-        s = os.path.basename(s)
-        for k,v in config["SAMPLES"].items():
-            for f in find_key_for_value(s,v):
-                log.debug(logid+'SEARCHING: '+f)
-                if f not in ret:
-                    ret.append(f)
+        n = s.split(os.sep)[-1]
+        s = os.path.dirname(s)
+        log.debug(logid+'SAMPLE: '+s)
+        c = getFromDict(config["SAMPLES"],s.split(os.sep))[0]
+        if dict_inst(c):
+            for k,v in c.items():
+                log.debug(logid+'k,v: '+str([str(k),str(v)]))
+                if n in v:
+                    if k not in ret:
+                        ret.append(k)
+        else:
+            if n in c:
+                k = s.split(os.sep)[-1]
+                ret.append(k)
     log.debug(logid+'RETURN: '+str(ret))
     return ret
 
@@ -523,11 +531,19 @@ def checkpaired(sample,config):
     paired = ''
     for s in sample:
         check = os.path.dirname(s).split(os.sep)
+        tmplist = check
+        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        log.debug(logid+'P: '+str(p))
         for r in runstate_from_sample([s],config):
-            tmplist = check
-            tmplist.append(r)
-            if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+            if r in p:
+                tmplist.append(r)
                 paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+            #if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                #paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+            #tmplist.append(r) if r in config['SEQUENCING']
+            #if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
+                #paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+                tmplist = tmplist[:2]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
@@ -543,6 +559,7 @@ def checkstranded(sample,config):
             tmplist.append(r)
             if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
                 stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
+            tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
@@ -741,9 +758,9 @@ def find_all_values_on_key(key, dictionary):
         return dictionary
 
 @check_run
-def find_key_for_value(val, dictionary):
+def find_key_for_value(val, dictionary):  # DEBUG HERE!!!
     logid=scriptname+'.Collection_find_key_for_value: '
-    log.debug(logid+str(val))
+    log.debug(logid+'VAL: '+str(val)+' Dict: '+str(dictionary))
     if dict_inst(dictionary):
         for k, v in dictionary.items():
             log.debug(logid+'DICT: '+str(k)+' ; '+str(v))
