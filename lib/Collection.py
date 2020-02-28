@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 28 15:05:41 2020 (+0100)
+# Last-Updated: Fri Feb 28 15:46:58 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1547
+#     Update #: 1562
 # URL:
 # Doc URL:
 # Keywords:
@@ -530,9 +530,7 @@ def checkpaired(sample,config):
     for s in sample:
         check = os.path.dirname(s).split(os.sep)
         tmplist = check
-        log.debug(logid+'TMP: '+str(tmplist))
-        p = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-        paired = p if 'paired' in p or 'single' in p else ''
+        p = getFromDict(config['SEQUENCING'],tmplist)[0]
         log.debug(logid+'P: '+str(p))
         for r in runstate_from_sample([s],config):
             if r in p:
@@ -559,6 +557,30 @@ def checkstranded(sample,config):
                 tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
+
+@check_run
+def post_checkpaired(sample,config):
+    logid = scriptname+'.Collection_checkpaired: '
+    ret = list()
+    paired = ''
+    for s in sample:
+        log.debug(logid+'SAMPLE: '+str(sample))
+        check = os.path.dirname(s).split(os.sep)
+        tmplist = check
+        log.debug(logid+'TMP: '+str(tmplist))
+        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        log.debug(logid+'P: '+str(p))
+        #if not dict_inst(p):
+        #paired = p[0] if 'paired' in p or 'unpaired' in p or 'singlecell' in p else ''
+        log.debug(logid+'P: '+str(p))
+        for r in runstate_from_sample([s],config):
+            log.debug(logid+'R: '+str(r))
+            if r in p:
+                tmplist.append(r)
+                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+                tmplist = tmplist[:2]
+    log.debug(logid+'PAIRED: '+str(paired))
+    return paired
 
 @check_run
 def checkclip(sample,config):

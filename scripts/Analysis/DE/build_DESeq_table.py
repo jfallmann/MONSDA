@@ -70,13 +70,14 @@ def prepare_table(slist, conditions, replicates, types, paired, table, anno, sam
         if types is not None:
             log.debug(logid+'TYPES: '+str(typelist))
 
-        for sample in samplelist:
+        for s in range(len(samplelist)):
             rep = None
             cond = None
             typ = None
+            sample = samplelist[s]
             for i in range(len(replist)):
                 check = replist[i]
-                if pairedlist[i] == 'paired':
+                if pairedlist[s] == 'paired':
                     check = re.sub(r'_r1|_r2|.fastq.gz','',replist[i])+'_mapped_sorted_unique.counts'
                 log.debug(logid+'REP:SAMPLE: '+str([str(check), sample]))
                 if check in sample:
