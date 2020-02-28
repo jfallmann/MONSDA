@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 28 09:27:19 2020 (+0100)
+# Last-Updated: Fri Feb 28 15:05:41 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1534
+#     Update #: 1547
 # URL:
 # Doc URL:
 # Keywords:
@@ -469,6 +469,8 @@ def runstate_from_sample(sample,config):
     for s in sample:
         n = s.split(os.sep)[-1]
         s = os.path.dirname(s)
+        if len(s.split(os.sep)) > 2:
+            s = str.join(os.sep,s.split(os.sep)[-3:])
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SAMPLES"],s.split(os.sep))[0]
         if dict_inst(c):
@@ -528,7 +530,9 @@ def checkpaired(sample,config):
     for s in sample:
         check = os.path.dirname(s).split(os.sep)
         tmplist = check
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        log.debug(logid+'TMP: '+str(tmplist))
+        p = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+        paired = p if 'paired' in p or 'single' in p else ''
         log.debug(logid+'P: '+str(p))
         for r in runstate_from_sample([s],config):
             if r in p:
@@ -545,12 +549,14 @@ def checkstranded(sample,config):
     stranded = ''
     for s in sample:
         check = os.path.dirname(s).split(os.sep)
+        tmplist = check
+        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        log.debug(logid+'P: '+str(p))
         for r in runstate_from_sample([s],config):
-            tmplist = check
-            tmplist.append(r)
-            if ',' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1]
-            tmplist = tmplist[:2]
+            if r in p:
+                tmplist.append(r)
+                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
+                tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 

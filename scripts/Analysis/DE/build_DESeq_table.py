@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import sys, argparse, os, inspect, traceback, gzip, glob
+import sys, argparse, os, inspect, traceback, gzip, glob, re
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../../lib")
 if cmd_subfolder not in sys.path:
@@ -19,6 +19,7 @@ def parseargs():
     parser.add_argument("-t", "--types", required=False, type=str, help="Sequencing types to compare" )
     parser.add_argument("-r", "--replicates", required=True, type=str, help="Replicates belonging to conditions" )
     parser.add_argument("--cutoff", dest='cutoff', type=int, default=0 ,help="cutoff for minimum count" )
+    parser.add_argument("-p", "--paired", required=False, type=str, default=None, help="Sequencing strategy for sample name processing" )
     parser.add_argument("--table", dest='table', required=True, type=str, default='counts.table' ,help="Name of table to write to" )
     parser.add_argument("--anno", dest='anno', required=True, type=str, default='counts.anno' ,help="Name of anno to write to" )
     parser.add_argument("--loglevel", default='INFO', help="Log verbosity" )
@@ -41,7 +42,7 @@ class Sample_list(object):
         self.replicate_paths = list()
         self.replicate_types = list()
 
-def prepare_table(slist, conditions, replicates, types, table, anno, sample_name=None, order=None, cutoff=None):
+def prepare_table(slist, conditions, replicates, types, paired, table, anno, sample_name=None, order=None, cutoff=None):
     try:
         logid = scriptname+'.prepare_table: '
         log.debug(logid+'LIST: '+str(slist))
@@ -61,7 +62,8 @@ def prepare_table(slist, conditions, replicates, types, table, anno, sample_name
         samplelist = str(slist).strip().split(',')
         replist = str(replicates).strip().split(',')
         typelist = str(types).strip().split(',') if types is not None else None
-        condlist = str(conditions).strip().split(',')#libtype!
+        pairedlist = str(paired).strip().split(',') if paired is not None else None
+        condlist = str(conditions).strip().split(',')
         log.debug(logid+'SAMPLES: '+str(samplelist))
         log.debug(logid+'REPS: '+str(replist))
         log.debug(logid+'CONDS: '+str(condlist))
@@ -73,7 +75,12 @@ def prepare_table(slist, conditions, replicates, types, table, anno, sample_name
             cond = None
             typ = None
             for i in range(len(replist)):
-                if replist[i]+'_mapped_sorted_unique.counts' in sample:
+                check = replist[i]
+                if pairedlist[i] == 'paired':
+                    check = re.sub(r'_r1|_r2|.fastq.gz','',replist[i])+'_mapped_sorted_unique.counts'
+                log.debug(logid+'REP:SAMPLE: '+str([str(check), sample]))
+                if check in sample:
+                    log.debug(logid+'FOUND: '+str(check))
                     rep = str(replist[i])
                     cond = str(condlist[i])
                     typ = str(typelist[i]) if types is not None else None
@@ -199,7 +206,7 @@ if __name__ == '__main__':
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
         log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
-        prepare_table(args.list, args.conditions, args.replicates, args.types, args.table, args.anno, args.sample_name, args.order, args.cutoff)
+        prepare_table(args.list, args.conditions, args.replicates, args.types, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

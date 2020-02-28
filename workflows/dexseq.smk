@@ -10,7 +10,7 @@ for analysis in ['DE', 'DEU', 'DAS']:
 
     if analysis == 'DEU':
         rule featurecount_unique:
-            input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+            input:  mapf = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
             output: cts = "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
                     anno = "COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf.gz"
                     #tan = temp("COUNTS/Featurecounter_dexseq/{file}_anno.tmp")
@@ -28,7 +28,8 @@ for analysis in ['DE', 'DEU', 'DAS']:
             shell:  "if [ ! -f \"{params.dexgtf}\"] || [ ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgtf} ;fi && ln -s {params.dexgtf} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
 
         rule prepare_count_table:
-            input:   cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
+            input:   cnd = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+                #cnd = expand("COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
             output:  tbl = "DEU/Tables/RUN_DEU_Analysis.tbl.gz",
                      anno = "DEU/Tables/RUN_DEU_Analysis.anno.gz"
             log:     "LOGS/DEU/prepare_count_table.log"
