@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 28 08:57:41 2020 (+0100)
+# Last-Updated: Fri Feb 28 09:27:19 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1527
+#     Update #: 1534
 # URL:
 # Doc URL:
 # Keywords:
@@ -174,7 +174,7 @@ def get_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    for k in keysets_from_dict(config['SOURCE']):  # This does not work for nested dict on same level
+    for k in keysets_from_dict(config['SOURCE']):
         ret.append(k)
     log.debug(logid+str(ret))
     return ret
@@ -260,9 +260,6 @@ def genome(s, config):
     for skey in sk:
         klist = value_extract(skey, config['SOURCE'])
         for k in klist:
-            #log.debug(logid+'there: '+str([k,skey,sp,sa,cond]))
-            #if str(k) == config['SOURCE'][sp][cond]:
-            #log.debug(logid+'k is sp')
             for x, y in config['GENOME'].items():
                 log.debug(logid+str([k, x, y]))
                 if str(k) == str(x):
@@ -380,7 +377,6 @@ def tool_params(sample, runstate, config, subconf):
     t = genome(sample,config)
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
-    #x = source_from_sample(sample,config)
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
@@ -467,7 +463,7 @@ def anno_from_source(source, config, step):
     return ret
 
 @check_run
-def runstate_from_sample(sample,config):  # DEBUG HERE!!!
+def runstate_from_sample(sample,config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
@@ -538,11 +534,6 @@ def checkpaired(sample,config):
             if r in p:
                 tmplist.append(r)
                 paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-            #if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                #paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-            #tmplist.append(r) if r in config['SEQUENCING']
-            #if 'paired' in getFromDict(config['SEQUENCING'],tmplist)[0]:
-                #paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
                 tmplist = tmplist[:2]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
@@ -758,7 +749,7 @@ def find_all_values_on_key(key, dictionary):
         return dictionary
 
 @check_run
-def find_key_for_value(val, dictionary):  # DEBUG HERE!!!
+def find_key_for_value(val, dictionary):
     logid=scriptname+'.Collection_find_key_for_value: '
     log.debug(logid+'VAL: '+str(val)+' Dict: '+str(dictionary))
     if dict_inst(dictionary):
@@ -860,7 +851,6 @@ def toarray(file, ulim):
 @check_run
 def convertcol(entry):
     if isinvalid(entry):
-        #       if entry is None or entry == 'NA' or entry == 'nan' or entry is np.nan:
         return np.nan
     else:
         return float(entry)
@@ -930,6 +920,7 @@ def npprint(a, o=None):#, format_string ='{0:.2f}'):
         o.write(bytes(out,encoding='UTF-8'))
     else:
         print(out)
+
 @check_run
 def idfromfa(id):
     goi, chrom, strand = [None, None, None]
