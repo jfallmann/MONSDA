@@ -19,19 +19,19 @@ rule featurecount_unique:
     shell:  "zcat {params.anno} > {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output.anno} -o {output.tbl} {input.reads} 2> {log}"
 
 rule prepare_count_table:
-    input:   cnd = expand(rules.featurecount_unique.output.tbl, file=samplecond(SAMPLES,config))#"COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts"
+    input:   cnd = expand(rules.featurecount_unique.output.tbl, file=samplecond(SAMPLES,config))
     output:  tbl = "DE/Tables/RUN_DE_Analysis.tbl.gz",
              anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
-             dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
-             detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['TYPES']) for x in input.cnd]),
-             samples = lambda wildcards, input: str.join(',',input.cnd),
-             paired = lambda wildcards, input:  str.join(',',[checkpaired([str.join(os.sep,x.split(os.sep)[2:])],config) for x in input.cnd]),
+    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITIONS']) for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]),
+             dereps = lambda wildcards, input: str.join(',',[str.join(os.sep, str.join(os.sep,x.split(os.sep)[2:-1])+',',z) for z in [tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES'] for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]]),
+             detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['TYPES']) for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]),
+             #samples = lambda wildcards, input: str.join(',',list(set(input.cnd))),
+             paired = lambda wildcards, input:  str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:])],config) for x in list(set(input.cnd))]),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} {params.detypes} --table {output.tbl} --anno {output.anno} --paired {params.paired} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} --paired {params.paired} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_deseq2:
     input:  cnt = rules.prepare_count_table.output.tbl,

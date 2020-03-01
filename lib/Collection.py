@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Feb 28 15:46:58 2020 (+0100)
+# Last-Updated: Sun Mar  1 14:16:03 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1562
+#     Update #: 1579
 # URL:
 # Doc URL:
 # Keywords:
@@ -387,6 +387,16 @@ def tool_params(sample, runstate, config, subconf):
     return mp
 
 @check_run
+def tool_params_rep(sample, runstate, config, subconf):
+    logid=scriptname+'.Collection_tool_params_rep: '
+    log.debug(logid+'Samples: '+str(sample))
+    mp = OrderedDict()
+    x = sample.split(os.sep)
+    mp = subDict(config[subconf],x)
+    log.debug(logid+'DONE: '+str(mp))
+    return mp
+
+@check_run
 def env_bin_from_config(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config: '
     s = samples[0].split(os.sep)[:-1]
@@ -539,6 +549,22 @@ def checkpaired(sample,config):
                 tmplist = tmplist[:2]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
+
+@check_run
+def checkpaired_rep(sample,config):
+    logid = scriptname+'.Collection_checkpaired_rep: '
+    log.debug(logid+'SAMPLE: '+str(sample))
+    ret = list()
+    for s in sample:
+        check = os.path.dirname(s).split(os.sep)
+        tmplist = check
+        log.debug(logid+'S: '+str(tmplist))
+        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        #if p == 'paired':
+        #    ret.append(p)
+        ret.append(p)
+    log.debug(logid+'PAIRED: '+str(ret))
+    return str.join(',',ret)
 
 @check_run
 def checkstranded(sample,config):

@@ -12,7 +12,7 @@ scriptname=os.path.basename(__file__)
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
-    parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")
+    #parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")
     parser.add_argument("-n", "--sample_name", action="store_true", help=" provide -n if sample names instead of group names should be used for header" )
     parser.add_argument("-o", "--order", action="store_true", help="if wanted the order of conditions can be given as comma separated list" )
     parser.add_argument("-c", "--conditions", required=True, type=str, help="Conditions to compare" )
@@ -42,10 +42,11 @@ class Sample_list(object):
         self.replicate_paths = list()
         self.replicate_types = list()
 
-def prepare_table(slist, conditions, replicates, types, paired, table, anno, sample_name=None, order=None, cutoff=None):
+def prepare_table(conditions, replicates, types, paired, table, anno, sample_name=None, order=None, cutoff=None):
     try:
+        #slist,
         logid = scriptname+'.prepare_table: '
-        log.debug(logid+'LIST: '+str(slist))
+        #log.debug(logid+'LIST: '+str(slist))
         my_groups={}
         list_size=0
 
@@ -59,50 +60,47 @@ def prepare_table(slist, conditions, replicates, types, paired, table, anno, sam
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old DE anno file'+oldfile+', was moved to '+oldfile+'.bak')
 
-        samplelist = str(slist).strip().split(',')
+        #samplelist = str(slist).strip().split(',')
         replist = str(replicates).strip().split(',')
+        condlist = str(conditions).strip().split(',')
         typelist = str(types).strip().split(',') if types is not None else None
         pairedlist = str(paired).strip().split(',') if paired is not None else None
-        condlist = str(conditions).strip().split(',')
-        log.debug(logid+'SAMPLES: '+str(samplelist))
-        log.debug(logid+'REPS: '+str(replist))
-        log.debug(logid+'CONDS: '+str(condlist))
-        if types is not None:
-            log.debug(logid+'TYPES: '+str(typelist))
 
-        for s in range(len(samplelist)):
+        #log.debug(logid+'SAMPLES: '+str(samplelist)+'\tLEN: '+str(len(samplelist)))
+        log.debug(logid+'REPS: '+str(replist)+'\tLEN: '+str(len(replist)))
+        log.debug(logid+'CONDS: '+str(condlist)+'\tLEN: '+str(len(condlist)))
+
+        if types is not None:
+            log.debug(logid+'TYPES: '+str(typelist)+'\tLEN: '+str(len(typelist)))
+
+        if paired is not None:
+            log.debug(logid+'PAIRED: '+str(pairedlist)+'\tLEN: '+str(len(pairedlist)))
+
+        for i in range(len(replist)):
             rep = None
             cond = None
             typ = None
-            sample = samplelist[s]
-            for i in range(len(replist)):
-                check = replist[i]
-                if pairedlist[s] == 'paired':
-                    check = re.sub(r'_r1|_r2|.fastq.gz','',replist[i])+'_mapped_sorted_unique.counts'
-                log.debug(logid+'REP:SAMPLE: '+str([str(check), sample]))
-                if check in sample:
-                    log.debug(logid+'FOUND: '+str(check))
-                    rep = str(replist[i])
-                    cond = str(condlist[i])
-                    typ = str(typelist[i]) if types is not None else None
-                    break
-            if not rep or not cond:
-                log.warning(logid+'No rep/cond found for sample '+str(sample))
-                continue
 
-            log.debug(logid+'rep/cond: '+str([sample,rep,cond]))
+            rep = str(replist[i])
+            cond = str(condlist[i])
+            typ = str(typelist[i]) if types is not None else None
+
+            if not rep or not cond:
+                log.warning(logid+'No rep/cond found for sample '+str(replist[i]))
+
+            log.debug(logid+'rep/cond: '+str([rep,cond]))
 
             list_size+=1
 
             if cond in my_groups:
-                my_groups[cond].replicate_paths.append(sample)
-                my_groups[cond].replicate_names.append(rep)
+                my_groups[cond].replicate_paths.append(rep)
+                my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
             else:
                 my_groups[cond]=make_sample_list(cond)
-                my_groups[cond].replicate_paths.append(sample)
-                my_groups[cond].replicate_names.append(rep)
+                my_groups[cond].replicate_paths.append(rep)
+                my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
 
@@ -206,8 +204,8 @@ if __name__ == '__main__':
         makelogdir('LOGS')
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
         log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
-
-        prepare_table(args.list, args.conditions, args.replicates, args.types, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
+        #args.list,
+        prepare_table(args.conditions, args.replicates, args.types, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
