@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Mar  2 01:08:15 2020 (+0100)
+# Last-Updated: Mon Mar  2 08:50:52 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1593
+#     Update #: 1594
 # URL:
 # Doc URL:
 # Keywords:
@@ -397,7 +397,7 @@ def tool_params_rep(sample, runstate, config, subconf):
     return mp
 
 @check_run
-def get_reps(samples,config,subconf):
+def get_reps(samples,config,analysis,subconf):
     logid=scriptname+'.Collection_tool_get_reps: '
     log.debug(logid+'Samples: '+str(samples))
     ret = list()
@@ -410,9 +410,9 @@ def get_reps(samples,config,subconf):
     paths = list(set(paths))
     for p in paths:
         if subconf == 'REPLICATES':
-            ret.extend([str.join(os.sep,[p,x])+'_mapped_sorted_unique.counts' for x in tool_params_rep(p, None, config, 'DE')[subconf]])
+            ret.extend([str.join(os.sep,[p,x])+'_mapped_sorted_unique.counts' for x in tool_params_rep(p, None, config, analysis)[subconf]])
         else:
-            ret.extend(tool_params_rep(p, None, config, 'DE')[subconf])
+            ret.extend(tool_params_rep(p, None, config, analysis)[subconf])
     log.debug(logid+'RETURN: '+str(ret))
     return ret
 
