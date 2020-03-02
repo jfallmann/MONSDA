@@ -28,7 +28,8 @@ optParser.add_option( "-r", "--aggregate", type="choice", dest="aggregate",
 # add option for featurecounts output
 optParser.add_option( "-f", "--featurecountsgtf", type="string", dest="fcgtf", action = "store",
    help = "gtf file to write for featurecounts." )
-
+optParser.add_option( "-s", "--stranded", type="string", dest="fcstrand", action = "store",
+   help = "Use strand in gffparse if stranded sequencing protocol was used." )
 ##
 
 (opts, args) = optParser.parse_args()
@@ -59,7 +60,7 @@ aggregateGenes = opts.aggregate == "yes"
 # Step 1: Store all exons with their gene and transcript ID
 # in a GenomicArrayOfSets
 
-exons = HTSeq.GenomicArrayOfSets( "auto", stranded=True )
+exons = HTSeq.GenomicArrayOfSets( "auto", stranded=fcstrand )
 for f in HTSeq.GFF_Reader( gtf_file ):
    if f.type != "exon":
       continue

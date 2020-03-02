@@ -17,9 +17,10 @@ rule featurecount_unique:
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            countstrand = lambda x: 'True' if stranded == 'fr' or stranded == 'rf' else 'False',
             countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_fc_dexseq.gtf')),
             dexgtf   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
-    shell:  "if [ ! -f \"{params.dexgtf}\"] || [ ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.anno} {params.dexgtf} ;fi && ln -s {params.dexgtf} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
+    shell:  "if [ ! -f \"{params.dexgtf}\" ] || [ ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} -s {params.countstrand} {params.anno} {params.dexgtf} ;fi && ln -s {params.dexgtf} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
 
 rule prepare_count_table:
     input:   cnd = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
@@ -33,10 +34,6 @@ rule prepare_count_table:
              detypes = lambda wildcards, input: '-t '+str.join(',',get_reps(input.cnd,config,'DEU','TYPES')),
              paired  = lambda wildcards, input:  '--paired '+str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:]) for x in get_reps(input.cnd,config,'DEU','REPLICATES')],config)]),
              bins = BINS
-             #samples = lambda wildcards, input: str.join(',',input.cnd),
-             #decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['CONDITION']) for x in input.cnd]),
-             #dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['REPLICATES']) for x in input.cnd]),
-             #detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU')['TYPES']) for x in input.cnd]),# if 'TYPES' in tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DEU') else '',
     shell: "{params.bins}/Analysis/DEU/build_DEXSeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} {params.paired} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_dexeq:
