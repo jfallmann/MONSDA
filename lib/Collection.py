@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sun Mar  1 14:16:03 2020 (+0100)
+# Last-Updated: Mon Mar  2 01:08:15 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1579
+#     Update #: 1593
 # URL:
 # Doc URL:
 # Keywords:
@@ -397,6 +397,26 @@ def tool_params_rep(sample, runstate, config, subconf):
     return mp
 
 @check_run
+def get_reps(samples,config,subconf):
+    logid=scriptname+'.Collection_tool_get_reps: '
+    log.debug(logid+'Samples: '+str(samples))
+    ret = list()
+    paths = list()
+    for sample in samples:
+        if subconf == 'REPLICATES':
+            paths.append(str.join(os.sep,sample.split(os.sep)[:-1]))
+        else:
+            paths.append(str.join(os.sep,sample.split(os.sep)[2:-1]))
+    paths = list(set(paths))
+    for p in paths:
+        if subconf == 'REPLICATES':
+            ret.extend([str.join(os.sep,[p,x])+'_mapped_sorted_unique.counts' for x in tool_params_rep(p, None, config, 'DE')[subconf]])
+        else:
+            ret.extend(tool_params_rep(p, None, config, 'DE')[subconf])
+    log.debug(logid+'RETURN: '+str(ret))
+    return ret
+
+@check_run
 def env_bin_from_config(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config: '
     s = samples[0].split(os.sep)[:-1]
@@ -560,8 +580,6 @@ def checkpaired_rep(sample,config):
         tmplist = check
         log.debug(logid+'S: '+str(tmplist))
         p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        #if p == 'paired':
-        #    ret.append(p)
         ret.append(p)
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)

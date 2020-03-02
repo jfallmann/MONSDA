@@ -25,11 +25,10 @@ rule prepare_count_table:
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITIONS']) for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]),
-             dereps = lambda wildcards, input: str.join(',',[str.join(os.sep, str.join(os.sep,x.split(os.sep)[2:-1])+',',z) for z in [tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES'] for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]]),
-             detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params_rep(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['TYPES']) for x in [str.join(os.sep,y.split(os.sep)[:-1]) for y in input.cnd]]),
-             #samples = lambda wildcards, input: str.join(',',list(set(input.cnd))),
-             paired = lambda wildcards, input:  str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:])],config) for x in list(set(input.cnd))]),
+    params:  decond = lambda wildcards, input: str.join(',',get_reps(input.cnd,config,'CONDITIONS')),
+             dereps = lambda wildcards, input: str.join(',',get_reps(input.cnd,config,'REPLICATES')),
+             detypes = lambda wildcards, input: '-t '+str.join(',',get_reps(input.cnd,config,'TYPES')),
+             paired = lambda wildcards, input:  str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:]) for x in get_reps(input.cnd,config,'REPLICATES')],config)]),
              bins = BINS
     shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} --paired {params.paired} --table {output.tbl} --anno {output.anno} 2> {log}"
 
