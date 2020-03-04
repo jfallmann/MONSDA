@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb 27 15:17:23 2020 (+0100)
+# Last-Updated: Wed Mar  4 10:06:49 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 690
+#     Update #: 692
 # URL:
 # Doc URL:
 # Keywords:
@@ -141,6 +141,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.debug(logid+'WORKFLOWS: '+str([preprocess,subworkflows,postprocess]))
 
         SAMPLES = get_samples(config)
+        log.info(logid+'SAMPLES: '+str(SAMPLES))
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
 
@@ -294,7 +295,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             log.warning(logid+'No subworkflows defined! Nothing to do!')
 
         if postprocess:
-            log.info(logid+'STARTING POSTPROCESSING')
+            log.info(logid+'STARTING POSTPROCESSING WITH SAMPLES '+str(SAMPLES))
 
             if 'PEAKS' in config and 'PEAKS' in postprocess:
                 CLIP = checkclip(SAMPLES, config)

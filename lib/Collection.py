@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar  4 09:35:12 2020 (+0100)
+# Last-Updated: Wed Mar  4 10:17:40 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1599
+#     Update #: 1601
 # URL:
 # Doc URL:
 # Keywords:
@@ -145,7 +145,7 @@ def sources(config):
 
 @check_run
 def get_samples(config):
-    logid = scriptname+'.Collection_samples: '
+    logid = scriptname+'.Collection_get_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     paired = checkpaired([SAMPLES[0]],config)
@@ -632,8 +632,8 @@ def checkclip(sample,config):
     ret = list()
     clip = ''
     for s in sample:
+        log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
-        log.debug(logid+str(check))
         r = runstate_from_sample([s],config)
         tmplist = check
         if r not in tmplist:
