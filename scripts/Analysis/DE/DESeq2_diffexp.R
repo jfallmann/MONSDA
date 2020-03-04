@@ -1,21 +1,23 @@
 #https://dwheelerau.com/2014/02/17/how-to-use-deseq2-to-analyse-rnaseq-data/
-library(DESeq2)
-require(utils)
-library("BiocParallel")
+suppressPackageStartupMessages({
+    require(DESeq2)
+    require(utils)
+    require("BiocParallel")
+})
 
 args <- commandArgs(trailingOnly = TRUE)
 
 anname<-args[1]
 inname<-args[2]
 outdir<-args[3]
-availablecores <- args[5]
+availablecores <- as.integer(args[4])
 
-register(MulticoreParam(availablecores))
+#register(MulticoreParam(availablecores))
 
 anno <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(anno) <- c("condition")
+colnames(anno) <- c("condition","type")
 anno <- as.data.frame(anno)
-head(anno)
+#head(anno)
 condcomb<-as.data.frame(combn(unique(anno$condition),2))[1:2,]
 countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 #head(countData)
@@ -23,7 +25,9 @@ countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 setwd(outdir)
 
 #Check if names are consistent
-all(rownames(anno) == colnames(countData))
+if (!all(rownames(anno) %in% colnames(countData))){
+    stop("Count file does not correspond to the annotation file")
+}
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
@@ -33,12 +37,14 @@ dds <- DESeqDataSetFromMatrix(countData = countData,
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
+#print(head(dds))
 
 #run for each pair of conditions
-dds <- DESeq(dds, parallel=True, BPPARAM=MulticoreParam(workers=availablecores))
+BPPARAM = MulticoreParam(workers=availablecores)
+dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)
 
-dds$condition
-resultsNames(dds)
+#dds$condition
+#resultsNames(dds)
 
 for (n in 1:ncol(condcomb)){
 
@@ -47,22 +53,22 @@ for (n in 1:ncol(condcomb)){
     print(cname)
 
     tryCatch({
-        res <- results(dds,contrast=c("condition",as.character(condcomb[1,n]),as.character(condcomb[2,n])), parallel=True, BPPARAM=MulticoreParam(workers=availablecores))#, name=paste(condcomb[,n],collapse='_vs_'))
+        res <- results(dds,contrast=c("condition",as.character(condcomb[1,n]),as.character(condcomb[2,n])), parallel=TRUE, BPPARAM=BPPARAM)#, name=paste(condcomb[,n],collapse='_vs_'))
                                         #sort and output
         resOrdered <- res[order(res$log2FoldChange),]
                                         #write the table to a csv file
-
         pdf(paste(cname,"DESeq2","plot.pdf",sep="_"))
         plotMA(res, ylim=c(-3,3))
         dev.off()
+
         write.table(as.data.frame(resOrdered), gzfile(paste(cname,'.csv.gz',sep="")), sep="\t")
 
 ###
-                                        #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+        #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
         rld<- rlogTransformation(dds, blind=TRUE)
         vsd<-varianceStabilizingTransformation(dds, blind=TRUE)
-
-                                        #We also write the normalized counts to file
+        
+        #We also write the normalized counts to file
         write.table(as.data.frame(assay(rld)), gzfile(paste(cname,"DESeq2_rld.txt.gz",sep="_")), sep="\t", col.names=NA)
         write.table(as.data.frame(assay(vsd)), gzfile(paste(cname,"DESeq2_vsd.txt.gz",sep="_")), sep="\t", col.names=NA)
     }, error=function(e){cat("WARNING :",conditionMessage(e), "\n")})

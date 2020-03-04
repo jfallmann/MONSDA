@@ -15,18 +15,12 @@ flatanno<-args[3]
 outdir<-args[4]
 availablecores <- args[5]
 
-#anname<-'~/Work/Alzheimer/DEU/DEXManual/Tables/RUN_DEU_Analysis.anno.gz'
-#flatanno<-'~/Work/Alzheimer/DEU/DEXManual/Tables/Homo_Anno_dexseq.gtf.gz'
-#countfile<-'~/Work/Alzheimer/DEU/DEXManual/Tables/RUN_DEU_Analysis.tbl.gz'
-#countfile<-'~/Work/Alzheimer/DEU/DEXManual/Tables/Test.tbl.gz'
-#outdir<-'~/Work/Alzheimer/DEU/DEXManual/DEXSeq'
-#availablecores <- 2
-
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type")
 sampleData <- as.data.frame(sampleData)
 #head(sampleData)
+
 ## Combinations of conditions
 condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
 ##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
@@ -39,7 +33,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 {
     ##  Take a fcount file and convert it to dcounts for dexseq
     message("Reading and adding Exon IDs for DEXSeq")
-    #read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) %>% dplyr::select(-(V2:V6)) -> dcounts
+
     read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
     colnames(dcounts) <- c("GeneID", rownames(sampleData) )
     id <- as.character(dcounts[,1])
@@ -58,7 +52,6 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
     exons <- sapply(splitted, "[[", 2)
     genesrle <- sapply(splitted, "[[", 1)
 
-    #flattenedfile<-flatanno
     ## parse the flattened file
     if (!is.null(flattenedfile)) {
         aggregates <- read.delim(flattenedfile, stringsAsFactors = FALSE,
@@ -116,14 +109,13 @@ setwd(outdir)
 
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
+BPPARAM = MulticoreParam(workers=availablecores)
+
 for (n in 1:ncol(condcomb)){
 
     cname=""
     cname=paste(condcomb[,n],collapse='_vs_')
     print(cname)
-    
-#    tryCatch({
-        BPPARAM = MulticoreParam(availablecores)
 
         dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
 
