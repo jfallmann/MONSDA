@@ -479,18 +479,18 @@
 },
 #DE Analysis options
 "DE" : {
+  "COMPARABLE" :
+    {
+      "CTRL_3": "AD_3",
+      "CTRL_5_6": "AD_5_6",
+      "CTRL_white": "AD_white",
+      "CTRL_total": "AD_total"
+    },
       "hg38" : {
           "190722": {
               "star": {
                   "ENV": "edger",  #see QC
                   "BIN": "EdgeR.R",
-                  "COMPARABLE" :
-                    {
-                      "CTRL_3": "AD_3",
-                      "CTRL_5_6": "AD_5_6",
-                      "CTRL_white": "AD_white",
-                      "CTRL_total": "AD_total"
-                    },
                   "CONDITION":  ["CTRL_5_6","CTRL_3","CTRL_total","AD_total","CTRL_white","AD_white","AD_5_6","AD_3"],
                   "REPLICATES": ["UU_Library_X12_S47","UU_Library_X11_S46","UU_Library_X10_S45","UU_Library_X09_S44","UU_Library_X14_S8","UU_Library_X04_S4","UU_Library_X03_S3","UU_Library_X02_S2"],
                   "TYPES": ["paired","paired","paired","paired","paired","paired","paired","paired"],
@@ -501,15 +501,9 @@
           },
           "260919": {
               "star": {
-                  "ENV": "BBBBB",  #see QC
-                  "BIN": "BBBBB.R",
-                  "COMPARABLE" :
-                    {
-                      "CTRL_3": "AD_3",
-                      "CTRL_5_6": "AD_5_6",
-                      "CTRL_white": "AD_white",
-                      "CTRL_total": "AD_total"
-                    },
+                "ENV": "edger",  #see QC
+                "BIN": "EdgeR.R",
+                  "COMPARABLE" :,
                   "CONDITION":  ["AD_total","AD_3","AD_5_6","AD_white","CTRL_total","CTRL_3","CTRL_5_6","CTRL_white"],
                   "REPLICATES": ["UU_X15_S201","UU_X16_S202","UU_X17_S203","UU_X18_S204","UU_X19_S205","UU_X20_S206","UU_X21_S207","UU_X22_S208"],
                   "TYPES": ["paired","paired","paired","paired","paired","paired","paired","paired"],
@@ -520,15 +514,9 @@
           },
           "211019": {
               "star": {
-                  "ENV": "CCCCC",  #see QC
-                  "BIN": "CCCCC.R",
-                  "COMPARABLE" :
-                    {
-                      "CTRL_3": "AD_3",
-                      "CTRL_5_6": "AD_5_6",
-                      "CTRL_white": "AD_white",
-                      "CTRL_total": "AD_total"
-                    },
+                "ENV": "edger",  #see QC
+                "BIN": "EdgeR.R",
+                  "COMPARABLE" :,
                   "CONDITION":  ["AD_total","AD_3","AD_5_6","AD_white","CTRL_total","CTRL_3","CTRL_5_6","CTRL_white"],
                   "REPLICATES": ["UU_X23","UU_X24","UU_X25","UU_X26","UU_X27","UU_X28","UU_X29","UU_X30"],
                   "TYPES": ["paired","paired","paired","paired","paired","paired","paired","paired"],
@@ -539,15 +527,9 @@
           },
           "211019_P": {
               "star": {
-                  "ENV": "DDDDD",  #see QC
-                  "BIN": "DDDDD.R",
-                  "COMPARABLE" :
-                    {
-                      "CTRL_3": "AD_3",
-                      "CTRL_5_6": "AD_5_6",
-                      "CTRL_white": "AD_white",
-                      "CTRL_total": "AD_total"
-                    },
+                "ENV": "edger",  #see QC
+                "BIN": "EdgeR.R",
+                  "COMPARABLE" :,
                   "CONDITION":  ["Non_CL_P27","Non_CL_PABP","CL_P27","CL_PABP"],
                   "REPLICATES": ["UU_P05","UU_P06","UU_P07","UU_P08"],
                   "TYPES": ["paired","paired","paired","paired"],

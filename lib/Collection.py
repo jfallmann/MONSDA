@@ -329,6 +329,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
+            if subwork == "DE":
+                tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 tempconf[key][src][treat][setup] = config[key][src][treat][setup]
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]) and 'COUNTING' in config:
