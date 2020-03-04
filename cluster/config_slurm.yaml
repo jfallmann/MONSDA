@@ -7,4 +7,6 @@ __default__:
   #mail-type: "ALL"
   #mail-user: "user@address"
   account: "snakemake" 
-  mem: 10000
+
+mapping:
+  MinMemoryNode: 200000
