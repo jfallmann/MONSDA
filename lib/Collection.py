@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Mar  2 08:50:52 2020 (+0100)
+# Last-Updated: Wed Mar  4 09:35:12 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1594
+#     Update #: 1599
 # URL:
 # Doc URL:
 # Keywords:
@@ -636,10 +636,12 @@ def checkclip(sample,config):
         log.debug(logid+str(check))
         r = runstate_from_sample([s],config)
         tmplist = check
-        tmplist.extend(r)
+        if r not in tmplist:
+            tmplist.extend(r)
         log.debug(logid+str(tmplist))
-        if 'CLIP' in subDict(config['PEAKS'],tmplist):
-            clip = subDict(config['PEAKS'],tmplist)['CLIP']
+        check = getFromDict(config['PEAKS'],tmplist)
+        if 'CLIP' in check:
+            clip = check['CLIP']
         else:
             log.debug(logid+'Key CLIP not found in config')
     log.debug(logid+str(clip))

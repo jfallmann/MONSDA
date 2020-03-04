@@ -51,7 +51,7 @@ if 'PEAKS' in config:
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
         )
-        log.error('Not all required options defined in config!\n'+''.join(tbe.format()))
+        log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
 
     MINPEAKRATIO = peakconf['MINPEAKRATIO']
     PEAKDISTANCE = peakconf['PEAKDISTANCE']
