@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar  4 10:17:40 2020 (+0100)
+# Last-Updated: Fri Mar  6 09:05:10 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1601
+#     Update #: 1610
 # URL:
 # Doc URL:
 # Keywords:
@@ -157,11 +157,12 @@ def get_samples(config):
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                SAMPLES.extend(list(set([re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in f])))
+                SAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                SAMPLES.extend([str.join(os.sep,x.split(os.sep)[1:]).replace('.fastq.gz','') for x in f])
+                SAMPLES.extend([x.replace('.fastq.gz','') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
     if len(SAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')

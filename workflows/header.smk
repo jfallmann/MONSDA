@@ -12,7 +12,7 @@ for x in cmd_subfolder:
 from Collection import *
 from Logger import *
 
-log = setup_logger(name='snakemake', log_file='LOGS/snakemake.log', level='DEBUG')
+log = setup_logger(name='snakemake', log_file='LOGS/snakemakerun.log', level='DEBUG', filemode='a')
 
 logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]
