@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Mar  6 08:07:20 2020 (+0100)
+# Last-Updated: Fri Mar  6 08:43:38 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1602
+#     Update #: 1605
 # URL:
 # Doc URL:
 # Keywords:
@@ -157,6 +157,7 @@ def get_samples(config):
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
+            f = os.path.join(f,split(os.sep)[1:])
             if paired == 'paired':
                 SAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
