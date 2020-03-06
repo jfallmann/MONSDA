@@ -1,5 +1,6 @@
-DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+
 
 rule all:
     input:  "DE/DESEQ2/DONE"
@@ -45,4 +46,4 @@ rule run_deseq2:
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp_2.R {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} && touch {output.csv}"
 
 onsuccess:
-    print("Workflow DE finished, no error")
+    print("Workflow DE-deseq2 finished, no error")

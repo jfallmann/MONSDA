@@ -1,9 +1,6 @@
 
-DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
-
-
-
 
 
 
@@ -62,4 +59,4 @@ rule run_edger:
 #    shell:  "touch {output}"
 
 onsuccess:
-    print("Workflow finished, no error")
+    print("Workflow DE-edgeR finished, no error")

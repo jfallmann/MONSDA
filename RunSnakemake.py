@@ -358,7 +358,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
                 if analysis in config and analysis in postprocess:
-                    log.info(logid+'STARTING '+analysis+' Analysis')
+                    log.info(logid+'STARTING '+analysis+' Analysis...')
                     subwork = analysis
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
@@ -368,24 +368,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     if listoftools is None or listoftoolscount is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
-
-                    ANAtools = [i for n, i in enumerate(listoftools) if i not in listoftools[n + 1:]]
-                    print(listoftools)
-                    print(ANAtools)
-
-                    for tool in ANAtools:
-                        print(tool)
-                        toolenv, toolbin = map(str,tool)
+                    for key in config[subwork]['TOOLS']:
+                        log.info(logid+'... with '+key+' Tool')
+                        toolenv = key
+                        toolbin = config[subwork]['TOOLS'][key]
                         countenv, countbin = map(str,listoftoolscount[0])
-
                         subconf = NestedDefaultDict()
+                        for i in listofconfigs:
+                            i[subwork+'ENV'] = toolenv
+                            i[subwork+'BIN'] = toolbin
                         for i in range(len(listoftools)):
-                            if listoftools[i] == tool:
-                                subconf = merge_dicts(subconf,listofconfigs[i])
+                            subconf = merge_dicts(subconf,listofconfigs[i])
 
                         for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
                             subconf = merge_dicts(subconf,listofconfigscount[x])
-
                         subname = toolenv+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
@@ -412,16 +408,15 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         o = runjob(jobtorun)
+
                         if o.stdout:
                             log.info(o.stdout)
-                            if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                                #if any(x in o.stdout for x in ['ERROR','Error','error']):
-                                sys.exit(o.stdout)
 
                         if o.stderr:
                             log.error(o.stderr)
                             if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
                                 sys.exit(o.stderr)
+
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')

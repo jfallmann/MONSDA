@@ -336,6 +336,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                 tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
+                if 'TOOLS' in config[subwork]:
+                    tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
 
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -348,7 +350,6 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         tempconf[subwork+'BIN'] = exe
         toollist.append([env,exe])
         configs.append(tempconf)
-    print(toollist)
 
     log.debug(logid+str([toollist,configs]))
 
@@ -447,6 +448,16 @@ def env_bin_from_config2(samples, config, subconf):
             else:
                 me = ''
         log.debug(logid+str([str(mb),str(me)]))
+    return mb, me
+
+@check_run
+def env_bin_from_config3(config, subconf):
+    logid=scriptname+'.Collection_env_bin_from_config3: '
+    envkey = subconf+"ENV"
+    binkey = subconf+"BIN"
+    me = config[envkey]
+    mb = config[binkey]
+    log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
 @check_run
