@@ -5,6 +5,8 @@ COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 
 
+
+
 rule all:
     input:  "DE/EDGER/DONE"
 
@@ -45,10 +47,11 @@ rule run_edger:
     threads: 1
     params: bins = BINS,
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
-            compare = "\""+str(json.dumps(config['DE']['COMPARABLE'])).replace("\"","").replace("{","").replace("}","").replace(" ","")+"\""
+            compare = comparable_as_string(config,'DE')
+            #compare = "\""+str(json.dumps(config['DE']['COMPARABLE'])).replace("\"","").replace("{","").replace("}","").replace(" ","")+"\""
             #compare = [*config['DE']['COMPARE'].items()]
             #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/EdgeR_2.R {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} && touch {output.csv}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/EdgeR.R {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} && touch {output.csv}"
 
 #rule themall:
 #    input:  rules.summarize_counts.output

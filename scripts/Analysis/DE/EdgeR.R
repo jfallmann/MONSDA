@@ -20,13 +20,12 @@ f <- function(list){
   return(cl)
 }
 
-dir.create(file.path(drct,'RESULTS'), showWarnings = FALSE)
 
 ###READ IN
 data <- read.table(tbl,skip=1,h=F,sep="\t",check.names=FALSE)
 header <- strsplit(readLines(tbl, n=1),"\t")[[1]]
 header[1] <- "gene"
-comparison <- strsplit(strsplit(cmp, ",")[[1]], ":")
+comparison <- strsplit(cmp, ",")
 #######FILTER COLOUMS WITH ONLY NA
 data <- Filter(function(x) !all(is.na(x)), data)
 colnames(data) <- header
@@ -69,7 +68,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 write.table(tmm, file=paste(drct,"normalized_table.tsv",sep='/'), sep="\t", quote=F, row.names=FALSE)
 
 ###plot MDS
-out <- paste(drct,"RESULTS","MDS.png",sep="/")
+out <- paste(drct,"MDS.png",sep="/")
 png(out, width = 1000, height = 800)
 colors <- f(groups_by_number)
 plotMDS(dge,col=colors)
@@ -85,7 +84,7 @@ dge <- estimateDisp(dge, design, robust=TRUE)
 
 ###plot Dispersion
 
-out <- paste(drct,"RESULTS","BCV.png",sep="/")
+out <- paste(drct,"BCV.png",sep="/")
 png(out, width = 350, height = 350)
 plotBCV(dge)
 dev.off()
@@ -95,7 +94,7 @@ dev.off()
 fit <- glmFit(dge, design)
 
 ###IF NO COMPARE ENTRY - compare all vs all
-
+print(cmp)
 if(cmp == ''){
 
   for(i in 1:(dim(design)[2]-1)){
@@ -121,7 +120,7 @@ if(cmp == ''){
 
       print(paste("compare ", title))
 
-      out <- paste(drct,"/RESULTS/",cs,".png",sep="")
+      out <- paste(drct,'/',cs,".png",sep="")
       png(out, width = 350, height = 350)
       plotMD(lrt, main=title)
       abline(h=c(-1, 1), col="blue")
@@ -129,13 +128,15 @@ if(cmp == ''){
     }
   }
 
-###ELSE - compare selected Groups
+  ###ELSE - compare selected Groups
 } else {
 
   contrast_list = list()
-  for(i in 1:length(comparison)){
+  for(i in seq(1, length(comparison[[1]]),2)){
     con <- integer(dim(design)[2])
-    m <- match(comparison[[i]], colnames(design))
+    a <- comparison[[1]][i]
+    b <- comparison[[1]][i+1]
+    m <- match(c(a,b), colnames(design))
     con[m[1]] <- -1
     con[m[2]] <- 1
 
@@ -149,14 +150,12 @@ if(cmp == ''){
     #summary(decideTests(lrt))
 
     ###plot lFC vs CPM
-    a <- comparison[[i]][1]
-    b <- comparison[[i]][2]
     cs <- paste(a,"vs",b,sep="-")
     title <- paste(a, " vs. ",b)
 
     print(paste("compare ", title))
 
-    out <- paste(drct,"/RESULTS/",cs,".png",sep="")
+    out <- paste(drct,'/',cs,".png",sep="")
     png(out, width = 350, height = 350)
     plotMD(lrt, main=title)
     abline(h=c(-1, 1), col="blue")

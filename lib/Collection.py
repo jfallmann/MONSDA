@@ -329,12 +329,12 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
-            if subwork == "DE":
-                tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 tempconf[key][src][treat][setup] = config[key][src][treat][setup]
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]) and 'COUNTING' in config:
                 tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
+                if 'COMPARABLE' in config[subwork]:
+                    tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -347,6 +347,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         tempconf[subwork+'BIN'] = exe
         toollist.append([env,exe])
         configs.append(tempconf)
+    print(toollist)
 
     log.debug(logid+str([toollist,configs]))
 
@@ -1055,6 +1056,23 @@ def check_ref(reference):
 @check_run
 def runjob(jobtorun):
     return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+
+@check_run
+def comparable_as_string(config, subwork):
+    logid=scriptname+'.comparable_as_string: '
+    try:
+        compdict=config[subwork]['COMPARABLE']
+    except:
+        log.info(logid+'no comparables found in '+subwork)
+        return ""
+    complist  = []
+    for key in compdict:
+        for value in compdict[key]:
+            complist.append(key)
+            complist.append(value)
+    compstr = ','.join(complist)
+    return compstr
+
 
 #
 # Collection.py ends here

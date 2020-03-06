@@ -73,6 +73,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         subdir = 'SubSnakes'
         config = load_configfile(configfile)
+        print(config)
         argslist = list()
         if useconda:
             argslist.append("--use-conda")
@@ -361,57 +362,66 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     subwork = analysis
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
                     listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+
                     if listoftools is None or listoftoolscount is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
-                    toolenv, toolbin = map(str,listoftools[0])
-                    countenv, countbin = map(str,listoftoolscount[0])
 
-                    subconf = listofconfigs[0]
-                    for x in range(1,len(listofconfigs)):
-                        subconf = merge_dicts(subconf,listofconfigs[x])
-                    for x in range(0,len(listofconfigscount)):
-                        subconf = merge_dicts(subconf,listofconfigscount[x])
+                    ANAtools = [i for n, i in enumerate(listoftools) if i not in listoftools[n + 1:]]
+                    print(listoftools)
+                    print(ANAtools)
 
-                    subname = toolenv+'.smk'
-                    subsamples = sampleslong(subconf)
-                    log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                    smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk'])))
-                    if os.path.exists(smko):
-                        os.rename(smko,smko+'.bak')
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                    for tool in ANAtools:
+                        print(tool)
+                        toolenv, toolbin = map(str,tool)
+                        countenv, countbin = map(str,listoftoolscount[0])
 
-                    confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json'])))
-                    if os.path.exists(confo):
-                        os.rename(confo,confo+'.bak')
-                    with open(confo, 'a') as confout:
-                        json.dump(subconf, confout)
+                        subconf = NestedDefaultDict()
+                        for i in range(len(listoftools)):
+                            if listoftools[i] == tool:
+                                subconf = merge_dicts(subconf,listofconfigs[i])
 
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
-                    log.info(logid+'RUNNING '+str(jobtorun))
-                    o = runjob(jobtorun)
-                    if o.stdout:
-                        log.info(o.stdout)
-                        if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
-                            #if any(x in o.stdout for x in ['ERROR','Error','error']):
-                            sys.exit(o.stdout)
+                        for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
+                            subconf = merge_dicts(subconf,listofconfigscount[x])
 
-                    if o.stderr:
-                        log.error(o.stderr)
-                        if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
-                            sys.exit(o.stderr)
+                        subname = toolenv+'.smk'
+                        subsamples = sampleslong(subconf)
+                        log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk'])))
+                        if os.path.exists(smko):
+                            os.rename(smko,smko+'.bak')
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+
+                        confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json'])))
+                        if os.path.exists(confo):
+                            os.rename(confo,confo+'.bak')
+                        with open(confo, 'a') as confout:
+                            json.dump(subconf, confout)
+
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        log.info(logid+'RUNNING '+str(jobtorun))
+                        o = runjob(jobtorun)
+                        if o.stdout:
+                            log.info(o.stdout)
+                            if not 'Workflow finished, no error' in o.stdout or 'Exception' in o.stdout:
+                                #if any(x in o.stdout for x in ['ERROR','Error','error']):
+                                sys.exit(o.stdout)
+
+                        if o.stderr:
+                            log.error(o.stderr)
+                            if any(x in o.stderr for x in ['ERROR','Error','error','Exception']):
+                                sys.exit(o.stderr)
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')

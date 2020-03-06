@@ -41,7 +41,8 @@ rule run_deseq2:
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins   = BINS,
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} {threads} 2> {log} && touch {output.csv}"
+            compare = comparable_as_string(config,'DE')
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp_2.R {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} && touch {output.csv}"
 
 onsuccess:
     print("Workflow DE finished, no error")
