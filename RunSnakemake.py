@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar  4 10:06:49 2020 (+0100)
+# Last-Updated: Mon Mar  9 17:12:57 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 692
+#     Update #: 699
 # URL:
 # Doc URL:
 # Keywords:
@@ -36,10 +36,11 @@ from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
+#import logging
 min_version("5.8.2")
 
 from lib.Collection import *
-from lib.Logger import *        # Switch to snakemake logger?
+from lib.Logger import *
 scriptname=os.path.basename(__file__)
 
 def parseargs():
@@ -438,7 +439,10 @@ if __name__ == '__main__':
         knownargs=args[0]
         optionalargs=args[1:]
         makelogdir('LOGS')
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
+        #log = logging.basicConfig(level=knownarg.loglevel, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+        #handler = logging.FileHandler(log_file, mode=filemode)
+        #log.addHandler(handler)
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
         log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)

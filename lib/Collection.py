@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Mar  6 09:05:10 2020 (+0100)
+# Last-Updated: Mon Mar  9 17:18:53 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1610
+#     Update #: 1617
 # URL:
 # Doc URL:
 # Keywords:
@@ -88,14 +88,8 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
 try:
+    log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
     scriptname = os.path.basename(inspect.stack()[-1].filename)
-    if any([x in  scriptname for x in ['Configurator','RunSnakemake']]):
-        log=logging.getLogger(scriptname)
-    else:
-        log=logging.getLogger(scriptname)
-        handler = logging.FileHandler('LOGS/RunSnakemake.py.log', mode='a')
-        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M'))
-        log.addHandler(handler)
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -159,7 +153,7 @@ def get_samples(config):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                SAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                SAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 SAMPLES.extend([x.replace('.fastq.gz','') for x in f])
@@ -191,8 +185,8 @@ def get_samples_from_dir(id, condition, setting, config):
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'unpaired' not in x:
-                ret = list(set([re.sub(r'_r1|_r2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-                renamelist = [re.sub(r'_R\d', lambda pat: pat.group(1).lower(), s) for s in ret]
+                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
                     if renamelist[i] != ret[i]:
                         os.rename(ret[i],renamelist[i])

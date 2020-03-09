@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Feb 24 15:03:40 2020 (+0100)
+# Last-Updated: Mon Mar  9 17:13:22 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 547
+#     Update #: 551
 # URL:
 # Doc URL:
 # Keywords:
@@ -35,6 +35,7 @@ from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
+#import logging
 min_version("5.8.2")
 
 from lib.Collection import *
@@ -334,7 +335,7 @@ if __name__ == '__main__':
         optionalargs=args[1:]
 
         makelogdir('LOGS')
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
         log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)
