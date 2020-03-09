@@ -7,9 +7,9 @@
 # Created: Mon Dec  4 09:54:46 2017 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Sep 27 10:41:07 2019 (+0200)
+# Last-Updated: Mon Mar  9 10:23:08 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 159
+#     Update #: 161
 # URL:
 # Doc URL:
 # Keywords:
@@ -236,18 +236,18 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
         if genome:
             if retracks:
                 gen = '\n'.join(['genome '+genome,
-                                 'trackDb fw_{0}']).format(track)
+                                 'trackDb '+uid+'fw_{0}']).format(track)
                 with open(uid+'genomes_fw.txt', 'w') as out:
                     out.write(gen+'\n')
 
                 gen = '\n'.join(['genome '+genome,
-                                 'trackDb re_{0}']).format(track)
+                                 'trackDb '+uid+'re_{0}']).format(track)
                 with open(uid+'genomes_re.txt', 'w') as out:
                     out.write(gen+'\n')
 
             else:
                 gen = '\n'.join(['genome '+genome,
-                                 'trackDb {0}']).format(track)
+                                 'trackDb '+uid+'{0}']).format(track)
                 with open(uid+'genomes.txt', 'w') as out:
                     out.write(gen+'\n')
 
@@ -256,7 +256,7 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
                 hubtxt = '\n'.join(['hub fw_'+hub,
                                     'shortLabel FW_{0}',
                                     'longLabel FW_{1}',
-                                    'genomesFile genomes_fw.txt',
+                                    'genomesFile '+uid+'genomes_fw.txt',
                                     'email {2}']).format(shortlabel, longlabel, mail)
                 with open(uid+'hub_fw.txt', 'w') as out:
                     out.write(hubtxt+'\n')
@@ -264,7 +264,7 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
                 hubtxt = '\n'.join(['hub re_'+hub,
                                     'shortLabel RE_{0}',
                                     'longLabel RE_{1}',
-                                    'genomesFile genomes_re.txt',
+                                    'genomesFile '+uid+'genomes_re.txt',
                                     'email {2}']).format(shortlabel, longlabel, mail)
                 with open(uid+'hub_re.txt', 'w') as out:
                     out.write(hubtxt+'\n')
@@ -273,7 +273,7 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
                 hubtxt = '\n'.join(['hub '+hub,
                                     'shortLabel {0}',
                                     'longLabel {1}',
-                                    'genomesFile genomes.txt',
+                                    'genomesFile '+uid+'genomes.txt',
                                     'email {2}']).format(shortlabel, longlabel, mail)
                 with open(uid+'hub.txt', 'w') as out:
                     out.write(hubtxt+'\n')
