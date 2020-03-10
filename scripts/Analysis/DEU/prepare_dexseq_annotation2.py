@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # Code from:https://github.com/vivekbhr/Subread_to_DEXSeq
 
-#!/usr/bin/env python
-
-import sys, collections, itertools, os.path, optparse, os, gzip
+import sys, collections, itertools, os.path, optparse, os, gzip, warnings
 
 optParser = optparse.OptionParser(
 
@@ -28,11 +26,12 @@ optParser.add_option( "-r", "--aggregate", type="choice", dest="aggregate",
 # add option for featurecounts output
 optParser.add_option( "-f", "--featurecountsgtf", type="string", dest="fcgtf", action = "store",
    help = "gtf file to write for featurecounts." )
-optParser.add_option( "-s", "--stranded", type="string", dest="fcstrand", action = "store",
+optParser.add_option( "-s", "--stranded", dest="fcstrand", action = "store_true", default=False,
    help = "Use strand in gffparse if stranded sequencing protocol was used." )
 ##
 
 (opts, args) = optParser.parse_args()
+print(opts, args)
 
 if len( args ) != 2:
    sys.stderr.write( "Script to prepare annotation for DEXSeq.\n\n" )
@@ -50,8 +49,6 @@ except ImportError:
    sys.exit(1)
 
 
-
-
 gtf_file = args[0]
 out_file = args[1]
 
@@ -59,8 +56,12 @@ aggregateGenes = opts.aggregate == "yes"
 
 # Step 1: Store all exons with their gene and transcript ID
 # in a GenomicArrayOfSets
+try:
+    exons = HTSeq.GenomicArrayOfSets( "auto", stranded=opts.fcstrand )
+except:
+    warnings.warn('There was an issue setting stranded to True when creating the HTSeq.GenomicArrayOfSets. This is probably due to an error in the annotation allocating one gene ID to both strands. Will retry without strand information, please carefully check your results.')
+    exons = HTSeq.GenomicArrayOfSets( "auto", stranded=False )
 
-exons = HTSeq.GenomicArrayOfSets( "auto", stranded=fcstrand )
 for f in HTSeq.GFF_Reader( gtf_file ):
    if f.type != "exon":
       continue
@@ -135,25 +136,25 @@ for iv, s in exons.steps( ):
 
 aggregate_features = []
 for l in aggregates.values():
-   for i in range( len(l)-1 ):
-      assert l[i].name == l[i+1].name, str(l[i+1]) + " has wrong name"
-      assert l[i].iv.end <= l[i+1].iv.start, str(l[i+1]) + " starts too early"
-      if l[i].iv.chrom != l[i+1].iv.chrom:
-         raise ValueError(
-            "Same name found on two chromosomes: %s, %s" % ( str(l[i]), str(l[i+1]) )
-         )
-      if l[i].iv.strand != l[i+1].iv.strand:
-         raise ValueError(
-            "Same name found on two strands: %s, %s" % ( str(l[i]), str(l[i+1]) )
-         )
-   aggr_feat = HTSeq.GenomicFeature( l[0].name, "aggregate_gene",
-      HTSeq.GenomicInterval( l[0].iv.chrom, l[0].iv.start,
-         l[-1].iv.end, l[0].iv.strand ) )
-   aggr_feat.source = os.path.basename( sys.argv[0] )
-   aggr_feat.attr = { 'gene_id': aggr_feat.name }
-   for i in range( len(l) ):
-      l[i].attr['exonic_part_number'] = "%03d" % ( i+1 )
-   aggregate_features.append( aggr_feat )
+    for i in range( len(l)-1 ):
+        if l[i].iv.strand != l[i+1].iv.strand:
+            raise ValueError(
+                "Same name found on two strands: %s, %s" % ( str(l[i]), str(l[i+1]) )
+            )
+        assert l[i].name == l[i+1].name, str(l[i+1]) + " has wrong name"
+        assert l[i].iv.end <= l[i+1].iv.start, str(l[i+1]) + " starts too early"
+        if l[i].iv.chrom != l[i+1].iv.chrom:
+            raise ValueError(
+                "Same name found on two chromosomes: %s, %s" % ( str(l[i]), str(l[i+1]) )
+            )
+    aggr_feat = HTSeq.GenomicFeature( l[0].name, "aggregate_gene",
+                                      HTSeq.GenomicInterval( l[0].iv.chrom, l[0].iv.start,
+                                                             l[-1].iv.end, l[0].iv.strand ) )
+    aggr_feat.source = os.path.basename( sys.argv[0] )
+    aggr_feat.attr = { 'gene_id': aggr_feat.name }
+    for i in range( len(l) ):
+        l[i].attr['exonic_part_number'] = "%03d" % ( i+1 )
+    aggregate_features.append( aggr_feat )
 
 
 # Step 5: Sort the aggregates, then write everything out

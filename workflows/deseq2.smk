@@ -5,7 +5,7 @@ rule all:
     input:  "DE/DESEQ2/DONE"
 
 rule featurecount_unique:
-    input:  reads = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
+    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: cts   = "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_de_gene_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"

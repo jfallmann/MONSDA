@@ -164,7 +164,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         with gzip.open(table, 'wb') as t:
             t.write(bytes(str(line)+'\n',encoding='UTF8'))
         with gzip.open(anno, 'wb') as a:
-            a.write(bytes('\n'.join(annos),encoding='UTF-8'))
+            a.write(bytes('\n'.join(annos)+'\n',encoding='UTF-8'))
 
         for z in range(1,len(myMatrix)):
             zeilen = myMatrix[z]
