@@ -55,10 +55,10 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         oldanno = os.path.abspath(anno)
         for oldfile in glob.glob(oldtab):
             os.rename(oldfile,oldfile+'.bak')
-            log.warning(logid+'Found old DE table file'+oldfile+', was moved to '+oldfile+'.bak')
+            log.warning(logid+'Found old table file'+oldfile+', was moved to '+oldfile+'.bak')
         for oldfile in glob.glob(oldanno):
             os.rename(oldfile,oldfile+'.bak')
-            log.warning(logid+'Found old DE anno file'+oldfile+', was moved to '+oldfile+'.bak')
+            log.warning(logid+'Found old anno file'+oldfile+', was moved to '+oldfile+'.bak')
 
         replist = str(replicates).strip().split(',')
         condlist = str(conditions).strip().split(',')
