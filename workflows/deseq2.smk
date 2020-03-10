@@ -24,12 +24,9 @@ rule prepare_count_table:
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params:  decond = lambda wildcards, input: str.join(',',get_reps(input.cnd,config,'DE','CONDITIONS')),
-             dereps = lambda wildcards, input: str.join(',',get_reps(input.cnd,config,'DE','REPLICATES')),
-             detypes = lambda wildcards, input: '-t '+str.join(',',get_reps(input.cnd,config,'DE','TYPES')),
-             paired = lambda wildcards, input:  '--paired '+str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:]) for x in get_reps(input.cnd,config,'DE','REPLICATES')],config)]),
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} {params.paired} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,

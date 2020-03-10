@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Mar 10 13:22:40 2020 (+0100)
+# Last-Updated: Tue Mar 10 17:42:23 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1618
+#     Update #: 1662
 # URL:
 # Doc URL:
 # Keywords:
@@ -382,34 +382,30 @@ def tool_params(sample, runstate, config, subconf):
     return mp
 
 @check_run
-def tool_params_rep(sample, runstate, config, subconf):
-    logid=scriptname+'.Collection_tool_params_rep: '
-    log.debug(logid+'Samples: '+str(sample))
-    mp = OrderedDict()
-    x = sample.split(os.sep)
-    mp = subDict(config[subconf],x)
-    log.debug(logid+'DONE: '+str(mp))
-    return mp
-
-@check_run
-def get_reps(samples,config,analysis,subconf):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCTION
-    logid=scriptname+'.Collection_tool_get_reps: '
+def get_reps(samples,config,analysis):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCTION
+    logid=scriptname+'.Collection_get_reps: '
     log.debug(logid+'Samples: '+str(samples))
-    ret = list()
-    paths = list()
+    ret = defaultdict(list)
     for sample in samples:
-        if subconf == 'REPLICATES':
-            paths.append(str.join(os.sep,sample.split(os.sep)[:-1]))
-        else:
-            paths.append(str.join(os.sep,sample.split(os.sep)[2:-1]))
-    paths = list(set(paths))
-    for p in paths:
-        if subconf == 'REPLICATES':
-            ret.extend([str.join(os.sep,[p,x])+'_mapped_sorted_unique.counts' for x in tool_params_rep(p, None, config, analysis)[subconf]])
-        else:
-            ret.extend(tool_params_rep(p, None, config, analysis)[subconf])
-    log.debug(logid+'RETURN: '+str(ret))
-    return ret
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
+        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        log.debug(logid+'CONF: '+str(partconf))
+        ret['reps'].append(sample)
+        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        idx = partconf['REPLICATES'].index(wcfile)
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
+        ret['conds'].append(partconf['CONDITIONS'][idx])
+        if 'TYPES' in partconf:
+            if len(partconf['TYPES']) >= idx:
+                ret['types'].append(partconf['TYPES'][idx])
+
+    rets = '-r '+str.join(',',ret['reps'])
+    rets += ' -c '+str.join(',',ret['conds'])
+    rets += ' -t '+str.join(',',ret['types']) if 'types' in ret else ''
+    rets += ' --paired '+str.join(',',ret['pairs']) if 'pairs' in ret else ''
+
+    log.debug(logid+'RETURN: '+str(rets))
+    return rets
 
 @check_run
 def env_bin_from_config(samples, config, subconf):
