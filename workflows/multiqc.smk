@@ -3,8 +3,8 @@ rule qcall:
 
 if paired == 'paired':
     rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['r1','r2']),
-               expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['r1','r2']),
+        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),
+               expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['R1','R2']),
                expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),

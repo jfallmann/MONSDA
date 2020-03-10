@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Mar  9 17:18:53 2020 (+0100)
+# Last-Updated: Tue Mar 10 13:22:40 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1617
+#     Update #: 1618
 # URL:
 # Doc URL:
 # Keywords:
@@ -392,7 +392,7 @@ def tool_params_rep(sample, runstate, config, subconf):
     return mp
 
 @check_run
-def get_reps(samples,config,analysis,subconf):
+def get_reps(samples,config,analysis,subconf):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCTION
     logid=scriptname+'.Collection_tool_get_reps: '
     log.debug(logid+'Samples: '+str(samples))
     ret = list()

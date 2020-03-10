@@ -12,18 +12,14 @@ rule all:
 
 if paired == 'paired':
     rule count_fastq:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_r1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = lambda wildcards: "FASTQ/{rawfile}_r2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r3 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
-                r4 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
-        output: r1 = "COUNTS/{file}_raw_r1_fq.count",
-                r2 = "COUNTS/{file}_raw_r2_fq.count",
-                r3 = "COUNTS/{file}_trimmed_r1_fq.count",
-                r4 = "COUNTS/{file}_trimmed_r2_fq.count"
+        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{{read}}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),read=['R1','R2']),
+                r2 = expand("TRIMMED_FASTQ/{{file}}_{read}_trimmed.fastq.gz", read=['R1','R2'])
+        output: r1 = expand("COUNTS/{{file}}_raw_{read}_fq.count",read=['R1','R2']),
+                r2 = expand("COUNTS/{{file}}_trimmed_{read}_fq.count",read=['R1','R2'])
         log:    "LOGS/{file}/countfastq.log"
         conda:  "snakes/envs/base.yaml"
         threads: 1
-        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log} && arr=({input.r3}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r3};done 2>> {log} && arr=({input.r4}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r4};done 2>> {log}"
+        shell:  "arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log} && arr=({input.r2}); orr=({output.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
 
 else:
     rule count_fastq:

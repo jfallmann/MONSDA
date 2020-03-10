@@ -4,7 +4,7 @@ rule qcall:
 
 if paired == 'paired':
     rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['r1','r2']),
+        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),
         output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{condition}/tmp"),
                 lst = "QC/Multi/{condition}/qclist.txt"

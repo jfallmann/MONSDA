@@ -36,7 +36,7 @@ else:
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "UCSC/{file}_mapped_sorted.bed.gz",
                     "UCSC/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/UCSC/{file}_ucscbamtobed"
+            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
             conda:  "snakes/envs/bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
@@ -46,7 +46,7 @@ else:
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "UCSC/{file}_mapped_sorted.bed.gz",
                     "UCSC/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/UCSC/{file}_ucscbamtobed"
+            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
             conda:  "snakes/envs/bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
@@ -54,7 +54,7 @@ else:
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscindexfa"
+    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscindexfa.log"
     conda:  "snakes/envs/samtools.yaml"
     params: bins = BINS
     threads: 1
@@ -63,7 +63,7 @@ rule index_fa:
 rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
-    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscgetcrom"
+    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscgetchrom.log"
     conda:  "snakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -82,7 +82,7 @@ if all(checklist):
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
+        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "snakes/envs/ucsc.yaml"
         #    conda:  "snakes/envs/perl.yaml"
         threads: 1
@@ -94,7 +94,7 @@ elif all(checklist2):
         input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph"
+        log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "snakes/envs/ucsc.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
@@ -107,7 +107,7 @@ else:
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: fw = "UCSC/{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{file}_mapped_{type}.re.bedg.gz"
-        log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph"
+        log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph.log"
         conda:  "snakes/envs/bedtools.yaml"
         #    conda:  "snakes/envs/perl.yaml"
         threads: 1
@@ -121,10 +121,10 @@ rule NormalizeBedg:
             re = rules.BedToBedg.output.re
     output: fw = "UCSC/{file}_mapped_{type}.fw.norm.bedg.gz",
             re = "UCSC/{file}_mapped_{type}.re.norm.bedg.gz"
-    log:    "LOGS/UCSC/{file}_{type}_ucscnormalizebedgraph"
+    log:    "LOGS/UCSC/{file}_{type}_ucscnormalizebedgraph.log"
     conda:  "snakes/envs/perl.yaml"
     threads: 1
-    shell: "scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) |gzip > {output.fw}  2> {log} && scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})|gzip > {output.re} 2> {log}"
+    shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
@@ -134,12 +134,12 @@ rule BedgToUCSC:
             re = "UCSC/{file}_mapped_{type}.re.bw",
             t1 = temp("UCSC/{file}_mapped_{type}.fw.tmp"),
             t2 = temp("UCSC/{file}_mapped_{type}.re.tmp")
-    log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc"
+    log:    "LOGS/UCSC/{file}_{type}_bedgtoucsc.log"
     conda:  "snakes/envs/ucsc.yaml"
     threads: 1
     priority: 100               # This should be finished before we generate tracks
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
-    shell:  "zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log} && zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}"
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
     input:  fw = rules.BedgToUCSC.output.fw,

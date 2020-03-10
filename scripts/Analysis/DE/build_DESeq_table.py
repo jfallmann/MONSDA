@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
-import sys, argparse, os, inspect, traceback, gzip, glob, re
+import sys, argparse, os, inspect, gzip, glob, re, logging
+import traceback as tb
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../../lib")
 if cmd_subfolder not in sys.path:
@@ -46,7 +47,6 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
     try:
         #slist,
         logid = scriptname+'.prepare_table: '
-        #log.debug(logid+'LIST: '+str(slist))
         my_groups={}
         list_size=0
 
@@ -60,13 +60,11 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old DE anno file'+oldfile+', was moved to '+oldfile+'.bak')
 
-        #samplelist = str(slist).strip().split(',')
         replist = str(replicates).strip().split(',')
         condlist = str(conditions).strip().split(',')
         typelist = str(types).strip().split(',') if types is not None else None
         pairedlist = str(paired).strip().split(',') if paired is not None else None
 
-        #log.debug(logid+'SAMPLES: '+str(samplelist)+'\tLEN: '+str(len(samplelist)))
         log.debug(logid+'REPS: '+str(replist)+'\tLEN: '+str(len(replist)))
         log.debug(logid+'CONDS: '+str(condlist)+'\tLEN: '+str(len(condlist)))
 
@@ -202,9 +200,12 @@ if __name__ == '__main__':
     try:
         args=parseargs()
         makelogdir('LOGS')
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
-        #args.list,
+        try:
+            log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+            log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+        except:
+            log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+
         prepare_table(args.conditions, args.replicates, args.types, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -212,7 +213,6 @@ if __name__ == '__main__':
             exc_type, exc_value, exc_tb,
         )
         log.error(logid+''.join(tbe.format()))
-
 
 #
 # build_DESeq_table.py ends here

@@ -6,8 +6,7 @@ rule all:
 
 rule featurecount_unique:
     input:  reads = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
-    output: cts   = "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts",
-            anno  = temp("COUNTS/Featurecounter_genes/{file}_unique.anno")
+    output: cts   = "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_de_gene_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -16,7 +15,7 @@ rule featurecount_unique:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene -g '+config['COUNTING']['FEATURES']['gene'],
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "zcat {params.anno} > {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {output.anno} -o {output.cts} {input.reads} 2> {log}"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
@@ -30,7 +29,7 @@ rule prepare_count_table:
              detypes = lambda wildcards, input: '-t '+str.join(',',get_reps(input.cnd,config,'DE','TYPES')),
              paired = lambda wildcards, input:  '--paired '+str.join(',',[checkpaired_rep([str.join(os.sep,x.split(os.sep)[2:]) for x in get_reps(input.cnd,config,'DE','REPLICATES')],config)]),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} {params.paired} --table {output.tbl} --anno {output.anno} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -r {params.dereps} -c {params.decond} {params.detypes} {params.paired} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,

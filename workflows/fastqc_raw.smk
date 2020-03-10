@@ -1,25 +1,20 @@
 rule qcall:
     input: expand("QC/Multi/RAW/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))
-    #input: expand("QC/Multi/RAW/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",
-               r2 = "FASTQ/{rawfile}_r2.fastq.gz"
-        output: o1 = report("QC/{rawfile}_r1_fastqc.zip",category="QC"),
-                o2 = report("QC/{rawfile}_r2_fastqc.zip",category="QC")
-#        wildcard_constraints:
-#            rawfile="!trimmed"
-        log:    "LOGS/{rawfile}/fastqc_raw.log"
+        input: r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
+        log:    "LOGS/{rawfile}/fastqc_{read}_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
         params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['r1','r2']),
+        input: expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
         output: html = report("QC/Multi/RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/RAW/{condition}/tmp"),
                 lst = "QC/Multi/RAW/{condition}/qclist.txt"

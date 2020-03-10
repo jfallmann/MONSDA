@@ -1,31 +1,27 @@
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1 = "FASTQ/{rawfile}_r1.fastq.gz",
-               r2 = "FASTQ/{rawfile}_r2.fastq.gz"
-        output: o1 = report("QC/{rawfile}_r1_fastqc.zip",category="QC"),
-                o2 = report("QC/{rawfile}_r2_fastqc.zip",category="QC")
+        input: r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
 #        wildcard_constraints:
 #            rawfile="!trimmed"
-        log:    "LOGS/{rawfile}/fastqc_raw.log"
+        log:    "LOGS/{rawfile}/fastqc_{read}_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
         params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
-        input:  expand(rules.qc_raw.output, rawfile=SAMPLES),
-                r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz"
-        output: o1 = report("QC/{file}_r1_trimmed_fastqc.zip", category="QC"),
-                o2 = report("QC/{file}_r2_trimmed_fastqc.zip", category="QC")
-        log:   "LOGS/{file}/fastqc_trimmed.log"
+        input:  expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
+                r1 = "TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz"
+        output: o1 = report("QC/{file}_{read}_trimmed_fastqc.zip", category="QC")
+        log:   "LOGS/{file}/fastqc_{read}_trimmed.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
         params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log} && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_mapped:
         input:  r1 = "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
