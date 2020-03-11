@@ -93,72 +93,30 @@ dev.off()
 ####fit glms
 fit <- glmFit(dge, design)
 
-###IF NO COMPARE ENTRY - compare all vs all
-print(cmp)
-if(cmp == ''){
+contrast_list = list()
+for(pair in comparison[[1]]) {
+  con <- integer(dim(design)[2])
+  comp <- strsplit(pair,"-vs-")
+  a <- comp[[1]][1]
+  b <- comp[[1]][2]
+  m <- match(c(a,b), colnames(design))
+  con[m[1]] <- -1
+  con[m[2]] <- 1
+  ####likelihood ratiotest
+  lrt <- glmLRT(fit, contrast = con)
 
-  for(i in 1:(dim(design)[2]-1)){
-    for(j in (i+1):dim(design)[2]){
-      con <- integer(dim(design)[2])
-      con[i] <- -1
-      con[j] <- 1
+  ####top DE
+  #topTags(lrt)
 
-      ####likelihood ratiotest
-      lrt <- glmLRT(fit, contrast = con)
+  ###DE distribution
+  #summary(decideTests(lrt))
 
-      ####top DE
-      #topTags(lrt)
+  ###plot lFC vs CPM
+  print(paste("compare ", pair[[1]]))
 
-      ###DE distribution
-      #summary(decideTests(lrt))
-
-      ###plot lFC vs CPM
-      a <- levels(dge$samples$group)[i]
-      b <- levels(dge$samples$group)[j]
-      cs <- paste("rand",a,"vs",b,sep="-")
-      title <- paste(a, " vs. ",b)
-
-      print(paste("compare ", title))
-
-      out <- paste(drct,'/',cs,".png",sep="")
-      png(out, width = 350, height = 350)
-      plotMD(lrt, main=title)
-      abline(h=c(-1, 1), col="blue")
-      dev.off()
-    }
-  }
-
-  ###ELSE - compare selected Groups
-} else {
-
-  contrast_list = list()
-  for(i in seq(1, length(comparison[[1]]),2)){
-    con <- integer(dim(design)[2])
-    a <- comparison[[1]][i]
-    b <- comparison[[1]][i+1]
-    m <- match(c(a,b), colnames(design))
-    con[m[1]] <- -1
-    con[m[2]] <- 1
-
-    ####likelihood ratiotest
-    lrt <- glmLRT(fit, contrast = con)
-
-    ####top DE
-    #topTags(lrt)
-
-    ###DE distribution
-    #summary(decideTests(lrt))
-
-    ###plot lFC vs CPM
-    cs <- paste(a,"vs",b,sep="-")
-    title <- paste(a, " vs. ",b)
-
-    print(paste("compare ", title))
-
-    out <- paste(drct,'/',cs,".png",sep="")
-    png(out, width = 350, height = 350)
-    plotMD(lrt, main=title)
-    abline(h=c(-1, 1), col="blue")
-    dev.off()
-  }
+  out <- paste(drct,'/',pair[[1]],".png",sep="")
+  png(out, width = 350, height = 350)
+  plotMD(lrt, main=pair[[1]])
+  abline(h=c(-1, 1), col="blue")
+  dev.off()
 }

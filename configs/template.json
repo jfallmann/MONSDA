@@ -190,20 +190,26 @@
     },
 #DE options for Differential Expression Analysis for each sample/condition
     "DE": {
+      "TOOLS" :
+        {
+          "deseq2" : "DESeq2_diffexp_2.R",
+          "edger" : "EdgeR.R"
+        },
+      "COMPARABLE" :
+        {
+        }
         "id": {
             "condition": {
                 "setting": {  # See above
-                              "ENV": "deseq2", #see QC
-                              "BIN": "deseq2",
-                              "CONDITION":  ["WT","KO"], #Conditions of samples can be different than the condition setting
-                              "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
-                              "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
-                              "OPTIONS":
-                              [
-                                  {  #Should not be needed
-                                  }
-                              ]
-                           }
+                    "GROUP":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
+                    "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
+                    "OPTIONS":
+                    [
+                        {  #Should not be needed
+                        }
+                    ]
+                 }
             }
         }
     },
@@ -215,7 +221,7 @@
                     "ENV": "dexseq",
                     "BIN": "dexseq",
                     "ANNOTATION": "genome_or_other.gtf.gz",
-                    "CONDITION":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                    "GROUP":  ["WT","KO"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
                     "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
                     "OPTIONS":

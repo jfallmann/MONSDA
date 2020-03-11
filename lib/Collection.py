@@ -66,6 +66,7 @@ import glob, os, snakemake
 import numpy as np
 import heapq
 import itertools
+from itertools import combinations
 from operator import itemgetter
 from natsort import natsorted, ns
 import traceback as tb
@@ -308,12 +309,14 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             env = str(subDict(config[subwork],condition)[stage+'ENV'])
         except:
-            log.warning('Key ENV not found for '+subwork+' this can be intentional')
+            if subwork != 'DE':
+                log.warning('Key ENV not found for '+subwork+' this can be intentional')
             env = ''
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            log.warning('Key BIN not found for '+subwork+' this can be intentional')
+            if subwork != 'DE':
+                log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         src, treat, setup = condition
         log.debug(logid+str([env,exe,src,treat,setup]))
@@ -1070,20 +1073,45 @@ def runjob(jobtorun):
     return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
 
 @check_run
+def find(key, dictionary):
+    for k, v in dictionary.items():
+        if k == key:
+            yield v
+        elif isinstance(v, dict):
+            for result in find(key, v):
+                yield result
+        elif isinstance(v, list):
+            for d in v:
+                if isinstance(d, dict):
+                    for result in find(key, d):
+                        yield result
+
+@check_run
 def comparable_as_string(config, subwork):
     logid=scriptname+'.comparable_as_string: '
-    try:
+    check = config[subwork].get('COMPARABLE')
+    if check:
+        log.info(logid+'determine comparables in '+subwork)
+        complist  = []
         compdict=config[subwork]['COMPARABLE']
-    except:
-        log.info(logid+'no comparables found in '+subwork)
-        return ""
-    complist  = []
-    for key in compdict:
-        for value in compdict[key]:
-            complist.append(key)
-            complist.append(value)
-    compstr = ','.join(complist)
-    return compstr
+        for key in compdict:
+            for value in compdict[key]:
+                complist.append(f"{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
+    else:
+        log.info(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
+        groups_by_condition = list(find("GROUP",config))
+        flattened = set(val for sublist in groups_by_condition for val in sublist)
+        combined=list(combinations(flattened,2))
+        complist=[]
+        for key, value in combined:
+            complist.append(f"{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
+
+
+
 
 
 #

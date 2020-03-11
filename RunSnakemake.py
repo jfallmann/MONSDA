@@ -73,7 +73,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         subdir = 'SubSnakes'
         config = load_configfile(configfile)
-        print(config)
         argslist = list()
         if useconda:
             argslist.append("--use-conda")
@@ -369,7 +368,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
                     for key in config[subwork]['TOOLS']:
-                        log.info(logid+'... with '+key+' Tool')
+                        log.info(logid+'... with Tool: '+key)
                         toolenv = key
                         toolbin = config[subwork]['TOOLS'][key]
                         countenv, countbin = map(str,listoftoolscount[0])
@@ -382,11 +381,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
                             subconf = merge_dicts(subconf,listofconfigscount[x])
-                        subname = toolenv+'.smk'
+                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+analysis+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
+
                         smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk'])))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
@@ -394,18 +394,18 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
-                        confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json'])))
+                        confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subconfig.json'])))
                         if os.path.exists(confo):
                             os.rename(confo,confo+'.bak')
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         o = runjob(jobtorun)
 
