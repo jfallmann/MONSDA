@@ -1,4 +1,4 @@
-import glob, os, sys, inspect, snakemake, json, shutil
+import glob, os, sys, inspect, snakemake, json, shutil, logging
 import tempfile
 import traceback as tb
 from collections import defaultdict
@@ -12,7 +12,15 @@ for x in cmd_subfolder:
 from Collection import *
 from Logger import *
 
-log = setup_logger(name='snakemake', log_file='LOGS/snakemakerun.log', level='DEBUG')#, filemode='a')
+try:
+    log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+    if (log.hasHandlers()):
+        logr.handlers.clear()
+    log.addHandler(logging.FileHandler('LOGS/RunSnakemake.log'))  # streamlog
+    log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+except:
+    log = setup_logger(name='Snakemake', log_file='stdout', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')#, filemode='a')
+    #log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
 logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]

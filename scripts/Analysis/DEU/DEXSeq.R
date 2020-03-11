@@ -109,17 +109,19 @@ setwd(outdir)
 
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
-BPPARAM = MulticoreParam(workers=availablecores)
-
 for (n in 1:ncol(condcomb)){
 
     cname=""
     cname=paste(condcomb[,n],collapse='_vs_')
     print(cname)
+    dxdpair <- NULL
+    dxr1 <- NULL
+
+    tryCatch({
 
         dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
 
-        dxdpair = estimateSizeFactors( dxdpair )
+        BPPARAM = MulticoreParam(workers=availablecores)
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM)
 
         pdf(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
@@ -132,17 +134,21 @@ for (n in 1:ncol(condcomb)){
 
         dxr1 = DEXSeqResults( dxdpair )
 
+        rm(dxdpair)
+
         csvout <- paste(paste('DEXSeqResults',cname,sep='_'),'.tsv.gz', sep='')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t")
-    tryCatch({
+
         htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
         pathout <- paste('DEXSeqReport',cname,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout)
 
-        rm(dxdpair,dxr1)
-
+        rm(dxr1)
         print(paste('cleanup done for ', cname, sep=''))
 
 
-    }, error=function(e){cat("WARNING :",conditionMessage(e), "\n")})
+    }, error=function(e){
+        rm(dxr1)
+        cat("WARNING :",conditionMessage(e), "\n")
+    })
 }

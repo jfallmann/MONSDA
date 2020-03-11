@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Mar 10 22:32:22 2020 (+0100)
+# Last-Updated: Wed Mar 11 16:02:50 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1663
+#     Update #: 1674
 # URL:
 # Doc URL:
 # Keywords:
@@ -78,6 +78,7 @@ import gzip
 import math
 import inspect
 import subprocess
+import shlex
 import collections
 from collections import defaultdict, OrderedDict
 import six
@@ -1043,7 +1044,10 @@ def check_ref(reference):
 
 @check_run
 def runjob(jobtorun):
-    return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+    #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+    logid=scriptname+'.Collection_runjob: '
+    log.info(logid+str(jobtorun))
+    return subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 #
 # Collection.py ends here
