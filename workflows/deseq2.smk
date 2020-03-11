@@ -1,8 +1,18 @@
-DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
+outdir="DE/DESEQ2/"
+comparison=comparable_as_string(config,'DE')
+
 rule all:
-    input:  "DE/DESEQ2/DONE"
+    input:  plot = expand("{outdir}{comparison}_DESeq2_plot.pdf", outdir=outdir, comparison=comparison.split(",")),
+            rld = expand("{outdir}{comparison}_DESeq2_rld.txt.gz", outdir=outdir, comparison=comparison.split(",")),
+            vsd = expand("{outdir}{comparison}_DESeq2_vsd.txt.gz", outdir=outdir, comparison=comparison.split(",")),
+            csv = expand("{outdir}{comparison}.csv.gz", outdir=outdir, comparison=comparison.split(",")),
+            heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
+            pca = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
+            vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
+            rpl = expand("{outdir}Rplots.pdf", outdir=outdir),
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -31,13 +41,21 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: csv  = "DE/DESEQ2/DONE"
+    output: rules.all.input.plot,
+            rules.all.input.rld,
+            rules.all.input.vsd,
+            rules.all.input.csv,
+            rules.all.input.heat,
+            rules.all.input.pca,
+            rules.all.input.vst,
+            rules.all.input.rpl,
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins   = BINS,
-            outdir = lambda wildcards, output: os.path.dirname(output.csv),
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp.R {input.anno} {input.cnt} {params.outdir} {threads} 2> {log} && touch {output.csv}"
+            outdir = lambda wildcards, output: os.path.dirname(outdir),
+            compare = comparison
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp_2.R {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} "
 
 onsuccess:
-    print("Workflow DE finished, no error")
+    print("Workflow DE-deseq2 finished, no error")

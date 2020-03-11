@@ -212,7 +212,7 @@ The pipeline now also supports DE-Analysis as postprocessing step for a defined 
                     "star": {
                              "ENV": "deseq2", #choose which environment to use (currently only deseq2 is supported, others will follow)
                              "BIN": "deseq2", #choose which binary to use (currently only deseq2 is supported, others will follow)
-                             "CONDITION":  ["WT","WT"], # define the conditions per sample as list of same lenght as replicates
+                             "GROUP":  ["WT","WT"], # define the conditions per sample as list of same lenght as replicates
                              "REPLICATES": ["GSM461177_untreat_paired_subset_r1","GSM461177_untreat_paired_subset_r2"], #this are the replicates for each condition, length has to match with CONDITION
                              "OPTIONS": #This is not needed currently, other DE pipelines may need this later on
                              [
@@ -225,7 +225,7 @@ The pipeline now also supports DE-Analysis as postprocessing step for a defined 
                     "star": {
                              "ENV": "deseq2", #see QC
                              "BIN": "deseq2",
-                             "CONDITION":  ["KO","KO"],
+                             "GROUP":  ["KO","KO"],
                              "REPLICATES": ["GSM461177_untreat_paired_subset","GSM461177_untreat_paired_subset"],
                              "OPTIONS":
                              [

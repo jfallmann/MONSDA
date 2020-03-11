@@ -1,8 +1,15 @@
-DEBIN, DEENV = env_bin_from_config2(SAMPLES,config,'DE')
+
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
+outdir="DE/EDGER/"
+comparison=comparable_as_string(config,'DE')
+
 rule all:
-    input:  "DE/EDGER/DONE"
+    input:  plot = expand("{outdir}{comparison}.png", outdir=outdir, comparison=comparison.split(",")),
+            bcv = expand("{outdir}BCV.png", outdir=outdir),
+            mds = expand("{outdir}MDS.png", outdir=outdir),
+            tbl = expand("{outdir}normalized_table.tsv", outdir=outdir)
 
 rule featurecount_unique:
     input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -25,32 +32,28 @@ rule prepare_count_table:
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnd]),
+    params:  decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')["GROUP"]) for x in input.cnd]),
              dereps = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['REPLICATES']) for x in input.cnd]),
              detypes = lambda wildcards, input: '-t '+str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['TYPES']) for x in input.cnd]),
              samples = lambda wildcards, input: str.join(',',input.cnd),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} -t {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: csv = "DE/EDGER/DONE"
+    output: rules.all.input.plot,
+            rules.all.input.bcv,
+            rules.all.input.mds,
+            rules.all.input.tbl
     log:    "LOGS/DE/run_edger.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params: bins = str.join(os.sep,[BINS,"Analysis/DE",DEBIN]),
-            outdir = lambda wildcards, output: os.path.dirname(output.csv),
-            #condcombs = lambda wildcards, input: ','.join([map(str, comb) for comb in combinations([','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')['CONDITION']) for x in input.cnt],2)]),
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.outdir} 2> {log} && touch {output.csv}"
+    params: bins = BINS,
+            outdir = lambda wildcards, output: os.path.dirname(outdir),
+            compare = comparison
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/EdgeR.R {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} "
 
-#rule themall:
-#    input:  rules.summarize_counts.output
-#    output: "COUNTS/DONE"
-#    conda:  "snakes/envs/base.yaml"
-#    threads: 1
-#    params: bins = BINS
-#    shell:  "touch {output}"
 
 onsuccess:
-    print("Workflow finished, no error")
+    print("Workflow DE-edgeR finished, no error")

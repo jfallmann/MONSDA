@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar 11 16:05:08 2020 (+0100)
+# Last-Updated: Wed Mar 11 20:00:50 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 712
+#     Update #: 713
 # URL:
 # Doc URL:
 # Keywords:
@@ -358,47 +358,53 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
                 if analysis in config and analysis in postprocess:
-                    log.info(logid+'STARTING '+analysis+' Analysis')
+                    log.info(logid+'STARTING '+analysis+' Analysis...')
                     subwork = analysis
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
                     listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+
                     if listoftools is None or listoftoolscount is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
-                    toolenv, toolbin = map(str,listoftools[0])
-                    countenv, countbin = map(str,listoftoolscount[0])
+                    for key in config[subwork]['TOOLS']:
+                        log.info(logid+'... with Tool: '+key)
+                        toolenv = key
+                        toolbin = config[subwork]['TOOLS'][key]
+                        countenv, countbin = map(str,listoftoolscount[0])
+                        subconf = NestedDefaultDict()
+                        for i in listofconfigs:
+                            i[subwork+'ENV'] = toolenv
+                            i[subwork+'BIN'] = toolbin
+                        for i in range(len(listoftools)):
+                            subconf = merge_dicts(subconf,listofconfigs[i])
 
-                    subconf = listofconfigs[0]
-                    for x in range(1,len(listofconfigs)):
-                        subconf = merge_dicts(subconf,listofconfigs[x])
-                    for x in range(0,len(listofconfigscount)):
-                        subconf = merge_dicts(subconf,listofconfigscount[x])
+                        for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
+                            subconf = merge_dicts(subconf,listofconfigscount[x])
+                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+analysis+'.smk'
+                        subsamples = sampleslong(subconf)
+                        log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
-                    subname = toolenv+'.smk'
-                    subsamples = sampleslong(subconf)
-                    log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
-                    smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk'])))
-                    if os.path.exists(smko):
-                        os.rename(smko,smko+'.bak')
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
-                    with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subsnake.smk']))), 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk'])))
+                        if os.path.exists(smko):
+                            os.rename(smko,smko+'.bak')
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
 
-                    confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolbin,'subconfig.json'])))
-                    if os.path.exists(confo):
-                        os.rename(confo,confo+'.bak')
-                    with open(confo, 'a') as confout:
-                        json.dump(subconf, confout)
+                        confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subconfig.json'])))
+                        if os.path.exists(confo):
+                            os.rename(confo,confo+'.bak')
+                        with open(confo, 'a') as confout:
+                            json.dump(subconf, confout)
 
                     jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                     log.info(logid+'RUNNING '+str(jobtorun))
