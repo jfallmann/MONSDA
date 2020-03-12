@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 09:00:17 2020 (+0100)
+# Last-Updated: Thu Mar 12 10:19:29 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1686
+#     Update #: 1689
 # URL:
 # Doc URL:
 # Keywords:
@@ -650,12 +650,14 @@ def checkclip(sample,config):
         if r not in tmplist:
             tmplist.extend(r)
         log.debug(logid+str(tmplist))
-        check = getFromDict(config['PEAKS'],tmplist)
+        log.debug(logid+'TMP: '+str(tmplist))
+        check = getFromDict(config['PEAKS'],tmplist)[0]
+        log.debug(logid+'CHECK: '+str(check))
         if 'CLIP' in check:
             clip = check['CLIP']
         else:
             log.debug(logid+'Key CLIP not found in config')
-    log.debug(logid+str(clip))
+    log.debug(logid+'CLIP is: '+str(clip))
     return str(clip)
 
 @check_run

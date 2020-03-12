@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 09:46:41 2020 (+0100)
+# Last-Updated: Thu Mar 12 10:06:23 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 748
+#     Update #: 750
 # URL:
 # Doc URL:
 # Keywords:
@@ -405,7 +405,23 @@ def runjob(jobtorun):
         log.info(logid+str(jobtorun))
         #return
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return check_job_status(job)
+
+        while True:
+            output = str.join('',job.stdout.readlines()).rstrip()
+            err = str.join('',job.stderr.readlines()).rstrip()
+            if output:
+                log.info(logid+str(output))
+                if not 'Workflow finished, no error' in output or 'Exception' in output:
+                    sys.exit(output)
+            if err:
+                log.error(logid+str(err))
+                if any(x in err for x in ['ERROR','Error','error','Exception']):
+                    sys.exit(err)
+            if job.poll() is not None:
+                break
+        return job.poll()
+
+        #return check_job_status(job)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
