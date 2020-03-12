@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 10:19:29 2020 (+0100)
+# Last-Updated: Thu Mar 12 13:41:36 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1689
+#     Update #: 1701
 # URL:
 # Doc URL:
 # Keywords:
@@ -144,28 +144,29 @@ def get_samples(config):
     logid = scriptname+'.Collection_get_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    paired = checkpaired([SAMPLES[0]],config)
-    log.debug(logid+'PAIRED: '+str(paired))
     check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
-    SAMPLES = list()
-    for s in check:
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        paired = checkpaired([SAMPLES[i]],config)
+        log.debug(logid+'PAIRED: '+str(paired))
         log.debug(logid+'SEARCHING: '+s)
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                SAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                SAMPLES.extend([x.replace('.fastq.gz','') for x in f])
-    log.debug(logid+'SAMPLETEST: '+str(SAMPLES))
-    if len(SAMPLES) < 1:
+                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
         sys.exit()
 
-    log.info(logid+'SAMPLES: '+str(SAMPLES))
-    return SAMPLES
+    log.info(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
 
 @check_run
 def get_conditions(samples, config):
@@ -569,6 +570,7 @@ def checkpaired(sample,config):
     ret = list()
     paired = ''
     for s in sample:
+        log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
         tmplist = check
         p = getFromDict(config['SEQUENCING'],tmplist)[0]
@@ -646,6 +648,7 @@ def checkclip(sample,config):
         log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
         r = runstate_from_sample([s],config)
+        log.debug(logid+'RUNSTATE: '+str(r))
         tmplist = check
         if r not in tmplist:
             tmplist.extend(r)

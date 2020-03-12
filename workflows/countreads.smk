@@ -154,3 +154,6 @@ onsuccess:
 #   params: out="QUANT/Cufflinks/{file}_unique"
 #   threads: 20
 #   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
+onerror:
+	print("ERROR: "+str({log}))
+

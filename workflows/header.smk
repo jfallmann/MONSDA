@@ -74,3 +74,6 @@ if 'PEAKS' in config:
         PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
     else:
         PREPROCESS = ''
+onerror:
+	print("ERROR: "+str({log}))
+

@@ -96,7 +96,7 @@ rule extendbed:
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input[0]} -o {output[0]} -g {params.gen} 2> {log}"
 
 rule rev_extendbed:
     input:  "PEAKS/{file}_mapped_{type}.bed.gz",
@@ -107,7 +107,7 @@ rule rev_extendbed:
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input[0]} -o {output[0]} -g {params.gen}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input[0]} -o {output[0]} -g {params.gen}  2> {log}"
 
 checklist = list()
 checklist2 = list()
@@ -129,7 +129,7 @@ if all(checklist) and CLIP not in ['iCLIP', 'revCLIP']:
         threads: 1
         params: absf = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.fw.bedg.gz'),
                 absr = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
-        shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} && zcat {params.absr} | perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat}"
+        shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} && zcat {params.absr} | perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat}  2> {log}"
 
 elif all(checklist2) and CLIP not in ['iCLIP', 'revCLIP']:
     rule BedToBedg:
@@ -143,7 +143,7 @@ elif all(checklist2) and CLIP not in ['iCLIP', 'revCLIP']:
         threads: 1
         params: absf = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.fw.bedg.gz'),
                 absr = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
-        shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} && zcat {params.absr} | perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} "
+        shell:  "export LC_ALL=C; export LC_COLLATE=C; ln -s {params.absf} {output.fwd} && ln -s {params.absr} {output.rev} && zcat {params.absf} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} && zcat {params.absr} | perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat}  2> {log}"
 
 elif CLIP == 'iCLIP':
      rule BedToBedg:
@@ -197,7 +197,7 @@ rule PreprocessPeaks:
     threads: 1
     params:  bins=BINS,
              opts=PREPROCESS
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]} 2> {log}"
 
 rule Find_Peaks:
     input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
@@ -212,7 +212,7 @@ rule Find_Peaks:
             cutoff=MINPEAKHEIGHT,
             userlimit=USRLIMIT,
             bins=BINS
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]}"
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
 #rule QuantPeaks:
 #   input:  "PEAKS/{source}/Peak_{file}.bed.gz"
@@ -253,7 +253,7 @@ if ANNOPEAK is not None:
         threads: 1
         params: bins=BINS,
                 anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'PEAKS')['ANNOTATION']])
-        shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output}"
+        shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}"
 
     rule PeakToBedg:
         input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
@@ -318,3 +318,9 @@ rule PeakToUCSC:
 
 onsuccess:
     print("Workflow finished, no error")
+
+onerror:
+    print("ERROR: "+str({log}))
+onerror:
+	print("ERROR: "+str({log}))
+

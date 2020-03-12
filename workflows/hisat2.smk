@@ -40,3 +40,6 @@ else:
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
         shell: "{params.mapp} {params.mpara} -p {threads} -x {input.index} -r {input.query} --al {output.mapped} --un {output.unmapped} 2>> {log} && touch {output.unmapped}"
+onerror:
+	print("ERROR: "+str({log}))
+

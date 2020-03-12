@@ -89,3 +89,6 @@ else:
         params:  dir=lambda w: expand("QC/{source}",source=source_from_sample(w.file,config)),
                  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+onerror:
+	print("ERROR: "+str({log}))
+

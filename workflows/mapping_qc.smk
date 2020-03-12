@@ -59,3 +59,6 @@ rule themall:
         for f in output:
             with open(f, "w") as out:
                 out.write("DONE")
+onerror:
+	print("ERROR: "+str({log}))
+

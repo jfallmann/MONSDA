@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 10:06:23 2020 (+0100)
+# Last-Updated: Thu Mar 12 15:28:50 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 750
+#     Update #: 767
 # URL:
 # Doc URL:
 # Keywords:
@@ -269,7 +269,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 log.info(logid+'RUNNING WORKFLOW '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
-                #check_job_status(job)
 
         else:
             log.warning(logid+'No subworkflows defined! Nothing to do!')
@@ -324,7 +323,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
-                        #check_job_status(job)
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
@@ -383,7 +381,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     log.info(logid+'RUNNING '+str(jobtorun))
                     job = runjob(jobtorun)
                     log.debug(logid+'JOB CODE '+str(job))
-                    #check_job_status(job)
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
@@ -402,11 +399,10 @@ def runjob(jobtorun):
     try:
         logid = scriptname+'.runjob: '
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-        log.info(logid+str(jobtorun))
-        #return
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         while True:
+            status = job.poll()
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
             if output:
@@ -417,11 +413,11 @@ def runjob(jobtorun):
                 log.error(logid+str(err))
                 if any(x in err for x in ['ERROR','Error','error','Exception']):
                     sys.exit(err)
-            if job.poll() is not None:
+            if status is not None:
+                log.debug(logid+'POLL: '+str(job.poll()))
                 break
-        return job.poll()
 
-        #return check_job_status(job)
+        return status
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -429,33 +425,6 @@ def runjob(jobtorun):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
-
-def check_job_status(job):
-    try:
-        logid = scriptname+'.check_job_status: '
-
-        while True:
-            output = str.join('',job.stdout.readlines()).rstrip()
-            err = str.join('',job.stderr.readlines()).rstrip()
-            if job.poll() is not None:
-                break
-            if output:
-                log.info(logid+str(output))
-                if not 'Workflow finished, no error' in output or 'Exception' in output:
-                    sys.exit(output)
-            if err:
-                log.error(logid+str(err))
-                if any(x in err for x in ['ERROR','Error','error','Exception']):
-                    sys.exit(err)
-        return job.poll()
-
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error(''.join(tbe.format()))
-
 
 ####################
 ####    MAIN    ####

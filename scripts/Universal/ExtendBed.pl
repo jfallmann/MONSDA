@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 #Script ExtendBed.pl;
-#Last changed Time-stamp: <2019-10-17 16:50:42 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
+#Last changed Time-stamp: <2020-03-12 14:10:26 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
 ###############
 ###Use stuff
 ###############
@@ -248,6 +248,8 @@ while(<$Bed>){
 		print $Out "\n";
 	}
 }
+
+return 1
 
 ###############
 ###POD
