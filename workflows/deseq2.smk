@@ -5,14 +5,14 @@ outdir="DE/DESEQ2/"
 comparison=comparable_as_string(config,'DE')
 
 rule all:
-    input:  plot = expand("{outdir}{comparison}_DESeq2_plot.pdf", outdir=outdir, comparison=comparison.split(",")),
-            rld = expand("{outdir}{comparison}_DESeq2_rld.txt.gz", outdir=outdir, comparison=comparison.split(",")),
-            vsd = expand("{outdir}{comparison}_DESeq2_vsd.txt.gz", outdir=outdir, comparison=comparison.split(",")),
-            csv = expand("{outdir}{comparison}.csv.gz", outdir=outdir, comparison=comparison.split(",")),
+    input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=comparison.split(",")),
+            csv = expand("{outdir}{comparison}_DESeq2.csv.gz", outdir=outdir, comparison=comparison.split(",")),
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
             pca = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
             vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
-            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir)),
+            rld = expand("{outdir}DESeq2_rld.txt.gz", outdir=outdir),
+            vsd = expand("{outdir}DESeq2_vsd.txt.gz", outdir=outdir),
+            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir))
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -29,8 +29,8 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DE/Tables/DESEQ2/RUN_DE_Analysis.tbl.gz",
-             anno = "DE/Tables/DESEQ2/RUN_DE_Analysis.anno.gz"
+    output:  tbl  = "DE/Tables/DESEQ2/COUNTS.gz",
+             anno = "DE/Tables/DESEQ2/ANNOTATION.gz"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
@@ -55,7 +55,7 @@ rule run_deseq2:
     params: bins   = os.path.join([BINS,DEBIN]),
             outdir = lambda wildcards, output: os.path.dirname(outdir),
             compare = comparison
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} "
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")

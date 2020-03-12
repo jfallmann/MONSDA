@@ -35,7 +35,7 @@ if (!all(rownames(anno) %in% colnames(countData))){
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
                               colData = anno,
-                              design= ~ condition)
+                              design= ~ condition+type)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
@@ -46,35 +46,49 @@ dds <- dds[keep,]
 BPPARAM = MulticoreParam(workers=availablecores)
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)
 
-#dds$condition
-#resultsNames(dds)
+                                        #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+
+rld<- rlogTransformation(dds, blind=TRUE)
+vsd<-varianceStabilizingTransformation(dds, blind=TRUE)
+
+pdf(paste("DESeq2","PCA.pdf",sep="_"))
+print(plotPCA(rld, intgroup=c('condition')))
+dev.off()
+
+                                        #We also write the normalized counts to file
+write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
 
 
 for(pair in comparison[[1]]){
-  comp <- strsplit(pair,"-vs-")
-  cname=pair
-  print(cname)
+    comp <- strsplit(pair,"-vs-")
+    cname=pair
+    print(cname)
 
-  tryCatch({
-    res <- results(dds,contrast=c("condition",as.character(comp[[1]][1]),as.character(comp[[1]][2])), parallel=TRUE, BPPARAM=BPPARAM)
-    #sort and output
-    resOrdered <- res[order(res$log2FoldChange),]
-    #write the table to a csv file
-    pdf(paste(cname,"DESeq2","plot.pdf",sep="_"))
-    plotMA(res, ylim=c(-3,3))
-    dev.off()
+                                        #initialize empty objects
+    res <- NULL
+    resOrdered <- NULL
 
-    write.table(as.data.frame(resOrdered), gzfile(paste(cname,'.csv.gz',sep="")), sep="\t")
+    tryCatch({
+        res <- results(dds,contrast=c("condition",as.character(comp[[1]][1]),as.character(comp[[1]][2])), parallel=TRUE, BPPARAM=BPPARAM)
+                                        #sort and output
+        resOrdered <- res[order(res$log2FoldChange),]
+                                        #write the table to a csv file
+        write.table(as.data.frame(resOrdered), gzfile(paste(cname,'_DESEQ2.csv.gz',sep="")), sep="\t")
 
-    ###
-    #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
-    rld<- rlogTransformation(dds, blind=TRUE)
-    vsd<-varianceStabilizingTransformation(dds, blind=TRUE)
+                                        #plotMA
+        pdf(paste(cname,"DESeq2_MA.pdf",sep="_"))
+        plotMA(res, ylim=c(-3,3))
+        dev.off()
 
-    #We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld)), gzfile(paste(cname,"DESeq2_rld.txt.gz",sep="_")), sep="\t", col.names=NA)
-    write.table(as.data.frame(assay(vsd)), gzfile(paste(cname,"DESeq2_vsd.txt.gz",sep="_")), sep="\t", col.names=NA)
-  }, error=function(e){cat("WARNING :",conditionMessage(e), "\n")})
+        rm(res,resOrdered)
+
+
+        print(paste('cleanup done for ', cname, sep=''))
+    }, error=function(e){
+        rm(results,resOrdered)
+        cat("WARNING :",conditionMessage(e), "\n")
+    } )
 }
 
 #Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
@@ -110,6 +124,7 @@ heatmap.2(assay(vsd)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10, 6))
 dev.off()
+
 #The above shows heatmaps for 30 most highly expressed genes (not necessarily the biggest fold change). The data is of raw counts (left), regularized log transformation (center) and from variance stabilizing transformation (right) and you can clearly see the effect of the transformation has by shrinking the variance so that we don’t get the squish effect shown in the left hand graph.
 ##############################
 #Now we calculate sample to sample distances so we can make a dendrogram to look at the clustering of samples.
@@ -128,6 +143,4 @@ heatmap.2(mat, Rowv=as.dendrogram(hc),
 dev.off()
 
 ##############################
-pdf(paste("DESeq2","PCA.pdf",sep="_"))
-print(plotPCA(rld, intgroup=c('condition')))
-dev.off()
+rm(rld, vsd)

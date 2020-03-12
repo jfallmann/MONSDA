@@ -80,7 +80,7 @@ rule AddSequenceToBed:
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && fastaFromBed -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && fastaFromBed -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 #rule AddSequenceToBed:
 #    input:  rules.AnnotateBed.output
@@ -90,7 +90,7 @@ rule AddSequenceToBed:
 #    conda:  "snakes/envs/bedtools.yaml"
 #    threads: 1
 #    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-#    shell:  "export LC_ALL=C; if [ ! -f \"{params.fasta}\" ] && [ -f \"{params.fasta}.gz\" ];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
+#    shell:  "export LC_ALL=C; if [ ! -f \"{params.fasta}\" ] && [ -f \"{params.fasta}.gz\" ];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
@@ -98,7 +98,7 @@ rule MergeAnnoBed:
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
-    shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T SORTTMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
+    shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
 
 rule themall:
     input:  rules.MergeAnnoBed.output

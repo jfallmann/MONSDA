@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar 11 22:19:04 2020 (+0100)
+# Last-Updated: Thu Mar 12 09:00:17 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1683
+#     Update #: 1686
 # URL:
 # Doc URL:
 # Keywords:
@@ -404,13 +404,14 @@ def get_reps(samples,config,analysis):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCT
         idx = partconf['REPLICATES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
         ret['conds'].append(partconf['GROUPS'][idx])
-        if 'TYPES' in partconf:
-            if len(partconf['TYPES']) >= idx:
+        if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
                 ret['types'].append(partconf['TYPES'][idx])
+        else:
+            ret['types'].append('std')
 
     rets = '-r '+str.join(',',ret['reps'])
     rets += ' -c '+str.join(',',ret['conds'])
-    rets += ' -t '+str.join(',',ret['types']) if 'types' in ret else ''
+    rets += ' -t '+str.join(',',ret['types'])
     rets += ' --paired '+str.join(',',ret['pairs']) if 'pairs' in ret else ''
 
     log.debug(logid+'RETURN: '+str(rets))
@@ -1091,12 +1092,5 @@ def check_ref(reference):
         return reference
     elif os.path.exists(os.path.abspath(reference+'.gz')):
         return reference+'.gz'
-
-@check_run
-def runjob(jobtorun):
-    #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-    logid=scriptname+'.Collection_runjob: '
-    log.info(logid+str(jobtorun))
-    return subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 #
 # Collection.py ends here

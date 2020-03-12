@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 08:01:46 2020 (+0100)
+# Last-Updated: Thu Mar 12 09:46:41 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 721
+#     Update #: 748
 # URL:
 # Doc URL:
 # Keywords:
@@ -94,7 +94,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             jobtorun = 'snakemake --unlock -s {s} --configfile {c}'.format(s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
             log.info(logid+'RUNNING '+str(jobtorun))
             job = runjob(jobtorun)
-            check_job_status(job)
+            log.debug(logid+'JOB CODE '+str(job))
 
         preprocess = subworkflows = postprocess = None
 
@@ -189,7 +189,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre'+subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
-                        check_job_status(job)
+                        log.debug(logid+'JOB CODE '+str(job))
 
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
@@ -268,7 +268,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 jobtorun = 'snakemake -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING WORKFLOW '+str(jobtorun))
                 job = runjob(jobtorun)
-                check_job_status(job)
+                log.debug(logid+'JOB CODE '+str(job))
+                #check_job_status(job)
 
         else:
             log.warning(logid+'No subworkflows defined! Nothing to do!')
@@ -322,7 +323,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
-                        check_job_status(job)
+                        log.debug(logid+'JOB CODE '+str(job))
+                        #check_job_status(job)
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
@@ -380,7 +382,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                     log.info(logid+'RUNNING '+str(jobtorun))
                     job = runjob(jobtorun)
-                    check_job_status(job)
+                    log.debug(logid+'JOB CODE '+str(job))
+                    #check_job_status(job)
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
@@ -395,23 +398,40 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.error(''.join(tbe.format()))
 
 
+def runjob(jobtorun):
+    try:
+        logid = scriptname+'.runjob: '
+        #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+        log.info(logid+str(jobtorun))
+        #return
+        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return check_job_status(job)
+
+    except Exception as err:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
 def check_job_status(job):
     try:
-        while job.poll() is None:
-            while True:
-                output = str.join('',job.stdout.readlines()).strip()
-                err = str.join('',job.stderr.readlines()).strip()
-                if output or err:
-                    if output:
-                        log.info(logid+str(output))
-                        if not 'Workflow finished, no error' in output or 'Exception' in output:
-                            sys.exit(output)
-                    if err:
-                        log.error(logid+str(err))
-                        if any(x in err for x in ['ERROR','Error','error','Exception']):
-                            sys.exit(err)
-                else:
-                    break
+        logid = scriptname+'.check_job_status: '
+
+        while True:
+            output = str.join('',job.stdout.readlines()).rstrip()
+            err = str.join('',job.stderr.readlines()).rstrip()
+            if job.poll() is not None:
+                break
+            if output:
+                log.info(logid+str(output))
+                if not 'Workflow finished, no error' in output or 'Exception' in output:
+                    sys.exit(output)
+            if err:
+                log.error(logid+str(err))
+                if any(x in err for x in ['ERROR','Error','error','Exception']):
+                    sys.exit(err)
+        return job.poll()
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
