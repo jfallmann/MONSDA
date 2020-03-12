@@ -1,5 +1,5 @@
-#DEBIN, DEENV = env_bin_from_config3(config,'DE')
-#COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
+COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DE/EDGER/"
 comparison=comparable_as_string(config,'DE')
@@ -11,8 +11,8 @@ rule all:
             tbl = expand("{outdir}normalized_table.tsv", outdir=outdir)
 
 rule featurecount_unique:
-    input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: "COUNTS/Featurecounter_edger_de/{file}_mapped_sorted_unique.counts"
+    input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: cts = "COUNTS/Featurecounter_edger_de/{file}_mapped_sorted_unique.counts"
             #temp("COUNTS/Featurecounter_edger_de/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_de_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
@@ -35,9 +35,9 @@ rule prepare_count_table:
     threads: 1
     params: dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
             #decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')["GROUP"]) for x in input.cnd]),
-            samples = lambda wildcards, input: str.join(',',input.cnd),
+            #samples = lambda wildcards, input: str.join(',',input.cnd),
             bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py -l {params.samples} -r {params.dereps} -c {params.decond} -t {params.detypes} --table {output.tbl} --anno {output.anno} 2> {log}"
+    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
@@ -49,14 +49,13 @@ rule run_edger:
     log:    "LOGS/DE/run_edger.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
-    params: bins   = os.path.join([BINS,DEBIN]),
+    params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = lambda wildcards, output: os.path.dirname(outdir),
             compare = comparison
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/EdgeR.R {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} "
 
 
 onsuccess:
     print("Workflow finished, no error")
 onerror:
 	print("ERROR: "+str({log}))
-

@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 15:28:50 2020 (+0100)
+# Last-Updated: Thu Mar 12 17:30:29 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 767
+#     Update #: 789
 # URL:
 # Doc URL:
 # Keywords:
@@ -283,7 +283,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
-                    if subwork == 'DE' or subwork == 'DEU' or subwork == 'DAS':
+                    if any(subwork == x for x in ['DE', 'DEU', 'DAS']):
                         continue
                     log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -331,28 +331,28 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     subwork = analysis
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-                    listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                    #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
                     listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
-                    if listoftools is None or listoftoolscount is None:
+                    if listoftools is None:# or listoftoolscount is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
 
                     for key in config[subwork]['TOOLS']:
                         log.info(logid+'... with Tool: '+key)
                         toolenv = key
                         toolbin = config[subwork]['TOOLS'][key]
-                        countenv, countbin = map(str,listoftoolscount[0])
+                        #countenv, countbin = map(str,listoftoolscount[0])
                         subconf = NestedDefaultDict()
                         for i in listofconfigs:
                             i[subwork+'ENV'] = toolenv
                             i[subwork+'BIN'] = toolbin
-                            i['COUNTBIN'] = 'featureCounts'
-                            i['COUNTENV'] = 'countreads'
+                            #i['COUNTBIN'] = 'featureCounts'
+                            #i['COUNTENV'] = 'countreads'
                         for i in range(len(listoftools)):
                             subconf = merge_dicts(subconf,listofconfigs[i])
 
-                        for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
-                            subconf = merge_dicts(subconf,listofconfigscount[x])
+                        #for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
+                        #    subconf = merge_dicts(subconf,listofconfigscount[x])
                         subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+analysis+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
@@ -377,7 +377,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolbin,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                     log.info(logid+'RUNNING '+str(jobtorun))
                     job = runjob(jobtorun)
                     log.debug(logid+'JOB CODE '+str(job))
@@ -399,7 +399,7 @@ def runjob(jobtorun):
     try:
         logid = scriptname+'.runjob: '
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
         while True:
             status = job.poll()
@@ -407,19 +407,24 @@ def runjob(jobtorun):
             err = str.join('',job.stderr.readlines()).rstrip()
             if output:
                 log.info(logid+str(output))
-                if not 'Workflow finished, no error' in output or 'Exception' in output:
+                if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
+                    log.error(logid+'STOPOUT: '+str(err))
+                    job.kill()
                     sys.exit(output)
             if err:
-                log.error(logid+str(err))
-                if any(x in err for x in ['ERROR','Error','error','Exception']):
+                if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
+                    log.error(logid+'STOPERROR: '+str(err))
+                    job.kill()
                     sys.exit(err)
+                else:
+                    log.info(logid+str(err))
             if status is not None:
-                log.debug(logid+'POLL: '+str(job.poll()))
                 break
 
         return status
 
     except Exception as err:
+        job.kill()
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

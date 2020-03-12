@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 #Script ExtendBed.pl;
-#Last changed Time-stamp: <2020-03-12 14:10:26 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
+#Last changed Time-stamp: <2020-03-12 16:53:33 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
 ###############
 ###Use stuff
 ###############
@@ -15,6 +15,7 @@ use Cwd;
 use File::Path qw(make_path remove_tree);
 use File::Basename qw(fileparse);
 use Math::Round;
+use autodie;
 
 ### use own modules
 use FindBin::Real qw(Bin); # locate this script
@@ -249,7 +250,6 @@ while(<$Bed>){
 	}
 }
 
-return 1
 
 ###############
 ###POD

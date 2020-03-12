@@ -1,5 +1,5 @@
-#DEBIN, DEENV = env_bin_from_config3(config,'DE')
-#COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
+DEBIN, DEENV = env_bin_from_config3(config,'DE')
+COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DE/DESEQ2/"
 comparison=comparable_as_string(config,'DE')
@@ -52,7 +52,7 @@ rule run_deseq2:
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
-    params: bins   = os.path.join([BINS,DEBIN]),
+    params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = lambda wildcards, output: os.path.dirname(outdir),
             compare = comparison
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log}"
@@ -61,4 +61,3 @@ onsuccess:
     print("Workflow finished, no error")
 onerror:
 	print("ERROR: "+str({log}))
-

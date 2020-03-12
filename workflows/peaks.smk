@@ -318,9 +318,5 @@ rule PeakToUCSC:
 
 onsuccess:
     print("Workflow finished, no error")
-
-onerror:
-    print("ERROR: "+str({log}))
 onerror:
 	print("ERROR: "+str({log}))
-

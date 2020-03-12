@@ -40,6 +40,3 @@ else:
 	    conda: "snakes/envs/"+TRIMENV+".yaml"
 	    threads: 1
 	    shell:  "mv {input.o1} {output.r1}"
-onerror:
-	print("ERROR: "+str({log}))
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #Script AnotateBed.pl;
-#Last changed Time-stamp: <2019-09-10 13:37:21 fall> by joerg
+#Last changed Time-stamp: <2020-03-12 16:53:46 fall> by joerg
 
 #### use things ###
 use strict;
@@ -13,6 +13,7 @@ use Cwd;
 use Data::Dumper;
 ### use own modules
 use FindBin::Real qw(Bin); # locate this script
+use autodie; 
 #use lib Bin() . "/../lib";
 #use Collection;
 

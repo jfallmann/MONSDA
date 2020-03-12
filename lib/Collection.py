@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 12 13:41:36 2020 (+0100)
+# Last-Updated: Thu Mar 12 17:41:00 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1701
+#     Update #: 1702
 # URL:
 # Doc URL:
 # Keywords:
@@ -447,15 +447,15 @@ def env_bin_from_config2(samples, config, subconf):
         log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
-#@check_run
-#def env_bin_from_config3(config, subconf):
-#    logid=scriptname+'.Collection_env_bin_from_config3: '
-#    envkey = subconf+"ENV"
-#    binkey = subconf+"BIN"
-#    me = config[envkey]
-#    mb = config[binkey]
-#    log.debug(logid+str([str(mb),str(me)]))
-#    return mb, me
+@check_run
+def env_bin_from_config3(config, subconf):
+    logid=scriptname+'.Collection_env_bin_from_config3: '
+    envkey = subconf+"ENV"
+    binkey = subconf+"BIN"
+    me = config[envkey]
+    mb = config[binkey]
+    log.debug(logid+str([str(mb),str(me)]))
+    return mb, me
 
 @check_run
 def rmempty(check):

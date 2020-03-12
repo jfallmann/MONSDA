@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #Script Bed2Bedgraph.pl;
-#Last changed Time-stamp: <2019-10-18 16:11:59 fall> by joerg
+#Last changed Time-stamp: <2020-03-12 16:53:57 fall> by joerg
 
 #### use things ###
 use strict;

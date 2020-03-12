@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use autodie;
 
 my $in1 = shift; 	#bam file
 my $in2 = shift;	#fastq

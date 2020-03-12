@@ -49,9 +49,6 @@ rule sam2bamuniq:
             fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
     shell: "zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
 
-onsuccess:
-    print("Workflow finished, no error")
-
 rule themall:
     input:  rules.sam2bamuniq.output
     output: "DONE/{file}_mapped"
@@ -59,6 +56,8 @@ rule themall:
         for f in output:
             with open(f, "w") as out:
                 out.write("DONE")
+
+onsuccess:
+    print("Workflow finished, no error")
 onerror:
 	print("ERROR: "+str({log}))
-

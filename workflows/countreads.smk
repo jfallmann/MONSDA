@@ -98,6 +98,8 @@ rule themall:
 
 onsuccess:
     print("Workflow finished, no error")
+onerror:
+	print("ERROR: "+str({log}))
 
 #rule count_summary:
 #    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
@@ -154,6 +156,3 @@ onsuccess:
 #   params: out="QUANT/Cufflinks/{file}_unique"
 #   threads: 20
 #   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
-onerror:
-	print("ERROR: "+str({log}))
-
