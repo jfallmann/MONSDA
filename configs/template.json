@@ -100,8 +100,8 @@
                },
 #Count options
     "COUNTING": { #options for counting for each sample/condition
-                  "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
-                      "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3 file
+                  "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE), depends on whether gtf or gff is used as annotation, gff default is gene -> ID and exon -> Parent, gtf default for gene and exon is gene_id
+                      "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3/gtf file
                       "gene": "ID" #same here
                   },
                   "id": {
@@ -109,16 +109,15 @@
                           "setting": {  # See above
                                         "ENV": "countreads", #see above
                                         "BIN": "featureCounts",
-                                        "ANNOTATION": "genome_or_other.gff3.gz", #should only be relevant for star, but who knows
+                                        "ANNOTATION": "genome_or_other.gff3.gz", #gtf or gff annotation for count tool
                                         "OPTIONS":
-                                        [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options
+                                        [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
                                            {
                                                "-f": "",
                                                "--fraction": "",
                                                "-p": "",
                                                "-O": "",
-                                               "-M": "",
-                                               "-T": "5",
+                                               "-M": ""
                                            }
                                         ]
                                      }
@@ -132,12 +131,12 @@
                 "setting": { # See above
                              "ENV": "annotatebed",
                              "BIN": "annotate", #default, if you have a specific binary for annotation state here, may need extra tweaking of workflow though
-                             "ANNOTATION": "genome_or_other.gff3.gz", #should only be relevant for star, but who knows
+                             "ANNOTATION": "genome_or_other.gff3.gz", #The annotation used to annotate reads
                              "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
                              "OPTIONS":
                              [
                                  {
-                                     "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value
+                                     "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or removing this line
                                  }
                              ]
                            }
@@ -150,7 +149,6 @@
             "condition": {
                 "setting": {  # See above
                               "ENV" : "ucsc",
-                              "BIN" : "ucsc", #dummy as ucsc has no direct bin but we need some placeholder key
                               "OPTIONS":
                               [
                                   {
@@ -170,7 +168,6 @@
             "condition": {
                 "setting": {  # See above
                               "ENV" : "peaks",
-                              "BIN" : "peaks", #dummy as Peaks has no direct bin but we need the key
                               "ANNOTATION": "genome_or_other.gff3.gz",
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
@@ -192,21 +189,29 @@
     "DE": {
       "TOOLS" :
         {
-          "deseq2" : "DESeq2_diffexp_2.R",
-          "edger" : "EdgeR.R"
+          "deseq2" : "Analysis/DE/DESeq2.R",
+          "edger" : "Analysis/DE/EdgeR.R"
         },
       "COMPARABLE" :
         {
-        }
+        },
         "id": {
             "condition": {
-                "setting": {  # See above
-                    "GROUP":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                "setting": {
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount
+                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
                     "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
                     "OPTIONS":
                     [
-                        {  #Should not be needed
+                        {
+                            "-t": "gene",
+                            "-g": "gene_id",
+                            "-f": "",
+                            "--fraction": "",
+                            "-p": "",
+                            "-O": "",
+                            "-M": ""
                         }
                     ]
                  }
@@ -215,18 +220,33 @@
     },
 #DEU Analysis options for Differential Exon Usage
     "DEU" : {
+        "TOOLS" :
+        {
+          "dexseq" : "Analysis/DEU/DEXSeq.R",
+          "edger" : "Analysis/DEU/EdgeR.R"
+        },
+      "COMPARABLE" :
+        {
+        },
         "id": {
             "condition": {
                 "setting": {
                     "ENV": "dexseq",
                     "BIN": "dexseq",
-                    "ANNOTATION": "genome_or_other.gtf.gz",
-                    "GROUP":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
                     "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
                     "OPTIONS":
                     [
-                        {  #Should not be needed
+                        {
+                            "-t": "exon",
+                            "-g": "gene_id",
+                            "-f": "",
+                            "--fraction": "",
+                            "-p": "",
+                            "-O": "",
+                            "-M": ""
                         }
                     ]
                 }

@@ -1,5 +1,5 @@
-DEBIN, DEENV = env_bin_from_config3(config,'DE')
-COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+#DEBIN, DEENV = env_bin_from_config3(config,'DE')
+#COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DE/DESEQ2/"
 comparison=comparable_as_string(config,'DE')
@@ -12,25 +12,25 @@ rule all:
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
             pca = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
             vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
-            rpl = expand("{outdir}Rplots.pdf", outdir=outdir),
+            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir)),
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounter_genes/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_de_gene_unique.log"
+    output: cts   = "COUNTS/Featurecounter_deseq2/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{file}/featurecount_deseq2_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t gene -g '+config['COUNTING']['FEATURES']['gene'],
+            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DE')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DE")['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DE/Tables/RUN_DE_Analysis.tbl.gz",
-             anno = "DE/Tables/RUN_DE_Analysis.anno.gz"
+    output:  tbl  = "DE/Tables/DESEQ2/RUN_DE_Analysis.tbl.gz",
+             anno = "DE/Tables/DESEQ2/RUN_DE_Analysis.anno.gz"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
@@ -52,10 +52,10 @@ rule run_deseq2:
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
-    params: bins   = BINS,
+    params: bins   = os.path.join([BINS,DEBIN]),
             outdir = lambda wildcards, output: os.path.dirname(outdir),
             compare = comparison
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DE/DESeq2_diffexp_2.R {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} "
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log} "
 
 onsuccess:
-    print("Workflow DE-deseq2 finished, no error")
+    print("Workflow finished, no error")

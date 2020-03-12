@@ -1,5 +1,5 @@
-DEUBIN, DEUENV = env_bin_from_config2(SAMPLES,config,'DEU')
-COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+#DEUBIN, DEUENV = env_bin_from_config2(SAMPLES,config,'DEU')
+#COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 rule all:
     input:  "DEU/DEXSEQ/DONE"
@@ -40,10 +40,10 @@ rule run_dexeq:
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
-    params: bins   = BINS,
+    params: bins   = os.path.join([BINS,DEBIN]),
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
     shell: "Rscript --no-environ --no-restore --no-save {params.bins}/Analysis/DEU/DEXSeq.R {input.anno} {input.cnt} {params.flat} {params.outdir} {threads} 2> {log} && touch {output.csv}"
 
 onsuccess:
-    print("Workflow DEU finished, no error")
+    print("Workflow finished, no error")

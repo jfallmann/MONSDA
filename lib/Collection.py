@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Mar 11 16:02:50 2020 (+0100)
+# Last-Updated: Wed Mar 11 22:19:04 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1674
+#     Update #: 1683
 # URL:
 # Doc URL:
 # Keywords:
@@ -304,13 +304,13 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             env = str(subDict(config[subwork],condition)[stage+'ENV'])
         except:
-            if subwork != 'DE':
+            if subwork not in ['DE', 'DEU', 'DAS']:
                 log.warning('Key ENV not found for '+subwork+' this can be intentional')
             env = ''
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork != 'DE':
+            if subwork not in ['DE', 'DEU', 'DAS']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         src, treat, setup = condition
@@ -330,8 +330,9 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 tempconf[key][src][treat][setup] = config[key][src][treat][setup]
-            if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]) and 'COUNTING' in config:
-                tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
+            if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
+                if subwork == 'COUNTING':
+                    tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
                 if 'TOOLS' in config[subwork]:
@@ -402,7 +403,7 @@ def get_reps(samples,config,analysis):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCT
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
-        ret['conds'].append(partconf['CONDITIONS'][idx])
+        ret['conds'].append(partconf['GROUPS'][idx])
         if 'TYPES' in partconf:
             if len(partconf['TYPES']) >= idx:
                 ret['types'].append(partconf['TYPES'][idx])
@@ -444,15 +445,15 @@ def env_bin_from_config2(samples, config, subconf):
         log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
-@check_run
-def env_bin_from_config3(config, subconf):
-    logid=scriptname+'.Collection_env_bin_from_config3: '
-    envkey = subconf+"ENV"
-    binkey = subconf+"BIN"
-    me = config[envkey]
-    mb = config[binkey]
-    log.debug(logid+str([str(mb),str(me)]))
-    return mb, me
+#@check_run
+#def env_bin_from_config3(config, subconf):
+#    logid=scriptname+'.Collection_env_bin_from_config3: '
+#    envkey = subconf+"ENV"
+#    binkey = subconf+"BIN"
+#    me = config[envkey]
+#    mb = config[binkey]
+#    log.debug(logid+str([str(mb),str(me)]))
+#    return mb, me
 
 @check_run
 def rmempty(check):
@@ -673,10 +674,28 @@ def check_tool_params(sample, runstate, config, subconf, idx):
             return ''
 
 @check_run
-def aggregate_input(wildcards):
-    return expand("post/{sample}/{i}.txt",
-           sample=wildcards.sample,
-           i=glob_wildcards(os.path.join(checkpoint_output, "{i}.txt")).i)
+def comparable_as_string(config, subwork):
+    logid=scriptname+'.comparable_as_string: '
+    check = config[subwork].get('COMPARABLE')
+    if check:
+        log.info(logid+'determine comparables in '+subwork)
+        complist  = []
+        compdict=config[subwork]['COMPARABLE']
+        for key in compdict:
+            for value in compdict[key]:
+                complist.append(f"{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
+    else:
+        log.info(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
+        groups_by_condition = list(yield_from_dict("GROUPS",config))
+        flattened = set(val for sublist in groups_by_condition for val in sublist)
+        combined=list(combinations(flattened,2))
+        complist=[]
+        for key, value in combined:
+            complist.append(f"{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
 
 ##############################
 #########Python Subs##########
@@ -705,6 +724,20 @@ def getFromDict(dataDict, mapList):
     else:
         log.debug(logid+'RET: '+str(list([])))
         return list([])
+
+@check_run
+def yield_from_dict(key, dictionary):
+    for k, v in dictionary.items():
+        if k == key:
+            yield v
+        elif dict_inst(v):
+            for result in yield_from_dict(key, v):
+                yield result
+        elif isinstance(v, list):
+            for d in v:
+                if dict_inst(d):
+                    for result in yield_from_dict(key, d):
+                        yield result
 
 @check_run
 def subDict(dataDict, mapList):
@@ -1065,48 +1098,5 @@ def runjob(jobtorun):
     logid=scriptname+'.Collection_runjob: '
     log.info(logid+str(jobtorun))
     return subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-@check_run
-def find(key, dictionary):
-    for k, v in dictionary.items():
-        if k == key:
-            yield v
-        elif isinstance(v, dict):
-            for result in find(key, v):
-                yield result
-        elif isinstance(v, list):
-            for d in v:
-                if isinstance(d, dict):
-                    for result in find(key, d):
-                        yield result
-
-@check_run
-def comparable_as_string(config, subwork):
-    logid=scriptname+'.comparable_as_string: '
-    check = config[subwork].get('COMPARABLE')
-    if check:
-        log.info(logid+'determine comparables in '+subwork)
-        complist  = []
-        compdict=config[subwork]['COMPARABLE']
-        for key in compdict:
-            for value in compdict[key]:
-                complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
-        return compstr
-    else:
-        log.info(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
-        groups_by_condition = list(find("GROUP",config))
-        flattened = set(val for sublist in groups_by_condition for val in sublist)
-        combined=list(combinations(flattened,2))
-        complist=[]
-        for key, value in combined:
-            complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
-        return compstr
-
-
-
-
-
 #
 # Collection.py ends here

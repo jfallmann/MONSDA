@@ -1,8 +1,26 @@
 wildcard_constraints:
     type="sorted|unique"
-
-rule all:
-    input:  expand("DONE/PEAKS/{file}_peaks_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+if ANNOPEAK is not None:
+    rule themall:
+        input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+else:
+    rule themall:
+        input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
+                expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -298,28 +316,5 @@ rule PeakToUCSC:
 #       source=Peak_{file}
 #   shell:  "gunzip -c {input[0]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.fw.bw && gunzip -c {input[1]} > tmp && bedGraphToBigWig tmp {params.ref}/{params.gen}/{params.gen}.chrom.sizes {params.source}.re.bw && rm -f tmp"
 
-rule themall:
-    input:  "PEAKS/{file}_mapped_{type}.bedg.gz",
-            "UCSC/{file}_peak_{type}.fw.bw",
-            "UCSC/{file}_peak_{type}.re.bw",
-            "UCSC/{file}_peak_{type}.fw.bedg.gz",
-            "UCSC/{file}_peak_{type}.re.bedg.gz",
-            "PEAKS/{file}_peak_{type}.bed.gz",
-            "PEAKS/{file}_prepeak_{type}.bed.gz",
-            "PEAKS/{file}_peak_seq_{type}.bed.gz",
-            "PEAKS/{file}_peak_anno_{type}.bed.gz" if ANNOPEAK is not None else
-            "PEAKS/{file}_mapped_{type}.bedg.gz",
-            "UCSC/{file}_peak_{type}.fw.bw",
-            "UCSC/{file}_peak_{type}.re.bw",
-            "UCSC/{file}_peak_{type}.fw.bedg.gz",
-            "UCSC/{file}_peak_{type}.re.bedg.gz",
-            "PEAKS/{file}_peak_{type}.bed.gz",
-            "PEAKS/{file}_prepeak_{type}.bed.gz",
-            "PEAKS/{file}_peak_seq_{type}.bed.gz"
-    output: "DONE/PEAKS/{file}_peaks_{type}"
-    run:
-        for f in output:
-            with open(f, "w") as out:
-                        out.write("DONE")
 onsuccess:
     print("Workflow finished, no error")

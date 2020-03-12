@@ -14,13 +14,15 @@ from Logger import *
 
 try:
     log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
-    if (log.hasHandlers()):
-        logr.handlers.clear()
-    log.addHandler(logging.FileHandler('LOGS/RunSnakemake.log'))  # streamlog
-    log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
-except:
-    log = setup_logger(name='Snakemake', log_file='stdout', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level='DEBUG')#, filemode='a')
+    if filename != 'RunSnakemake.py' and filename != 'Configurator.py':
+        if (log.hasHandlers()):
+            log.handlers.clear()
+    handler = logging.FileHandler('LOGS/RunSnakemake.log')
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    log.addHandler(handler)  # streamlog
     #log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+except:
+    log = setup_logger(name='Snakemake', log_file='stdout', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level='INFO')#, filemode='a')
 
 logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]
@@ -35,7 +37,7 @@ if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
-log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
+log.debug(logid+'Working on SAMPLES: '+str(SAMPLES))
 
 paired = checkpaired([SAMPLES[0]], config)
 if paired == 'paired':
