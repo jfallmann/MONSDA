@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Mar 13 07:45:18 2020 (+0100)
+# Last-Updated: Fri Mar 13 10:06:30 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 790
+#     Update #: 792
 # URL:
 # Doc URL:
 # Keywords:
@@ -331,7 +331,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     subwork = analysis
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-                    #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions)
+                    #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
                     listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
                     if listoftools is None:# or listoftoolscount is None:
@@ -341,13 +341,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.info(logid+'... with Tool: '+key)
                         toolenv = key
                         toolbin = config[subwork]['TOOLS'][key]
-                        #countenv, countbin = map(str,listoftoolscount[0])
+                        #countenv, countbin = map(str,listoftoolscount[0]) #Counting per analysis rule now
                         subconf = NestedDefaultDict()
                         for i in listofconfigs:
                             i[subwork+'ENV'] = toolenv
                             i[subwork+'BIN'] = toolbin
-                            #i['COUNTBIN'] = 'featureCounts'
-                            #i['COUNTENV'] = 'countreads'
+                            #i['COUNTBIN'] = 'featureCounts'#This is hard coded where needed for now
+                            #i['COUNTENV'] = 'countreads'#This is hard coded where needed for now
                         for i in range(len(listoftools)):
                             subconf = merge_dicts(subconf,listofconfigs[i])
 
