@@ -13,7 +13,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: count  = COUNTBIN,
             anno   = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]),
-            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items()),
+            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
@@ -40,7 +40,7 @@ rule run_dexeq:
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
-    params: bins   = str.join(os.sep,[BINS,DEBIN]),
+    params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {threads} 2> {log} && touch {output.csv}"
