@@ -27,9 +27,15 @@ comparison<-strsplit(cmp, ",")
 ##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 ##head(countData)
 
+if (length(levels(sampleData$type)) > 1){
+    design = ~sample + exon + type:exon + condition:exon
+}
+else{
+    design = ~sample + exon + condition:exon
+}
 ## Read Fcount output and convert to dxd
 DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
-                                            design = ~sample + exon + type:exon + condition:exon, flattenedfile = NULL)
+                                            design = design, flattenedfile = NULL)
 
 {
     ##  Take a fcount file and convert it to dcounts for dexseq
@@ -104,7 +110,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 ### MAIN ###
 #read in count table and normalize
 
-dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = ~sample + exon + type:exon + condition:exon, flattenedfile = flatanno)
+dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = design, flattenedfile = flatanno)
 
 setwd(outdir)
 
