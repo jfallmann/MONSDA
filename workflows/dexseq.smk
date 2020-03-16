@@ -42,7 +42,7 @@ rule run_dexeq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno
     output: rules.themall.input.plot,
-            rules.themall.input.table,
+            rules.themall.input.tbl,
             rules.themall.input.html
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
