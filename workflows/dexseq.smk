@@ -48,7 +48,7 @@ rule run_dexeq:
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
-            outdir = lambda wildcards, output: os.path.dirname(output.csv),
+            outdir = lambda wildcards, output: os.path.dirname(output.tbl),
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
             compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log}"
