@@ -2,7 +2,7 @@ DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DEU/DEXSEQ/"
-comparison=comparable_as_string(config,'DE')
+comparison=comparable_as_string(config,'DEU')
 
 rule themall:
     input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
