@@ -9,20 +9,21 @@ suppressPackageStartupMessages({
 
 args <- commandArgs(trailingOnly = TRUE)
 
-anname<-args[1]
-countfile<-args[2]
-flatanno<-args[3]
-outdir<-args[4]
-availablecores <- args[5]
+anname    <- args[1]
+countfile <- args[2]
+flatanno  <- args[3]
+outdir    <- args[4]
+cmp       <- args[5]
+availablecores <- as.integer(args[6])
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type")
 sampleData <- as.data.frame(sampleData)
 #head(sampleData)
-
+comparison<-strsplit(cmp, ",")
 ## Combinations of conditions
-condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
+#condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
 ##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 ##head(countData)
 
@@ -111,17 +112,22 @@ print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
 BPPARAM = MulticoreParam(workers=availablecores)
 
-for (n in 1:ncol(condcomb)){
+for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
 
     cname=""
-    cname=paste(condcomb[,n],collapse='_vs_')
+    #cname=paste(condcomb[,n],collapse='_vs_')
+    comp <- strsplit(pair,"-vs-")
+    cname=pair
     print(cname)
+
+                                        #initialize empty objects
     dxdpair <- NULL
     dxr1 <- NULL
 
     tryCatch({
 
-        dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
+                                        #dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
+        dxdpair = dxd[,which(dxd$condition == as.character(comp[[1]][1]) | dxd$condition == as.character(comp[[1]][2]))]#, drop=True]
 
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM)
 

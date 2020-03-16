@@ -9,10 +9,10 @@ options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE)
 print(args)
 
-anname<-args[1]
-inname<-args[2]
-outdir<-args[3]
-cmp   <-args[4]
+anname <- args[1]
+inname <- args[2]
+outdir <- args[3]
+cmp    <- args[4]
 availablecores <- as.integer(args[5])
 
 #register(MulticoreParam(availablecores))
@@ -61,6 +61,8 @@ write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", co
 
 
 for(pair in comparison[[1]]){
+
+    cname=""
     comp <- strsplit(pair,"-vs-")
     cname=pair
     print(cname)

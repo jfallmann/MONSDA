@@ -4,7 +4,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 outdir="DE/DESEQ2/"
 comparison=comparable_as_string(config,'DE')
 
-rule all:
+rule themall:
     input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=comparison.split(",")),
             csv = expand("{outdir}{comparison}_DESeq2.csv.gz", outdir=outdir, comparison=comparison.split(",")),
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
@@ -41,14 +41,14 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.all.input.plot,
-            rules.all.input.rld,
-            rules.all.input.vsd,
-            rules.all.input.csv,
-            rules.all.input.heat,
-            rules.all.input.pca,
-            rules.all.input.vst,
-            rules.all.input.rpl,
+    output: rules.themall.input.plot,
+            rules.themall.input.rld,
+            rules.themall.input.vsd,
+            rules.themall.input.csv,
+            rules.themall.input.heat,
+            rules.themall.input.pca,
+            rules.themall.input.vst,
+            rules.themall.input.rpl,
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1

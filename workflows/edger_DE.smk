@@ -4,7 +4,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 outdir="DE/EDGER/"
 comparison=comparable_as_string(config,'DE')
 
-rule all:
+rule themall:
     input:  plot = expand("{outdir}{comparison}.png", outdir=outdir, comparison=comparison.split(",")),
             bcv = expand("{outdir}BCV.png", outdir=outdir),
             mds = expand("{outdir}MDS.png", outdir=outdir),
@@ -42,10 +42,10 @@ rule prepare_count_table:
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.all.input.plot,
-            rules.all.input.bcv,
-            rules.all.input.mds,
-            rules.all.input.tbl
+    output: rules.themall.input.plot,
+            rules.themall.input.bcv,
+            rules.themall.input.mds,
+            rules.themall.input.tbl
     log:    "LOGS/DE/run_edger.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1

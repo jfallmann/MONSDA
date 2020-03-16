@@ -1,8 +1,13 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-rule all:
-    input:  "DEU/DEXSEQ/DONE"
+outdir="DEU/DEXSEQ/"
+comparison=comparable_as_string(config,'DE')
+
+rule themall:
+    input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
+           plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
+           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
 
 rule featurecount_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -36,14 +41,17 @@ rule prepare_count_table:
 rule run_dexeq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno
-    output: csv  = "DEU/DEXSEQ/DONE"
+    output: rules.themall.input.plot,
+            rules.themall.input.table,
+            rules.themall.input.html
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = lambda wildcards, output: os.path.dirname(output.csv),
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf'))
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {threads} 2> {log} && touch {output.csv}"
+            compare = comparison
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
