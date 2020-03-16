@@ -50,7 +50,7 @@ rule run_edger:
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
-            outdir = lambda wildcards, output: os.path.dirname(outdir),
+            outdir = outdir,
             compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} "
 

@@ -53,7 +53,7 @@ rule run_deseq2:
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
-            outdir = lambda wildcards, output: os.path.dirname(outdir),
+            outdir = outdir,
             compare = comparison
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log}"
 
