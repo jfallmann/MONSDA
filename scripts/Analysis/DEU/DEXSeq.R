@@ -27,7 +27,7 @@ comparison<-strsplit(cmp, ",")
 ##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 ##head(countData)
 
-if (length(levels(sampleData$type)) > 1){
+if (length(levels(sampleData$type)) > 1){#FIX DESIGN
     design = ~sample + exon + type:exon + condition:exon
 }
 else{
