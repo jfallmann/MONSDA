@@ -41,9 +41,9 @@ rule prepare_count_table:
 rule run_dexeq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno
-    output: rules.themall.input.plot,
-            rules.themall.input.tbl,
-            rules.themall.input.html
+    output: plot = rules.themall.input.plot,
+            tbl  = rules.themall.input.tbl,
+            html = rules.themall.input.html
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
