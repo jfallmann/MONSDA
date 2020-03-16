@@ -104,13 +104,15 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 ### MAIN ###
 #read in count table and normalize
 
-dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = ~sample + exon + condition:exon, flattenedfile = flatanno)
+dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = ~sample + exon + type:exon + condition:exon, flattenedfile = flatanno)
 
 setwd(outdir)
 
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
 BPPARAM = MulticoreParam(workers=availablecores)
+
+dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM )
 
 for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
 
