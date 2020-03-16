@@ -28,7 +28,7 @@ condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
 
 ## Read Fcount output and convert to dxd
 DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
-                                            design = ~sample + exon + condition:exon, flattenedfile = NULL)
+                                            design = ~sample + exon + type:exon + condition:exon, flattenedfile = NULL)
 
 {
     ##  Take a fcount file and convert it to dcounts for dexseq
@@ -109,6 +109,8 @@ setwd(outdir)
 
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
+BPPARAM = MulticoreParam(workers=availablecores)
+
 for (n in 1:ncol(condcomb)){
 
     cname=""
@@ -121,7 +123,6 @@ for (n in 1:ncol(condcomb)){
 
         dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
 
-        BPPARAM = MulticoreParam(workers=availablecores)
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM)
 
         pdf(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
@@ -141,14 +142,14 @@ for (n in 1:ncol(condcomb)){
 
         htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
         pathout <- paste('DEXSeqReport',cname,sep='_')
-        DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout)
+        DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
         rm(dxr1)
         print(paste('cleanup done for ', cname, sep=''))
 
 
     }, error=function(e){
-        rm(dxr1)
+        rm(dxdpair,dxr1)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }

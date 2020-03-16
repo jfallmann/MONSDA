@@ -86,7 +86,7 @@ for(pair in comparison[[1]]){
 
         print(paste('cleanup done for ', cname, sep=''))
     }, error=function(e){
-        rm(results,resOrdered)
+        rm(res,resOrdered)
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
