@@ -120,7 +120,7 @@ BPPARAM = MulticoreParam(workers=availablecores)
 
 #dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM ) # we do this later on a per pair basis as we do not know about the biological variance between conditions, so this should be more safe
 
-for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
+for (pair in comparison[[1]]){
 
     cname=""
     comp <- strsplit(pair,"-vs-")
@@ -133,7 +133,6 @@ for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
 
     tryCatch({
 
-        #dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
         dxdpair = dxd[,which(dxd$condition == as.character(comp[[1]][1]) | dxd$condition == as.character(comp[[1]][2]))]
 
 		print(head(dxdpair))

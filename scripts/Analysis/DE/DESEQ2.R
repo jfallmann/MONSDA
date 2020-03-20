@@ -66,6 +66,7 @@ for(pair in comparison[[1]]){
     comp <- strsplit(pair,"-vs-")
     cname=pair
     print(cname)
+	BPPARAM = MulticoreParam(workers=availablecores)
 
                                         #initialize empty objects
     res <- NULL
@@ -83,7 +84,7 @@ for(pair in comparison[[1]]){
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
-        rm(res,resOrdered)
+        rm(res,resOrdered, BPPARAM)
 
 
         print(paste('cleanup done for ', cname, sep=''))
