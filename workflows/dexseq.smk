@@ -46,7 +46,7 @@ rule run_dexeq:
             html = rules.themall.input.html
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
-    threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),

@@ -22,6 +22,7 @@ colnames(sampleData) <- c("condition","type")
 sampleData <- as.data.frame(sampleData)
 #head(sampleData)
 comparison<-strsplit(cmp, ",")
+print(paste("Will analyze conditions ",comparison,sep=""))
 ## Combinations of conditions
 #condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
 ##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
@@ -29,8 +30,7 @@ comparison<-strsplit(cmp, ",")
 
 if (length(levels(sampleData$type)) > 1){#FIX DESIGN
     design = ~sample + exon + type:exon + condition:exon
-}
-else{
+} else{
     design = ~sample + exon + condition:exon
 }
 ## Read Fcount output and convert to dxd
@@ -118,12 +118,11 @@ print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
 BPPARAM = MulticoreParam(workers=availablecores)
 
-dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM )
+#dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM ) # we do this later on a per pair basis as we do not know about the biological variance between conditions, so this should be more safe
 
 for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
 
     cname=""
-    #cname=paste(condcomb[,n],collapse='_vs_')
     comp <- strsplit(pair,"-vs-")
     cname=pair
     print(cname)
@@ -134,10 +133,13 @@ for (pair in comparison[[1]]){#n in 1:ncol(condcomb)){
 
     tryCatch({
 
-                                        #dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
-        dxdpair = dxd[,which(dxd$condition == as.character(comp[[1]][1]) | dxd$condition == as.character(comp[[1]][2]))]#, drop=True]
+        #dxdpair = dxd[,which(dxd$condition == condcomb[1,n] | dxd$condition == condcomb[2,n])]#, drop=True]
+        dxdpair = dxd[,which(dxd$condition == as.character(comp[[1]][1]) | dxd$condition == as.character(comp[[1]][2]))]
 
-        dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM)
+		print(head(dxdpair))
+
+		dxdpair = estimateSizeFactors( dxdpair )
+        dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
         pdf(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
         plotDispEsts( dxdpair )
