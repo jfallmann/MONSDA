@@ -152,7 +152,7 @@ for (pair in comparison[[1]]){
 
         rm(dxdpair)
 
-        csvout <- paste(paste('DEXSeqResults',cname,sep='_'),'.tsv.gz', sep='')
+        csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t")
 
         htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
