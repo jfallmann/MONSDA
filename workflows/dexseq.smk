@@ -40,8 +40,7 @@ rule prepare_count_table:
 
 rule run_dexeq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
-            anno = rules.prepare_count_table.output.anno,
-            flat = rules.featurecount_dexseq_unique
+            anno = rules.prepare_count_table.output.anno
     output: plot = rules.themall.input.plot,
             tbl  = rules.themall.input.tbl,
             html = rules.themall.input.html
@@ -50,9 +49,9 @@ rule run_dexeq:
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
-            compare = comparison
-            #flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {input.flat} {params.outdir} {params.compare} {threads} 2> {log}"
+            compare = comparison,
+            flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
