@@ -377,10 +377,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
-                    log.info(logid+'RUNNING '+str(jobtorun))
-                    job = runjob(jobtorun)
-                    log.debug(logid+'JOB CODE '+str(job))
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        log.info(logid+'RUNNING '+str(jobtorun))
+                        job = runjob(jobtorun)
+                        log.debug(logid+'JOB CODE '+str(job))
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
