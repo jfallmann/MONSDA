@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Mar 13 10:06:30 2020 (+0100)
+# Last-Updated: Tue Mar 24 14:46:03 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 792
+#     Update #: 793
 # URL:
 # Doc URL:
 # Keywords:
@@ -335,7 +335,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
                     if listoftools is None:# or listoftoolscount is None:
-                        log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork)+' or COUNTING not configured')
+                        log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork))
 
                     for key in config[subwork]['TOOLS']:
                         log.info(logid+'... with Tool: '+key)
@@ -377,10 +377,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                    jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
-                    log.info(logid+'RUNNING '+str(jobtorun))
-                    job = runjob(jobtorun)
-                    log.debug(logid+'JOB CODE '+str(job))
+                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        log.info(logid+'RUNNING '+str(jobtorun))
+                        job = runjob(jobtorun)
+                        log.debug(logid+'JOB CODE '+str(job))
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
