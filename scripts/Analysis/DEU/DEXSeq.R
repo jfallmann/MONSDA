@@ -29,8 +29,7 @@ comparison<-strsplit(cmp, ",")
 
 if (length(levels(sampleData$type)) > 1){
     design = ~sample + exon + type:exon + condition:exon
-}
-else{
+}else{
     design = ~sample + exon + condition:exon
 }
 ## Read Fcount output and convert to dxd
@@ -98,8 +97,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
         dxd <- DEXSeqDataSet(dcounts, sampleData, design, exons,
                              genesrle, exoninfo[matching], transcripts[matching])
         return(dxd)
-    }
-    else {
+    }else{
         dxd <- DEXSeqDataSet(dcounts, sampleData, design, exons,
                              genesrle)
         return(dxd)
