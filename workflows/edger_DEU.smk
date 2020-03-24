@@ -34,7 +34,7 @@ rule prepare_count_table:
     output:  tbl = "DEU/Tables/EDGER/RUN_DEU_Analysis.tbl.gz",
              anno = "DE/Tables/EDGER/RUN_DEU_Analysis.anno.gz"
     log:     "LOGS/DEU/prepare_count_table.log"
-    conda:   "snakes/envs/"+DEENV+".yaml"
+    conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
             #decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')["GROUP"]) for x in input.cnd]),
@@ -50,7 +50,7 @@ rule run_edger:
             rules.themall.input.mds,
             rules.themall.input.tbl
     log:    "LOGS/DEU/run_edger.log"
-    conda:  "snakes/envs/"+DEENV+".yaml"
+    conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
