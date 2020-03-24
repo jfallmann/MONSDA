@@ -404,7 +404,7 @@ def get_reps(samples,config,analysis):  # THIS NEEDS TO BE FIXED TO SINGLE FUNCT
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
-        ret['conds'].append(partconf['GROUP'][idx])
+        ret['conds'].append(partconf['GROUPS'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
                 ret['types'].append(partconf['TYPES'][idx])
         else:
