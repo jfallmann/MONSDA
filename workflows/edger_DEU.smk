@@ -12,7 +12,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts = "COUNTS/Featurecounter_edger_deu/{file}_mapped_sorted_unique.counts"
+    output: cts = "COUNTS/Featurecounter_edger_deu/{file}_mapped_sorted_unique.counts",
             anno = "COUNTS/Featurecounter_edger_deu/{file}_dexseq.gtf.gz"
     log:    "LOGS/{file}/deu_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
@@ -54,8 +54,8 @@ rule run_edger:
     threads: 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
-            compare = comparison
-            flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_edger.gtf')),
+            compare = comparison,
+            flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_edger.gtf'))
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.flat} {params.outdir} {params.compare} 2> {log} "
 
 
