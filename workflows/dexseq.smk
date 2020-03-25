@@ -7,7 +7,7 @@ comparison=comparable_as_string(config,'DEU')
 rule themall:
     input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
            plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
-           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(","))
+           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_dexseq_unique:

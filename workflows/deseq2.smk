@@ -12,7 +12,7 @@ rule themall:
             vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
             rld = expand("{outdir}DESeq2_rld.txt.gz", outdir=outdir),
             vsd = expand("{outdir}DESeq2_vsd.txt.gz", outdir=outdir),
-            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir)),
+            rpl = temp(expand("{outdir}Rplots.pdf", outdir=outdir)),
             session = expand("{outdir}DESeq2_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_unique:
