@@ -164,6 +164,8 @@ for (pair in comparison[[1]]){
 
     }, error=function(e){
         rm(dxdpair,dxr1)
+        csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
+        file.create(csvout)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }

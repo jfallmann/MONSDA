@@ -90,6 +90,7 @@ for(pair in comparison[[1]]){
         print(paste('cleanup done for ', cname, sep=''))
     }, error=function(e){
         rm(res,resOrdered)
+        file.create(paste(cname,'_DESEQ2.csv.gz',sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
