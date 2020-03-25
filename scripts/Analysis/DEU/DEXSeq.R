@@ -172,3 +172,5 @@ for (pair in comparison[[1]]){
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }
+
+save.image(file = "DEXSEQ_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

@@ -12,7 +12,8 @@ rule themall:
             vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
             rld = expand("{outdir}DESeq2_rld.txt.gz", outdir=outdir),
             vsd = expand("{outdir}DESeq2_vsd.txt.gz", outdir=outdir),
-            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir))
+            rpl = tmp(expand("{outdir}Rplots.pdf", outdir=outdir)),
+            session = expand("{outdir}DESeq2_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -49,6 +50,7 @@ rule run_deseq2:
             rules.themall.input.pca,
             rules.themall.input.vst,
             rules.themall.input.rpl,
+            rules.themall.input.session
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

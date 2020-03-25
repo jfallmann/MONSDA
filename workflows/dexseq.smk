@@ -7,7 +7,8 @@ comparison=comparable_as_string(config,'DEU')
 rule themall:
     input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
            plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
-           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
+           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(","))
+           session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_dexseq_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -38,12 +39,13 @@ rule prepare_count_table:
              bins = BINS
     shell: "{params.bins}/Analysis/DEU/build_DEXSeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
-rule run_dexeq:
+rule run_dexseq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno
     output: plot = rules.themall.input.plot,
             tbl  = rules.themall.input.tbl,
-            html = rules.themall.input.html
+            html = rules.themall.input.html,
+            session = rules.themall.input.session
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
