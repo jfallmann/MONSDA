@@ -51,7 +51,7 @@ rule run_deseq2:
             rules.themall.input.rpl,
     log:    "LOGS/DE/run_deseq2.log"
     conda:  "snakes/envs/"+DEENV+".yaml"
-    threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = outdir,
             compare = comparison

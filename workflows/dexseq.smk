@@ -9,7 +9,7 @@ rule themall:
            plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
            html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
 
-rule featurecount_unique:
+rule featurecount_dexseq_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: cts  = "COUNTS/Featurecounter_dexseq/{file}_mapped_sorted_unique.counts",
             anno = "COUNTS/Featurecounter_dexseq/{file}_dexseq.gtf.gz"
@@ -28,7 +28,7 @@ rule featurecount_unique:
     shell:  "if [ ! -f \"{params.dexgtf}\" ] || [ ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_dexseq_annotation2.py -f {params.countgtf} {params.countstrand} {params.anno} {params.dexgtf} ;fi && ln -s {params.dexgtf} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
 
 rule prepare_count_table:
-    input:   cnd = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, file=samplecond(SAMPLES,config))
     output:  tbl = "DEU/Tables/RUN_DEU_Analysis.tbl.gz",
              anno = "DEU/Tables/RUN_DEU_Analysis.anno.gz"
     log:     "LOGS/DEU/prepare_count_table.log"
@@ -46,11 +46,11 @@ rule run_dexeq:
             html = rules.themall.input.html
     log:    "LOGS/DEU/run_dexseq.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
-    threads: int(MAXTHREAD/2) if int(MAXTHREAD/2) >= 1 else 1
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
+            compare = comparison,
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_dexseq.gtf')),
-            compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:

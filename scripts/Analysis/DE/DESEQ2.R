@@ -48,8 +48,8 @@ dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)
 
                                         #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
 
-rld<- rlogTransformation(dds, blind=TRUE)
-vsd<-varianceStabilizingTransformation(dds, blind=TRUE)
+rld<- rlogTransformation(dds, blind=FALSE)
+vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
 pdf(paste("DESeq2","PCA.pdf",sep="_"))
 print(plotPCA(rld, intgroup=c('condition')))
@@ -66,6 +66,7 @@ for(pair in comparison[[1]]){
     comp <- strsplit(pair,"-vs-")
     cname=pair
     print(cname)
+	BPPARAM = MulticoreParam(workers=availablecores)
 
                                         #initialize empty objects
     res <- NULL
@@ -83,7 +84,7 @@ for(pair in comparison[[1]]){
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
-        rm(res,resOrdered)
+        rm(res,resOrdered, BPPARAM)
 
 
         print(paste('cleanup done for ', cname, sep=''))
