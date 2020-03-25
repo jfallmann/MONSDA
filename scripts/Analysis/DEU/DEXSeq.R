@@ -98,8 +98,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
         dxd <- DEXSeqDataSet(dcounts, sampleData, design, exons,
                              genesrle, exoninfo[matching], transcripts[matching])
         return(dxd)
-    }
-    else {
+    }else{
         dxd <- DEXSeqDataSet(dcounts, sampleData, design, exons,
                              genesrle)
         return(dxd)
