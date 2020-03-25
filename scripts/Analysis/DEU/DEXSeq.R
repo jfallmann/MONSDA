@@ -164,8 +164,11 @@ for (pair in comparison[[1]]){
 
     }, error=function(e){
         rm(dxdpair,dxr1)
+        file.create(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
         csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
+        htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
+        file.create(htmlout)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }
