@@ -11,7 +11,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: dir=lambda w: expand("QC/{source}",source=source_from_sample(w.rawfile,config)),
                 qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r2} 2>> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
         input: expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),

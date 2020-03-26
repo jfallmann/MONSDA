@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Mar 24 13:41:54 2020 (+0100)
+# Last-Updated: Thu Mar 26 17:02:58 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1703
+#     Update #: 1705
 # URL:
 # Doc URL:
 # Keywords:
@@ -169,6 +169,13 @@ def get_samples(config):
     return RETSAMPLES
 
 @check_run
+def download_samples(config):
+    logid = scriptname+'.Collection_download_samples: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    log.debug(logid+'DOWNLOAD_SAMPLES_LONG: '+str(SAMPLES))
+    return SAMPLES
+
+@check_run
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
@@ -311,7 +318,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS']:
+            if subwork not in ['DE', 'DEU', 'DAS', 'RAW']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         src, treat, setup = condition

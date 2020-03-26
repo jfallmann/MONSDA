@@ -69,8 +69,8 @@ for(pair in comparison[[1]]){
 	BPPARAM = MulticoreParam(workers=availablecores)
 
                                         #initialize empty objects
-    res <- NULL
-    resOrdered <- NULL
+    res=""
+    resOrdered=""
 
     tryCatch({
         res <- results(dds,contrast=c("condition",as.character(comp[[1]][1]),as.character(comp[[1]][2])), parallel=TRUE, BPPARAM=BPPARAM)
