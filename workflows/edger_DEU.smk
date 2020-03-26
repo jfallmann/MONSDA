@@ -56,7 +56,7 @@ rule run_edger:
             outdir = outdir,
             compare = comparison,
             flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_edger.gtf'))
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.flat} {params.outdir} {params.compare} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.flat} {params.outdir} {params.compare} {threads} 2> {log} "
 
 
 onsuccess:
