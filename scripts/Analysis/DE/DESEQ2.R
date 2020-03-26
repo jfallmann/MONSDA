@@ -149,4 +149,4 @@ dev.off()
 ##############################
 rm(rld, vsd)
 
-save.image(file = "DESEQ2_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = "DESeq2_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

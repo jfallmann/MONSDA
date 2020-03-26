@@ -167,10 +167,11 @@ for (pair in comparison[[1]]){
         file.create(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
         csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
+        pathout <- paste('DEXSeqReport',cname,sep='_')
         htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
-        file.create(htmlout)
+        file.create(paste(pathout,htmlout,sep=file.sep))
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }
 
-save.image(file = "DEXSEQ_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = "DEXSeq_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
