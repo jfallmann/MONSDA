@@ -378,7 +378,6 @@
 "DEU" : {
   "TOOLS" :
     {
-      "dexseq" : "Analysis/DEU/DEXSeq.R",
       "edger" : "Analysis/DEU/EdgeR.R"
     },
   "COMPARABLE" :
