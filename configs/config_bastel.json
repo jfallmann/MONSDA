@@ -398,7 +398,7 @@
                   [
                       {
                           "-t": "exon",
-                          "-g": "Parent",
+                          "-g": "gene_id",
                           "-f": "",
                           "--fraction": "",
                           "-p": "",
@@ -418,7 +418,7 @@
                   [
                       {
                           "-t": "exon",
-                          "-g": "Parent",
+                          "-g": "gene_id",
                           "-f": "",
                           "--fraction": "",
                           "-p": "",
@@ -438,7 +438,7 @@
                   [
                       {
                           "-t": "exon",
-                          "-g": "Parent",
+                          "-g": "gene_id",
                           "-f": "",
                           "--fraction": "",
                           "-p": "",
@@ -458,7 +458,7 @@
                   [
                       {
                           "-t": "exon",
-                          "-g": "Parent",
+                          "-g": "gene_id",
                           "-f": "",
                           "--fraction": "",
                           "-p": "",
