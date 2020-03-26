@@ -32,7 +32,7 @@ rule featurecount_unique:
 rule prepare_count_table:
     input:   cnd = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
     output:  tbl = "DEU/Tables/EDGER/RUN_DEU_Analysis.tbl.gz",
-             anno = "DE/Tables/EDGER/RUN_DEU_Analysis.anno.gz"
+             anno = "DEU/Tables/EDGER/RUN_DEU_Analysis.anno.gz"
     log:     "LOGS/DEU/prepare_count_table.log"
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
