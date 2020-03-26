@@ -109,7 +109,6 @@ DGEListFromFeatureCounts <- function (countfile, sampleData, flattenedfile=NULL,
 
 ### MAIN ###
 ############
-setwd(outdir)
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
