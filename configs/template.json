@@ -36,6 +36,21 @@
                                  }
                   }
     },
+#RAW options
+    "RAW": {
+        "id": { #key for source and genome
+                    "condition": { # sample id
+                                   "setting": {
+                                       "ENV" : "sra",  # name of conda env for raw file download
+                                       "OPTIONS":
+                                       [  #RAW options here if any, paired is not required, will be resolved by rules
+                                          {}
+                                       ]
+                                   }
+                             }
+                  }
+    },
+
 #QC options
     "QC": {
         "id": { #key for source and genome

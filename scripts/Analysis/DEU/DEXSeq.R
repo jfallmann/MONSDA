@@ -127,8 +127,8 @@ for (pair in comparison[[1]]){
     print(cname)
 
                                         #initialize empty objects
-    dxdpair <- NULL
-    dxr1 <- NULL
+    dxdpair=""
+    dxr1=""
 
     tryCatch({
 
@@ -163,13 +163,13 @@ for (pair in comparison[[1]]){
 
 
     }, error=function(e){
-        rm(dxdpair,dxr1)
         file.create(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
         csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
         pathout <- paste('DEXSeqReport',cname,sep='_')
         htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
-        file.create(paste(pathout,htmlout,sep=file.sep))
+        file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
+        rm(dxdpair,dxr1)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }
