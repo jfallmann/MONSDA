@@ -5,10 +5,12 @@ outdir="DEU/EDGER/"
 comparison=comparable_as_string(config,'DEU')
 
 rule themall:
-    input:  plot = expand("{outdir}{comparison}.png", outdir=outdir, comparison=comparison.split(",")),
-            bcv = expand("{outdir}BCV.png", outdir=outdir),
-            mds = expand("{outdir}MDS.png", outdir=outdir),
-            tbl = expand("{outdir}normalized_table.tsv", outdir=outdir)
+    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
+            tbl = expand("{outdir}normalized_table_{comparison}.tsv", outdir=outdir, comparison=comparison.split(",")),
+            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=comparison.split(",")),
+            bcv = expand("{outdir}{comparison}_BCV.png", outdir=outdir, comparison=comparison.split(",")),
+            qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
+            mds = expand("{outdir}{comparison}_MDS.png", outdir=outdir, comparison=comparison.split(","))
 
 rule featurecount_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -45,10 +47,12 @@ rule prepare_count_table:
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.themall.input.plot,
+    output: rules.themall.input.all,
+            rules.themall.input.tbl,
+            rules.themall.input.plot,
             rules.themall.input.bcv,
-            rules.themall.input.mds,
-            rules.themall.input.tbl
+            rules.themall.input.qld,
+            rules.themall.input.mds
     log:    "LOGS/DEU/run_edger.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: 1
