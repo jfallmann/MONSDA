@@ -10,9 +10,9 @@ if paired == 'paired':
         log:    "LOGS/RAW/{rawfile}_{read}.log"
         conda:  "snakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
-        params: outdir = lambda w: expand("FASTQ/{cond}",cond=os.path.dirname(w.rawfile)),
+        params: outdir = lambda w, output: expand("FASTQ/{cond}",cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in download_samples(config)])
-        shell:  "for i in {params.ids};do fasterq-dump -O {params.outdir} -e {threads} -t TMP --split-files $i 2> {log};done && cd {params.outdir} && rename _1 _R1 *.fastq && rename _2 _R2 *.fastq && pigz -p {threads} *.fastq"
+        shell:  "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP --split-files ${{arr[$i]}} 2> {log};done && cd {params.outdir} && rename _1 _R1 *.fastq && rename _2 _R2 *.fastq && pigz -p {threads} *.fastq"
 
 else:
     log.info('Downloading single-end fastq files from SRA')
@@ -26,4 +26,5 @@ else:
         threads: MAXTHREAD
         params: outdir = lambda w: expand("FASTQ/{cond}",cond=os.path.dirname(w.rawfile)),
                 ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in download_samples(config)])
-        shell:  "for i in {params.ids};do fasterq-dump -O {params.outdir} -e {threads} -t TMP --concatenate-reads {params.ids} 2> {log};done && cd {params.outdir} && pigz -p {threads} *.fastq"
+        shell: "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP --concatenate-reads ${{arr[$i]}} 2> {log};done && cd {params.outdir} && pigz -p {threads} *.fastq"
+            #"for i in {params.ids};do fasterq-dump -O {params.outdir} -e {threads} -t TMP --concatenate-reads {params.ids} 2> {log};done && cd {params.outdir} && pigz -p {threads} *.fastq"
