@@ -38,11 +38,9 @@ rule prepare_count_table:
     log:     "LOGS/DEU/prepare_count_table.log"
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
-    params: dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
-            #decond = lambda wildcards, input: str.join(',',[','.join(tool_params(str.join(os.sep, x.split(os.sep)[2:]).replace('_mapped_sorted_unique.counts',''), None, config, 'DE')["GROUP"]) for x in input.cnd]),
-            #samples = lambda wildcards, input: str.join(',',input.cnd),
-            bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
+             bins = BINS
+    shell: "{params.bins}/Analysis/DEU/build_DEXSeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
