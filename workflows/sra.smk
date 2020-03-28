@@ -6,13 +6,13 @@ if paired == 'paired':
         input: expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
 
     rule get_from_sra:
-        output: fq = "FASTQ/{rawfile}_{read}.fastq.gz"
-        log:    "LOGS/RAW/{rawfile}_{read}.log"
+        output: fq = expand("FASTQ/{{rawfile}}_{read}.fastq.gz", read=['R1','R2'])
+        log:    "LOGS/RAW/{rawfile}.log"
         conda:  "snakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
-        params: outdir = lambda w: expand("FASTQ/{cond}",cond=os.path.dirname(w.rawfile)),
+        params: outdir = lambda w, output: expand("{cond}",cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in download_samples(config)])
-        shell:  "for i in {params.ids};do fasterq-dump -O {params.outdir} -e {threads} -t TMP --split-files $i 2> {log};done && cd {params.outdir} && rename _1 _R1 *.fastq && rename _2 _R2 *.fastq && pigz -p {threads} *.fastq"
+        shell:  "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP --split-files ${{arr[$i]}} 2> {log};done && cd ${{orr[$i]}} && rename _1 _R1 *.fastq && rename _2 _R2 *.fastq && pigz -p {threads} *.fastq"
 
 else:
     log.info('Downloading single-end fastq files from SRA')
@@ -24,6 +24,6 @@ else:
         log:    "LOGS/RAW/{rawfile}.log"
         conda:  "snakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
-        params: outdir = lambda w: expand("FASTQ/{cond}",cond=os.path.dirname(w.rawfile)),
+        params: outdir = lambda w, output: expand("{cond}",cond=os.path.dirname(output.fq)),
                 ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in download_samples(config)])
-        shell:  "for i in {params.ids};do fasterq-dump -O {params.outdir} -e {threads} -t TMP --concatenate-reads {params.ids} 2> {log};done && cd {params.outdir} && pigz -p {threads} *.fastq"
+        shell: "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP ${{arr[$i]}} 2> {log};done && cd ${{orr[$i]}} && pigz -p {threads} *.fastq"
