@@ -15,7 +15,7 @@ rule themall:
 rule featurecount_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: cts = "COUNTS/Featurecounter_edger_deu/{file}_mapped_sorted_unique.counts",
-            anno = "COUNTS/Featurecounter_edger_deu/{file}_dexseq.gtf.gz"
+            anno = "COUNTS/Featurecounter_edger_deu/{file}_edger.gtf.gz"
     log:    "LOGS/{file}/deu_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
