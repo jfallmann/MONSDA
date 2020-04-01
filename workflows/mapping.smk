@@ -1,5 +1,6 @@
-rule mapall:
-    input: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
+rule themall:
+    input: expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
+           #expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
 
 rule gzipsam:
     input:  mapps = rules.mapping.output.mapped
@@ -52,13 +53,13 @@ rule sam2bamuniq:
             fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
     shell: "zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
 
-rule themall:
-    input:  rules.sam2bamuniq.output
-    output: "DONE/{file}_mapped"
-    run:
-        for f in output:
-            with open(f, "w") as out:
-                out.write("DONE")
+#rule themall:
+#    input:  rules.sam2bamuniq.output
+#    output: "DONE/{file}_mapped"
+#    run:
+#        for f in output:
+#            with open(f, "w") as out:
+#                out.write("DONE")
 
 onsuccess:
     print("Workflow finished, no error")

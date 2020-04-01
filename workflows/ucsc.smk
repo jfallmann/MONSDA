@@ -1,8 +1,9 @@
 wildcard_constraints:
     type="sorted|unique"
 
-rule all:
-    input:  expand("DONE/UCSC/{file}_{type}_tracks",file=samplecond(SAMPLES,config),type=['sorted','unique'])
+rule themall:
+    input: expand("UCSC/{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config),type=['sorted','unique'], orient=['fw','re'])
+           #expand("DONE/UCSC/{file}_{type}_tracks",file=samplecond(SAMPLES,config),type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -156,13 +157,14 @@ rule GenerateTrack:
             uid = lambda wildcards: "{src}".format(src='_'.join(source_from_sample(wildcards.file,config).split(os.sep)))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
 
-rule themall:
-    input:  rules.GenerateTrack.output
-    output: "DONE/UCSC/{file}_{type}_tracks"
-    run:
-        for f in output:
-            with open(f, "w") as out:
-                out.write("DONE")
+#rule themall:
+#    input:  rules.GenerateTrack.output
+#    output: "DONE/UCSC/{file}_{type}_tracks"
+#    run:
+#        for f in output:
+#            with open(f, "w") as out:
+#                out.write("DONE")
+
 onsuccess:
     print("Workflow finished, no error")
 onerror:
