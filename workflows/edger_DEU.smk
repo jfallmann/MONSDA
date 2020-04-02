@@ -12,27 +12,34 @@ rule themall:
             qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
             mds = expand("{outdir}{comparison}_MDS.png", outdir=outdir, comparison=comparison.split(","))
 
-rule featurecount_unique:
-    input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts = "COUNTS/Featurecounter_edger_deu/{file}_mapped_sorted_unique.counts",
-            anno = "COUNTS/Featurecounter_edger_deu/{file}_edger.gtf.gz"
-    log:    "LOGS/{file}/deu_edger_unique.log"
+rule prepare_count_annotation:
+    input:   anno   = expand("{ref}/{gen}/{anno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), anno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'])
+    output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_edger.gtf')),
+             deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_edger.gtf'))
+    log:     "LOGS/featurecount_edger_unique.log"
+    conda:   "snakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params:  bins = BINS,
+             countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
+    shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
+
+rule featurecount_dexseq_unique:
+    input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
+            countgtf = expand(rules.prepare_count_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_edger.gtf')),
+            deugtf = expand(rules.prepare_count_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_edger.gtf'))
+    output: cts  = "COUNTS/Featurecounter_edger/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{file}/featurecount_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count  = COUNTBIN,
-            anno   = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]),
             cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else '',
-            countgtf = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_fc_edger.gtf')),
-            deugtf   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_edger.gtf'))
-    shell:  "if [ ! -f \"{params.deugtf}\" ] || [ ! -f \"{params.countgtf}\" ];then {params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {params.countgtf} {params.countstrand} {params.anno} {params.deugtf} ;fi && ln -s {params.deugtf} {output.anno} && {params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
-
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.cts} {input.mapf} 2> {log}"
 
 rule prepare_count_table:
-    input:   cnd = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, file=samplecond(SAMPLES,config))
     output:  tbl = "DEU/Tables/EDGER/RUN_DEU_Analysis.tbl.gz",
              anno = "DEU/Tables/EDGER/RUN_DEU_Analysis.anno.gz"
     log:     "LOGS/DEU/prepare_count_table.log"
@@ -43,8 +50,9 @@ rule prepare_count_table:
     shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_edger:
-    input:  tbl = rules.prepare_count_table.output.tbl,
+    input:  cnt = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
+            flat = rules.prepare_count_annotation.output.deugtf
     output: rules.themall.input.all,
             rules.themall.input.tbl,
             rules.themall.input.plot,
@@ -53,12 +61,11 @@ rule run_edger:
             rules.themall.input.mds
     log:    "LOGS/DEU/run_edger.log"
     conda:  "snakes/envs/"+DEUENV+".yaml"
-    threads: 1
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
             compare = comparison,
-            flat   = lambda wildcards: os.path.abspath(str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION']]).replace('.gtf','_edger.gtf'))
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.flat} {params.outdir} {params.compare} {threads} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log} "
 
 
 onsuccess:
