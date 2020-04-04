@@ -459,27 +459,24 @@ def runjob(jobtorun):
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
-        while True:
-            streamdata = job.communicate()[0]
-            print("STREAMDATA: ",streamdata)
-            status = job.returncode
-            output = str.join('',job.stdout.readlines()).rstrip()
-            err = str.join('',job.stderr.readlines()).rstrip()
-            if output:
-                log.info(logid+str(output))
-                if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
-                    log.error(logid+'STOPOUT: '+str(err))
-                    job.kill()
-                    sys.exit(output)
-            if err:
-                if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
-                    log.error(logid+'STOPERROR: '+str(err))
-                    job.kill()
-                    sys.exit(err)
-                else:
-                    log.info(logid+str(err))
-            if status is not None:
-                break
+        status = job.wait()
+        output = str.join('',job.stdout.readlines()).rstrip()
+        err = str.join('',job.stderr.readlines()).rstrip()
+        if output:
+            log.info(logid+str(output))
+            if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
+                log.error(logid+'STOPOUT: '+str(err))
+                job.kill()
+                sys.exit(output)
+        if err:
+            if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
+                log.error(logid+'STOPERROR: '+str(err))
+                job.kill()
+                sys.exit(err)
+            else:
+                log.info(logid+str(err))
+        if status is not None:
+            break
 
         return status
 
