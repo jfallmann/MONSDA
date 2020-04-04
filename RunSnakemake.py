@@ -460,7 +460,9 @@ def runjob(jobtorun):
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
         while True:
-            status = job.poll()
+            streamdata = job.communicate()[0]
+            print("STREAMDATA: ",streamdata)
+            status = job.returncode
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
             if output:
