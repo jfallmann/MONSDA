@@ -460,9 +460,10 @@ def runjob(jobtorun):
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
         while True:
-            status = job.poll()
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
+            if output == '' and err == '' and job.poll() is not None:
+                break
             if output:
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
@@ -476,9 +477,7 @@ def runjob(jobtorun):
                     sys.exit(err)
                 else:
                     log.info(logid+str(err))
-            if status is not None:
-                break
-
+        status = job.poll()
         return status
 
     except Exception as err:
