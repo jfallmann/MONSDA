@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr  6 11:30:09 2020 (+0200)
+# Last-Updated: Thu Mar 26 17:47:14 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 809
+#     Update #: 804
 # URL:
 # Doc URL:
 # Keywords:
@@ -267,8 +267,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if 'QC' in subworkflows and 'QC' in config:
                     makeoutdir('QC')
                     if 'MAPPING' in subworkflows:
-                        #with open(smko, 'a') as smkout:
-                        #    smkout.write('rule themall:\n\tinput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))\n\n')
+                        with open(smko, 'a') as smkout:
+                            smkout.write('rule themall:\n\tinput: expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))\n\n')
 
                         smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                         with open(smko, 'a') as smkout:
@@ -287,7 +287,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
-                    log.info(logid+'PREPARING '+str(subwork)+' FOR CONDITION '+str(condition))
+                    log.info(logid+'PREPARING '+str(subwork))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
