@@ -5,12 +5,10 @@ outdir="DAS/EDGER/"
 comparison=comparable_as_string(config,'DAS')
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}normalized_table_{comparison}.tsv", outdir=outdir, comparison=comparison.split(",")),
-            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=comparison.split(",")),
-            bcv = expand("{outdir}{comparison}_BCV.png", outdir=outdir, comparison=comparison.split(",")),
-            qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
-            mds = expand("{outdir}{comparison}_MDS.png", outdir=outdir, comparison=comparison.split(","))
+    input:  plot = expand("{outdir}{comparison}.png", outdir=outdir, comparison=comparison.split(",")),
+            bcv = expand("{outdir}BCV.png", outdir=outdir),
+            mds = expand("{outdir}MDS.png", outdir=outdir),
+            tbl = expand("{outdir}normalized_table.tsv", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -30,29 +28,26 @@ rule prepare_count_table:
     output:  tbl  = "DAS/Tables/EDGER/COUNTS.gz",
              anno = "DAS/Tables/EDGER/ANNOTATION.gz"
     log:     "LOGS/DAS/prepare_count_table.log"
-    conda:   "snakes/envs/"+DEENV+".yaml"
+    conda:   "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
              bins = BINS
     shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
-    input:  cnt = rules.prepare_count_table.output.tbl,
+    input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-            flat = rules.prepare_count_annotation.output.deugtf
-    output: rules.themall.input.all,
-            rules.themall.input.tbl,
-            rules.themall.input.plot,
+    output: rules.themall.input.plot,
             rules.themall.input.bcv,
-            rules.themall.input.qld,
-            rules.themall.input.mds
-    log:    "LOGS/DEU/run_edger.log"
+            rules.themall.input.mds,
+            rules.themall.input.tbl
+    log:    "LOGS/DAS/run_edger.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
-    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    threads: 1
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
-            compare = comparison,
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.flat} {params.outdir} {params.compare} {threads} 2> {log} "
+            compare = comparison
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.tbl} {input.anno} {params.outdir} {params.compare} 2> {log} "
 
 
 # rule run_script_edger:
