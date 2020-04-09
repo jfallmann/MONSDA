@@ -72,7 +72,6 @@ DGEListFromFeatureCounts <- function (countfile, sampleData, comp){
 ############
 
 message(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
-setwd(outdir)
 
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
@@ -93,7 +92,7 @@ keep <- filterByExpr(DGE)
 DGE <- DGE[keep, , keep.lib.sizes=FALSE]
 DGE <- calcNormFactors(DGE, method = "TMM", BPPARAM=BPPARAM)
 DGE <- sumTechReps(DGE, ID=conditions)
-out <- "All_Conditions_MDS.png"
+out <- paste(outdir,"All_Conditions_MDS.png",sep="")
 png(out, width = 400, height = 400)
 colors <- RainbowColor(DGE$samples$group)
 plotMDS(DGE, col=colors)
@@ -132,7 +131,7 @@ for(pair in comparison[[1]]){
   write.table(tmm, file=paste(pair,"_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
   # create file colored MDS-plot
-  out <- paste(pair,"_MDS.png",sep="")
+  out <- paste(outdir,pair,"_MDS.png",sep="")
   png(out, width = 400, height = 400)
   colors <- RainbowColor(DGE$samples$group)
   plotMDS(DGE, col=colors)
@@ -140,14 +139,14 @@ for(pair in comparison[[1]]){
 
   # create file BCV-plot
   DGE <- estimateDisp(DGE, design, robust=TRUE)
-  out <- paste(pair,"_BCV.png",sep="")
+  out <- paste(outdir,pair,"_BCV.png",sep="")
   png(out, width = 400, height = 400)
   plotBCV(DGE)
   dev.off()
 
   # create file QLDisp-plot
   fit <- glmQLFit(DGE, design, robust=TRUE)
-  out <- paste(pair,"_QLDisp.png",sep="")
+  out <- paste(outdir,pair,"_QLDisp.png",sep="")
   png(out, width = 400, height = 400)
   plotQLDisp(fit)
   dev.off()
@@ -155,17 +154,17 @@ for(pair in comparison[[1]]){
   # create files topSpliced by gene, simes and exon method
   sp <- diffSpliceDGE(fit, geneid="genes", exonid="exons")
   tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
-  write.table(tops, file=paste(pair,"_diffSplice_geneTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  write.table(tops, file=paste(outdir,pair,"_diffSplice_geneTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
   tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
-  write.table(tops, file=paste(pair,"_diffSplice_simesTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  write.table(tops, file=paste(outdir,pair,"_diffSplice_simesTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
   tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
-  write.table(tops, file=paste(pair,"_diffSplice_exonTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  write.table(tops, file=paste(outdir,pair,"_diffSplice_exonTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
   # create files diffSplicePlots
   tops <- topSpliceDGE(sp, test="simes", n=10)
   for(i in 1:10){
     geneID <- tops$genes[i]
-    out <- paste(pair,"_topSplice_simes_",i,".png",sep="")
+    out <- paste(outdir,pair,"_topSplice_simes_",i,".png",sep="")
     png(out, width = 800, height = 400)
     plotSpliceDGE(sp, geneid=geneID, genecol="genes")
     dev.off()
