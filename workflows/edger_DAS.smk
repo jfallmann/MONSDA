@@ -6,11 +6,11 @@ comparison=comparable_as_string(config,'DAS')
 
 rule themall:
     input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}{comparison}_normalized_table_.tsv", outdir=outdir, comparison=comparison.split(",")),
+            tbl = expand("{outdir}{comparison}_normalized_table.tsv", outdir=outdir, comparison=comparison.split(",")),
             bcv = expand("{outdir}{comparison}_BCV.png", outdir=outdir, comparison=comparison.split(",")),
             qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
-            dift = expand("{outdir}{comparison}_diffSplice_{test}.png", outdir=outdir, comparison=comparison.split(","), test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.tsv", outdir=outdir, comparison=comparison.split(","), n=[str(i) for i in range(1,11)]),
+            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=comparison.split(","), test=["geneTest","simesTest","exonTest"]),
+            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=comparison.split(","), n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
