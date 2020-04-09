@@ -45,7 +45,8 @@ rule run_edger:
             rules.themall.input.bcv,
             rules.themall.input.qld,
             rules.themall.input.dift,
-            rules.themall.input.tops
+            rules.themall.input.tops,
+            rules.themall.input.session
     log:    "LOGS/DAS/run_edger.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
