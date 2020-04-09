@@ -9,9 +9,9 @@ args <- commandArgs(trailingOnly = TRUE)
 
 anname          <- args[1]
 countfile       <- args[2]
-outdir          <- args[4]
-cmp             <- args[5]
-availablecores  <- as.integer(args[6])
+outdir          <- args[3]
+cmp             <- args[4]
+availablecores  <- as.integer(args[5])
 
 ## for manual use
 # wd <-"/home/roberto/Rscripts/DAS2/"
