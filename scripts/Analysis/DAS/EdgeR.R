@@ -71,9 +71,11 @@ DGEListFromFeatureCounts <- function (countfile, sampleData, comp){
 ### MAIN ###
 ############
 
+message(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
+setwd(outdir)
+
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
-message(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
