@@ -128,7 +128,7 @@ for(pair in comparison[[1]]){
   colnames(tmm) <- t(DGE$samples$samples)
   tmm$ID <- DGE$genes$genes
   tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-  write.table(tmm, file=paste(pair,"_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  write.table(tmm, file=paste(outdir,pair,"_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
   # create file colored MDS-plot
   out <- paste(outdir,pair,"_MDS.png",sep="")
@@ -171,4 +171,4 @@ for(pair in comparison[[1]]){
   }
 }
 
-save.image(file = "EDGER_DAS_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste(outdir,"EDGER_DAS_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
