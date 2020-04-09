@@ -1,6 +1,7 @@
 
 suppressPackageStartupMessages({
   require(edgeR)
+  require(dplyr)
   library(BiocParallel)
 })
 
