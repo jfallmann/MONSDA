@@ -28,8 +28,8 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DAS/Tables/EDGER/COUNTS.gz",
-             anno = "DAS/Tables/EDGER/ANNOTATION.gz"
+    output:  tbl  = "DAS/EDGER/Tables/COUNTS.gz",
+             anno = "DAS/EDGER/Tables/ANNOTATION.gz"
     log:     "LOGS/DAS/prepare_count_table.log"
     conda:   "snakes/envs/"+DASENV+".yaml"
     threads: 1
