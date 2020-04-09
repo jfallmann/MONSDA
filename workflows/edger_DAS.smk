@@ -11,7 +11,7 @@ rule themall:
             bcv = expand("{outdir}{comparison}_BCV.png", outdir=outdir, comparison=comparison.split(",")),
             qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
             dift = expand("{outdir}{comparison}_diffSplice_{test}.png", outdir=outdir, comparison=comparison.split(","), test=["geneTest","simesTest","exonTest"])
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=comparison.split(","), n=list(range(1,11)))
+            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=comparison.split(","), n=[str(i) for i in range(1,11)])
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
