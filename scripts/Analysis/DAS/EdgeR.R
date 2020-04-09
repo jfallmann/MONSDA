@@ -1,6 +1,7 @@
 
 suppressPackageStartupMessages({
   require(edgeR)
+  library(BiocParallel)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
