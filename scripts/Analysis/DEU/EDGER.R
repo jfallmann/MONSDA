@@ -133,8 +133,8 @@ for(contrast in comparisons[[1]]){
   message(paste("Comparing ",contrast_name, sep=""))
 
   # determine contrast
-  A <- strsplit(contrast_groups[[1]][1], "+")
-  B <- strsplit(contrast_groups[[1]][2], "+")
+  A <- strsplit(contrast_groups[[1]][1], "\\+")
+  B <- strsplit(contrast_groups[[1]][2], "\\+")
   minus <- 1/length(A[[1]])*(-1)
   plus <- 1/length(B[[1]])
   contrast <- cbind(integer(dim(design)[2]), colnames(design))
