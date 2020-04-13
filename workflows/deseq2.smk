@@ -37,7 +37,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table_simple.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,

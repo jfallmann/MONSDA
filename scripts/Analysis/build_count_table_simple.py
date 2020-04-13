@@ -215,4 +215,4 @@ if __name__ == '__main__':
         log.error(logid+''.join(tbe.format()))
 
 #
-# build_DESeq_table.py ends here
+# build_count_table_simple.py ends here
