@@ -2,7 +2,7 @@ DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DEU/EDGER/"
-comparison=comparable_as_string(config,'DEU')
+comparison=comparable_as_string2(config,'DEU')
 
 rule themall:
     input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
@@ -55,7 +55,7 @@ rule run_edger:
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
             compare = comparison
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
