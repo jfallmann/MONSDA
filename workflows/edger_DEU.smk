@@ -47,7 +47,6 @@ rule run_edger:
             rules.themall.input.bcv,
             rules.themall.input.qld,
             rules.themall.input.dift,
-            rules.themall.input.tops,
             rules.themall.input.plot,
             rules.themall.input.session
     log:    "LOGS/DEU/run_edger.log"
