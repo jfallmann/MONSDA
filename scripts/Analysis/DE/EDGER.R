@@ -82,7 +82,7 @@ tmm <- as.data.frame(cpm(dge))
 colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-write.table(tmm, file=paste(outidr,"All_Conditions_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+write.table(tmm, file=paste(outdir,"All_Conditions_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- paste(outdir,"All_Conditions_MDS.png",sep="")
