@@ -205,10 +205,11 @@
       "TOOLS" :
         {
           "deseq2" : "Analysis/DE/DESeq2.R",
-          "edger" : "Analysis/DE/EdgeR.R"
+          "edger" : "Analysis/DE/EDGER.R"
         },
       "COMPARABLE" :
         {
+          "contrast_AvsBCD": [["A"]["B","C","D"]]
         },
         "id": {
             "condition": {
@@ -236,16 +237,47 @@
         "TOOLS" :
         {
           "dexseq" : "Analysis/DEU/DEXSeq.R",
-          "edger" : "Analysis/DEU/EdgeR.R"
+          "edger" : "Analysis/DEU/EDGER.R"
         },
       "COMPARABLE" :
         {
+          "contrast_AvsBCD": [["A"]["B","C","D"]]
         },
         "id": {
             "condition": {
                 "setting": {
-                    "ENV": "dexseq",
-                    "BIN": "dexseq",
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
+                    "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
+                    "OPTIONS":
+                    [
+                        {
+                            "-t": "exon",
+                            "-g": "gene_id",
+                            "-f": "",
+                            "--fraction": "",
+                            "-O": ""
+                        }
+                    ]
+                }
+            }
+        }
+    },
+#DAS Analysis options for Differential Exon Usage
+    "DAS" : {
+        "TOOLS" :
+        {
+          "dexseq" : "Analysis/DEU/DEXSeq.R",
+          "edger" : "Analysis/DEU/EDGER.R"
+        },
+      "COMPARABLE" :
+        {
+          "contrast_AvsBCD": [["A"]["B","C","D"]]
+        },
+        "id": {
+            "condition": {
+                "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
                     "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS

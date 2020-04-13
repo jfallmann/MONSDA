@@ -2,21 +2,22 @@ DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DAS/EDGER/"
-comparison=comparable_as_string(config,'DAS')
+comparison=comparable_as_string2(config,'DAS')
 
 rule themall:
     input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}{comparison}_normalized_table.tsv", outdir=outdir, comparison=comparison.split(",")),
-            bcv = expand("{outdir}{comparison}_BCV.png", outdir=outdir, comparison=comparison.split(",")),
-            qld = expand("{outdir}{comparison}_QLDisp.png", outdir=outdir, comparison=comparison.split(",")),
-            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=comparison.split(","), test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=comparison.split(","), n=[str(i) for i in range(1,11)]),
+            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
+            tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
+            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
+            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
+            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")], test=["geneTest","simesTest","exonTest"]),
+            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")], n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounter_edger/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_edger_unique.log"
+    output: cts   = "COUNTS/Featurecounter_DAS_edger/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
@@ -35,12 +36,13 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
              bins = BINS
-    shell: "{params.bins}/Analysis/DE/build_DESeq_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table_simple.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
     output: rules.themall.input.all,
+            rules.themall.input.allsum,
             rules.themall.input.tbl,
             rules.themall.input.bcv,
             rules.themall.input.qld,
