@@ -14,12 +14,12 @@ cmp             <- args[4]
 availablecores  <- as.integer(args[5])
 
 ## for manual use
-# wd <-"/home/roberto/Rscripts/DAS3/"
+# wd <-"/home/roberto/Rscripts/DE/"
 # setwd(wd)
 # anname          <- "data/ANNOTATION.gz"
 # countfile       <- "data/COUNTS.gz"
 # outdir          <- wd
-# cmp             <- "AD.allvsCTRL.all:AD_total;AD_3;AD_5_6;AD_white-vs-CTRL_total;CTRL_3;CTRL_5_6;CTRL_white,AD.totalvsAD.single:AD_total-vs-AD_3;AD_5_6;AD_white,CTRL.totalvsCTRL.single:CTRL_total-vs-CTRL_3;CTRL_5_6;CTRL_white,3:AD_3-vs-CTRL_3,5_6:AD_5_6-vs-CTRL_5_6,total:AD_total-vs-CTRL_total,white:AD_white-vs-CTRL_white"
+# cmp             <- "ADvsCTRL.all:AD_total+AD_3+AD_5_6+AD_white-vs-CTRL_total+CTRL_3+CTRL_5_6+CTRL_white,TOTALvsSINGLE.AD:AD_total-vs-AD_3+AD_5_6+AD_white,TOTALvsSINGLE.CTRL:CTRL_total-vs-CTRL_$+CTRL_5_6+CTRL_white,ADvsCTRL.total:AD_total-vs-CTRL_total,ADvsCTRL.white:AD_white-vs-CTRL_white,ADvsCTRL.3:AD_3-vs-CTRL_3,ADvsCTRL.5_6:AD_5_6-vs-CTRL_5_6"
 # availablecores  <- as.integer("1")
 
 
@@ -131,10 +131,10 @@ for(contrast in comparisons[[1]]){
   contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
   message(paste("Comparing ",contrast_name, sep=""))
-
+  
   # determine contrast
-  A <- strsplit(contrast_groups[[1]][1], ";")
-  B <- strsplit(contrast_groups[[1]][2], ";")
+  A <- strsplit(contrast_groups[[1]][1], "+")
+  B <- strsplit(contrast_groups[[1]][2], "+")
   minus <- 1/length(A[[1]])*(-1)
   plus <- 1/length(B[[1]])
   contrast <- cbind(integer(dim(design)[2]), colnames(design))
