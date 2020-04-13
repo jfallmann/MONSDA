@@ -722,9 +722,9 @@ def comparable_as_string2(config, subwork):
             As = ""
             Bs = ""
             for condition in compdict[contrast][0]:
-                As = (As + ";" + condition).strip(";")
+                As = (As + "+" + condition).strip("+")
             for condition in compdict[contrast][1]:
-                Bs = (Bs + ";" + condition).strip(";")
+                Bs = (Bs + "+" + condition).strip("+")
             complist.append(f"{contrast}:{As}-vs-{Bs}")
         compstr = ','.join(complist)
         return compstr
