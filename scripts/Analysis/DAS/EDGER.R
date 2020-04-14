@@ -167,7 +167,7 @@ for(contrast in comparisons[[1]]){
     out <- paste(outdir,contrast_name,"_topSplice_simes_",i,".png",sep="")
     png(out, width = 800, height = 400)
     plotSpliceDGE(sp, geneid=geneID, genecol="genes")
-    dsdev.off()
+    dev.off()
   }
 }
 
