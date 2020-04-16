@@ -2,7 +2,7 @@ DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DE/DESEQ2/"
-comparison=comparable_as_string(config,'DE')
+comparison=comparable_as_string2(config,'DE')
 
 rule themall:
     input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=comparison.split(",")),
@@ -30,8 +30,8 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DE/Tables/DESEQ2/COUNTS.gz",
-             anno = "DE/Tables/DESEQ2/ANNOTATION.gz"
+    output:  tbl  = "DE/DESEQ2/Tables/COUNTS.gz",
+             anno = "DE/DESEQ2/Tables/ANNOTATION.gz"
     log:     "LOGS/DE/prepare_count_table.log"
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
