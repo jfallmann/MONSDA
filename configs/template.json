@@ -268,8 +268,9 @@
     "DAS" : {
         "TOOLS" :
         {
-          "dexseq" : "Analysis/DEU/DEXSeq.R",
-          "edger" : "Analysis/DEU/EDGER.R"
+          "dexseq" : "Analysis/DAS/DEXSeq.R",
+          "edger" : "Analysis/DAS/EDGER.R",
+          "diego" : "Analysis/DAS/DIEGO/DIEGO.py"
         },
       "COMPARABLE" :
         {
