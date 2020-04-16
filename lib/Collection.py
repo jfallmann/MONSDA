@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 26 17:02:58 2020 (+0100)
+# Last-Updated: Thu Apr 16 17:23:39 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1705
+#     Update #: 1708
 # URL:
 # Doc URL:
 # Keywords:
@@ -341,6 +341,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
+                if subwork == 'DAS':
+                    tempconf['MAPPING'][src][treat][setup] = config['MAPPING'][src][treat][setup]
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
                 if 'TOOLS' in config[subwork]:

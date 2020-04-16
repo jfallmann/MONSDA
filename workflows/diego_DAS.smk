@@ -8,82 +8,57 @@ files=samplecond(SAMPLES,config)
 
 
 rule themall:
-    input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
-           plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
-           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
+    input: tbl = expand("{outdir}DIEGO_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
+           plot = expand("{outdir}DIEGO_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
+           html = expand("{outdir}DIEGO_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)# R object?
 
+rule featurecount_unique:
+    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
+    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: count = COUNTBIN,
+            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
+            paired   = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
+
 rule create_genome_annotation_file:
-    input:  lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']])
-    output: expand("{outdir}annotation_DIEGO.bed", outdir=outdir)
+    input:  gff = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']])
+    output: bed = expand("{outdir}Tables/Annotation_DIEGO.bed", outdir=outdir)
     log:    "LOGS/DAS/DIEGO/create_genome_annotation_file.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
+    threads: 1
+    shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
+
+rule prepare_junction_usage_matrix:
+    input:  anno = rule.create_genome_annotation_file.output,
+            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir)
+    log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
+    conda:  "snakes/envs/"+DASENV+".yaml"
+    threads: 1
+    params:  out=outdir
+    shell:  "python3 pre_STAR.py -l {input.list} -d {input.anno} -o {params.out}"
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
+             bins = BINS
+    shell: "{params.bins}/Analysis/build_count_table_simple.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+
+rule run_diego:
+    input:  tbl=
+            anno= rule.prepare_junction_usage_matrix.output,
+            list=
+    output: expand("{outdir}dendrogram", outdir=outdir)
+    log:    "LOGS/"
+    conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
-    shell:  "perl scripts/Analysis/DAS/DIEGO/gfftoDIEGObed.pl -g  <(awk 'OFS="\t" {if (NR > 5) $1="chr"$1; print}' <(zcat {input})) -o {output} 2> {log}"
-
-for contrast in comps:
-
-    rule
-
-
-
-    rule create_list_of_starjunction_files:
-        input:  expand("MAPPED/{files}SJ.out.tab",files=samplecond(SAMPLES,config))
-        output: expand("{outdir}names_and_data_list.txt")
-        log:    "LOGS/DAS/DIEGO/create_list_of_starjunction_files.log"
-        conda:  "snakes/envs/"+DASENV+".yaml"
-        threads: MAXTHREAD
-        shell:  'for i in {input}; do echo -e "$(echo $i | awk -F/ '{print$NF}' | tr -d SJ.out.tab)\t$i >> {output}"; done'
-
-    if "/star/" in samplecond(SAMPLES,config):
-
-        rule prepare_junction_usage_matrix:
-            input:  anno=rule.create_genome_annotation_file.output,
-                    list=rule.create_list_of_starjunction_files.output
-            output: tbl="junction_table.txt"
-            log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
-            conda:  "snakes/envs/"+DASENV+".yaml"
-            threads: MAXTHREAD
-            params: out=outdir
-            shell:  "python3 scripts/Analysis/DAS/DIEGO/pre_STAR.py -l {input.list} -d {input.anno} -o {params.out}"
-
-    elif "/segemehl/" in samplecond(SAMPLES,config):
-
-        rule prepare_junction_usage_matrix:
-            input:  anno=rule.create_genome_annotation_file.output,
-                    list=rule.create_list_of_starjunction_files.output
-            output: tbl="junction_table.txt"
-            log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
-            conda:  "snakes/envs/"+DASENV+".yaml"
-            threads: MAXTHREAD
-            params: out=outdir
-            shell:  "perl scripts/Analysis/DAS/DIEGO/pre_segemehl.py -l {input.list} -d {input.anno} -o {params.out}"
-
-    elif "/htseq/" in samplecond(SAMPLES,config):
-
-        rule prepare_junction_usage_matrix:
-            input:  anno=rule.create_genome_annotation_file.output,
-                    list=rule.create_list_of_starjunction_files.output
-            output: tbl="junction_table.txt"
-            log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
-            conda:  "snakes/envs/"+DASENV+".yaml"
-            threads: MAXTHREAD
-            params: out=outdir
-            shell:  "perl scripts/Analysis/DAS/DIEGO/HTseq2DIEGO.pl -l {input.list} -d {input.anno} -o {params.out}"
-
-    rule run_diego:
-        input:  tbl=
-                anno= rule.prepare_junction_usage_matrix.output,
-                list=
-        output: expand("{outdir}dendrogram", outdir=outdir)
-        log:    "LOGS/"
-        conda:  "snakes/envs/"+DASENV+".yaml"
-        threads: MAXTHREAD
-        params: bins   = str.join(os.sep,[BINS,DASBIN]),
-                outdir = outdir,
-                compare = comparison
-        shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x your_base_condition -e [-f {output}]"
-
+    params: bins   = str.join(os.sep,[BINS,DASBIN]),
+            outdir = outdir,
+            compare = comparison
+    shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x your_base_condition -e [-f {output}]"
 
 onsuccess:
     print("Workflow finished, no error")
