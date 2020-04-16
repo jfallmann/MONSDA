@@ -34,23 +34,29 @@ rule create_genome_annotation_file:
     threads: 1
     shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
 
+rule create_samplemap:
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    output: smap  = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
+            cmap  = expand("{outdir}Tables/groupings.txt",outdir=outdir)
+    log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
+    conda:  "snakes/envs/"+DASENV+".yaml"
+    threads: 1
+    params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
+            clist = lambda wildcards, input: get_diego_groups(input.cnd,config,'DAS'),
+            bins = BINS
+    shell:  "echo {params.slist} > {output.smap} && echo {params.clist} > {output.cmap} 2> {log}"
+
 rule prepare_junction_usage_matrix:
-    input:  anno = rule.create_genome_annotation_file.output,
-            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:  smap  = rules.create_samplemap.output.smap
     output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir)
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
-    params:  out=outdir
-    shell:  "python3 pre_STAR.py -l {input.list} -d {input.anno} -o {params.out}"
-    params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
-             bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table_simple.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+    shell: " perl HTseq2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
 
 rule run_diego:
-    input:  tbl=
-            anno= rule.prepare_junction_usage_matrix.output,
-            list=
+    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl
+            anno = rules.create_genome_annotation_file.output.bed,
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
