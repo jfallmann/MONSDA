@@ -75,7 +75,7 @@ for(contrast in comparison[[1]]){
 
     tryCatch({
 
-                                              # determine contrast
+                                        # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
 
@@ -84,21 +84,18 @@ for(contrast in comparison[[1]]){
 
         plus <- 1/length(A)
         minus <- 1/length(B)*-1
-        
-        #temp <- rbind(tempa,tempb)
-        #contrast <- ifelse(temp$condition %in% A, (minus), ifelse(anno$condition %in% B, as.character(plus), '0')))
-        #contrasta <- ifelse(anno$condition %in% A, as.character(minus), ifelse(anno$condition %in% B, as.character(plus), '0')))
-        
+
         BPPARAM = MulticoreParam(workers=availablecores)
 
                                         #initialize empty objects
         res=""
         resOrdered=""
 
-        #res <- results(dds,contrast=c("condition",as.character(comp[[1]][1]),as.character(comp[[1]][2])), parallel=TRUE, BPPARAM=BPPARAM)
         res <- results(dds,contrast=list(paste('condition',levels(tempa$condition),sep=''),paste('condition',levels(tempb$condition),sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+
                                         #sort and output
         resOrdered <- res[order(res$log2FoldChange),]
+
                                         #write the table to a csv file
         write.table(as.data.frame(resOrdered), gzfile(paste(contrast_name,'_DESEQ2.csv.gz',sep="")), sep="\t")
 

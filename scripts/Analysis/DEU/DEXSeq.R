@@ -21,18 +21,15 @@ sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type")
 sampleData <- as.data.frame(sampleData)
 #head(sampleData)
-comparison<-strsplit(cmp, ",")
-print(paste("Will analyze conditions ",comparison,sep=""))
-## Combinations of conditions
-#condcomb<-as.data.frame(combn(unique(sampleData$condition),2))[1:2,]
-##countfile <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
-##head(countData)
+comparisons <- strsplit(cmp, ",")
+print(paste("Will analyze conditions ",comparisons,sep=""))
 
 if (length(levels(sampleData$type)) > 1){#FIX DESIGN
-    design = ~sample + exon + type:exon + condition:exon
+    design = ~ sample + exon + type:exon + condition:exon
 } else{
-    design = ~sample + exon + condition:exon
+    design = ~ sample + exon + condition:exon
 }
+
 ## Read Fcount output and convert to dxd
 DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
                                             design = design, flattenedfile = NULL)
@@ -115,31 +112,39 @@ setwd(outdir)
 
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
-BPPARAM = MulticoreParam(workers=availablecores)
-
 #dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM ) # we do this later on a per pair basis as we do not know about the biological variance between conditions, so this should be more safe
 
-for (pair in comparison[[1]]){
+for(contrast in comparisons[[1]]){
 
-    cname=""
-    comp <- strsplit(pair,"-vs-")
-    cname=pair
-    print(cname)
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
+    message(paste("Comparing ",contrast_name, sep=""))
+
+    BPPARAM = MulticoreParam(workers=availablecores)
+    
                                         #initialize empty objects
     dxdpair=""
     dxr1=""
 
     tryCatch({
 
-        dxdpair = dxd[,which(dxd$condition == as.character(comp[[1]][1]) | dxd$condition == as.character(comp[[1]][2]))]
-
-		print(head(dxdpair))
-
-		dxdpair = estimateSizeFactors( dxdpair )
+                                                # determine contrast
+        A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
+        B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
+        
+        c1 <- strsplit(contrast_name,"vs")[[1]][1]
+        c2 <- strsplit(strsplit(contrast_name,"vs")[[1]][2],'\\.')[[1]][1]
+        
+        dxdpair = dxd[colData(dxd)$condition %in% A | colData(dxd)$condition %in% B]
+        
+        names(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
+        levels(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
+        
+        dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
-        pdf(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
+        pdf(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
         plotDispEsts( dxdpair )
         dev.off()
 
@@ -151,23 +156,23 @@ for (pair in comparison[[1]]){
 
         rm(dxdpair)
 
-        csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
+        csvout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.tsv.gz', sep='')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t")
 
-        htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
-        pathout <- paste('DEXSeqReport',cname,sep='_')
+        htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
+        pathout <- paste('DEXSeqReport',contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
         rm(dxr1)
-        print(paste('cleanup done for ', cname, sep=''))
+        print(paste('cleanup done for ', contrast_name, sep=''))
 
 
     }, error=function(e){
-        file.create(paste("DEXSeq",cname,"DispEsts.pdf",sep="_"))
-        csvout <- paste(paste('DEXSeq',cname,sep='_'),'.tsv.gz', sep='')
+        file.create(paste("DEXSeq",contrast,"DispEsts.pdf",sep="_"))
+        csvout <- paste(paste('DEXSeq',contrast,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
-        pathout <- paste('DEXSeqReport',cname,sep='_')
-        htmlout <- paste(paste('DEXSeq',cname,sep='_'),'.html', sep='')
+        pathout <- paste('DEXSeqReport',contrast,sep='_')
+        htmlout <- paste(paste('DEXSeq',contrast,sep='_'),'.html', sep='')
         file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
         rm(dxdpair,dxr1)
         cat("WARNING :",conditionMessage(e), "\n")
