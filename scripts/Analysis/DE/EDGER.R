@@ -164,4 +164,4 @@ for(contrast in comparisons[[1]]){
 
 }
 
-save.image(file = paste(outdir,"EDGER_DAS_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste(outdir,"EDGER_DE_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

@@ -32,10 +32,16 @@ if (!all(rownames(anno) %in% colnames(countData))){
   stop("Count file does not correspond to the annotation file")
 }
 
+if (length(levels(anno$types))>1){
+  design <- ~0 + condition+type
+} else {
+  design <- ~0 + condition
+}
+
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
                               colData = anno,
-                              design= ~ condition+type)
+                              design= design)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
@@ -44,7 +50,7 @@ dds <- dds[keep,]
 
 #run for each pair of conditions
 BPPARAM = MulticoreParam(workers=availablecores)
-dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)
+dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
 
                                         #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
 
@@ -60,24 +66,38 @@ write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", co
 write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
 
 
-for(pair in comparison[[1]]){
+for(contrast in comparison[[1]]){
 
-    cname=""
-    comp <- strsplit(pair,"-vs-")
-    cname=pair
-    print(cname)
-	BPPARAM = MulticoreParam(workers=availablecores)
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-                                        #initialize empty objects
-    res=""
-    resOrdered=""
+    message(paste("Comparing ",contrast_name, sep=""))
 
     tryCatch({
-        res <- results(dds,contrast=c("condition",as.character(comp[[1]][1]),as.character(comp[[1]][2])), parallel=TRUE, BPPARAM=BPPARAM)
+
+                                        # determine contrast
+        A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
+        B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
+
+        tempa <- droplevels(anno[anno$condition %in% A,])
+        tempb <- droplevels(anno[anno$condition %in% B,])
+
+        plus <- 1/length(A)
+        minus <- 1/length(B)*-1
+
+        BPPARAM = MulticoreParam(workers=availablecores)
+
+                                        #initialize empty objects
+        res=""
+        resOrdered=""
+
+        res <- results(dds,contrast=list(paste('condition',levels(tempa$condition),sep=''),paste('condition',levels(tempb$condition),sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+
                                         #sort and output
         resOrdered <- res[order(res$log2FoldChange),]
+
                                         #write the table to a csv file
-        write.table(as.data.frame(resOrdered), gzfile(paste(cname,'_DESEQ2.csv.gz',sep="")), sep="\t")
+        write.table(as.data.frame(resOrdered), gzfile(paste(contrast_name,'_DESEQ2.csv.gz',sep="")), sep="\t")
 
                                         #plotMA
         pdf(paste(cname,"DESeq2_MA.pdf",sep="_"))
@@ -87,10 +107,10 @@ for(pair in comparison[[1]]){
         rm(res,resOrdered, BPPARAM)
 
 
-        print(paste('cleanup done for ', cname, sep=''))
+        print(paste('cleanup done for ', contrast_name, sep=''))
     }, error=function(e){
         rm(res,resOrdered)
-        file.create(paste(cname,'_DESEQ2.csv.gz',sep=""))
+        file.create(paste(contrast_name,'_DESEQ2.csv.gz',sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
