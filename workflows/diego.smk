@@ -4,7 +4,6 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 outdir="DAS/DIEGO/"
 comparison=comparable_as_string2(config,'DAS')
 comps = comparison.split(",")
-files=samplecond(SAMPLES,config)
 
 
 rule themall:
@@ -57,7 +56,7 @@ rule prepare_junction_usage_matrix:
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
             anno = rules.create_genome_annotation_file.output.bed,
-            base = rule.create_samplemap.output.cmap
+            base = rules.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
