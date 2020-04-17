@@ -12,11 +12,11 @@ comps = comparison.split(",")
 #            html = expand("{outdir}DIEGO_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(","))
 
 rule themall:
-    input:  expand("{outdir}dendrogram", outdir=outdir)
+    input:  expand("{outdir}dendrogram", outdir=outdir, file=samplecond(SAMPLES,config))
 
 rule featurecount_unique:
-    input:  reads = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
-    output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
+    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    output: cts   = expand("COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
     log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
