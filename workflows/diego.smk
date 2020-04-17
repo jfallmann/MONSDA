@@ -12,7 +12,7 @@ comps = comparison.split(",")
 #            html = expand("{outdir}DIEGO_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(","))
 
 rule themall:
-    input:  rules.run_diego.output
+    input:  expand("{outdir}dendrogram", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
