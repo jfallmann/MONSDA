@@ -6,15 +6,16 @@ comparison=comparable_as_string2(config,'DAS')
 comps = comparison.split(",")
 
 
+# rule themall:
+#     input: tbl = expand("{outdir}DIEGO_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
+#            plot = expand("{outdir}DIEGO_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
+#            html = expand("{outdir}DIEGO_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(","))
+
 rule themall:
-    input: tbl = expand("{outdir}DIEGO_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
-           plot = expand("{outdir}DIEGO_{comparison}_DispEsts.pdf", outdir=outdir, comparison=comparison.split(",")),
-           html = expand("{outdir}DIEGO_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=comparison.split(",")),
-           session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)# R object?
+    input:  rules.run_diego.output
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
