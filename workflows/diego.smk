@@ -4,10 +4,8 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 outdir="DAS/DIEGO/"
 comparison=comparable_as_string2(config,'DAS')
 comps = comparison.split(",")
-
 rule themall:
-    input: #tbl = expand("{outdir}DIEGO_{comparison}.tsv.gz", outdir=outdir, comparison=comparison.split(",")),
-           plot = expand("{outdir}dendrogram", outdir=outdir)
+    input:  expand("{outdir}dendrogram", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -22,12 +20,10 @@ rule featurecount_unique:
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
-rule create_samplemaps:
+rule create_samplemap:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
     output: smap = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt",outdir=outdir)
-            #smap = expand("{outdir}Tables/{{file}}_samplemap.txt", outdir=outdir),
-            #cmap = expand("{outdir}Tables/{{file}}_groupings.txt", outdir=outdir)
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -46,8 +42,8 @@ rule prepare_junction_usage_matrix:
     shell:  "perl {params.bins}/Analysis/DAS/FeatureCounts2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
 
 rule run_diego:
-    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl
-            #anno = rules.create_genome_annotation_file.output.bed
+    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
+            group = rules.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
@@ -55,7 +51,7 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x your_base_condition -e -f {output}"
+    shell:  "python {params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{print $1}') -e -f {output}"
 
 onsuccess:
     print("Workflow finished, no error")
