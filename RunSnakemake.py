@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Apr 14 16:12:27 2020 (+0200)
+# Last-Updated: Thu Apr 16 17:29:11 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 809
+#     Update #: 810
 # URL:
 # Doc URL:
 # Keywords:
@@ -284,7 +284,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
-                    log.info(logid+'PREPARING '+str(subwork)+' '+str(condition))
+                    log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])

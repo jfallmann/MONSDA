@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Mar 26 17:02:58 2020 (+0100)
+# Last-Updated: Thu Apr 16 18:38:53 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1705
+#     Update #: 1712
 # URL:
 # Doc URL:
 # Keywords:
@@ -341,6 +341,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
+                if subwork == 'DAS':
+                    tempconf['MAPPING'][src][treat][setup] = config['MAPPING'][src][treat][setup]
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
                 if 'TOOLS' in config[subwork]:
@@ -424,6 +426,50 @@ def get_reps(samples,config,analysis):
 
     log.debug(logid+'RETURN: '+str(rets))
     return rets
+
+@check_run
+def get_diego_samples(samples,config,analysis):
+    logid=scriptname+'.Collection_get_reps: '
+    log.debug(logid+'Samples: '+str(samples))
+    ret = defaultdict(list)
+    for sample in samples:
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
+        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        log.debug(logid+'CONF: '+str(partconf))
+        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        ret[wcfile].append(sample)
+
+    log.debug(logid+'RETURN: '+str(ret))
+
+    slist = ''
+    for key,val in ret.items():
+        slist =  str(key)+'\t'
+        slist += '|'.join(val)
+        slist += os.linesep
+    return slist
+
+@check_run
+def get_diego_groups(samples,config,analysis):
+    logid=scriptname+'.Collection_get_reps: '
+    log.debug(logid+'Samples: '+str(samples))
+    ret = defaultdict(list)
+    for sample in samples:
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
+        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        log.debug(logid+'CONF: '+str(partconf))
+        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        idx = partconf['REPLICATES'].index(wcfile)
+        cond = partconf['GROUPS'][idx]
+        ret[cond].append(wcfile)
+
+    log.debug(logid+'RETURN: '+str(ret))
+
+    slist = ''
+    for key,val in ret.items():
+        slist =  str(key)+'\t'
+        slist += '|'.join(val)
+        slist += os.linesep
+    return slist
 
 @check_run
 def env_bin_from_config(samples, config, subconf):
