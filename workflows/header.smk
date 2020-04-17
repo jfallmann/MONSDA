@@ -12,17 +12,21 @@ for x in cmd_subfolder:
 from Collection import *
 from Logger import *
 
+loglevel="INFO"
+
 try:
     log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
-    if filename != 'RunSnakemake.py' and filename != 'Configurator.py':
+    if not any(x in scriptname for x in ['RunSnakemake','Configurator']):
         if (log.hasHandlers()):
             log.handlers.clear()
-    handler = logging.FileHandler('LOGS/RunSnakemake.log')
+    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
+    handler.setLevel(loglevel)
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
     log.addHandler(handler)  # streamlog
-    #log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+
 except:
-    log = setup_logger(name='Snakemake', log_file='stdout', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level='INFO')#, filemode='a')
+    log = setup_logger(name='SubSnake', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
+    log.addHandler(logging.StreamHandler(sys.stderr))
 
 logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]
