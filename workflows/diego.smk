@@ -16,7 +16,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = expand("COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
+    output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
