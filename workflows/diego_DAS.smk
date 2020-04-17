@@ -20,8 +20,8 @@ rule featurecount_unique:
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
-            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DEU')['ANNOTATION']]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
+            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']]),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
@@ -55,8 +55,9 @@ rule prepare_junction_usage_matrix:
     shell: " perl HTseq2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
 
 rule run_diego:
-    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl
+    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
             anno = rules.create_genome_annotation_file.output.bed,
+            base = rule.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
@@ -64,7 +65,7 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x your_base_condition -e [-f {output}]"
+    shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x <(head -n 1 {input.base} | awk '{print $1}') -e -f {output}"
 
 onsuccess:
     print("Workflow finished, no error")
