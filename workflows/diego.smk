@@ -16,7 +16,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = expand("COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config)
+    output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -36,7 +36,7 @@ rule featurecount_unique:
 #     shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
 
 rule create_samplemap:
-    input:  cnd  = rules.featurecount_unique.output.cts
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config)
     output: smap  = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
             cmap  = expand("{outdir}Tables/groupings.txt",outdir=outdir)
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
