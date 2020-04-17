@@ -15,7 +15,7 @@ rule themall:
     input:  expand("{outdir}dendrogram", outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
     output: cts   = "COUNTS/Featurecounter_DAS_diego/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
@@ -36,7 +36,7 @@ rule create_genome_annotation_file:
     shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
 
 rule create_samplemap:
-    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:  cnd  = rules.featurecount_unique.output.cts
     output: smap  = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
             cmap  = expand("{outdir}Tables/groupings.txt",outdir=outdir)
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
@@ -57,7 +57,7 @@ rule prepare_junction_usage_matrix:
 
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
-            anno = expand(rules.create_genome_annotation_file.output.bed, file=samplecond(SAMPLES,config)),
+            anno = rules.create_genome_annotation_file.output.bed,
             base = rules.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
