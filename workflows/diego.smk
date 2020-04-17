@@ -57,7 +57,7 @@ rule prepare_junction_usage_matrix:
 
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
-            anno = expand(rules.create_genome_annotation_file.output.bed, file=samplecond(SAMPLES,config))
+            anno = expand(rules.create_genome_annotation_file.output.bed, file=samplecond(SAMPLES,config)),
             base = rules.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
