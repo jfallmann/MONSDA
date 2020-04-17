@@ -28,7 +28,7 @@ rule featurecount_unique:
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
 rule create_genome_annotation_file:
-    input:  gff = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']])
+    input:  gff = "str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath({file}, config)),tool_params({file}, None, config, 'DAS')['ANNOTATION']])"
     output: bed = expand("{outdir}Tables/Annotation_DIEGO.bed", outdir=outdir)
     log:    "LOGS/DAS/DIEGO/create_genome_annotation_file.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
