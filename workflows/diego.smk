@@ -27,13 +27,13 @@ rule featurecount_unique:
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
-rule create_genome_annotation_file:
-    input:  gff = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']])
-    output: bed = expand("{outdir}Tables/Annotation_DIEGO.bed", outdir=outdir)
-    log:    "LOGS/DAS/DIEGO/create_genome_annotation_file.log"
-    conda:  "snakes/envs/"+DASENV+".yaml"
-    threads: 1
-    shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
+# rule create_genome_annotation_file:
+#     input:  gff = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']])
+#     output: bed = expand("{outdir}Tables/Annotation_DIEGO.bed", outdir=outdir)
+#     log:    "LOGS/DAS/DIEGO/create_genome_annotation_file.log"
+#     conda:  "snakes/envs/"+DASENV+".yaml"
+#     threads: 1
+#     shell:  "perl gfftoDIEGObed.pl -g  <(perl -F\\\\040 -wlane '{($F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0])=~ s/\_/\./g;print $F[0]}' <(zcat {input.gff})) -o {output.bed} 2> {log}"
 
 rule create_samplemap:
     input:  cnd  = rules.featurecount_unique.output.cts
@@ -57,8 +57,7 @@ rule prepare_junction_usage_matrix:
 
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
-            anno = rules.create_genome_annotation_file.output.bed,
-            base = rules.create_samplemap.output.cmap
+            group = rules.create_samplemap.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
@@ -66,7 +65,7 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "python {params.bins} -a {input.tbl} -b {input.anno} -x <(head -n 1 {input.base} | awk '{print $1}') -e -f {output}"
+    shell:  "python {params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{print $1}') -e -f {output}"
 
 onsuccess:
     print("Workflow finished, no error")
