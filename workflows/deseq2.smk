@@ -17,8 +17,8 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounter_deseq2/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_deseq2_unique.log"
+    output: cts   = "COUNTS/Featurecounts_deseq2/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{file}/featurecounts_deseq2_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,

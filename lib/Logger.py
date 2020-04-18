@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb 19 12:26:19 2020 (+0100)
+# Last-Updated: Fri Apr 17 17:50:39 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 81
+#     Update #: 82
 # URL:
 # Doc URL:
 # Keywords:
@@ -71,13 +71,13 @@ def makelogdir(logdir):
     return logdir
 
 #@check_run
-def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING'):
+def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING', delay=False):
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
     if log_file is not 'stdout' and log_file is not 'stderr':
         makelogdir(os.path.dirname(log_file))
-        handler = logging.FileHandler(log_file, mode=filemode)
+        handler = logging.FileHandler(log_file, mode=filemode, delay=delay)
     else:
         handler = logging.StreamHandler()
 

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 16 18:38:53 2020 (+0200)
+# Last-Updated: Fri Apr 17 20:53:57 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1712
+#     Update #: 1783
 # URL:
 # Doc URL:
 # Keywords:
@@ -60,7 +60,7 @@
 # # cmd_folder = os.path.dirname(os.path.abspath(__file__)) # DO NOT USE __file__ !!!
 # # __file__ fails if the script is called in different ways on Windows.
 # # __file__ fails if someone does os.chdir() before.
-# # sys.argv[0] also fails, because it doesn't not always contains the path.
+# # sys.argv[0] also fails, because it doesn't not always contain the path.
 
 import glob, os, snakemake
 import numpy as np
@@ -85,20 +85,28 @@ from collections import defaultdict, OrderedDict
 import six
 import logging
 
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib")
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
 try:
-    log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
     scriptname = os.path.basename(inspect.stack()[-1].filename)
+    if any(x in scriptname for x in ['Snakemake','Configurator']):
+        log = logging.getLogger(scriptname)
+    else:
+        log = logging.getLogger('SubSnake')
+        lvl = log.level
+        if (log.hasHandlers()):
+            log.handlers.clear()
+        handler = logging.FileHandler('LOGS/RunSnakemake.log',mode='a')
+        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+        log.setLevel('DEBUG')
+        log.addHandler(handler)  # streamlog
+
+    log.debug('FILENAME: '+str(scriptname))
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
         exc_type, exc_value, exc_tb,
     )
-    log.error(''.join(tbe.format()))
+    print(''.join(tbe.format()))
 
 #Class
 class NestedDefaultDict(defaultdict):
@@ -429,46 +437,49 @@ def get_reps(samples,config,analysis):
 
 @check_run
 def get_diego_samples(samples,config,analysis):
-    logid=scriptname+'.Collection_get_reps: '
+    logid=scriptname+'.Collection_get_diego_samples: '
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
         partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-',sample.split(os.sep)[-3:]).replace('_mapped_sorted_unique.counts','')
         ret[wcfile].append(sample)
 
     log.debug(logid+'RETURN: '+str(ret))
 
     slist = ''
     for key,val in ret.items():
-        slist =  str(key)+'\t'
+        slist +=  str(key)+'\t'
         slist += '|'.join(val)
         slist += os.linesep
+
+        log.debug(logid+'RETURN: '+str(slist))
     return slist
 
 @check_run
 def get_diego_groups(samples,config,analysis):
-    logid=scriptname+'.Collection_get_reps: '
+    logid=scriptname+'.Collection_get_diego_groups: '
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
         partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
-        idx = partconf['REPLICATES'].index(wcfile)
+        wcfile = str.join('-',sample.split(os.sep)[-3:]).replace('_mapped_sorted_unique.counts','')
+        checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        #wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
+        idx = partconf['REPLICATES'].index(checkfile)
         cond = partconf['GROUPS'][idx]
         ret[cond].append(wcfile)
 
-    log.debug(logid+'RETURN: '+str(ret))
-
     slist = ''
     for key,val in ret.items():
-        slist =  str(key)+'\t'
+        slist +=  str(key)+'\t'
         slist += '|'.join(val)
         slist += os.linesep
+    log.debug(logid+'RETURN: '+str(slist))
     return slist
 
 @check_run
@@ -1179,5 +1190,14 @@ def check_ref(reference):
         return reference
     elif os.path.exists(os.path.abspath(reference+'.gz')):
         return reference+'.gz'
+
+def multi_replace(repl, text):
+    print('MULTI: '+str(repl)+str(text))
+    # Create a regular expression  from the dictionary keys
+    regex = re.compile("(%s)" % "|".join(map(re.escape, repl.keys())))
+
+    # For each match, look-up corresponding value in dictionary
+    return regex.sub(lambda mo: dict[mo.string[mo.start():mo.end()]], text)
+
 #
 # Collection.py ends here

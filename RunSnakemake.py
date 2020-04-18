@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 16 17:29:11 2020 (+0200)
+# Last-Updated: Fri Apr 17 19:12:01 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 810
+#     Update #: 843
 # URL:
 # Doc URL:
 # Keywords:
@@ -61,7 +61,7 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, unlock=None, optionalargs=None):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
@@ -137,7 +137,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         Fix conda path if needed
         '''
         condapath=re.compile(r'conda:\s+"')
-
+        logfix=re.compile(r'loglevel="INFO"')
         '''
         START TO PROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
@@ -169,7 +169,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     os.rename(smko,smko+'.bak')
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        for line in smk.readlines():
+                            re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
+                            re.sub(condapath,'conda:  "../',line)
+                            print(line,file=sys.stderr)
                     smkout.write('\n\n')
 
                 smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
@@ -226,7 +229,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                for line in smk.readlines():
+                                    re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
+                                    re.sub(condapath,'conda:  "../',line)
+                                    smkout.write(line)
+                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
                         if subwork == 'QC':
@@ -261,7 +268,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     os.rename(smko,smko+'.bak')
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        for line in smk.readlines():
+                            re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
+                            re.sub(condapath,'conda:  "../',line)
+                            smkout.write(line)
+                            #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
 
                 if 'QC' in subworkflows and 'QC' in config:
@@ -359,7 +370,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                for line in smk.readlines():
+                                    re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
+                                    re.sub(condapath,'conda:  "../',line)
+                                    smkout.write(line)
+                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -408,7 +423,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         #for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
                         #    subconf = merge_dicts(subconf,listofconfigscount[x])
-                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
+                        subname = toolenv+'.smk' if toolenv != 'edger' and toolenv != 'diego' else toolenv+'_'+subwork+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
@@ -418,7 +433,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                for line in smk.readlines():
+                                    line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
+                                    line = re.sub(condapath,'conda:  "../',line)
+                                    smkout.write(line)
+                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
@@ -509,7 +528,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.unlock, optionalargs[0])
+        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.unlock, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
