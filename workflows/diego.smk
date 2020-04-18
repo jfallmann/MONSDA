@@ -43,7 +43,7 @@ rule prepare_junction_usage_matrix:
 
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
-            group = rules.create_samplemap.output.cmap
+            group = rules.create_samplemaps.output.cmap
     output: expand("{outdir}dendrogram", outdir=outdir)
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
