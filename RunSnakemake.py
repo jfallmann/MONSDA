@@ -423,7 +423,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         #for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
                         #    subconf = merge_dicts(subconf,listofconfigscount[x])
-                        subname = toolenv+'.smk' if toolenv != 'edger' and toolenv != 'diego' else toolenv+'_'+subwork+'.smk'
+                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
