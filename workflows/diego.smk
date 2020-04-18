@@ -20,7 +20,7 @@ rule featurecount_unique:
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
-rule create_samplemap:
+rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
     output: smap = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt",outdir=outdir)
