@@ -47,14 +47,15 @@ rule prepare_junction_usage_matrix:
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
             group = rules.create_samplemaps.output.cmap
-    output: expand("{outdir}dendrogram", outdir=outdir)
+    output: dend = expand("{outdir}dendrogram", outdir=outdir),
+            grouplist = temp(expand("{outdir}subroup", outdir=outdir))
     log:    "LOGS/"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "{params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{{print $1}}') -e -f {output}"
+    shell:  "head -n 1 {input.group} | awk '{{print $1}}' > {output.grouplist} && {params.bins} -a {input.tbl} -b {input.group} -x {output.grouplist} -e -f {output.dend}"
 
 onsuccess:
     print("Workflow finished, no error")
