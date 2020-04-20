@@ -22,8 +22,8 @@ rule featurecount_unique:
 
 rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output: smap = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
-            cmap = expand("{outdir}Tables/groupings.txt",outdir=outdir)
+    output: smap = "{outdir}Tables/samplemap.txt",
+            cmap = "{outdir}Tables/groupings.txt"
     log:    "LOGS/DAS/DIEGO/create_samplemaps.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -33,8 +33,8 @@ rule create_samplemaps:
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
 rule prepare_junction_usage_matrix:
-    input:  smap  = rules.create_samplemaps.output.smap
-    output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir)
+    input:  smap = rules.create_samplemaps.output.smap
+    output: tbl = "{outdir}Tables/junction_table_dexdas.txt"
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -44,7 +44,7 @@ rule prepare_junction_usage_matrix:
 
 rule create_contrast_files:
     input:  rules.create_samplemaps.output.cmap
-    output: expand("{outdir}{comparison}_contrast.txt", outdir=outdir, comparison=[key for key in comparison])
+    output: "{outdir}{comparison}_contrast.txt"
     log:    "LOGS/DAS/DIEGO/create_contrast_files.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -54,9 +54,9 @@ rule create_contrast_files:
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -g {input} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
-    input:  tbl = rules.prepare_junction_usage_matrix.output.smp,
-            contrast = "{outdir}{comparison}_contrast.txt"
-    output: "{outdir}{comparison}dendrogram"
+    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
+            contrast = rules.create_contrast_files.output
+    output: rules.themall.input
     log:    "LOGS/DAS/DIEGO/run_diego.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
