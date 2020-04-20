@@ -45,19 +45,19 @@ rule prepare_junction_usage_matrix:
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
-    input:  rules.create_samplemaps.output.cmap
-    output: expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
+    input:  cmap = rules.create_samplemaps.output.cmap
+    output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
             compare=comparison,
-            outdir=outdir
-    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input} -c {params.compare} -o {params.outdir} 2> {log}"
+            outdir=outdir+'Tables/'
+    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input.cmap} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = expand(rules.create_contrast_files.output, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
+            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
             group = rules.create_samplemaps.output.cmap
     output: dendrogram = rules.themall.input.dendrogram,
             grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
