@@ -39,13 +39,13 @@ rule prepare_junction_usage_matrix:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS')
+            dereps = lambda wildcards, input: get_reps(input.smap,config,'DAS')
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl}  --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
     input:  rules.create_samplemaps.output.cmap
     output: expand("{outdir}{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
-    log:    expand("LOGS/{outdir}/create_contrast_files.log", outdir=outdir)
+    log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
