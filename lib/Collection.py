@@ -791,8 +791,10 @@ def comparable_as_string2(config, subwork):
         flattened = set(val for sublist in groups_by_condition for val in sublist)
         combined=list(combinations(flattened,2))
         complist=[]
+        nr=1
         for key, value in combined:
-            complist.append(f"{key}-vs-{value}")
+            complist.append(f"AvsA_{nr}:{key}-vs-{value}")
+            nr += 1
         compstr = ','.join(complist)
         return compstr
 
