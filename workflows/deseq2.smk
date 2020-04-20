@@ -30,9 +30,9 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DE/DESEQ2/Tables/COUNTS.gz",
-             anno = "DE/DESEQ2/Tables/ANNOTATION.gz"
-    log:     "LOGS/DE/prepare_count_table.log"
+    output:  tbl  = expand("{outdir}Tables/COUNTS.gz",outdir=outdir),
+             anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
+    log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
@@ -51,7 +51,7 @@ rule run_deseq2:
             rules.themall.input.vst,
             rules.themall.input.rpl,
             rules.themall.input.session
-    log:    "LOGS/DE/run_deseq2.log"
+    log:    expand("LOGS/{outdir}run_deseq2.log",outdir=outdir)
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),

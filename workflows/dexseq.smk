@@ -14,7 +14,7 @@ rule prepare_count_annotation:
     input:   anno   = expand("{ref}/{gen}/{anno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), anno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'])
     output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
              deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
-    log:     "LOGS/featurecount_dexseq_unique.log"
+    log:     "LOGS/featurecount_dexseq_annotation.log"
     conda:   "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params:  bins = BINS,
@@ -38,9 +38,9 @@ rule featurecount_dexseq_unique:
 
 rule prepare_count_table:
     input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl = "DEU/Tables/DEXSEQ/RUN_DEU_Analysis.tbl.gz",
-             anno = "DEU/Tables/DEXSEQ/RUN_DEU_Analysis.anno.gz"
-    log:     "LOGS/DEU/prepare_count_table.log"
+    output:  tbl = expand("{outdir}Tables/DEXSEQ/RUN_DEU_Analysis.tbl.gz",outdir=outdir),
+             anno = expand("{outdir}Tables/DEXSEQ/RUN_DEU_Analysis.anno.gz",outdir=outdir)
+    log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
@@ -55,13 +55,12 @@ rule run_dexseq:
             tbl  = rules.themall.input.tbl,
             html = rules.themall.input.html,
             session = rules.themall.input.session
-    log:    "LOGS/DEU/run_dexseq.log"
+    log:    expand("LOGS/{outdir}run_dexseq.log",outdir=outdir)
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,
-            compare = comparison,
-
+            compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {input.flat} {params.outdir} {params.compare} {threads} 2> {log}"
 
 onsuccess:

@@ -29,9 +29,9 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = "DAS/EDGER/Tables/COUNTS.gz",
-             anno = "DAS/EDGER/Tables/ANNOTATION.gz"
-    log:     "LOGS/DAS/prepare_count_table.log"
+    output:  tbl  = expand("{outdir}Tables/COUNTS.gz",,outdir=outdir),
+             anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
+    log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
@@ -49,7 +49,7 @@ rule run_edger:
             rules.themall.input.dift,
             rules.themall.input.tops,
             rules.themall.input.session
-    log:    "LOGS/DAS/run_edger.log"
+    log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
