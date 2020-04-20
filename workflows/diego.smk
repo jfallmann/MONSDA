@@ -3,9 +3,9 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 
 outdir="DAS/DIEGO/"
 comparison=comparable_as_string2(config,'DAS')
-comps = comparison.split(",")
+
 rule themall:
-    input:  expand("{outdir}dendrogram", outdir=outdir)
+    input:  expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -24,7 +24,7 @@ rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
     output: smap = expand("{outdir}Tables/samplemap.txt",outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt",outdir=outdir)
-    log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix.log"
+    log:    "LOGS/DAS/DIEGO/create_samplemaps.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
@@ -35,23 +35,34 @@ rule create_samplemaps:
 rule prepare_junction_usage_matrix:
     input:  smap  = rules.create_samplemaps.output.smap
     output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir)
-    log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
+    log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS
     shell:  "perl {params.bins}/Analysis/DAS/FeatureCounts2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
 
+rule create_contrast_files:
+    input:  rules.create_samplemaps.output.cmap
+    output: expand("{outdir}{comparison}_contrast.txt", outdir=outdir, comparison=[key for key in comparison])
+    log:    "LOGS/DAS/DIEGO/create_contrast_files.log"
+    conda:  "snakes/envs/"+DASENV+".yaml"
+    threads: 1
+    params: bins = BINS,
+            compare=comparison,
+            outdir=outdir
+    shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -g {input} -c {params.compare} -o {params.outdir} 2> {log}"
+
 rule run_diego:
-    input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
-            group = rules.create_samplemaps.output.cmap
-    output: expand("{outdir}dendrogram", outdir=outdir)
-    log:    "LOGS/"
+    input:  tbl = rules.prepare_junction_usage_matrix.output.smp,
+            contrast = "{outdir}{comparison}_contrast.txt"
+    output: "{outdir}{comparison}dendrogram"
+    log:    "LOGS/DAS/DIEGO/run_diego.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "python {params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{print $1}') -e -f {output}"
+    shell:  "python {params.bins} -a {input.tbl} -b {input.contrast} -x <(head -n 1 {input.group} | awk '{print $1}') -e -f {output} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
