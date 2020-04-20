@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Apr 17 17:50:39 2020 (+0200)
+# Last-Updated: Mon Apr 20 10:30:51 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 82
+#     Update #: 83
 # URL:
 # Doc URL:
 # Keywords:
@@ -75,7 +75,7 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
-    if log_file is not 'stdout' and log_file is not 'stderr':
+    if log_file != 'stdout' and log_file != 'stderr':
         makelogdir(os.path.dirname(log_file))
         handler = logging.FileHandler(log_file, mode=filemode, delay=delay)
     else:

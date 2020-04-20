@@ -38,8 +38,9 @@ rule prepare_junction_usage_matrix:
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix.log"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
-    params: bins = BINS
-    shell:  "perl {params.bins}/Analysis/DAS/FeatureCounts2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
+    params: bins = BINS,
+            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS')
+    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl}  --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
     input:  rules.create_samplemaps.output.cmap
