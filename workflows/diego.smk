@@ -9,7 +9,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounts_DAS_diego/{file}_mapped_sorted_unique.counts"
+    output: cts   = expand("COUNTS/Featurecounts_DAS_diego/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config))
     log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -21,7 +21,7 @@ rule featurecount_unique:
     shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.cts} {input.reads} 2> {log}"
 
 rule create_samplemaps:
-    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:  cnd  = rules.featurecount_unique.output.cts
     output: smap = "{outdir}Tables/samplemap.txt",
             cmap = "{outdir}Tables/groupings.txt"
     log:    "LOGS/DAS/DIEGO/create_samplemaps.log"
@@ -30,7 +30,7 @@ rule create_samplemaps:
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
             clist = lambda wildcards, input: get_diego_groups(input.cnd,config,'DAS'),
             bins = BINS
-    shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap}"
+    shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
 rule prepare_junction_usage_matrix:
     input:  smap = rules.create_samplemaps.output.smap
