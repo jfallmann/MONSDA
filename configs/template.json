@@ -209,7 +209,7 @@
         },
       "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"]["B","C","D"]]
+          "contrast_AvsBCD": [["A"],["B","C","D"]]
         },
         "id": {
             "condition": {
@@ -241,7 +241,7 @@
         },
       "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"]["B","C","D"]]
+          "contrast_AvsBCD": [["A"],["B","C","D"]]
         },
         "id": {
             "condition": {
@@ -274,7 +274,7 @@
         },
       "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"]["B","C","D"]]
+          "contrast_AvsBCD": [["A"],["B","C","D"]]
         },
         "id": {
             "condition": {
