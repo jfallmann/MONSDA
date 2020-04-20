@@ -33,8 +33,10 @@ rule create_samplemaps:
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
 rule prepare_junction_usage_matrix:
-    input:  smap = rules.create_samplemaps.output.smap
-    output: tbl = expand("{outdir}Tables/junction_table_dexdas.txt", outdir=outdir)
+    input:  smap = rules.create_samplemaps.output.smap,
+            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    output: tbl = expand("{outdir}Tables/junction_table_dexdas.txt", outdir=outdir),
+            anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
     log:    expand("LOGS/{outdir}prepare_junction_usage_matrix.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -51,7 +53,7 @@ rule create_contrast_files:
     params: bins = BINS,
             compare=comparison,
             outdir=outdir
-    shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -g {input} -c {params.compare} -o {params.outdir} 2> {log}"
+    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,

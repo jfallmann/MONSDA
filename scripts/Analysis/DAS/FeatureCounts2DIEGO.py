@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 import sys, argparse, os, inspect, gzip, glob, re, logging
 import traceback as tb
@@ -12,7 +12,7 @@ from Logger import *
 scriptname=os.path.basename(__file__)
 
 def parseargs():
-    parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
+    parser = argparse.ArgumentParser(description='Parses FeatureCounts output tables into DIEGO ready format')
     #parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")
     parser.add_argument("-n", "--sample_name", action="store_true", help=" provide -n if sample names instead of group names should be used for header" )
     parser.add_argument("-o", "--order", action="store_true", help="if wanted the order of conditions can be given as comma separated list" )
@@ -179,7 +179,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
             if 'geneName' in str(zeilen):
                 continue
             willprint = False
-            log.info('Z: '+zeilen[0])
+            log.debug('Z: '+zeilen[0])
             gene, id, chr, junction = str(zeilen[0]).split(':')
             line = "\t".join([junction,chr])
             for x in range(1,len(zeilen)):
@@ -187,8 +187,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 if (int(zeilen[x]) >= cutoff):
                     willprint = True
             line += '\t'.join([id,gene])
-
-            log.info('LINE: '+str(line))
+            log.debug('LINE: '+str(line))
 
             if willprint:
                 with gzip.open(table, 'ab') as t:
@@ -215,8 +214,8 @@ if __name__ == '__main__':
     logid = scriptname+'.main: '
     try:
         args=parseargs()
-        makelogdir('LOGS')
         try:
+            makelogdir('LOGS')
             log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
             log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
