@@ -46,7 +46,7 @@ rule prepare_junction_usage_matrix:
 
 rule create_contrast_files:
     input:  rules.create_samplemaps.output.cmap
-    output: expand("{outdir}{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
+    output: expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -60,7 +60,7 @@ rule run_diego:
             contrast = expand(rules.create_contrast_files.output, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
             group = rules.create_samplemaps.output.cmap
     output: dendrogram = rules.themall.input.dendrogram,
-            grouplist = temp(expand("{outdir}subroup", outdir=outdir))
+            grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
