@@ -30,7 +30,7 @@ rule create_samplemaps:
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
             clist = lambda wildcards, input: get_diego_groups(input.cnd,config,'DAS'),
             bins = BINS
-    shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
+    shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap}"
 
 rule prepare_junction_usage_matrix:
     input:  smap = rules.create_samplemaps.output.smap
