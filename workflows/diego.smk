@@ -40,7 +40,7 @@ rule prepare_junction_usage_matrix:
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.smap,config,'DAS')
-    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl}  --anno {output.anno} 2> {log}"
+    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl}  --anno {output.tbl} 2> {log}"
 
 rule create_contrast_files:
     input:  rules.create_samplemaps.output.cmap
