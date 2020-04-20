@@ -31,7 +31,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
     output:  tbl  = "DEU/EDGER/Tables/COUNTS.gz",
              anno = "DEU/EDGER/Tables/ANNOTATION.gz"
-    log:     "LOGS/DEU/prepare_count_table.log"
+    log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
@@ -49,7 +49,7 @@ rule run_edger:
             rules.themall.input.dift,
             rules.themall.input.plot,
             rules.themall.input.session
-    log:    "LOGS/DEU/run_edger.log"
+    log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
