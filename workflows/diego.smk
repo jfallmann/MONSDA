@@ -5,7 +5,7 @@ outdir="DAS/DIEGO/"
 comparison=comparable_as_string2(config,'DAS')
 
 rule themall:
-    input:  expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
+    input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -57,16 +57,17 @@ rule create_contrast_files:
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = expand(rules.create_contrast_files.output, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
-    output: rules.themall.input,
+            contrast = expand(rules.create_contrast_files.output, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
+            group = rules.create_samplemaps.output.cmap
+    output: dendrogram = rules.themall.input.dendrogram,
             grouplist = temp(expand("{outdir}subroup", outdir=outdir))
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
-    params: bins   = str.join(os.sep,[BINS,DASBIN]),
+    params: bins   = DASBIN,
             outdir = outdir,
             compare = comparison
-    shell:  "head -n 1 {input.group} | awk '{{print $1}}' > {output.grouplist} && python {params.bins} -a {input.tbl} -b {input.contrast} -x {output.grouplist} -e -f {output} 2> {log}"
+    shell:  "head -n 1 {input.group} | awk '{{print $1}}' > {output.grouplist} && {params.bins} -a {input.tbl} -b {input.contrast} -x {output.grouplist} -e -f {output.dendrogram} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
