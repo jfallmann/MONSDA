@@ -33,13 +33,16 @@ rule create_samplemaps:
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
 rule prepare_junction_usage_matrix:
-    input:  smap  = rules.create_samplemaps.output.smap
-    output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir)
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+            #smap  = rules.create_samplemaps.output.smap
+    output: tbl  = expand("{outdir}Tables/junction_table_dexdas.txt",outdir=outdir),
+            anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir) #remove this or replace by cmpa/smap
     log:    "LOGS/DAS/DIEGO/prepare_junction_usage_matrix"
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
-    params: bins = BINS
-    shell:  "perl {params.bins}/Analysis/DAS/FeatureCounts2DIEGO.pl -i {input.smap} -o {output.tbl} 2> {log}"
+    params: bins = BINS,
+            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS')
+    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl}  --anno {output.anno} 2> {log}"
 
 rule run_diego:
     input:  tbl= rules.prepare_junction_usage_matrix.output.tbl,
@@ -51,7 +54,7 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "python {params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{print $1}') -e -f {output}"
+    shell:  "{params.bins} -a {input.tbl} -b {input.group} -x <(head -n 1 {input.group} | awk '{{print $1}}') -e -f {output}"
 
 onsuccess:
     print("Workflow finished, no error")
