@@ -225,7 +225,7 @@ processing steps.  If there are no options just do not add the
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 std", #short name for track
+                          "-b" : "UCSC dm6 std" #short name for track
                        }
                     ]
                 }
@@ -233,6 +233,7 @@ processing steps.  If there are no options just do not add the
          }
      }
 
+	 
 ```
 
 The pipeline now also supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
