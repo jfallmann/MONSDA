@@ -2,7 +2,8 @@ DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DAS/DIEGO/"
-comparison=[i.split(":")[0] for i in comparable_as_string2(config,'DAS').split(",")]
+compare_string= comparable_as_string2(config,'DAS').split(",")
+comparison=[i.split(":")[0] for i in compare_string]
 
 rule themall:
     input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=comparison)
@@ -51,23 +52,23 @@ rule create_contrast_files:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            compare=comparison,
+            compare=compare_string,
             outdir=outdir+'Tables/'
     shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input.cmap} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
-            group = rules.create_samplemaps.output.cmap
+            # group = rules.create_samplemaps.output.cmap
     output: dendrogram = rules.themall.input.dendrogram,
-            grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
+            # grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array[$i]}} -x < (head -n 1 $i | awk '{print ${{array2[$i]}}}') -e -f {output.dendrogram} 2> {log}"
+    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array1[$i]}} -x < (head -n 1 $i | awk '{print ${{array2[$i]}}}') -e -f {output.dendrogram} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
