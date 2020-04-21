@@ -64,7 +64,7 @@ rule run_diego:
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
-    params: bins   = tr.join(os.sep,[BINS,DASBIN]),
+    params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
     shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array[$i]}} -x < (head -n 1 $i | awk '{print ${{array2[$i]}}}') -e -f {output.dendrogram} 2> {log}"
