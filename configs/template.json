@@ -3,70 +3,70 @@
     "WORKFLOWS": "", #which workflows do you want to run
     "POSTPROCESSING" : "", # which postprocessing steps do you want to run
     "REFERENCE": "GENOMES", #where to find the reference genomes, default is a directory GENOMES
-    "BINS": "snakes/scripts", #where to find the scripts used in the workflow, per default the scripts git repository that comes as gitmodule with the snakes repository
-    "MAXTHREADS": "20", #maximum number of cores to use
+    "BINS": "snakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
+    "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fasta.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
                 "organism": "Genomefile"
               },
     "SOURCE": {  #which organisms are to be parsed for which samples, organisms need to have subdirectories in you 'REFERENCE' directory and contain the corresponding fasta files
                  "id": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. for id 'id' and condition 'condition' with setting 'setting' the genome defined for organism in the 'GENOME' section of the config will be used
-                             "condition": {
-                                 "setting": "organism"
-                             }
-                           }
+                         "condition": {
+                             "setting": "organism"
+                         }
+                       }
               },
     "NAME": { #extension for genome file name in case different types of reference are used, e.g. genomic, artificial, organelle ...
               "id": {#first key is Sample ID defined by IdConditionSetting in Configurator.py
-                      "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
+                     "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
                                     "setting": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
                                   }
-                     }
+                    }
             },
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
-                              "condition": { # sample id
-                                             "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
-                      }
-                  }
+                          "condition": { # sample id
+                                         "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
+                                       }
+                        }
                },
     "SEQUENCING" : {
         "id": { #key for source and genome
-                    "condition": { # sample id
-                                   "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
-                                 }
-                  }
+                "condition": { # sample id
+                               "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
+                             }
+              }
     },
 #RAW options
     "RAW": {
         "id": { #key for source and genome
-                    "condition": { # sample id
-                                   "setting": {
-                                       "ENV" : "sra",  # name of conda env for raw file download
-                                       "OPTIONS":
-                                       [  #RAW options here if any, paired is not required, will be resolved by rules
-                                          {}
-                                       ]
-                                   }
+                "condition": { # sample id
+                               "setting": {
+                                   "ENV" : "sra",  # name of conda env for raw file download
+                                   "OPTIONS":
+                                   [  #RAW options here if any, paired is not required, will be resolved by rules
+                                      {}
+                                   ]
+                               }
                              }
-                  }
+              }
     },
 
 #QC options
     "QC": {
         "id": { #key for source and genome
-                    "condition": { # sample id
-                                   "setting": {
-                                       "PREENV" : "fastqc",  # name of conda env for QC in PREPROCESSING
-                                       "PREBIN" : "fastqc", # binary for QC in PREPROCESSING
-                                       "ENV" : "fastqc",  # name of conda env for QC
-                                       "BIN" : "fastqc", # binary for QC
-                                       "OPTIONS":
-                                       [  #QC options here if any, paired is not required, will be resolved by rules
-                                          {}
-                                       ]
-                                   }
+                "condition": { # sample id
+                               "setting": {
+                                   "PREENV" : "fastqc",  # name of conda env for QC in PREPROCESSING
+                                   "PREBIN" : "fastqc", # binary for QC in PREPROCESSING
+                                   "ENV" : "fastqc",  # name of conda env for QC
+                                   "BIN" : "fastqc", # binary for QC
+                                   "OPTIONS":
+                                   [  #QC options here if any, paired is not required, will be resolved by rules
+                                      {}
+                                   ]
+                               }
                              }
-                  }
+              }
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
@@ -116,9 +116,9 @@
 #Count options
     "COUNTING": { #options for counting for each sample/condition
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE), depends on whether gtf or gff is used as annotation, gff default is gene -> ID and exon -> Parent, gtf default for gene and exon is gene_id
-                      "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3/gtf file
-                      "gene": "ID" #same here
-                  },
+                                "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3/gtf file
+                                "gene": "ID" #same here
+                              },
                   "id": {
                       "condition": {
                           "setting": {  # See above
@@ -202,33 +202,33 @@
     },
 #DE options for Differential Expression Analysis for each sample/condition
     "DE": {
-      "TOOLS" :
+        "TOOLS" :
         {
-          "deseq2" : "Analysis/DE/DESeq2.R",
-          "edger" : "Analysis/DE/EDGER.R"
+            "deseq2" : "Analysis/DE/DESeq2.R",
+            "edger"  : "Analysis/DE/EDGER.R"
         },
-      "COMPARABLE" :
+        "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"],["B","C","D"]]
+            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
                 "setting": {
-                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount
-                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
-                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
-                    "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
+                    "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "OPTIONS":
                     [
                         {
-                            "-t": "gene",
+                            "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
                             "-g": "gene_id",
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
                         }
                     ]
-                 }
+                }
             }
         }
     },
@@ -236,20 +236,20 @@
     "DEU" : {
         "TOOLS" :
         {
-          "dexseq" : "Analysis/DEU/DEXSeq.R",
-          "edger" : "Analysis/DEU/EDGER.R"
+            "dexseq" : "Analysis/DEU/DEXSeq.R",
+            "edger"  : "Analysis/DEU/EDGER.R"
         },
-      "COMPARABLE" :
+        "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"],["B","C","D"]]
+            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
                 "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
-                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
-                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
-                    "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
+                    "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
+                    "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "OPTIONS":
                     [
                         {
@@ -268,21 +268,20 @@
     "DAS" : {
         "TOOLS" :
         {
-          "dexseq" : "Analysis/DAS/DEXSeq.R",
-          "edger" : "Analysis/DAS/EDGER.R",
-          "diego" : "Analysis/DAS/DIEGO.py"
+            "edger"  : "Analysis/DAS/EDGER.R",
+            "diego"  : "diego.py"
         },
-      "COMPARABLE" :
+        "COMPARABLE" :
         {
-          "contrast_AvsBCD": [["A"],["B","C","D"]]
+            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
                 "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
-                    "GROUPS":  ["WT","KO"], #Conditions of samples can be different than the condition setting
-                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2"], #replicates that belong to condition, one entry here for one entry in CONDITIONS
-                    "TYPES": ["standard","standard"], #sequencing type or additional condition to compare to
+                    "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
+                    "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "OPTIONS":
                     [
                         {
