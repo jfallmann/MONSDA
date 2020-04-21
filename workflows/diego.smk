@@ -2,10 +2,10 @@ DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DAS/DIEGO/"
-comparison=comparable_as_string2(config,'DAS')
+comparison=[i.split(":")[0] for i in comparable_as_string2(config,'DAS').split(",")]
 
 rule themall:
-    input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
+    input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=comparison)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -46,7 +46,7 @@ rule prepare_junction_usage_matrix:
 
 rule create_contrast_files:
     input:  cmap = rules.create_samplemaps.output.cmap
-    output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")])
+    output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=comparison)
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
@@ -57,7 +57,7 @@ rule create_contrast_files:
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
+            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
             group = rules.create_samplemaps.output.cmap
     output: dendrogram = rules.themall.input.dendrogram,
             grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
