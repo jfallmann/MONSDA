@@ -23,7 +23,7 @@ def parseargs():
     parser.add_argument("-p", "--paired", required=False, type=str, default=None, help="Sequencing strategy for sample name processing" )
     parser.add_argument("--table", dest='table', required=True, type=str, default='counts.table' ,help="Name of table to write to" )
     parser.add_argument("--anno", dest='anno', required=True, type=str, default='counts.anno' ,help="Name of anno to write to" )
-    parser.add_argument("--loglevel", default='INFO', help="Log verbosity" )
+    parser.add_argument("--loglevel", default='DEBUG', help="Log verbosity" )
 
     if len(sys.argv)==1:
         parser.print_help(sys.stderr)
@@ -147,17 +147,17 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                     if columns[0] != "name" and columns[1]!="count":
                         lineNumber += 1
                         gene = str(columns[0]).replace(':',"|")
-                        chr = str(columns[1]).replace(':',"|")
-                        id = str(columns[4]).replace(':',"|")+str(columns[2]).replace(':',"|")
                         if gene != oldgene:
                             junctionnr = 0
                             oldgene = gene
                         else:
                             junctionnr += 1
+                        chr = str(columns[1]).replace(':',"|")+'-'+str(columns[2])+'-'+str(columns[3])
+                        id = str(columns[4]).replace(':',"|")+'junction_'+str(junctionnr)
                         if sample_counter == 1:
                             newListi = []
                             myMatrix.append(newListi)
-                            myMatrix[lineNumber].append(':'.join([gene,id,chr,'junction_'+str(junctionnr)]))
+                            myMatrix[lineNumber].append(':'.join([gene,id,chr]))
                         myMatrix[lineNumber].append(round(float(columns[-1])))
 
         line = "\t".join(["\t".join(myMatrix[0]),'geneID','geneName'])
@@ -180,13 +180,13 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 continue
             willprint = False
             log.debug('Z: '+zeilen[0])
-            gene, id, chr, junction = str(zeilen[0]).split(':')
-            line = "\t".join([junction,chr])
+            gene, id, chr = str(zeilen[0]).split(':')
+            line = "\t".join([str(chr).replace('-',':',1)+':'+id,'N_w'+'\t'])
             for x in range(1,len(zeilen)):
                 line += str(zeilen[x])+"\t"
                 if (int(zeilen[x]) >= cutoff):
                     willprint = True
-            line += '\t'.join([id,gene])
+            line += '\t'.join([gene,gene])
             log.debug('LINE: '+str(line))
 
             if willprint:
