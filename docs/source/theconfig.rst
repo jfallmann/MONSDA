@@ -14,7 +14,6 @@ correspond to a key later in the config.json that defines parameters
 specific for the job:
 
 ```
-{
     "PREPROCESSING" : "QC,SRA", # define preprocessing steps
     "WORKFLOWS": "MAPPING,TRIMMING,QC", # Here you define which main workflow steps should be run,
     "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
@@ -54,7 +53,7 @@ as innermost value of the *SOURCE* key.
                               "std": "Dm6"
                           }
                         }
-              },
+              }
 ```
 
 The next part defines the samples to run the analysis on, just add a
@@ -87,7 +86,7 @@ fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                                      #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
-    },
+    }
 ```
 
 Now the actual workflow section begins, where you can define for each
@@ -233,7 +232,7 @@ processing steps.  If there are no options just do not add the
             }
          }
      }
-}
+
 ```
 
 The pipeline now also supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
