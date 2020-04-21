@@ -2,7 +2,8 @@ DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DAS/DIEGO/"
-comparison=[i.split(":")[0] for i in comparable_as_string2(config,'DAS').split(",")]
+compare_string= comparable_as_string2(config,'DAS').split(",")
+comparison=[i.split(":")[0] for i in compare_string]
 
 rule themall:
     input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=comparison)
@@ -51,7 +52,7 @@ rule create_contrast_files:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            compare=comparison,
+            compare=compare_string,
             outdir=outdir+'Tables/'
     shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input.cmap} -c {params.compare} -o {params.outdir} 2> {log}"
 
