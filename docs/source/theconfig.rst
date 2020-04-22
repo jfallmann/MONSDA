@@ -13,15 +13,14 @@ run. Be aware that every workflow and postproccessing value has to
 correspond to a key later in the config.json that defines parameters
 specific for the job:
 
-```
-{
+::
     "PREPROCESSING" : "QC,SRA", # define preprocessing steps
     "WORKFLOWS": "MAPPING,TRIMMING,QC", # Here you define which main workflow steps should be run,
     "POSTPROCESSING" : "COUNTING,UCSC,ANNOTATE", # no specific order needed
     "REFERENCE": "GENOMES", #where to find the reference genomes
     "BINS": "snakes/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
     "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load
-```
+
 
 The next part defines where the path to the genome files and its main
 name plus an extension in case you use specific genomes for different
@@ -54,7 +53,7 @@ as innermost value of the *SOURCE* key.
                               "std": "Dm6"
                           }
                         }
-              },
+              }
 ```
 
 The next part defines the samples to run the analysis on, just add a
@@ -87,7 +86,7 @@ fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                                      #"std": "paired,fr" # if stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
-    },
+    }
 ```
 
 Now the actual workflow section begins, where you can define for each
@@ -111,7 +110,6 @@ processing steps.  If there are no options just do not add the
 *OPTION* key
 
 ```
-#QC options
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
@@ -123,7 +121,6 @@ processing steps.  If there are no options just do not add the
                               }
                }
     },
-#Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
                   "RUN": ON", # set to 'OFF' if no trimming wanted
         "Dm6": {
@@ -143,7 +140,6 @@ processing steps.  If there are no options just do not add the
             }
         }
     },
-    #Mapping software options
     "MAPPING": { #options for mapping for each sample/condition
         "Dm6": {
             "untreated": {
@@ -169,8 +165,7 @@ processing steps.  If there are no options just do not add the
             }
         }
     },
-    #Count options
-    "COUNTING": { #options for trimming for each sample/condition
+    "COUNTING": { #options for read counting for each sample/condition
         "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE)
             "exon": "Parent",
             "gene": "ID"
@@ -195,7 +190,6 @@ processing steps.  If there are no options just do not add the
            }
        }
     },
-    #Annotation options
     "ANNOTATE" : {
          "Dm6": {
             "untreated": {
@@ -226,16 +220,15 @@ processing steps.  If there are no options just do not add the
                           "-n": "DM6 Standard Mapping", #name of the hub
                           "-s" : "dm6_st", #short name for hub
                           "-l" : "UCSC DM6 Standard Mapping", #long name for track
-                          "-b" : "UCSC dm6 std", #short name for track
+                          "-b" : "UCSC dm6 std" #short name for track
                        }
                     ]
                 }
             }
          }
      }
-}
 ```
-
+	 
 The pipeline now also supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
 
 ```

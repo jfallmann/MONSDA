@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Apr 17 20:53:57 2020 (+0200)
+# Last-Updated: Wed Apr 22 11:25:41 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1783
+#     Update #: 1784
 # URL:
 # Doc URL:
 # Keywords:
@@ -452,7 +452,7 @@ def get_diego_samples(samples,config,analysis):
     slist = ''
     for key,val in ret.items():
         slist +=  str(key)+'\t'
-        slist += '|'.join(val)
+        slist += '\t'.join(val)
         slist += os.linesep
 
         log.debug(logid+'RETURN: '+str(slist))
@@ -477,7 +477,7 @@ def get_diego_groups(samples,config,analysis):
     slist = ''
     for key,val in ret.items():
         slist +=  str(key)+'\t'
-        slist += '|'.join(val)
+        slist += '\t'.join(val)
         slist += os.linesep
     log.debug(logid+'RETURN: '+str(slist))
     return slist
