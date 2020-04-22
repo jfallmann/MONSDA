@@ -45,21 +45,17 @@ def create_tables(groupfile,comparisons,outdir):
         contrast_group1 = [i for i in c.split(":")[1].split("-vs-")[0].split("+")]
         contrast_group2 = [i for i in c.split(":")[1].split("-vs-")[1].split("+")]
 
-        samples_1 = []
+
+        outstring = ""
         for condition in contrast_group1:
-            samples_1 += sample_dict[condition]
-        samples_2 = []
+            for sample in sample_dict[condition]:
+                outstring += f"{contrast_name}_1\t{sample}\n"
         for condition in contrast_group2:
-            samples_2 += sample_dict[condition]
-
-        s1 = "\t".join(samples_1)
-        s2 = "\t".join(samples_2)
-
-        line1 = f"{contrast_name}_1\t{s1}"
-        line2 = f"{contrast_name}_2\t{s2}"
+            for sample in sample_dict[condition]:
+                outstring += f"{contrast_name}_2\t{sample}\n"
 
         with open(f"{outdir}{contrast_name}_contrast.txt","w") as outfile:
-            outfile.write(line1+"\n"+line2)
+            outfile.write(outstring)
 
 
 ####################
