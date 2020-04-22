@@ -13,7 +13,7 @@ scriptname=os.path.basename(__file__)
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Creates contrast list for DIEGO')
-    parser.add_argument('-g', '--groupfile', type=str, default="", help='')
+    parser.add_argument('-a', '--annofile', type=str, default="", help='')
     parser.add_argument('-c', '--comparisons', type=str, default="", help='')
     parser.add_argument('-o', '--outdir', type=str, default="", help='')
     parser.add_argument('--loglevel', default='INFO', help="Log verbosity" )
@@ -24,18 +24,18 @@ def parseargs():
 
     return parser.parse_args()
 
-def create_tables(groupfile,comparisons,outdir):
+def create_tables(annofile,comparisons,outdir):
     logid = scriptname+'.create_tables: '
 
     comps = comparisons.split(",")
 
     sample_dict = {}
-    with open(groupfile, "r") as gf:
+    with open(annofile, "r") as gf:
         for line in gf:
             l = line.replace("\n","")
             if l == "":
                 continue
-            sample_dict[l.split("\t")[0]] = [i for i in l.split("\t")[1].split("|")]
+            sample_dict[l.split("\t")[0]] = l.split("\t")[1]
 
     log.debug(logid+'COMPS: '+str(comps))
 
@@ -47,13 +47,11 @@ def create_tables(groupfile,comparisons,outdir):
 
 
         outstring = ""
-        for condition in contrast_group1:
-            for sample in sample_dict[condition]:
+        for sample in sample_dict:
+            if sample_dict[sample] in contrast_group1:
                 outstring += f"{contrast_name}_1\t{sample}\n"
-        for condition in contrast_group2:
-            for sample in sample_dict[condition]:
+            if sample_dict[sample] in contrast_group2:
                 outstring += f"{contrast_name}_2\t{sample}\n"
-
         with open(f"{outdir}{contrast_name}_contrast.txt","w") as outfile:
             outfile.write(outstring)
 
@@ -77,7 +75,7 @@ if __name__ == '__main__':
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         log.info('RUNNING!')
-        create_tables(args.groupfile, args.comparisons, args.outdir)
+        create_tables(args.annofile, args.comparisons, args.outdir)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

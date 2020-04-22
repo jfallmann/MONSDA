@@ -46,7 +46,7 @@ rule prepare_junction_usage_matrix:
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
-    input:  cmap = rules.create_samplemaps.output.cmap
+    input:  anno = rules.prepare_junction_usage_matrix.anno
     output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=comparison)
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
@@ -54,7 +54,7 @@ rule create_contrast_files:
     params: bins = BINS,
             compare=compare_string,
             outdir=outdir+'Tables/'
-    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -g {input.cmap} -c {params.compare} -o {params.outdir} 2> {log}"
+    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -a {input.anno} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
