@@ -2,8 +2,8 @@ DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
 outdir="DAS/DIEGO/"
-compare_string= comparable_as_string2(config,'DAS').split(",")
-comparison=[i.split(":")[0] for i in compare_string]
+compare_string= comparable_as_string2(config,'DAS')
+comparison=[i.split(":")[0] for i in compare_string.split(",")]
 
 rule themall:
     input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=comparison)
