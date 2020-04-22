@@ -6,7 +6,8 @@ compare_string= comparable_as_string2(config,'DAS')
 comparison=[i.split(":")[0] for i in compare_string.split(",")]
 
 rule themall:
-    input:  dendrogram = expand("{outdir}{comparison}_dendrogram", outdir=outdir, comparison=comparison)
+    input:  dendrogram = expand("{outdir}{comparison}_dendrogram.pdf", outdir=outdir, comparison=comparison),
+            txtfile = expand("{outdir}{comparison}_dendrogram.txt", outdir=outdir, comparison=comparison)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -46,7 +47,7 @@ rule prepare_junction_usage_matrix:
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
-    input:  anno = rules.prepare_junction_usage_matrix.anno
+    input:  anno = rules.prepare_junction_usage_matrix.output.anno
     output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=comparison)
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
@@ -54,21 +55,32 @@ rule create_contrast_files:
     params: bins = BINS,
             compare=compare_string,
             outdir=outdir+'Tables/'
-    shell:  "{params.bins}/Analysis/DAS/diego_contrast_files.py -a {input.anno} -c {params.compare} -o {params.outdir} 2> {log}"
+    shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -c {params.compare} -o {params.outdir} 2> {log}"
 
-rule run_diego:
+rule run_diego_pdf:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
-            # group = rules.create_samplemaps.output.cmap
     output: dendrogram = rules.themall.input.dendrogram
-            #grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
+    log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
+    conda:  "snakes/envs/"+DASENV+".yaml"
+    threads: MAXTHREAD
+    params: bins   = str.join(os.sep,[BINS,DASBIN]),
+            outdir = outdir,
+            compare = comparison,
+            outfile = [i.replace(".pdf","").replace(".txt","") for i in rules.themall.input.dendrogram]
+    shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done"
+
+rule run_diego_txt:
+    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
+            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
+    output: txtfile = rules.themall.input.txtfile
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done"
+    shell:  "array1=({input.contrast}); array2=({output.txtfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
 
 onsuccess:
     print("Workflow finished, no error")
