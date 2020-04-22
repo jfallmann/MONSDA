@@ -60,15 +60,15 @@ rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
             # group = rules.create_samplemaps.output.cmap
-    output: dendrogram = rules.themall.input.dendrogram,
-            # grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
+    output: dendrogram = rules.themall.input.dendrogram
+            #grouplist = temp(expand("{outdir}subgroup", outdir=outdir))
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = DASBIN,
             outdir = outdir,
             compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in \"${{!array1[@]}}\"; do {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x <(head -n 1 ${{array1[$i]}} | awk '{{print$1}}') -e -f ${{array2[$i]}} 2>> {log};done"
+    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in \"${{!array1[@]}}\"; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done"
 
 onsuccess:
     print("Workflow finished, no error")
