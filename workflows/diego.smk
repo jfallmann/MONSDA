@@ -68,7 +68,7 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             outdir = outdir,
             compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array1[$i]}} -x < (head -n 1 ${{array2[$i]}} | awk '{{print$1}}') -e -f ${{array2[$i]}} 2> {log}"
+    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array1[$i]}} -x < (head -n 1 ${{array1[$i]}} | awk '{{print$1}}') -e -f ${{array2[$i]}} 2> {log}"
 
 onsuccess:
     print("Workflow finished, no error")
