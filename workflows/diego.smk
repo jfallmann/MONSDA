@@ -65,10 +65,10 @@ rule run_diego:
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
-    params: bins   = str.join(os.sep,[BINS,DASBIN]),
+    params: bins   = DASBIN,
             outdir = outdir,
             compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in ${{array[*]}}; do {params.bins} -a {input.tbl} -b ${{array1[$i]}} -x < (head -n 1 ${{array2[$i]}} | awk '{{print$1}}') -e -f ${{array2[$i]}} 2> {log}"
+    shell:  "array1=({input.contrast}); array2=({output.dendrogram}); for i in \"${{!array1[@]}}\"; do {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x <(head -n 1 ${{array1[$i]}} | awk '{{print$1}}') -e -f ${{array2[$i]}} 2>> {log};done"
 
 onsuccess:
     print("Workflow finished, no error")
