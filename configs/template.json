@@ -209,7 +209,7 @@
         },
         "COMPARABLE" :
         {
-            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
+            "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
@@ -221,7 +221,7 @@
                     "OPTIONS":
                     [
                         {
-                            "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
+                            "-t": "exon", #make sure this is the feature you want to count, gene would include introns and exons
                             "-g": "gene_id",
                             "-f": "",
                             "--fraction": "",
@@ -241,7 +241,7 @@
         },
         "COMPARABLE" :
         {
-            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
+            "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
@@ -273,7 +273,7 @@
         },
         "COMPARABLE" :
         {
-            "contrast_AvsBCD": [["WT"],["KO1","KO2"]]
+            "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
             "condition": {
