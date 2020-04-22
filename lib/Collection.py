@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Apr 22 11:25:41 2020 (+0200)
+# Last-Updated: Wed Apr 22 15:52:04 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1784
+#     Update #: 1786
 # URL:
 # Doc URL:
 # Keywords:
@@ -605,7 +605,7 @@ def samplecond(sample,config):
             tmplist = check
             tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
-            if getFromDict(config['SEQUENCING'],tmplist) is 'paired':
+            if getFromDict(config['SEQUENCING'],tmplist) == 'paired':
                 s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
@@ -731,7 +731,7 @@ def checkclip(sample,config):
 def check_tool_params(sample, runstate, config, subconf, idx):
     try:
         par = tool_params(sample, runstate ,config, subconf)['OPTIONS'][idx]
-        if par is not '':
+        if par != '':
             return par
         elif subconf == 'MAPPING':
             return 'std'
