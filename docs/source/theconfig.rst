@@ -36,7 +36,7 @@ the *GENOME* key of the config file, the ```.fa.gz``` postfix is
 condition/setting should use which genome by stating the *GENOME* key
 as innermost value of the *SOURCE* key.
 
-::
+```
     "GENOME": { #which genomes to use and how the reference fasta is named, key is subdir of REFERENCE and value is name of fasta
                 "Dm6": "dm6"
               },
@@ -54,7 +54,7 @@ as innermost value of the *SOURCE* key.
                           }
                         }
               }
-
+```
 
 The next part defines the samples to run the analysis on, just add a
 list of sample names as innermost value to the *SAMPLES* key for each
@@ -71,7 +71,7 @@ http://rseqc.sourceforge.net/#infer-experiment-py as comma separated
 value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--],
 fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
 
-::
+```
     "SAMPLES": {  #which samples to analyze
                   "Dm6": { #key for source and genome
                            "untreated": {      # sample id
@@ -87,7 +87,7 @@ fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+])
                               }
                }
     }
-
+```
 
 Now the actual workflow section begins, where you can define for each
 combinatio of processing/postprocessing step and condition/setting
@@ -109,8 +109,7 @@ setting.  This should become clear having a look at the different
 processing steps.  If there are no options just do not add the
 *OPTION* key
 
-::
-
+```
     "QC": {
         "RUN": "ON", #set to 'OFF' to skip QC
         "Dm6": { #key for source and genome
@@ -228,11 +227,11 @@ processing steps.  If there are no options just do not add the
             }
          }
      }
-
+```
 	 
 The pipeline now also supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
 
-::
+```
     #DE/DEU/DAS options
 	"DAS" : { # this can be DE, DEU or DAS
 	    "TOOLS" : #in contrast to other analysis types you can already define a set of tools at this stage that will be run sequentially
@@ -265,6 +264,7 @@ The pipeline now also supports DE/DEU/DAS-Analysis as postprocessing steps for a
             }
         }
     }
+```
 
 Keep in mind that every workflow/postprocessing step needs a
 corresponding entry in the config file or ```RunSnakemake.py``` will
