@@ -1,7 +1,7 @@
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input: r1  = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
 #        wildcard_constraints:
 #            rawfile="!trimmed"
@@ -47,7 +47,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
         output: o1 = report("QC/{rawfile}_fastqc.zip", category="QC")
 #        wildcard_constraints:
 #            rawfile="!trimmed"
