@@ -3,8 +3,8 @@ if paired == 'paired':
     rule qc_raw:
         input: r1  = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
-#        wildcard_constraints:
-#            rawfile="!trimmed"
+        wildcard_constraints:
+            rawfile="!trimmed"
         log:    "LOGS/{rawfile}/fastqc_{read}_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
@@ -49,8 +49,8 @@ else:
     rule qc_raw:
         input:  r1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
         output: o1 = report("QC/{rawfile}_fastqc.zip", category="QC")
-#        wildcard_constraints:
-#            rawfile="!trimmed"
+        wildcard_constraints:
+            rawfile="!trimmed"
         log:    "LOGS/{rawfile}/fastqc_raw.log"
         conda:  "snakes/envs/qc.yaml"
         threads: MAXTHREAD
