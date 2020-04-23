@@ -41,7 +41,7 @@ if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
-log.debug(logid+'Working on SAMPLES: '+str(SAMPLES))
+log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
 paired = checkpaired([SAMPLES[0]], config)
 if paired == 'paired':

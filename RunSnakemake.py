@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 23 09:03:25 2020 (+0200)
+# Last-Updated: Thu Apr 23 09:55:56 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 850
+#     Update #: 856
 # URL:
 # Doc URL:
 # Keywords:
@@ -475,7 +475,7 @@ def runjob(jobtorun):
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
-        while job.poll is None:
+        while True:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
             if output == '' and err == '' and job.poll() is not None:
@@ -493,6 +493,8 @@ def runjob(jobtorun):
                     sys.exit(err)
                 else:
                     log.info(logid+str(err))
+            if job.poll() is not None:
+                break
         status = job.poll()
         return status
 
