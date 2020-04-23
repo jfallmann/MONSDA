@@ -7,7 +7,7 @@ comparison=[i.split(":")[0] for i in compare_string.split(",")]
 
 rule themall:
     input:  dendrogram = expand("{outdir}{comparison}_dendrogram.pdf", outdir=outdir, comparison=comparison),
-            txtfile = expand("{outdir}{comparison}_dendrogram.txt", outdir=outdir, comparison=comparison)
+            csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=comparison)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -60,7 +60,8 @@ rule create_contrast_files:
 rule run_diego_pdf:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
-    output: dendrogram = rules.themall.input.dendrogram
+    output: dendrogram = rules.themall.input.dendrogram,
+            csv = rules.themall.input.csv
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
@@ -68,19 +69,7 @@ rule run_diego_pdf:
             outdir = outdir,
             compare = comparison,
             outfile = [i.replace(".pdf","").replace(".txt","") for i in rules.themall.input.dendrogram]
-    shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done"
-
-rule run_diego_txt:
-    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
-    output: txtfile = rules.themall.input.txtfile
-    log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
-    conda:  "snakes/envs/"+DASENV+".yaml"
-    threads: MAXTHREAD
-    params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            outdir = outdir,
-            compare = comparison
-    shell:  "array1=({input.contrast}); array2=({output.txtfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
+    shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
 
 onsuccess:
     print("Workflow finished, no error")
