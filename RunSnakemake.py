@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Apr 17 19:12:01 2020 (+0200)
+# Last-Updated: Thu Apr 23 09:03:25 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 843
+#     Update #: 850
 # URL:
 # Doc URL:
 # Keywords:
@@ -172,7 +172,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         for line in smk.readlines():
                             re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
                             re.sub(condapath,'conda:  "../',line)
-                            print(line,file=sys.stderr)
+                            smkout.write(line)
                     smkout.write('\n\n')
 
                 smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
@@ -475,7 +475,7 @@ def runjob(jobtorun):
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
-        while True:
+        while job.poll is None:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
             if output == '' and err == '' and job.poll() is not None:
