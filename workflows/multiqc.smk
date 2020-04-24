@@ -1,6 +1,3 @@
-rule qcall:
-    input: expand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))
-
 if paired == 'paired':
     rule multiqc:
         input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),

@@ -1,7 +1,3 @@
-rule themall:
-    input: expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
-           #expand("DONE/{file}_mapped",file=samplecond(SAMPLES,config))
-
 rule gzipsam:
     input:  mapps = rules.mapping.output.mapped
     output: gzipped = report("MAPPED/{file}_mapped.sam.gz", category="ZIPIT")

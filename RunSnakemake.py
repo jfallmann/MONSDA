@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 23 09:55:56 2020 (+0200)
+# Last-Updated: Fri Apr 24 12:49:33 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 856
+#     Update #: 872
 # URL:
 # Doc URL:
 # Keywords:
@@ -277,10 +277,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 if 'QC' in subworkflows and 'QC' in config:
                     makeoutdir('QC')
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                     if 'MAPPING' in subworkflows:
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
+                                smkout.write('rule themall:\n\tinput:\texpand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config)),\n\t\texpand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))\n\n')
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
+                    else:
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write('rule themall:\n\tinput:\texpand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))\n\n')
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
