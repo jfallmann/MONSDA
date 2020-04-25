@@ -269,7 +269,7 @@
         "TOOLS" :
         {
             "edger"  : "Analysis/DAS/EDGER.R",
-            "diego"  : "diego.py"
+            "diego"  : "Analysis/DASA/DIEGO.py"
         },
         "COMPARABLE" :
         {
@@ -284,12 +284,20 @@
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "OPTIONS":
                     [
-                        {
+                        { # counting options
                             "-t": "exon",
                             "-g": "gene_id",
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
+                        },
+                        { # analysis options
+                            "-c": "10",
+                            "-d": "3",
+                            "-q": "0.01",
+                            "-z": "1.0",
+                            "-c": "",
+
                         }
                     ]
                 }

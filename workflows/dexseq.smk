@@ -38,8 +38,8 @@ rule featurecount_dexseq_unique:
 
 rule prepare_count_table:
     input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl = expand("{outdir}Tables/DEXSEQ/RUN_DEU_Analysis.tbl.gz",outdir=outdir),
-             anno = expand("{outdir}Tables/DEXSEQ/RUN_DEU_Analysis.anno.gz",outdir=outdir)
+    output:  tbl = expand("{outdir}Tables/RUN_DEU_Analysis.tbl.gz",outdir=outdir),
+             anno = expand("{outdir}Tables/RUN_DEU_Analysis.anno.gz",outdir=outdir)
     log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
