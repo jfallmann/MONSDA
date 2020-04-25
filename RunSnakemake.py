@@ -485,6 +485,9 @@ def runjob(jobtorun):
         while True:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
+            if output or err:
+                print(output.strip())
+                print(err.stritp())
             if output == '' and err == '' and job.poll() is not None:
                 break
             if output:
