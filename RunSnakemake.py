@@ -485,6 +485,8 @@ def runjob(jobtorun):
         while True:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
+            if output == '' and err == '' and job.poll() is not None:
+                break
             if output:
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:

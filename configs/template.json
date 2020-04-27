@@ -269,7 +269,7 @@
         "TOOLS" :
         {
             "edger"  : "Analysis/DAS/EDGER.R",
-            "diego"  : "Analysis/DASA/DIEGO.py"
+            "diego"  : "Analysis/DAS/DIEGO.py"
         },
         "COMPARABLE" :
         {
@@ -296,7 +296,7 @@
                             "-d": "3",
                             "-q": "0.01",
                             "-z": "1.0",
-                            "-c": "",
+                            "-r": "",
 
                         }
                     ]
