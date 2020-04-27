@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Apr 24 12:49:33 2020 (+0200)
+# Last-Updated: Mon Apr 27 07:40:44 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 872
+#     Update #: 873
 # URL:
 # Doc URL:
 # Keywords:
@@ -485,11 +485,6 @@ def runjob(jobtorun):
         while True:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
-            if output or err:
-                print(output.strip())
-                print(err.stritp())
-            if output == '' and err == '' and job.poll() is not None:
-                break
             if output:
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
@@ -503,6 +498,8 @@ def runjob(jobtorun):
                     sys.exit(err)
                 else:
                     log.info(logid+str(err))
+            if output == '' and err == '' and job.poll() is not None:
+                break
             if job.poll() is not None:
                 break
         status = job.poll()
