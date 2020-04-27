@@ -15,18 +15,40 @@ from Logger import *
 loglevel="INFO"
 
 try:
-    log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
-    if not any(x in scriptname for x in ['RunSnakemake','Configurator']):
-        if (log.hasHandlers()):
-            log.handlers.clear()
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
+    if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
+        makelogdir('LOGS')
+        open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
     handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
-    handler.setLevel(loglevel)
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
-    log.addHandler(handler)  # streamlog
+    if any(x in scriptname for x in ['Snakemake','Configurator']):
+        log = logging.getLogger(scriptname)
+        #while log.hasHandlers():
+        #    log.handlers.pop()
+        #log.addHandler(handler)
+        #lvl = log.level if log.level != 0 else loglevel
+        #log.setLevel(lvl)
+        #log.addHandler(logging.StreamHandler(sys.stderr))
+    else:
+        log = logging.getLogger('snakemake.logging')
+        while log.hasHandlers():
+            print(str(log.handlers),file=sys.stderr)
+            log.handlers.pop()
 
-except:
-    log = setup_logger(name='SubSnake', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
+        log.addHandler(handler)
+        lvl = log.level if log.level != 0 else loglevel
+        log.setLevel(lvl)
+        log.addHandler(logging.StreamHandler(sys.stderr))
+
+except Exception as err:
+    log = setup_logger(name='RunSnakemake.header', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
     log.addHandler(logging.StreamHandler(sys.stderr))
+
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tbe = tb.TracebackException(
+        exc_type, exc_value, exc_tb,
+    )
+    log.error(''.join(tbe.format()))
 
 logid = 'header.smk: '
 REFERENCE=config["REFERENCE"]

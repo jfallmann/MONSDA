@@ -3,17 +3,17 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE),
     output: idx = expand("{ref}/{{dir}}/{map}/{{extension}}/{{gen}}{{name}}_{{extension}}/{map}.idx", ref=REFERENCE, map=MAPPERENV),
-            tmp = temp("TMP/{dir}/{gen}{name}_{extension}.fa"),
-            tmpa = temp("TMP/{dir}/{gen}{name}_{extension}.anno")
+            tmp = temp("STARTMP/{dir}/{gen}{name}_{extension}.fa"),
+            tmpa = temp("STARTMP/{dir}/{gen}{name}_{extension}.anno")
     log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
     conda:  "snakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]),
-            genpath = lambda wildcards: os.path.abspath("{ref}/{dir}/{map}/{extension}/{gen}{name}_{extension}/".format(ref=REFERENCE, dir=wildcards.dir, gen=wildcards.gen, name=wildcards.name, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))+os.sep,
-            tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
-    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.genpath}SAindex\" ]]; then ln -fs {params.genpath}SAindex {output.idx} && touch {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -s {params.genpath}SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
+            genpath = lambda wildcards: os.path.abspath("{ref}/{dir}/{map}/{extension}/{gen}{name}_{extension}".format(ref=REFERENCE, dir=wildcards.dir, gen=wildcards.gen, name=wildcards.name, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))+os.sep,
+            tmpidx = lambda x: tempfile.mkdtemp(dir='STARTMP'),
+    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.genpath}\SAindex\" ]]; then ln -fs {params.genpath}\SAindex {output.idx} && touch {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -s {params.genpath}\SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:

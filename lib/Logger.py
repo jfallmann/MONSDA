@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr 20 10:30:51 2020 (+0200)
+# Last-Updated: Mon Apr 27 14:14:18 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 83
+#     Update #: 90
 # URL:
 # Doc URL:
 # Keywords:
@@ -77,7 +77,9 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     logger = logging.getLogger(name)
     if log_file != 'stdout' and log_file != 'stderr':
         makelogdir(os.path.dirname(log_file))
-        handler = logging.FileHandler(log_file, mode=filemode, delay=delay)
+        if not os.path.isfile(os.path.abspath(log_file)):
+            open(os.path.abspath(log.file),'a').close()
+        handler = logging.FileHandler(os.path.abspath(log_file), mode=filemode, delay=delay)
     else:
         handler = logging.StreamHandler()
 
@@ -92,22 +94,6 @@ if __name__ == '__main__':
     try:
         # set up logging to file
         logging=setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='WARNING')
-
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        #console = logging.StreamHandler()
-        #console.setLevel(logging.INFO)
-        # set a format which is simpler for console use
-        #formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-        # tell the handler to use this format
-        #console.setFormatter(formatter)
-        # add the handler to the root logger
-        #logging.getLogger('').addHandler(console)
-
-        # Now, we can log to the root logger, or any other logger. First the root...
-        #logging.info('Imported logger.py')
-        # Now, use this in code defining a couple of other loggers which might represent areas in your
-        # application, e.g.:
-        #log = logging.getLogger('logger.main')
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

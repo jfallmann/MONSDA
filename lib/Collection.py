@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Apr 22 15:52:04 2020 (+0200)
+# Last-Updated: Mon Apr 27 14:57:42 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1786
+#     Update #: 1856
 # URL:
 # Doc URL:
 # Keywords:
@@ -86,20 +86,23 @@ import six
 import logging
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename)
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
+    if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
+        logdir =  os.path.abspath('LOGS')
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
+        open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
     if any(x in scriptname for x in ['Snakemake','Configurator']):
         log = logging.getLogger(scriptname)
     else:
-        log = logging.getLogger('SubSnake')
-        lvl = log.level
-        if (log.hasHandlers()):
-            log.handlers.clear()
-        handler = logging.FileHandler('LOGS/RunSnakemake.log',mode='a')
+        log = logging.getLogger('RunSnakemake.Collection')
+    if not (log.hasHandlers()):
+        #log.handlers.clear()
+        handler = logging.FileHandler(os.path.abspath('LOGS/RunSnakemake.log'), mode='a')
         handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
-        log.setLevel('DEBUG')
-        log.addHandler(handler)  # streamlog
-
-    log.debug('FILENAME: '+str(scriptname))
+        log.addHandler(handler)
+        lvl = log.level if log.level != 0 else 'INFO'
+        log.setLevel(lvl)
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -173,7 +176,7 @@ def get_samples(config):
         log.error(logid+'No samples found, please check config file')
         sys.exit()
 
-    log.info(logid+'SAMPLES: '+str(RETSAMPLES))
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
     return RETSAMPLES
 
 @check_run
@@ -196,7 +199,7 @@ def get_conditions(samples, config):
 def get_samples_from_dir(id, condition, setting, config):
     logid = scriptname+'.Collection_get_samples_from_dir: '
     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
-    log.info(logid+str(pat))
+    log.debug(logid+str(pat))
     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
     log.debug(logid+str(ret))
     if len(ret) > 0:
@@ -748,7 +751,7 @@ def comparable_as_string(config, subwork):
     logid=scriptname+'.comparable_as_string: '
     check = config[subwork].get('COMPARABLE')
     if check:
-        log.info(logid+'determine comparables in '+subwork)
+        log.debug(logid+'determine comparables in '+subwork)
         complist  = []
         compdict=config[subwork]['COMPARABLE']
         for key in compdict:
@@ -757,7 +760,7 @@ def comparable_as_string(config, subwork):
         compstr = ','.join(complist)
         return compstr
     else:
-        log.info(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
+        log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS",config))
         flattened = set(val for sublist in groups_by_condition for val in sublist)
         combined=list(combinations(flattened,2))
@@ -772,7 +775,7 @@ def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
     check = config[subwork].get('COMPARABLE')
     if check:
-        log.info(logid+'determine comparables in '+subwork)
+        log.debug(logid+'determine comparables in '+subwork)
         complist  = []
         compdict=config[subwork]['COMPARABLE']
         for contrast in compdict:
@@ -786,7 +789,7 @@ def comparable_as_string2(config, subwork):
         compstr = ','.join(complist)
         return compstr
     else:
-        log.info(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
+        log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS",config))
         flattened = set(val for sublist in groups_by_condition for val in sublist)
         combined=list(combinations(flattened,2))
@@ -1191,6 +1194,7 @@ def check_ref(reference):
     elif os.path.exists(os.path.abspath(reference+'.gz')):
         return reference+'.gz'
 
+@check_run
 def multi_replace(repl, text):
     print('MULTI: '+str(repl)+str(text))
     # Create a regular expression  from the dictionary keys
@@ -1198,6 +1202,14 @@ def multi_replace(repl, text):
 
     # For each match, look-up corresponding value in dictionary
     return regex.sub(lambda mo: dict[mo.string[mo.start():mo.end()]], text)
+
+@check_run
+def makelogdir(logdir):
+    if not os.path.isabs(logdir):
+        logdir =  os.path.abspath(logdir)
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+    return logdir
 
 #
 # Collection.py ends here

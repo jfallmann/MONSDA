@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr 27 07:40:44 2020 (+0200)
+# Last-Updated: Mon Apr 27 14:49:35 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 873
+#     Update #: 893
 # URL:
 # Doc URL:
 # Keywords:
@@ -41,7 +41,7 @@ min_version("5.8.2")
 
 from lib.Collection import *
 from lib.Logger import *
-scriptname=os.path.basename(__file__)
+scriptname=os.path.basename(__file__).replace('.py','')
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
@@ -525,10 +525,9 @@ if __name__ == '__main__':
         knownargs=args[0]
         optionalargs=args[1:]
         makelogdir('LOGS')
-        #log = logging.basicConfig(level=knownarg.loglevel, format='%(asctime)s %(levelname)s %(name)s %(message)s')
-        #handler = logging.FileHandler(log_file, mode=filemode)
-        #log.addHandler(handler)
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname.replace('.py','')+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
+        if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
+            open('LOGS/'+scriptname+'.log','a').close()
+        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
         log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
 
         MIN_PYTHON = (3,7)
@@ -536,6 +535,7 @@ if __name__ == '__main__':
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
+        log.debug(logid+str(log.handlers))
 
         run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.unlock, optionalargs[0])
     except Exception as err:
