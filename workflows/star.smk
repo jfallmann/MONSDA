@@ -24,7 +24,7 @@ if paired == 'paired':
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
                 unmapped_r1 = "UNMAPPED/{file}_unmapped_R1.fastq.gz",
                 unmapped_r2 = "UNMAPPED/{file}_unmapped_R2.fastq.gz",
-                tmp = temp("TMP/STAROUT/{file}")
+                tmp = temp("STARTMP/STAROUT/{file}")
         log:    "LOGS/{file}/mapping.log"
         conda:  "snakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
@@ -43,7 +43,7 @@ else:
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
-                tmp = temp("TMP/STAROUT/{file}")
+                tmp = temp("STARTMP/STAROUT/{file}")
         log:    "LOGS/{file}/mapping.log"
         conda:  "snakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
