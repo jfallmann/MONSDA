@@ -58,7 +58,7 @@ rule create_contrast_files:
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego_pdf:
-    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
+    input:  tbl = expand(rules.prepare_junction_usage_matrix.output.tbl, file=samplecond(SAMPLES,config))
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
