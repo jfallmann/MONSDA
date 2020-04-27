@@ -57,8 +57,8 @@ rule create_contrast_files:
             outdir=outdir+'Tables/'
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -c {params.compare} -o {params.outdir} 2> {log}"
 
-rule run_diego_pdf:
-    input:  tbl = expand(rules.prepare_junction_usage_matrix.output.tbl, file=samplecond(SAMPLES,config))
+rule run_diego:
+    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
             contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison),
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
@@ -66,7 +66,7 @@ rule run_diego_pdf:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][1].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][1].items()),
             outdir = outdir,
             compare = comparison,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
