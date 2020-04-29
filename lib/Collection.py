@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Apr 29 13:02:06 2020 (+0200)
+# Last-Updated: Wed Apr 29 17:36:59 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1857
+#     Update #: 1858
 # URL:
 # Doc URL:
 # Keywords:
@@ -97,7 +97,6 @@ try:
     else:
         log = logging.getLogger('RunSnakemake.Collection')
     if not (log.hasHandlers()):
-        #log.handlers.clear()
         handler = logging.FileHandler(os.path.abspath('LOGS/RunSnakemake.log'), mode='a')
         handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
         log.addHandler(handler)

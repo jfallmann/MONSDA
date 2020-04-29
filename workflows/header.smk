@@ -31,7 +31,7 @@ try:
         log.addHandler(handler)
         lvl = log.level if log.level != 0 else loglevel
         log.setLevel(lvl)
-        log.addHandler(logging.StreamHandler(sys.stderr))
+        #log.addHandler(logging.StreamHandler(sys.stderr))
 
 except Exception as err:
     log = setup_logger(name='RunSnakemake.header', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')

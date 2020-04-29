@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr 27 14:49:35 2020 (+0200)
+# Last-Updated: Wed Apr 29 17:35:33 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 893
+#     Update #: 895
 # URL:
 # Doc URL:
 # Keywords:
@@ -490,12 +490,12 @@ def runjob(jobtorun):
             if output:
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
-                    log.error(logid+'STOPOUT: '+str(err))
+                    log.error(logid+'STOPPING: '+str(output))
                     job.kill()
                     sys.exit(output)
             if err:
                 if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
-                    log.error(logid+'STOPERROR: '+str(err))
+                    log.error(logid+'STOPPING: '+str(err))
                     job.kill()
                     sys.exit(err)
                 else:
