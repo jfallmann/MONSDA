@@ -4,7 +4,7 @@ rule qcall:
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
         log:    "LOGS/{rawfile}/fastqc_{read}_raw.log"
         conda:  "snakes/envs/qc.yaml"
@@ -14,7 +14,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
-        input: expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
+        input:  expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
         output: html = report("QC/Multi/RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/RAW/{condition}/tmp"),
                 lst = "QC/Multi/RAW/{condition}/qclist.txt"
@@ -26,7 +26,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
         output: o1 = report("QC/{rawfile}_fastqc.zip", category="QC")
 #        wildcard_constraints:
 #            rawfile="!trimmed"
@@ -38,7 +38,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule multiqc:
-        input: expand("QC/{rawfile}_fastqc.zip", rawfile=SAMPLES),
+        input:  expand("QC/{rawfile}_fastqc.zip", rawfile=SAMPLES),
         output: html = report("QC/Multi/RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/RAW/{condition}/tmp"),
                 lst = "QC/Multi/RAW/{condition}/qclist.txt"

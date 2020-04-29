@@ -7,9 +7,9 @@
 # Created: Mon Aug 12 10:26:55 2019 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr 27 14:14:18 2020 (+0200)
+# Last-Updated: Wed Apr 29 16:42:40 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 90
+#     Update #: 91
 # URL:
 # Doc URL:
 # Keywords:
@@ -78,7 +78,7 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     if log_file != 'stdout' and log_file != 'stderr':
         makelogdir(os.path.dirname(log_file))
         if not os.path.isfile(os.path.abspath(log_file)):
-            open(os.path.abspath(log.file),'a').close()
+            open(os.path.abspath(log_file),'a').close()
         handler = logging.FileHandler(os.path.abspath(log_file), mode=filemode, delay=delay)
     else:
         handler = logging.StreamHandler()

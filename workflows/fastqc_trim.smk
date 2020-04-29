@@ -4,7 +4,7 @@ rule qcall:
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz",rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
         log:    "LOGS/{rawfile}/fastqc_{read}_raw.log"
         conda:  "snakes/envs/qc.yaml"
@@ -15,7 +15,7 @@ if paired == 'paired':
 
     rule qc_trimmed:
         input:  expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
-                r1 = "TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz"
+                r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:   "LOGS/{file}/fastqc_{read}_trimmed.log"
         conda:  "snakes/envs/qc.yaml"
@@ -25,8 +25,8 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),
-               expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['R1','R2']),
+        input:  expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),
+                expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['R1','R2']),
         output: html = report("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/TRIMMED_RAW/{condition}/tmp"),
                 lst = "QC/Multi/TRIMMED_RAW/{condition}/qclist.txt"
@@ -38,7 +38,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = expand("FASTQ/{rawfile}.fastq.gz",rawfile=SAMPLES)
         output: o1 = report("QC/{rawfile}_fastqc.zip", category="QC")
 #        wildcard_constraints:
 #            rawfile="!trimmed"

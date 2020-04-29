@@ -1,7 +1,7 @@
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input: r1  = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
+        input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
         output: o1 = report("QC/{rawfile}_{read}_fastqc.zip",category="QC")
         wildcard_constraints:
             rawfile="!trimmed"
@@ -14,7 +14,7 @@ if paired == 'paired':
 
     rule qc_trimmed:
         input:  expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
-                r1 = "TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz"
+                r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz",file=samplecond(SAMPLES,config), read=['R1','R2'])
         output: o1 = report("QC/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:   "LOGS/{file}/fastqc_{read}_trimmed.log"
         conda:  "snakes/envs/qc.yaml"
@@ -24,7 +24,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_mapped:
-        input:  r1 = "SORTED_MAPPED/{file}_mapped_sorted.sam.gz"
+        input:  r1 = expand("SORTED_MAPPED/{file}_mapped_sorted.sam.gz",file=samplecond(SAMPLES,config))
         output: o1 = report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_mapped.log"
         conda: "snakes/envs/qc.yaml"
@@ -34,8 +34,8 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_uniquemapped:
-        input:  r1 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-                r2 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam.bai"
+        input:  r1 = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",file=samplecond(SAMPLES,config)),
+                r2 = expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam.bai"file=samplecond(SAMPLES,config))
         output: o1 = report("QC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_uniquemapped.log"
         conda: "snakes/envs/qc.yaml"
