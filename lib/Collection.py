@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Apr 27 14:57:42 2020 (+0200)
+# Last-Updated: Wed Apr 29 13:02:06 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1856
+#     Update #: 1857
 # URL:
 # Doc URL:
 # Keywords:
@@ -109,7 +109,7 @@ except Exception as err:
     tbe = tb.TracebackException(
         exc_type, exc_value, exc_tb,
     )
-    print(''.join(tbe.format()))
+    print(''.join(tbe.format()),file=sys.stderr)
 
 #Class
 class NestedDefaultDict(defaultdict):

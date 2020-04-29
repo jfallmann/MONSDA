@@ -23,16 +23,9 @@ try:
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
     if any(x in scriptname for x in ['Snakemake','Configurator']):
         log = logging.getLogger(scriptname)
-        #while log.hasHandlers():
-        #    log.handlers.pop()
-        #log.addHandler(handler)
-        #lvl = log.level if log.level != 0 else loglevel
-        #log.setLevel(lvl)
-        #log.addHandler(logging.StreamHandler(sys.stderr))
     else:
-        log = logging.getLogger('snakemake.logging')
+        log = logging.getLogger('snakemake')
         while log.hasHandlers():
-            print(str(log.handlers),file=sys.stderr)
             log.handlers.pop()
 
         log.addHandler(handler)
