@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 30 13:44:02 2020 (+0200)
+# Last-Updated: Thu Apr 30 22:15:13 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 944
+#     Update #: 947
 # URL:
 # Doc URL:
 # Keywords:
@@ -89,9 +89,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             if '--profile' in optionalargs and 'snakes/slurm' in optionalargs:
                 makeoutdir('LOGS/SLURM')
 
+        threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
+
         if unlock:
             log.info(logid+'Unlocking directory')
-            jobtorun = 'snakemake --unlock -s {s} --configfile {c}'.format(s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
+            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
             log.info(logid+'RUNNING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
@@ -110,8 +112,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             postprocess = config['POSTPROCESSING'].split(',') # we keep this separate because not all postprocessing steps need extra configuration
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
-
-        threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
 
         if preprocess:
             try:
@@ -187,7 +187,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
