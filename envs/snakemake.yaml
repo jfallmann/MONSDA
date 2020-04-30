@@ -15,8 +15,8 @@ dependencies:
   - attrs=19.3.0
   - bcrypt=3.1.7
   - biopython=1.76
-  - boto3=1.12.43
-  - botocore=1.15.43
+  - boto3=1.12.49
+  - botocore=1.15.49
   - brotlipy=0.7.0
   - bzip2=1.0.8
   - ca-certificates=2020.4.5.1
@@ -25,10 +25,10 @@ dependencies:
   - certifi=2020.4.5.1
   - cffi=1.14.0
   - chardet=3.0.4
-  - configargparse=1.2.1
+  - configargparse=1.2.3
   - coreutils=8.31
   - crc32c=2.0
-  - cryptography=2.8
+  - cryptography=2.9.2
   - curl=7.69.1
   - datrie=0.8.2
   - decorator=4.4.2
@@ -49,13 +49,14 @@ dependencies:
   - glib=2.64.2
   - gobject-introspection=1.58.2
   - google-api-core=1.17.0
-  - google-auth=1.14.0
+  - google-auth=1.14.1
   - google-cloud-core=1.3.0
-  - google-cloud-storage=1.27.0
+  - google-cloud-storage=1.28.0
   - google-resumable-media=0.5.0
   - googleapis-common-protos=1.51.0
   - graphite2=1.3.13
   - graphviz=2.38.0
+  - grep=3.4
   - harfbuzz=2.4.0
   - icu=64.2
   - idna=2.9
@@ -114,7 +115,7 @@ dependencies:
   - paramiko=2.7.1
   - pcre=8.44
   - perl=5.26.2
-  - pip=20.0.2
+  - pip=20.1
   - pixman=0.38.0
   - pkg-config=0.29.2
   - prettytable=0.7.2
@@ -135,7 +136,7 @@ dependencies:
   - python-dateutil=2.8.1
   - python-irodsclient=0.8.2
   - python_abi=3.8
-  - pytz=2019.3
+  - pytz=2020.1
   - pyyaml=5.3.1
   - ratelimiter=1.2.0
   - readline=8.0
@@ -145,8 +146,8 @@ dependencies:
   - setuptools=46.1.3
   - six=1.14.0
   - smmap=3.0.2
-  - snakemake=5.15.0
-  - snakemake-minimal=5.15.0
+  - snakemake=5.16.0
+  - snakemake-minimal=5.16.0
   - sqlite=3.30.1
   - tk=8.6.10
   - toposort=1.5
@@ -180,4 +181,5 @@ dependencies:
   - zipp=3.1.0
   - zlib=1.2.11
   - zstd=1.4.4
+prefix: /home/fall/anaconda3/envs/snakemake
 
