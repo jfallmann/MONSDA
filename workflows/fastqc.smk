@@ -24,7 +24,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_mapped:
-        input:  r1 = expand("SORTED_MAPPED/{file}_mapped_sorted.sam.gz", file=samplecond(SAMPLES,config))
+        input:  r1 = expand("MAPPED/{file}_mapped_sorted.sam.gz", file=samplecond(SAMPLES,config))
         output: o1 = report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_mapped.log"
         conda: "snakes/envs/qc.yaml"
@@ -70,7 +70,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"#" && cd $OUT && rename fastqc qc *_fastqc*"
 
     rule qc_mapped:
-        input:   r1 = expand("SORTED_MAPPED/{file}_mapped_sorted.sam.gz", file=samplecond(SAMPLES,config))
+        input:   r1 = expand("MAPPED/{file}_mapped_sorted.sam.gz", file=samplecond(SAMPLES,config))
         output:  o1 = report("QC/{file}_mapped_sorted_fastqc.zip", category="QC")
         log: "LOGS/{file}/fastqc_mapped.log"
         conda: "snakes/envs/qc.yaml"

@@ -30,7 +30,7 @@ elif all(checklist2):
 else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+            input:  "MAPPED/{file}_mapped_sorted.bam",
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"
@@ -41,7 +41,7 @@ else:
     elif stranded and stranded == 'rf':
         rule BamToBed:
         rule BamToBed:
-            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+            input:  "MAPPED/{file}_mapped_sorted.bam",
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"

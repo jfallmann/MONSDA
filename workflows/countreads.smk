@@ -33,7 +33,7 @@ else:
         shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
 
 rule count_mappers:
-    input:  m = "SORTED_MAPPED/{file}_mapped_sorted.bam"
+    input:  m = "MAPPED/{file}_mapped_sorted.bam"
     output: m = "COUNTS/{file}_mapped.count"
     log:    "LOGS/{file}/countmappers.log"
     conda:  "snakes/envs/samtools.yaml"
@@ -49,7 +49,7 @@ rule count_unique_mappers:
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule featurecount:
-    input:  s = "SORTED_MAPPED/{file}_mapped_sorted.bam",
+    input:  s = "MAPPED/{file}_mapped_sorted.bam",
     output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted.counts"
             #t = temp("COUNTS/Featurecounter_{feat}s/{file}.anno")
     log:    "LOGS/{file}/featurecount_{feat}s.log"
@@ -120,7 +120,7 @@ onerror:
 
 ###rnacounter and cufflinks are to be added later
 #rule RNAcountReads:
-#   input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+#   input:  "MAPPED/{file}_mapped_sorted.bam",
 #           "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
 #   output: "COUNTS/RNAcounter/{file}_mapped_sorted.counts",
 #           "COUNTS/RNAcounter/{file}_mapped_sorted.gene_counts",
@@ -140,7 +140,7 @@ onerror:
 #   shell:  "/usr/bin/rnacounter -n 1 -t genes,transcripts,exons,introns {input[0]} {ANNOTATION} > {output[0]} && grep 'gene' {output[0]} > {output[1]} && grep 'transcript' {output[0]} > {output[2]} && grep 'exon' {output[0]} > {output[3]} && grep 'intron' {output[0]} > {output[4]}"
 #
 #rule cufflinks:
-#   input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+#   input:  "MAPPED/{file}_mapped_sorted.bam",
 #           "COUNTS/RNAcounter/{file}_mapped_sorted.counts"
 #   output: "QUANT/Cufflinks/{file}/transcripts.gtf"
 #   log:    "LOGS/Cufflinks/{file}.log"

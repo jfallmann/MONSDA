@@ -50,7 +50,7 @@ elif all(checklist2):
 else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+            input:  "MAPPED/{file}_mapped_sorted.bam",
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "PEAKS/{file}_mapped_sorted.bed.gz",
                     "PEAKS/{file}_mapped_unique.bed.gz"
@@ -60,7 +60,7 @@ else:
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
     elif stranded and stranded == 'rf':
         rule BamToBed:
-            input:  "SORTED_MAPPED/{file}_mapped_sorted.bam",
+            input:  "MAPPED/{file}_mapped_sorted.bam",
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
             output: "PEAKS/{file}_mapped_sorted.bed.gz",
                     "PEAKS/{file}_mapped_unique.bed.gz"

@@ -4,7 +4,7 @@ if paired == 'paired':
                expand("QC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config),read=['R1','R2']),
                expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),
-               expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),
+               expand("MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),
                expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
         output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{condition}/tmp"),
@@ -20,7 +20,7 @@ else:
                expand("QC/{file}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_fastqc.zip", file=samplecond(SAMPLES,config)),
                expand("QC/{file}_mapped_sorted_unique_fastqc.zip", file=samplecond(SAMPLES,config)),
-               expand("SORTED_MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),
+               expand("MAPPED/{file}_mapped_sorted.bam", file=samplecond(SAMPLES,config)),
                expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))
         output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{condition}/tmp"),
