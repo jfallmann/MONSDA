@@ -13,7 +13,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
-        input:  expand(rules.qc_raw.output, rawfile=SAMPLES, read=['R1','R2']),
+        input:  expand(rules.qc_raw.output.o1, rawfile=SAMPLES, read=['R1','R2']),
                 r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=['R1','R2'])
         output: o1 = report("QC/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:   "LOGS/{file}/fastqc_{read}_trimmed.log"
