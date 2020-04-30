@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Apr 29 17:35:33 2020 (+0200)
+# Last-Updated: Thu Apr 30 09:33:38 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 895
+#     Update #: 896
 # URL:
 # Doc URL:
 # Keywords:
@@ -482,11 +482,9 @@ def runjob(jobtorun):
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
-        while True:
+        while job.poll() is not None:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
-            if output == '' and err == '' and job.poll() is not None:
-                break
             if output:
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
@@ -500,12 +498,14 @@ def runjob(jobtorun):
                     sys.exit(err)
                 else:
                     log.info(logid+str(err))
-            if output == '' and err == '' and job.poll() is not None:
-                break
-            if job.poll() is not None:
-                break
-        status = job.poll()
-        return status
+        status = job.returncode()
+        if status == 0:
+            return status
+        else:
+            err = str.join('',job.stderr.readlines()).rstrip()
+            log.error(logid+'STOPPING: '+str(err))
+            job.kill()
+            sys.exit(err)
 
     except Exception as err:
         job.kill()
