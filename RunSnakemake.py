@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 30 09:33:38 2020 (+0200)
+# Last-Updated: Thu Apr 30 13:37:37 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 896
+#     Update #: 943
 # URL:
 # Doc URL:
 # Keywords:
@@ -170,8 +170,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
-                            re.sub(condapath,'conda:  "../',line)
+                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                            line = re.sub(condapath, 'conda:  "../', line)
                             smkout.write(line)
                     smkout.write('\n\n')
 
@@ -230,8 +230,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
-                                    re.sub(condapath,'conda:  "../',line)
+                                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                    line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
@@ -269,8 +269,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
-                            re.sub(condapath,'conda:  "../',line)
+                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                            line = re.sub(condapath,'conda:  "../',line)
                             smkout.write(line)
                             #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
@@ -378,8 +378,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    re.sub('loglevel\=\'INFO\'','loglevel\=\''+loglevel+'\'',line)
-                                    re.sub(condapath,'conda:  "../',line)
+                                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                    line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
@@ -480,32 +480,41 @@ def runjob(jobtorun):
     try:
         logid = scriptname+'.runjob: '
         #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, close_fds=True)
 
-        while job.poll() is not None:
+        while True:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
-            if output:
+            if output == '' and err == '' and job.poll() is not None:
+                break
+            if output and output != '':
                 log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
                     log.error(logid+'STOPPING: '+str(output))
                     job.kill()
-                    sys.exit(output)
-            if err:
+                    sys.exit()
+            if err and err != '':
                 if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
                     log.error(logid+'STOPPING: '+str(err))
                     job.kill()
-                    sys.exit(err)
+                    sys.exit()
                 else:
                     log.info(logid+str(err))
-        status = job.returncode()
-        if status == 0:
+            if job.poll() is not None:
+                break
+
+        if job.returncode == 0:
+            output = str.join('',job.stdout.readlines()).rstrip()
+            if output and output != '':
+                log.info(logid+'JOB FINISHED: '+output)
             return status
         else:
+            output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
-            log.error(logid+'STOPPING: '+str(err))
+            if err and err != '' or output and output != '':
+                log.error(logid+'ERROR: '+errput+output)
             job.kill()
-            sys.exit(err)
+            sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
     except Exception as err:
         job.kill()
@@ -514,6 +523,7 @@ def runjob(jobtorun):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
+        sys.exit(''.join(tbe.format()))
 
 ####################
 ####    MAIN    ####
@@ -530,7 +540,7 @@ if __name__ == '__main__':
         if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
             open('LOGS/'+scriptname+'.log','a').close()
         log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+        log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
 
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:

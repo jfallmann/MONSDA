@@ -16,26 +16,28 @@ loglevel="INFO"
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
-        makelogdir('LOGS')
-        open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
-    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
-    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
-    if any(x in scriptname for x in ['Snakemake','Configurator']):
+    #if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
+    #    makelogdir('LOGS')
+    #    open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
+    if any(x in scriptname for x in ['RunSnakemake','Configurator']):
         log = logging.getLogger(scriptname)
     else:
-        log = logging.getLogger('snakemake')
-        while log.hasHandlers():
-            log.handlers.pop()
-
-        log.addHandler(handler)
-        lvl = log.level if log.level != 0 else loglevel
-        log.setLevel(lvl)
-        #log.addHandler(logging.StreamHandler(sys.stderr))
+        log = logging.getLogger('snakemake.logging')
+        for handler in log.handlers[:]:
+            handler.close()
+            log.removeHandler(handler)
+    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    log.addHandler(handler)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    log.addHandler(handler)
+    lvl = loglevel
+    log.setLevel(lvl)
 
 except Exception as err:
     log = setup_logger(name='RunSnakemake.header', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
-    #log.addHandler(logging.StreamHandler(sys.stderr))
+    #log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=loglevel)
 
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -52,6 +54,7 @@ MAXTHREAD=int(config["MAXTHREADS"])
 SOURCE=sources(config)
 
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
