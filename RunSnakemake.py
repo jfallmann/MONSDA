@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 30 13:37:37 2020 (+0200)
+# Last-Updated: Thu Apr 30 13:44:02 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 943
+#     Update #: 944
 # URL:
 # Doc URL:
 # Keywords:
@@ -507,7 +507,7 @@ def runjob(jobtorun):
             output = str.join('',job.stdout.readlines()).rstrip()
             if output and output != '':
                 log.info(logid+'JOB FINISHED: '+output)
-            return status
+            return job.poll()
         else:
             output = str.join('',job.stdout.readlines()).rstrip()
             err = str.join('',job.stderr.readlines()).rstrip()
