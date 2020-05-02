@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sat May  2 11:33:30 2020 (+0200)
+# Last-Updated: Sat May  2 12:15:41 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 950
+#     Update #: 951
 # URL:
 # Doc URL:
 # Keywords:
@@ -526,7 +526,7 @@ def runjob(jobtorun):
             exc_type, exc_value, exc_tb,
         )
         log.error(''.join(tbe.format()))
-        sys.exit(''.join(tbe.format()))
+        sys.exit()
 
 ####################
 ####    MAIN    ####
