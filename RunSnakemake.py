@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 30 22:15:13 2020 (+0200)
+# Last-Updated: Sat May  2 11:33:30 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 947
+#     Update #: 950
 # URL:
 # Doc URL:
 # Keywords:
@@ -483,9 +483,10 @@ def runjob(jobtorun):
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, close_fds=True)
 
         while True:
-            output = str.join('',job.stdout.readlines()).rstrip()
-            err = str.join('',job.stderr.readlines()).rstrip()
-            if output == '' and err == '' and job.poll() is not None:
+            output, outerr = job.communicate()
+            output = str.join('',output).rstrip()
+            outerr = str.join('',outerr).rstrip()
+            if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
                 log.info(logid+str(output))
@@ -493,26 +494,28 @@ def runjob(jobtorun):
                     log.error(logid+'STOPPING: '+str(output))
                     job.kill()
                     sys.exit()
-            if err and err != '':
-                if not 'Workflow finished' in err and not 'Nothing to be done' in err and any(x in err for x in ['ERROR','Error','error','Exception']):
-                    log.error(logid+'STOPPING: '+str(err))
+            if outerr and outerr != '':
+                if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and any(x in outerr for x in ['ERROR','Error','error','Exception']):
+                    log.error(logid+'STOPPING: '+str(outerr))
                     job.kill()
                     sys.exit()
                 else:
-                    log.info(logid+str(err))
+                    log.info(logid+str(outerr))
             if job.poll() is not None:
                 break
 
         if job.returncode == 0:
-            output = str.join('',job.stdout.readlines()).rstrip()
+            output, outerr = job.communicate()
+            output = str.join('',output).rstrip()
             if output and output != '':
                 log.info(logid+'JOB FINISHED: '+output)
             return job.poll()
         else:
-            output = str.join('',job.stdout.readlines()).rstrip()
-            err = str.join('',job.stderr.readlines()).rstrip()
-            if err and err != '' or output and output != '':
-                log.error(logid+'ERROR: '+errput+output)
+            output, outerr = job.communicate()
+            output = str.join('',output).rstrip()
+            outerr = str.join('',outerr).rstrip()
+            if outerr and outerr != '' or output and output != '':
+                log.error(logid+'ERROR: '+outerr+output)
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
