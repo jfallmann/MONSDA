@@ -58,8 +58,3 @@ rule run_deseq2:
             outdir = outdir,
             compare = comparison
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log}"
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

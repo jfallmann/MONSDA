@@ -16,9 +16,6 @@ loglevel="INFO"
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    #if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
-    #    makelogdir('LOGS')
-    #    open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
     if any(x in scriptname for x in ['RunSnakemake','Configurator']):
         log = logging.getLogger(scriptname)
     else:

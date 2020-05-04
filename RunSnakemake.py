@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Sat May  2 12:15:41 2020 (+0200)
+# Last-Updated: Mon May  4 12:20:30 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 951
+#     Update #: 1003
 # URL:
 # Doc URL:
 # Keywords:
@@ -94,7 +94,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if unlock:
             log.info(logid+'Unlocking directory')
             jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
-            log.info(logid+'RUNNING '+str(jobtorun))
+            log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
 
@@ -201,11 +201,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
 
+        rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=os.path.join(samplecond(SAMPLES,config)[0]))\n'
+
         if preprocess:
             log.info(logid+'STARTING PREPROCESSING')
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
             for condition in conditions:
+                log.debug(logid+'Working on condition: '+str(condition))
                 for subwork in preprocess:
                     subconf = NestedDefaultDict()
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
@@ -242,8 +245,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
+                                smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
+
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(smk.read())
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json'])))
                         if os.path.exists(confo):
@@ -259,6 +268,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
 
+        '''
+        END OF PREPROCESSING, START OF PROCESSING
+        '''
+
+        allmap = 'expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
+        allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))'
+        allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=os.path.join(samplecond(SAMPLES,config)[0]))'
+        alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))'
+        alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
+
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:
@@ -272,24 +291,27 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                             line = re.sub(condapath,'conda:  "../',line)
                             smkout.write(line)
-                            #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
 
                 if 'QC' in subworkflows and 'QC' in config:
                     makeoutdir('QC')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
                     if 'MAPPING' in subworkflows:
                         with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write('rule themall:\n\tinput:\texpand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config)),\n\t\texpand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))\n\n')
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                            smkout.write('rule themall:\n\tinput:\t'+allmap+',\n\t\t'+allqc+'\n\n')
                     else:
-                        with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write('rule themall:\n\tinput:\texpand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))\n\n')
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                        if 'TRIMMING' in subworkflows:
+                            with open(smko, 'a') as smkout:
+                                smkout.write('rule themall:\n\tinput:\t'+alltrimqc+'\n\n')
+                        else:
+                            with open(smko, 'a') as smkout:
+                                smkout.write('rule themall:\n\tinput:\t'+allrawqc+'\n\n')
+
+                if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
+                    log.info(logid+'Mapping without QC!')
+                    with open(smko, 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write('rule themall:\n\tinput:\t'+allmap+'\n\n')
+                        smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
                     log.info(logid+'Simulating read trimming as trimming is not part of the workflow!')
@@ -298,6 +320,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+
+                if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
+                    log.info(logid+'Trimming without QC!')
+                    with open(smko, 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(alltrim+'\n')
                         smkout.write('\n\n')
 
                 subconf = NestedDefaultDict()
@@ -329,6 +358,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
+                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
+                    with open(smko, 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+
+                smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                with open(smko, 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(smk.read())
 
                 confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json'])))
                 if os.path.exists(confo):
@@ -444,13 +483,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                     line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
-                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n\n')
+                            smkout.write('\n')
+
+                            smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                            with open(smko, 'a') as smkout:
+                                with open(smkf,'r') as smk:
+                                    smkout.write(smk.read())
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subconfig.json'])))
                         if os.path.exists(confo):

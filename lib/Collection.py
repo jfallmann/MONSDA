@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Apr 30 13:29:05 2020 (+0200)
+# Last-Updated: Mon May  4 09:22:48 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1860
+#     Update #: 1861
 # URL:
 # Doc URL:
 # Keywords:
@@ -192,7 +192,7 @@ def get_conditions(samples, config):
     for k in keysets_from_dict(config['SOURCE']):
         ret.append(k)
     log.debug(logid+str(ret))
-    return ret
+    return list(set(ret))
 
 @check_run
 def get_samples_from_dir(id, condition, setting, config):

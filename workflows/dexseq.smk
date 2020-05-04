@@ -62,8 +62,3 @@ rule run_dexseq:
             outdir = outdir,
             compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {input.flat} {params.outdir} {params.compare} {threads} 2> {log}"
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

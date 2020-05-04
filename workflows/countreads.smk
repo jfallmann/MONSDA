@@ -96,11 +96,6 @@ rule themall:
     params: bins = BINS
     shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> COUNTS/Summary;fi;done;touch {output.a}"
 
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))
-
 #rule count_summary:
 #    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
 #    output: c = lambda x,input: expand("COUNTS/{cdir}/Summary", cdir=os.path.dirname(wildcards.input.c[0]))

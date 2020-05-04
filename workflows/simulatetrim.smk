@@ -16,7 +16,3 @@ else:
         threads: 1
         params: filetolink = lambda w,input: "{r}".format(r=os.path.abspath(input.r1[0]))
         shell:  "ln -s {params.filetolink} {output.r1}"
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

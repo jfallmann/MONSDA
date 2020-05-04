@@ -71,8 +71,3 @@ rule run_diego:
             compare = comparison,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
     shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond {params.cpara} -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} {params.cpara} 2>> {log};done"
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

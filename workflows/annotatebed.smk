@@ -100,16 +100,3 @@ rule MergeAnnoBed:
     conda:  "snakes/envs/bedtools.yaml"
     threads: 1
     shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
-
-#rule themall:
-#    input:  rules.MergeAnnoBed.output
-#    output: "DONE/BED/{file}_{type}"
-#    run:
-#        for f in output:
-#            with open(f, "w") as out:
-#                        out.write("DONE")
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

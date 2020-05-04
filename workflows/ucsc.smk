@@ -156,16 +156,3 @@ rule GenerateTrack:
             options = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'UCSC')['OPTIONS'][0].items()),
             uid = lambda wildcards: "{src}".format(src='_'.join(source_from_sample(wildcards.file,config).split(os.sep)))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
-
-#rule themall:
-#    input:  rules.GenerateTrack.output
-#    output: "DONE/UCSC/{file}_{type}_tracks"
-#    run:
-#        for f in output:
-#            with open(f, "w") as out:
-#                out.write("DONE")
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))

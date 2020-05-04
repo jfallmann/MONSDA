@@ -48,8 +48,3 @@ rule sam2bamuniq:
     params: bins=BINS,
             fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
     shell: "zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
-
-onsuccess:
-    print("Workflow finished, no error")
-onerror:
-	print("ERROR: "+str({log}))
