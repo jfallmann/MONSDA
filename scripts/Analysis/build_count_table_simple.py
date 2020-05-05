@@ -140,7 +140,6 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 lineNumber=0
                 for line in myInput:
                     if '#' in line[0:5] or '.bam' in line[-10:]:
-                        #log.debug(logid+'Rep: '+str(replicate)+'\t'+'Line: '+str(line))
                         continue
                     columns = line.strip().split('\t')
                     if columns[0] != "name" and columns[0] != "Geneid" and columns[1]!="count":
@@ -206,8 +205,8 @@ if __name__ == '__main__':
         args=parseargs()
         makelogdir('LOGS')
         try:
-            log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
-            log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+            log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+            #log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
