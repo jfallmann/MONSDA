@@ -50,8 +50,7 @@ rule count_unique_mappers:
 
 rule featurecount:
     input:  s = "MAPPED/{file}_mapped_sorted.bam",
-    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted.counts"
-            #t = temp("COUNTS/Featurecounter_{feat}s/{file}.anno")
+    output: c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts"
     log:    "LOGS/{file}/featurecount_{feat}s.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -64,8 +63,7 @@ rule featurecount:
 
 rule featurecount_unique:
     input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-    output: c = "COUNTS/Featurecounter_{feat}s/{file}_mapped_sorted_unique.counts"
-            #t = temp("COUNTS/Featurecounter_{feat}s/{file}_unique.anno")
+    output: c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
