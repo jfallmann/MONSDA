@@ -149,7 +149,11 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                             newListi=[]
                             myMatrix.append(newListi)
                             myMatrix[lineNumber].append(str(columns[0]))
-                        myMatrix[lineNumber].append(round(float(columns[-1])))
+                        if len(columns) > 1 and columns[-1] != columns[0]:
+                            myMatrix[lineNumber].append(round(float(columns[-1])))
+                        else:
+                            myMatrix[lineNumber].append('0')
+                myInput.close()
 
         line = "\t".join(myMatrix[0])
         annos = list()
