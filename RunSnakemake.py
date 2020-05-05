@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon May  4 12:20:30 2020 (+0200)
+# Last-Updated: Tue May  5 07:59:15 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1003
+#     Update #: 1004
 # URL:
 # Doc URL:
 # Keywords:
@@ -563,7 +563,6 @@ def runjob(jobtorun):
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
     except Exception as err:
-        job.kill()
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

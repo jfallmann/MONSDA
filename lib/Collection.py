@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon May  4 09:22:48 2020 (+0200)
+# Last-Updated: Tue May  5 07:46:05 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1861
+#     Update #: 1862
 # URL:
 # Doc URL:
 # Keywords:
@@ -425,7 +425,7 @@ def get_reps(samples,config,analysis):
         ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
         ret['conds'].append(partconf['GROUPS'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
-                ret['types'].append(partconf['TYPES'][idx])
+                ret['types'].append(partconf['TYPES'][idx].replace(',','_'))
         else:
             ret['types'].append('std')
 

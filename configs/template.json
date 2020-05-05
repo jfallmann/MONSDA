@@ -204,7 +204,7 @@
     "DE": {
         "TOOLS" :
         {
-            "deseq2" : "Analysis/DE/DESeq2.R",
+            "deseq2" : "Analysis/DE/DESEQ2.R",
             "edger"  : "Analysis/DE/EDGER.R"
         },
         "COMPARABLE" :
@@ -236,7 +236,7 @@
     "DEU" : {
         "TOOLS" :
         {
-            "dexseq" : "Analysis/DEU/DEXSeq.R",
+            "dexseq" : "Analysis/DEU/DEXSEQ.R",
             "edger"  : "Analysis/DEU/EDGER.R"
         },
         "COMPARABLE" :
