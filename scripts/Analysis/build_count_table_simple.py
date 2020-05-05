@@ -140,7 +140,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 lineNumber=0
                 for line in myInput:
                     if '#' in line[0:5] or '.bam' in line[-10:]:
-                        log.debug(logid+'Rep: '+str(replicate)+'\t'+'Line: '+str(line))
+                        #log.debug(logid+'Rep: '+str(replicate)+'\t'+'Line: '+str(line))
                         continue
                     columns = line.strip().split('\t')
                     if columns[0] != "name" and columns[0] != "Geneid" and columns[1]!="count":
