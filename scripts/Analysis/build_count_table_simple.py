@@ -120,8 +120,8 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         for gruppies in conds:
             condition_index=-1
             rep_nr=0
-            for replicates in my_groups[gruppies].replicate_paths:
-                log.info(logid+'Processing: '+str(replicates))
+            for replicate in my_groups[gruppies].replicate_paths:
+                log.info(logid+'Processing: '+str(replicate))
                 condition_index +=1
                 sample_counter+=1
                 rep_nr+=1
@@ -132,17 +132,18 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 else:
                     myMatrix[0].append(str(my_groups[gruppies].group_name)+'_'+str(rep_nr))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
-                if '.gz' in replicates:
-                    myInput = gzip.open(replicates,'r')
+                if '.gz' in replicate:
+                    myInput = gzip.open(replicate,'r')
                 else:
-                    myInput = open(replicates,'r')
+                    myInput = open(replicate,'r')
 
                 lineNumber=0
                 for line in myInput:
                     if '#' in line[0:5] or '.bam' in line[-10:]:
+                        log.debug(logid+'Rep: '+str(replicate)+'\t'+'Line: '+str(line))
                         continue
                     columns = line.strip().split('\t')
-                    if columns[0] != "name" and columns[1]!="count":
+                    if columns[0] != "name" and columns[0] != "Geneid" and columns[1]!="count":
                         lineNumber+=1
                         if sample_counter==1:
                             newListi=[]
