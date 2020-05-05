@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May  5 08:10:20 2020 (+0200)
+# Last-Updated: Tue May  5 13:31:19 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1863
+#     Update #: 1864
 # URL:
 # Doc URL:
 # Keywords:
@@ -659,7 +659,7 @@ def checkpaired_rep(sample,config):
         tmplist = check
         log.debug(logid+'S: '+str(tmplist))
         p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        ret.append(p)
+        ret.append(str(p).replace(',','_'))
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)
 
