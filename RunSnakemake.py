@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May  5 07:59:15 2020 (+0200)
+# Last-Updated: Tue May  5 10:09:22 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1004
+#     Update #: 1009
 # URL:
 # Doc URL:
 # Keywords:
@@ -273,9 +273,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         allmap = 'expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
-        allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)[0]))'
-        allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=os.path.join(samplecond(SAMPLES,config)[0]))'
-        alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))'
+        allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+        allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+        alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
 
         if subworkflows:
@@ -532,14 +532,17 @@ def runjob(jobtorun):
             if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
-                log.info(logid+str(output))
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
                     log.error(logid+'STOPPING: '+str(output))
+                    log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
                     job.kill()
                     sys.exit()
+                else:
+                    log.info(logid+str(output))
             if outerr and outerr != '':
                 if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and any(x in outerr for x in ['ERROR','Error','error','Exception']):
                     log.error(logid+'STOPPING: '+str(outerr))
+                    log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
                     job.kill()
                     sys.exit()
                 else:
@@ -559,6 +562,7 @@ def runjob(jobtorun):
             outerr = str.join('',outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
                 log.error(logid+'ERROR: '+outerr+output)
+                log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 

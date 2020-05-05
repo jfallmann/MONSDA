@@ -1,10 +1,9 @@
 rule qcall:
-    input: expand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(samplecond(SAMPLES,config)))
-    #input: expand("QC/Multi/{condition}/multiqc_report.html",condition=os.path.join(*samplecond(SAMPLES,config)[0].split(os.sep)[:-1]))
+    input: expand("QC/Multi/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
 
 if paired == 'paired':
     rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=SAMPLES, read=['R1','R2']),
+        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']),
         output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{condition}/tmp"),
                 lst = "QC/Multi/{condition}/qclist.txt"
@@ -15,7 +14,7 @@ if paired == 'paired':
 
 else:
     rule multiqc:
-        input: expand("QC/{rawfile}_fastqc.zip", rawfile=SAMPLES),
+        input: expand("QC/{rawfile}_fastqc.zip", rawfile=list(SAMPLES)),
         output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{condition}/tmp"),
                 lst = "QC/Multi/{condition}/qclist.txt"
