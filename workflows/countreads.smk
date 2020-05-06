@@ -1,13 +1,8 @@
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-#wildcard_constraints:
-#    feat="!os.sep()"
-
-rule all:
-    input:  #expand("COUNTS/Features_{feat}s", feat=config['COUNTING']['FEATURES'].keys()),
-            #expand("COUNTS/Features_{feat}s_unique", feat=config['COUNTING']['FEATURES'].keys()),
-            #"COUNTS/Summary",
-            expand("DONE/{file}/counts_{feat}", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+rule themall:
+    input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+            expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
             expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
@@ -83,13 +78,3 @@ rule summarize_counts:
     conda:  "snakes/envs/base.yaml"
     threads: 1
     shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
-
-rule themall:
-    input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-            c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-    output: a = "DONE/{file}/counts_{feat}"
-    conda:  "snakes/envs/base.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> COUNTS/Summary;fi;done;touch {output.a}"
