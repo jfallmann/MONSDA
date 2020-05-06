@@ -12,7 +12,7 @@ rule themall:
             qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
             dift = expand("{outdir}{comparison}_genes_{sort}.tsv", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
             plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=compstr),
-            session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
+            session = expand("{outdir}EDGER_DE_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
