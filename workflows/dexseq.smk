@@ -3,11 +3,12 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 
 outdir="DEU/DEXSEQ/"
 comparison=comparable_as_string2(config,'DEU')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
-           plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
-           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
+    input: tbl = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
+           plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=compstr),
+           html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=compstr),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
 
 rule prepare_count_annotation:

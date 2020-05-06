@@ -3,14 +3,15 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 
 outdir="DE/EDGER/"
 comparison=comparable_as_string2(config,'DE')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
             tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
             bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}{comparison}_genes_{sort}.tsv", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")], sort=["logFC-sorted","pValue-sorted"]),
-            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
+            dift = expand("{outdir}{comparison}_genes_{sort}.tsv", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
+            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=compstr),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:

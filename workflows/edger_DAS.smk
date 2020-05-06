@@ -3,6 +3,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES
 
 outdir="DAS/EDGER/"
 comparison=comparable_as_string2(config,'DAS')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
@@ -10,8 +11,8 @@ rule themall:
             tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
             bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")], test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")], n=[str(i) for i in range(1,11)]),
+            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
+            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:

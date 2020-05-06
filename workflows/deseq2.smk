@@ -1,17 +1,18 @@
 DEBIN, DEENV = env_bin_from_config3(config,'DE')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-outdir="DE/DESEQ2/"
-comparison=comparable_as_string2(config,'DE')
+outdir = "DE/DESEQ2/"
+comparison = comparable_as_string2(config,'DE')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")]),
-            csv = expand("{outdir}{comparison}_DESeq2.csv.gz", outdir=outdir, comparison=[i.split(":")[0] for i in comparison.split(",")],
+    input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=compstr),
+            csv  = expand("{outdir}{comparison}_DESeq2.csv.gz", outdir=outdir, comparison=compstr),
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
-            pca = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
-            vst = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
-            rld = expand("{outdir}DESeq2_rld.txt.gz", outdir=outdir),
-            vsd = expand("{outdir}DESeq2_vsd.txt.gz", outdir=outdir),
+            pca  = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
+            vst  = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
+            rld  = expand("{outdir}DESeq2_rld.txt.gz", outdir=outdir),
+            vsd  = expand("{outdir}DESeq2_vsd.txt.gz", outdir=outdir),
             session = expand("{outdir}DESeq2_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_unique:
