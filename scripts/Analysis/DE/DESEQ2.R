@@ -100,7 +100,7 @@ for(contrast in comparison[[1]]){
         write.table(as.data.frame(resOrdered), gzfile(paste(contrast_name,'_DESEQ2.csv.gz',sep="")), sep="\t")
 
                                         #plotMA
-        pdf(paste(cname,"DESeq2_MA.pdf",sep="_"))
+        pdf(paste(contrast_name,"DESeq2_MA.pdf",sep="_"))
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
