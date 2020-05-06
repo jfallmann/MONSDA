@@ -98,7 +98,7 @@ for(contrast in comparison[[1]]){
         resOrdered <- res[order(res$log2FoldChange),]
 
                                         #write the table to a csv file
-        write.table(as.data.frame(resOrdered), gzfile(paste(contrast_name,'_DESEQ2.csv.gz',sep="")), sep="\t")
+        write.table(as.data.frame(resOrdered), gzfile(paste(contrast_name,'_DESeq2.csv.gz',sep="")), sep="\t")
 
                                         #plotMA
         pdf(paste(contrast_name,"DESeq2_MA.pdf",sep="_"))
@@ -111,7 +111,7 @@ for(contrast in comparison[[1]]){
         print(paste('cleanup done for ', contrast_name, sep=''))
     }, error=function(e){
         rm(res,resOrdered)
-        file.create(paste(contrast_name,'_DESEQ2.csv.gz',sep=""))
+        file.create(paste(contrast_name,'_DESeq2.csv.gz',sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
