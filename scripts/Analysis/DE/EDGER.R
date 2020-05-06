@@ -13,16 +13,6 @@ outdir          <- args[3]
 cmp             <- args[4]
 availablecores  <- as.integer(args[5])
 
-## for manual use
-# wd <-"/home/roberto/Rscripts/DE/"
-# setwd(wd)
-# anname          <- "data/ANNOTATION.gz"
-# countfile       <- "data/COUNTS.gz"
-# outdir          <- wd
-# cmp             <- "ADvsCTRL.all:AD_total+AD_3+AD_5_6+AD_white-vs-CTRL_total+CTRL_3+CTRL_5_6+CTRL_white,TOTALvsSINGLE.AD:AD_total-vs-AD_3+AD_5_6+AD_white,TOTALvsSINGLE.CTRL:CTRL_total-vs-CTRL_$+CTRL_5_6+CTRL_white,ADvsCTRL.total:AD_total-vs-CTRL_total,ADvsCTRL.white:AD_white-vs-CTRL_white,ADvsCTRL.3:AD_3-vs-CTRL_3,ADvsCTRL.5_6:AD_5_6-vs-CTRL_5_6"
-# availablecores  <- as.integer("1")
-
-
 ## Gives Colors for MDS Plot
 RainbowColor <- function(groups){
   groupsAsNumbers <- as.numeric(groups)

@@ -15,7 +15,8 @@ outdir <- args[3]
 cmp    <- args[4]
 availablecores <- as.integer(args[5])
 
-#register(MulticoreParam(availablecores))
+### MAIN ###
+############
 
 anno <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(anno) <- c("condition","type")

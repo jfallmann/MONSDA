@@ -16,6 +16,9 @@ outdir    <- args[4]
 cmp       <- args[5]
 availablecores <- as.integer(args[6])
 
+### MAIN ###
+############
+
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type")
@@ -122,7 +125,7 @@ for(contrast in comparisons[[1]]){
     message(paste("Comparing ",contrast_name, sep=""))
 
     BPPARAM = MulticoreParam(workers=availablecores)
-    
+
                                         #initialize empty objects
     dxdpair=""
     dxr1=""
@@ -132,15 +135,15 @@ for(contrast in comparisons[[1]]){
                                                 # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
-        
+
         c1 <- strsplit(contrast_name,"vs")[[1]][1]
         c2 <- strsplit(strsplit(contrast_name,"vs")[[1]][2],'\\.')[[1]][1]
-        
+
         dxdpair = dxd[colData(dxd)$condition %in% A | colData(dxd)$condition %in% B]
-        
+
         names(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
         levels(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
-        
+
         dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
