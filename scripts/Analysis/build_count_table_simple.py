@@ -120,8 +120,8 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         for gruppies in conds:
             condition_index=-1
             rep_nr=0
-            for replicates in my_groups[gruppies].replicate_paths:
-                log.info(logid+'Processing: '+str(replicates))
+            for replicate in my_groups[gruppies].replicate_paths:
+                log.info(logid+'Processing: '+str(replicate))
                 condition_index +=1
                 sample_counter+=1
                 rep_nr+=1
@@ -132,23 +132,27 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 else:
                     myMatrix[0].append(str(my_groups[gruppies].group_name)+'_'+str(rep_nr))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
-                if '.gz' in replicates:
-                    myInput = gzip.open(replicates,'r')
+                if '.gz' in replicate:
+                    myInput = gzip.open(replicate,'r')
                 else:
-                    myInput = open(replicates,'r')
+                    myInput = open(replicate,'r')
 
                 lineNumber=0
                 for line in myInput:
                     if '#' in line[0:5] or '.bam' in line[-10:]:
                         continue
                     columns = line.strip().split('\t')
-                    if columns[0] != "name" and columns[1]!="count":
+                    if columns[0] != "name" and columns[0] != "Geneid" and columns[1]!="count":
                         lineNumber+=1
                         if sample_counter==1:
                             newListi=[]
                             myMatrix.append(newListi)
                             myMatrix[lineNumber].append(str(columns[0]))
-                        myMatrix[lineNumber].append(round(float(columns[-1])))
+                        if len(columns) > 1 and columns[-1] != columns[0]:
+                            myMatrix[lineNumber].append(round(float(columns[-1])))
+                        else:
+                            myMatrix[lineNumber].append('0')
+                myInput.close()
 
         line = "\t".join(myMatrix[0])
         annos = list()
@@ -201,8 +205,8 @@ if __name__ == '__main__':
         args=parseargs()
         makelogdir('LOGS')
         try:
-            log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
-            log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+            log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=args.loglevel)
+            #log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 

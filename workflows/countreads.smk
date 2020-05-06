@@ -51,7 +51,6 @@ rule count_unique_mappers:
 rule featurecount:
     input:  s = "MAPPED/{file}_mapped_sorted.bam",
     output: c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts"
-            #t = temp("COUNTS/Featurecounts_{feat}s/{file}.anno")
     log:    "LOGS/{file}/featurecount_{feat}s.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -65,7 +64,6 @@ rule featurecount:
 rule featurecount_unique:
     input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
     output: c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts"
-            #t = temp("COUNTS/Featurecounts_{feat}s/{file}_unique.anno")
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -95,59 +93,3 @@ rule themall:
     threads: 1
     params: bins = BINS
     shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> COUNTS/Summary;fi;done;touch {output.a}"
-
-#rule count_summary:
-#    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-#    output: c = lambda x,input: expand("COUNTS/{cdir}/Summary", cdir=os.path.dirname(wildcards.input.c[0]))
-#    conda:  "snakes/envs/base.yaml"
-#    threads: 1
-#    params: bins = BINS
-#    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done"
-#
-#rule themall:
-#    input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-#            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys())
-#    output: a = "COUNTS/DONE"
-#    conda:  "snakes/envs/base.yaml"
-#    threads: 1
-#    params: bins = BINS
-#    shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}}_unique;fi;done && touch {output.a}"
-
-###rnacounter and cufflinks are to be added later
-#rule RNAcountReads:
-#   input:  "MAPPED/{file}_mapped_sorted.bam",
-#           "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
-#   output: "COUNTS/RNAcounter/{file}_mapped_sorted.counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.gene_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.transcript_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.exon_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.intron_counts"
-#   shell:  "/usr/bin/rnacounter --nh -n 1 -t genes,transcripts,exons,introns {input[0]} {ANNOTATION} > {output[0]} && grep 'gene' {output[0]} > {output[1]} && grep 'transcript' {output[0]} > {output[2]} && grep 'exon' {output[0]} > {output[3]} && grep 'intron' {output[0]} > {output[4]}"
-#
-#rule RNAcountReads_uniq:
-#   input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-#           "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts"
-#   output: "COUNTS/RNAcounter/{file}_mapped_sorted_unique.counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.gene_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.transcript_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.exon_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.intron_counts"
-#   shell:  "/usr/bin/rnacounter -n 1 -t genes,transcripts,exons,introns {input[0]} {ANNOTATION} > {output[0]} && grep 'gene' {output[0]} > {output[1]} && grep 'transcript' {output[0]} > {output[2]} && grep 'exon' {output[0]} > {output[3]} && grep 'intron' {output[0]} > {output[4]}"
-#
-#rule cufflinks:
-#   input:  "MAPPED/{file}_mapped_sorted.bam",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.counts"
-#   output: "QUANT/Cufflinks/{file}/transcripts.gtf"
-#   log:    "LOGS/Cufflinks/{file}.log"
-#   params: out="QUANT/Cufflinks/{file}"
-#   threads: 20
-#   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
-#
-#rule cufflinks_uniq:
-#   input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.counts"
-#   output: "QUANT/Cufflinks/{file}_unique/transcripts.gtf"
-#   log:    "LOGS/Cufflinks/{file}.log"
-#   params: out="QUANT/Cufflinks/{file}_unique"
-#   threads: 20
-#   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
