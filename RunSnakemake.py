@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May  5 10:09:22 2020 (+0200)
+# Last-Updated: Wed May  6 11:05:07 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1009
+#     Update #: 1010
 # URL:
 # Doc URL:
 # Keywords:
@@ -490,10 +490,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n')
 
-                            smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
-                            with open(smko, 'a') as smkout:
-                                with open(smkf,'r') as smk:
-                                    smkout.write(smk.read())
+                        smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(smk.read())
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subconfig.json'])))
                         if os.path.exists(confo):
