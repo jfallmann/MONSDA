@@ -46,7 +46,8 @@ rule run_edger:
             rules.themall.input.qld,
             rules.themall.input.dift,
             rules.themall.input.plot,
-            rules.themall.input.session
+            rules.themall.input.session,
+            temp(expand("{outdir}Rplots.pdf", outdir=outdir))
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

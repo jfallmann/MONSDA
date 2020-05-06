@@ -16,7 +16,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = "COUNTS/Featurecounter_DAS_edger/{file}_mapped_sorted_unique.counts"
+    output: cts   = "COUNTS/Featurecounts_DAS_edger/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -48,7 +48,8 @@ rule run_edger:
             rules.themall.input.qld,
             rules.themall.input.dift,
             rules.themall.input.tops,
-            rules.themall.input.session
+            rules.themall.input.session,
+            temp(expand("{outdir}Rplots.pdf", outdir=outdir))
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

@@ -1,13 +1,8 @@
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-#wildcard_constraints:
-#    feat="!os.sep()"
-
-rule all:
-    input:  #expand("COUNTS/Features_{feat}s", feat=config['COUNTING']['FEATURES'].keys()),
-            #expand("COUNTS/Features_{feat}s_unique", feat=config['COUNTING']['FEATURES'].keys()),
-            #"COUNTS/Summary",
-            expand("DONE/{file}/counts_{feat}", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+rule themall:
+    input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+            expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
             expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
@@ -83,69 +78,3 @@ rule summarize_counts:
     conda:  "snakes/envs/base.yaml"
     threads: 1
     shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
-
-rule themall:
-    input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-            c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-    output: a = "DONE/{file}/counts_{feat}"
-    conda:  "snakes/envs/base.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> COUNTS/Summary;fi;done;touch {output.a}"
-
-#rule count_summary:
-#    input:  c = expand(rules.summarize_counts.output, file=samplecond(SAMPLES,config))
-#    output: c = lambda x,input: expand("COUNTS/{cdir}/Summary", cdir=os.path.dirname(wildcards.input.c[0]))
-#    conda:  "snakes/envs/base.yaml"
-#    threads: 1
-#    params: bins = BINS
-#    shell:  "for i in {input.c};do if [[ $i == *\".summary\"*  ]];then cat $i >> {output.c};fi;done"
-#
-#rule themall:
-#    input:  f1 = expand(rules.featurecount.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys()),
-#            f2 = expand(rules.featurecount_unique.output.c, file=samplecond(SAMPLES,config),feat=config['COUNTING']['FEATURES'].keys())
-#    output: a = "COUNTS/DONE"
-#    conda:  "snakes/envs/base.yaml"
-#    threads: 1
-#    params: bins = BINS
-#    shell:  "for i in {input.f1};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}};fi;done && for i in {input.f2};do if [[ $i == *\".counts\"*  ]];then out=${{i#COUNTS/Featurecounter_*}};out=${{out%%\/*}}; cat $i\.summary >> COUNTS/Features_${{out}}_unique;fi;done && touch {output.a}"
-
-###rnacounter and cufflinks are to be added later
-#rule RNAcountReads:
-#   input:  "MAPPED/{file}_mapped_sorted.bam",
-#           "COUNTS/Featurecounter/{file}_mapped_sorted.counts"
-#   output: "COUNTS/RNAcounter/{file}_mapped_sorted.counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.gene_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.transcript_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.exon_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.intron_counts"
-#   shell:  "/usr/bin/rnacounter --nh -n 1 -t genes,transcripts,exons,introns {input[0]} {ANNOTATION} > {output[0]} && grep 'gene' {output[0]} > {output[1]} && grep 'transcript' {output[0]} > {output[2]} && grep 'exon' {output[0]} > {output[3]} && grep 'intron' {output[0]} > {output[4]}"
-#
-#rule RNAcountReads_uniq:
-#   input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-#           "COUNTS/Featurecounter/{file}_mapped_sorted_unique.counts"
-#   output: "COUNTS/RNAcounter/{file}_mapped_sorted_unique.counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.gene_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.transcript_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.exon_counts",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.intron_counts"
-#   shell:  "/usr/bin/rnacounter -n 1 -t genes,transcripts,exons,introns {input[0]} {ANNOTATION} > {output[0]} && grep 'gene' {output[0]} > {output[1]} && grep 'transcript' {output[0]} > {output[2]} && grep 'exon' {output[0]} > {output[3]} && grep 'intron' {output[0]} > {output[4]}"
-#
-#rule cufflinks:
-#   input:  "MAPPED/{file}_mapped_sorted.bam",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted.counts"
-#   output: "QUANT/Cufflinks/{file}/transcripts.gtf"
-#   log:    "LOGS/Cufflinks/{file}.log"
-#   params: out="QUANT/Cufflinks/{file}"
-#   threads: 20
-#   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
-#
-#rule cufflinks_uniq:
-#   input:  "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-#           "COUNTS/RNAcounter/{file}_mapped_sorted_unique.counts"
-#   output: "QUANT/Cufflinks/{file}_unique/transcripts.gtf"
-#   log:    "LOGS/Cufflinks/{file}.log"
-#   params: out="QUANT/Cufflinks/{file}_unique"
-#   threads: 20
-#   shell:  "cufflinks -o {params.out} -p {threads} -G {ANNOTATION} {input[0]}"
