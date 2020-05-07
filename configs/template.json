@@ -221,7 +221,7 @@
                     "OPTIONS":
                     [
                         {
-                            "-t": "exon", #make sure this is the feature you want to count, gene would include introns and exons
+                            "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
                             "-g": "gene_id",
                             "-f": "",
                             "--fraction": "",
@@ -291,13 +291,12 @@
                             "--fraction": "",
                             "-O": ""
                         },
-                        { # analysis options
+                        { # analysis options for diego
                             "-c": "10",
                             "-d": "3",
                             "-q": "0.01",
                             "-z": "1.0",
                             "-r": "",
-
                         }
                     ]
                 }
