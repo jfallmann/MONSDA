@@ -55,8 +55,7 @@ rule run_dexseq:
     output: plot = rules.themall.input.plot,
             tbl  = rules.themall.input.tbl,
             html = rules.themall.input.html,
-            session = rules.themall.input.session,
-            temp(expand("{outdir}Rplots.pdf", outdir=outdir))
+            session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_dexseq.log",outdir=outdir)
     conda:  "snakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

@@ -49,8 +49,7 @@ rule run_deseq2:
             rules.themall.input.heat,
             rules.themall.input.pca,
             rules.themall.input.vst,
-            rules.themall.input.session,
-            temp(expand("{outdir}Rplots.pdf", outdir=outdir))
+            rules.themall.input.session
     log:    expand("LOGS/{outdir}run_deseq2.log",outdir=outdir)
     conda:  "snakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
