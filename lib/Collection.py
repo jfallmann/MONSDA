@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May  5 13:31:19 2020 (+0200)
+# Last-Updated: Thu May  7 12:00:58 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1864
+#     Update #: 1865
 # URL:
 # Doc URL:
 # Keywords:
@@ -100,7 +100,7 @@ try:
         handler = logging.FileHandler(os.path.abspath('LOGS/RunSnakemake.log'), mode='a')
         handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
         log.addHandler(handler)
-        lvl = log.level if log.level != 0 else 'INFO'
+        lvl = log.level if log.level else 'DEBUG'
         log.setLevel(lvl)
 
 except Exception as err:
