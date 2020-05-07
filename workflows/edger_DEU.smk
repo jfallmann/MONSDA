@@ -6,13 +6,13 @@ comparison=comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
+    input:  all = expand("{outdir}All_Conditions_MDS.pdf", outdir=outdir),
+            allsum = expand("{outdir}All_Conditions_sum_MDS.pdf", outdir=outdir),
             tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
-            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
-            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
+            bcv = expand("{outdir}All_Conditions_BCV.pdf", outdir=outdir),
+            qld = expand("{outdir}All_Conditions_QLDisp.pdf", outdir=outdir),
             dift = expand("{outdir}{comparison}_exons_{sort}.tsv", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=compstr),
+            plot = expand("{outdir}{comparison}_MD.pdf", outdir=outdir, comparison=compstr),
             session = expand("{outdir}EDGER_DEU_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
