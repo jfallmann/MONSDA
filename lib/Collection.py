@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri May  8 08:09:11 2020 (+0200)
+# Last-Updated: Fri May  8 12:06:28 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1867
+#     Update #: 1870
 # URL:
 # Doc URL:
 # Keywords:
@@ -87,16 +87,14 @@ import logging
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
-        logdir =  os.path.abspath('LOGS')
-        if not os.path.exists(logdir):
-            os.makedirs(logdir)
-        open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
-    if any(x in scriptname for x in ['Snakemake','Configurator']):
-        log = logging.getLogger(scriptname)
-    else:
-        log = logging.getLogger('RunSnakemake.Collection')
+    log = logging.getLogger(__name__.replace('.py',''))
     if not (log.hasHandlers()):
+        if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
+            logdir =  os.path.abspath('LOGS')
+            if not os.path.exists(logdir):
+                os.makedirs(logdir)
+            open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
+
         handler = logging.FileHandler(os.path.abspath('LOGS/RunSnakemake.log'), mode='a')
         handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
         log.addHandler(handler)

@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Mar  9 17:13:22 2020 (+0100)
+# Last-Updated: Fri May  8 12:10:43 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 551
+#     Update #: 552
 # URL:
 # Doc URL:
 # Keywords:
@@ -97,7 +97,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     oldconf = NestedDefaultDict()
     icslist = list()
 
-    todos = ','.join([x for x in [preprocess,workflows,postprocess] if x is not '' ]).split(',')
+    todos = ','.join([x for x in [preprocess,workflows,postprocess] if x != '' ]).split(',')
     for x in todos:
         if x not in config:
             log.error(logid+'Key '+str(x)+' not found in template, please check for typos!')
