@@ -16,7 +16,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: cts   = expand("{outdir}Featurecounts_DE_edger/{file}_mapped_sorted_unique.counts", outdir=outdir)
+    output: cts   = expand("{outdir}Featurecounts_DE_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_DE_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD

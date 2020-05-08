@@ -26,7 +26,7 @@ rule featurecount_dexseq_unique:
     input:  mapf = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_count_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_count_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
-    output: cts  = expand("{outdir}Featurecounts_dexseq/{file}_mapped_sorted_unique.counts", outdir=outdir)
+    output: cts  = expand("{outdir}Featurecounts_dexseq/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
