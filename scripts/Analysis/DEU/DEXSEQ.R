@@ -28,10 +28,11 @@ comparisons <- strsplit(cmp, ",")
 print(paste("Will analyze conditions ",comparisons,sep=""))
 
 if (length(levels(sampleData$type)) > 1){
-    design = ~ sample + exon + type:exon + condition:exon
-    reduced = ~ sample + exon + condition:exon
+    full = ~ sample + exon + type:exon + condition:exon
+    reduced = ~ sample + exon + type:exon
 } else{
-    design = ~ sample + exon + condition:exon
+    full = ~ sample + exon + condition:exon
+    reduced = ~ sample + exon
 }
 
 ## Read Fcount output and convert to dxd
@@ -110,7 +111,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 ### MAIN ###
 #read in count table and normalize
 
-dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = design, flattenedfile = flatanno)
+dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = full, flattenedfile = flatanno)
 
 setwd(outdir)
 
@@ -152,11 +153,7 @@ for(contrast in comparisons[[1]]){
         plotDispEsts( dxdpair )
         dev.off()
 
-        if (exists('reduced')){
-            dxdpair = testForDEU( dxdpair, reducedModel = reduced, fullModel = design, BPPARAM=BPPARAM )
-        }else{
-            dxdpair = testForDEU( dxdpair, BPPARAM=BPPARAM )
-        }
+        dxdpair = testForDEU( dxdpair, reducedModel = reduced, fullModel = full, BPPARAM=BPPARAM )
 
         dxdpair = estimateExonFoldChanges( dxdpair, fitExpToVar="condition", BPPARAM=BPPARAM)
 
