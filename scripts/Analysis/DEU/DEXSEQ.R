@@ -27,8 +27,9 @@ sampleData <- as.data.frame(sampleData)
 comparisons <- strsplit(cmp, ",")
 print(paste("Will analyze conditions ",comparisons,sep=""))
 
-if (length(levels(sampleData$type)) > 1){#FIX DESIGN
+if (length(levels(sampleData$type)) > 1){
     design = ~ sample + exon + type:exon + condition:exon
+    reduced = ~ sample + exon + condition:exon
 } else{
     design = ~ sample + exon + condition:exon
 }
@@ -151,7 +152,11 @@ for(contrast in comparisons[[1]]){
         plotDispEsts( dxdpair )
         dev.off()
 
-        dxdpair = testForDEU( dxdpair,BPPARAM=BPPARAM )
+        if (exists('reduced')){
+            dxdpair = testForDEU( dxdpair, reducedModel = reduced, fullModel = design, BPPARAM=BPPARAM )
+        }else{
+            dxdpair = testForDEU( dxdpair, BPPARAM=BPPARAM )
+        }
 
         dxdpair = estimateExonFoldChanges( dxdpair, fitExpToVar="condition", BPPARAM=BPPARAM)
 
