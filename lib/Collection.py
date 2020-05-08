@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu May  7 12:00:58 2020 (+0200)
+# Last-Updated: Fri May  8 08:09:11 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1865
+#     Update #: 1867
 # URL:
 # Doc URL:
 # Keywords:
@@ -416,13 +416,14 @@ def get_reps(samples,config,analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
-        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        scond = sample.split(os.sep)[3:-1]
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
+        partconf = subDict(config[analysis],scond)
         log.debug(logid+'CONF: '+str(partconf))
         ret['reps'].append(sample)
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[3:])],config))
         ret['conds'].append(partconf['GROUPS'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
                 ret['types'].append(str(partconf['TYPES'][idx]).replace(',','_'))
