@@ -112,6 +112,7 @@ for(contrast in comparison[[1]]){
     }, error=function(e){
         rm(res,resOrdered)
         file.create(paste(contrast_name,'_DESeq2.csv.gz',sep=""))
+        print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
