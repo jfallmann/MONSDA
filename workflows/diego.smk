@@ -66,7 +66,7 @@ rule run_diego:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][1].items()),
+            cpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][1].items()),
             outdir = outdir,
             compare = comparison,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
