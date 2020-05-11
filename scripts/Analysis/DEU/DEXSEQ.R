@@ -177,6 +177,7 @@ for(contrast in comparisons[[1]]){
         htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
         file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
         rm(dxdpair,dxr1)
+        print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }
