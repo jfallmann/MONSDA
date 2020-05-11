@@ -30,7 +30,7 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = expand("{outdir}Tables/COUNTS.gz",,outdir=outdir),
+    output:  tbl  = expand("{outdir}Tables/COUNTS.gz",outdir=outdir),
              anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
     log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
     conda:   "snakes/envs/"+DASENV+".yaml"
