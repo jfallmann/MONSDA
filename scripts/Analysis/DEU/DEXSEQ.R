@@ -114,10 +114,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = full, flattenedfile = flatanno)
 
 setwd(outdir)
-
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
-
-#dxd = estimateSizeFactors( dxd, BPPARAM=BPPARAM ) # we do this later on a per pair basis as we do not know about the biological variance between conditions, so this should be more safe
 
 for(contrast in comparisons[[1]]){
 
@@ -173,11 +170,11 @@ for(contrast in comparisons[[1]]){
 
 
     }, error=function(e){
-        file.create(paste("DEXSeq",contrast,"DispEsts.pdf",sep="_"))
-        csvout <- paste(paste('DEXSeq',contrast,sep='_'),'.tsv.gz', sep='')
+        file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
+        csvout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
-        pathout <- paste('DEXSeqReport',contrast,sep='_')
-        htmlout <- paste(paste('DEXSeq',contrast,sep='_'),'.html', sep='')
+        pathout <- paste('DEXSeqReport',contrast_name,sep='_')
+        htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
         file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
         rm(dxdpair,dxr1)
         cat("WARNING :",conditionMessage(e), "\n")
