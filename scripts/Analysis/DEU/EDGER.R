@@ -1,27 +1,37 @@
 
 suppressPackageStartupMessages({
-    require(edgeR)
-    require(dplyr)
-    library(BiocParallel)
+  require(edgeR)
+  require(dplyr)
+  library(BiocParallel)
 })
 
-args <- commandArgs(trailingOnly = TRUE)
+# args <- commandArgs(trailingOnly = TRUE)
+#
+# anname          <- args[1]
+# countfile       <- args[2]
+# outdir          <- args[3]
+# cmp             <- args[4]
+# availablecores  <- as.integer(args[5])
 
-anname          <- args[1]
-countfile       <- args[2]
-outdir          <- args[3]
-cmp             <- args[4]
-availablecores  <- as.integer(args[5])
+# for manual use
+wd <-"/home/roberto/Rscripts/DEU2/"
+setwd(wd)
+anname          <- "data/ANNOTATION.gz"
+countfile       <- "data/COUNTS.gz"
+outdir          <- wd
+cmp             <- "AD.allvsCTRL.all:AD_total+AD_3+AD_5_6+AD_white-vs-CTRL_total+CTRL_3+CTRL_5_6+CTRL_white,AD.totalvsAD.single:AD_total-vs-AD_3+AD_5_6+AD_white,CTRL.totalvsCTRL.single:CTRL_total-vs-CTRL_3+CTRL_5_6+CTRL_white,3:AD_3-vs-CTRL_3,5_6:AD_5_6-vs-CTRL_5_6,total:AD_total-vs-CTRL_total,white:AD_white-vs-CTRL_white"
+availablecores  <- as.integer("1")
+
 
 ## Gives Colors for MDS Plot
 RainbowColor <- function(groups){
-    groupsAsNumbers <- as.numeric(groups)
-    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-    cl <- c()
-    for(i in groupsAsNumbers){
-        cl <- c(cl,spektrum[i])
-    }
-    return(cl)
+  groupsAsNumbers <- as.numeric(groups)
+  spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
+  cl <- c()
+  for(i in groupsAsNumbers){
+    cl <- c(cl,spektrum[i])
+  }
+  return(cl)
 }
 
 
@@ -47,12 +57,7 @@ comparisons <- strsplit(cmp, ",")
 ## readin counttable
 read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
 colnames(dcounts) <- c("GeneID", rownames(sampleData))
-
-## create ExonID's
-id <- as.character(dcounts[,1])
-n <- id
-split(n,id) <- lapply(split(n ,id), seq_along )
-rownames(dcounts) <- sprintf("%s%s%03.f",id,":E",as.numeric(n))
+rownames(dcounts) <- dcounts[,1]
 dcounts <- dcounts[,2:ncol(dcounts)]
 
 ## get genes names out
@@ -75,14 +80,14 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 write.table(tmm, file=paste(outdir,"All_Conditions_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
-out <- paste(outdir,"All_Conditions_MDS.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_MDS.png",sep="")
+png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
 DGEsum <- sumTechReps(dge, ID=groups)
-out <- paste(outdir,"All_Conditions_sum_MDS.pdf", sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_sum_MDS.png", sep="")
+png(out, width = 400, height = 400)
 colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
 dev.off()
@@ -90,9 +95,9 @@ dev.off()
 
 ## Create design-table considering different types (paired, unpaired)
 if (length(levels(types))>1){
-    design <- model.matrix(~0+groups+types, data=sampleData)
+  design <- model.matrix(~0+groups+types, data=sampleData)
 } else {
-    design <- model.matrix(~0+groups, data=sampleData)
+  design <- model.matrix(~0+groups, data=sampleData)
 }
 colnames(design) <- levels(groups)
 
@@ -100,8 +105,8 @@ colnames(design) <- levels(groups)
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- paste(outdir,"All_Conditions_BCV.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_BCV.png",sep="")
+png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
 
@@ -109,49 +114,49 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- paste(outdir,"All_Conditions_QLDisp.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_QLDisp.png",sep="")
+png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+  contrast_name <- strsplit(contrast,":")[[1]][1]
+  contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    message(paste("Comparing ",contrast_name, sep=""))
+  message(paste("Comparing ",contrast_name, sep=""))
 
-                                        # determine contrast
-    A <- strsplit(contrast_groups[[1]][1], "\\+")
-    B <- strsplit(contrast_groups[[1]][2], "\\+")
-    minus <- 1/length(A[[1]])*(-1)
-    plus <- 1/length(B[[1]])
-    contrast <- cbind(integer(dim(design)[2]), colnames(design))
-    for(i in A[[1]]){
-        contrast[which(contrast[,2]==i)]<- minus
-    }
-    for(i in B[[1]]){
-        contrast[which(contrast[,2]==i)]<- plus
-    }
-    contrast <- as.numeric(contrast[,1])
+  # determine contrast
+  A <- strsplit(contrast_groups[[1]][1], "\\+")
+  B <- strsplit(contrast_groups[[1]][2], "\\+")
+  minus <- 1/length(A[[1]])*(-1)
+  plus <- 1/length(B[[1]])
+  contrast <- cbind(integer(dim(design)[2]), colnames(design))
+  for(i in A[[1]]){
+    contrast[which(contrast[,2]==i)]<- minus
+  }
+  for(i in B[[1]]){
+    contrast[which(contrast[,2]==i)]<- plus
+  }
+  contrast <- as.numeric(contrast[,1])
 
-                                        # quasi-likelihood F-Test
-    qlf <- glmQLFTest(fit, contrast = contrast)
-    is.de <- decideTests(qlf, p.value=0.05)
-    summary(is.de)
+  # quasi-likelihood F-Test
+  qlf <- glmQLFTest(fit, contrast = contrast)
+  is.de <- decideTests(qlf, p.value=0.05)
+  summary(is.de)
 
-                                        # create sorted tables
-    tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-    write.table(tops, file=paste(outdir,contrast_name,"_exons_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
-    tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-    write.table(tops, file=paste(outdir,contrast_name,"_exons_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  # create sorted tables
+  tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
+  write.table(tops, file=paste(outdir,contrast_name,"_exons_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+  tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
+  write.table(tops, file=paste(outdir,contrast_name,"_exons_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
-                                        # create file MD-plot
-    out <- paste(outdir,contrast_name,"_MD.pdf",sep="")
-    pdf(out, width = 400, height = 400)
-    plotMD(qlf, main=contrast_name)
-    dev.off()
+  # create file MD-plot
+  out <- paste(outdir,contrast_name,"_MD.png",sep="")
+  png(out, width = 400, height = 400)
+  plotMD(qlf, main=contrast_name)
+  dev.off()
 }
 
-save.image(file = paste(outdir,"EDGER_DEU_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste(outdir,"EDGER_DAS_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
