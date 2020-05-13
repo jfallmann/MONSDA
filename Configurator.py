@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri May  8 12:10:43 2020 (+0200)
+# Last-Updated: Wed May 13 10:26:18 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 552
+#     Update #: 561
 # URL:
 # Doc URL:
 # Keywords:
@@ -35,12 +35,24 @@ from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
-#import logging
 min_version("5.8.2")
+scriptname=os.path.basename(__file__).replace('.py','')
 
-from lib.Collection import *
 from lib.Logger import *
-scriptname=os.path.basename(__file__)
+#Logging
+import datetime
+makelogdir('LOGS')
+if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
+    open('LOGS/'+scriptname+'.log','a').close()
+else:
+    ts = str(datetime.datetime.fromtimestamp(os.path.getmtime(os.path.abspath('LOGS/'+scriptname+'.log'))).strftime("%Y%m%d_%H_%M_%S"))
+    shutil.copy2('LOGS/'+scriptname+'.log','LOGS/'+scriptname+'_'+ts+'.log.bak')
+
+log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
+log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
+
+#import Collection
+from lib.Collection import *
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Helper to create initial config file used for workflow processing')
@@ -334,9 +346,7 @@ if __name__ == '__main__':
         knownargs=args[0]
         optionalargs=args[1:]
 
-        makelogdir('LOGS')
-        log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=knownargs.loglevel)
-        log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+        log.setLevel(knownargs.loglevel)
 
         MIN_PYTHON = (3,7)
         if sys.version_info < MIN_PYTHON:

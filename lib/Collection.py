@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri May  8 12:06:28 2020 (+0200)
+# Last-Updated: Wed May 13 10:24:48 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1870
+#     Update #: 1884
 # URL:
 # Doc URL:
 # Keywords:
@@ -89,16 +89,19 @@ try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
     log = logging.getLogger(__name__.replace('.py',''))
     if not (log.hasHandlers()):
-        if not os.path.isfile(os.path.abspath('LOGS/RunSnakemake.log')):
+        if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
             logdir =  os.path.abspath('LOGS')
             if not os.path.exists(logdir):
                 os.makedirs(logdir)
-            open(os.path.abspath('LOGS/RunSnakemake.log'),'a').close()
+            open(os.path.abspath('LOGS/'+scriptname+'.log'),'a').close()
 
-        handler = logging.FileHandler(os.path.abspath('LOGS/RunSnakemake.log'), mode='a')
+        handler = logging.FileHandler(os.path.abspath('LOGS/'+scriptname+'.log'), mode='a')
         handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
         log.addHandler(handler)
-        lvl = log.level if log.level else 'DEBUG'
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+        log.addHandler(handler)
+        lvl = log.level if log.level else 'INFO'
         log.setLevel(lvl)
 
 except Exception as err:
