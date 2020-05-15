@@ -300,7 +300,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     # print_json(newconf,configfile,annotation)
     # input=json.dumps(newconf)
     # flatconf=json.loads(input)
-    return flatconf
+    return newconf
 
 
 # @check_run
