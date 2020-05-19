@@ -55,7 +55,7 @@ rule featurecount:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && tail -n+3 {output.t}|sort -k1,1 -k2,2n -k3,3n -u >> {output.c}"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && tail -n+3 {output.t}|sort -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
     input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
@@ -69,7 +69,7 @@ rule featurecount_unique:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && tail -n+3 {output.t}|sort -k1,1 -k2,2n -k3,3n -u >> {output.c}"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && tail -n+3 {output.t}|sort -k1,1 -k2,2n -k3,3n -u >> {output.c}  && mv {output.t}.summary {output.c}.summary"
 
 rule summarize_counts:
     input:  f = rules.count_fastq.output,
