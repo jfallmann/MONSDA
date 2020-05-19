@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 13 10:24:48 2020 (+0200)
+# Last-Updated: Tue May 19 14:47:23 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1884
+#     Update #: 1885
 # URL:
 # Doc URL:
 # Keywords:
@@ -763,9 +763,9 @@ def comparable_as_string(config, subwork):
     else:
         log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS",config))
-        flattened = set(val for sublist in groups_by_condition for val in sublist)
-        combined=list(combinations(flattened,2))
-        complist=[]
+        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        combined = list(set(combinations(flattened,2)))
+        complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}")
         compstr = ','.join(complist)
@@ -778,7 +778,7 @@ def comparable_as_string2(config, subwork):
     if check:
         log.debug(logid+'determine comparables in '+subwork)
         complist  = []
-        compdict=config[subwork]['COMPARABLE']
+        compdict = config[subwork]['COMPARABLE']
         for contrast in compdict:
             As = ""
             Bs = ""
@@ -792,9 +792,9 @@ def comparable_as_string2(config, subwork):
     else:
         log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS",config))
-        flattened = set(val for sublist in groups_by_condition for val in sublist)
-        combined=list(combinations(flattened,2))
-        complist=[]
+        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        combined = list(set(combinations(flattened,2)))
+        complist = []
         for key, value in combined:
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
         compstr = ','.join(complist)
