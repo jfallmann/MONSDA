@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon May 18 10:23:11 2020 (+0200)
+# Last-Updated: Tue May 19 09:07:34 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1030
+#     Update #: 1033
 # URL:
 # Doc URL:
 # Keywords:
@@ -60,10 +60,7 @@ def parseargs():
     parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
     parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
-    parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
-    parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start nextflow with, capped by MAXTHREADS in config!')
-    parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -72,28 +69,15 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, unlock=None, optionalargs=None):
+def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_nextflow: '
-        if skeleton:
-            for subdir in ['SubFlows', 'RAW', 'GENOMES', 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
-                makeoutdir(subdir)
-            sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
-        else:
-            for subdir in ['SubFlows', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
-                makeoutdir(subdir)
+        for subdir in ['SubFlows', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+            makeoutdir(subdir)
 
         subdir = 'SubFlows'
         config = load_configfile(configfile)
         argslist = list()
-        if useconda:
-            argslist.append("--use-conda")
-        else:
-            log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. Tou can also preinstall all conda environments appending the --use-conda and the --create-envs-only arguments.')
-        if debugdag:
-            argslist.append("--debug-dag")
-        if filegraph:
-            argslist.append("--filegraph|dot|display")
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
@@ -101,13 +85,6 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
-
-        if unlock:
-            log.info(logid+'Unlocking directory')
-            jobtorun = 'nextflow --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes','workflows','header.smk')), c=configfile)
-            log.info(logid+'UNLOCKING '+str(jobtorun))
-            job = runjob(jobtorun)
-            log.debug(logid+'JOB CODE '+str(job))
 
         preprocess = subworkflows = postprocess = None
 
@@ -147,8 +124,9 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
         '''
         Fix conda path if needed
         '''
+
         condapath=re.compile(r'conda:\s+"')
-        logfix=re.compile(r'loglevel="INFO"')
+
         '''
         START TO PROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
@@ -162,7 +140,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
             preprocess.remove('RAW')
             SAMPLES = download_samples(config)
             log.info(logid+'PRESAMPLES: '+str(SAMPLES))
-            conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
+            conditions = get_conditions(SAMPLES,config)
             log.info(logid+'PRECONDITIONS: '+str(conditions))
             for condition in conditions:
                 subconf = NestedDefaultDict()
@@ -173,9 +151,9 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                     continue
                 toolenv, toolbin = map(str,listoftools[0])
                 subconf.update(listofconfigs[0])
-                subname = toolenv+'.smk'
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.smk'])))
+                subname = toolenv+'.nf'
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf'])))
                 if os.path.exists(smko):
                     os.rename(smko,smko+'.bak')
                 with open(smko, 'a') as smkout:
@@ -198,7 +176,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -234,11 +212,11 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
-                        subname = toolenv+'.smk'
+                        subname = toolenv+'.nf'
                         log.debug(logid+'PREPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                        smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.smk'])))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
@@ -251,7 +229,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                             smkout.write('\n\n')
 
                         if subwork == 'QC':
-                            subname = toolenv+'_raw.smk'
+                            subname = toolenv+'_raw.nf'
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -260,7 +238,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -271,7 +249,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -292,8 +270,8 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.smk'])))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf'])))
                 if os.path.exists(smko):
                     os.rename(smko,smko+'.bak')
                 with open(smko, 'a') as smkout:
@@ -327,7 +305,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                 if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
                     log.info(logid+'Simulating read trimming as trimming is not part of the workflow!')
                     makeoutdir('TRIMMED_FASTQ')
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -348,14 +326,14 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
-                        subname = toolenv+'.smk'
+                        subname = toolenv+'.nf'
                         log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
 
                         if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
-                            subname = toolenv+'_trim.smk'
+                            subname = toolenv+'_trim.nf'
 
                         if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
-                            subname = toolenv+'_raw.smk'
+                            subname = toolenv+'_raw.nf'
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -364,18 +342,18 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                             smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
 
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
@@ -388,7 +366,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
 
             for condition in conditions:
                 log.info(logid+'Starting workflows for condition '+str(condition))
-                jobtorun = 'nextflow -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                jobtorun = 'nextflow -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING WORKFLOW '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -418,11 +396,11 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
-                        subname = toolenv+'.smk'
+                        subname = toolenv+'.nf'
                         subsamples = list(set(sampleslong(subconf)))
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                        smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.smk'])))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
@@ -446,7 +424,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -480,12 +458,12 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
 
                         #for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
                         #    subconf = merge_dicts(subconf,listofconfigscount[x])
-                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
+                        subname = toolenv+'.nf' if toolenv != 'edger' else toolenv+'_'+subwork+'.nf'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subflow.smk'])))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
                         with open(smko, 'a') as smkout:
@@ -496,12 +474,12 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                                     smkout.write(line)
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subflow.smk']))), 'a') as smkout:
+                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subflow.nf']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -512,7 +490,7 @@ def run_nextflow (configfile, debugdag, filegraph, workdir, useconda, procs, ske
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subflow.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subflow.nf'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -606,7 +584,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_nextflow(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.unlock, optionalargs[0])
+        run_nextflow(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.loglevel, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
