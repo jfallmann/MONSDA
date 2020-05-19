@@ -1,5 +1,9 @@
 #!/usr/bin/env nextflow
 
+nextflowVersion = '>=20.01.0.5264'
+nextflow.preview.dsl=2
+include checkHostname 'nextsnakes/lib/Collection.groovy'
+
 // Check if genome exists in the config file
 if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
     exit 1, "The provided genome '${params.genome}' is not available in the iGenomes file. Currently the available genomes are ${params.genomes.keySet().join(", ")}"

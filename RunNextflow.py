@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May 19 09:07:34 2020 (+0200)
+# Last-Updated: Tue May 19 09:43:25 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1033
+#     Update #: 1039
 # URL:
 # Doc URL:
 # Keywords:
@@ -30,12 +30,11 @@
 import glob, os, sys, inspect, json, shutil
 from collections import defaultdict
 import traceback as tb
-from nextflow import load_configfile
-from nextflow.utils import validate, min_version
+from snakemake import load_configfile
 import argparse
 import subprocess
 import re
-min_version("5.8.2")
+
 scriptname=os.path.basename(__file__).replace('.py','')
 
 from lib.Logger import *
@@ -59,7 +58,7 @@ def parseargs():
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
     parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
     parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
-    parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
+    parser.add_argument("-d", "--directory", type=str, default='${PWD}', help='Directory to work in')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start nextflow with, capped by MAXTHREADS in config!')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -159,7 +158,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                             line = re.sub(condapath, 'conda:  "../', line)
                             smkout.write(line)
                     smkout.write('\n\n')
@@ -222,7 +220,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -277,7 +274,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                             line = re.sub(condapath,'conda:  "../',line)
                             smkout.write(line)
                     smkout.write('\n\n')
@@ -366,7 +362,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
 
             for condition in conditions:
                 log.info(logid+'Starting workflows for condition '+str(condition))
-                jobtorun = 'nextflow -j {t} -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                jobtorun = 'nextflow run -params-file {c} -w {d} {rest} {s}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
                 log.info(logid+'RUNNING WORKFLOW '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -406,7 +402,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -469,7 +464,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                             smkout.write('\n\n')
@@ -584,7 +578,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_nextflow(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.loglevel, optionalargs[0])
+        run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.loglevel, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
