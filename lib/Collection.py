@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May 19 14:47:23 2020 (+0200)
+# Last-Updated: Wed May 20 11:16:45 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1885
+#     Update #: 1901
 # URL:
 # Doc URL:
 # Keywords:
@@ -84,6 +84,7 @@ import collections
 from collections import defaultdict, OrderedDict
 import six
 import logging
+from snakemake import load_configfile
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -799,6 +800,66 @@ def comparable_as_string2(config, subwork):
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
         compstr = ','.join(complist)
         return compstr
+
+##############################
+########Nextflow Subs########
+##############################
+@check_run
+def nf_fetch_params(configfile):
+    logid=scriptname+'.nf_fetch_params: '
+
+    config = load_configfile(configfile)
+
+    retconf = collections.defaultdict()
+    retconf["REFERENCE"] = config["REFERENCE"]
+    retconf["GENOME"] = config["GENOME"]
+    retconf["NAME"] = config["NAME"]
+    retconf["BINS"] = config["BINS"]
+    retconf["MAXTHREAD"] = int(config["MAXTHREADS"])
+    retconf["SOURCE"] = sources(config)
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    retconf["SAMPLES"] = SAMPLES
+    log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
+
+    paired = checkpaired([SAMPLES[0]], config)
+    retconf["PAIRED"] = paired
+
+    if paired == 'paired':
+        log.info('RUNNING NEXTFLOW IN PAIRED READ MODE')
+
+    stranded = checkstranded([SAMPLES[0]], config)
+    retconf["STRANDED"] = stranded
+
+    if stranded != '':
+        log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
+
+    if 'PEAKS' in config:
+        retconf["CLIP"] = checkclip(SAMPLES, config)
+        retconf["PEAKCONF"] = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
+        if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
+            retconf["ANNOPEAK"] = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
+        else:
+            retconf["ANNOPEAK"] = None
+        try:
+            all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
+        except Exception as err:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
+
+        retconf["MINPEAKRATIO"] = peakconf['MINPEAKRATIO']
+        retconf["PEAKDISTANCE"] = peakconf['PEAKDISTANCE']
+        retconf["PEAKWIDTH"] = peakconf['PEAKWIDTH']
+        retconf["PEAKCUTOFF"] = peakconf['PEAKCUTOFF']
+        retconf["MINPEAKHEIGHT"] = peakconf['MINPEAKHEIGHT']
+        retconf["USRLIMIT"] = peakconf['USRLIMIT']
+
+        if 'PREPROCESS' in peakconf:
+            retconf["PREPROCESS"] = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
+
+    return retconf
 
 ##############################
 #########Python Subs##########

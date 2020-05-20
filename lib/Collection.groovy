@@ -1,3 +1,5 @@
+//import groovy.json.JsonSlurper
+
 def nfcoreHeader() {
     // Log colors ANSI codes
     c_black = params.monochrome_logs ? '' : "\033[0;30m";

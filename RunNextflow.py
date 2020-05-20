@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May 19 09:43:25 2020 (+0200)
+# Last-Updated: Wed May 20 11:20:36 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1039
+#     Update #: 1052
 # URL:
 # Doc URL:
 # Keywords:
@@ -56,8 +56,6 @@ from lib.Collection import *
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around nextflow to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
-    parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
-    parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
     parser.add_argument("-d", "--directory", type=str, default='${PWD}', help='Directory to work in')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start nextflow with, capped by MAXTHREADS in config!')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
@@ -174,7 +172,9 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                params = nf_fetch_params(subconf)
+
+                jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir,rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -235,10 +235,10 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
-                        with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write(smk.read())
+                        #smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                        #with open(smko, 'a') as smkout:
+                        #    with open(smkf,'r') as smk:
+                        #        smkout.write(smk.read())
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json'])))
                         if os.path.exists(confo):
@@ -246,7 +246,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json']))))
+                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -362,8 +363,10 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
 
             for condition in conditions:
                 log.info(logid+'Starting workflows for condition '+str(condition))
-                jobtorun = 'nextflow run -params-file {c} -w {d} {rest} {s}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))),d=workdir,rest=' '.join(argslist))
-                log.info(logid+'RUNNING WORKFLOW '+str(jobtorun))
+
+                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
+                jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
 
@@ -419,7 +422,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+                        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
+                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -484,7 +488,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        jobtorun = 'nextflow -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subflow.nf'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
+                        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
+                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -505,7 +510,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
 def runjob(jobtorun):
     try:
         logid = scriptname+'.runjob: '
-        #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, close_fds=True)
 
         while True:

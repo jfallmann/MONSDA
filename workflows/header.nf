@@ -1,8 +1,21 @@
 #!/usr/bin/env nextflow
 
+//includes
+include * from '../nextsnakes/lib/Collection.groovy'
+
 nextflowVersion = '>=20.01.0.5264'
 nextflow.preview.dsl=2
-include checkHostname 'nextsnakes/lib/Collection.groovy'
+
+
+REFERENCE = params.REFERENCE
+GENOME = params.GENOME
+NAME = params.NAME
+BINS = params.BINS
+MAXTHREAD = params.MAXTHREADS
+SOURCE = params.SOURCE
+SAMPLES = params.SAMPLES
+paired = params.PAIRED
+stranded = params.STRANDED
 
 // Check if genome exists in the config file
 if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
