@@ -194,7 +194,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SAMPLES':
-                    samplelist = get_samples_from_dir(id, condition, setting, newconf)
+                    samplelist = get_samples_from_dir_2(id, condition, setting, newconf)
                     log.debug(logid+'SAMPLELIST: '+str(samplelist))
                     if len(samplelist) > 0:
                         newconf[key][id][condition][setting] = samplelist
@@ -270,7 +270,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SAMPLES':
-                    samplelist = get_samples_from_dir(id, condition, setting, oldconf)
+                    samplelist = get_samples_from_dir_2(id, condition, setting, oldconf)
                     log.debug(logid+'SAMPLELIST: '+str(samplelist))
                     if len(samplelist) > 0:
                         newconf[key][id][condition][setting] = samplelist
@@ -313,6 +313,9 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                 log.debug(logid+'TODO: '+str(key)+'\t'+str(config[key])+'\t'+str(newconf[key]))
                 newconf[key][id][condition][setting].update(config[key]['id']['condition']['setting'])
 
+        if key=='DE' or key=="DEU" or key=='DAS':
+            set_relations(newconf,key)
+
     print_json(newconf,configfile,annotation)
 
 @check_run
@@ -322,6 +325,19 @@ def print_json(paramdict,ofn,annotation=''):
             print(re.sub('genome_or_other.gff3.gz',annotation,json.dumps(paramdict,indent=4)),file=jsonout)
         else:
             print(json.dumps(paramdict,indent=4),file=jsonout)
+
+def set_relations(config,key):
+    for id in config['SAMPLES'].keys():
+        for condition in config['SAMPLES'][id].keys():
+            for setting in config['SAMPLES'][id][condition].keys():
+                if config["SAMPLES"][id][condition][setting]:
+                    relations=[]
+                    ics = f"{id}:{condition}:{setting}"
+                    type = config["SEQUENCING"][id][condition][setting]
+                    for sample in config["SAMPLES"][id][condition][setting]:
+                        relations.append((sample,ics,type))
+                    config[key][id][condition][setting]['RELATIONS']=relations
+
 ####################
 ####    MAIN    ####
 ####################

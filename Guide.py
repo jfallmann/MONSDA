@@ -38,6 +38,7 @@ import re
 import sys
 import copy
 import json
+import random
 #import logging
 min_version("5.8.2")
 
@@ -80,10 +81,12 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     newconf = NestedDefaultDict()
     oldconf = NestedDefaultDict()
     icslist = list()
+    oldics = []
+    oldtodos = ['NAME','SOURCE','SEQUENCING','SAMPLES']
 
     todos = ','.join([x for x in [preprocess,workflows,postprocess] if x != '' ]).split(',')
     for x in todos:
-        if x not in config:
+        if x not in config and x != "":
             log.error(logid+'Key '+str(x)+' not found in template, please check for typos!')
             sys.exit()
 
@@ -114,31 +117,31 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     if ics or append:
         if append:
             oldconf = load_configfile(os.path.abspath(os.path.join(configfile)))
-            iteration = -1
-            icstemp = ''
-            for k,v in list_all_keys_of_dict(oldconf['SAMPLES']):
-                iteration+=1
-                if k == 'last':
-                    icslist.append(icstemp[:-1])
-                    if iteration >3:
-                        icstemp = icstemp.split(':')[0]+':'
-                        iteration = -1
-                    else:
-                        icstemp=''
-                        iteration = -1
-                else:
-                    icstemp+=k+':'
-            if ics:
-                for x in ics.split(','):
-                    if x not in icslist:
-                        icslist.append(x)
-        else:
-            icslist = ics.split(',')
+            for id in oldconf['SAMPLES'].keys():
+                for condition in oldconf['SAMPLES'][id].keys():
+                    for setting in oldconf['SAMPLES'][id][condition].keys():
+                        icslist.append(f"{id}:{condition}:{setting}")
+                        oldics.append([[id],[condition],[setting]])
+            for x in oldconf['PREPROCESSING'].split(","):
+                oldtodos.append(x)
+                todos.append(x)
+            for x in oldconf['WORKFLOWS'].split(","):
+                oldtodos.append(x)
+                todos.append(x)
+            for x in oldconf['POSTPROCESSING'].split(","):
+                oldtodos.append(x)
+                todos.append(x)
+        if ics:
+            for x in ics.split(','):
+                if x not in icslist:
+                    icslist.append(x)
     else:
         log.error(logid+'IdentifierConditionSetting (ics) not defined!')
         sys.exit()
+    todos = [x for x in todos if x]
 
     log.debug(logid+'List of IdentifierConditionSettings: '+str(icslist))
+
 
     seqlist = [s.replace(':',',') for s in sequencing.split(',')]
 
@@ -178,7 +181,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SAMPLES':
-                    samplelist = get_samples_from_dir(id, condition, setting, newconf)
+                    samplelist = get_samples_from_dir_2(id, condition, setting, newconf)
                     log.debug(logid+'SAMPLELIST: '+str(samplelist))
                     if len(samplelist) > 0:
                         newconf[key][id][condition][setting] = samplelist
@@ -192,10 +195,16 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
 
         if preprocess and preprocess not in newconf['PREPROCESSING']:
             newconf['PREPROCESSING'] = str.join(',',list(set(str.join(',',[oldconf['PREPROCESSING'],preprocess]).split(','))))
+        else:
+            newconf['PREPROCESSING'] = oldconf['PREPROCESSING']
         if workflows and workflows not in newconf['WORKFLOWS']:
             newconf['WORKFLOWS'] = str.join(',',list(set(str.join(',',[oldconf['WORKFLOWS'],workflows]).split(','))))
+        else:
+            newconf['WORKFLOWS'] = oldconf['WORKFLOWS']
         if postprocess and postprocess not in newconf['POSTPROCESSING']:
             newconf['POSTPROCESSING'] = str.join(',',list(set(str.join(',',[oldconf['POSTPROCESSING'],postprocess]).split(','))))
+        else:
+            newconf['POSTPROCESSING'] = oldconf['POSTPROCESSING']
         if refdir and refdir != oldconf['REFERENCE']:
             newconf['REFERENCE'] = refdir
         else:
@@ -216,52 +225,27 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
             newconf['GENOME'].merge(oldconf['GENOME'])
             for k,v in gens.items():
                 newconf['GENOME'][str(k)] = str(v)
+        elif isinstance(oldconf['GENOME'], dict):
+            newconf['GENOME'] = oldconf['GENOME']
         else:
             newconf['GENOME'] = str(oldconf['GENOME'])
 
         log.debug(logid+'GENOMEMAPCONF: '+str(newconf['GENOME']))
 
-        for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
+        for key in ['NAME','SOURCE','SEQUENCING','SAMPLES']:
             for id,condition,setting in [x.split(':') for x in icslist]:
-                if key == 'NAME' or key == 'SOURCE':
-                    try:
-                        checkkey=getFromDict(oldconf[key],[id,condition,setting])
-                    except:
-                        checkkey=list()
-                    if len(checkkey) > 0:
-                        if key == 'NAME':
-                            if genomeext:
-                                for k,v in genext.items():
-                                    if id in [x for x in find_key_for_value(k,genmap)]:
-                                        if str(v) != oldconf[key][id][condition][setting]:
-                                            newconf[key][id][condition][setting] = str(v)
-                                        else:
-                                            newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
-                            else:
-                                newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-                        elif key == 'SOURCE':
-                            if genomemap:
-                                for k,v in genmap.items():
-                                    if v in newconf['GENOME']:
-                                        if str(v) != str(oldconf[key][id][condition][setting]):
-                                            newconf[key][id][condition][setting] = str(v)
-                                        else:
-                                            newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
-                            else:
-                                newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
+                try:
+                    newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
+                except:
+                    if key == 'SAMPLES':
+                        samplelist = get_samples_from_dir_2(id, condition, setting, newconf)
+                        log.debug(logid+'SAMPLELIST: '+str(samplelist))
+                        if len(samplelist) > 0:
+                            newconf[key][id][condition][setting] = samplelist
                         else:
-                            newconf[key][id][condition][setting] = oldconf[key][id][condition][setting]
+                            newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                     else:
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-                elif key == 'SAMPLES':
-                    samplelist = get_samples_from_dir(id, condition, setting, oldconf)
-                    log.debug(logid+'SAMPLELIST: '+str(samplelist))
-                    if len(samplelist) > 0:
-                        newconf[key][id][condition][setting] = samplelist
-                    else:
-                        newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
-                else:
-                    newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
 
         for do in todos:
             if do not in newconf and do in oldconf:
@@ -288,20 +272,34 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
             if setting not in newconf[key][id][condition]:
                 newconf[key][id][condition][setting] = NestedDefaultDict()
                 log.debug(logid+'SETTING: '+str(newconf[key]))
+                newconf[key][id][condition][setting].update(config[key]['id']['condition']['setting'])
+                log.debug(logid+'TODO: '+str(key)+'\t'+str(config[key])+'\t'+str(newconf[key]))
 
             if 'id' in newconf[key]:
                 newconf[key][id] = newconf[key].pop('id')
                 newconf[key][id][condition] = newconf[key][id].pop('condition')
                 newconf[key][id][condition][setting] = newconf[key][id][condition].pop('setting')
-            else:
-                log.debug(logid+'TODO: '+str(key)+'\t'+str(config[key])+'\t'+str(newconf[key]))
-                newconf[key][id][condition][setting].update(config[key]['id']['condition']['setting'])
 
-    # print_json(newconf,configfile,annotation)
-    # input=json.dumps(newconf)
-    # flatconf=json.loads(input)
-    return newconf
+        if key=='DE' or key=="DEU" or key=='DAS':
+            set_relations(newconf,key)
 
+    input=json.dumps(newconf)
+    flatconf=json.loads(input)
+
+    return oldtodos, oldics, flatconf
+
+
+def set_relations(config,key):
+    for id in config['SAMPLES'].keys():
+        for condition in config['SAMPLES'][id].keys():
+            for setting in config['SAMPLES'][id][condition].keys():
+                if config["SAMPLES"][id][condition][setting]:
+                    relations=[]
+                    ics = f"{id}:{condition}:{setting}"
+                    type = config["SEQUENCING"][id][condition][setting]
+                    for sample in config["SAMPLES"][id][condition][setting]:
+                        relations.append((sample,ics,type))
+                    config[key][id][condition][setting]['RELATIONS']=relations
 
 # @check_run
 def print_json(paramdict,ofn,annotation=''):
@@ -311,17 +309,44 @@ def print_json(paramdict,ofn,annotation=''):
         else:
             print(json.dumps(paramdict,indent=4),file=jsonout)
 
-def conversation(question, origin):
+def proof_input(proof=None):
+    allowed_characters=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0','(',')','_',',','.',':']
+    while True:
+        a = input(">>> ").strip().replace(" ","")
+        if any(x not in allowed_characters for x in a):
+            print("You used unallowed letters, try again")
+            continue
+        if proof is not None and proof != "only-numbers" and any(x not in proof for x in a.split(",")):
+            print(f"available are only: {proof}")
+            continue
+        if proof=="only-numbers":
+            try:
+                float(a)
+                return a
+            except:
+                print("please enter integer or float")
+                continue
+        else:
+            return a
+
+def conversation(question, origin, proof=None):
     print(question)
     default = copy.deepcopy(origin)
-    if default is not None:
+    if default is None:
+        a = proof_input(proof)
+        return a
+    else:
         print("\n")
 
         if isinstance(default, str):
             print("\t> ",default)
             print("\n")
-            print("enter what should be added or enter 'n' to continue ")
-            a = input(">>> ")
+            if proof:
+                print("enter what should be added ")
+            else:
+                print("enter what should be added or enter 'n' to continue ")
+            a = proof_input(proof)
+            print("\n")
             if a == 'n':
                 print("fine, everything the same!")
                 return default
@@ -339,83 +364,28 @@ def conversation(question, origin):
                 print("enter 'y' for yes or 'n' for no")
                 a = input(">>> ")
                 if a=='n':
-                    return
+                    return default
                 if a=='y':
                     print("okay, tell me your setting:")
                     if default:
                         for element in default:
                             print(element+":")
-                            a = input(">>> ").strip().replace(" ","")
+                            a = proof_input()
                             default[element]=a
                         return default
                     else:
                         while True:
                             print("enter the name of the argument or enter 'n' to quit")
-                            name = input(">>> ").strip().replace(" ","")
+                            name = proof_input()
                             if name=='n':
                                 break
                             print("enter the value")
-                            value = input(">>> ").strip().replace(" ","")
+                            value = proof_input()
+                            print("\n")
                             default.update({name:value})
-
                     return default
 
-    a = input(">>> ").strip().replace(" ","")
-    return a
-
-def rename(config,job,*args):
-    ics_list,naming_list = ics_naming(config,job)
-    for naming in naming_list:
-        switch=False
-        for ics in ics_list:
-                if naming==ics:
-                    switch=True
-                    print(f"okay, look at the settings of {ics[0][0]}:{ics[1][0]}:{ics[2][0]}")
-                    for call in args:
-                        if len(call)==1:
-                            text  =call[0]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]] = conversation(text,None)
-                        if len(call)==2:
-                            text  =call[0]
-                            key   =call[1]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None)
-                        if len(call)==3:
-                            text  =call[0]
-                            key   =call[1]
-                            number=call[2]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = conversation(text, config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number])
-                elif ics in naming_list and naming!=ics:
-                    switch=False
-                else:
-                    if switch:
-                        for call in args:
-                            if len(call)==1:
-                                text  =call[0]
-                                config[job][ics[0][0]][ics[1][0]][ics[2][0]] = config[job][naming[0][0]][naming[1][0]][naming[2][0]]
-                            if len(call)==2:
-                                text  =call[0]
-                                key   =call[1]
-                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key]
-                            if len(call)==3:
-                                text  =call[0]
-                                key   =call[1]
-                                number=call[2]
-                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number]
-
-def explain(text):
-    if manual:
-        print("\n** ",text,"\n")
-
-
-def get_path(input_dict):
-    for key, value in input_dict.items():
-        if isinstance(value, dict):
-            for subkey in get_path(value):
-                yield key + ':' + subkey
-        else:
-            yield key
-
-def ics_naming(config,workflow):
+def list_generator(config,workflow):
     ics_list=[]
     naming_list=[]
     level = conversation(f"set the following {workflow} settings per 'setting', per 'condition', per 'id', or 'all' the same?",None)
@@ -441,6 +411,62 @@ def ics_naming(config,workflow):
                     a+=1
     return ics_list, naming_list
 
+def rename(config,job,oldics,oldtodos,proof,*args):
+    ics_list,naming_list = list_generator(config,job)
+    if job in oldtodos:
+        ics_list = [x for x in ics_list if x not in oldics]
+        naming_list = [x for x in naming_list if x not in oldics]
+    if not ics_list:
+        return
+    for naming in naming_list:
+        switch=False
+        for ics in ics_list:
+                if naming==ics:
+                    switch=True
+                    print(f"okay, look at the settings of {ics[0][0]}:{ics[1][0]}:{ics[2][0]}")
+                    for call in args:
+                        if len(call)==1:
+                            text  =call[0]
+                            config[job][ics[0][0]][ics[1][0]][ics[2][0]] = conversation(text,None,proof)
+                        if len(call)==2:
+                            text  =call[0]
+                            key   =call[1]
+                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
+                        if len(call)==3:
+                            text  =call[0]
+                            key   =call[1]
+                            number=call[2]
+                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = conversation(text, config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number], proof)
+                elif ics in naming_list and naming!=ics:
+                    switch=False
+                else:
+                    if switch:
+                        for call in args:
+                            if len(call)==1:
+                                text  =call[0]
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]] = config[job][naming[0][0]][naming[1][0]][naming[2][0]]
+                            if len(call)==2:
+                                text  =call[0]
+                                key   =call[1]
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key]
+                            if len(call)==3:
+                                text  =call[0]
+                                key   =call[1]
+                                number=call[2]
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number]
+
+def explain(text):
+    if manual:
+        print("\n** ",text,randomtext(),"\n")
+
+def get_path(input_dict):
+    for key, value in input_dict.items():
+        if isinstance(value, dict):
+            for subkey in get_path(value):
+                yield key + ':' + subkey
+        else:
+            yield key
+
 def add_comparables(config,workflow):
     explain("what are comparables?...")
     config[workflow]['COMPARABLE'] = {}
@@ -448,24 +474,31 @@ def add_comparables(config,workflow):
         a = conversation("do you want to add a comparable? enter 'y' or 'n'",None)
         if a=='y':
             name=conversation("enter the name",None)
+            ics_list=[]
             print("to remember, these are your ICS-keys:\n")
             for id in config[workflow].keys():
                 if id == "TOOLS" or id == "COMPARABLE":
                     continue
-                print(f"\t> '{id}'")
+                ics = f"{id}"
+                ics_list.append(ics)
+                print(f"\t> {id}")
                 for condition in config[workflow][id].keys():
-                    print(f"\t> '{id}:{condition}'")
+                    ics = f"{id}:{condition}"
+                    ics_list.append(ics)
+                    print(f"\t> {id}:{condition}")
                     for setting in config[workflow][id][condition].keys():
-                        print(f"\t> '{id}:{condition}:{setting}'")
+                        ics = f"{id}:{condition}:{setting}"
+                        ics_list.append(ics)
+                        print(f"\t> {ics}")
             print("\n")
-            group1=conversation("enter all ICS-keys for GROUP 1. ('id:condition:setting' or 'id:condition' or 'id')",None)
-            group2=conversation("enter all ICS-keys for GROUP 2",None)
+            group1=conversation("enter all ICS-keys for GROUP 1.",None,ics_list)
+            group2=conversation("enter all ICS-keys for GROUP 2",None,ics_list)
             config[workflow]['COMPARABLE'].update({name:[group1.split(','),group2.split(',')]})
-        if a=='n':
+            print("\n")
+        elif a=='n':
             break
         else:
             print("enter 'y' or 'n'!")
-
 
 def add_tools(config,workflow):
     tools_dict=config[workflow]['TOOLS']
@@ -473,6 +506,20 @@ def add_tools(config,workflow):
     config[workflow]['TOOLS'] = {}
     for tool in tools.split(','):
         config[workflow]['TOOLS'].update({tool:tools_dict[tool]})
+
+def randomtext():
+    text = "Parish so enable innate in formed missed. Hand two was eat busy fail. Stand smart grave would in so. Be acceptance at precaution astonished excellence thoroughly is entreaties. Who decisively attachment has dispatched. Fruit defer in party me built under first. Forbade him but savings sending ham general. So play do in near park that pain.\n"
+    "In by an appetite no humoured returned informed. Possession so comparison inquietude he he conviction no decisively. Marianne jointure attended she hastened surprise but she. Ever lady son yet you very paid form away. He advantage of exquisite resolving if on tolerably. Become sister on in garden it barton waited on. \n"
+    "Improve him believe opinion offered met and end cheered forbade. Friendly as stronger speedily by recurred. Son interest wandered sir addition end say. Manners beloved affixed picture men ask. Explain few led parties attacks picture company. On sure fine kept walk am in it. Resolved to in believed desirous unpacked weddings together. Nor off for enjoyed cousins herself. Little our played lively she adieus far sussex. Do theirs others merely at temper it nearer. \n"
+    "Yourself off its pleasant ecstatic now law. Ye their mirth seems of songs. Prospect out bed contempt separate. Her inquietude our shy yet sentiments collecting. Cottage fat beloved himself arrived old. Grave widow hours among him ﻿no you led. Power had these met least nor young. Yet match drift wrong his our. \n"
+    "Do to be agreeable conveying oh assurance. Wicket longer admire do barton vanity itself do in it. Preferred to sportsmen it engrossed listening. Park gate sell they west hard for the. Abode stuff noisy manor blush yet the far. Up colonel so between removed so do. Years use place decay sex worth drift age. Men lasting out end article express fortune demands own charmed. About are are money ask how seven. \n"
+    "Oh he decisively impression attachment friendship so if everything. Whose her enjoy chief new young. Felicity if ye required likewise so doubtful. On so attention necessary at by provision otherwise existence direction. Unpleasing up announcing unpleasant themselves oh do on. Way advantage age led listening belonging supposing. \n"
+    "Up maids me an ample stood given. Certainty say suffering his him collected intention promotion. Hill sold ham men made lose case. Views abode law heard jokes too. Was are delightful solicitude discovered collecting man day. Resolving neglected sir tolerably but existence conveying for. Day his put off unaffected literature partiality inhabiting. \n"
+    "It as announcing it me stimulated frequently continuing. Least their she you now above going stand forth. He pretty future afraid should genius spirit on. Set property addition building put likewise get. Of will at sell well at as. Too want but tall nay like old. Removing yourself be in answered he. Consider occasion get improved him she eat. Letter by lively oh denote an. \n"
+    "Society excited by cottage private an it esteems. Fully begin on by wound an. Girl rich in do up or both. At declared in as rejoiced of together. He impression collecting delightful unpleasant by prosperous as on. End too talent she object mrs wanted remove giving. \n"
+    "Too cultivated use solicitude frequently. Dashwood likewise up consider continue entrance ladyship oh. Wrong guest given purse power is no. Friendship to connection an am considered difficulty. Country met pursuit lasting moments why calling certain the. Middletons boisterous our way understood law. Among state cease how and sight since shall. Material did pleasure breeding our humanity she contempt had. So ye really mutual no cousin piqued summer result. "
+    n = random.randint(50,len(text.split(" ")))
+    return " ".join(text.split(" ")[:n])
 
 
 ####################
@@ -492,7 +539,8 @@ if __name__ == '__main__':
         sys.exit("This script requires Python version >= 3.7")
     # log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-    print("\n\n","*"*30," SNAKES GUIDE ","*"* 30,"\n")
+    print("\n\n\n","*"*30," SNAKES GUIDE ","*"* 30,)
+    print("\n","*"*76,"\n")
 
     try:
         args=parseargs()
@@ -509,42 +557,43 @@ if __name__ == '__main__':
         while True:
 
             if 'append' in start:
-                configfile = conversation("enter the name of the existing file",None)
+                while True:
+                    configfile = conversation("enter the name of the existing file",None)
+                    if os.path.isfile(configfile):
+                        break
+                    else:
+                        print("Sry, didn't find such a file...")
                 config = load_configfile(os.path.abspath(configfile))
                 print("\n")
                 for key in get_path(config['SAMPLES']):
                     print("\t> ",key)
                 print("\n")
-                appending = conversation("this are all ICS i found in the file, would you like to add more? \nwrite 'y' for yes or 'n' for no", None)
+                appending = conversation("this are all ICS i found in the file, would you like to add more? \nwrite 'y' for yes or 'n' for no", None,['y','n'])
 
-                ics=""
+                ICS=[]
                 if 'y' in appending:
                     IDs = conversation("enter all ID's you want to work on",None)
-                    if len(IDs.split(","))>1:
-                        explain("okay, you specified mulitiple ID's, we will go through all the settings several times")
-                    ICS=[]
                     for id in IDs.split(","):
                         conditions = conversation(f"now tell me all conditions for {id}",None)
                         for condi in conditions.split(","):
                             settings = conversation(f"and now all settings for {id}:{condi}",None)
                             for setting in settings.split(","):
                                 ICS.append(f"{id}:{condi}:{setting}")
-                    ics=",".join(ICS)
 
                 print("okay, let's have a look to the workflows and postprocessing analyses")
-                workflows = conversation("this are the current workflows, would you like to add more? Possible are MAPPING, TRIMMING, QC",config['WORKFLOWS'])
-                postprocess = conversation("this are the current postprocess analyses, would you like to add more? Possible are DE, DEU, DAS",config['POSTPROCESSING'])
+                workflows = conversation("this are the current workflows, would you like to add more? Possible are MAPPING, TRIMMING, QC",config['WORKFLOWS'],["MAPPING","TRIMMING","QC",""])
+                postprocess = conversation("this are the current postprocess analyses, would you like to add more? Possible are DE, DEU, DAS",config['POSTPROCESSING'],["DE","DEU","DAS",""])
 
                 annotation=""
 
-                newconf= create_json_config(
+                oldtodos, oldics, newconf= create_json_config(
                 configfile=configfile,
                 append="APPEND",
                 template="snakes/configs/template_2.json",
                 preprocess="",
                 workflows=workflows,
                 postprocess=postprocess,
-                ics=ics,
+                ics=",".join(ICS),
                 refdir=config['REFERENCE'],
                 binaries=config['BINS'],
                 procs=config['MAXTHREADS'],
@@ -557,7 +606,7 @@ if __name__ == '__main__':
                 break
 
             if 'new' in start:
-                name = conversation("Please type the name of your Project, it will also be the name of the CONFIGFILE", None)
+                name = conversation("Please type the name of your Project, it will also be the name of the CONFIGFILE", None,)
                 configfile = f"config_{name}.json"
 
                 explain("For each id to work on you can define one or multiple conditions and settings that will be used for the analysis). The ICS also sets the file structure to follow for the FASTQ directory, where the ID is the first level and the Condition the second. Setting is used by RunSnakemake.py to enable processing of the same samples under different settings like mapping tools, trimming tools and later also postprocessing tools or commandline options for these tools.")
@@ -577,14 +626,14 @@ if __name__ == '__main__':
                     fasta_dict.update({organism:conversation(f"enter the FASTA.gz file appending to {organism}", None)})
 
                 explain("workflow explanation...")
-                workflows = conversation("which WORKFLOWS would you like to run? Possible are MAPPING, TRIMMING, QC", None)
+                workflows = conversation("which WORKFLOWS would you like to run? Possible are MAPPING, TRIMMING, QC", None,["MAPPING", "TRIMMING", "QC",""])
                 explain("postprocess explanation...")
-                postprocess = conversation("which POSTPROCESS ANALYSIS would you like to run? Possible are DE, DEU, DAS", None)
-                procs= conversation("enter the Maximum number of parallel processes to start snakemake with", None)
+                postprocess = conversation("which POSTPROCESS ANALYSIS would you like to run? Possible are DE, DEU, DAS", None, ["DE","DEU","DAS",""])
+                procs= conversation("enter the Maximum number of parallel processes to start snakemake with", None, "only-numbers")
 
                 annotation=""
 
-                newconf = create_json_config(
+                oldtodos, oldics, newconf = create_json_config(
                 configfile = configfile,
                 append="",
                 template="snakes/configs/template_2.json",
@@ -607,82 +656,92 @@ if __name__ == '__main__':
                 start = conversation("enter 'append' or 'new'",None)
 
         explain("we are now done with the basics. in the next steps we will set the details. for this we have to make the design of the experiment understandable for snakes")
+        print(newconf)
 
-        explain("genome extension...")
-        rename(newconf,'NAME',
-        ["enter the additional FASTA-extension"]
-        )
-
-        if len(newconf["GENOME"]) > 1:
-            explain("source..")
-            rename(newconf,'SOURCE',
-            [f"enter the corresponding organism {list(newconf['GENOME'].keys())}"]
+        if ICS:
+            # NAME
+            explain("genome extension...")
+            rename(newconf,'NAME',oldics,oldtodos,None,
+            ["enter the additional FASTA-extension"]
             )
-        else:
-            for id in newconf['SOURCE'].keys():
-                for condition in newconf['SOURCE'][id].keys():
-                    for setting in newconf['SOURCE'][id][condition].keys():
-                        newconf['SOURCE'][id][condition][setting]=list(newconf['GENOME'].keys())[0]
 
-        explain("sequencing types..")
-        rename(newconf,'SEQUENCING',
-        ["enter 'paired' or 'unpaired'"]
-        )
+            # SOURCE
+            if len(newconf["GENOME"]) > 1:
+                explain("source..")
+                rename(newconf,'SOURCE',oldics,oldtodos,list(newconf['GENOME'].keys()),
+                [f"enter the corresponding organism {list(newconf['GENOME'].keys())}"]
+                )
+            else:
+                for id in newconf['SOURCE'].keys():
+                    for condition in newconf['SOURCE'][id].keys():
+                        for setting in newconf['SOURCE'][id][condition].keys():
+                            newconf['SOURCE'][id][condition][setting]=list(newconf['GENOME'].keys())[0]
 
-        explain("samples...")
-        for id in newconf['SAMPLES'].keys():
-            for condition in newconf['SAMPLES'][id].keys():
-                for setting in newconf['SAMPLES'][id][condition].keys():
-                    samples = conversation(f"enter the sample-names of {id}:{condition}:{setting}",None)
-                    newconf['SAMPLES'][id][condition][setting]=samples.split(",")
+            # SEQUENCING
+            explain("sequencing types..")
+            rename(newconf,'SEQUENCING',oldics,oldtodos,["paired", "unpaired"],
+            ["enter 'paired' or 'unpaired'"]
+            )
+
+            # SAMPLES
+            explain("samples...")
+            for id in newconf['SAMPLES'].keys():
+                for condition in newconf['SAMPLES'][id].keys():
+                    for setting in newconf['SAMPLES'][id][condition].keys():
+                        if not newconf['SAMPLES'][id][condition][setting]:
+                            samples = conversation(f"I couldn't found samples for {id}:{condition}:{setting}, please type the file names",None)
+                            newconf['SAMPLES'][id][condition][setting]=samples.split(",")
 
         explain("workflows...")
 
-        if 'QC' in newconf['WORKFLOWS']:
+        if 'QC' in newconf['WORKFLOWS'].split(",") and ('QC' not in oldtodos or ICS):
             explain("QC...")
-            rename(newconf,'QC',
+            rename(newconf,'QC',oldics,oldtodos,None,
             ["QC-options, would you like to change them?",'OPTIONS',0]
             )
 
-        if 'MAPPING' in newconf['WORKFLOWS']:
+        if 'MAPPING' in newconf['WORKFLOWS'].split(",") and ('MAPPING' not in oldtodos or ICS):
             explain("MAPPING...")
-            rename(newconf,'MAPPING',
+            rename(newconf,'MAPPING',oldics,oldtodos,None,
             ["enter ANNOTATION file",'ANNOTATION'],
             ["INDEXING, would you like to change them?",'OPTIONS',0],
             ["MAPPER, would you like to change them?",'OPTIONS',1]
             )
 
-        if 'TRIMMING' in newconf['WORKFLOWS']:
+        if 'TRIMMING' in newconf['WORKFLOWS'].split(",") and ('TRIMMING' not in oldtodos or ICS):
             explain("TRIMING...")
-            rename(newconf,'TRIMMING',
+            rename(newconf,'TRIMMING',oldics,oldtodos,None,
             ["TRIMMING-options, would you like to change them?",'OPTIONS',0]
             )
 
         explain("now we come to the analysis settings..")
 
-        if 'DE' in newconf['POSTPROCESSING']:
+        if 'DE' in newconf['POSTPROCESSING'].split(",") and ('DE' not in oldtodos or ICS):
             explain("DE...")
+            set_relations(newconf,'DE')
             add_tools(newconf,'DE')
             add_comparables(newconf,'DE')
-            rename(newconf,'DE',
+            rename(newconf,'DE',oldics,oldtodos,None,
             ["enter ANNOTATION file",'ANNOTATION'],
             ["Counting-settings for DE-Analysis, would you like to change them?",'OPTIONS',0]
             )
 
-        if 'DEU' in newconf['POSTPROCESSING']:
+        if 'DEU' in newconf['POSTPROCESSING'].split(",") and ('DEU' not in oldtodos or ICS):
             explain("DEU...")
+            set_relations(newconf,'DEU')
             add_tools(newconf,'DEU')
             add_comparables(newconf,'DEU')
-            rename(newconf,'DEU',
+            rename(newconf,'DEU',oldics,oldtodos,None,
             ["enter ANNOTATION file",'ANNOTATION'],
             ["Counting-settings for DEU-Analysis, would you like to change them?",'OPTIONS',0]
             )
 
-        if 'DAS' in newconf['POSTPROCESSING']:
+        if 'DAS' in newconf['POSTPROCESSING'].split(",") and ('DAS' not in oldtodos or ICS):
             explain("DAS...")
+            set_relations(newconf,'DAS')
             add_tools(newconf,'DAS')
             add_comparables(newconf,'DAS')
-            rename(newconf,'DAS',
+            rename(newconf,'DAS',oldics,oldtodos,None,
             ["enter ANNOTATION file",'ANNOTATION'],
             ["Counting-settings for DAS-Analysis, would you like to change them?",'OPTIONS',0],
             ["Analysis-options for diego for DAS-Analysis, would you like to change them?",'OPTIONS', 1]
@@ -690,7 +749,7 @@ if __name__ == '__main__':
 
         print_json(newconf,configfile,annotation)
 
-        print(f"ALL RIGHT! you will find now {configfile} for starting your analysis ")
+        print(f"\nALL RIGHT! you will find now {configfile} for starting your analysis ")
 
         explain("How to start snakes with the configfile: ...")
 

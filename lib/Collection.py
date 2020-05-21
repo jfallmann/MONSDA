@@ -215,6 +215,28 @@ def get_samples_from_dir(id, condition, setting, config):
         return list()
 
 @check_run
+def get_samples_from_dir_2(id, condition, setting, config):
+    logid = scriptname+'.Collection_get_samples_from_dir: '
+    pat = os.path.abspath(os.path.join('FASTQ',id, condition, setting, '*.fastq.gz'))
+    log.debug(logid+str(pat))
+    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
+    log.debug(logid+str(ret))
+    if len(ret) > 0:
+        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
+        for x in seqtype:
+            if 'unpaired' not in x:
+                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
+                for i in range(len(renamelist)):
+                    if renamelist[i] != ret[i]:
+                        os.rename(ret[i],renamelist[i])
+            else:
+                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
+        return list(set(ret))
+    else:
+        return list()
+
+@check_run
 def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     ret = list()

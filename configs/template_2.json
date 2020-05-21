@@ -25,7 +25,7 @@
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
                           "condition": { # sample id
-                                         "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
+                                         "setting": [] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
                                        }
                         }
                },
@@ -215,6 +215,7 @@
             "condition": {
                 "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "RELATIONS": [],
                     "OPTIONS":
                     [
                         {
@@ -244,6 +245,7 @@
             "condition": {
                 "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "RELATIONS": [],
                     "OPTIONS":
                     [
                         {
@@ -273,6 +275,7 @@
             "condition": {
                 "setting": {
                     "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "RELATIONS": [],
                     "OPTIONS":
                     [
                         { # counting options
