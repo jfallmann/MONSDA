@@ -1,7 +1,10 @@
 if paired == 'paired':
-    log.info('Running paired mode QC')
-    rule qc_raw:
-        input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=list(SAMPLES), read=['R1','R2'])
+log('Running paired mode QC')
+rule qc_raw:
+input:
+fastqs = Channel.fromFilePairs(SAMPLES+'_{R1,R2}.fastq.gz')
+    .println()
+
         output: o1 = report(expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']), category="QC")
         log:    expand("LOGS/{rawfile}/fastqc_{read}_raw.log", rawfile=list(SAMPLES), read=['R1','R2'])
         conda:  "snakes/envs/qc.yaml"

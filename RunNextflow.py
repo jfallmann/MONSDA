@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 20 11:20:36 2020 (+0200)
+# Last-Updated: Mon May 25 12:52:01 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1052
+#     Update #: 1061
 # URL:
 # Doc URL:
 # Keywords:
@@ -172,9 +172,9 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                params = nf_fetch_params(subconf)
+                params = nf_fetch_params(subconf, subsamples[0])
 
-                jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir,rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                jobtorun = 'nextflow run {s} -w {d} {rest} {p} '.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir,rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -247,7 +247,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                             json.dump(subconf, confout)
 
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subconfig.json']))))
-                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                        jobtorun = 'nextflow run {s} -w {d} {rest} {p}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -365,7 +365,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 log.info(logid+'Starting workflows for condition '+str(condition))
 
                 params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                jobtorun = 'nextflow run {s} -w {d} {rest} {p}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
                 log.debug(logid+'JOB CODE '+str(job))
@@ -423,7 +423,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                             json.dump(subconf, confout)
 
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                        jobtorun = 'nextflow run {s} -w {d} {rest} {p}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
@@ -489,7 +489,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                             json.dump(subconf, confout)
 
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                        jobtorun = 'nextflow run -w {d} {rest} {p} {s}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
+                        jobtorun = 'nextflow run {s} -w {d} {rest} {p}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()))
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))

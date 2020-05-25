@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 //includes
-include * from '../nextsnakes/lib/Collection.groovy'
+include '../nextsnakes/lib/Collection.groovy'
 
 nextflowVersion = '>=20.01.0.5264'
 nextflow.preview.dsl=2
@@ -14,6 +14,7 @@ BINS = params.BINS
 MAXTHREAD = params.MAXTHREADS
 SOURCE = params.SOURCE
 SAMPLES = params.SAMPLES
+LONGSAMPLES = params.LONGSAMPLES
 paired = params.PAIRED
 stranded = params.STRANDED
 

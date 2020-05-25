@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 20 11:16:45 2020 (+0200)
+# Last-Updated: Mon May 25 12:33:40 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1901
+#     Update #: 1920
 # URL:
 # Doc URL:
 # Keywords:
@@ -812,32 +812,34 @@ def nf_fetch_params(configfile):
 
     retconf = collections.defaultdict()
     retconf["REFERENCE"] = config["REFERENCE"]
-    retconf["GENOME"] = config["GENOME"]
-    retconf["NAME"] = config["NAME"]
     retconf["BINS"] = config["BINS"]
     retconf["MAXTHREAD"] = int(config["MAXTHREADS"])
-    retconf["SOURCE"] = sources(config)
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    retconf["SAMPLES"] = SAMPLES
-    log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
+    retconf["SAMPLES"] = str.join(',',SAMPLES)
+    LONGSAMPLES = samplecond(SAMPLES, config)
+    retconf["LONGSAMPLES"] = str.join(',',LONGSAMPLES)
+    log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
 
-    paired = checkpaired([SAMPLES[0]], config)
+    sample = SAMPLES[0]
+    lsample = LONGSAMPLES[0]
+    retconf["GENOME"] = genome(sample, config)
+    retconf["SOURCE"] = source_from_sample(lsample,config)
+    retconf["NAME"] = namefromfile(sample, config)
+    paired = checkpaired([sample], config)
     retconf["PAIRED"] = paired
+    stranded = checkstranded([sample], config)
+    retconf["STRANDED"] = stranded
 
     if paired == 'paired':
         log.info('RUNNING NEXTFLOW IN PAIRED READ MODE')
-
-    stranded = checkstranded([SAMPLES[0]], config)
-    retconf["STRANDED"] = stranded
-
     if stranded != '':
         log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
     if 'PEAKS' in config:
         retconf["CLIP"] = checkclip(SAMPLES, config)
-        retconf["PEAKCONF"] = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
-        if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
-            retconf["ANNOPEAK"] = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
+        retconf["PEAKCONF"] = tool_params(sample,None,config,'PEAKS')['OPTIONS'][0]
+        if 'ANNOTATION' in tool_params(sample,None,config,'PEAKS'):
+            retconf["ANNOPEAK"] = tool_params(sample,None,config,'PEAKS')['ANNOTATION']
         else:
             retconf["ANNOPEAK"] = None
         try:
