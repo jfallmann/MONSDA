@@ -1,9 +1,27 @@
-if paired == 'paired':
-log('Running paired mode QC')
-rule qc_raw:
-input:
-fastqs = Channel.fromFilePairs(SAMPLES+'_{R1,R2}.fastq.gz')
-    .println()
+if paired == 'paired'{
+    log('Running paired end QC')
+
+    Channel
+        .fromFilePairs(SAMPLES+'_{1,2}.fastq.gz')
+        .set { samples_ch }
+
+}else{
+    log('Running single end QC')
+
+    Channel
+        .fromPath(SAMPLES+'.fastq.gz')
+        .set { samples_ch }
+}
+
+
+process qc_raw{
+    input:
+    set sampleId, file(reads) from samples_ch
+    script:
+
+}
+
+
 
         output: o1 = report(expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']), category="QC")
         log:    expand("LOGS/{rawfile}/fastqc_{read}_raw.log", rawfile=list(SAMPLES), read=['R1','R2'])
