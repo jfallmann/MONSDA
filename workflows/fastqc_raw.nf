@@ -2,9 +2,8 @@ if paired == 'paired'{
     log('Running paired end QC')
 
     Channel
-        .fromFilePairs(SAMPLES+'_{1,2}.fastq.gz')
+        .fromFilePairs(SAMPLES+'_{R1,R2}.fastq.gz') //{ file -> file.name.replaceAll(/.bam|.bai$/,'') }
         .set { samples_ch }
-
 }else{
     log('Running single end QC')
 
@@ -13,12 +12,13 @@ if paired == 'paired'{
         .set { samples_ch }
 }
 
-
 process qc_raw{
+    conda 'nextsnakes/envs/qc.yaml'
     input:
     set sampleId, file(reads) from samples_ch
-    script:
+    output:
 
+    script:
 }
 
 

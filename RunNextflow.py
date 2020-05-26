@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon May 25 12:52:01 2020 (+0200)
+# Last-Updated: Tue May 26 09:23:37 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1061
+#     Update #: 1065
 # URL:
 # Doc URL:
 # Keywords:
@@ -122,7 +122,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
         Fix conda path if needed
         '''
 
-        condapath=re.compile(r'conda:\s+"')
+        condapath=re.compile(r'conda\s+\'')
 
         '''
         START TO PROCESS
@@ -156,14 +156,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda  \'../', line)
                             smkout.write(line)
                     smkout.write('\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
-                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                     smkout.write('\n\n')
 
                 confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json'])))
@@ -220,9 +220,9 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(condapath,'conda:  "../',line)
+                                    line = re.sub(condapath,'conda  \'../',line)
                                     smkout.write(line)
-                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                #smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n\n')
 
                         if subwork == 'QC':
@@ -232,7 +232,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n\n')
 
                         #smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
@@ -275,7 +275,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath,'conda:  "../',line)
+                            line = re.sub(condapath,'conda  \'../',line)
                             smkout.write(line)
                     smkout.write('\n\n')
 
@@ -305,7 +305,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                         smkout.write('\n\n')
 
                 if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
@@ -335,19 +335,19 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows:
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                         smkout.write('\n\n')
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                         smkout.write('\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
@@ -405,14 +405,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(condapath,'conda:  "../',line)
+                                    line = re.sub(condapath,'conda  \'../',line)
                                     smkout.write(line)
-                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                #smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n\n')
 
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json'])))
@@ -468,13 +468,13 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 for line in smk.readlines():
-                                    line = re.sub(condapath,'conda:  "../',line)
+                                    line = re.sub(condapath,'conda  \'../',line)
                                     smkout.write(line)
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subflow.nf']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                                smkout.write(re.sub(condapath,'conda  \'../',smk.read()))
                             smkout.write('\n')
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
