@@ -14,7 +14,7 @@ rule featurecount_unique:
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
             cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"
-    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']]),
@@ -28,7 +28,7 @@ rule create_samplemaps:
     output: smap = expand("{outdir}Tables/samplemap.txt", outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt", outdir=outdir)
     log:    expand("LOGS/{outdir}create_samplemaps.log", outdir=outdir)
-    conda:  "snakes/envs/"+DASENV+".yaml"
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
             clist = lambda wildcards, input: get_diego_groups(input.cnd,config,'DAS'),
@@ -41,7 +41,7 @@ rule prepare_junction_usage_matrix:
     output: tbl = expand("{outdir}Tables/junction_table_dexdas.txt.gz", outdir=outdir),
             anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
     log:    expand("LOGS/{outdir}prepare_junction_usage_matrix.log", outdir=outdir)
-    conda:  "snakes/envs/"+DASENV+".yaml"
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS')
@@ -51,7 +51,7 @@ rule create_contrast_files:
     input:  anno = rules.prepare_junction_usage_matrix.output.anno
     output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=comparison)
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
-    conda:  "snakes/envs/"+DASENV+".yaml"
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
             compare=compare_string,
@@ -64,7 +64,7 @@ rule run_diego:
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
-    conda:  "snakes/envs/"+DASENV+".yaml"
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             cpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][1].items()),

@@ -20,7 +20,7 @@ rule featurecount_unique:
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
             cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_deseq2_unique.log"
-    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count = COUNTBIN,
             anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DE')['ANNOTATION']]),
@@ -34,7 +34,7 @@ rule prepare_count_table:
     output:  tbl  = expand("{outdir}Tables/COUNTS.gz",outdir=outdir),
              anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
     log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
-    conda:   "snakes/envs/"+DEENV+".yaml"
+    conda:   "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
              bins = BINS
@@ -52,7 +52,7 @@ rule run_deseq2:
             rules.themall.input.vst,
             rules.themall.input.session
     log:    expand("LOGS/{outdir}run_deseq2.log",outdir=outdir)
-    conda:  "snakes/envs/"+DEENV+".yaml"
+    conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = outdir,

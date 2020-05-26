@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 13 10:24:01 2020 (+0200)
+# Last-Updated: Tue May 26 11:50:04 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1027
+#     Update #: 1029
 # URL:
 # Doc URL:
 # Keywords:
@@ -46,7 +46,7 @@ if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
     open('LOGS/'+scriptname+'.log','a').close()
 else:
     ts = str(datetime.datetime.fromtimestamp(os.path.getmtime(os.path.abspath('LOGS/'+scriptname+'.log'))).strftime("%Y%m%d_%H_%M_%S"))
-    shutil.copy2('LOGS/'+scriptname+'.log','LOGS/'+scriptname+'_'+ts+'.log.bak')
+    shutil.copy2('LOGS/'+scriptname+'.log','LOGS/'+scriptname+'_'+ts+'.log')
 
 log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
 log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
@@ -97,14 +97,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-            if '--profile' in optionalargs and 'snakes/slurm' in optionalargs:
+            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
 
         if unlock:
             log.info(logid+'Unlocking directory')
-            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('snakes','workflows','header.smk')), c=configfile)
+            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes','workflows','header.smk')), c=configfile)
             log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
@@ -174,7 +174,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 toolenv, toolbin = map(str,listoftools[0])
                 subconf.update(listofconfigs[0])
                 subname = toolenv+'.smk'
-                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
                 smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk'])))
                 if os.path.exists(smko):
                     os.rename(smko,smko+'.bak')
@@ -186,7 +186,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             smkout.write(line)
                     smkout.write('\n\n')
 
-                smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -237,7 +237,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         subname = toolenv+'.smk'
                         log.debug(logid+'PREPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subsnake.smk'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
@@ -253,14 +253,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         if subwork == 'QC':
                             subname = toolenv+'_raw.smk'
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -292,7 +292,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:
-                smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
                 smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subsnake.smk'])))
                 if os.path.exists(smko):
                     os.rename(smko,smko+'.bak')
@@ -327,7 +327,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
                     log.info(logid+'Simulating read trimming as trimming is not part of the workflow!')
                     makeoutdir('TRIMMED_FASTQ')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','simulatetrim.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.smk'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -357,25 +357,25 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             subname = toolenv+'_raw.smk'
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','mapping.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('snakes','workflows','multiqc.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
 
-                smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
@@ -421,7 +421,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         subname = toolenv+'.smk'
                         subsamples = list(set(sampleslong(subconf)))
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname,condition, subsamples, subconf]))
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subsnake.smk'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
@@ -433,7 +433,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
@@ -484,7 +484,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','header.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk'])))
                         if os.path.exists(smko):
                             os.rename(smko,smko+'.bak')
@@ -495,13 +495,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
                             smkout.write('\n\n')
-                        smkf = os.path.abspath(os.path.join('snakes','workflows',subname))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n')
 
-                        smkf = os.path.abspath(os.path.join('snakes','workflows','footer.smk'))
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())

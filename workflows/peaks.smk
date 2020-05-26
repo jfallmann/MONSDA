@@ -34,7 +34,7 @@ if all(checklist):
         input:  "BED/{file}_mapped_{type}.bed.gz"
         output: "PEAKS/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/PEAKS/linkbed{file}_{type}.log"
-        conda:  "snakes/envs/base.yaml"
+        conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -43,7 +43,7 @@ elif all(checklist2):
         input:  "UCSC/{file}_mapped_{type}.bed.gz"
         output: "PEAKS/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/PEAKS/linkbed{file}_{type}.log"
-        conda:  "snakes/envs/base.yaml"
+        conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -56,7 +56,7 @@ else:
                     "PEAKS/{file}_mapped_unique.bed.gz"
             log:    "LOGS/PEAKS/bam2bed_{file}.log"
             threads: 1
-            conda:  "snakes/envs/bedtools.yaml"
+            conda:  "nextsnakes/envs/bedtools.yaml"
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
     elif stranded and stranded == 'rf':
         rule BamToBed:
@@ -66,14 +66,14 @@ else:
                     "PEAKS/{file}_mapped_unique.bed.gz"
             log:    "LOGS/PEAKS/bam2bed_{file}.log"
             threads: 1
-            conda:  "snakes/envs/bedtools.yaml"
+            conda:  "nextsnakes/envs/bedtools.yaml"
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
-    conda:  "snakes/envs/samtools.yaml"
+    conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
@@ -82,7 +82,7 @@ rule get_chromsize_genomic:
     input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
     output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
     log:    "LOGS/PEAKS/{org}/{gen}{name}/chromsize.log"
-    conda:  "snakes/envs/samtools.yaml"
+    conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
@@ -92,7 +92,7 @@ rule extendbed:
             lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))#''.join(tool_params(wildcards.file, None ,config, 'PEAKS')[2]))
     output: "PEAKS/{file}_mapped_extended_{type}.bed.gz"
     log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
-    conda:  "snakes/envs/perl.yaml"
+    conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS
@@ -103,7 +103,7 @@ rule rev_extendbed:
             lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
     output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
-    conda:  "snakes/envs/perl.yaml"
+    conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: gen=lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
             bins=BINS
@@ -125,7 +125,7 @@ if all(checklist) and CLIP not in ['iCLIP', 'revCLIP']:
                 rev = "PEAKS/{file}_mapped_{type}.re.bedg.gz",
                 concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_{type}.ucscbedtobedgraph"
-        conda:  "snakes/envs/base.yaml"
+        conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: absf = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.fw.bedg.gz'),
                 absr = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
@@ -139,7 +139,7 @@ elif all(checklist2) and CLIP not in ['iCLIP', 'revCLIP']:
                 rev = "PEAKS/{file}_mapped_{type}.re.bedg.gz",
                 concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/PEAKS/{file}_{type}.ucscbedtobedgraph"
-        conda:  "snakes/envs/base.yaml"
+        conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: absf = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.fw.bedg.gz'),
                 absr = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.re.bedg.gz')
@@ -152,7 +152,7 @@ elif CLIP == 'iCLIP':
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
-        conda:  "snakes/envs/bedtools.yaml"
+        conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
                 bins=BINS,
@@ -166,7 +166,7 @@ elif CLIP == 'revCLIP':
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
-        conda:  "snakes/envs/bedtools.yaml"
+        conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
                 bins=BINS,
@@ -180,7 +180,7 @@ else:
                 sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
         output: concat = "PEAKS/{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/PEAKS/bed2bedgraph{type}_{file}.log"
-        conda:  "snakes/envs/bedtools.yaml"
+        conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
         params: genome = lambda wildcards: "{gen}".format(gen=genome(wildcards.file,config)),
                 bins=BINS,
@@ -193,7 +193,7 @@ rule PreprocessPeaks:
     input:  "PEAKS/{file}_mapped_{type}.bedg.gz"
     output: "PEAKS/{file}_prepeak_{type}.bed.gz",
     log:    "LOGS/PEAKS/prepeak_{type}_{file}.log"
-    conda:  "snakes/envs/perl.yaml"
+    conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
              opts=PREPROCESS
@@ -203,7 +203,7 @@ rule Find_Peaks:
     input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
     output: "PEAKS/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/findpeaks{type}_{file}.log"
-    conda:  "snakes/envs/perl.yaml"
+    conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: limitratio=MINPEAKRATIO,
             ratio=PEAKCUTOFF,
@@ -227,7 +227,7 @@ rule UnzipGenome:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
     output: fa = expand("{ref}/{{org}}/{{gen}}{{name}}_fastafrombed.fa",ref=REFERENCE)
     log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
-    conda:  "snakes/envs/samtools.yaml"
+    conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
@@ -239,7 +239,7 @@ rule AddSequenceToPeak:
             pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/PEAKS/seq2peaks{type}_{file}.log"
-    conda:  "snakes/envs/bedtools.yaml"
+    conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
     shell:  "export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
@@ -249,7 +249,7 @@ if ANNOPEAK is not None:
         input:  "PEAKS/{file}_peak_seq_{type}.bed.gz"
         output: "PEAKS/{file}_peak_anno_{type}.bed.gz"
         log:    "LOGS/PEAKS/annotatepeaks{type}_{file}.log"
-        conda:  "snakes/envs/perl.yaml"
+        conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
                 anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'PEAKS')['ANNOTATION']])
@@ -263,7 +263,7 @@ if ANNOPEAK is not None:
                 temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
                 temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
-        conda:  "snakes/envs/perl.yaml"
+        conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: out=expand("UCSC/{source}",source=SOURCE),
                 bins=BINS,
@@ -278,7 +278,7 @@ else:
                 temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
                 temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
-        conda:  "snakes/envs/perl.yaml"
+        conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: out=expand("UCSC/{source}",source=SOURCE),
                 bins=BINS,
@@ -302,7 +302,7 @@ rule PeakToUCSC:
             temp("UCSC/{file}_{type}fw_tmp"),
             temp("UCSC/{file}_{type}re_tmp")
     log:    "LOGS/PEAKS/peak2ucsc{file}_{type}.log"
-    conda:  "snakes/envs/ucsc.yaml"
+    conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
     shell:  "zcat {input[0]} > {output[2]} 2>> {log} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2>> {log} && zcat {input[1]} > {output[3]} 2>> {log} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]} 2>> {log}"

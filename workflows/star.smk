@@ -6,7 +6,7 @@ rule generate_index:
             tmp = temp("TMP/{dir}/{gen}{name}_{extension}.fa"),
             tmpa = temp("TMP/{dir}/{gen}{name}_{extension}.anno")
     log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
-    conda:  "snakes/envs/"+MAPPERENV+".yaml"
+    conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
@@ -26,7 +26,7 @@ if paired == 'paired':
                 unmapped_r2 = "UNMAPPED/{file}_unmapped_R2.fastq.gz",
                 tmp = temp("TMP/STAROUT/{file}")
         log:    "LOGS/{file}/mapping.log"
-        conda:  "snakes/envs/"+MAPPERENV+".yaml"
+        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
@@ -44,7 +44,7 @@ else:
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
                 tmp = temp("TMP/STAROUT/{file}")
         log:    "LOGS/{file}/mapping.log"
-        conda:  "snakes/envs/"+MAPPERENV+".yaml"
+        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,

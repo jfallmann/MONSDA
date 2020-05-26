@@ -16,7 +16,7 @@ rule prepare_count_annotation:
     output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
              deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
     log:     "LOGS/featurecount_dexseq_annotation.log"
-    conda:   "snakes/envs/"+COUNTENV+".yaml"
+    conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params:  bins = BINS,
              countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
@@ -29,7 +29,7 @@ rule featurecount_dexseq_unique:
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
             cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
-    conda:  "snakes/envs/"+COUNTENV+".yaml"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: count  = COUNTBIN,
             cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
@@ -43,7 +43,7 @@ rule prepare_count_table:
     output:  tbl = expand("{outdir}Tables/RUN_DEU_Analysis.tbl.gz",outdir=outdir),
              anno = expand("{outdir}Tables/RUN_DEU_Analysis.anno.gz",outdir=outdir)
     log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
-    conda:   "snakes/envs/"+DEUENV+".yaml"
+    conda:   "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
              bins = BINS
@@ -58,7 +58,7 @@ rule run_dexseq:
             html = rules.themall.input.html,
             session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_dexseq.log",outdir=outdir)
-    conda:  "snakes/envs/"+DEUENV+".yaml"
+    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEUBIN]),
             outdir = outdir,

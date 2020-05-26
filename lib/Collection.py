@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon May 25 12:33:40 2020 (+0200)
+# Last-Updated: Tue May 26 12:20:08 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1920
+#     Update #: 1932
 # URL:
 # Doc URL:
 # Keywords:
@@ -862,6 +862,25 @@ def nf_fetch_params(configfile):
             retconf["PREPROCESS"] = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
 
     return retconf
+
+@check_run
+def nf_tool_params(sample, runstate, config, subconf, toolenv):
+    logid=scriptname+'.nf_tool_params: '
+    log.debug(logid+'Samples: '+str(sample))
+    t = genome(sample,config)
+    mp = OrderedDict()
+    x = sample.split(os.sep)[:-1]
+    if runstate is None:
+        runstate = runstate_from_sample([sample], config)[0]
+    if runstate not in x:
+        x.append(runstate)
+    log.debug(logid+str([sample,runstate,subconf,t,x]))
+    mp = subDict(config[subconf],x)['OPTIONS']
+    tp = list()
+    for idx in range(len(mp)):
+        tp.append(' '.join("--"+toolenv+"_params_"+str(idx)+" \'{!s} {!s}\'".format(key,val) for (key, val) in mp[idx].items()))
+    log.debug(logid+'DONE: '+str(tp))
+    return ' '.join(tp)
 
 ##############################
 #########Python Subs##########

@@ -1,22 +1,27 @@
 #!/usr/bin/env nextflow
 
 //includes
-include '../nextsnakes/lib/Collection.groovy'
+include {} from '../nextsnakes/lib/Collection.groovy'
 
+//Version Check
 nextflowVersion = '>=20.01.0.5264'
 nextflow.preview.dsl=2
 
-
+//Params from CL
 REFERENCE = params.REFERENCE
 GENOME = params.GENOME
 NAME = params.NAME
 BINS = params.BINS
-MAXTHREAD = params.MAXTHREADS
+THREADS = params.MAXTHREAD
 SOURCE = params.SOURCE
-SAMPLES = params.SAMPLES.splitCSV
-LONGSAMPLES = params.LONGSAMPLES.splitCSV
-paired = params.PAIRED
-stranded = params.STRANDED
+PAIRED = params.PAIRED
+STRANDED = params.STRANDED
+
+SAMPLES= params.SAMPLES.split(',')
+LONGSAMPLES= params.LONGSAMPLES.split(',')
+
+for( String values : SAMPLES )
+      println(values);
 
 // TODO nf-core: Add any reference files that are needed
 // Configurable reference genomes

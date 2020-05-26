@@ -4,7 +4,7 @@ rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
     output: idx = expand("{ref}/{{dir}}/{map}/{{extension}}/{{gen}}{{name}}_{{extension}}/{map}.idx", ref=REFERENCE, map=MAPPERENV)
     log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
-    conda:  "snakes/envs/"+MAPPERENV+".yaml"
+    conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items())
@@ -19,7 +19,7 @@ if paired == 'paired':
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
-        conda:  "snakes/envs/"+MAPPERENV+".yaml"
+        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
@@ -33,7 +33,7 @@ else:
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
-        conda:  "snakes/envs/"+MAPPERENV+".yaml"
+        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params:  mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
