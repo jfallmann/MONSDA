@@ -39,7 +39,8 @@ import sys
 import copy
 import json
 import random
-#import logging
+import logging
+
 min_version("5.8.2")
 
 from lib.Collection import *
@@ -48,7 +49,7 @@ scriptname=os.path.basename(__file__)
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Helper to create initial config file used for workflow processing')
-    parser.add_argument("-m", "--manualmode", action="store_true", help='If set configuration will explain every step in detail')
+    parser.add_argument("-q", "--quickmode", action="store_true", help='If set configuration without explanation')
 
     return parser.parse_args()
 
@@ -310,9 +311,10 @@ def print_json(paramdict,ofn,annotation=''):
             print(json.dumps(paramdict,indent=4),file=jsonout)
 
 def proof_input(proof=None):
-    allowed_characters=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0','(',')','_',',','.',':']
+    allowed_characters=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0','(',')','_','-',',','.',':','/']
     while True:
         a = input(">>> ").strip().replace(" ","")
+        print("\n")
         if any(x not in allowed_characters for x in a):
             print("You used unallowed letters, try again")
             continue
@@ -455,9 +457,7 @@ def rename(config,job,oldics,oldtodos,proof,*args):
                                 number=call[2]
                                 config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number]
 
-def explain(text):
-    if manual:
-        print("\n** ",text,randomtext(),"\n")
+
 
 def get_path(input_dict):
     for key, value in input_dict.items():
@@ -507,20 +507,13 @@ def add_tools(config,workflow):
     for tool in tools.split(','):
         config[workflow]['TOOLS'].update({tool:tools_dict[tool]})
 
-def randomtext():
-    text = "Parish so enable innate in formed missed. Hand two was eat busy fail. Stand smart grave would in so. Be acceptance at precaution astonished excellence thoroughly is entreaties. Who decisively attachment has dispatched. Fruit defer in party me built under first. Forbade him but savings sending ham general. So play do in near park that pain.\n"
-    "In by an appetite no humoured returned informed. Possession so comparison inquietude he he conviction no decisively. Marianne jointure attended she hastened surprise but she. Ever lady son yet you very paid form away. He advantage of exquisite resolving if on tolerably. Become sister on in garden it barton waited on. \n"
-    "Improve him believe opinion offered met and end cheered forbade. Friendly as stronger speedily by recurred. Son interest wandered sir addition end say. Manners beloved affixed picture men ask. Explain few led parties attacks picture company. On sure fine kept walk am in it. Resolved to in believed desirous unpacked weddings together. Nor off for enjoyed cousins herself. Little our played lively she adieus far sussex. Do theirs others merely at temper it nearer. \n"
-    "Yourself off its pleasant ecstatic now law. Ye their mirth seems of songs. Prospect out bed contempt separate. Her inquietude our shy yet sentiments collecting. Cottage fat beloved himself arrived old. Grave widow hours among him ﻿no you led. Power had these met least nor young. Yet match drift wrong his our. \n"
-    "Do to be agreeable conveying oh assurance. Wicket longer admire do barton vanity itself do in it. Preferred to sportsmen it engrossed listening. Park gate sell they west hard for the. Abode stuff noisy manor blush yet the far. Up colonel so between removed so do. Years use place decay sex worth drift age. Men lasting out end article express fortune demands own charmed. About are are money ask how seven. \n"
-    "Oh he decisively impression attachment friendship so if everything. Whose her enjoy chief new young. Felicity if ye required likewise so doubtful. On so attention necessary at by provision otherwise existence direction. Unpleasing up announcing unpleasant themselves oh do on. Way advantage age led listening belonging supposing. \n"
-    "Up maids me an ample stood given. Certainty say suffering his him collected intention promotion. Hill sold ham men made lose case. Views abode law heard jokes too. Was are delightful solicitude discovered collecting man day. Resolving neglected sir tolerably but existence conveying for. Day his put off unaffected literature partiality inhabiting. \n"
-    "It as announcing it me stimulated frequently continuing. Least their she you now above going stand forth. He pretty future afraid should genius spirit on. Set property addition building put likewise get. Of will at sell well at as. Too want but tall nay like old. Removing yourself be in answered he. Consider occasion get improved him she eat. Letter by lively oh denote an. \n"
-    "Society excited by cottage private an it esteems. Fully begin on by wound an. Girl rich in do up or both. At declared in as rejoiced of together. He impression collecting delightful unpleasant by prosperous as on. End too talent she object mrs wanted remove giving. \n"
-    "Too cultivated use solicitude frequently. Dashwood likewise up consider continue entrance ladyship oh. Wrong guest given purse power is no. Friendship to connection an am considered difficulty. Country met pursuit lasting moments why calling certain the. Middletons boisterous our way understood law. Among state cease how and sight since shall. Material did pleasure breeding our humanity she contempt had. So ye really mutual no cousin piqued summer result. "
-    n = random.randint(50,len(text.split(" ")))
-    return " ".join(text.split(" ")[:n])
-
+def explain(filename):
+    if not quick:
+        path = os.path.join("docs/guide",filename)
+        with open(path, 'r') as f:
+            text = f.read()
+        print("\n")
+        print(text,"\n")
 
 ####################
 ####    MAIN    ####
@@ -539,24 +532,28 @@ if __name__ == '__main__':
         sys.exit("This script requires Python version >= 3.7")
     # log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-    print("\n\n\n","*"*30," SNAKES GUIDE ","*"* 30,)
-    print("\n","*"*76,"\n")
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    cwd=os.getcwd()
+
+    print("\n\n\n","*"*33," NextSnakes GUIDE ","*"* 33,)
+    print("","*"*86,"\n")
 
     try:
         args=parseargs()
-        if args.manualmode:
-            manual=True
-            print("starting in manualmode\n\n")
+        if args.quickmode:
+            quick=True
+            print("  > starting in quick-mode <\n")
         else:
-            manual=False
-            print("starting in quickmode\n\n")
+            quick=False
+            print("  > starting in explanation-mode <\n")
 
-        explain("Welcome...")
-        start = conversation("enter 'append' for expanding an existing configfile, or enter 'new' for a new project",None)
+        explain("intro.txt")
+        start = conversation("Enter 'append' for expanding an existing configfile or 'new' for a new project",None)
 
         while True:
 
             if 'append' in start:
+
                 while True:
                     configfile = conversation("enter the name of the existing file",None)
                     if os.path.isfile(configfile):
@@ -606,20 +603,61 @@ if __name__ == '__main__':
                 break
 
             if 'new' in start:
-                name = conversation("Please type the name of your Project, it will also be the name of the CONFIGFILE", None,)
+
+                name = conversation("Now please type the name of your Project, it will be the name of the CONFIGFILE \nand possibly of your Project-folder", None)
                 configfile = f"config_{name}.json"
 
-                explain("For each id to work on you can define one or multiple conditions and settings that will be used for the analysis). The ICS also sets the file structure to follow for the FASTQ directory, where the ID is the first level and the Condition the second. Setting is used by RunSnakemake.py to enable processing of the same samples under different settings like mapping tools, trimming tools and later also postprocessing tools or commandline options for these tools.")
+                folder_content = os.listdir('../')
+                if 'FASTQ' in folder_content or 'GENOMES' in folder_content:
+                    set_folder=conversation("It looks like you already set up your project-folder. We would therefor skip setting it up now. Enter 'n' if you want to do that anyway.", None)
+                else:
+                    explain('projectfolder.txt')
+                    while True:
+                        path_to_project = conversation("So, where should the Project-folder be created? Enter the absolute path \nlike '/home/path/to/NextSnakesProjects' ",None)
+                        if os.path.isdir(path_to_project):
+                            project = os.path.join(path_to_project,name)
+                            if os.path.isdir(project):
+                                print(f"In the directory you entered, a folder with the name {name} already exist. \nMaybe you should think about what you really want to do. If you want to work on \nan existing Project, use the 'append' function, otherwise use a different \nProject-name. Ciao!")
+                                exit()
+                            os.mkdir(project)
+                            os.mkdir(os.path.join(project,"FASTQ"))
+                            os.mkdir(os.path.join(project,"GENOMES"))
+                            os.symlink(cwd, os.path.join(project,'snakes'))
+                            break
+                        else:
+                            print("Sry, couldn't find this directory ")
+
+                explain("ics.txt")
                 IDs = conversation("enter all ID's you want to work on",None)
                 ICS=[]
                 for id in IDs.split(","):
+                    os.mkdir(os.path.join(project,"FASTQ",id))
                     conditions = conversation(f"now tell me all conditions for {id}",None)
                     for condi in conditions.split(","):
+                        os.mkdir(os.path.join(project,"FASTQ",id,condi))
                         settings = conversation(f"and now all settings for {id}:{condi}",None)
                         for setting in settings.split(","):
+                            os.mkdir(os.path.join(project,"FASTQ",id,condi,setting))
                             ICS.append(f"{id}:{condi}:{setting}")
+                print("Now you may have to be patient. We go through all settings, and you have to \n"
+                    "assign the corresponding samples by their absolute directory path. The Guide will \n"
+                    "symlink it to your 'FASTQ'-Folder.\n\n"
+                    "For that, maybe it's helpful to open another termimal, navigate to the directory \n"
+                    "your samples are stored and list them with 'readlink -f *.fastq.gz'\n")
+                for ics in ICS:
+                    while True:
+                        sample=conversation(f"Enter one Sample-path of {ics} or enter 'n' to go to the next ics",None)
+                        if sample=='n':
+                            break
+                        if os.path.isfile(sample):
+                            os.symlink(sample, os.path.join(project,'FASTQ',ics.split(':')[0],ics.split(':')[1],ics.split(':')[2],os.path.basename(sample)))
+                        else:
+                            print("Sry, couldn't find the file")
 
-                explain("Genomes, references...")
+                print("Well done.. ")
+
+
+                explain("genomes.txt")
                 fasta_dict={}
                 organisms = conversation("enter all organisms you have in your analysis",None)
                 for organism in organisms.split(","):
