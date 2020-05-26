@@ -1,62 +1,86 @@
+FQSAMPLES = null
+
 if (PAIRED == 'paired'){
-    //log('Running paired end raw QC')
+    R1 = SAMPLES.collect{
+        element -> return "${workflow.workDir}/FASTQ/"+element+"_R1.fastq.gz"
+    }
+    R2 = SAMPLES.collect{
+        element -> return "${workflow.workDir}/FASTQ/"+element+"_R2.fastq.gz"
+    }
+    FQSAMPLES = R1+R2
+    FQSAMPLES.sort()
 
-    Channel
-        .from(SAMPLES+'_{R1,R2}.fastq.gz') //{ file -> file.name.replaceAll(/.bam|.bai$/,'') }
-        //.set { samples_ch }
-        .view()
 }else{
-    //log('Running single end raw QC')
-
-    Channel
-        .from(SAMPLES+'.fastq.gz')
-        .view()
-        //.set { samples_ch }
+    FQSAMPLES=SAMPLES.collect{
+        element -> return "${workflow.workDir}/FASTQ/"+element+".fastq.gz"
+    }
+    FQSAMPLES.sort()
 }
 
 process qc_raw{
     conda 'nextsnakes/envs/qc.yaml'
+    cpus THREADS
     validExitStatus 0,1
+
     publishDir "${workflow.workDir}" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
         else null
     }
 
     input:
-    set prefix, file(reads) from samples_ch
+    path read
 
     output:
-    file "*.{zip,html}" into fastqc_results
+    path "*.{zip,html}", emit: fastqc_results
 
     script:
     """
-    echo ${prefix}
-    fastqc $reads
+    fastqc --quiet -t $THREADS --noextract -f fastq $read
     """
+}
+
+process collect_qc_raw{
+    input:
+    path results
+    output:
+    path "QC/Multi/RAW/$CONDITION/qclist.txt", emit: collect_fastqc
+    shell:
+    '''
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u > !{};done
+    '''
 }
 
 process multiqc_raw{
     conda 'nextsnakes/envs/qc.yaml'
+    cpus THREADS
     validExitStatus 0,1
     publishDir "${workflow.workDir}" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/RAW/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/Multi/RAW/$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/RAW/$CONDITION/$filename"
         else null
     }
 
     input:
-    set sampleId, file(reads) from samples_ch
+    path qcs
     output:
-
-    output:
-    file "*.{zip,html}" into fastqc_results
+    path "*.{zip,html}", emit: multiqc_results
 
     script:
     """
-    echo ${prefix}
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/QC/FASTQC/$CONDITION/.
     """
+}
+
+workflow {
+    samples_ch = Channel.from(FQSAMPLES)
+    main:
+    qc_raw(samples_ch)
+    multiqc_raw(qc_raw.out.fastqc_results)
+    emit:
+    multiqc_raw.out.multiqc_results
+    //collect_qc_raw()
+    //multiqc_raw(collect_qc_raw.out.collect_fastqc)
 }
