@@ -1,6 +1,5 @@
 FQSAMPLES = null
 TRSAMPLES = null
-MAMSAMPLES = null
 
 if (PAIRED == 'paired'){
     FR1 = SAMPLES.collect{
@@ -26,17 +25,11 @@ if (PAIRED == 'paired'){
         element -> return "${workflow.workDir}/FASTQ/"+element+".fastq.gz"
     }
     FQSAMPLES.sort()
-
     TRSAMPLES=LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
     }
     TRSAMPLES.sort()
 }
-
-MRSAMPLES = LONGSAMPLES.collect{
-    element -> return "${workflow.workDir}/MAPPED/"+element+"_mapped_sorted.sam.gz"
-}
-MRSAMPLES.sort()
 
 process qc_raw{
     conda 'nextsnakes/envs/qc.yaml'
@@ -86,40 +79,15 @@ process qc_trimmed{
     """
 }
 
-process qc_mapped{
-    conda 'nextsnakes/envs/qc.yaml'
-    cpus THREADS
-    validExitStatus 0,1
-
-    publishDir "${workflow.workDir}" , mode: 'copy',
-    saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
-        else null
-    }
-
-    input:
-    path mapped
-
-    output:
-    path "*.{zip,html}", emit: mapfastqc_results
-
-    script:
-    """
-    fastqc --quiet -t $THREADS --noextract -f sam_mapped $read
-    """
-}
-
-
 //collecting list of processed file for multiqc, not implemented yet
 process collect_qc_raw{
     input:
     path results
     output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    path "QC/Multi/TRIMMED_RAW/$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u > !{};done
     '''
 }
 
@@ -128,40 +96,27 @@ process collect_qc_trimmed{
     input:
     path results
     output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    path "QC/Multi/TRIMMED_RAW/$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u > !{};done
     '''
 }
 
-//collecting list of processed file for multiqc, not implemented yet
-process collect_qc_map{
-    input:
-    path results
-    output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
-    shell:
-    '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
-    '''
-}
-
-process multiqc{
+process multiqc_trimmed_raw{
     conda 'nextsnakes/envs/qc.yaml'
     cpus THREADS
     validExitStatus 0,1
     publishDir "${workflow.workDir}" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/Multi/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/Multi/TRIMMED_RAW/$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/TRIMMED_RAW/$CONDITION/$filename"
         else null
     }
 
     input:
     path qcs
     path trimmed
-    path mapped
     output:
     path "*.{zip,html}", emit: multiqc_results
 
@@ -174,16 +129,14 @@ process multiqc{
 workflow {
     samples_ch = Channel.from(FQSAMPLES)
     trsamples_ch = Channel.from(TRSAMPLES)
-    mapsamples_ch = Channel.from(MAPSAMPLES)
 
     main:
     qc_raw(samples_ch)
     qc_trimmed(trsamples_ch)
-    qc_mapped(mapsamples_ch)
 
-    multiqc_raw(qc_raw.out.fastqc_results, qc_trimmed.out.trfastqc_results, qc_mapped.out.mapfastqc_results)
+    multiqc_raw(qc_raw.out.fastqc_results, qc_trimmed.out.trfastqc_results)
     emit:
-    multiqc.out.multiqc_results
+    multiqc_trimmed_raw.out.multiqc_results
     //collect_qc_raw()
     //multiqc_raw(collect_qc_raw.out.collect_fastqc)
 }
