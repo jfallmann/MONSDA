@@ -1,0 +1,70 @@
+                                   Chapter 4
+                            > GENOME REFERENCES  <
+
+Now we look at the 'GENOMES'-folder. It has also been created in your Project-
+directory. Later the Workflows you involve will find References like GTF- or
+FASTA-files here.
+NextSnakes implements two features, you need to know about:
+
+ > It can happen, that your data includes multiple organisms, like in the example
+   above. For that case NextSnakes needs one subdirectory per organism in
+   the GENOMES directory. But even if you only have one organism, the
+   subdirectory is necessesary.
+
+ > You can use extensions for your genome-files in case you want to use specific
+   genomes for different runs.
+
+To set up all that properly, you have to do four steps:
+
+1. First you have to specify a key-value pair in the configfile that assigns the
+   organisms your samples come from to the basename(!) of a FASTA-file.
+   The ending '.fa.gz' will NextSnakes append automatically.
+
+   In the configfile it will look like this for example:
+
+                "GENOMES": {
+                    "Human": "hg38",
+                    "Drosophila": "dm6"
+                }
+
+2. Than you have to assign each ics to one Organism, which look like this:
+
+                "SOURCE": {
+                    "id": {
+                        "condition": {
+                            "setting_1": "Human"
+                            "setting_2": "Drosophila"
+                        }
+                    }
+                }
+
+3. You assign each ics to an additional identifier, which extends the
+   FASTA-file basename.
+
+                "NAME": {
+                    "id": {
+                        "condition": {
+                            "setting_1": ".extended"
+                            "setting_2": ".normal"
+                        }
+                    }
+                }
+
+4. And finally you have to specify the sequencing type.
+
+                "SOURCE": {
+                    "id": {
+                        "condition": {
+                            "setting_1": "paired"
+                            "setting_2": "unpaired"
+                        }
+                    }
+                }
+
+
+All in all our Example will leads NextSnakes to following files:
+
+ > /GENOMES/Human/hg38.extended.fa.gz
+ > /GENOMES/Drosophila/dm6.normal.fa.gz
+
+Now, let's start with the first step!

@@ -1,3 +1,6 @@
+                                   Chapter 2  
+                               > ICS-STRUCTURE <
+
 All right, we now establish the core-part of NextSnakes, the ICS-structure.
 ICS stands for ID-CONDITION-SETTING and is the way you structure the experiment
 you want to analyze.

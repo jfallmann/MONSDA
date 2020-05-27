@@ -303,18 +303,15 @@ def set_relations(config,key):
                     config[key][id][condition][setting]['RELATIONS']=relations
 
 # @check_run
-def print_json(paramdict,ofn,annotation=''):
-    with open(ofn,'w') as jsonout:
-        if annotation != '' and 'gff.gz' in annotation or 'gff3.gz' in annotation:
-            print(re.sub('genome_or_other.gff3.gz',annotation,json.dumps(paramdict,indent=4)),file=jsonout)
-        else:
-            print(json.dumps(paramdict,indent=4),file=jsonout)
+def print_json(paramdict,ofn):
+    with open(os.path.join(project,ofn),'w') as jsonout:
+        print(json.dumps(paramdict,indent=4),file=jsonout)
 
 def proof_input(proof=None):
     allowed_characters=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0','(',')','_','-',',','.',':','/']
     while True:
         a = input(">>> ").strip().replace(" ","")
-        print("\n")
+        # print("\n")
         if any(x not in allowed_characters for x in a):
             print("You used unallowed letters, try again")
             continue
@@ -336,6 +333,7 @@ def conversation(question, origin, proof=None):
     default = copy.deepcopy(origin)
     if default is None:
         a = proof_input(proof)
+        print("\n")
         return a
     else:
         print("\n")
@@ -433,12 +431,36 @@ def rename(config,job,oldics,oldtodos,proof,*args):
                         if len(call)==2:
                             text  =call[0]
                             key   =call[1]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
+                            if 'ANNOTATION' in key:
+                                org = config['SOURCE'][ics[0][0]][ics[1][0]][ics[2][0]]
+                                files = os.listdir(os.path.join(project,'GENOMES',org))
+                                if len(files) > 0:
+                                    print(f"Following annotation-files are available for {org}:")
+                                    print("\n")
+                                    for file in files:
+                                        print("\t> ",os.path.basename(file))
+                                    print("\n")
+                                    while True:
+                                        anno = conversation(text,None,proof)
+                                        if anno not in files:
+                                            a = conversation(f"WARNING: {anno} is not yet in /GENOMES/{org} \nEnter 'y' for enter it anyway or enter 'n' to try again.",None)
+                                            if 'n' in a:
+                                                continue
+                                            if 'y' in a:
+                                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = anno
+                                                break
+                                        config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = anno
+                                        break
+                                else:
+                                    print(f"There are no annotation files available for {org}. you can still specify \na file, but then remember to copy it to the directory")
+                                    config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
+                            else:
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
                         if len(call)==3:
                             text  =call[0]
                             key   =call[1]
                             number=call[2]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = conversation(text, config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number], proof)
+                            config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = conversation(text, config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number],proof)
                 elif ics in naming_list and naming!=ics:
                     switch=False
                 else:
@@ -468,10 +490,9 @@ def get_path(input_dict):
             yield key
 
 def add_comparables(config,workflow):
-    explain("what are comparables?...")
     config[workflow]['COMPARABLE'] = {}
     while True:
-        a = conversation("do you want to add a comparable? enter 'y' or 'n'",None)
+        a = conversation("do you want to add a COMPARABLE? enter 'y' or 'n'",None)
         if a=='y':
             name=conversation("enter the name",None)
             ics_list=[]
@@ -586,7 +607,7 @@ if __name__ == '__main__':
                 oldtodos, oldics, newconf= create_json_config(
                 configfile=configfile,
                 append="APPEND",
-                template="snakes/configs/template_2.json",
+                template="configs/template_2.json",
                 preprocess="",
                 workflows=workflows,
                 postprocess=postprocess,
@@ -639,49 +660,63 @@ if __name__ == '__main__':
                         for setting in settings.split(","):
                             os.mkdir(os.path.join(project,"FASTQ",id,condi,setting))
                             ICS.append(f"{id}:{condi}:{setting}")
+
+                explain("workflows.txt")
+                workflows = conversation("Enter which WORKFLOWS you would like to run. Possible are MAPPING, TRIMMING, QC", None,["MAPPING", "TRIMMING", "QC",""])
+                postprocess = conversation("Which POSTPROCESS ANALYSIS would you like to run? Possible are DE, DEU, DAS", None, ["DE","DEU","DAS",""])
+
                 print("Now you may have to be patient. We go through all settings, and you have to \n"
                     "assign the corresponding samples by their absolute directory path. The Guide will \n"
                     "symlink it to your 'FASTQ'-Folder.\n\n"
                     "For that, maybe it's helpful to open another termimal, navigate to the directory \n"
                     "your samples are stored and list them with 'readlink -f *.fastq.gz'\n")
+
                 for ics in ICS:
                     while True:
                         sample=conversation(f"Enter one Sample-path of {ics} or enter 'n' to go to the next ics",None)
                         if sample=='n':
                             break
                         if os.path.isfile(sample):
-                            os.symlink(sample, os.path.join(project,'FASTQ',ics.split(':')[0],ics.split(':')[1],ics.split(':')[2],os.path.basename(sample)))
+                            try:
+                                os.symlink(sample, os.path.join(project,'FASTQ',ics.split(':')[0],ics.split(':')[1],ics.split(':')[2],os.path.basename(sample)))
+                            except:
+                                print("hmm, an error occured.. maybe this file is already linked. try again!")
                         else:
                             print("Sry, couldn't find the file")
-
-                print("Well done.. ")
-
 
                 explain("genomes.txt")
                 fasta_dict={}
                 organisms = conversation("enter all organisms you have in your analysis",None)
                 for organism in organisms.split(","):
-                    fasta_dict.update({organism:conversation(f"enter the FASTA.gz file appending to {organism}", None)})
+                    os.mkdir(os.path.join(project,"GENOMES",organism))
+                    fasta_dict.update({organism:conversation(f"enter the basename(!) of the fa.gz file appending to {organism}", None)})
+                    print("Now you can add Genome reference files to your GENOMES folder\n")
+                    while True:
+                        file=conversation(f"Enter one file-path you want to symlink to {organism} or enter 'n' to go to the next ics",None)
+                        if file=='n':
+                            break
+                        if os.path.isfile(file):
+                            try:
+                                os.symlink(file, os.path.join(project,'GENOMES',organism,os.path.basename(file)))
+                            except:
+                                print("hmm, an error occured.. maybe this file is already linked. try again!")
+                        else:
+                            print("Sry, couldn't find the file")
 
-                explain("workflow explanation...")
-                workflows = conversation("which WORKFLOWS would you like to run? Possible are MAPPING, TRIMMING, QC", None,["MAPPING", "TRIMMING", "QC",""])
-                explain("postprocess explanation...")
-                postprocess = conversation("which POSTPROCESS ANALYSIS would you like to run? Possible are DE, DEU, DAS", None, ["DE","DEU","DAS",""])
-                procs= conversation("enter the Maximum number of parallel processes to start snakemake with", None, "only-numbers")
 
                 annotation=""
 
                 oldtodos, oldics, newconf = create_json_config(
                 configfile = configfile,
                 append="",
-                template="snakes/configs/template_2.json",
+                template="configs/template_2.json",
                 preprocess="",
                 workflows=workflows,
                 postprocess=postprocess,
                 ics=",".join(ICS),
                 refdir="GENOMES",
-                binaries="snakes/scripts",
-                procs=procs,
+                binaries="scripts",
+                procs="10",
                 genomemap=",".join([id+":organism" for id in IDs.split(",")]),
                 genomes=",".join([k+":"+v for k,v in fasta_dict.items()]),
                 genomeext="",
@@ -693,19 +728,12 @@ if __name__ == '__main__':
             else:
                 start = conversation("enter 'append' or 'new'",None)
 
-        explain("we are now done with the basics. in the next steps we will set the details. for this we have to make the design of the experiment understandable for snakes")
-        print(newconf)
+        # print(newconf)
 
         if ICS:
-            # NAME
-            explain("genome extension...")
-            rename(newconf,'NAME',oldics,oldtodos,None,
-            ["enter the additional FASTA-extension"]
-            )
-
+            explain("genomes2.txt")
             # SOURCE
             if len(newconf["GENOME"]) > 1:
-                explain("source..")
                 rename(newconf,'SOURCE',oldics,oldtodos,list(newconf['GENOME'].keys()),
                 [f"enter the corresponding organism {list(newconf['GENOME'].keys())}"]
                 )
@@ -715,31 +743,35 @@ if __name__ == '__main__':
                         for setting in newconf['SOURCE'][id][condition].keys():
                             newconf['SOURCE'][id][condition][setting]=list(newconf['GENOME'].keys())[0]
 
+            # NAME
+            rename(newconf,'NAME',oldics,oldtodos,None,
+            ["enter the additional FASTA-extension"]
+            )
+
             # SEQUENCING
-            explain("sequencing types..")
             rename(newconf,'SEQUENCING',oldics,oldtodos,["paired", "unpaired"],
             ["enter 'paired' or 'unpaired'"]
             )
 
-            # SAMPLES
-            explain("samples...")
-            for id in newconf['SAMPLES'].keys():
-                for condition in newconf['SAMPLES'][id].keys():
-                    for setting in newconf['SAMPLES'][id][condition].keys():
-                        if not newconf['SAMPLES'][id][condition][setting]:
-                            samples = conversation(f"I couldn't found samples for {id}:{condition}:{setting}, please type the file names",None)
-                            newconf['SAMPLES'][id][condition][setting]=samples.split(",")
+            # # SAMPLES
+            # explain("samples...")
+            # for id in newconf['SAMPLES'].keys():
+            #     for condition in newconf['SAMPLES'][id].keys():
+            #         for setting in newconf['SAMPLES'][id][condition].keys():
+            #             if not newconf['SAMPLES'][id][condition][setting]:
+            #                 samples = conversation(f"I couldn't found samples for {id}:{condition}:{setting}, please type the file names",None)
+            #                 newconf['SAMPLES'][id][condition][setting]=samples.split(",")
 
-        explain("workflows...")
+        explain("workflows2.txt")
 
         if 'QC' in newconf['WORKFLOWS'].split(",") and ('QC' not in oldtodos or ICS):
-            explain("QC...")
+            # explain("QC...")
             rename(newconf,'QC',oldics,oldtodos,None,
             ["QC-options, would you like to change them?",'OPTIONS',0]
             )
 
         if 'MAPPING' in newconf['WORKFLOWS'].split(",") and ('MAPPING' not in oldtodos or ICS):
-            explain("MAPPING...")
+            # explain("MAPPING...")
             rename(newconf,'MAPPING',oldics,oldtodos,None,
             ["enter ANNOTATION file",'ANNOTATION'],
             ["INDEXING, would you like to change them?",'OPTIONS',0],
@@ -747,25 +779,25 @@ if __name__ == '__main__':
             )
 
         if 'TRIMMING' in newconf['WORKFLOWS'].split(",") and ('TRIMMING' not in oldtodos or ICS):
-            explain("TRIMING...")
+            # explain("TRIMING...")
             rename(newconf,'TRIMMING',oldics,oldtodos,None,
             ["TRIMMING-options, would you like to change them?",'OPTIONS',0]
             )
 
-        explain("now we come to the analysis settings..")
+        explain("analysis.txt")
 
         if 'DE' in newconf['POSTPROCESSING'].split(",") and ('DE' not in oldtodos or ICS):
-            explain("DE...")
+            # explain("DE...")
             set_relations(newconf,'DE')
             add_tools(newconf,'DE')
             add_comparables(newconf,'DE')
             rename(newconf,'DE',oldics,oldtodos,None,
-            ["enter ANNOTATION file",'ANNOTATION'],
+            ["enter ANNOTATION file (consider, that it has to be )",'ANNOTATION'],
             ["Counting-settings for DE-Analysis, would you like to change them?",'OPTIONS',0]
             )
 
         if 'DEU' in newconf['POSTPROCESSING'].split(",") and ('DEU' not in oldtodos or ICS):
-            explain("DEU...")
+            # explain("DEU...")
             set_relations(newconf,'DEU')
             add_tools(newconf,'DEU')
             add_comparables(newconf,'DEU')
@@ -775,7 +807,7 @@ if __name__ == '__main__':
             )
 
         if 'DAS' in newconf['POSTPROCESSING'].split(",") and ('DAS' not in oldtodos or ICS):
-            explain("DAS...")
+            # explain("DAS...")
             set_relations(newconf,'DAS')
             add_tools(newconf,'DAS')
             add_comparables(newconf,'DAS')
@@ -785,11 +817,16 @@ if __name__ == '__main__':
             ["Analysis-options for diego for DAS-Analysis, would you like to change them?",'OPTIONS', 1]
             )
 
-        print_json(newconf,configfile,annotation)
+        explain("processes.txt")
+        procs= conversation("Enter the Maximum number of parallel processes to start snakemake with", None, "only-numbers")
 
-        print(f"\nALL RIGHT! you will find now {configfile} for starting your analysis ")
+        print_json(newconf,configfile)
 
-        explain("How to start snakes with the configfile: ...")
+        explain("runsnakemake.txt")
+        print(f"\nYou created \n\n\t> {configfile}\n")
+        print(f"start RunSnakemake with:\n\n\t> python3 snakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n")
+        print("\nCIAO!")
+
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

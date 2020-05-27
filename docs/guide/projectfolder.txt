@@ -1,3 +1,6 @@
+                                   Chapter 1  
+                              > PROJECT-FOLDER <
+
 Okay, first we take care of your project folder. It will fill up more and more
 over time. But in the beginning you need only three Subfolders, that we're going
 to create now:
@@ -10,4 +13,4 @@ For now its enough just to create this three - the Guide will do that for you.
 Later we fill them. The best and clearest way to use NextSnkaes would be to
 create a Folder 'NextSnakes' where you can store several projects side by side.
 But this is up to you, only the existence of the above inside your Project-folder
-is really necessary.  
+is really necessary.

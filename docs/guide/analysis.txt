@@ -1,0 +1,47 @@
+Okay, now we reach the analysis workflows. Here is another important detail that
+you have to take into account. For DE, DEU and DAS you have to determine
+comparison groups and you can choose different analysis tools.
+
+The comparison groups are particularly important at this point. You have to
+specify them according to the ics structure. NextSnakes will collect the samples
+and put them bundled up into the analysis tools. Use the ICS-encoding for this.
+
+You will understand it, when you look at the following example.
+This is how it should look like in the configfile:
+
+            "DAS": {
+                    "TOOLS": {
+                        "edger": "Analysis/DAS/EDGER.R",
+                        "diego": "Analysis/DAS/DIEGO.py"
+                    },
+                    "COMPARABLE": {
+                        "contrast_WTvsKO": [
+                            [
+                                "mir124:WT:day_0",
+                                "mir124:WT:day_1",
+                                "mir124:WT:day_2",
+                                "mir124:WT:day_3"
+                            ],
+                            [
+                                "mir124:KO:day_0",
+                                "mir124:KO:day_1",
+                                "mir124:KO:day_2",
+                                "mir124:KO:day_3",
+                            ]
+                        ],
+                        "contrast_d0": [
+                            [
+                                "mir124:WT:day_0"
+                            ],
+                            [
+                                "mir124:KO:day_0""
+                            ]
+                        ]
+                    }
+
+You can also see here, that the tools are assigned to the directory where you
+can find their analysis-scripts.
+Also consider, that you will find the results of the analyses under the name,
+you gave the groups. In this case 'contrast_WTvsKO' and 'contrast_d0'.
+
+okay, now we can continue.. 

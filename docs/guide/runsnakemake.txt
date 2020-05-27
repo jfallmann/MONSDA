@@ -1,0 +1,13 @@
+                  ****************************************
+
+                          All right, We are done!!
+
+
+Now you can start the pipeline and enjoy. You just have to navigate to your
+Project-folder and run RunSnakemake.py with your configfile.
+
+Consider, that you can add several arguments to RunSnakemake.py which you can
+display with '-h'.
+
+it is definitely a good idea to take a look to the created configfile. You will
+be much faster, if you know how its structured and how you can make changes.
