@@ -1,3 +1,6 @@
+TOOLENV=params.QCENV ?: null
+TOOLBIN=params.QCBIN ?: null
+
 MRSAMPLES = null
 
 MRSAMPLES = LONGSAMPLES.collect{
@@ -18,7 +21,7 @@ process qc_mapped{
     }
 
     input:
-    path mapped
+    path read
 
     output:
     path "*.{zip,html}", emit: mapfastqc_results
@@ -34,6 +37,7 @@ workflow QC_MAPPING{
     trsamples_ch = Channel.from(TRSAMPLES)
     mapsamples_ch = Channel.from(MRSAMPLES)
 
+    take: bla ?: null
     main:
     qc_raw(samples_ch)
     qc_trimmed(trsamples_ch)

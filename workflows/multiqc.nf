@@ -1,3 +1,6 @@
+TOOLENV=params.QCENV ?: null
+TOOLBIN=params.QCBIN ?: null
+
 //collecting list of processed file for multiqc, not implemented yet
 process collect_qc_raw{
     input:

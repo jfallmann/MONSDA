@@ -1,3 +1,6 @@
+TOOLENV=params.QCENV ?: null
+TOOLBIN=params.QCBIN ?: null
+
 FQSAMPLES = null
 
 if (PAIRED == 'paired'){
@@ -41,19 +44,9 @@ process qc_raw{
     """
 }
 
-process collect_qc_raw{
-    input:
-    path results
-    output:
-    path "../QC/Multi/RAW/$CONDITION/qclist.txt", emit: collect_fastqc
-    shell:
-    '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u > !{};done
-    '''
-}
-
 workflow QC_RAW{
     samples_ch = Channel.from(FQSAMPLES)
+    take: bla ?: null
     main:
     qc_raw(samples_ch)
     emit:

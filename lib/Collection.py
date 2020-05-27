@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 13:46:02 2020 (+0200)
+# Last-Updated: Wed May 27 18:11:59 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1942
+#     Update #: 1952
 # URL:
 # Doc URL:
 # Keywords:
@@ -864,7 +864,7 @@ def nf_fetch_params(configfile):
     return retconf
 
 @check_run
-def nf_tool_params(sample, runstate, config, subconf, toolenv, toolbin):
+def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflows=None, condition=None):
     logid=scriptname+'.nf_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     t = genome(sample,config)
@@ -874,10 +874,18 @@ def nf_tool_params(sample, runstate, config, subconf, toolenv, toolbin):
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
-    log.debug(logid+str([sample,runstate,subconf,t,x]))
-    mp = subDict(config[subconf],x)['OPTIONS']
+    log.debug(logid+str([sample,runstate,config,t,x]))
+    mp = subDict(config[subwork],x)['OPTIONS']
     tp = list()
-    tp.append("--TENV "+toolenv+" --TBIN "+toolbin+' ')
+    if not workflows:
+        tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
+    else:
+        for subwork in workflows:
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            for i in range(0,len(listoftools)):
+                toolenv, toolbin = map(str,listoftools[i])
+                tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
+
     for idx in range(len(mp)):
         tp.append(' '.join("--"+toolenv+"_params_"+str(idx)+" \'{!s} {!s}\'".format(key,val) for (key, val) in mp[idx].items()))
     log.debug(logid+'DONE: '+str(tp))

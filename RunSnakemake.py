@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 15:10:02 2020 (+0200)
+# Last-Updated: Wed May 27 18:22:39 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1037
+#     Update #: 1038
 # URL:
 # Doc URL:
 # Keywords:
@@ -122,8 +122,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            for x in subworkflows:
-                wfs.remove(x)
+            #for x in subworkflows:
+            #    wfs.remove(x)
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None

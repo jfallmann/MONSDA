@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 16:13:53 2020 (+0200)
+# Last-Updated: Wed May 27 18:37:29 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1176
+#     Update #: 1225
 # URL:
 # Doc URL:
 # Keywords:
@@ -93,7 +93,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:
+            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
@@ -193,6 +193,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         smkout.write(smk.read())
                     smkout.write('\n\n')
 
+                #workflow merger
+                with open(smko, 'a') as smkout:
+                    smkout.write('\n\n'+'workflow {\n    main:\n')
+                    for w in ['RAW']:
+                        if w in flowlist:
+                            smkout.write('\n    '+w+'()')
+                        smkout.write('\n}')
+
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
@@ -224,12 +232,12 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
 
         if preprocess:
             log.info(logid+'STARTING PREPROCESSING')
+
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
             for condition in conditions:
                 log.debug(logid+'Working on condition: '+str(condition))
                 for subwork in preprocess:
-                    flowlist = list(subwork)
                     subconf = NestedDefaultDict()
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -239,7 +247,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         continue
 
                     for i in range(0,len(listoftools)):
-
+                        flowlist = list()
                         toolenv, toolbin = map(str,listoftools[i])
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
@@ -259,6 +267,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
 
                         if subwork == 'QC':
                             subname = toolenv+'_raw.nf'
+                            flowlist.append('QC_RAW')
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -274,18 +283,15 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                                     smkout.write(smk.read())
                                     #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
                                 smkout.write('\n\n')
-                            flowlist.append('MULTIQC()')
+                            flowlist.append('MULTIQC')
 
                         #workflow merger
                         with open(smko, 'a') as smkout:
-                            smkout.write('\n\n'+
-                                         """
-                                         workflow {
-                                         """+
-                                        '\n    '.join(flowlist)+
-                                         """
-                                         }
-                                         """)
+                            smkout.write('\n\n'+'workflow {\n    main:\n')
+                            for w in ['QC_RAW']:
+                                if w in flowlist:
+                                    smkout.write('\n    '+w+'()')
+                                smkout.write('\n}')
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
@@ -348,11 +354,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                 if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
                     log.info(logid+'Trimming without QC!')
 
+                if 'MAPPING' in subworkflows and 'QC' in subworkflows:
+                        flowlist.append('QC_MAPPING')
+
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
                     log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
                     if subwork != 'QC':
-                        flowlist.append(subwork+'()')
+                        flowlist.append(subwork)
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
@@ -361,13 +370,20 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         subname = toolenv+'.nf'
                         log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
 
-                        if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
-                            subname = toolenv+'_trim.nf'
-                            flowlist.append('QC_TRIMMING()')
-
-                        if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
+                        if subwork == 'QC' and 'TRIMMING' in subworkflows:
                             subname = toolenv+'_raw.nf'
-                            flowlist.append('QC_RAW()')
+                            smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
+                            with open(smko, 'a') as smkout:
+                                with open(smkf,'r') as smk:
+                                #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
+                                    smkout.write(smk.read())
+                                smkout.write('\n\n')
+                            subname = toolenv+'_trim.nf'
+                            flowlist.extend(['QC_RAW','QC_TRIMMING'])
+
+                        if subwork == 'QC' and not 'TRIMMING' in subworkflows:
+                            subname = toolenv+'_raw.nf'
+                            flowlist.append('QC_RAW')
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -377,28 +393,31 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                             smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows:
-                    flowlist.append('MAPPING()')
-                    if 'QC' in subworkflows:
-                        flowlist.append('QC_MAPPING()')
-
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
                             smkout.write(smk.read())
                         smkout.write('\n\n')
+                if 'QC' in subworkflows:
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(smk.read())
                             #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
-                        smkout.write('\n\n')
-                    flowlist.append('MULTIQC()')
+                            smkout.write('\n\n')
+                    flowlist.append('MULTIQC')
 
                 #workflow merger
+                log.info('FLOWLIST: '+str(flowlist))
                 with open(smko, 'a') as smkout:
-                    smkout.write('\n\n'+'workflow {')
-                    #HIER WEITER+'\n    '.join(flowlist)+'}')
+                    smkout.write('\n\n'+'workflow {\n    main:\n\n        ')
+                    idx = 0
+                    for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
+                        if w in flowlist:
+                            idx+=1
+                            smkout.write(w+'(')
+                    smkout.write(')'*idx+'\n}\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
@@ -415,7 +434,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                 log.info(logid+'Starting workflows for condition '+str(condition))
 
                 params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
+                toolparams = nf_tool_params(subsamples[0], None, config, subwork, toolenv, toolbin, subworkflows, condition)
 
                 jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 
@@ -469,6 +488,19 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                                 smkout.write(smk.read())
                             smkout.write('\n\n')
 
+                        #workflow merger
+                        with open(smko, 'a') as smkout:
+                            smkout.write('\n\n'+'workflow {\n    main:\n')
+                            for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
+                                if w in flowlist:
+                                    smkout.write('\n    '.w)
+                                smkout.write('\n}')
+
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(smk.read())
+
                         confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subconfig.json'])))
                         if os.path.exists(confo):
                             os.rename(confo,confo+'.bak')
@@ -477,7 +509,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                             json.dump(subconf, confout)
 
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
+                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, condition)
 
                         jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 
@@ -547,7 +579,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                             json.dump(subconf, confout)
 
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
-                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
+                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, condition)
 
                         jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 

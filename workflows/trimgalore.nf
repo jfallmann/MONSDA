@@ -1,3 +1,6 @@
+TOOLENV=params.TRIMMINGENV ?: null
+TOOLBIN=params.TRIMMINGBIN ?: null
+
 TRIMPARAMS = params.trimgalore_params_0 ?: ''
 
 if (PAIRED == 'paired'){
@@ -29,15 +32,15 @@ process trim_paired{
     }
 
     input:
-    path read1
-    path read2
+    path fread
+    path sread
 
     output:
     path "*_trimmed.fastq.gz", emit: trimmed_reads
 
     script:
     """
-    $TOOLBIN --cores $THREADS --paired --no_report_file --gzip $TRIMPARAMS $read1 $read2
+    $TOOLBIN --cores $THREADS --paired --no_report_file --gzip $TRIMPARAMS $fread $sread
     """
 }
 
@@ -60,12 +63,13 @@ process trim{
 
     script:
     """
-    $TOOLBIN --cores $THREADS --no_report_file --gzip $TRIMPARAMS $read1 $read2
+    $TOOLBIN --cores $THREADS --no_report_file --gzip $TRIMPARAMS $read
     """
 }
 
 workflow TRIMMING{
     samples_ch1 = Channel.from(T1SAMPLES)
+    take: bla ?: null
     main:
     if (PAIRED == 'paired'){
         samples_ch2 = Channel.from(T2SAMPLES)
@@ -75,8 +79,8 @@ workflow TRIMMING{
 
     }
     else{
-        trimgalore(samples_ch1)
+        trim(samples_ch1)
         emit:
-        trimgalore.out.trimmed_reads
+        trim.out.trimmed_reads
     }
 }

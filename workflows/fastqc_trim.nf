@@ -1,3 +1,6 @@
+TOOLENV=params.QCENV ?: null
+TOOLBIN=params.QCBIN ?: null
+
 FQSAMPLES = null
 TRSAMPLES = null
 
@@ -45,7 +48,7 @@ process qc_trimmed{
 workflow QC_TRIMMING{
     samples_ch = Channel.from(FQSAMPLES)
     trsamples_ch = Channel.from(TRSAMPLES)
-
+    take: bla ?: null
     main:
     qc_trimmed(trsamples_ch)
 

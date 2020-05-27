@@ -19,5 +19,3 @@ STRANDED = params.STRANDED
 CONDITION = params.CONDITION
 SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
-TOOLENV = params.TENV
-TOOLBIN = params.TBIN
