@@ -6,7 +6,7 @@ MRSAMPLES = LONGSAMPLES.collect{
 MRSAMPLES.sort()
 
 process qc_mapped{
-    conda "nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 

@@ -35,7 +35,7 @@ process collect_qc_map{
 }
 
 process multiqc{
-    conda "nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
     publishDir "${workflow.workDir}/../" , mode: 'copy',

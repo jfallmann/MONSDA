@@ -18,7 +18,7 @@ if (PAIRED == 'paired'){
 }
 
 process trim_paired{
-    conda "../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
@@ -42,7 +42,7 @@ process trim_paired{
 }
 
 process trim{
-    conda "../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 

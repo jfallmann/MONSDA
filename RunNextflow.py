@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 16:05:45 2020 (+0200)
+# Last-Updated: Wed May 27 16:13:53 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1169
+#     Update #: 1176
 # URL:
 # Doc URL:
 # Keywords:
@@ -351,6 +351,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
                     log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
+                    if subwork != 'QC':
+                        flowlist.append(subwork+'()')
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
@@ -395,14 +397,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
 
                 #workflow merger
                 with open(smko, 'a') as smkout:
-                    smkout.write('\n\n'+
-                                 """
-                                 workflow {
-                                 """+
-                                 '\n    '.join(flowlist)+
-                                 """
-                                 }
-                                 """)
+                    smkout.write('\n\n'+'workflow {')
+                    #HIER WEITER+'\n    '.join(flowlist)+'}')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
