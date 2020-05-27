@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May 26 15:07:39 2020 (+0200)
+# Last-Updated: Wed May 27 13:46:02 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1935
+#     Update #: 1942
 # URL:
 # Doc URL:
 # Keywords:
@@ -864,7 +864,7 @@ def nf_fetch_params(configfile):
     return retconf
 
 @check_run
-def nf_tool_params(sample, runstate, config, subconf, toolenv):
+def nf_tool_params(sample, runstate, config, subconf, toolenv, toolbin):
     logid=scriptname+'.nf_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     t = genome(sample,config)
@@ -877,6 +877,7 @@ def nf_tool_params(sample, runstate, config, subconf, toolenv):
     log.debug(logid+str([sample,runstate,subconf,t,x]))
     mp = subDict(config[subconf],x)['OPTIONS']
     tp = list()
+    tp.append("--TENV "+toolenv+" --TBIN "+toolbin+' ')
     for idx in range(len(mp)):
         tp.append(' '.join("--"+toolenv+"_params_"+str(idx)+" \'{!s} {!s}\'".format(key,val) for (key, val) in mp[idx].items()))
     log.debug(logid+'DONE: '+str(tp))

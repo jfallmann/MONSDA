@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue May 26 11:50:04 2020 (+0200)
+# Last-Updated: Wed May 27 11:55:34 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1029
+#     Update #: 1031
 # URL:
 # Doc URL:
 # Keywords:
@@ -111,18 +111,26 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         preprocess = subworkflows = postprocess = None
 
-        if 'PREPROCESSING' in config:
-            preprocess = config['PREPROCESSING'].split(',') # we keep this separate because not all preprocessing steps need extra configuration
-            if len(preprocess) == 0 or preprocess[0] == '':
-                preprocess = None
+        #Define workflow stages
+        pre = ['QC,RAW']
+        sub = ['QC','MAPPING','TRIMMING']
+        post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
+
+        wfs = config['WORKFLOWS'].split(',')
+
         if 'WORKFLOWS' in config:
-            subworkflows = config['WORKFLOWS'].split(',')
+            subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-        if 'POSTPROCESSING' in config:
-            postprocess = config['POSTPROCESSING'].split(',') # we keep this separate because not all postprocessing steps need extra configuration
+            preprocess = [x for x in config['WORKFLOWS'].split(',') if x in pre]
+            if len(preprocess) == 0 or preprocess[0] == '':
+                preprocess = None
+            postprocess = [x for x in config['WORKFLOWS'].split(',') if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
+        else:
+            log.error('NO WORKFLOWS DEFINED, NOTHING TO DO!')
+            sys.exit()
 
         if preprocess:
             try:

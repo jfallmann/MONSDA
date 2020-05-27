@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 13 10:26:18 2020 (+0200)
+# Last-Updated: Wed May 27 12:02:20 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 561
+#     Update #: 564
 # URL:
 # Doc URL:
 # Keywords:
@@ -59,9 +59,7 @@ def parseargs():
     parser.add_argument("-c", "--configfile", type=str, default='configurator.json', help='Configuration json to write to, can be called together with --append option to append new workflows to existing config')
     parser.add_argument("-a", "--append", action="store_true", help='If set configuration will be appended to existing json')
     parser.add_argument("-t", "--template", type=str, default='snakes/configs/template.json', help='Template config to build from, per default the one that comes with this repository, change only when you know what you do')
-    parser.add_argument("-p", "--preprocess", type=str, default='', help='Which preprocessing steps to conduct, choices are any or combinations of [\'SRA\', \'BASECALL\']. NOT IMPLEMENTED YET!!!')
-    parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'MAPPING\', \'TRIMMING\', \'QC\']')
-    parser.add_argument("-l", "--postprocess", type=str, default='', help='Which workflow steps to conduct,choices are any of or combinations of [\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\']')
+    parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'RAW\',\'MAPPING\',\'TRIMMING\',\'QC\',\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\',\'DAS\']')
     parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
     parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
     parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr,unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
@@ -97,7 +95,7 @@ def check_run(func):
     return func_wrapper
 
 @check_run
-def create_json_config(configfile, append, template, preprocess, workflows, postprocess, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, annotation, optionalargs=None):
+def create_json_config(configfile, append, template, workflows, ics, refdir, binaries, procs, genomemap, genomes, genomeext, sequencing, annotation, optionalargs=None):
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
     for oldfile in glob.glob(oldcnf):
@@ -109,7 +107,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     oldconf = NestedDefaultDict()
     icslist = list()
 
-    todos = ','.join([x for x in [preprocess,workflows,postprocess] if x != '' ]).split(',')
+    todos = ','.join([x for x in [workflows] if x != '' ]).split(',')
     for x in todos:
         if x not in config:
             log.error(logid+'Key '+str(x)+' not found in template, please check for typos!')
@@ -172,9 +170,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
 
     if not append:
         #newconf.merge(config)
-        newconf['PREPROCESSING'] = preprocess
         newconf['WORKFLOWS'] = workflows
-        newconf['POSTPROCESSING'] = postprocess
         newconf['REFERENCE'] = refdir
         newconf['BINS'] = binaries
         newconf['MAXTHREADS'] = str(procs)
@@ -218,12 +214,8 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     else:
         #newconf.merge(oldconfig)
 
-        if preprocess and preprocess not in newconf['PREPROCESSING']:
-            newconf['PREPROCESSING'] = str.join(',',list(set(str.join(',',[oldconf['PREPROCESSING'],preprocess]).split(','))))
         if workflows and workflows not in newconf['WORKFLOWS']:
             newconf['WORKFLOWS'] = str.join(',',list(set(str.join(',',[oldconf['WORKFLOWS'],workflows]).split(','))))
-        if postprocess and postprocess not in newconf['POSTPROCESSING']:
-            newconf['POSTPROCESSING'] = str.join(',',list(set(str.join(',',[oldconf['POSTPROCESSING'],postprocess]).split(','))))
         if refdir and refdir != oldconf['REFERENCE']:
             newconf['REFERENCE'] = refdir
         else:
@@ -354,7 +346,7 @@ if __name__ == '__main__':
             sys.exit("This script requires Python version >= 3.7")
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
 
-        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.preprocess, knownargs.workflows, knownargs.postprocess, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, knownargs.annotation, optionalargs[0])
+        create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.workflows, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, knownargs.annotation, optionalargs[0])
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

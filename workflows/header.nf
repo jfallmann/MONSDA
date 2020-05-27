@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 //includes
-include {} from '../nextsnakes/lib/Collection.groovy'
+//include {} from '../nextsnakes/lib/Collection.groovy'
 
 //Version Check
 nextflowVersion = '>=20.01.0.5264'
@@ -19,3 +19,5 @@ STRANDED = params.STRANDED
 CONDITION = params.CONDITION
 SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
+TOOLENV = params.TENV
+TOOLBIN = params.TBIN

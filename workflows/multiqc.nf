@@ -1,25 +1,68 @@
-process multiqc {
-    publishDir "${params.outdir}/MultiQC", mode: 'copy'
+//collecting list of processed file for multiqc, not implemented yet
+process collect_qc_raw{
+    input:
+    path results
+    output:
+    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    shell:
+    '''
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    '''
+}
+
+//collecting list of processed file for multiqc, not implemented yet
+process collect_qc_trimmed{
+    input:
+    path results
+    output:
+    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    shell:
+    '''
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    '''
+}
+
+//collecting list of processed file for multiqc, not implemented yet
+process collect_qc_map{
+    input:
+    path results
+    output:
+    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    shell:
+    '''
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    '''
+}
+
+process multiqc{
+    conda "nextsnakes/envs/$TOOLENV"+".yaml"
+    cpus THREADS
+    validExitStatus 0,1
+    publishDir "${workflow.workDir}" , mode: 'copy',
+    saveAs: {filename ->
+        if (filename.indexOf("zip") > 0)          "QC/Multi/$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/$CONDITION/$filename"
+        else null
+    }
 
     input:
-    file (multiqc_config) from ch_multiqc_config
-    file (mqc_custom_config) from ch_multiqc_custom_config.collect().ifEmpty([])
-    // TODO nf-core: Add in log files from your new processes for MultiQC to find!
-    file ('fastqc/*') from ch_fastqc_results.collect().ifEmpty([])
-    file ('software_versions/*') from ch_software_versions_yaml.collect()
-    file workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
-
+    path qcs
+    path trimmed
+    path mapped
     output:
-    file "*multiqc_report.html" into ch_multiqc_report
-    file "*_data"
-    file "multiqc_plots"
+    path "*.{zip,html}", emit: multiqc_results
 
     script:
-    rtitle = custom_runName ? "--title \"$custom_runName\"" : ''
-    rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
-    custom_config_file = params.multiqc_config ? "--config $mqc_custom_config" : ''
-    // TODO nf-core: Specify which MultiQC modules to use with -m for a faster run time
     """
-    multiqc -f $rtitle $rfilename $custom_config_file .
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/QC/FASTQC/$CONDITION/.
     """
+}
+
+workflow multiqc{
+    main:
+    multiqc_raw(qc_raw.out.fastqc_results, qc_trimmed.out.trfastqc_results, qc_mapped.out.mapfastqc_results)
+    emit:
+    multiqc.out.multiqc_results
+    //collect_qc_raw()
+    //multiqc_raw(collect_qc_raw.out.collect_fastqc)
 }
