@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 13:59:42 2020 (+0200)
+# Last-Updated: Wed May 27 16:05:45 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1138
+#     Update #: 1169
 # URL:
 # Doc URL:
 # Keywords:
@@ -58,6 +58,7 @@ def parseargs():
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
     parser.add_argument("-d", "--directory", type=str, default='${PWD}', help='Directory to work in')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start nextflow with, capped by MAXTHREADS in config!')
+    parser.add_argument("--clean", action="store_true", help='Cleanup workdir, append -n to see list of files to clean or -f to actually remove those files')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -66,9 +67,22 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalargs=None):
+def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs=None):
     try:
         logid = scriptname+'.run_nextflow: '
+        argslist = list()
+        if optionalargs and len(optionalargs) > 0:
+            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            argslist.extend(optionalargs)
+
+        if clean:
+            log.info(logid+'Cleaning working directory')
+            jobtorun = 'nextflow clean {a}'.format(a=' '.join(argslist))
+            log.info(logid+'CLEANUP '+str(jobtorun))
+            job = runjob(jobtorun)
+            log.debug(logid+'JOB CODE '+str(job))
+            sys.exit()
+
         workdir = os.path.abspath(str.join(os.sep,[workdir,'NextFlowWork']))
         for subdir in ['SubFlows', 'LOGS', 'TMP', workdir]:  # Add RAW for nanopore preprocessing
             makeoutdir(subdir)
@@ -97,10 +111,12 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            preprocess = [x for x in config['WORKFLOWS'].split(',') if x in pre]
+            for x in subworkflows:
+                wfs.remove(x)
+            preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
-            postprocess = [x for x in config['WORKFLOWS'].split(',') if x in post]
+            postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
         else:
@@ -206,8 +222,6 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
 
-        rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=os.path.join(samplecond(SAMPLES,config)[0]))\n'
-
         if preprocess:
             log.info(logid+'STARTING PREPROCESSING')
             if 'QC' in preprocess and 'QC' in config:
@@ -215,6 +229,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
             for condition in conditions:
                 log.debug(logid+'Working on condition: '+str(condition))
                 for subwork in preprocess:
+                    flowlist = list(subwork)
                     subconf = NestedDefaultDict()
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -252,6 +267,26 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                                 smkout.write(smk.read())
                             smkout.write('\n\n')
 
+                        if subwork == 'QC':
+                            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
+                            with open(smko, 'a') as smkout:
+                                with open(smkf,'r') as smk:
+                                    smkout.write(smk.read())
+                                    #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
+                                smkout.write('\n\n')
+                            flowlist.append('MULTIQC()')
+
+                        #workflow merger
+                        with open(smko, 'a') as smkout:
+                            smkout.write('\n\n'+
+                                         """
+                                         workflow {
+                                         """+
+                                        '\n    '.join(flowlist)+
+                                         """
+                                         }
+                                         """)
+
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
@@ -284,6 +319,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
             for condition in conditions:
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
                 smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf'])))
+                flowlist = list()
                 if os.path.exists(smko):
                     os.rename(smko,smko+'.bak')
                 with open(smko, 'a') as smkout:
@@ -325,9 +361,11 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
 
                         if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             subname = toolenv+'_trim.nf'
+                            flowlist.append('QC_TRIMMING()')
 
                         if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             subname = toolenv+'_raw.nf'
+                            flowlist.append('QC_RAW()')
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:
@@ -337,6 +375,10 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                             smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows:
+                    flowlist.append('MAPPING()')
+                    if 'QC' in subworkflows:
+                        flowlist.append('QC_MAPPING()')
+
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
@@ -349,6 +391,18 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                             smkout.write(smk.read())
                             #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
                         smkout.write('\n\n')
+                    flowlist.append('MULTIQC()')
+
+                #workflow merger
+                with open(smko, 'a') as smkout:
+                    smkout.write('\n\n'+
+                                 """
+                                 workflow {
+                                 """+
+                                 '\n    '.join(flowlist)+
+                                 """
+                                 }
+                                 """)
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
@@ -367,7 +421,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                 params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
                 toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
 
-                jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
+                jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 
                 log.info(logid+'RUNNING '+str(jobtorun))
                 job = runjob(jobtorun)
@@ -429,7 +483,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
                         toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
 
-                        jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
+                        jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
@@ -499,7 +553,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, unlock=None, optionalarg
                         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
                         toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
 
-                        jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
+                        jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key,val) for (key,val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep,condition))
 
                         log.info(logid+'RUNNING '+str(jobtorun))
                         job = runjob(jobtorun)
@@ -594,7 +648,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.loglevel, optionalargs[0])
+        run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.loglevel, knownargs.clean, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

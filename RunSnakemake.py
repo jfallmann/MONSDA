@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 11:55:34 2020 (+0200)
+# Last-Updated: Wed May 27 15:10:02 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1031
+#     Update #: 1037
 # URL:
 # Doc URL:
 # Keywords:
@@ -112,7 +112,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         preprocess = subworkflows = postprocess = None
 
         #Define workflow stages
-        pre = ['QC,RAW']
+        pre = ['QC','RAW']
         sub = ['QC','MAPPING','TRIMMING']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
@@ -122,10 +122,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            preprocess = [x for x in config['WORKFLOWS'].split(',') if x in pre]
+            for x in subworkflows:
+                wfs.remove(x)
+            preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
-            postprocess = [x for x in config['WORKFLOWS'].split(',') if x in post]
+            postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
         else:

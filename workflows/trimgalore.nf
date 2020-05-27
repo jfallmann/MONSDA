@@ -17,12 +17,12 @@ if (PAIRED == 'paired'){
     T1SAMPLES.sort()
 }
 
-process trimgalore_paired{
+process trim_paired{
     conda "../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
-    publishDir "${workflow.workDir}../" , mode: 'move',
+    publishDir "${workflow.workDir}/../" , mode: 'move',
     saveAs: {filename ->
         if (filename.indexOf("val_*fq.gz") > 0)          "TRIMMED_FASTQ/$CONDITION/${filename.baseName}"+"_trimmed.fastq.gz"
         else null
@@ -41,12 +41,12 @@ process trimgalore_paired{
     """
 }
 
-process trimgalore{
+process trim{
     conda "../nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
-    publishDir "${workflow.workDir}../" , mode: 'move',
+    publishDir "${workflow.workDir}/../" , mode: 'move',
     saveAs: {filename ->
         if (filename.indexOf("*fq.gz") > 0)          "TRIMMED_FASTQ/$CONDITION/${filename.baseName}"+"_trimmed.fastq.gz"
         else null
@@ -64,14 +64,14 @@ process trimgalore{
     """
 }
 
-workflow trimgalore{
+workflow TRIMMING{
     samples_ch1 = Channel.from(T1SAMPLES)
     main:
     if (PAIRED == 'paired'){
         samples_ch2 = Channel.from(T2SAMPLES)
-        trimgalore_paired(samples_ch1, samples_ch2)
+        trim_paired(samples_ch1, samples_ch2)
         emit:
-        trimgalore_paired.out.trimmed_reads
+        trim_paired.out.trimmed_reads
 
     }
     else{

@@ -22,7 +22,7 @@ process qc_raw{
     cpus THREADS
     validExitStatus 0,1
 
-    publishDir "${workflow.workDir}../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
         else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
@@ -52,35 +52,10 @@ process collect_qc_raw{
     '''
 }
 
-process multiqc_raw{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
-    cpus THREADS
-    validExitStatus 0,1
-    publishDir "${workflow.workDir}../" , mode: 'copy',
-    saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/RAW/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/Multi/RAW/$CONDITION/$filename"
-        else null
-    }
-
-    input:
-    path qcs
-    output:
-    path "*.{zip,html}", emit: multiqc_results
-
-    script:
-    """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/QC/FASTQC/$CONDITION/.
-    """
-}
-
-workflow {
+workflow QC_RAW{
     samples_ch = Channel.from(FQSAMPLES)
     main:
     qc_raw(samples_ch)
-    multiqc_raw(qc_raw.out.fastqc_results)
     emit:
-    multiqc_raw.out.multiqc_results
-    //collect_qc_raw()
-    //multiqc_raw(collect_qc_raw.out.collect_fastqc)
+    qc_raw.out.fastqc_results
 }

@@ -38,31 +38,25 @@ process multiqc{
     conda "nextsnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
-    publishDir "${workflow.workDir}" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf("zip") > 0)          "QC/Multi/$CONDITION/$filename"
         else if (filename.indexOf("html") > 0)    "QC/Multi/$CONDITION/$filename"
         else null
     }
 
-    input:
-    path qcs
-    path trimmed
-    path mapped
     output:
     path "*.{zip,html}", emit: multiqc_results
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/QC/FASTQC/$CONDITION/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/../QC/FASTQC/$CONDITION/.
     """
 }
 
-workflow multiqc{
+workflow MULTIQC{
     main:
-    multiqc_raw(qc_raw.out.fastqc_results, qc_trimmed.out.trfastqc_results, qc_mapped.out.mapfastqc_results)
+    multiqc()
     emit:
     multiqc.out.multiqc_results
-    //collect_qc_raw()
-    //multiqc_raw(collect_qc_raw.out.collect_fastqc)
 }
