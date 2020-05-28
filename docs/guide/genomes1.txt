@@ -1,0 +1,84 @@
+                                   Chapter 4
+                            > GENOME REFERENCES  <
+
+Now we look at the 'GENOMES'-folder. It has also been created in your PROJECT-
+FOLDER. Later the WORKFLOWS you involve will find references like GTF- or
+FASTA-files here.
+NextSnakes implements two features, you need to know about:
+
+ > It can happen, that your data includes multiple organisms, like in the example
+   above. For that case NextSnakes needs one subdirectory per organism in
+   the GENOMES-folder. But even if you only have one organism, the
+   subdirectory is necessesary.
+
+   In the following example we have samples from Human and Drosophila.
+
+
+ > Furthermore you can use extensions for your genome-files in case you want to
+   use specific genomes for different runs.
+
+   For 'Human' you want to use 'hg38.reduced.fa.gz' and 'hg38.extended.fa.gz'
+   For 'Drosohphila' only 'dm6.fa.gz'
+
+   In that case we you have the basenames 'hg38' and 'dm6'. And you have
+   '.reduced' and '.extended' as additional identifier for 'Human'.
+
+
+ > Please notice that NextSnakes will append the ending '.fa.gz' automatically.
+   You won't have to type it anywhere yourself.
+
+Well, to set up all that properly in the CONFIGFILE, you have to do four steps:
+
+1. First you have to specify a key-value pair in the CONFIGFILE that assigns the
+   organisms your samples come from to the basename(!) of a FASTA-file.
+   NextSnakes will append the ending '.fa.gz' automatically.
+
+   In the CONFIGFILE it will look like this for example:
+
+                "GENOMES": {
+                    "Human": "hg38",
+                    "Drosophila": "dm6"
+                }
+
+2. Additionaly the 'SOURCE' section assigns each ics to one of your Organism.
+   If you have only one, the Guide can do this for you. Otherwise you have to.
+
+                "SOURCE": {
+                    "id": {
+                        "condition": {
+                            "setting_1": "Human"
+                            "setting_2": "Drosophila"
+                        }
+                    }
+                }
+
+3. After that you can assign the additional identifier to the ics. As i said,
+   this will extend the FASTA-file basenames and is called 'NAME' in CONFIGFILE.
+
+                "NAME": {
+                    "id": {
+                        "condition": {
+                            "setting_1": ".extended"
+                            "setting_2": ".normal"
+                        }
+                    }
+                }
+
+4. Finally you also have to specify the sequencing type.
+
+                "SEQUENCING": {
+                    "id": {
+                        "condition": {
+                            "setting_1": "paired"
+                            "setting_2": "unpaired"
+                        }
+                    }
+                }
+
+
+All in all our example will leads NextSnakes to following files:
+
+ > /GENOMES/Human/hg38.extended.fa.gz
+ > /GENOMES/Drosophila/dm6.normal.fa.gz
+
+Now, let's start with the first step!

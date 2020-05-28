@@ -1,0 +1,47 @@
+                                   Chapter 2
+                               > ICS-STRUCTURE <
+
+All right, we now establish the core-part of NextSnakes, the ICS-structure.
+ICS stands for ID-CONDITION-SETTING and is the way you structure the experiment
+you want to analyze.
+You can imagine the ICS as a rooted tree, where your CONFIGFILE contains the
+root and you have now three branches, where you can arrange your data.
+
+For example you have a KO experiment with Alzheimer-Disease cells comparison
+between Mouse and Human. Samples were taken at three different days. Than you
+could arrange your data like this:
+
+            root             ID      CONDITION     SETTING
+
+                                                 ┌── day1
+                                  ┌── Wild-Type ─┼── day2
+                                  |              └── day3
+              `        ┌── Mouse ─┤
+                       |          |              ┌── day1
+                       |          └── Knock-Out ─┼── day2
+                       |                         └── day3
+        AD-Experiment ─┤
+                       |                         ┌── day1
+                       |          ┌── Wild-Type ─┼── day2
+                       |          |              └── day3
+                       └── Human ─┤
+                                  |              ┌── day1
+                                  └── Knock-Out ─┼── day2
+                                                 └── day3
+
+For identify a certain node or leaf in this tree, we use following annotation:
+
+ > Mouse:Wild-Type:day2  or
+ > Human:Knock-Out
+
+From now on, we we are going to call such an identifyer an 'ics'. It is important
+to understand this structure, because NextSnakes will use it in different places:
+
+1. As file structure to follow for the 'FASTQ' directory, where the ID
+   accordingly is the first level.
+2. As json-dictionary structure to assign WORKFLOWS and settings to your data
+3. As identifier for your POSTPROCESS analyses, where you probably going to
+   choose different COMPARISON GROUPS.
+
+Now it's your turn. You have to think about how you want to structure your
+experiment in NextSnake and we gonna establish it for your project.

@@ -1,0 +1,39 @@
+Good, before we continue with the next steps you have to understand how the
+sections in the CONFIGFILE work. In principal they assign one or more values to
+each of your defined ics. The more ics you defined, the bigger your CONFIGFILE
+will be.
+
+As you learned the genome reference assignment needs three sections. You can
+see in the following example how the 'SOURCE' section looks if you have several
+ID's, CONDITIONS's and SETTING's:
+
+                "SOURCE": {
+                        "DAY_1": {
+                            "sick": {
+                                "GROUP_1": "Human",
+                                "GROUP_2": "Mouse"
+                            },
+                            "healty": {
+                                "GROUP_1": "Human",
+                                "GROUP_2": "Mouse"
+                            }
+                        "DAY_2": {
+                            "sick": {
+                                "GROUP_1": "Human",
+                                "GROUP_2": "Mouse"
+                            },
+                            "healty": {
+                                "GROUP_1": "Human",
+                                "GROUP_2": "Mouse"
+                            }
+                        }
+                    }
+
+You can imagine, that it would be an annoying work to set every ics individually.
+Therefore in the next steps you will be asked at which level in the ICS-tree
+you would like to change the settings.
+If you decide to do it per ID the options will be shown only once per ID, namely
+those from the first ics of this ID. The GUIDE will apply these settings for the
+following levels.
+
+Okay, here we go!

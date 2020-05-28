@@ -1,0 +1,36 @@
+                                   Chapter 5
+                             > SET THE WORKFLOWS <
+
+As expected the CONFIGFILE contains also one section per WORKFLOW you switched
+on before. For example the MAPPING section of one(!) ics looks like this:
+
+  "MAPPING": {
+               "id": {
+                   "condition": {
+                       "setting": {
+                           "ENV": "star",
+                           "BIN": "STAR",
+                           "ANNOTATION": "genome_or_other.gff3.gz",
+                           "OPTIONS":
+                           [
+                               {  #indexing options
+                                  "--sjdbGTFfeatureExon": "exon",
+                                  "--sjdbGTFtagExonParentTranscript": "Parent",
+                                  "--genomeSAindexNbases": "13"
+                               },
+                               {  #mapping options
+                                  "--sjdbGTFfeatureExon": "exon",
+                                  "--sjdbGTFtagExonParentTranscript": "Parent",
+                                  "--outSAMprimaryFlag AllBestScore": ""
+                               },
+                               "std"
+                           ]
+                       }
+                   }
+              }
+
+
+We are going to go through all WORKFLOWS and change their settings just like
+before. In this example you could set the 'ANNOTATION' option as well as the
+'indexing options' and 'mapping options'. The rest shouldn't interest you at
+first.
