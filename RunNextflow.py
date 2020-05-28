@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 18:37:29 2020 (+0200)
+# Last-Updated: Thu May 28 11:40:51 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1225
+#     Update #: 1228
 # URL:
 # Doc URL:
 # Keywords:
@@ -413,11 +413,11 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                 with open(smko, 'a') as smkout:
                     smkout.write('\n\n'+'workflow {\n    main:\n\n        ')
                     idx = 0
-                    for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
+                    for w in ['MULTIQC','QC_MAPPING','MAPPING','QC_TRIMMING','TRIMMING','QC_RAW']:
                         if w in flowlist:
                             idx+=1
                             smkout.write(w+'(')
-                    smkout.write(')'*idx+'\n}\n\n')
+                    smkout.write('dummy'+')'*idx+'\n}\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:

@@ -58,8 +58,11 @@ process multiqc{
 }
 
 workflow MULTIQC{
+    take: dummy
+
     main:
     multiqc()
+
     emit:
     multiqc.out.multiqc_results
 }

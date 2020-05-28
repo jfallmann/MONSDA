@@ -19,3 +19,6 @@ STRANDED = params.STRANDED
 CONDITION = params.CONDITION
 SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
+
+//dummy
+dummy = null

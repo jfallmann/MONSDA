@@ -45,10 +45,12 @@ process qc_raw{
 }
 
 workflow QC_RAW{
-    samples_ch = Channel.from(FQSAMPLES)
-    take: bla ?: null
+    take: dummy
+
     main:
+    samples_ch = Channel.from(FQSAMPLES)
     qc_raw(samples_ch)
+
     emit:
     qc_raw.out.fastqc_results
 }

@@ -33,12 +33,13 @@ process qc_mapped{
 }
 
 workflow QC_MAPPING{
+    take: dummy
+
+    main:
     samples_ch = Channel.from(FQSAMPLES)
     trsamples_ch = Channel.from(TRSAMPLES)
     mapsamples_ch = Channel.from(MRSAMPLES)
 
-    take: bla ?: null
-    main:
     qc_raw(samples_ch)
     qc_trimmed(trsamples_ch)
     qc_mapped(mapsamples_ch)

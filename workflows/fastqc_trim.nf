@@ -1,7 +1,6 @@
 TOOLENV=params.QCENV ?: null
 TOOLBIN=params.QCBIN ?: null
 
-FQSAMPLES = null
 TRSAMPLES = null
 
 if (PAIRED == 'paired'){
@@ -37,7 +36,7 @@ process qc_trimmed{
     path read
 
     output:
-    path "*.{zip,html}", emit: trfastqc_results
+    path "*.{zip,html}", emit: fastqc_results
 
     script:
     """
@@ -46,12 +45,12 @@ process qc_trimmed{
 }
 
 workflow QC_TRIMMING{
-    samples_ch = Channel.from(FQSAMPLES)
-    trsamples_ch = Channel.from(TRSAMPLES)
-    take: bla ?: null
+    take: dummy
+
     main:
-    qc_trimmed(trsamples_ch)
+    trsamples_ch = Channel.from(TRSAMPLES)
+    qc_trimmed(trsamples_ch)x
 
     emit:
-    qc_trimmed.out.trfastqc_results
+    qc_trimmed.out.fastqc_results
 }
