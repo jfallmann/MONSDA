@@ -1,13 +1,13 @@
-Okay, now we reach the analysis workflows. Here is another important detail that
+Okay, now we reach the analysis WORKFLOWS. Here is another important detail that
 you have to take into account. For DE, DEU and DAS you have to determine
-comparison groups and you can choose different analysis tools.
+COMPARISON GROUPS and you can choose different analysis TOOLS.
 
-The comparison groups are particularly important at this point. You have to
-specify them according to the ics structure. NextSnakes will collect the samples
-and put them bundled up into the analysis tools. Use the ICS-encoding for this.
+The COMPARISON GROUPS are particularly important at this point. You have to
+specify them according to the ICS structure. NextSnakes will collect the samples
+and put them bundled up into the analysis TOOLS. Use the ICS-encoding for this.
 
-You will understand it, when you look at the following example.
-This is how it should look like in the configfile:
+It becomes clear, when you look at the following example. This is how it should
+look like in the CONFIGFILE:
 
             "DAS": {
                     "TOOLS": {
@@ -44,4 +44,4 @@ can find their analysis-scripts.
 Also consider, that you will find the results of the analyses under the name,
 you gave the groups. In this case 'contrast_WTvsKO' and 'contrast_d0'.
 
-okay, now we can continue.. 
+okay, now we can continue..

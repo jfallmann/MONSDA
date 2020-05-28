@@ -3,17 +3,17 @@ centered on a single config file.
 NextSnakes provides HTS analysis from sra download, preprocessing and mapping
 to postprocessing/analysis and ucsc track generation.
 
-For using NextSnakes you basically have to set up a Project-folder with your
-Data and create a Config-file containig all Informations about your Project.
+For using NextSnakes you basically have to set up a PROJECT-FOLDER with your
+data and create a CONFIGFILE containig all informations about your project.
 
-This Guide will help you with how to set up both step by step. At the same time
-you will understand how NextSnakes works and how the the config-file is
-structured. This is important so that you can read and edit config files more
+This GUIDE will help you with how to set up both step by step. At the same time
+you will understand how NextSnakes works and how the the CONFIG-FILE is
+structured. This is important so that you can read and edit CONFIGFILES more
 easily.
 
-Furthermore NextSnakes Projects can be expanded by adding further Workflows.
-To do that you can also use this Guide to 'append' workflows or data to an
-existing config-file.
+Furthermore NextSnakes-projects can be expanded by adding further WORKFLOWS.
+To do that you can also use this GUIDE to 'append' WORKFLOWS or data to an
+existing CONFIG-FILE.
 
 The Guide will ask you for about various settings. Whenever you are asked for
 several entries, use a comma as separator. Spaces are generally ignored. Most

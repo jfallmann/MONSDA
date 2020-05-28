@@ -1,7 +1,7 @@
                                    Chapter 5
                              > SET THE WORKFLOWS <
 
-As expected the configfile contains also one section per workflow you switched
+As expected the CONFIGFILE contains also one section per WORKFLOW you switched
 on before. For example the MAPPING section of one(!) ics looks like this:
 
   "MAPPING": {
@@ -28,8 +28,9 @@ on before. For example the MAPPING section of one(!) ics looks like this:
                        }
                    }
               }
-         }
 
-We will now go through all Workflows and change their Settings just like before.
-At this example you can set the ANNOTATION option as well as the 'indexing
-options' and 'mapping options'. The rest shouldn't interest you at first.
+
+We are going to go through all WORKFLOWS and change their settings just like
+before. In this example you could set the 'ANNOTATION' option as well as the
+'indexing options' and 'mapping options'. The rest shouldn't interest you at
+first.

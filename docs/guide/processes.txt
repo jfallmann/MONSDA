@@ -1,5 +1,5 @@
-                                   FINALS
+                                   FINALE
                             > last but not least! <
 
 NextSnakes can limit the number of cores that is used for your analysis. The
-number you provide here will apply to all workflows.
+number you provide here will apply to all WORKFLOWS.

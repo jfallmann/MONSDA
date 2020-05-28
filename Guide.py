@@ -388,10 +388,10 @@ def conversation(question, origin, proof=None):
 def list_generator(config,workflow):
     ics_list=[]
     naming_list=[]
-    level = conversation(f"set the following {workflow} settings per 'setting', per 'condition', per 'id', or 'all' the same?",None)
+    level = conversation(f"\n\n> {workflow} <\nChoose setting-level:   'id'   'condition'   'setting'   'all'",None)
     a=0
     for id in config[workflow].keys():
-        if id == "TOOLS" or id == "COMPARABLE":
+        if id == "TOOLS" or id == "COMPARABLE" or id == "FEATURES":
             continue
         i=0
         for condition in config[workflow][id].keys():
@@ -411,7 +411,7 @@ def list_generator(config,workflow):
                     a+=1
     return ics_list, naming_list
 
-def rename(config,job,oldics,oldtodos,proof,*args):
+def rename(config,job,oldics,oldtodos,*args):
     ics_list,naming_list = list_generator(config,job)
     if job in oldtodos:
         ics_list = [x for x in ics_list if x not in oldics]
@@ -425,12 +425,14 @@ def rename(config,job,oldics,oldtodos,proof,*args):
                     switch=True
                     print(f"okay, look at the settings of {ics[0][0]}:{ics[1][0]}:{ics[2][0]}")
                     for call in args:
-                        if len(call)==1:
-                            text  =call[0]
-                            config[job][ics[0][0]][ics[1][0]][ics[2][0]] = conversation(text,None,proof)
                         if len(call)==2:
                             text  =call[0]
+                            proof =call[1]
+                            config[job][ics[0][0]][ics[1][0]][ics[2][0]] = conversation(text,None,proof)
+                        if len(call)==3:
+                            text  =call[0]
                             key   =call[1]
+                            proof =call[2]
                             if 'ANNOTATION' in key:
                                 org = config['SOURCE'][ics[0][0]][ics[1][0]][ics[2][0]]
                                 files = os.listdir(os.path.join(project,'GENOMES',org))
@@ -456,27 +458,31 @@ def rename(config,job,oldics,oldtodos,proof,*args):
                                     config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
                             else:
                                 config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = conversation(text,None,proof)
-                        if len(call)==3:
+                        if len(call)==4:
                             text  =call[0]
                             key   =call[1]
                             number=call[2]
+                            proof =call[3]
                             config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = conversation(text, config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number],proof)
                 elif ics in naming_list and naming!=ics:
                     switch=False
                 else:
                     if switch:
                         for call in args:
-                            if len(call)==1:
-                                text  =call[0]
-                                config[job][ics[0][0]][ics[1][0]][ics[2][0]] = config[job][naming[0][0]][naming[1][0]][naming[2][0]]
                             if len(call)==2:
                                 text  =call[0]
-                                key   =call[1]
-                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key]
+                                proof =call[1]
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]] = config[job][naming[0][0]][naming[1][0]][naming[2][0]]
                             if len(call)==3:
                                 text  =call[0]
                                 key   =call[1]
+                                proof =call[2]
+                                config[job][ics[0][0]][ics[1][0]][ics[2][0]][key] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key]
+                            if len(call)==4:
+                                text  =call[0]
+                                key   =call[1]
                                 number=call[2]
+                                proof =call[3]
                                 config[job][ics[0][0]][ics[1][0]][ics[2][0]][key][number] = config[job][naming[0][0]][naming[1][0]][naming[2][0]][key][number]
 
 
@@ -531,10 +537,17 @@ def add_tools(config,workflow):
 def explain(filename):
     if not quick:
         path = os.path.join("docs/guide",filename)
-        with open(path, 'r') as f:
-            text = f.read()
         print("\n")
-        print(text,"\n")
+        with open(path, 'r') as f:
+            text = f.read().splitlines()
+            counter=1
+            for line in text:
+                print(line)
+                if counter == 30:
+                    input("                                                     > press enter to continue <")
+                    counter=0
+                counter+=1
+        print("\n")
 
 ####################
 ####    MAIN    ####
@@ -662,7 +675,7 @@ if __name__ == '__main__':
                             ICS.append(f"{id}:{condi}:{setting}")
 
                 explain("workflows.txt")
-                workflows = conversation("Enter which WORKFLOWS you would like to run. Possible are MAPPING, TRIMMING, QC", None,["MAPPING", "TRIMMING", "QC",""])
+                workflows = conversation("Enter which WORKFLOWS you would like to run.", None,["MAPPING", "TRIMMING", "QC","ANNOTATE","UCSC","PEAKS","COUNTING",""])
                 postprocess = conversation("Which POSTPROCESS ANALYSIS would you like to run? Possible are DE, DEU, DAS", None, ["DE","DEU","DAS",""])
 
                 print("Now you may have to be patient. We go through all settings, and you have to \n"
@@ -684,7 +697,7 @@ if __name__ == '__main__':
                         else:
                             print("Sry, couldn't find the file")
 
-                explain("genomes.txt")
+                explain("genomes1.txt")
                 fasta_dict={}
                 organisms = conversation("enter all organisms you have in your analysis",None)
                 for organism in organisms.split(","):
@@ -734,8 +747,8 @@ if __name__ == '__main__':
             explain("genomes2.txt")
             # SOURCE
             if len(newconf["GENOME"]) > 1:
-                rename(newconf,'SOURCE',oldics,oldtodos,list(newconf['GENOME'].keys()),
-                [f"enter the corresponding organism {list(newconf['GENOME'].keys())}"]
+                rename(newconf,'SOURCE',oldics,oldtodos,
+                [f"enter the corresponding organism {list(newconf['GENOME'].keys())}",list(newconf['GENOME'].keys())]
                 )
             else:
                 for id in newconf['SOURCE'].keys():
@@ -744,13 +757,13 @@ if __name__ == '__main__':
                             newconf['SOURCE'][id][condition][setting]=list(newconf['GENOME'].keys())[0]
 
             # NAME
-            rename(newconf,'NAME',oldics,oldtodos,None,
-            ["enter the additional FASTA-extension"]
+            rename(newconf,'NAME',oldics,oldtodos,
+            ["enter the additional FASTA-extension",None]
             )
 
             # SEQUENCING
-            rename(newconf,'SEQUENCING',oldics,oldtodos,["paired", "unpaired"],
-            ["enter 'paired' or 'unpaired'"]
+            rename(newconf,'SEQUENCING',oldics,oldtodos,
+            ["enter 'paired' or 'unpaired'",["paired", "unpaired"]]
             )
 
             # # SAMPLES
@@ -765,23 +778,45 @@ if __name__ == '__main__':
         explain("workflows2.txt")
 
         if 'QC' in newconf['WORKFLOWS'].split(",") and ('QC' not in oldtodos or ICS):
-            # explain("QC...")
-            rename(newconf,'QC',oldics,oldtodos,None,
-            ["QC-options, would you like to change them?",'OPTIONS',0]
+            rename(newconf,'QC',oldics,oldtodos,
+            ["QC-options, would you like to change them?",'OPTIONS',0,None]
+            )
+
+        if 'COUNTING' in newconf['WORKFLOWS'].split(",") and ('COUNTING' not in oldtodos or ICS):
+            rename(newconf,'COUNTING',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["COUNTING-options, would you like to change them?",'OPTIONS',0,None]
+            )
+            print("\n")
+            newconf['COUNTING']['FEATURES']=conversation("Set feature options. Which features to count (KEY) and which group they \nbelong to (VALUE), depends on whether gtf or gff is used as annotation",newconf['COUNTING']['FEATURES'],None)
+
+        if 'UCSC' in newconf['WORKFLOWS'].split(",") and ('UCSC' not in oldtodos or ICS):
+            rename(newconf,'UCSC',oldics,oldtodos,
+            ["UCSC-options, would you like to change them?",'OPTIONS',0,None]
             )
 
         if 'MAPPING' in newconf['WORKFLOWS'].split(",") and ('MAPPING' not in oldtodos or ICS):
-            # explain("MAPPING...")
-            rename(newconf,'MAPPING',oldics,oldtodos,None,
-            ["enter ANNOTATION file",'ANNOTATION'],
-            ["INDEXING, would you like to change them?",'OPTIONS',0],
-            ["MAPPER, would you like to change them?",'OPTIONS',1]
+            rename(newconf,'MAPPING',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["These are the indexing options, would you like to change them?",'OPTIONS',0,None],
+            ["These are the mapper options, would you like to change them?",'OPTIONS',1,None]
+            )
+
+        if 'PEAKS' in newconf['WORKFLOWS'].split(",") and ('PEAKS' not in oldtodos or ICS):
+            rename(newconf,'PEAKS',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["specify a set of certain features to annotate here",'OPTIONS',0,None],
+            )
+
+        if 'ANNOTATE' in newconf['WORKFLOWS'].split(",") and ('ANNOTATE' not in oldtodos or ICS):
+            rename(newconf,'ANNOTATE',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["Which CLIP protocol to follow for read extension/trimming before peak calling?\nChoices are 'iCLIP' (5'enriched), 'revCLIP' (3' enriched) or 'STD' (no enrichment)",'CLIP',["iCLIP","revCLIP","STD"]],
             )
 
         if 'TRIMMING' in newconf['WORKFLOWS'].split(",") and ('TRIMMING' not in oldtodos or ICS):
-            # explain("TRIMING...")
-            rename(newconf,'TRIMMING',oldics,oldtodos,None,
-            ["TRIMMING-options, would you like to change them?",'OPTIONS',0]
+            rename(newconf,'TRIMMING',oldics,oldtodos,
+            ["TRIMMING-options, would you like to change them?",'OPTIONS',0,None]
             )
 
         explain("analysis.txt")
@@ -791,9 +826,9 @@ if __name__ == '__main__':
             set_relations(newconf,'DE')
             add_tools(newconf,'DE')
             add_comparables(newconf,'DE')
-            rename(newconf,'DE',oldics,oldtodos,None,
-            ["enter ANNOTATION file (consider, that it has to be )",'ANNOTATION'],
-            ["Counting-settings for DE-Analysis, would you like to change them?",'OPTIONS',0]
+            rename(newconf,'DE',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["Counting-settings for DE-Analysis, would you like to change them?",'OPTIONS',0,None]
             )
 
         if 'DEU' in newconf['POSTPROCESSING'].split(",") and ('DEU' not in oldtodos or ICS):
@@ -801,9 +836,9 @@ if __name__ == '__main__':
             set_relations(newconf,'DEU')
             add_tools(newconf,'DEU')
             add_comparables(newconf,'DEU')
-            rename(newconf,'DEU',oldics,oldtodos,None,
-            ["enter ANNOTATION file",'ANNOTATION'],
-            ["Counting-settings for DEU-Analysis, would you like to change them?",'OPTIONS',0]
+            rename(newconf,'DEU',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["Counting-settings for DEU-Analysis, would you like to change them?",'OPTIONS',0,None]
             )
 
         if 'DAS' in newconf['POSTPROCESSING'].split(",") and ('DAS' not in oldtodos or ICS):
@@ -811,21 +846,21 @@ if __name__ == '__main__':
             set_relations(newconf,'DAS')
             add_tools(newconf,'DAS')
             add_comparables(newconf,'DAS')
-            rename(newconf,'DAS',oldics,oldtodos,None,
-            ["enter ANNOTATION file",'ANNOTATION'],
-            ["Counting-settings for DAS-Analysis, would you like to change them?",'OPTIONS',0],
-            ["Analysis-options for diego for DAS-Analysis, would you like to change them?",'OPTIONS', 1]
+            rename(newconf,'DAS',oldics,oldtodos,
+            ["enter ANNOTATION file",'ANNOTATION',None],
+            ["Counting-settings for DAS-Analysis, would you like to change them?",'OPTIONS',0,None],
+            ["Analysis-options for diego for DAS-Analysis, would you like to change them?",'OPTIONS',1,None]
             )
 
         explain("processes.txt")
-        procs= conversation("Enter the Maximum number of parallel processes to start snakemake with", None, "only-numbers")
+        newconf['MAXTHREADS'] = conversation("Enter the Maximum number of parallel processes to start snakemake with", None, "only-numbers")
 
         print_json(newconf,configfile)
 
         explain("runsnakemake.txt")
         print(f"\nYou created \n\n\t> {configfile}\n")
         print(f"start RunSnakemake with:\n\n\t> python3 snakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n")
-        print("\nCIAO!")
+        print("\n")
 
 
     except Exception as err:

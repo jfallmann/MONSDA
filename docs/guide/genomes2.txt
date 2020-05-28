@@ -1,10 +1,11 @@
 Good, before we continue with the next steps you have to understand how the
-sections in the configfile work. In principal they assign one or more values to
-each of your defined ics. The more you have, the bigger your configfile will be.
+sections in the CONFIGFILE work. In principal they assign one or more values to
+each of your defined ics. The more ics you defined, the bigger your CONFIGFILE
+will be.
 
-Now as you learned the Genome reference assignment needs three sections. You can
-see in the following Example how the SOURCE section looks if you have several
-ID's and Conditions's:
+As you learned the genome reference assignment needs three sections. You can
+see in the following example how the 'SOURCE' section looks if you have several
+ID's, CONDITIONS's and SETTING's:
 
                 "SOURCE": {
                         "DAY_1": {
@@ -31,8 +32,8 @@ ID's and Conditions's:
 You can imagine, that it would be an annoying work to set every ics individually.
 Therefore in the next steps you will be asked at which level in the ICS-tree
 you would like to change the settings.
-If you decide to do it per ID the options will be shown only once per id, namely
-those from the first ics of this id. The Guide will apply these settings for the
+If you decide to do it per ID the options will be shown only once per ID, namely
+those from the first ics of this ID. The GUIDE will apply these settings for the
 following levels.
 
 Okay, here we go!

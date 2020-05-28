@@ -1,16 +1,16 @@
-                                   Chapter 1  
-                              > PROJECT-FOLDER <
+                                   Chapter 1
+                             > THE PROJECT-FOLDER <
 
-Okay, first we take care of your project folder. It will fill up more and more
-over time. But in the beginning you need only three Subfolders, that we're going
+Okay, first we take care of your PROJECT-FOLDER. It will fill up more and more
+over time. But in the beginning you need only three subfolders, that we're going
 to create now:
 
-> The 'FASTQ' -folder will contain your sequencing raw-data in a certain strukture
-> The 'GENOMES' -folder will contain all needed reference genomes and annotations
-> The 'snakes' -folder will be insterted as symlink to this repository copy
+> The 'FASTQ'-folder will contain your sequencing raw-data in a certain structure.
+> The 'GENOMES'-folder will contain all needed reference genomes and annotations.
+> The 'snakes'-folder will be inserted as symlink to this repository copy.
 
-For now its enough just to create this three - the Guide will do that for you.
+For now its enough just to create this three - the GUIDE will do that for you.
 Later we fill them. The best and clearest way to use NextSnkaes would be to
-create a Folder 'NextSnakes' where you can store several projects side by side.
-But this is up to you, only the existence of the above inside your Project-folder
+create a directory 'NextSnakes' where you can store several projects side by side.
+But this is up to you, only the existence of the above inside your PROJECT-FOLDER
 is really necessary.
