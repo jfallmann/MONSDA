@@ -40,8 +40,9 @@ process trim_paired{
     path sread
 
     output:
-    path "*val*.fq.gz", emit: trimmed_reads
-    path "*trimming_report.txt", emit: trim_report
+    path "*val_1.fq.gz", emit: trimmed_r1
+    path "*val_2.fq.gz", emit: trimmed_r2
+    path "*trimming_report.txt"
 
     script:
     """
@@ -56,7 +57,7 @@ process trim{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("trimmed.fq.gz") > 0)              "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        if (filename.indexOf("trimmed.fq.gz") > 0)      "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
         else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
@@ -65,8 +66,8 @@ process trim{
     path read
 
     output:
-    path "*trimmed.fq.gz", emit: trimmed_reads
-    path "*trimming_report.txt", emit: trim_report
+    path "*trimmed.fq.gz", emit: trimmed
+    path "*trimming_report.txt"
 
     script:
     """
@@ -84,12 +85,13 @@ workflow TRIMMING{
         trim_paired(samples_ch1, samples_ch2)
 
         emit:
-        trimmedreads = trim_paired.out.trimmed_reads
+        trimmed_r1 = trim_paired.out.trimmed_r1
+        trimmed_r2 = trim_paired.out.trimmed_r2
     }
     else{
         trim(samples_ch1)
 
         emit:
-        trimmedreads = trim.out.trimmed_reads
+        trimmed = trim.out.trimmed
     }
 }

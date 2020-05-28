@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu May 28 18:07:29 2020 (+0200)
+# Last-Updated: Thu May 28 22:43:43 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1262
+#     Update #: 1283
 # URL:
 # Doc URL:
 # Keywords:
@@ -410,22 +410,27 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
 
                 #workflow merger
                 log.debug('FLOWLIST: '+str(flowlist))
+                paired = checkpaired([SAMPLES[0]],config)
                 with open(smko, 'a') as smkout:
-                    smkout.write('\n\n'+'workflow {\n    main:\n\n        ')
+                    smkout.write('\n\n'+'workflow {\n')
                     for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
                         if w in flowlist:
                             if w ==  'QC_TRIMMING' or w == 'MAPPING':
-                                smkout.write(w+'(TRIMMING.out.trimmedreads)\n'+' '*8)
+                                if paired == 'paired':
+                                    #smkout.write(' '*4+w+'(TRIMMING.out.trimmed_r1,TRIMMING.out.trimmed_r2)\n')
+                                    smkout.write(' '*4+w+'(TRIMMING.out)\n')
+                                else:
+                                    smkout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
                             elif w ==  'MULTIQC':
                                 if 'MAPPING' in flowlist:
-                                    smkout.write(w+'(QC_MAPPING.out.mapqc)\n'+' '*8)
+                                    smkout.write(' '*4+w+'(QC_MAPPING.out)\n')
                                 elif 'TRIMMING' in flowlist:
-                                    smkout.write(w+'(QC_TRIMMING.out.trimqc)\n'+' '*8)
+                                    smkout.write(' '*4+w+'(QC_TRIMMING.out)\n')
                                 else:
-                                    smkout.write(w+'(QC_RAW.out.rawqc)\n'+' '*8)
+                                    smkout.write(' '*4+w+'(QC_RAW.out)\n')
                             else:
-                                smkout.write(w+'(dummy)\n'+' '*8)
-                    smkout.write('\n}\n\n')
+                                smkout.write(' '*4+w+'(dummy)\n')
+                    smkout.write('}\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:

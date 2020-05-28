@@ -52,6 +52,5 @@ workflow QC_TRIMMING{
     qc_trimmed(trsamples_ch)
 
     emit:
-    trimqc = qc_trimmed.out.fastqc_results
-
+    trimqc = qc_trimmed.out
 }

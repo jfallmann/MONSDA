@@ -45,7 +45,7 @@ workflow QC_MAPPING{
     qc_mapped(mapsamples_ch)
 
     emit:
-    rawqc = qc_raw.out.fastqc_results
-    trimqc = qc_trimmed.out.trfastqc_results
-    mapqc = qc_mapped.out.mapfastqc_results
+    rawqc = qc_raw.out
+    trimqc = qc_trimmed.out
+    mapqc = qc_mapped.out
 }

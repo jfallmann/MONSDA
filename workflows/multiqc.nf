@@ -68,6 +68,9 @@ process multiqc{
         else null
     }
 
+    input:
+    path dummy
+
     output:
     path "*.{zip,html}", emit: multiqc_results
 
@@ -81,9 +84,9 @@ workflow MULTIQC{
     take: dummy
 
     main:
-    mqcsamples_ch = Channel.from(MQCSAMPLES)
-    multiqc()
+    //mqcsamples_ch = Channel.from(MQCSAMPLES)
+    multiqc(dummy)
 
     emit:
-    mqcres = multiqc.out.multiqc_results
+    mqcres = multiqc.out
 }
