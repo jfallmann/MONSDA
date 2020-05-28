@@ -1,5 +1,5 @@
-TOOLENV=params.QCENV ?: null
-TOOLBIN=params.QCBIN ?: null
+QCENV=params.QCENV ?: null
+QCBIN=params.QCBIN ?: null
 
 MRSAMPLES = null
 
@@ -9,7 +9,7 @@ MRSAMPLES = LONGSAMPLES.collect{
 MRSAMPLES.sort()
 
 process qc_mapped{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$QCENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
@@ -45,7 +45,7 @@ workflow QC_MAPPING{
     qc_mapped(mapsamples_ch)
 
     emit:
-    qc_raw.out.fastqc_results
-    qc_trimmed.out.trfastqc_results
-    qc_mapped.out.mapfastqc_results
+    rawqc = qc_raw.out.fastqc_results
+    trimqc = qc_trimmed.out.trfastqc_results
+    mapqc = qc_mapped.out.mapfastqc_results
 }

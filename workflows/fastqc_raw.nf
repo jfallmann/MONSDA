@@ -1,5 +1,5 @@
-TOOLENV=params.QCENV ?: null
-TOOLBIN=params.QCBIN ?: null
+QCRENV=params.QCENV ?: null
+QCRBIN=params.QCBIN ?: null
 
 FQSAMPLES = null
 
@@ -21,7 +21,7 @@ if (PAIRED == 'paired'){
 }
 
 process qc_raw{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$QCRENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
@@ -52,5 +52,5 @@ workflow QC_RAW{
     qc_raw(samples_ch)
 
     emit:
-    qc_raw.out.fastqc_results
+    rawqc = qc_raw.out.fastqc_results
 }

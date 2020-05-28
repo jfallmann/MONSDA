@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu May 28 11:40:51 2020 (+0200)
+# Last-Updated: Thu May 28 18:07:29 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1228
+#     Update #: 1262
 # URL:
 # Doc URL:
 # Keywords:
@@ -409,15 +409,23 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                     flowlist.append('MULTIQC')
 
                 #workflow merger
-                log.info('FLOWLIST: '+str(flowlist))
+                log.debug('FLOWLIST: '+str(flowlist))
                 with open(smko, 'a') as smkout:
                     smkout.write('\n\n'+'workflow {\n    main:\n\n        ')
-                    idx = 0
-                    for w in ['MULTIQC','QC_MAPPING','MAPPING','QC_TRIMMING','TRIMMING','QC_RAW']:
+                    for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
                         if w in flowlist:
-                            idx+=1
-                            smkout.write(w+'(')
-                    smkout.write('dummy'+')'*idx+'\n}\n\n')
+                            if w ==  'QC_TRIMMING' or w == 'MAPPING':
+                                smkout.write(w+'(TRIMMING.out.trimmedreads)\n'+' '*8)
+                            elif w ==  'MULTIQC':
+                                if 'MAPPING' in flowlist:
+                                    smkout.write(w+'(QC_MAPPING.out.mapqc)\n'+' '*8)
+                                elif 'TRIMMING' in flowlist:
+                                    smkout.write(w+'(QC_TRIMMING.out.trimqc)\n'+' '*8)
+                                else:
+                                    smkout.write(w+'(QC_RAW.out.rawqc)\n'+' '*8)
+                            else:
+                                smkout.write(w+'(dummy)\n'+' '*8)
+                    smkout.write('\n}\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:

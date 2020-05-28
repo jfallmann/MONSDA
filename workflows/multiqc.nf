@@ -1,6 +1,26 @@
 TOOLENV=params.QCENV ?: null
 TOOLBIN=params.QCBIN ?: null
 
+MQCSAMPLES = null
+
+if (PAIRED == 'paired'){
+    R1 = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+    }
+    R2 = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+    }
+    MQCSAMPLES = R1+R2
+    MQCSAMPLES.sort()
+
+}else{
+    MQCSAMPLES=SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+    }
+    MQCSAMPLES.sort()
+}
+
+
 //collecting list of processed file for multiqc, not implemented yet
 process collect_qc_raw{
     input:
@@ -53,7 +73,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/../QC/FASTQC/$CONDITION/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/../QC/FASTQC/${CONDITION}/.
     """
 }
 
@@ -61,8 +81,9 @@ workflow MULTIQC{
     take: dummy
 
     main:
+    mqcsamples_ch = Channel.from(MQCSAMPLES)
     multiqc()
 
     emit:
-    multiqc.out.multiqc_results
+    mqcres = multiqc.out.multiqc_results
 }

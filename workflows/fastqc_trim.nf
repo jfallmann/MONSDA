@@ -1,5 +1,5 @@
-TOOLENV=params.QCENV ?: null
-TOOLBIN=params.QCBIN ?: null
+QCTENV=params.QCENV ?: null
+QCTBIN=params.QCBIN ?: null
 
 TRSAMPLES = null
 
@@ -21,7 +21,7 @@ if (PAIRED == 'paired'){
 }
 
 process qc_trimmed{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../nextsnakes/envs/$QCTENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
@@ -49,8 +49,9 @@ workflow QC_TRIMMING{
 
     main:
     trsamples_ch = Channel.from(TRSAMPLES)
-    qc_trimmed(trsamples_ch)x
+    qc_trimmed(trsamples_ch)
 
     emit:
-    qc_trimmed.out.fastqc_results
+    trimqc = qc_trimmed.out.fastqc_results
+
 }
