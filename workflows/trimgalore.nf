@@ -3,51 +3,19 @@ TRIMBIN=params.TRIMMINGBIN ?: null
 
 TRIMPARAMS = params.trimgalore_params_0 ?: ''
 
-T1SAMPLES = null
-T2SAMPLES = null
+TSAMPLES = null
 
 if (PAIRED == 'paired'){
-    T1 = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+    TSAMPLES = SAMPLES.collect{
+        element -> return ["${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz", "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"]
     }
-    T2 = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-    }
-    T1SAMPLES = T1.sort()
-    T2SAMPLES = T2.sort()
+    TSAMPLES.sort()
 
 }else{
-    T1SAMPLES=SAMPLES.collect{
+    TSAMPLES=SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
     }
-    T1SAMPLES.sort()
-}
-
-process trim_paired{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TRIMENV"+".yaml"
-    cpus THREADS
-    validExitStatus 0,1
-
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
-    saveAs: {filename ->
-        if (filename.indexOf("fq.gz") > 0)               "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)      "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
-        else null
-    }
-
-    input:
-    path fread
-    path sread
-
-    output:
-    path "*val_1.fq.gz", emit: trimmed_r1
-    path "*val_2.fq.gz", emit: trimmed_r2
-    path "*trimming_report.txt"
-
-    script:
-    """
-    $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $fread $sread
-    """
+    TSAMPLES.sort()
 }
 
 process trim{
@@ -57,41 +25,38 @@ process trim{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("trimmed.fq.gz") > 0)      "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        if (filename.indexOf(".fq.gz") > 0)      "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}/,"")}.fastq.gz"
         else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
 
     input:
-    path read
+    path reads
 
     output:
-    path "*trimmed.fq.gz", emit: trimmed
+    path "*{val,trimmed}*.fq.gz", emit: trimmed
     path "*trimming_report.txt"
 
     script:
-    """
-    $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $read
-    """
+    if (PAIRED == 'paired'){
+        """
+        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $reads
+        """
+    }
+    else{
+        """
+        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads
+        """
+    }
 }
 
 workflow TRIMMING{
     take: dummy
 
     main:
-    samples_ch1 = Channel.from(T1SAMPLES)
-    if (PAIRED == 'paired'){
-        samples_ch2 = Channel.from(T2SAMPLES)
-        trim_paired(samples_ch1, samples_ch2)
+    samples_ch = Channel.from(TSAMPLES)
+    trim(samples_ch)
 
-        emit:
-        trimmed_r1 = trim_paired.out.trimmed_r1
-        trimmed_r2 = trim_paired.out.trimmed_r2
-    }
-    else{
-        trim(samples_ch1)
-
-        emit:
-        trimmed = trim.out.trimmed
-    }
+    emit:
+    trimmed = trim.out.trimmed
 }

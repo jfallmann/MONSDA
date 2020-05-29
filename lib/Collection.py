@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu May 28 15:06:58 2020 (+0200)
+# Last-Updated: Fri May 29 22:54:29 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1953
+#     Update #: 1956
 # URL:
 # Doc URL:
 # Keywords:
@@ -901,8 +901,9 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
     if not workflows:
         mp = subDict(config[subwork],x)['OPTIONS']
         tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
-        for idx in range(len(mp)):
-            tp.append(' '.join("--"+toolenv+"_params_"+str(idx)+" \'{!s} {!s}\'".format(key,val) for (key, val) in mp[idx].items()))
+        if len(mp) > 0:
+            for idx in range(len(mp)):
+                tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
     else:
         for subwork in workflows:
             mp = subDict(config[subwork],x)['OPTIONS']
@@ -910,9 +911,9 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             for i in range(0,len(listoftools)):
                 toolenv, toolbin = map(str,listoftools[i])
                 tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
-
-            for idx in range(len(mp)):
-                tp.append(' '.join("--"+toolenv+"_params_"+str(idx)+" \'{!s} {!s}\'".format(key,val) for (key, val) in mp[idx].items()))
+            if len(mp) > 0:
+                for idx in range(len(mp)):
+                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)
 
