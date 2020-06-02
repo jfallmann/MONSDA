@@ -71,6 +71,7 @@ process qc_mapped{
     }
 
     input:
+    val dummy
     path read
 
     output:
@@ -87,9 +88,9 @@ workflow QC_MAPPING{
 
     main:
 
-    qc_raw(samples_ch)
-    qc_trimmed(trimmed_samples_ch)
-    qc_mapped(mapped_samples_ch)
+    qc_raw(dummy,samples_ch)
+    qc_trimmed(dummy,trimmed_samples_ch)
+    qc_mapped(dummy,mapped_samples_ch)
 
     emit:
     rawqc = qc_raw.out

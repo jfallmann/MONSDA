@@ -21,4 +21,4 @@ SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
 
 //dummy
-dummy = null
+dummy = Channel.empty()

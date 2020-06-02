@@ -35,6 +35,7 @@ process qc_raw{
     }
 
     input:
+    val dummy
     path read
 
     output:
@@ -50,7 +51,7 @@ workflow QC_RAW{
     take: dummy
 
     main:
-    qc_raw(samples_ch)
+    qc_raw(dummy, samples_ch)
 
     emit:
     rawqc = qc_raw.out

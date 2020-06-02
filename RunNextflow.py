@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun  2 10:13:35 2020 (+0200)
+# Last-Updated: Tue Jun  2 13:12:15 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1284
+#     Update #: 1287
 # URL:
 # Doc URL:
 # Keywords:
@@ -399,14 +399,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                             #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
                             smkout.write(smk.read())
                         smkout.write('\n\n')
-                if 'QC' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(smk.read())
-                            #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
-                            smkout.write('\n\n')
-                    flowlist.append('MULTIQC')
+                #if 'QC' in subworkflows:
+                #    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
+                #    with open(smko, 'a') as smkout:
+                #        with open(smkf,'r') as smk:
+                #            smkout.write(smk.read())
+                #            #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
+                #            smkout.write('\n\n')
+                #    flowlist.append('MULTIQC')
 
                 #workflow merger
                 log.debug('FLOWLIST: '+str(flowlist))
@@ -417,17 +417,16 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         if w in flowlist:
                             if w ==  'QC_TRIMMING' or w == 'MAPPING':
                                 if paired == 'paired':
-                                    #smkout.write(' '*4+w+'(TRIMMING.out.trimmed_r1,TRIMMING.out.trimmed_r2)\n')
-                                    smkout.write(' '*4+w+'(TRIMMING.out)\n')
+                                    smkout.write(' '*4+w+'(dummy, TRIMMING.out)\n')
                                 else:
-                                    smkout.write(' '*4+w+'(TRIMMING.out)\n')#.trimmed)\n')
+                                    smkout.write(' '*4+w+'(dummy, TRIMMING.out)\n')
                             elif w ==  'MULTIQC':
                                 if 'MAPPING' in flowlist:
-                                    smkout.write(' '*4+w+'(QC_MAPPING.out)\n')
+                                    smkout.write(' '*4+w+'(dummy, QC_MAPPING.out)\n')
                                 elif 'TRIMMING' in flowlist:
-                                    smkout.write(' '*4+w+'(QC_TRIMMING.out)\n')
+                                    smkout.write(' '*4+w+'(dummy, QC_TRIMMING.out)\n')
                                 else:
-                                    smkout.write(' '*4+w+'(QC_RAW.out)\n')
+                                    smkout.write(' '*4+w+'(dummy, QC_RAW.out)\n')
                             else:
                                 smkout.write(' '*4+w+'(dummy)\n')
                     smkout.write('}\n\n')

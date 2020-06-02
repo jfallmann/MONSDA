@@ -1,6 +1,8 @@
 QCTENV=params.QCENV ?: null
 QCTBIN=params.QCBIN ?: null
 
+QCPARAMS = params.fastqc_params_0 ?: ''
+
 //SAMPLE CHANNELS
 if (PAIRED == 'paired'){
     T1SAMPLES = LONGSAMPLES.collect{
@@ -36,6 +38,7 @@ process qc_trimmed{
     }
 
     input:
+    val dummy
     path read
 
     output:
@@ -51,7 +54,7 @@ workflow QC_TRIMMING{
     take: dummy
 
     main:
-    qc_trimmed(trimmed_samples_ch)
+    qc_trimmed(dummy, trimmed_samples_ch)
 
     emit:
     trimqc = qc_trimmed.out

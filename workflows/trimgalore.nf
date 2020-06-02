@@ -36,6 +36,7 @@ process trim{
     }
 
     input:
+    val dummy
     path reads
 
     output:
@@ -59,7 +60,7 @@ workflow TRIMMING{
     take: dummy
 
     main:
-    trim(samples_ch)
+    trim(dummy, samples_ch)
 
     emit:
     trimmed = trim.out.trimmed
