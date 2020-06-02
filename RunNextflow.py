@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun  2 13:12:15 2020 (+0200)
+# Last-Updated: Tue Jun  2 18:04:43 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1287
+#     Update #: 1337
 # URL:
 # Doc URL:
 # Keywords:
@@ -416,17 +416,14 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                     for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
                         if w in flowlist:
                             if w ==  'QC_TRIMMING' or w == 'MAPPING':
-                                if paired == 'paired':
-                                    smkout.write(' '*4+w+'(dummy, TRIMMING.out)\n')
-                                else:
-                                    smkout.write(' '*4+w+'(dummy, TRIMMING.out)\n')
+                                smkout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
                             elif w ==  'MULTIQC':
                                 if 'MAPPING' in flowlist:
-                                    smkout.write(' '*4+w+'(dummy, QC_MAPPING.out)\n')
+                                    smkout.write(' '*4+w+'(QC_MAPPING.out)\n')
                                 elif 'TRIMMING' in flowlist:
-                                    smkout.write(' '*4+w+'(dummy, QC_TRIMMING.out)\n')
+                                    smkout.write(' '*4+w+'(QC_TRIMMING.out)\n')
                                 else:
-                                    smkout.write(' '*4+w+'(dummy, QC_RAW.out)\n')
+                                    smkout.write(' '*4+w+'(QC_RAW.out)\n')
                             else:
                                 smkout.write(' '*4+w+'(dummy)\n')
                     smkout.write('}\n\n')
