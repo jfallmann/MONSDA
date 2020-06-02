@@ -19,7 +19,7 @@ process qc_mapped{
     path read
 
     output:
-    path "*.{zip,html}", emit: mapfastqc_results
+    path "*.{zip,html}", emit: fastqc_results
 
     script:
     """
@@ -33,26 +33,6 @@ workflow QC_MAPPING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1_trimmed.fastq.gz"
-        }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2_trimmed.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
-
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
-
         M1SAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../MAPPED/"+element+"_R1_sorted.bam"
         }
@@ -65,18 +45,6 @@ workflow QC_MAPPING{
 
 
     }else{
-        RSAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-        }
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
-
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+".fastq.gz"
-        }
-        T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-
         M1SAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../MAPPED/"+element+".bam"
         }
@@ -85,12 +53,8 @@ workflow QC_MAPPING{
 
     }
 
-    qc_raw(samples_ch)
-    qc_trimmed(trimmed_samples_ch)
     qc_mapped(mapped_samples_ch)
 
     emit:
-    rawqc = qc_raw.out
-    trimqc = qc_trimmed.out
-    mapqc = qc_mapped.out
+    mapqc = qc_mapped.out.fastqc_results
 }

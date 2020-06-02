@@ -36,24 +36,11 @@ process trim{
     }
 }
 
-process collect_trim{
-    input:
-    reads
-
-    output:
-    path "*{val,trimmed}*.fq.gz", emit: collect
-
-    script:
-    """
-    ls $reads
-    """
-
-}
-
 workflow TRIMMING{
     take: samples_ch
 
     main:
+
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -73,9 +60,9 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    collect_trim(trim(samples_ch).trimmed)
+    trim(samples_ch)
 
     emit:
-    trimmed = collect_trim.out.collect
-    report = trim.out.report
+    trimmed = trim.out.trimmed
+    report  = trim.out.report
 }

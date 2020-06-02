@@ -49,7 +49,7 @@ process multiqc{
     }
 
     input:
-    path dummy
+    val dummy
 
     output:
     path "*.{zip,html}", emit: multiqc_results
@@ -67,5 +67,5 @@ workflow MULTIQC{
     multiqc(dummy)
 
     emit:
-    mqcres = multiqc.out
+    mqcres = multiqc.out.multiqc_results
 }
