@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu May 28 22:43:43 2020 (+0200)
+# Last-Updated: Tue Jun  2 10:13:35 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1283
+#     Update #: 1284
 # URL:
 # Doc URL:
 # Keywords:
@@ -420,7 +420,7 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                                     #smkout.write(' '*4+w+'(TRIMMING.out.trimmed_r1,TRIMMING.out.trimmed_r2)\n')
                                     smkout.write(' '*4+w+'(TRIMMING.out)\n')
                                 else:
-                                    smkout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
+                                    smkout.write(' '*4+w+'(TRIMMING.out)\n')#.trimmed)\n')
                             elif w ==  'MULTIQC':
                                 if 'MAPPING' in flowlist:
                                     smkout.write(' '*4+w+'(QC_MAPPING.out)\n')

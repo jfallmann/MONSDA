@@ -1,24 +1,27 @@
 QCTENV=params.QCENV ?: null
 QCTBIN=params.QCBIN ?: null
 
-TRSAMPLES = null
-
+//SAMPLE CHANNELS
 if (PAIRED == 'paired'){
-    TR1 = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
+    T1SAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1.fastq.gz"
     }
-    TR2 = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
+    T1SAMPLES.sort()
+    T2SAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2.fastq.gz"
     }
-    TRSAMPLES = TR1+TR2
-    TRSAMPLES.sort()
+    T2SAMPLES.sort()
+    trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
 
 }else{
-    TRSAMPLES=LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
+    T1SAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+".fastq.gz"
     }
-    TRSAMPLES.sort()
+    T1SAMPLES.sort()
+    trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
+
 }
+
 
 process qc_trimmed{
     conda "${workflow.workDir}/../nextsnakes/envs/$QCTENV"+".yaml"
@@ -48,8 +51,7 @@ workflow QC_TRIMMING{
     take: dummy
 
     main:
-    trsamples_ch = Channel.from(TRSAMPLES)
-    qc_trimmed(trsamples_ch)
+    qc_trimmed(trimmed_samples_ch)
 
     emit:
     trimqc = qc_trimmed.out

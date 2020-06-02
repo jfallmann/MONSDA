@@ -3,21 +3,26 @@ TRIMBIN=params.TRIMMINGBIN ?: null
 
 TRIMPARAMS = params.trimgalore_params_0 ?: ''
 
-TSAMPLES = null
-
+//SAMPLE CHANNELS
 if (PAIRED == 'paired'){
-    TSAMPLES = SAMPLES.collect{
-        element -> return ["${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz", "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"]
+    R1SAMPLES = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
     }
-    TSAMPLES.sort()
-
+    R1SAMPLES.sort()
+    R2SAMPLES = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+    }
+    R2SAMPLES.sort()
+    samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
 }else{
-    TSAMPLES=SAMPLES.collect{
+    RSAMPLES=SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
     }
-    TSAMPLES.sort()
+    RSAMPLES.sort()
+    samples_ch = Channel.fromPath(RSAMPLES)
 }
 
+//PROCESSES
 process trim{
     conda "${workflow.workDir}/../nextsnakes/envs/$TRIMENV"+".yaml"
     cpus THREADS
@@ -54,7 +59,6 @@ workflow TRIMMING{
     take: dummy
 
     main:
-    samples_ch = Channel.from(TSAMPLES)
     trim(samples_ch)
 
     emit:

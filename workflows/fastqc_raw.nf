@@ -1,23 +1,25 @@
 QCRENV=params.QCENV ?: null
 QCRBIN=params.QCBIN ?: null
 
-FQSAMPLES = null
 
+//SAMPLE CHANNELS
 if (PAIRED == 'paired'){
-    R1 = SAMPLES.collect{
+    R1SAMPLES = SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
     }
-    R2 = SAMPLES.collect{
+    R1SAMPLES.sort()
+    R2SAMPLES = SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
     }
-    FQSAMPLES = R1+R2
-    FQSAMPLES.sort()
+    R2SAMPLES.sort()
+    samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
 
 }else{
-    FQSAMPLES=SAMPLES.collect{
+    RSAMPLES=SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
     }
-    FQSAMPLES.sort()
+    RSAMPLES.sort()
+    samples_ch = Channel.fromPath(RSAMPLES)
 }
 
 process qc_raw{
@@ -48,7 +50,6 @@ workflow QC_RAW{
     take: dummy
 
     main:
-    samples_ch = Channel.from(FQSAMPLES)
     qc_raw(samples_ch)
 
     emit:
