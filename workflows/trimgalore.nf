@@ -20,8 +20,8 @@ process trim{
     path reads
 
     output:
-    path "*{val,trimmed}*.fq.gz", emit: trimmed
-    path "*trimming_report.txt", emit: report
+    path "*{val,trimmed}*.fq.gz", emit: trim
+    path "*trimming_report.txt", emit: rep
 
     script:
     if (PAIRED == 'paired'){
@@ -64,6 +64,6 @@ workflow TRIMMING{
 
     emit:
 
-    trimmed = trim.out.trimmed
-    report  = trim.out.report
+    trimmed = trim.out.trim
+    report  = trim.out.rep
 }

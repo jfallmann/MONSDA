@@ -53,5 +53,5 @@ workflow QC_RAW{
     qc_raw(samples_ch)
 
     emit:
-    rawqc = qc_raw.out.fastqc_results
+    qc = qc_raw.out.fastqc_results
 }

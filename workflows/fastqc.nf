@@ -56,5 +56,5 @@ workflow QC_MAPPING{
     qc_mapped(mapped_samples_ch)
 
     emit:
-    mapqc = qc_mapped.out.fastqc_results
+    qc = qc_mapped.out.fastqc_results
 }
