@@ -47,8 +47,6 @@ comparisons <- strsplit(cmp, ",")
 ## readin counttable
 read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
 colnames(dcounts) <- c("GeneID", rownames(sampleData))
-rownames(dcounts) <- dcounts[,1]
-dcounts <- dcounts[,2:ncol(dcounts)]
 
 ## create ExonID's
 id <- as.character(dcounts[,1])
@@ -88,7 +86,6 @@ pdf(out, width = 400, height = 400)
 colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
 dev.off()
-
 
 ## Create design-table considering different types (paired, unpaired)
 if (length(levels(types))>1){
