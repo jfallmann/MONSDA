@@ -1,8 +1,8 @@
 
 suppressPackageStartupMessages({
-  require(edgeR)
-  require(dplyr)
-  library(BiocParallel)
+    require(BiocParallel)
+    require(dplyr)
+    require(edgeR)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -47,12 +47,7 @@ comparisons <- strsplit(cmp, ",")
 ## readin counttable
 read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
 colnames(dcounts) <- c("GeneID", rownames(sampleData))
-
-## create ExonID's
-id <- as.character(dcounts[,1])
-n <- id
-split(n,id) <- lapply(split(n ,id), seq_along )
-rownames(dcounts) <- sprintf("%s%s%03.f",id,":E",as.numeric(n))
+rownames(dcounts) <- dcounts[,1]
 dcounts <- dcounts[,2:ncol(dcounts)]
 
 ## get genes names out
@@ -117,41 +112,51 @@ dev.off()
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-  contrast_name <- strsplit(contrast,":")[[1]][1]
-  contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-  message(paste("Comparing ",contrast_name, sep=""))
+    message(paste("Comparing ",contrast_name, sep=""))
+    tryCatch({
 
-  # determine contrast
-  A <- strsplit(contrast_groups[[1]][1], "\\+")
-  B <- strsplit(contrast_groups[[1]][2], "\\+")
-  minus <- 1/length(A[[1]])*(-1)
-  plus <- 1/length(B[[1]])
-  contrast <- cbind(integer(dim(design)[2]), colnames(design))
-  for(i in A[[1]]){
-    contrast[which(contrast[,2]==i)]<- minus
-  }
-  for(i in B[[1]]){
-    contrast[which(contrast[,2]==i)]<- plus
-  }
-  contrast <- as.numeric(contrast[,1])
+                                        # determine contrast
+        A <- strsplit(contrast_groups[[1]][1], "\\+")
+        B <- strsplit(contrast_groups[[1]][2], "\\+")
+        minus <- 1/length(A[[1]])*(-1)
+        plus <- 1/length(B[[1]])
+        contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        for(i in A[[1]]){
+            contrast[which(contrast[,2]==i)]<- minus
+        }
+        for(i in B[[1]]){
+            contrast[which(contrast[,2]==i)]<- plus
+        }
+        contrast <- as.numeric(contrast[,1])
 
-  # likelihood-ratiotest
-  lrt <- glmLRT(fit, contrast=contrast)
+                                        # likelihood-ratiotest
+        lrt <- glmLRT(fit, contrast=contrast)
 
-  # create sorted tables
-  tops <- topTags(lrt, n=nrow(lrt$table), sort.by="logFC")
-  write.table(tops, file=paste(outdir,contrast_name,"_genes_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
-  tops <- topTags(lrt, n=nrow(lrt$table), sort.by="PValue")
-  write.table(tops, file=paste(outdir,contrast_name,"_genes_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+                                        # create sorted tables
+        tops <- topTags(lrt, n=nrow(lrt$table), sort.by="logFC")
+        write.table(tops, file=paste(outdir,contrast_name,"_genes_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+        tops <- topTags(lrt, n=nrow(lrt$table), sort.by="PValue")
+        write.table(tops, file=paste(outdir,contrast_name,"_genes_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
-  ## plot lFC vs CPM
-  out <- paste(outdir,contrast_name,"_MD.pdf",sep="")
-  pdf(out, width = 400, height = 400)
-  plotMD(lrt, main=contrast_name)
-  abline(h=c(-1, 1), col="blue")
-  dev.off()
+        ## plot lFC vs CPM
+        out <- paste(outdir,contrast_name,"_MD.pdf",sep="")
+        pdf(out, width = 400, height = 400)
+        plotMD(lrt, main=contrast_name)
+        abline(h=c(-1, 1), col="blue")
+        dev.off()
 
+
+    }, error=function(e){
+        rm(contrast,lrt,tops)
+        print(warnings)
+        file.create(paste(outdir,contrast_name,"_genes_logFC-sorted.tsv",sep=""))
+        file.create(paste(outdir,contrast_name,"_genes_pValue-sorted.tsv",sep=""))
+        file.create(paste(outdir,contrast_name,"_MD.pdf",sep=""))
+        cat("WARNING :",conditionMessage(e), "\n")
+    } )
 }
 
 save.image(file = paste(outdir,"EDGER_DE_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

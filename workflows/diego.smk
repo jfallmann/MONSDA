@@ -45,7 +45,7 @@ rule prepare_junction_usage_matrix:
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
-            tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][1].items())
+            tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][1].items())
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
 
 rule create_contrast_files:

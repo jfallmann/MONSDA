@@ -1,8 +1,8 @@
 
 suppressPackageStartupMessages({
-    require(edgeR)
+    require(BiocParallel)
     require(dplyr)
-    library(BiocParallel)
+    require(edgeR)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -48,6 +48,13 @@ comparisons <- strsplit(cmp, ",")
 read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
 colnames(dcounts) <- c("GeneID", rownames(sampleData))
 rownames(dcounts) <- dcounts[,1]
+dcounts <- dcounts[,2:ncol(dcounts)]
+
+## create ExonID's
+id <- as.character(dcounts[,1])
+n <- id
+split(n,id) <- lapply(split(n ,id), seq_along )
+rownames(dcounts) <- sprintf("%s%s%03.f",id,":E",as.numeric(n))
 dcounts <- dcounts[,2:ncol(dcounts)]
 
 ## get genes names out
@@ -116,37 +123,45 @@ for(contrast in comparisons[[1]]){
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
     message(paste("Comparing ",contrast_name, sep=""))
-
+    tryCatch({
                                         # determine contrast
-    A <- strsplit(contrast_groups[[1]][1], "\\+")
-    B <- strsplit(contrast_groups[[1]][2], "\\+")
-    minus <- 1/length(A[[1]])*(-1)
-    plus <- 1/length(B[[1]])
-    contrast <- cbind(integer(dim(design)[2]), colnames(design))
-    for(i in A[[1]]){
-        contrast[which(contrast[,2]==i)]<- minus
-    }
-    for(i in B[[1]]){
-        contrast[which(contrast[,2]==i)]<- plus
-    }
-    contrast <- as.numeric(contrast[,1])
+        A <- strsplit(contrast_groups[[1]][1], "\\+")
+        B <- strsplit(contrast_groups[[1]][2], "\\+")
+        minus <- 1/length(A[[1]])*(-1)
+        plus <- 1/length(B[[1]])
+        contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        for(i in A[[1]]){
+            contrast[which(contrast[,2]==i)]<- minus
+        }
+        for(i in B[[1]]){
+            contrast[which(contrast[,2]==i)]<- plus
+        }
+        contrast <- as.numeric(contrast[,1])
 
                                         # quasi-likelihood F-Test
-    qlf <- glmQLFTest(fit, contrast = contrast)
-    is.de <- decideTests(qlf, p.value=0.05)
-    summary(is.de)
+        qlf <- glmQLFTest(fit, contrast = contrast)
+        is.de <- decideTests(qlf, p.value=0.05)
+        summary(is.de)
 
                                         # create sorted tables
-    tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-    write.table(tops, file=paste(outdir,contrast_name,"_exons_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
-    tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-    write.table(tops, file=paste(outdir,contrast_name,"_exons_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
+        write.table(tops, file=paste(outdir,contrast_name,"_exons_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
+        write.table(tops, file=paste(outdir,contrast_name,"_exons_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
                                         # create file MD-plot
-    out <- paste(outdir,contrast_name,"_MD.pdf",sep="")
-    pdf(out, width = 400, height = 400)
-    plotMD(qlf, main=contrast_name)
-    dev.off()
+        out <- paste(outdir,contrast_name,"_MD.pdf",sep="")
+        pdf(out, width = 400, height = 400)
+        plotMD(qlf, main=contrast_name)
+        dev.off()
+    }, error=function(e){
+        rm(contrast,lrt,tops)
+        print(warnings)
+        file.create(paste(outdir,contrast_name,"_exons_logFC-sorted.tsv",sep=""))
+        file.create(paste(outdir,contrast_name,"_exons_pValue-sorted.tsv",sep=""))
+        file.create(paste(outdir,contrast_name,"_MD.pdf",sep=""))
+        cat("WARNING :",conditionMessage(e), "\n")
+    } )
 }
 
 save.image(file = paste(outdir,"EDGER_DEU_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
