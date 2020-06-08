@@ -53,7 +53,7 @@ rule prepare_count_table:
 rule run_dexseq:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-            flat = rules.prepare_count_annotation.output.deugtf
+            flat = rules.prepare_deu_annotation.output.deugtf
     output: plot = rules.themall.input.plot,
             tbl  = rules.themall.input.tbl,
             html = rules.themall.input.html,
