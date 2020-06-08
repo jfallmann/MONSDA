@@ -11,7 +11,7 @@ rule themall:
            html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=compstr),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
 
-rule prepare_count_annotation:
+rule prepare_deu_annotation:
     input:   anno   = expand("{ref}/{gen}/{anno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), anno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'])
     output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
              deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
@@ -26,8 +26,8 @@ rule featurecount_dexseq_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_count_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_count_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
-    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
+            cts   = expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -36,7 +36,7 @@ rule featurecount_dexseq_unique:
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule prepare_count_table:
     input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, file=samplecond(SAMPLES,config))
@@ -46,8 +46,9 @@ rule prepare_count_table:
     conda:   "snakes/envs/"+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
-             bins = BINS
-    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
+             bins = BINS,
+             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][1].items())
+    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
 
 rule run_dexseq:
     input:  cnt  = rules.prepare_count_table.output.tbl,

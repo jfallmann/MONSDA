@@ -17,8 +17,8 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_edger/{{file}}_tmp.counts", outdir=outdir)),
+            cts   = expand("{outdir}Featurecounts_DAS_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
     conda:  "snakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -37,8 +37,9 @@ rule prepare_count_table:
     conda:   "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
-             bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+             bins = BINS,
+             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][1].items())
+    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,

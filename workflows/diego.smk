@@ -44,8 +44,9 @@ rule prepare_junction_usage_matrix:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS')
-    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
+            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
+            tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][1].items())
+    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
 
 rule create_contrast_files:
     input:  anno = rules.prepare_junction_usage_matrix.output.anno
@@ -67,9 +68,8 @@ rule run_diego:
     conda:  "snakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            #cpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][1].items()),
+            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DAS")['OPTIONS'][2].items()),
             outdir = outdir,
             compare = comparison,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
-    #shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond {params.cpara} -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} {params.cpara} 2>> {log};done"
     shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
