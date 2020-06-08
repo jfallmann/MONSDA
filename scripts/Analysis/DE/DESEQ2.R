@@ -34,7 +34,7 @@ if (!all(rownames(anno) %in% colnames(countData))){
 }
 
 if (length(levels(anno$types))>1){
-  design <- ~0 + condition+type
+  design <- ~0 + condition + type
 } else {
   design <- ~0 + condition
 }
