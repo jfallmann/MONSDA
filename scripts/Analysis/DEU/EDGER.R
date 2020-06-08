@@ -90,10 +90,11 @@ dev.off()
 ## Create design-table considering different types (paired, unpaired)
 if (length(levels(types))>1){
     design <- model.matrix(~0+groups+types, data=sampleData)
+    colnames(design) <- c(levels(groups),"type")
 } else {
     design <- model.matrix(~0+groups, data=sampleData)
+    colnames(design) <- levels(groups)
 }
-colnames(design) <- levels(groups)
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
