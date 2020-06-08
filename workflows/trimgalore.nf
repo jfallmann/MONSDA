@@ -63,7 +63,6 @@ workflow TRIMMING{
     trim(samples_ch)
 
     emit:
-
     trimmed = trim.out.trim
     report  = trim.out.rep
 }
