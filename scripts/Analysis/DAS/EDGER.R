@@ -86,14 +86,14 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 write.table(tmm, file=paste(outdir,"All_Conditions_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
-out <- paste(outdir,"All_Conditions_MDS.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_MDS.png",sep="")
+png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
 DGEsum <- sumTechReps(dge, ID=groups)
-out <- paste(outdir,"All_Conditions_sum_MDS.pdf", sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_sum_MDS.png", sep="")
+png(out, width = 400, height = 400)
 colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
 dev.off()
@@ -112,8 +112,8 @@ if (length(levels(types))>1){
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- paste(outdir,"All_Conditions_BCV.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_BCV.png",sep="")
+png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
 
@@ -121,8 +121,8 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- paste(outdir,"All_Conditions_QLDisp.pdf",sep="")
-pdf(out, width = 400, height = 400)
+out <- paste(outdir,"All_Conditions_QLDisp.png",sep="")
+png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
 
@@ -161,8 +161,8 @@ for(contrast in comparisons[[1]]){
         tops <- topSpliceDGE(sp, test="simes", n=10)
         for(i in 1:10){
             geneID <- tops$genes[i]
-            out <- paste(outdir,contrast_name,"_topSplice_simes_",i,".pdf",sep="")
-            pdf(out, width = 800, height = 400)
+            out <- paste(outdir,contrast_name,"_topSplice_simes_",i,".png",sep="")
+            png(out, width = 800, height = 400)
             plotSpliceDGE(sp, geneid=geneID, genecol="genes")
             dev.off()
         }
