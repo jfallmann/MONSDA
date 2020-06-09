@@ -222,7 +222,10 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        }
+                        },
+                        {
+                            "--cutoff": "10"
+                        } #options for count table creation, filtering counts below threshold
                     ]
                 }
             }
@@ -254,7 +257,10 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        }
+                        },
+                        {
+                            "--cutoff": "10"
+                        } #options for count table creation, filtering counts below threshold
                     ]
                 }
             }
@@ -287,6 +293,9 @@
                             "--fraction": "",
                             "-O": ""
                         },
+                        {
+                            "--cutoff": "10"
+                        }, #options for count table creation, filtering counts below threshold
                         { # analysis options for diego
                             "-c": "10",
                             "-d": "3",

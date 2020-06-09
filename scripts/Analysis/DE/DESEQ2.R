@@ -1,8 +1,8 @@
 #https://dwheelerau.com/2014/02/17/how-to-use-deseq2-to-analyse-rnaseq-data/
 suppressPackageStartupMessages({
-  require(DESeq2)
   require(utils)
-  require("BiocParallel")
+  require(BiocParallel)
+  require(DESeq2)
 })
 
 options(echo=TRUE)
@@ -34,7 +34,7 @@ if (!all(rownames(anno) %in% colnames(countData))){
 }
 
 if (length(levels(anno$types))>1){
-  design <- ~0 + condition+type
+  design <- ~0 + condition + type
 } else {
   design <- ~0 + condition
 }
