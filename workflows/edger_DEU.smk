@@ -6,13 +6,13 @@ comparison=comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.pdf", outdir=outdir),
-            allsum = expand("{outdir}All_Conditions_sum_MDS.pdf", outdir=outdir),
+    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
+            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
             tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
-            bcv = expand("{outdir}All_Conditions_BCV.pdf", outdir=outdir),
-            qld = expand("{outdir}All_Conditions_QLDisp.pdf", outdir=outdir),
+            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
+            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
             dift = expand("{outdir}{comparison}_exons_{sort}.tsv", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            plot = expand("{outdir}{comparison}_MD.pdf", outdir=outdir, comparison=compstr),
+            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=compstr),
             session = expand("{outdir}EDGER_DEU_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
@@ -37,8 +37,9 @@ rule prepare_count_table:
     conda:   "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
-             bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+             bins = BINS,
+             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DEU")['OPTIONS'][1].items())
+    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,

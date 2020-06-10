@@ -3,8 +3,9 @@
 ## Copyright 2015 Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de). Licence: GPLv3.
 
 suppressPackageStartupMessages({
-    require(DEXSeq)
     require(dplyr)
+    require(BiocParallel)
+    require(DEXSeq)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -170,6 +171,7 @@ for(contrast in comparisons[[1]]){
 
 
     }, error=function(e){
+        print(warnings)
         file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
         csvout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.tsv.gz', sep='')
         file.create(csvout)
@@ -177,7 +179,6 @@ for(contrast in comparisons[[1]]){
         htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
         file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
         rm(dxdpair,dxr1)
-        print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     })
 }

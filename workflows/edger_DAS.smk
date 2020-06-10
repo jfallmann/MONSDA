@@ -6,19 +6,19 @@ comparison=comparable_as_string2(config,'DAS')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.pdf", outdir=outdir),
-            allsum = expand("{outdir}All_Conditions_sum_MDS.pdf", outdir=outdir),
+    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
+            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
             tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
-            bcv = expand("{outdir}All_Conditions_BCV.pdf", outdir=outdir),
-            qld = expand("{outdir}All_Conditions_QLDisp.pdf", outdir=outdir),
+            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
+            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
             dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.pdf", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
+            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_edger/{{file}}_tmp.counts", outdir=outdir)),
+            cts   = expand("{outdir}Featurecounts_DAS_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
     log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -37,8 +37,9 @@ rule prepare_count_table:
     conda:   "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
-             bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+             bins = BINS,
+             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][1].items())
+    shell: "{params.bins}/Analysis/build_count_table_id.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
