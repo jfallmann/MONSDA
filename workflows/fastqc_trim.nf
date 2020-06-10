@@ -16,6 +16,7 @@ process qc_trimmed{
     }
 
     input:
+    val collect
     path read
 
     output:
@@ -31,7 +32,7 @@ workflow QC_TRIMMING{
     take: trimmed_samples_ch
 
     main:
-
+    collect_results(trimmed_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -52,7 +53,7 @@ workflow QC_TRIMMING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    qc_trimmed(trimmed_samples_ch)
+    qc_trimmed(collect_results.out, trimmed_samples_ch)
 
     emit:
     qc = qc_trimmed.out.fastqc_results

@@ -30,7 +30,8 @@ process simtrim{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("fastq.gz") > 0)               "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
+        if (filename.indexOf("fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz",
+        else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
 
@@ -38,24 +39,42 @@ process simtrim{
     path read
 
     output:
-    path "*.fastq.gz" , emit: trimmed_reads
+    path "*trimmed.fastq.gz" , emit: trim
+    path "*trimming_report.txt", emit: rep
 
     script:
     """
-    echo $read
+    a=basename($read); rename .fastq.gz trimmed.fastq.gz $read ; echo "simulated" > $a\_trimming_report.txt
     """
 
 }
 
 workflow TRIMMING{
-    take: dummy
+    take: samples_ch
 
     main:
-    samples_ch1 = Channel.from(T1SAMPLES)
+    //SAMPLE CHANNELS
+    if (PAIRED == 'paired'){
+        R1SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        }
+        R1SAMPLES.sort()
+        R2SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+        }
+        R2SAMPLES.sort()
+        samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
+    }else{
+        RSAMPLES=SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+        }
+        RSAMPLES.sort()
+        samples_ch = Channel.fromPath(RSAMPLES)
+    }
 
-    simtrim(samples_ch1)
+    simtrim(samples_ch)
 
     emit:
-    simtrim.out.trimmed_reads
-
+    trimmed = simtrim.out.trim
+    report  = simtrim.out.rep
 }

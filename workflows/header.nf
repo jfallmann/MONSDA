@@ -22,3 +22,18 @@ LONGSAMPLES = params.LONGSAMPLES.split(',')
 
 //dummy
 dummy = Channel.empty()
+
+process collect_results{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}

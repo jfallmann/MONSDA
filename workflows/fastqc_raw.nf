@@ -15,6 +15,7 @@ process qc_raw{
     }
 
     input:
+    //val collect
     path read
 
     output:
@@ -30,6 +31,8 @@ workflow QC_RAW{
     take: samples_ch
 
     main:
+    //collect_results(samples_ch.collect())
+
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{

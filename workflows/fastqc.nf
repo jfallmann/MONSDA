@@ -15,7 +15,7 @@ process qc_mapped{
     }
 
     input:
-    val dummy
+    val collect
     path read
 
     output:
@@ -28,9 +28,10 @@ process qc_mapped{
 }
 
 workflow QC_MAPPING{
-    take: dummy
+    take: mapped_samples_ch
 
     main:
+    collect_results(mapped_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         M1SAMPLES = LONGSAMPLES.collect{
@@ -53,7 +54,7 @@ workflow QC_MAPPING{
 
     }
 
-    qc_mapped(mapped_samples_ch)
+    qc_mapped(collect_results.out.done, mapped_samples_ch)
 
     emit:
     qc = qc_mapped.out.fastqc_results
