@@ -45,14 +45,19 @@ types <- factor(sampleData$type)
 comparisons <- strsplit(cmp, ",")
 
 ## readin counttable
-read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
-colnames(dcounts) <- c("GeneID", rownames(sampleData))
-dcounts <- dcounts[,2:ncol(dcounts)]
+read.table(countfile,header = TRUE,row.names=1) -> dcounts
 
 ## get genes names out
 genes <- rownames(dcounts)
 
-dge <- DGEList(counts=dcounts, group=groups, samples=samples, genes=genes)
+splitted <- strsplit(rownames(dcounts), ":")
+exons <- sapply(splitted, "[[", 2)
+genesrle <- sapply(splitted, "[[", 1)
+
+dge <- DGEList(counts=dcounts, group=groups, samples=samples, genes=genesrle)
+
+## Addd exons to dge
+dge$genes$exons <- exons
 
 ## filter low counts
 keep <- filterByExpr(dge)

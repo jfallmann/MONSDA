@@ -45,21 +45,10 @@ types <- factor(sampleData$type)
 comparisons <- strsplit(cmp, ",")
 
 ## readin counttable
-read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
-colnames(dcounts) <- c("GeneID", rownames(sampleData))
+read.table(countfile,header = TRUE,row.names=1) -> dcounts
 
-## create ExonID's
-id <- as.character(dcounts[,1])
-n <- id
-split(n,id) <- lapply(split(n ,id), seq_along )
-rownames(dcounts) <- sprintf("%s%s%03.f",id,":E",as.numeric(n))
-dcounts <- dcounts[,2:ncol(dcounts)]
-
-## readin counttable
-read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
-colnames(dcounts) <- c("GeneID", rownames(sampleData))
-rownames(dcounts) <- as.character(dcounts[,1])
-dcounts <- dcounts[,2:ncol(dcounts)]
+## get genes names out
+genes <- rownames(dcounts)
 
 ## get genes and exon names out
 splitted <- strsplit(rownames(dcounts), ":")
