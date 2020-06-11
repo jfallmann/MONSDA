@@ -149,7 +149,7 @@ for(contrast in comparisons[[1]]){
         contrast <- as.numeric(contrast[,1])
 
                                         # create files topSpliced by gene, simes and exon method
-        sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons")
+        sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
         tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
         write.table(tops, file=paste(outdir,contrast_name,"_diffSplice_geneTest.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
         tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
