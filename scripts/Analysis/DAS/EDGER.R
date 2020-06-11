@@ -169,7 +169,7 @@ for(contrast in comparisons[[1]]){
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)
-        file.create(paste(outdir,contrast_name,"_diffSplice_geneTest.tsv",sep="")
+        file.create(paste(outdir,contrast_name,"_diffSplice_geneTest.tsv",sep=""))
         file.create(paste(outdir,contrast_name,"_diffSplice_simesTest.tsv",sep=""))
         file.create(paste(outdir,contrast_name,"_diffSplice_exonTest.tsv",sep=""))
         file.create(paste(outdir,contrast_name,"_diffSplice_exonTest.tsv",sep=""))
