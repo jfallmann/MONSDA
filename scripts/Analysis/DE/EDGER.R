@@ -45,10 +45,7 @@ types <- factor(sampleData$type)
 comparisons <- strsplit(cmp, ",")
 
 ## readin counttable
-read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
-colnames(dcounts) <- c("GeneID", rownames(sampleData))
-rownames(dcounts) <- dcounts[,1]
-dcounts <- dcounts[,2:ncol(dcounts)]
+dcounts <- read.table(countfile,header = TRUE,row.names=1)
 
 ## get genes names out
 genes <- rownames(dcounts)
