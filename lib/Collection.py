@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jun 12 12:07:34 2020 (+0200)
+# Last-Updated: Fri Jun 12 13:49:24 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1974
+#     Update #: 1977
 # URL:
 # Doc URL:
 # Keywords:
@@ -906,7 +906,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
     else:
         for subwork in workflows:
-            mp = subDict(config[subwork],x)['OPTIONS']
+            mp = subDict(config[subwork],condition)['OPTIONS']
             listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
             for i in range(0,len(listoftools)):
                 toolenv, toolbin = map(str,listoftools[i])
@@ -922,7 +922,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 mapper = toolenv
                 name = namefromfile(sfile, config) or ''
                 gen = genome(sfile, config)
-                ext = check_tool_params(sfile, None ,config, 'MAPPING',2)
+                ext = check_tool_params(sfile, None ,config, 'MAPPING', 2)
                 uni = gen+name+'_'+ext
                 anno = tool_params(sfile, None, config, 'MAPPING')['ANNOTATION'] if 'ANNOTATION' in  tool_params(sample, None, config, 'MAPPING') else None
 
@@ -931,7 +931,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 index   = str.join(os.sep,[ref, gdir, mapper, ext, uni, mapper])+'.idx'
                 reffa     = str.join(os.sep,[ref, gdir, gen+name])+'.fa.gz'
                 genpath = str.join(os.sep,[ref, gdir, mapper, ext, uni])
-                anno    = str.join(os.sep,[ref, anno]) if anno else None
+                anno    = str.join(os.sep,[ref, gdir, anno]) if anno else None
 
                 apstr = "--"+subwork+"IDX "+index+" --"+subwork+"REF "+reffa+" --"+subwork+"GEN "+genpath
                 if anno:

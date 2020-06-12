@@ -22,14 +22,14 @@ process sege_idx{
 
     input:
     //val collect
-    path reads
+    path genome
 
     output:
     path "*.idx", emit: idx
 
     script:
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $MAPREF -x tmp.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $genome -x tmp.idx
     """
 
 }
@@ -49,6 +49,7 @@ process sege_mapping{
 
     input:
     //val collect
+    path genome
     path idx
     path reads
 
@@ -59,11 +60,18 @@ process sege_mapping{
 
     script:
     fn = file(reads[0]).getSimpleName()
-    pf = fn+"."
-    of = fn+'.Aligned.out.sam'
-    """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix TMP/STAROUT/$pf --outReadsUnmapped Fastx && gzip TMP/STAROUT/$of "
-    """
+    pf = fn+".mapped.sam"
+    uf = fn+'.fastq.gz'
+
+    if (PAIRED == 'paired'){
+        """
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads[0] -p $reads[1] -o $pf -u $uf
+        """
+    }else{
+        """
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads -o $pf -u $uf
+        """
+    }
 }
 
 workflow MAPPING{
@@ -91,16 +99,17 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    def checkidx = new File(MAPIDX)
+    checkidx = File(MAPIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        sege_mapping(idxfile, trimmed_samples_ch)
+        genomefile = Channel.fromPath(MAPREF)
+        sege_mapping(genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         sege_idx(genomefile, samples_ch)
-        sege_mapping(sege_idx.out.idx, trimmed_samples_ch)
+        sege_mapping(genomefile, sege_idx.out.idx, trimmed_samples_ch)
     }
 
 

@@ -23,7 +23,6 @@ process hisat_idx{
     input:
     //val collect
     path genome
-    path reads
 
     output:
     path "*.idx", emit: idx
@@ -31,7 +30,7 @@ process hisat_idx{
     script:
     indexbin=MAPBIN+'-build'
     """
-    zcat genome > tmp.fa && $idxbin $IDXPARAMS -p $THREADS tmp.fa $MAPIDX
+    zcat $genome > tmp.fa && $idxbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx
     """
 
 }
@@ -61,7 +60,13 @@ process hisat_mapping{
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+'.fastq.gz'
-    stranded = '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else ''
+    if (STRANDED == 'fr'){
+        stranded = '--rna-strandness F'
+    }else if (STRANDED == 'rf'){
+        stranded = '--rna-strandness R'
+    }else{
+        stranded = ''
+    }
 
     if (PAIRED == 'paired'){
     """
@@ -99,7 +104,7 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    def checkidx = new File(MAPIDX)
+    def checkidx = File(MAPIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
@@ -113,5 +118,5 @@ workflow MAPPING{
 
 
     emit:
-    mapped  = star_mapping.out.maps
+    mapped  = hisat_mapping.out.maps
 }
