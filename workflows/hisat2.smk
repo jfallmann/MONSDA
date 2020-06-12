@@ -27,7 +27,7 @@ if paired == 'paired':
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else ''
-        shell: "{params.mapp} {params.mpara} -p {threads} -x {input.index} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.index} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} 2>> {log} && touch {output.unmapped}"
 
 else:
     rule mapping:
@@ -42,4 +42,4 @@ else:
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else ''
-        shell: "{params.mapp} {params.mpara} -p {threads} -x {input.index} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.index} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} 2>> {log} && touch {output.unmapped}"

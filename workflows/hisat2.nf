@@ -4,42 +4,39 @@ MAPBIN=params.MAPPINGBIN ?: null
 MAPIDX=params.MAPPINGIDX ?: null
 MAPREF=params.MAPPINGREF ?: null
 MAPGEN=params.MAPPINGGEN ?: null
-MAPANNO=params.MAPPINGANNO ?: null
 
-IDXPARAMS = params.star_params_0 ?: ''
-MAPPARAMS = params.star_params_1 ?: ''
+IDXPARAMS = params.hisat2_params_0 ?: ''
+MAPPARAMS = params.hisat2_params_1 ?: ''
 
 //PROCESSES
-process star_idx{
+process hisat_idx{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("SAindex") > 0)        "$MAPIDX"
-        else if (filename.indexOf("Log.out") >0)    "$MAPIDX"
+        if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
 
     input:
     //val collect
     path genome
-    path anno
     path reads
 
     output:
-    path "STARTMP/SAindex", emit: idx
-    path "STARTMP/*Log.out", emit: idxlog
+    path "*.idx", emit: idx
 
     script:
+    indexbin=MAPBIN+'-build'
     """
-    zcat genome > tmp.fa && zcat anno > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outFileNamePrefix STARTMP --outTmpDir STARTMP --genomeDir $MAPGEN --genomeFastaFiles $MAPREF --sjdbGTFfile $MAPANNO 2> starlog && ln -s $MAPGEN/SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi
+    zcat genome > tmp.fa && $idxbin $IDXPARAMS -p $THREADS tmp.fa $MAPIDX
     """
 
 }
 
-process star_mapping{
+process hisat_mapping{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
@@ -48,7 +45,6 @@ process star_mapping{
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
         else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf("Log.out") >0)        "MAPPED/$CONDITION/$filename"
         else null
     }
 
@@ -58,17 +54,24 @@ process star_mapping{
     path reads
 
     output:
-    path "TMP/STAROUT/*Aligned.out.sam.gz", emit: maps
-    path "TMP/STAROUT/*Log.out", emit: maplog
-    path "TMP/STAROUT/*fastq.gz", emit: unmapped
+    path "*.sam.gz", emit: maps
+    path "*fastq.gz", emit: unmapped
 
     script:
     fn = file(reads[0]).getSimpleName()
-    pf = fn+"."
-    of = fn+'.Aligned.out.sam'
+    pf = fn+".mapped.sam"
+    uf = fn+'.fastq.gz'
+    stranded = '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else ''
+
+    if (PAIRED == 'paired'){
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix TMP/STAROUT/$pf --outReadsUnmapped Fastx && gzip TMP/STAROUT/$of "
+    $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -1 reads[0] -2 reads[1] -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
     """
+    }else{
+    """
+    $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -U reads[0] -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
+    """
+    }
 }
 
 workflow MAPPING{
@@ -100,12 +103,12 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        star_mapping(idxfile, trimmed_samples_ch)
+        hisat_mapping(idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        star_idx(genomefile, samples_ch)
-        star_mapping(star_idx.out.idx, trimmed_samples_ch)
+        hisat_idx(genomefile, samples_ch)
+        hisat_mapping(hisat_idx.out.idx, trimmed_samples_ch)
     }
 
 

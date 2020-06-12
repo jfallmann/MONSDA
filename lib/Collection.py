@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri May 29 22:54:29 2020 (+0200)
+# Last-Updated: Fri Jun 12 12:07:34 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1956
+#     Update #: 1974
 # URL:
 # Doc URL:
 # Keywords:
@@ -911,9 +911,38 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             for i in range(0,len(listoftools)):
                 toolenv, toolbin = map(str,listoftools[i])
                 tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
-            if len(mp) > 0:
-                for idx in range(len(mp)):
+
+            if subwork == 'MAPPING':
+                for idx in range(0,2):
                     tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
+
+                sfile = str.join(os.sep,x)+os.sep+sample.split(os.sep)[-1]
+                ref = config["REFERENCE"]
+                gdir = source_from_sample(sfile,config)
+                mapper = toolenv
+                name = namefromfile(sfile, config) or ''
+                gen = genome(sfile, config)
+                ext = check_tool_params(sfile, None ,config, 'MAPPING',2)
+                uni = gen+name+'_'+ext
+                anno = tool_params(sfile, None, config, 'MAPPING')['ANNOTATION'] if 'ANNOTATION' in  tool_params(sample, None, config, 'MAPPING') else None
+
+                log.debug([ref,gdir,mapper,name,gen,ext,uni,anno])
+
+                index   = str.join(os.sep,[ref, gdir, mapper, ext, uni, mapper])+'.idx'
+                reffa     = str.join(os.sep,[ref, gdir, gen+name])+'.fa.gz'
+                genpath = str.join(os.sep,[ref, gdir, mapper, ext, uni])
+                anno    = str.join(os.sep,[ref, anno]) if anno else None
+
+                apstr = "--"+subwork+"IDX "+index+" --"+subwork+"REF "+reffa+" --"+subwork+"GEN "+genpath
+                if anno:
+                    apstr += " --"+subwork+"ANNO "+anno+' '
+                tp.append(apstr)
+
+            else:
+                if len(mp) > 0:
+                    for idx in range(len(mp)):
+                        tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
+
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)
 

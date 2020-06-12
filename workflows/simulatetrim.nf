@@ -1,8 +1,3 @@
-TOOLENV=params.TRIMMINGENV ?: null
-TOOLBIN=params.TRIMMINGBIN ?: null
-
-TRIMPARAMS = params.trimgalore_params_0 ?: ''
-
 T1SAMPLES = null
 T2SAMPLES = null
 
@@ -30,7 +25,7 @@ process simtrim{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz",
+        if (filename.indexOf("fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
         else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
@@ -44,7 +39,7 @@ process simtrim{
 
     script:
     """
-    a=basename($read); rename .fastq.gz trimmed.fastq.gz $read ; echo "simulated" > $a\_trimming_report.txt
+    a=basename($read); rename .fastq.gz trimmed.fastq.gz $read ; echo "simulated" > \${a}_trimming_report.txt
     """
 
 }

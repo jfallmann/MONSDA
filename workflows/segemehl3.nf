@@ -4,42 +4,37 @@ MAPBIN=params.MAPPINGBIN ?: null
 MAPIDX=params.MAPPINGIDX ?: null
 MAPREF=params.MAPPINGREF ?: null
 MAPGEN=params.MAPPINGGEN ?: null
-MAPANNO=params.MAPPINGANNO ?: null
 
-IDXPARAMS = params.star_params_0 ?: ''
-MAPPARAMS = params.star_params_1 ?: ''
+IDXPARAMS = params.segemehl3_params_0 ?: ''
+MAPPARAMS = params.segemehl3_params_1 ?: ''
 
 //PROCESSES
-process star_idx{
+process sege_idx{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("SAindex") > 0)        "$MAPIDX"
-        else if (filename.indexOf("Log.out") >0)    "$MAPIDX"
+        if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
 
     input:
     //val collect
-    path genome
-    path anno
     path reads
 
     output:
-    path "STARTMP/SAindex", emit: idx
-    path "STARTMP/*Log.out", emit: idxlog
+    path "*.idx", emit: idx
 
     script:
     """
-    zcat genome > tmp.fa && zcat anno > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outFileNamePrefix STARTMP --outTmpDir STARTMP --genomeDir $MAPGEN --genomeFastaFiles $MAPREF --sjdbGTFfile $MAPANNO 2> starlog && ln -s $MAPGEN/SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $MAPREF -x tmp.idx
     """
 
 }
 
-process star_mapping{
+process sege_mapping{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     validExitStatus 0,1
@@ -100,15 +95,15 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        star_mapping(idxfile, trimmed_samples_ch)
+        sege_mapping(idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        star_idx(genomefile, samples_ch)
-        star_mapping(star_idx.out.idx, trimmed_samples_ch)
+        sege_idx(genomefile, samples_ch)
+        sege_mapping(sege_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped  = star_mapping.out.maps
+    mapped  = sege_mapping.out.maps
 }
