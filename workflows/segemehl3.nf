@@ -42,10 +42,10 @@ process sege_mapping{
     validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
-    saveAs: {filename ->
-        if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed.mapped.sam.gz|/,"")}_mapped.sam.gz"
-        else if (filename.indexOf("Log.out") >0)        "MAPPED/$CONDITION/$filename"
+        saveAs: {filename ->
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed_mapped.sam.gz/,"")}_mapped.sam.gz"
+        else if (filename.indexOf("Log.out") >0)          "MAPPED/$CONDITION/$filename"
         else null
     }
 
@@ -58,12 +58,12 @@ process sege_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*Log.out", emit: maplog
-    path "*fastq.gz", emit: unmapped
+    path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
-    uf = fn+'.fastq.gz'
+    uf = fn+".unmapped.fastq.gz"
     gen =  genome.getName()
     idx = idxfile.getName()
 
@@ -71,11 +71,11 @@ process sege_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && touch $uf && gzip *.sam
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && touch $uf && gzip *.sam
         """
     }
 }

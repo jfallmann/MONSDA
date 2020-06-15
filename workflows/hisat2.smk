@@ -17,7 +17,7 @@ if paired == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
-                index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
+                index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)).replace('.idx',''),
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
         output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
@@ -26,6 +26,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
+
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else ''
         shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.index} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} 2>> {log} && touch {output.unmapped}"
 

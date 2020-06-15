@@ -17,10 +17,11 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("SA") > 0)               "$MAPIDX"+"${file(filename).replaceAll(/star.idx|/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPIDX"+"${file(filename).replaceAll(/star.idx|/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPIDX"+"${file(filename).replaceAll(/star.idx|/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "$MAPIDX"+"${file(filename).replaceAll(/star.idx|/,"")}"
+        if (filename.indexOf("SA") > 0)               "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".txt") > 0)        "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".tab") > 0)        "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf("Log.out") >0)      "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
 
@@ -35,12 +36,14 @@ process star_idx{
     path "*Log.out", emit: idxlog
     path "*.txt", emit: txts
     path "*.tab", emit: tabs
+    path "*.idx", emit: tmpidx
 
     script:
     gen =  genome.getName()
-    an = anno.getName()
+    an  = anno.getName()
+
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch tmp.idx
     """
 
 }
@@ -65,18 +68,16 @@ process star_mapping{
 
     output:
     path "*Aligned.out.sam.gz", emit: maps
-    path "*Log.out", emit: maplog
-    path "*fastq.gz", emit: unmapped
+    path "*Log.out", emit: log
+    path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
     fn = file(reads[0]).getSimpleName()
     pf = fn+"."
     of = fn+'.Aligned.out.sam'
-    gen =  genome.getName()
-    idx = idxfile.getName()
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of"
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of
     """
 }
 

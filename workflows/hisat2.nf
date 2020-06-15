@@ -16,7 +16,7 @@ process hisat_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+filename.replaceFirst(/tmp.idx/, '')
+        if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+"${filename.replaceFirst(/tmp.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
         else null
     }
@@ -46,28 +46,27 @@ process hisat_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") >0)           "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".log") >0)               "MAPPED/$CONDITION/$filename"
         else null
     }
 
     input:
     val collect
-    path idxdummy
     path idx
     path reads
 
     output:
     path "*.sam.gz", emit: maps
-    path "*fastq.gz", emit: unmapped
-    path "*.log", emit: logs
+    path "*fastq.gz", includeInputs:false, emit: unmapped
+    path "*.log", emit: log
 
     script:
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
-    uf = fn+'.fastq.gz'
-    idx = idxfile.getName()
+    uf = fn+".unmapped.fastq.gz"
+    index = file(MAPIDX).getParent()+'/'+file(MAPIDX).getSimpleName()
 
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
@@ -81,11 +80,11 @@ process hisat_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> Log.log && gzip $pf && touch unmapped.fastq.gz
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -U $reads -S $pf --un-conc-gz $uf &> Log.log && gzip $pf && touch unmapped.fastq.gz
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }
 }
@@ -119,13 +118,12 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(collect_results.out.done, dummy, idxfile, trimmed_samples_ch)
+        hisat_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         hisat_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
-        idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, idxfile, trimmed_samples_ch)
+        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, trimmed_samples_ch)
     }
 
 

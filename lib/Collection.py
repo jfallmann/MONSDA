@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jun 15 13:59:54 2020 (+0200)
+# Last-Updated: Mon Jun 15 21:42:30 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1997
+#     Update #: 1999
 # URL:
 # Doc URL:
 # Keywords:
@@ -930,10 +930,10 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
                 log.debug(logid+'FINAL PARAMS: '+' '.join([ref, gdir, mapper, name, gen, ext, uni, str(anno)]))
 
-                index   = str.join(os.sep,[ref, gdir, mapper, ext, uni, mapper])+'.idx'
-                reffa     = str.join(os.sep,[ref, gdir, gen+name])+'.fa.gz'
-                genpath = str.join(os.sep,[ref, gdir, mapper, ext, uni])
-                anno    = str.join(os.sep,[ref, gdir, anno]) if anno else None
+                index   = os.path.abspath(str.join(os.sep,[ref, gdir, mapper, ext, uni, mapper])+'.idx')
+                reffa   = os.path.abspath(str.join(os.sep,[ref, gdir, gen+name])+'.fa.gz')
+                genpath = os.path.abspath(str.join(os.sep,[ref, gdir, mapper, ext, uni]))
+                anno    = os.path.abspath(str.join(os.sep,[ref, gdir, anno])) if anno else None
 
                 apstr = "--"+subwork+"IDX "+index+" --"+subwork+"REF "+reffa+" --"+subwork+"GEN "+genpath
                 if anno:
