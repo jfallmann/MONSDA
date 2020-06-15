@@ -16,7 +16,7 @@ process hisat_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+"${filename.replaceFirst(/tmp.idx/, '')}"
+        if (filename.indexOf(".ht2") > 0)        "$MAPGEN"+"${filename.replaceFirst(/tmp\.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
         else null
     }

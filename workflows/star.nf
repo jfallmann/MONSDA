@@ -17,10 +17,10 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("SA") > 0)               "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "$MAPIDX"+"${filename.replaceAll(/star.idx/,"")}"
+        if (filename.indexOf("SA") > 0)               "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
+        else if (filename.indexOf(".txt") > 0)        "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
+        else if (filename.indexOf(".tab") > 0)        "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
+        else if (filename.indexOf("Log.out") >0)      "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
         else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
