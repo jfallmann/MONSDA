@@ -12,7 +12,7 @@ if paired == 'paired':
         params: odir=lambda wildcards,output:os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "TRIMMING")['OPTIONS'][0].items()),
                 trim=TRIMBIN
-        shell:  "{params.trim} --cores {threads} --paired --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log} && "
+        shell:  "{params.trim} --cores {threads} --paired --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
 
     rule trimgalore_rename:
         input:  o1 = rules.trimgalore_trim.output.o1,

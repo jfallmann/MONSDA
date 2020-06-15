@@ -32,8 +32,9 @@ process hisat_idx{
 
     script:
     indexbin=MAPBIN.split(' ')[0]+'-build'
+    gen =  genome.getName()
     """
-    zcat $genome > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx && touch tmp.idx
+    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx && touch tmp.idx
     """
 
 }
@@ -66,6 +67,8 @@ process hisat_mapping{
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+'.fastq.gz'
+    idx = idxfile.getName()
+
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
     }else if (STRANDED == 'rf'){
@@ -116,7 +119,7 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
+        hisat_mapping(collect_results.out.done, dummy, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)

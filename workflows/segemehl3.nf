@@ -29,8 +29,9 @@ process sege_idx{
     path "*.idx", emit: idx
 
     script:
+    gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $genome -x tmp.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x tmp.idx
     """
 
 }
@@ -43,7 +44,7 @@ process sege_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed.mapped.sam.gz|/,"")}_mapped.sam.gz"
         else if (filename.indexOf("Log.out") >0)        "MAPPED/$CONDITION/$filename"
         else null
     }
@@ -51,7 +52,7 @@ process sege_mapping{
     input:
     val collect
     path genome
-    path idx
+    path idxfile
     path reads
 
     output:
@@ -63,16 +64,18 @@ process sege_mapping{
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+'.fastq.gz'
+    gen =  genome.getName()
+    idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $r1 -p $r2 -o $pf -u $uf &> Log.out && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && gzip *.sam
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads -o $pf -u $uf  &> Log.out && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && gzip *.sam
         """
     }
 }
