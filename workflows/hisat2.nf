@@ -16,21 +16,23 @@ process hisat_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".idx") > 0)        "$MAPIDX"
+        if (filename.indexOf(".idx") > 0)             "$MAPIDX"
+        else if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+"${file(filename).getExtension()}"
         else null
     }
 
     input:
-    //val collect
+    val collect
+    path reads
     path genome
 
     output:
     path "*.idx", emit: idx
 
     script:
-    indexbin=MAPBIN+'-build'
+    indexbin=MAPBIN.split(' ')[0]+'-build'
     """
-    zcat $genome > tmp.fa && $idxbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx
+    zcat $genome > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx && touch tmp.idx
     """
 
 }
@@ -48,7 +50,7 @@ process hisat_mapping{
     }
 
     input:
-    //val collect
+    val collect
     path idx
     path reads
 
@@ -69,13 +71,15 @@ process hisat_mapping{
     }
 
     if (PAIRED == 'paired'){
-    """
-    $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -1 reads[0] -2 reads[1] -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
-    """
+        r1 = reads[0]
+        r2 = reads[1]
+        """
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
+        """
     }else{
-    """
-    $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -U reads[0] -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
-    """
+        """
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -U $reads -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
+        """
     }
 }
 
@@ -83,7 +87,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -104,16 +108,16 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    def checkidx = File(MAPIDX)
+    checkidx = file(MAPIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(idxfile, trimmed_samples_ch)
+        hisat_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        hisat_idx(genomefile, samples_ch)
-        hisat_mapping(hisat_idx.out.idx, trimmed_samples_ch)
+        hisat_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
+        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, trimmed_samples_ch)
     }
 
 

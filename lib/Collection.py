@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jun 12 13:49:24 2020 (+0200)
+# Last-Updated: Mon Jun 15 11:56:59 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1977
+#     Update #: 1995
 # URL:
 # Doc URL:
 # Keywords:
@@ -906,15 +906,17 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
     else:
         for subwork in workflows:
-            mp = subDict(config[subwork],condition)['OPTIONS']
-            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-            for i in range(0,len(listoftools)):
-                toolenv, toolbin = map(str,listoftools[i])
-                tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
+            sd = subDict(config[subwork],condition)
+            mp = sd['OPTIONS']
+
+            #listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            #for i in range(0,len(listoftools)):
+            toolenv, toolbin = map(str,[sd['ENV'],sd['BIN']])
+            tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
 
             if subwork == 'MAPPING':
                 for idx in range(0,2):
-                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
+                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+' \'')
 
                 sfile = str.join(os.sep,x)+os.sep+sample.split(os.sep)[-1]
                 ref = config["REFERENCE"]
@@ -924,9 +926,9 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 gen = genome(sfile, config)
                 ext = check_tool_params(sfile, None ,config, 'MAPPING', 2)
                 uni = gen+name+'_'+ext
-                anno = tool_params(sfile, None, config, 'MAPPING')['ANNOTATION'] if 'ANNOTATION' in  tool_params(sample, None, config, 'MAPPING') else None
+                anno = mp['ANNOTATION'] if 'ANNOTATION' in mp else None
 
-                log.debug([ref,gdir,mapper,name,gen,ext,uni,anno])
+                log.debug(logid+'FINAL PARAMS: '+' '.join([ref, gdir, mapper, name, gen, ext, uni, str(anno)]))
 
                 index   = str.join(os.sep,[ref, gdir, mapper, ext, uni, mapper])+'.idx'
                 reffa     = str.join(os.sep,[ref, gdir, gen+name])+'.fa.gz'
@@ -941,7 +943,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             else:
                 if len(mp) > 0:
                     for idx in range(len(mp)):
-                        tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+'\'')
+                        tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key,val) for (key, val) in mp[idx].items())+' \'')
 
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)

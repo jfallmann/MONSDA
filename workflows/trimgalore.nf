@@ -41,7 +41,7 @@ workflow TRIMMING{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -54,7 +54,7 @@ workflow TRIMMING{
         R2SAMPLES.sort()
         samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
     }else{
-        RSAMPLES=SAMPLES.collect{
+        RSAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
         }
         RSAMPLES.sort()

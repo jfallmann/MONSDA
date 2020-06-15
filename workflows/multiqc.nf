@@ -49,6 +49,7 @@ process multiqc{
     }
 
     input:
+    val collect
     val dummy
 
     output:
@@ -64,7 +65,8 @@ workflow MULTIQC{
     take: dummy
 
     main:
-    multiqc(dummy)
+    collect_results(dummy.collect()),
+    multiqc(collect_results.done, dummy)
 
     emit:
     mqcres = multiqc.out.multiqc_results

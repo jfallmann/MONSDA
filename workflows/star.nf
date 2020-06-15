@@ -23,7 +23,8 @@ process star_idx{
     }
 
     input:
-    //val collect
+    val collect
+    path reads
     path genome
     path anno
 
@@ -52,7 +53,7 @@ process star_mapping{
     }
 
     input:
-    //val collect
+    val collect
     path idx
     path reads
 
@@ -74,7 +75,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -95,16 +96,17 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    checkidx = File(MAPIDX)
+    checkidx = file(MAPIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        star_mapping(idxfile, trimmed_samples_ch)
+        star_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        star_idx(genomefile, samples_ch)
-        star_mapping(star_idx.out.idx, trimmed_samples_ch)
+        annofile = Channel.fromPath(MAPANNO)
+        star_idx(collect_results.out.done, trimmed_samples_ch, genomefile, annofile)
+        star_mapping(collect_results.out.done, star_idx.out.idx, trimmed_samples_ch)
     }
 
 

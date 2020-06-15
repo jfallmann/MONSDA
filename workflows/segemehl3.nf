@@ -22,6 +22,7 @@ process sege_idx{
 
     input:
     //val collect
+    path reads
     path genome
 
     output:
@@ -48,15 +49,15 @@ process sege_mapping{
     }
 
     input:
-    //val collect
+    val collect
     path genome
     path idx
     path reads
 
     output:
-    path "TMP/STAROUT/*Aligned.out.sam.gz", emit: maps
-    path "TMP/STAROUT/*Log.out", emit: maplog
-    path "TMP/STAROUT/*fastq.gz", emit: unmapped
+    path "*.sam.gz", emit: maps
+    path "*Log.out", emit: maplog
+    path "*fastq.gz", emit: unmapped
 
     script:
     fn = file(reads[0]).getSimpleName()
@@ -64,12 +65,14 @@ process sege_mapping{
     uf = fn+'.fastq.gz'
 
     if (PAIRED == 'paired'){
+        r1 = reads[0]
+        r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads[0] -p $reads[1] -o $pf -u $uf
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $r1 -p $r2 -o $pf -u $uf &> Log.out && gzip *.sam
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads -o $pf -u $uf
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $genome -q $reads -o $pf -u $uf  &> Log.out && gzip *.sam
         """
     }
 }
@@ -78,7 +81,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -99,17 +102,17 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    checkidx = File(MAPIDX)
+    checkidx = file(MAPIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
-        sege_mapping(genomefile, idxfile, trimmed_samples_ch)
+        sege_mapping(collect_results.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        sege_idx(genomefile, samples_ch)
-        sege_mapping(genomefile, sege_idx.out.idx, trimmed_samples_ch)
+        sege_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
+        sege_mapping(collect_results.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
     }
 
 
