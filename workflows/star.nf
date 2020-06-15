@@ -34,7 +34,7 @@ process star_idx{
 
     script:
     """
-    zcat $genome > tmp.fa && zcat $anno > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outFileNamePrefix STARTMP --outTmpDir STARTMP --genomeDir $MAPGEN --genomeFastaFiles $MAPREF --sjdbGTFfile $MAPANNO 2> starlog && ln -s $MAPGEN/SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi
+    zcat $genome > tmp.fa && zcat $anno > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outFileNamePrefix STARTMP --outTmpDir STARTMP --genomeDir $MAPGEN --genomeFastaFiles $MAPREF --sjdbGTFfile $MAPANNO 2> starlog && ln -s $MAPGEN/SAindex {output.idx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx}
     """
 
 }

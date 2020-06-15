@@ -11,8 +11,10 @@ process trim{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".fq.gz") > 0)             "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("R1_val_1.fq.gz") > 0)                  "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("R2_val_2.fq.gz") > 0)             "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("_trimmed.fq.gz") > 0)             "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)                  "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
 
@@ -21,7 +23,7 @@ process trim{
     path reads
 
     output:
-    path "*{val,trimmed}*.fq.gz", emit: trim
+    path "*.fq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
 
     script:
@@ -41,7 +43,7 @@ workflow TRIMMING{
     take: samples_ch
 
     main:
-    collect_results(samples_ch.collect())
+    //collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jun 15 11:56:59 2020 (+0200)
+# Last-Updated: Mon Jun 15 13:59:54 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1995
+#     Update #: 1997
 # URL:
 # Doc URL:
 # Keywords:
@@ -926,7 +926,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 gen = genome(sfile, config)
                 ext = check_tool_params(sfile, None ,config, 'MAPPING', 2)
                 uni = gen+name+'_'+ext
-                anno = mp['ANNOTATION'] if 'ANNOTATION' in mp else None
+                anno = sd['ANNOTATION'] if 'ANNOTATION' in sd else None
 
                 log.debug(logid+'FINAL PARAMS: '+' '.join([ref, gdir, mapper, name, gen, ext, uni, str(anno)]))
 

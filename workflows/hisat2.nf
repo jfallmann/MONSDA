@@ -16,8 +16,8 @@ process hisat_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".idx") > 0)             "$MAPIDX"
-        else if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+"${file(filename).getExtension()}"
+        if (filename.indexOf(".ht2") > 0)        "$MAPIDX"+filename.replaceFirst(/tmp.idx/, '')
+        else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
         else null
     }
 
@@ -28,6 +28,7 @@ process hisat_idx{
 
     output:
     path "*.idx", emit: idx
+    path "*.ht2", emit: htidx
 
     script:
     indexbin=MAPBIN.split(' ')[0]+'-build'
@@ -46,17 +47,20 @@ process hisat_mapping{
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
         else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".log") >0)           "MAPPED/$CONDITION/$filename"
         else null
     }
 
     input:
     val collect
+    path idxdummy
     path idx
     path reads
 
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", emit: unmapped
+    path "*.log", emit: logs
 
     script:
     fn = file(reads[0]).getSimpleName()
@@ -74,11 +78,11 @@ process hisat_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> Log.log && gzip $pf && touch unmapped.fastq.gz
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $MAPIDX -U $reads -S $pf --un-conc-gz $uf && gzip $pf && touch unmapped.fastq.gz
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -U $reads -S $pf --un-conc-gz $uf &> Log.log && gzip $pf && touch unmapped.fastq.gz
         """
     }
 }
@@ -117,7 +121,8 @@ workflow MAPPING{
     else{
         genomefile = Channel.fromPath(MAPREF)
         hisat_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
-        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, trimmed_samples_ch)
+        idxfile = Channel.fromPath(MAPIDX)
+        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, idxfile, trimmed_samples_ch)
     }
 
 
