@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jun 15 21:42:30 2020 (+0200)
+# Last-Updated: Tue Jun 16 10:00:30 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1999
+#     Update #: 2004
 # URL:
 # Doc URL:
 # Keywords:
@@ -833,8 +833,8 @@ def nf_fetch_params(configfile):
     config = load_configfile(configfile)
 
     retconf = collections.defaultdict()
-    retconf["REFERENCE"] = config["REFERENCE"]
-    retconf["BINS"] = config["BINS"]
+    retconf["REFERENCE"] = os.path.abspath(config["REFERENCE"])
+    retconf["BINS"] = os.path.abspath(config["BINS"])
     retconf["MAXTHREAD"] = int(config["MAXTHREADS"])
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     retconf["SAMPLES"] = str.join(',',SAMPLES)
@@ -898,6 +898,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
         x.append(runstate)
     log.debug(logid+str([sample,runstate,config,t,x]))
     tp = list()
+
     if not workflows:
         mp = subDict(config[subwork],x)['OPTIONS']
         tp.append("--"+subwork+"ENV "+toolenv+" --"+subwork+"BIN "+toolbin+' ')
@@ -908,7 +909,6 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
         for subwork in workflows:
             sd = subDict(config[subwork],condition)
             mp = sd['OPTIONS']
-
             #listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
             #for i in range(0,len(listoftools)):
             toolenv, toolbin = map(str,[sd['ENV'],sd['BIN']])

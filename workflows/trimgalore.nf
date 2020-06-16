@@ -18,7 +18,7 @@ process trim{
     }
 
     input:
-    //val collect
+    val collect
     path reads
 
     output:
@@ -44,7 +44,7 @@ workflow TRIMMING{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    x = collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -64,8 +64,8 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    //trim(collect_results.out.done, samples_ch)
-    trim(samples_ch)
+    trim(x.out.done, samples_ch)
+    //trim(samples_ch)
 
     emit:
     trimmed = trim.out.trim

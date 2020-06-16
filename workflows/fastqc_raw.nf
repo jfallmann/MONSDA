@@ -15,7 +15,7 @@ process qc_raw{
     }
 
     input:
-    //val collect
+    val collect
     path read
 
     output:
@@ -31,7 +31,7 @@ workflow QC_RAW{
     take: samples_ch
 
     main:
-    //collect_results(samples_ch.collect())
+    x = collect_results(samples_ch.collect())
 
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
@@ -53,7 +53,7 @@ workflow QC_RAW{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    qc_raw(samples_ch)
+    qc_raw(x.out.done, samples_ch)
 
     emit:
     qc = qc_raw.out.fastqc_results

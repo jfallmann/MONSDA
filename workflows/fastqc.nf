@@ -16,14 +16,15 @@ process qc_mapped{
 
     input:
     val collect
-    path read
+    path map
+    path uni
 
     output:
     path "*.{zip,html}", emit: fastqc_results
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f sam_mapped $read
+    fastqc --quiet -t $THREADS --noextract -f sam_mapped $map $uni
     """
 }
 
@@ -31,18 +32,28 @@ workflow QC_MAPPING{
     take: mapped_samples_ch
 
     main:
-    collect_results(mapped_samples_ch.collect())
+    x = collect_results(mapped_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         M1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/"+element+"_R1_sorted.bam"
+            element -> return "${workflow.workDir}/../MAPPED/"+element+"_R1_mapped_sorted.bam"
         }
         M1SAMPLES.sort()
         M2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_sorted.bam"
+            element -> return "${workflow.workDir}/../MAPPED/"+element+"_R2_mapped_sorted.bam"
         }
         M2SAMPLES.sort()
+        U1SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_R1_mapped_sorted_unique.bam"
+        }
+        U1SAMPLES.sort()
+        U2SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_R2_mapped_sorted_unique.bam"
+        }
+        U2SAMPLES.sort()
+
         mapped_samples_ch = Channel.fromPath(M1SAMPLES).merge(Channel.fromPath(M2SAMPLES))
+        unique_samples_ch = Channel.fromPath(U1SAMPLES).merge(Channel.fromPath(U2SAMPLES))
 
 
     }else{
@@ -50,11 +61,17 @@ workflow QC_MAPPING{
             element -> return "${workflow.workDir}/../MAPPED/"+element+".bam"
         }
         M1SAMPLES.sort()
+        U1SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+".bam"
+        }
+        U1SAMPLES.sort()
+
         mapped_samples_ch = Channel.fromPath(M1SAMPLES)
+        unique_samples_ch = Channel.fromPath(U1SAMPLES)
 
     }
 
-    qc_mapped(collect_results.out.done, mapped_samples_ch)
+    qc_mapped(x.out.done, mapped_samples_ch, unique_samples_ch)
 
     emit:
     qc = qc_mapped.out.fastqc_results

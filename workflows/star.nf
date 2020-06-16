@@ -17,10 +17,11 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("SA") > 0)               "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "$MAPGEN"+"${filename.replaceAll(/star\.idx/,"")}"
+        if (filename =~ /SA/)                         "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename == "Genome")                "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".txt") > 0)        "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".tab") > 0)        "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf("Log.out") >0)      "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
@@ -32,11 +33,12 @@ process star_idx{
     path anno
 
     output:
-    path "SA*", emit: idx
+    path "*SA*", emit: idx
     path "*Log.out", emit: idxlog
     path "*.txt", emit: txts
     path "*.tab", emit: tabs
     path "*.idx", emit: tmpidx
+    path "*Genome*", emit: idxgen
 
     script:
     gen =  genome.getName()
@@ -55,9 +57,10 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".fastq.gz") > 0)          "UNMAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".sam.gz") >0)        "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf("Log.out") >0)        "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$CONDITION/"+"${filename.replaceAll(/trimmed.Aligned.out/,"mapped")}"
+        else if (filename.indexOf(".out") >0)        "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/$CONDITION/$filename"
         else null
     }
 
@@ -67,9 +70,10 @@ process star_mapping{
     path reads
 
     output:
-    path "*Aligned.out.sam.gz", emit: maps
-    path "*Log.out", emit: log
-    path "*fastq.gz", includeInputs:false, emit: unmapped
+    path "*.sam.gz", emit: maps
+    path "*.out", emit: log
+    path "*.tab", emit: sjtab
+    path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
     fn = file(reads[0]).getSimpleName()
@@ -77,7 +81,7 @@ process star_mapping{
     of = fn+'.Aligned.out.sam'
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
     """
 }
 
@@ -85,7 +89,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    collect_results(samples_ch.collect())
+    x = collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -110,13 +114,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        star_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
+        star_mapping(x.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
-        star_idx(collect_results.out.done, trimmed_samples_ch, genomefile, annofile)
-        star_mapping(collect_results.out.done, star_idx.out.idx, trimmed_samples_ch)
+        star_idx(x.out.done, trimmed_samples_ch, genomefile, annofile)
+        star_mapping(x.out.done, star_idx.out.idx, trimmed_samples_ch)
     }
 
 

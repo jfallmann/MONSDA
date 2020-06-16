@@ -44,7 +44,7 @@ process sege_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'copy',
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed_mapped.sam.gz/,"")}_mapped.sam.gz"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
         else if (filename.indexOf("Log.out") >0)          "MAPPED/$CONDITION/$filename"
         else null
     }
@@ -84,7 +84,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    collect_results(samples_ch.collect())
+    x = collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -110,12 +110,12 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
-        sege_mapping(collect_results.out.done, genomefile, idxfile, trimmed_samples_ch)
+        sege_mapping(x.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        sege_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
-        sege_mapping(collect_results.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
+        sege_idx(x.out.done, trimmed_samples_ch, genomefile)
+        sege_mapping(x.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
     }
 
 

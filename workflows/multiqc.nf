@@ -65,7 +65,7 @@ workflow MULTIQC{
     take: dummy
 
     main:
-    collect_results(dummy.collect()),
+    collect_results(dummy.collect())
     multiqc(collect_results.done, dummy)
 
     emit:

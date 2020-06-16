@@ -47,7 +47,7 @@ process hisat_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
         else if (filename.indexOf(".log") >0)               "MAPPED/$CONDITION/$filename"
         else null
     }
@@ -66,7 +66,7 @@ process hisat_mapping{
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+".unmapped.fastq.gz"
-    index = file(MAPIDX).getParent()+'/'+file(MAPIDX).getSimpleName()
+    index = MAPIDX
 
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
@@ -93,7 +93,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    collect_results(samples_ch.collect())
+    x = collect_results(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -118,15 +118,15 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(collect_results.out.done, idxfile, trimmed_samples_ch)
+        hisat_mapping(x.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        hisat_idx(collect_results.out.done, trimmed_samples_ch, genomefile)
-        hisat_mapping(collect_results.out.done, hisat_idx.out.idx, trimmed_samples_ch)
+        hisat_idx(x.out.done, trimmed_samples_ch, genomefile)
+        hisat_mapping(x.out.done, hisat_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped  = hisat_mapping.out.maps
+    mapped = hisat_mapping.out.maps
 }
