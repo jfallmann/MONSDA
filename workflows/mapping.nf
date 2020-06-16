@@ -1,4 +1,20 @@
 //POST MAPPING PROCESSES
+
+process collect_postmap{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process sortsam{
     conda "${workflow.workDir}/../nextsnakes/envs/samtools.yaml"
     cpus THREADS
@@ -114,7 +130,7 @@ workflow POSTMAPPING{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_postmap(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         M1SAMPLES = LONGSAMPLES.collect{
@@ -136,10 +152,10 @@ workflow POSTMAPPING{
     }
 
 
-    sortsam(x.out.done, mapped_samples_ch)
-    sam2bam(x.out.done, sortsam.out.sam)
-    uniqsam(x.out.done, sortsam.out.sam)
-    sam2bamuniq(x.out.done, uniqsam.out.sam)
+    sortsam(collect_postmap.out.done, mapped_samples_ch)
+    sam2bam(collect_postmap.out.done, sortsam.out.sam)
+    uniqsam(collect_postmap.out.done, sortsam.out.sam)
+    sam2bamuniq(collect_postmap.out.done, uniqsam.out.sam)
 
     emit:
     postmap  = sam2bam.out.bam

@@ -1,6 +1,20 @@
 TOOLENV=params.QCENV ?: null
 TOOLBIN=params.QCBIN ?: null
 
+process collect_multi{
+    //echo true
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 //collecting list of processed file for multiqc, not implemented yet
 process collect_qc_raw{
     input:
@@ -50,7 +64,7 @@ process multiqc{
 
     input:
     val collect
-    val dummy
+    path dummy
 
     output:
     path "*.{zip,html}", emit: multiqc_results
@@ -65,8 +79,8 @@ workflow MULTIQC{
     take: dummy
 
     main:
-    collect_results(dummy.collect())
-    multiqc(collect_results.done, dummy)
+    collect_multi(dummy.collect())
+    multiqc(collect_multi.out.done, dummy)
 
     emit:
     mqcres = multiqc.out.multiqc_results

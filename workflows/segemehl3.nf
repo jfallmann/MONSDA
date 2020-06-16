@@ -8,7 +8,23 @@ MAPGEN=params.MAPPINGGEN ?: null
 IDXPARAMS = params.segemehl3_params_0 ?: ''
 MAPPARAMS = params.segemehl3_params_1 ?: ''
 
-//PROCESSES
+//MAPPING PROCESSES
+
+process collect_tomap{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process sege_idx{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
@@ -84,7 +100,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_tomap(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -110,12 +126,12 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
-        sege_mapping(x.out.done, genomefile, idxfile, trimmed_samples_ch)
+        sege_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        sege_idx(x.out.done, trimmed_samples_ch, genomefile)
-        sege_mapping(x.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
+        sege_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        sege_mapping(collect_tomap.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
     }
 
 

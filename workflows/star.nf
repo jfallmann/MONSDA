@@ -9,7 +9,23 @@ MAPANNO=params.MAPPINGANNO ?: null
 IDXPARAMS = params.star_params_0 ?: ''
 MAPPARAMS = params.star_params_1 ?: ''
 
-//PROCESSES
+//MAPPING PROCESSES
+
+process collect_tomap{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process star_idx{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
@@ -89,7 +105,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_tomap(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -114,13 +130,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        star_mapping(x.out.done, idxfile, trimmed_samples_ch)
+        star_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
-        star_idx(x.out.done, trimmed_samples_ch, genomefile, annofile)
-        star_mapping(x.out.done, star_idx.out.idx, trimmed_samples_ch)
+        star_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile, annofile)
+        star_mapping(collect_tomap.out.done, star_idx.out.idx, trimmed_samples_ch)
     }
 
 

@@ -1,6 +1,20 @@
 QCRENV=params.QCENV ?: null
 QCRBIN=params.QCBIN ?: null
 
+process collect_fqraw{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
 
 process qc_raw{
     conda "${workflow.workDir}/../nextsnakes/envs/$QCRENV"+".yaml"
@@ -31,7 +45,7 @@ workflow QC_RAW{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_fqraw(samples_ch.collect())
 
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
@@ -53,7 +67,7 @@ workflow QC_RAW{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    qc_raw(x.out.done, samples_ch)
+    qc_raw(collect_fqraw.out.done, samples_ch)
 
     emit:
     qc = qc_raw.out.fastqc_results

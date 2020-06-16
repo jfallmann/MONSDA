@@ -8,7 +8,23 @@ MAPGEN=params.MAPPINGGEN ?: null
 IDXPARAMS = params.hisat2_params_0 ?: ''
 MAPPARAMS = params.hisat2_params_1 ?: ''
 
-//PROCESSES
+//MAPPING PROCESSES
+
+process collect_tomap{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process hisat_idx{
     conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
@@ -93,7 +109,7 @@ workflow MAPPING{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_tomap(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -118,12 +134,12 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
-        hisat_mapping(x.out.done, idxfile, trimmed_samples_ch)
+        hisat_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        hisat_idx(x.out.done, trimmed_samples_ch, genomefile)
-        hisat_mapping(x.out.done, hisat_idx.out.idx, trimmed_samples_ch)
+        hisat_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        hisat_mapping(collect_tomap.out.done, hisat_idx.out.idx, trimmed_samples_ch)
     }
 
 

@@ -3,6 +3,21 @@ QCTBIN=params.QCBIN ?: null
 
 QCPARAMS = params.fastqc_params_0 ?: ''
 
+process collect_fqtrim{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process qc_trimmed{
     conda "${workflow.workDir}/../nextsnakes/envs/$QCTENV"+".yaml"
     cpus THREADS
@@ -32,7 +47,7 @@ workflow QC_TRIMMING{
     take: trimmed_samples_ch
 
     main:
-    x = collect_results(trimmed_samples_ch.collect())
+    collect_fqtrim(trimmed_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -53,7 +68,7 @@ workflow QC_TRIMMING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    qc_trimmed(x.out.done, trimmed_samples_ch)
+    qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
 
     emit:
     qc = qc_trimmed.out.fastqc_results

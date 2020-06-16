@@ -3,7 +3,22 @@ TRIMBIN=params.TRIMMINGBIN ?: null
 
 TRIMPARAMS = params.trimgalore_params_0 ?: ''
 
-//PROCESSES
+//TRIMMING PROCESSES
+process collect_totrim{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
 process trim{
     conda "${workflow.workDir}/../nextsnakes/envs/$TRIMENV"+".yaml"
     cpus THREADS
@@ -44,7 +59,7 @@ workflow TRIMMING{
     take: samples_ch
 
     main:
-    x = collect_results(samples_ch.collect())
+    collect_totrim(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -64,7 +79,7 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    trim(x.out.done, samples_ch)
+    trim(collect_totrim.out.done, samples_ch)
     //trim(samples_ch)
 
     emit:

@@ -1,6 +1,22 @@
 QCENV=params.QCENV ?: null
 QCBIN=params.QCBIN ?: null
 
+process collect_fqmap{
+    //echo true
+
+    input:
+    path dummy
+
+    output:
+    path "collect.txt", emit: done
+
+    script:
+    """
+    echo "$dummy Collection successful!" > collect.txt
+    """
+}
+
+
 //PROCESSES
 process qc_mapped{
     conda "${workflow.workDir}/../nextsnakes/envs/$QCENV"+".yaml"
@@ -32,7 +48,7 @@ workflow QC_MAPPING{
     take: mapped_samples_ch
 
     main:
-    x = collect_results(mapped_samples_ch.collect())
+    collect_fqmap(mapped_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         M1SAMPLES = LONGSAMPLES.collect{
@@ -71,7 +87,7 @@ workflow QC_MAPPING{
 
     }
 
-    qc_mapped(x.out.done, mapped_samples_ch, unique_samples_ch)
+    qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)
 
     emit:
     qc = qc_mapped.out.fastqc_results
