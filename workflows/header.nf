@@ -8,10 +8,10 @@ nextflowVersion = '>=20.01.0.5264'
 nextflow.preview.dsl=2
 
 //Params from CL
-REFERENCE = params.REFERENCE
+REFERENCE = "${workflow.workDir}/../"+params.REFERENCE
 GENOME = params.GENOME
 NAME = params.NAME
-BINS = params.BINS
+BINS = "${workflow.workDir}/../"+params.BINS
 THREADS = params.MAXTHREAD
 SOURCE = params.SOURCE
 PAIRED = params.PAIRED
@@ -21,19 +21,4 @@ SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
 
 //dummy
-dummy = Channel.empty()
-
-process collect_results{
-    //echo true
-
-    input:
-    path dummy
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$dummy Collection successful!" > collect.txt
-    """
-}
+dummy = Channel.fromPath("${workflow.workDir}/../LOGS/RunNextflow.log")

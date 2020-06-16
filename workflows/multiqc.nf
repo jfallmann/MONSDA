@@ -2,16 +2,15 @@ TOOLENV=params.QCENV ?: null
 TOOLBIN=params.QCBIN ?: null
 
 process collect_multi{
-    //echo true
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -76,11 +75,11 @@ process multiqc{
 }
 
 workflow MULTIQC{
-    take: dummy
+    take: collection
 
     main:
-    collect_multi(dummy.collect())
-    multiqc(collect_multi.out.done, dummy)
+    collect_multi(collection.collect())
+    multiqc(collect_multi.out.done, collection.collect())
 
     emit:
     mqcres = multiqc.out.multiqc_results

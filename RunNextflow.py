@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun 16 12:02:48 2020 (+0200)
+# Last-Updated: Tue Jun 16 14:47:00 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1393
+#     Update #: 1408
 # URL:
 # Doc URL:
 # Keywords:
@@ -355,10 +355,8 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                 if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
                     log.info(logid+'Trimming without QC!')
 
-                if 'MAPPING' in subworkflows and 'QC' in subworkflows:
-                        flowlist.append('QC_MAPPING')
-
                 subconf = NestedDefaultDict()
+                subnames = list()
                 for subwork in subworkflows:
                     log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
                     if subwork != 'QC':
@@ -369,45 +367,34 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
                         subname = toolenv+'.nf'
+                        if subwork != 'QC':
+                            subnames.append(subname)
                         log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
 
-                        if subwork == 'QC' and 'TRIMMING' in subworkflows:
-                            subname = toolenv+'_raw.nf'
-                            smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
-                            with open(smko, 'a') as smkout:
-                                with open(smkf,'r') as smk:
-                                #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
-                                    smkout.write(smk.read())
-                                smkout.write('\n\n')
-                            subname = toolenv+'_trim.nf'
-                            flowlist.extend(['QC_RAW','QC_TRIMMING'])
-
-                        if subwork == 'QC' and not 'TRIMMING' in subworkflows:
-                            subname = toolenv+'_raw.nf'
-                            flowlist.append('QC_RAW')
-
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
-                        with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
-                                smkout.write(smk.read())
-                            smkout.write('\n\n')
+                        if subwork == 'QC':
+                            if 'TRIMMING' in subworkflows:
+                                subnames.extend([toolenv+'_raw.nf', toolenv+'_trim.nf'])
+                                flowlist.extend(['QC_RAW','QC_TRIMMING'])
+                            else:
+                                subnames.append(toolenv+'_raw.nf')
+                                flowlist.append('QC_RAW')
+                            if 'MAPPING' in subworkflows:
+                                subnames.append(toolenv+'.nf')
+                                flowlist.append('QC_MAPPING')
 
                 if 'MAPPING' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.nf'))
+                    subnames.append('mapping.nf')
+                if 'QC' in subworkflows:
+                    subnames.append('multiqc.nf')
+                    flowlist.append('MULTIQC')
+
+                for subname in subnames:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
                             smkout.write(smk.read())
                         smkout.write('\n\n')
-                if 'QC' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(smk.read())
-                            #smkout.write(re.sub(condapath,'conda  \"../',smk.read()))
-                            smkout.write('\n\n')
-                    flowlist.append('MULTIQC')
 
                 #workflow merger
                 log.debug('FLOWLIST: '+str(flowlist))
@@ -418,9 +405,11 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
                         if w in flowlist:
                             if w ==  'QC_TRIMMING':
                                 smkout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
-                            if w == 'MAPPING':
+                            elif w == 'MAPPING':
                                 smkout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
                                 smkout.write(' '*4+'POSTMAPPING(MAPPING.out.mapped)\n')
+                            elif w == 'QC_MAPPING':
+                                smkout.write(' '*4+w+'(POSTMAPPING.out.postmapuni)\n')
                             elif w ==  'MULTIQC':
                                 if 'MAPPING' in flowlist:
                                     smkout.write(' '*4+w+'(QC_MAPPING.out.qc)\n')

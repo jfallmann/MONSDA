@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun 16 10:00:30 2020 (+0200)
+# Last-Updated: Tue Jun 16 13:50:17 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2004
+#     Update #: 2005
 # URL:
 # Doc URL:
 # Keywords:
@@ -833,8 +833,8 @@ def nf_fetch_params(configfile):
     config = load_configfile(configfile)
 
     retconf = collections.defaultdict()
-    retconf["REFERENCE"] = os.path.abspath(config["REFERENCE"])
-    retconf["BINS"] = os.path.abspath(config["BINS"])
+    retconf["REFERENCE"] = config["REFERENCE"]
+    retconf["BINS"] = config["BINS"]
     retconf["MAXTHREAD"] = int(config["MAXTHREADS"])
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     retconf["SAMPLES"] = str.join(',',SAMPLES)

@@ -12,17 +12,15 @@ MAPPARAMS = params.star_params_1 ?: ''
 //MAPPING PROCESSES
 
 process collect_tomap{
-    //echo true
-
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -102,10 +100,9 @@ process star_mapping{
 }
 
 workflow MAPPING{
-    take: samples_ch
+    take: collection
 
     main:
-    collect_tomap(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -130,11 +127,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
+        collect_tomap(collection.collect())
         star_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
+        collect_tomap(collection.collect())
         star_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile, annofile)
         star_mapping(collect_tomap.out.done, star_idx.out.idx, trimmed_samples_ch)
     }

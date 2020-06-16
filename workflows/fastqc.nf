@@ -2,17 +2,15 @@ QCENV=params.QCENV ?: null
 QCBIN=params.QCBIN ?: null
 
 process collect_fqmap{
-    //echo true
-
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -45,48 +43,23 @@ process qc_mapped{
 }
 
 workflow QC_MAPPING{
-    take: mapped_samples_ch
+    take: collection
 
     main:
-    collect_fqmap(mapped_samples_ch.collect())
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        M1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/"+element+"_R1_mapped_sorted.bam"
-        }
-        M1SAMPLES.sort()
-        M2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/"+element+"_R2_mapped_sorted.bam"
-        }
-        M2SAMPLES.sort()
-        U1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_R1_mapped_sorted_unique.bam"
-        }
-        U1SAMPLES.sort()
-        U2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_R2_mapped_sorted_unique.bam"
-        }
-        U2SAMPLES.sort()
-
-        mapped_samples_ch = Channel.fromPath(M1SAMPLES).merge(Channel.fromPath(M2SAMPLES))
-        unique_samples_ch = Channel.fromPath(U1SAMPLES).merge(Channel.fromPath(U2SAMPLES))
-
-
-    }else{
-        M1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/"+element+".bam"
-        }
-        M1SAMPLES.sort()
-        U1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+".bam"
-        }
-        U1SAMPLES.sort()
-
-        mapped_samples_ch = Channel.fromPath(M1SAMPLES)
-        unique_samples_ch = Channel.fromPath(U1SAMPLES)
-
+    M1SAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped_sorted.bam"
     }
+    M1SAMPLES.sort()
+    U1SAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_mapped_sorted_unique.bam"
+    }
+    U1SAMPLES.sort()
 
+    mapped_samples_ch = Channel.fromPath(M1SAMPLES)
+    unique_samples_ch = Channel.fromPath(U1SAMPLES)
+
+    collect_fqmap(collection.collect())
     qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)
 
     emit:

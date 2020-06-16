@@ -4,18 +4,17 @@ TRIMBIN=params.TRIMMINGBIN ?: null
 TRIMPARAMS = params.trimgalore_params_0 ?: ''
 
 //TRIMMING PROCESSES
-process collect_totrim{
-    //echo true
 
+process collect_totrim{
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -56,10 +55,9 @@ process trim{
 }
 
 workflow TRIMMING{
-    take: samples_ch
+    take: collection
 
     main:
-    collect_totrim(samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -79,8 +77,8 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
+    collect_totrim(collection.collect())
     trim(collect_totrim.out.done, samples_ch)
-    //trim(samples_ch)
 
     emit:
     trimmed = trim.out.trim

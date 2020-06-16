@@ -4,17 +4,15 @@ QCTBIN=params.QCBIN ?: null
 QCPARAMS = params.fastqc_params_0 ?: ''
 
 process collect_fqtrim{
-    //echo true
-
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -44,10 +42,9 @@ process qc_trimmed{
 }
 
 workflow QC_TRIMMING{
-    take: trimmed_samples_ch
+    take: collection
 
     main:
-    collect_fqtrim(trimmed_samples_ch.collect())
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
@@ -68,6 +65,7 @@ workflow QC_TRIMMING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
+    collect_fqtrim(collection.collect())
     qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
 
     emit:

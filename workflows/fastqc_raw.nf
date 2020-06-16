@@ -2,17 +2,15 @@ QCRENV=params.QCENV ?: null
 QCRBIN=params.QCBIN ?: null
 
 process collect_fqraw{
-    //echo true
-
     input:
-    path dummy
+    path check
 
     output:
     path "collect.txt", emit: done
 
     script:
     """
-    echo "$dummy Collection successful!" > collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
 
@@ -42,11 +40,9 @@ process qc_raw{
 }
 
 workflow QC_RAW{
-    take: samples_ch
+    take: collection
 
     main:
-    collect_fqraw(samples_ch.collect())
-
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         R1SAMPLES = SAMPLES.collect{
@@ -67,6 +63,7 @@ workflow QC_RAW{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
+    collect_fqraw(collection.collect())
     qc_raw(collect_fqraw.out.done, samples_ch)
 
     emit:
