@@ -30,13 +30,13 @@ setwd(outdir)
 
 #Check if names are consistent
 if (!all(rownames(anno) %in% colnames(countData))){
-  stop("Count file does not correspond to the annotation file")
+    stop("Count file does not correspond to the annotation file")
 }
 
 if (length(levels(anno$types))>1){
-  design <- ~0 + condition + type
+    design <- ~0 + condition + type
 } else {
-  design <- ~0 + condition
+    design <- ~0 + condition
 }
 
 #Create DESeqDataSet

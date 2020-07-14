@@ -135,14 +135,9 @@ for(contrast in comparisons[[1]]){
                                                 # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
+        C <- c(A,B)
 
-        c1 <- strsplit(contrast_name,"vs")[[1]][1]
-        c2 <- strsplit(strsplit(contrast_name,"vs")[[1]][2],'\\.')[[1]][1]
-
-        dxdpair = dxd[colData(dxd)$condition %in% A | colData(dxd)$condition %in% B]
-
-        names(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
-        levels(colData(dxdpair)$condition) <- ifelse(colData(dxdpair)$condition %in% A, c1, c2)
+        dxdpair = dxd[, dxd$condition %in% C]
 
         dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
