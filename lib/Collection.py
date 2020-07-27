@@ -449,6 +449,7 @@ def get_reps(samples,config,analysis):
         idx = partconf['REPLICATES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[3:])],config))
         ret['conds'].append(partconf['GROUPS'][idx])
+        ret['batches'].append(partconf['BATCHES'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
                 ret['types'].append(str(partconf['TYPES'][idx]).replace(',','_'))
         else:
@@ -457,6 +458,7 @@ def get_reps(samples,config,analysis):
     rets = '-r '+str.join(',',ret['reps'])
     rets += ' -c '+str.join(',',ret['conds'])
     rets += ' -t '+str.join(',',ret['types'])
+    rets += ' -b '+str.join(',',ret['batches'])
     rets += ' --paired '+str.join(',',ret['pairs']) if 'pairs' in ret else ''
 
     log.debug(logid+'RETURN: '+str(rets))

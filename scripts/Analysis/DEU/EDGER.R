@@ -35,7 +35,7 @@ message(paste('Will run EdgeR DEU with ',availablecores,' cores',sep=''))
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(sampleData) <- c("condition","type")
+colnames(sampleData) <- c("condition","type","batch")
 sampleData <- as.data.frame(sampleData)
 groups <- factor(sampleData$condition)
 samples <- rownames(sampleData)
@@ -86,13 +86,22 @@ colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
 dev.off()
 
-## Create design-table considering different types (paired, unpaired)
-if (length(levels(types))>1){
-    design <- model.matrix(~0+groups+types, data=sampleData)
-    colnames(design) <- c(levels(groups),"type")
-} else {
-    design <- model.matrix(~0+groups, data=sampleData)
-    colnames(design) <- levels(groups)
+## Create design-table considering different types (paired, unpaired) and batches
+if (length(levels(sampleData$type)) > 1){
+    if (length(levels(sampleData$batch)) > 1){
+        design <- model.matrix(~0+groups+types+batch, data=sampleData)
+        colnames(design) <- c(levels(groups),"type","batch")
+    } else{
+        design <- model.matrix(~0+groups+types, data=sampleData)
+        colnames(design) <- c(levels(groups),"type")
+    }
+} else{
+    if (length(levels(sampleData$batch)) > 1){
+        design <- model.matrix(~0+groups+batch, data=sampleData)
+        colnames(design) <- c(levels(groups),"batch")
+    } else{
+        design <- model.matrix(~0+groups, data=sampleData)
+        colnames(design) <- levels(groups)
 }
 
 ## estimate Dispersion

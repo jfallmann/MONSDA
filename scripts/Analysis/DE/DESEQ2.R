@@ -19,7 +19,7 @@ availablecores <- as.integer(args[5])
 ############
 
 anno <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(anno) <- c("condition","type")
+colnames(anno) <- c("condition","type","batch")
 anno <- as.data.frame(anno)
 #head(anno)
 comparison<-strsplit(cmp, ",")
@@ -33,10 +33,17 @@ if (!all(rownames(anno) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
 }
 
-if (length(levels(anno$types))>1){
-    design <- ~0 + condition + type
-} else {
-    design <- ~0 + condition
+if (length(levels(sampleData$type)) > 1){
+    if (length(levels(sampleData$batch)) > 1){
+        design = ~0 + type + batch + condition
+    } else{
+        design = ~0 + type + condition
+    }
+} else{
+    if (length(levels(sampleData$batch)) > 1){
+        design = ~0 + batch + condition
+    } else{
+        design = ~0 + condition
 }
 
 #Create DESeqDataSet

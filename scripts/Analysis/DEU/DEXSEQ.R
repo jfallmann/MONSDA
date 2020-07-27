@@ -22,16 +22,25 @@ availablecores <- as.integer(args[6])
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(sampleData) <- c("condition","type")
+colnames(sampleData) <- c("condition","type","batch")
 sampleData <- as.data.frame(sampleData)
 #head(sampleData)
 comparisons <- strsplit(cmp, ",")
 print(paste("Will analyze conditions ",comparisons,sep=""))
 
 if (length(levels(sampleData$type)) > 1){
-    full = ~ sample + exon + type:exon + condition:exon
-    reduced = ~ sample + exon + type:exon
+    if (length(levels(sampleData$batch)) > 1){
+        full = ~ sample + exon + type:exon + batch:exon + condition:exon
+        reduced = ~ sample + exon + type:exon + batch:exon
+    } else{
+        full = ~ sample + exon + type:exon + condition:exon
+        reduced = ~ sample + exon + type:exon
+    }
 } else{
+    if (length(levels(sampleData$batch)) > 1){
+        full = ~ sample + exon + batch:exon + condition:exon
+        reduced = ~ sample + exon + batch:exon
+    } else{
     full = ~ sample + exon + condition:exon
     reduced = ~ sample + exon
 }

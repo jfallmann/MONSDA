@@ -214,6 +214,7 @@
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
+                    "BATCHES": ["1","1","2"], #batch number for sample                    
                     "OPTIONS":
                     [
                         {
@@ -249,6 +250,7 @@
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
+                    "BATCHES": ["1","1","2"], #batch number for sample
                     "OPTIONS":
                     [
                         {
@@ -284,6 +286,7 @@
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
+                    "BATCHES": ["1","1","2"], #batch number for sample
                     "OPTIONS":
                     [
                         { # counting options
