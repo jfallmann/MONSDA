@@ -1,4 +1,4 @@
-## From https://github.com/vivekbhr/Subread_to_DEXSeq/blob/master/load_SubreadOutput.R
+## Modified from https://github.com/vivekbhr/Subread_to_DEXSeq/blob/master/load_SubreadOutput.R
 ## Load Fcount output from : DEXSeq_after_Fcount.R into DEXSeq
 ## Copyright 2015 Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de). Licence: GPLv3.
 
