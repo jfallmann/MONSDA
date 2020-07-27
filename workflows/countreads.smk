@@ -50,12 +50,12 @@ rule featurecount:
     log:    "LOGS/{file}/featurecount_{feat}s.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
-    params: count = COUNTBIN,
+    params: countb = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
     input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
@@ -64,12 +64,12 @@ rule featurecount_unique:
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
-    params: count = COUNTBIN,
+    params: countb = COUNTBIN,
             anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.count} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule summarize_counts:
     input:  f = rules.count_fastq.output,
