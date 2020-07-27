@@ -1,5 +1,6 @@
+=======================================
 Welcome to the NextSnakes documentation
-======================================
+=======================================
 
 .. toctree::
    :maxdepth: 4
@@ -13,3 +14,14 @@ Welcome to the NextSnakes documentation
    source/runsmk
    source/cluster
    source/contribute
+
+==================
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+  
+NextSnakes.rst (END)
+
