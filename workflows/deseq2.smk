@@ -39,7 +39,7 @@ rule prepare_count_table:
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
              bins = BINS,
              tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DE")['OPTIONS'][1].items())
-    shell: "{params.bins}/Analysis/build_count_table_simple.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
 
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,

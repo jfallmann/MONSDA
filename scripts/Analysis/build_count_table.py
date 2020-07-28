@@ -15,6 +15,7 @@ def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     #parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")
     parser.add_argument("-n", "--sample_name", action="store_true", help=" provide -n if sample names instead of group names should be used for header" )
+    parser.add_argument("-i", "--ids", action="store_true", help=" provide -i if sample ids should contain coordinates (exon based counting for DEU)" )
     parser.add_argument("-o", "--order", action="store_true", help="if wanted the order of conditions can be given as comma separated list" )
     parser.add_argument("-c", "--conditions", required=True, type=str, help="Conditions to compare" )
     parser.add_argument("-t", "--types", required=False, type=str, help="Sequencing types to compare" )
@@ -45,7 +46,7 @@ class Sample_list(object):
         self.replicate_types = list()
         self.replicate_batches = list()
 
-def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None, cutoff=None):
+def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None, cutoff=None, ids=None):
     try:
         #slist,
         logid = scriptname+'.prepare_table: '
@@ -142,11 +143,11 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                 if (sample_name):
                     myMatrix[0].append(my_groups[gruppies].replicate_names[condition_index])
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
-                    batchanno.append(my_groups[gruppies].replicate_types[condition_index])
+                    batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
                 else:
                     myMatrix[0].append(str(my_groups[gruppies].group_name)+'_'+str(rep_nr))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
-                    batchanno.append(my_groups[gruppies].replicate_types[condition_index])
+                    batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
                 if '.gz' in replicate:
                     myInput = gzip.open(replicate,'r')
                 else:
@@ -162,7 +163,10 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                         if sample_counter==1:
                             newListi=[]
                             myMatrix.append(newListi)
-                            myMatrix[lineNumber].append(str(columns[0])+":"+str(columns[2])+"-"+str(columns[3]))
+                            if ids:
+                                myMatrix[lineNumber].append(str(columns[0])+":"+str(columns[2])+"-"+str(columns[3]))
+                            else:
+                                myMatrix[lineNumber].append(str(columns[0]))
                         if len(columns) > 1 and columns[-1] != columns[0]:
                             myMatrix[lineNumber].append(round(float(columns[-1])))
                         else:
