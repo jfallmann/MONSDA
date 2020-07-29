@@ -50,7 +50,7 @@ if (length(levels(sampleData$type)) > 1){
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
-                              colData = a,
+                              colData = sampleData,
                               design= design)
 
 #filter low counts
