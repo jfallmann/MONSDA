@@ -19,7 +19,7 @@ try:
     if any(x in scriptname for x in ['RunSnakemake','Configurator']):
         log = logging.getLogger(scriptname)
     else:
-        log = logging.getLogger('snakemake.logging')
+        log = logging.getLogger('snakemake')
         for handler in log.handlers[:]:
             handler.close()
             log.removeHandler(handler)
