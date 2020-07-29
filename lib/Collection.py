@@ -92,16 +92,18 @@ try:
         log = logging.getLogger(scriptname)
     else:
         log = logging.getLogger('snakemake')
-        for handler in log.handlers[:]:
-            handler.close()
-            log.removeHandler(handler)
+
+    lvl = log.level if log.level else 'INFO'
+    for handler in log.handlers[:]:
+        handler.close()
+        log.removeHandler(handler)
+
     handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
-    lvl = log.level if log.level else 'DEBUG'
     log.setLevel(lvl)
 
 except Exception as err:
