@@ -87,8 +87,8 @@ import logging
 from snakemake import load_configfile
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    log = logging.getLogger(__name__.replace('.py',''))
+    #scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
+    #log = logging.getLogger(__name__.replace('.py',''))
     if not (log.hasHandlers()):
         if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
             logdir =  os.path.abspath('LOGS')
@@ -229,28 +229,6 @@ def get_conditions(samples, config):
 def get_samples_from_dir(id, condition, setting, config):
     logid = scriptname+'.Collection_get_samples_from_dir: '
     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
-    log.debug(logid+str(pat))
-    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    log.debug(logid+str(ret))
-    if len(ret) > 0:
-        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
-        for x in seqtype:
-            if 'unpaired' not in x:
-                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
-                for i in range(len(renamelist)):
-                    if renamelist[i] != ret[i]:
-                        os.rename(ret[i],renamelist[i])
-            else:
-                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
-        return list(set(ret))
-    else:
-        return list()
-
-@check_run
-def get_samples_from_dir_2(id, condition, setting, config):
-    logid = scriptname+'.Collection_get_samples_from_dir: '
-    pat = os.path.abspath(os.path.join('FASTQ',id, condition, setting, '*.fastq.gz'))
     log.debug(logid+str(pat))
     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
     log.debug(logid+str(ret))
