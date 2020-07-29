@@ -181,6 +181,35 @@ def get_samples(config):
     return RETSAMPLES
 
 @check_run
+def get_samples_postprocess(config,subwork):
+    logid = scriptname+'.Collection_get_samples_postprocess: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        paired = checkpaired([SAMPLES[i]],config)
+        log.debug(logid+'PAIRED: '+str(paired))
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
+            if paired == 'paired':
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                log.debug(logid+'PAIREDSAMPLES: '+str(f))
+            else:
+                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
+
+@check_run
 def download_samples(config):
     logid = scriptname+'.Collection_download_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
@@ -371,13 +400,14 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
-                if len(getFromDict(config[key], condition)) <1:
+                if len(getFromDict(config[subwork], [src, treat, setup])) <1:
                     if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
-                        log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key))
+                        log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
                 else:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
