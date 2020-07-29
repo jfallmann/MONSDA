@@ -1,8 +1,8 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-outdir="DEU/EDGER/"
-comparison=comparable_as_string2(config,'DEU')
+outdir = "DEU/EDGER/"
+comparison = comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
@@ -18,7 +18,7 @@ rule themall:
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DEU_edger/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+            cts   = "DEU/Featurecounts_DEU/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_DEU_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD

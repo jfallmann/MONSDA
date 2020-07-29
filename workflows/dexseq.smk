@@ -1,8 +1,8 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-outdir="DEU/DEXSEQ/"
-comparison=comparable_as_string2(config,'DEU')
+outdir = "DEU/DEXSEQ/"
+comparison = comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
@@ -27,7 +27,7 @@ rule featurecount_dexseq_unique:
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+            cts   = "DEU/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD

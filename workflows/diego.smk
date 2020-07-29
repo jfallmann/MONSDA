@@ -1,18 +1,18 @@
 DASBIN, DASENV = env_bin_from_config3(config,'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-outdir="DAS/DIEGO/"
-compare_string= comparable_as_string2(config,'DAS')
-comparison=[i.split(":")[0] for i in compare_string.split(",")]
+outdir = "DAS/DIEGO/"
+comparison = comparable_as_string2(config,'DAS')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  dendrogram = expand("{outdir}{comparison}_dendrogram.pdf", outdir=outdir, comparison=comparison),
-            csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=comparison)
+    input:  dendrogram = expand("{outdir}{comparison}_dendrogram.pdf", outdir=outdir, comparison=compstr),
+            csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=compstr)
 
 rule featurecount_unique:
     input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = expand("{outdir}Featurecounts_DAS_diego/{{file}}_mapped_sorted_unique.counts", outdir=outdir)
+            cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -50,18 +50,18 @@ rule prepare_junction_usage_matrix:
 
 rule create_contrast_files:
     input:  anno = rules.prepare_junction_usage_matrix.output.anno
-    output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=comparison)
+    output: contrast = expand("{outdir}Tables/{comparison}_contrast.txt", outdir=outdir, comparison=compstr)
     log:    expand("LOGS/{outdir}create_contrast_files.log", outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            compare=compare_string,
+            compare=comparison,
             outdir=outdir+'Tables/'
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=comparison)
+            contrast = expand(rules.create_contrast_files.output.contrast, outdir=outdir, comparison=compstr)
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
@@ -70,6 +70,6 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
             dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][2].items()),
             outdir = outdir,
-            compare = comparison,
+            compare = compstr,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
     shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
