@@ -41,8 +41,9 @@ if (length(levels(sampleData$type)) > 1){
         full = ~ sample + exon + batch:exon + condition:exon
         reduced = ~ sample + exon + batch:exon
     } else{
-    full = ~ sample + exon + condition:exon
-    reduced = ~ sample + exon
+        full = ~ sample + exon + condition:exon
+        reduced = ~ sample + exon
+    }
 }
 
 ## Read Fcount output and convert to dxd

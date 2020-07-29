@@ -102,6 +102,7 @@ if (length(levels(sampleData$type)) > 1){
     } else{
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
+    }
 }
 
 ## estimate Dispersion

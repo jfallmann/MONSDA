@@ -45,6 +45,7 @@ if (length(levels(sampleData$type)) > 1){
         design = ~0 + batch + condition
     } else{
         design = ~0 + condition
+    }
 }
 
 #Create DESeqDataSet
