@@ -371,7 +371,13 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
-                tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+                if length(getFromDict(config[key], condition)) <1:
+                    if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
+                        log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
+                    else:
+                        log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key))
+                else: 
+                    tempconf[key][src][treat][setup] = config[key][src][treat][setup]
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
