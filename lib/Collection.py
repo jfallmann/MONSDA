@@ -87,8 +87,8 @@ import logging
 from snakemake import load_configfile
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    log = logging.getLogger(__name__.replace('.py',''))
+    #scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
+    #log = logging.getLogger(__name__.replace('.py',''))
     if not (log.hasHandlers()):
         if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
             logdir =  os.path.abspath('LOGS')
@@ -181,6 +181,35 @@ def get_samples(config):
     return RETSAMPLES
 
 @check_run
+def get_samples_postprocess(config,subwork):
+    logid = scriptname+'.Collection_get_samples_postprocess: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        paired = checkpaired([SAMPLES[i]],config)
+        log.debug(logid+'PAIRED: '+str(paired))
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
+            if paired == 'paired':
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                log.debug(logid+'PAIREDSAMPLES: '+str(f))
+            else:
+                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
+
+@check_run
 def download_samples(config):
     logid = scriptname+'.Collection_download_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
@@ -200,28 +229,6 @@ def get_conditions(samples, config):
 def get_samples_from_dir(id, condition, setting, config):
     logid = scriptname+'.Collection_get_samples_from_dir: '
     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
-    log.debug(logid+str(pat))
-    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    log.debug(logid+str(ret))
-    if len(ret) > 0:
-        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
-        for x in seqtype:
-            if 'unpaired' not in x:
-                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
-                for i in range(len(renamelist)):
-                    if renamelist[i] != ret[i]:
-                        os.rename(ret[i],renamelist[i])
-            else:
-                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
-        return list(set(ret))
-    else:
-        return list()
-
-@check_run
-def get_samples_from_dir_2(id, condition, setting, config):
-    logid = scriptname+'.Collection_get_samples_from_dir: '
-    pat = os.path.abspath(os.path.join('FASTQ',id, condition, setting, '*.fastq.gz'))
     log.debug(logid+str(pat))
     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
     log.debug(logid+str(ret))
@@ -371,13 +378,14 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
-                if len(getFromDict(config[key], condition)) <1:
+                if len(getFromDict(config[subwork], [src, treat, setup])) <1:
                     if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
-                        log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key))
+                        log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
                 else:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+
             if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']

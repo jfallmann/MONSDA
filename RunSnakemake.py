@@ -404,20 +404,19 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 log.debug(logid+'JOB CODE '+str(job))
 
         else:
-            log.warning(logid+'No subworkflows defined! Nothing to do!')
+            log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
 
         if postprocess:
-            log.info(logid+'STARTING POSTPROCESSING WITH SAMPLES '+str(SAMPLES))
-
-            if 'PEAKS' in config and 'PEAKS' in postprocess:
-                CLIP = checkclip(SAMPLES, config)
-                log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
                     if any(subwork == x for x in ['DE', 'DEU', 'DAS']):
                         continue
+
+                    SAMPLES = get_samples_postprocess(config,subwork)
+                    log.info(logid+'STARTING POSTPROCESSING '+str(subwork)+' WITH SAMPLES '+str(SAMPLES))
+
                     log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
@@ -464,8 +463,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['DE', 'DEU', 'DAS']:
                 if analysis in config and analysis in postprocess:
-                    log.info(logid+'STARTING '+analysis+' Analysis...')
+
                     subwork = analysis
+                    SAMPLES = get_samples_postprocess(config,subwork)
+                    log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
+                    
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
                     #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
