@@ -68,6 +68,7 @@ if stranded != '':
 
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
+    log.info(logid+'Running Peak finding for '+CLIP+' protocol')
     peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
     if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
         ANNOPEAK = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
