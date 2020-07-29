@@ -48,6 +48,8 @@ if (length(levels(sampleData$type)) > 1){
     }
 }
 
+message(paste('FITTING DESIGN: ',design, sep=""))
+
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
                               colData = sampleData,
@@ -121,6 +123,7 @@ for(contrast in comparison[[1]]){
     }, error=function(e){
         rm(res,resOrdered)
         file.create(paste(contrast_name,'_DESeq2.csv.gz',sep=""))
+        file.create(paste(contrast_name,"DESeq2_MA.pdf",sep="_"))
         print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     } )
@@ -178,6 +181,5 @@ heatmap.2(mat, Rowv=as.dendrogram(hc),
 dev.off()
 
 ##############################
-rm(rld, vsd)
 
 save.image(file = "DESeq2_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
