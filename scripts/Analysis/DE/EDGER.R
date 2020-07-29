@@ -65,26 +65,32 @@ dge <- dge[keep, , keep.lib.sizes=FALSE]
 ## normalize with TMM
 dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
 
+##name types and levels for design
+bl <- sapply("batch",paste0,levels(batches)[-1])
+tl <- sapply("type",paste0,levels(types)[-1])
+
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
     if (length(levels(batches)) > 1){
         design <- model.matrix(~0+groups+types+batches, data=sampleData)
-        colnames(design) <- c(levels(groups),"types","batches")
+        colnames(design) <- c(levels(groups),tl,bl)
     } else{
         design <- model.matrix(~0+groups+types, data=sampleData)
-        colnames(design) <- c(levels(groups),"types")
+        colnames(design) <- c(levels(groups),tl)
     }
 } else{
     if (length(levels(batches)) > 1){
+        print('DO')
         design <- model.matrix(~0+groups+batches, data=sampleData)
-        colnames(design) <- c(levels(groups),"batches")
+        print(design)
+        print(colnames(design))
+        colnames(design) <- c(levels(groups),bl)
+        print(design)
     } else{
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
     }
 }
-
-print(paste('FITTING DESIGN: ',design,sep=""))
 
 ## create file normalized table
 tmm <- as.data.frame(cpm(dge))
