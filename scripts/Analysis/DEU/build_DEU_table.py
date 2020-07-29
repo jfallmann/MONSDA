@@ -19,6 +19,7 @@ def parseargs():
     parser.add_argument("-c", "--conditions", required=True, type=str, help="Conditions to compare" )
     parser.add_argument("-t", "--types", required=False, type=str, help="Sequencing types to compare" )
     parser.add_argument("-r", "--replicates", required=True, type=str, help="Replicates belonging to conditions" )
+    parser.add_argument("-b", "--batches", required=False, type=str, help="Sample batches to compare" )
     parser.add_argument("--cutoff", dest='cutoff', type=int, default=0 ,help="cutoff for minimum count" )
     parser.add_argument("-p", "--paired", required=False, type=str, default=None, help="Sequencing strategy for sample name processing" )
     parser.add_argument("--table", dest='table', required=True, type=str, default='counts.table' ,help="Name of table to write to" )
@@ -42,8 +43,9 @@ class Sample_list(object):
         self.replicate_names = list()
         self.replicate_paths = list()
         self.replicate_types = list()
+        self.replicate_batches = list()
 
-def prepare_table(conditions, replicates, types, paired, table, anno, sample_name=None, order=None, cutoff=None):
+def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None, cutoff=None):
     try:
         #slist,
         logid = scriptname+'.prepare_table: '
@@ -63,6 +65,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         replist = str(replicates).strip().split(',')
         condlist = str(conditions).strip().split(',')
         typelist = str(types).strip().split(',') if types is not None else None
+        batchlist = str(batches).strip().split(',') if batches is not None else None
         pairedlist = str(paired).strip().split(',') if paired is not None else None
 
         log.debug(logid+'REPS: '+str(replist)+'\tLEN: '+str(len(replist)))
@@ -71,6 +74,9 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
         if types is not None:
             log.debug(logid+'TYPES: '+str(typelist)+'\tLEN: '+str(len(typelist)))
 
+        if batches is not None:
+            log.debug(logid+'BATCHES: '+str(batchlist)+'\tLEN: '+str(len(batchlist)))
+
         if paired is not None:
             log.debug(logid+'PAIRED: '+str(pairedlist)+'\tLEN: '+str(len(pairedlist)))
 
@@ -78,10 +84,12 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
             rep = None
             cond = None
             typ = None
+            bat = None
 
             rep = str(replist[i])
             cond = str(condlist[i])
             typ = str(typelist[i]) if types is not None else None
+            bat = str(batchlist[i]) if batches is not None else None
 
             if not rep or not cond:
                 log.warning(logid+'No rep/cond found for sample '+str(replist[i]))
@@ -95,12 +103,16 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
+                if bat is not None:
+                    my_groups[cond].replicate_batches.append(bat)
             else:
                 my_groups[cond]=make_sample_list(cond)
                 my_groups[cond].replicate_paths.append(rep)
                 my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
+                if bat is not None:
+                    my_groups[cond].replicate_batches.append(bat)
 
         log.debug(logid+'MyGroups: '+str(my_groups.keys()))
 
@@ -117,6 +129,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
 
         log.debug(logid+'CONDS: '+str(conds))
         typeanno = list()
+        batchanno = list()
         for gruppies in conds:
             condition_index=-1
             rep_nr=0
@@ -129,9 +142,11 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
                 if (sample_name):
                     myMatrix[0].append(my_groups[gruppies].replicate_names[condition_index])
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
+                    batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
                 else:
                     myMatrix[0].append(str(my_groups[gruppies].group_name)+'_'+str(rep_nr))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
+                    batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
                 if '.gz' in replicates:
                     myInput = gzip.open(replicates,'r')
                 else:
@@ -159,6 +174,7 @@ def prepare_table(conditions, replicates, types, paired, table, anno, sample_nam
             #a = ''.join([i for i in c if not i.isdigit()])
             a = str.join('_',str(c).split('_')[:-1])
             a += '\t'+str(typeanno[i-1]) if types is not None else None
+            a += '\t'+str(batchanno[i-1]) if batches is not None else None
             annos.append(str(c)+'\t'+str(a))
 
         with gzip.open(table, 'wb') as t:
@@ -206,7 +222,7 @@ if __name__ == '__main__':
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
-        prepare_table(args.conditions, args.replicates, args.types, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
+        prepare_table(args.conditions, args.replicates, args.types, args.batches, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
