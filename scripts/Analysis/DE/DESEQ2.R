@@ -19,10 +19,10 @@ availablecores <- as.integer(args[5])
 ### MAIN ###
 ############
 
-anno <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(anno) <- c("condition","type","batch")
-anno <- as.data.frame(anno)
-#head(anno)
+sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
+colnames(sampleData) <- c("condition","type","batch")
+sampleData <- as.data.frame(sampleData)
+#head(sampleData)
 comparison<-strsplit(cmp, ",")
 countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 #head(countData)
@@ -30,18 +30,18 @@ countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
 setwd(outdir)
 
 #Check if names are consistent
-if (!all(rownames(anno) %in% colnames(countData))){
+if (!all(rownames(sampleData) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
 }
 
-if (length(levels(sampleData$type)) > 1){
-    if (length(levels(sampleData$batch)) > 1){
+if (length(levels(a$type)) > 1){
+    if (length(levels(a$batch)) > 1){
         design = ~0 + type + batch + condition
     } else{
         design = ~0 + type + condition
     }
 } else{
-    if (length(levels(sampleData$batch)) > 1){
+    if (length(levels(a$batch)) > 1){
         design = ~0 + batch + condition
     } else{
         design = ~0 + condition
@@ -50,7 +50,7 @@ if (length(levels(sampleData$type)) > 1){
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
-                              colData = anno,
+                              colData = a,
                               design= design)
 
 #filter low counts
@@ -89,8 +89,8 @@ for(contrast in comparison[[1]]){
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
 
-        tempa <- droplevels(anno[anno$condition %in% A,])
-        tempb <- droplevels(anno[anno$condition %in% B,])
+        tempa <- droplevels(sampleData[sampleData$condition %in% A,])
+        tempb <- droplevels(sampleData[sampleData$condition %in% B,])
 
         plus <- 1/length(A)
         minus <- 1/length(B)*-1
