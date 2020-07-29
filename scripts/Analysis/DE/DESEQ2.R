@@ -34,14 +34,14 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
 }
 
-if (length(levels(a$type)) > 1){
-    if (length(levels(a$batch)) > 1){
+if (length(levels(sampleData$type)) > 1){
+    if (length(levels(sampleData$batch)) > 1){
         design = ~0 + type + batch + condition
     } else{
         design = ~0 + type + condition
     }
 } else{
-    if (length(levels(a$batch)) > 1){
+    if (length(levels(sampleData$batch)) > 1){
         design = ~0 + batch + condition
     } else{
         design = ~0 + condition
