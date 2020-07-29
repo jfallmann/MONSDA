@@ -52,7 +52,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 
 {
     ##  Take a fcount file and convert it to dcounts for dexseq
-    message("Reading and adding Exon IDs for DEXSeq")
+    print("Reading and adding Exon IDs for DEXSeq")
 
     read.table(countfile,skip = 2) %>% dplyr::arrange(V1,V3,V4) -> dcounts
     colnames(dcounts) <- c("GeneID", rownames(sampleData) )
@@ -132,7 +132,7 @@ for(contrast in comparisons[[1]]){
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    message(paste("Comparing ",contrast_name, sep=""))
+    print(paste("Comparing ",contrast_name, sep=""))
 
     BPPARAM = MulticoreParam(workers=availablecores)
 

@@ -31,7 +31,7 @@ RainbowColor <- function(groups){
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
-message(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
+print(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
@@ -45,17 +45,22 @@ types <- factor(sampleData$type)
 comparisons <- strsplit(cmp, ",")
 
 ## readin counttable
-read.table(countfile,header = TRUE,row.names=1) -> dcounts
+countData <- read.table(countfile,header = TRUE,row.names=1)
+
+#Check if names are consistent
+if (!all(rownames(sampleData) %in% colnames(countData))){
+    stop("Count file does not correspond to the annotation file")
+}
 
 ## get genes names out
-genes <- rownames(dcounts)
+genes <- rownames(countData)
 
 ## get genes and exon names out
-splitted <- strsplit(rownames(dcounts), ":")
+splitted <- strsplit(rownames(countData), ":")
 exons <- sapply(splitted, "[[", 2)
 genesrle <- sapply(splitted, "[[", 1)
 
-dge <- DGEList(counts=dcounts, group=groups, samples=samples, genes=genesrle)
+dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genesrle)
 
 ## Addd exons to dge
 dge$genes$exons <- exons
@@ -87,20 +92,19 @@ colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
 dev.off()
 
-
 ## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(sampleData$type)) > 1){
-    if (length(levels(sampleData$batch)) > 1){
-        design <- model.matrix(~0+groups+types+batch, data=sampleData)
-        colnames(design) <- c(levels(groups),"type","batch")
+if (length(levels(types)) > 1){
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+types+batches, data=sampleData)
+        colnames(design) <- c(levels(groups),"types","batches")
     } else{
         design <- model.matrix(~0+groups+types, data=sampleData)
-        colnames(design) <- c(levels(groups),"type")
+        colnames(design) <- c(levels(groups),"types")
     }
 } else{
-    if (length(levels(sampleData$batch)) > 1){
-        design <- model.matrix(~0+groups+batch, data=sampleData)
-        colnames(design) <- c(levels(groups),"batch")
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+batches, data=sampleData)
+        colnames(design) <- c(levels(groups),"batches")
     } else{
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
@@ -131,7 +135,7 @@ for(contrast in comparisons[[1]]){
   contrast_name <- strsplit(contrast,":")[[1]][1]
   contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-  message(paste("Comparing ",contrast_name, sep=""))
+  print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
                                         # determine contrast
         A <- strsplit(contrast_groups[[1]][1], "\\+")

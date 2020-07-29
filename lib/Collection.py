@@ -87,23 +87,22 @@ import logging
 from snakemake import load_configfile
 
 try:
-    #scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    #log = logging.getLogger(__name__.replace('.py',''))
-    if not (log.hasHandlers()):
-        if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
-            logdir =  os.path.abspath('LOGS')
-            if not os.path.exists(logdir):
-                os.makedirs(logdir)
-            open(os.path.abspath('LOGS/'+scriptname+'.log'),'a').close()
-
-        handler = logging.FileHandler(os.path.abspath('LOGS/'+scriptname+'.log'), mode='a')
-        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
-        log.addHandler(handler)
-        handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
-        log.addHandler(handler)
-        lvl = log.level if log.level else 'INFO'
-        log.setLevel(lvl)
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
+    if any(x in scriptname for x in ['RunSnakemake','Configurator']):
+        log = logging.getLogger(scriptname)
+    else:
+        log = logging.getLogger('snakemake')
+        for handler in log.handlers[:]:
+            handler.close()
+            log.removeHandler(handler)
+    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    log.addHandler(handler)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    log.addHandler(handler)
+    lvl = log.level if log.level else 'DEBUG'
+    log.setLevel(lvl)
 
 except Exception as err:
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -454,14 +453,14 @@ def get_reps(samples,config,analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[3:-1]
+        scond = sample.split(os.sep)[2:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
         partconf = subDict(config[analysis],scond)
         log.debug(logid+'CONF: '+str(partconf))
         ret['reps'].append(sample)
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[3:])],config))
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep,sample.split(os.sep)[2:])],config))
         ret['conds'].append(partconf['GROUPS'][idx])
         ret['batches'].append(partconf['BATCHES'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
@@ -484,10 +483,10 @@ def get_diego_samples(samples,config,analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
-        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
+        partconf = subDict(config[analysis],sample.split(os.sep)[1:-1])
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-',sample.split(os.sep)[-3:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-',sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
         ret[wcfile].append(sample)
 
     log.debug(logid+'RETURN: '+str(ret))
@@ -507,10 +506,10 @@ def get_diego_groups(samples,config,analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[2:-1]))
-        partconf = subDict(config[analysis],sample.split(os.sep)[2:-1])
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
+        partconf = subDict(config[analysis],sample.split(os.sep)[1:-1])
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-',sample.split(os.sep)[-3:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-',sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
         checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         #wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(checkfile)

@@ -48,7 +48,7 @@ if (length(levels(sampleData$type)) > 1){
     }
 }
 
-message(paste('FITTING DESIGN: ',design, sep=""))
+print(('FITTING DESIGN: ',design, sep=""))
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
@@ -83,7 +83,7 @@ for(contrast in comparison[[1]]){
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    message(paste("Comparing ",contrast_name, sep=""))
+    print(paste("Comparing ",contrast_name, sep=""))
 
     tryCatch({
 
