@@ -80,12 +80,8 @@ if (length(levels(types)) > 1){
     }
 } else{
     if (length(levels(batches)) > 1){
-        print('DO')
         design <- model.matrix(~0+groups+batches, data=sampleData)
-        print(design)
-        print(colnames(design))
         colnames(design) <- c(levels(groups),bl)
-        print(design)
     } else{
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
