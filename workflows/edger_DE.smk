@@ -8,7 +8,7 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 rule themall:
     input:  all = expand("{outdir}EDGER_DE_All_Conditions_MDS.png", outdir=outdir),
             allsum = expand("{outdir}EDGER_DE_All_Conditions_sum_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}EDGER_DE_All_Conditions_normalized_table.tsv.gz", outdir=outdir),
+            tbl = expand("{outdir}EDGER_DE_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DE_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DE_All_Conditions_QLDisp.png", outdir=outdir),
             dift = expand("{outdir}EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
@@ -42,7 +42,7 @@ rule prepare_count_table:
              tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DE")['OPTIONS'][1].items())
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
 
-rule run_edger:
+rule run_edgerDE:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
     output: all = rules.themall.input.all,
@@ -62,9 +62,9 @@ rule run_edger:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
 
 rule filter_significant_edgerDE:
-    input:  dift = rules.run_edger.output.dift
+    input:  dift = rules.run_edgerDE.output.dift
     output: sigdift  = rules.themall.input.sigdift
     log:    expand("LOGS/{outdir}filter_edgerDE.log",outdir=outdir)
-    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
+    conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    shell: "cd {outdir} && for i in EDGER_*.tsv.gz;do if [ -s \"$i\" ];then for i in EDGER_DE*pValue-sorted.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > $i\_Sig.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > $i\_SigUP.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > $i\_SigDOWN.tsv.gz;done;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"
+    shell: "cd {outdir} && for i in EDGER_*.tsv.gz;do if [ -s \"$i\" ];then for i in EDGER_DE*pValue-sorted.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > $i\_Sig.tsv.gz && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > $i\_SigUP.tsv.gz && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > $i\_SigDOWN.tsv.gz;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"

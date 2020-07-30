@@ -48,7 +48,7 @@ rule run_deseq2:
     output: plt = rules.themall.input.plot,
             rld = rules.themall.input.rld,
             vsd = rules.themall.input.vsd,
-            tbl = rules.themall.input.tsv,
+            tbl = rules.themall.input.tbl,
             heat = rules.themall.input.heat,
             pca = rules.themall.input.pca,
             vst = rules.themall.input.vst,
@@ -65,6 +65,6 @@ rule filter_significant_deseq2:
     input:  tbl = rules.run_deseq2.output.tbl
     output: sigtbl  = rules.themall.input.sigtbl
     log:    expand("LOGS/{outdir}filter_deseq2.log",outdir=outdir)
-    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
+    conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    shell: "cd {outdir} && for i in DESeq2_*.tsv.gz;do if [ -s \"$i\" ];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){print}' |gzip > Sig_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){print}' |gzip > SigUP_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){print}' |gzip > SigDOWN_$i; else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"
+    shell: "cd {outdir} && for i in DESeq2_*.tsv.gz;do if [ -s \"$i\" ];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > Sig_$i && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > SigUP_$i && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > SigDOWN_$i; else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"

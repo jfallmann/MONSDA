@@ -68,9 +68,9 @@ rule run_dexseq:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {input.flat} {params.outdir} {params.compare} {threads} 2> {log}"
 
 rule filter_significant_dexseq:
-    input:  tbl = rules.run_dexseq.output.table
+    input:  tbl = rules.run_dexseq.output.tbl
     output: sigtbl  = rules.themall.input.sigtbl
     log:    expand("LOGS/{outdir}filter_dexseq.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    shell: "cd {outdir} && for i in DEXSeq_*.tsv.gz;do if [ -s \"$i\" ];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] <= -1.5 ||$F[10] >= 1.5) ){print}' |gzip > Sig_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] >= 1.5) ){print}' |gzip > SigUP_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] <= -1.5) ){print}' |gzip > SigDOWN_$i;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"
+    shell: "cd {outdir} && for i in DEXSeq_*.tsv.gz;do if [ -s \"$i\" ];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] <= -1.5 ||$F[10] >= 1.5) ){{print}}' |gzip > Sig_$i && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] >= 1.5) ){{print}}' |gzip > SigUP_$i && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[7] || !$F[10]);if ($F[7] < 0.05 && ($F[10] <= -1.5) ){{print}}' |gzip > SigDOWN_$i;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"

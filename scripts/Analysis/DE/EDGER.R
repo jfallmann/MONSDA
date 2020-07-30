@@ -88,6 +88,8 @@ if (length(levels(types)) > 1){
     }
 }
 
+print(paste('FITTING DESIGN: ',design, sep=""))
+
 ## create file normalized table
 tmm <- as.data.frame(cpm(dge))
 colnames(tmm) <- t(dge$samples$samples)
@@ -96,7 +98,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile="EDGER_DE_All_Conditions_normalized_table.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile="EDGER_DE_All_Conditions_normalized.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DE_All_Conditions_MDS.png"

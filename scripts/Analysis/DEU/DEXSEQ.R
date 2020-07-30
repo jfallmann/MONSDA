@@ -50,6 +50,8 @@ if (length(levels(sampleData$type)) > 1){
     }
 }
 
+print(paste('FITTING DESIGN: ',full, reduced, sep=""))
+
 ## Read Fcount output and convert to dxd
 DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
                                             design = design, flattenedfile = NULL)
@@ -108,7 +110,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
         names(transcripts) <- names(exoninfo)
         if (!all(rownames(dcounts) %in% names(exoninfo))) {
             print(head(rownames(dcounts)))
-            print(head(names(exoninfo)))            
+            print(head(names(exoninfo)))
             stop("Count files do not correspond to the flattened annotation file")
         }
         matching <- match(rownames(dcounts), names(exoninfo))
@@ -170,10 +172,10 @@ for(contrast in comparisons[[1]]){
 
         rm(dxdpair)
 
-        csvout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.tsv.gz', sep='')
+        csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE)
 
-        htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
+        htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
@@ -184,10 +186,10 @@ for(contrast in comparisons[[1]]){
     }, error=function(e){
         print(warnings)
         file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
-        csvout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.tsv.gz', sep='')
+        csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
         file.create(csvout)
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
-        htmlout <- paste(paste('DEXSeq',contrast_name,sep='_'),'.html', sep='')
+        htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
         file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
         rm(dxdpair,dxr1)
         cat("WARNING :",conditionMessage(e), "\n")

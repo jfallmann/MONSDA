@@ -49,7 +49,7 @@ if (length(levels(sampleData$type)) > 1){
     }
 }
 
-print(('FITTING DESIGN: ',design, sep=""))
+print(paste('FITTING DESIGN: ',design, sep=""))
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData,
@@ -109,11 +109,11 @@ for(contrast in comparison[[1]]){
                                         #sort and output
         resOrdered <- res[order(res$log2FoldChange),]
 
-                                        #write the table to a csv file
-        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste(contrast_name,'_DESeq2.csv.gz',sep="")), sep="\t", row.names=FALSE)
+                                        #write the table to a tsv file
+        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DESeq2_",contrast_name,'.tsv.gz',sep="")), sep="\t", row.names=FALSE)
 
                                         #plotMA
-        pdf(paste(contrast_name,"DESeq2_MA.pdf",sep="_"))
+        pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
@@ -123,8 +123,8 @@ for(contrast in comparison[[1]]){
         print(paste('cleanup done for ', contrast_name, sep=''))
     }, error=function(e){
         rm(res,resOrdered)
-        file.create(paste(contrast_name,'_DESeq2.csv.gz',sep=""))
-        file.create(paste(contrast_name,"DESeq2_MA.pdf",sep="_"))
+        file.create(paste("DESeq2_",contrast_name,'.tsv.gz',sep=""))
+        file.create(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
         print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     } )

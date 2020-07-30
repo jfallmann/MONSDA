@@ -80,7 +80,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile="EDGER_DAS_All_Conditions_normalized_table.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile="EDGER_DAS_All_Conditions_normalized.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DAS_All_Conditions_MDS.png"
@@ -117,6 +117,8 @@ if (length(levels(types)) > 1){
         colnames(design) <- levels(groups)
     }
 }
+
+print(paste('FITTING DESIGN: ',design, sep=""))
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)

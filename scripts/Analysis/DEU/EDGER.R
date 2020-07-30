@@ -79,7 +79,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile="EDGER_DEU_All_Conditions_normalized_table.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile="EDGER_DEU_All_Conditions_normalized.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DEU_All_Conditions_MDS.png"
@@ -117,6 +117,8 @@ if (length(levels(types)) > 1){
     }
 }
 
+print(paste('FITTING DESIGN: ',design, sep=""))
+
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
 
@@ -130,7 +132,7 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- "EDGER_DE_All_Conditions_QLDisp.png"
+out <- "EDGER_DEU_All_Conditions_QLDisp.png"
 png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
@@ -177,9 +179,9 @@ for(contrast in comparisons[[1]]){
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)
-        file.create(paste("EDGER_DE_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DE_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DE_",contrast_name,"_MD.png",sep=""))
+        file.create(paste("EDGER_DEU_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep=""))
+        file.create(paste("EDGER_DEU_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep=""))
+        file.create(paste("EDGER_DEU_",contrast_name,"_MD.png",sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
