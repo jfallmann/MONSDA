@@ -80,7 +80,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile="EDGER_DAS_All_Conditions_normalized.tsv.gz", sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile("EDGER_DAS_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DAS_All_Conditions_MDS.png"
@@ -117,8 +117,6 @@ if (length(levels(types)) > 1){
         colnames(design) <- levels(groups)
     }
 }
-
-print(paste('FITTING DESIGN: ',design, sep=""))
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
@@ -163,13 +161,13 @@ for(contrast in comparisons[[1]]){
                                         # create files topSpliced by gene, simes and exon method
         sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
         tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
-        write.table(as.data.frame(tops),gzfile=paste("EDGER_DAS_",contrast_name,"_diffSplice_geneTest.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops),gzfile(paste("EDGER_DAS_",contrast_name,"_diffSplice_geneTest.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
-        write.table(as.data.frame(tops),gzfile=paste("EDGER_DAS_",contrast_name,"_diffSplice_simesTest.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops),gzfile(paste("EDGER_DAS_",contrast_name,"_diffSplice_simesTest.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
-        write.table(as.data.frame(tops),gzfile=paste("EDGER_DAS_",contrast_name,"_diffSplice_exonTest.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops),gzfile(paste("EDGER_DAS_",contrast_name,"_diffSplice_exonTest.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
 
                                         # create files diffSplicePlots
         tops <- topSpliceDGE(sp, test="simes", n=10)

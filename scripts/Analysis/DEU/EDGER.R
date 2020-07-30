@@ -79,7 +79,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile="EDGER_DEU_All_Conditions_normalized.tsv.gz", sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DEU_All_Conditions_MDS.png"
@@ -116,8 +116,6 @@ if (length(levels(types)) > 1){
         colnames(design) <- levels(groups)
     }
 }
-
-print(paste('FITTING DESIGN: ',design, sep=""))
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
@@ -166,10 +164,10 @@ for(contrast in comparisons[[1]]){
 
                                         # create sorted tables
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-        write.table(as.data.frame(tops), gzfile=paste("EDGER_DEU_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops), gzfile(paste("EDGER_DEU_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-        write.table(as.data.frame(tops), gzfile=paste("EDGER_DEU_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops), gzfile(paste("EDGER_DEU_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
 
                                         # create file MD-plot
         out <- paste("EDGER_DEU_",contrast_name,"_MD.png",sep="")
