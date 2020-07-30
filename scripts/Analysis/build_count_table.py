@@ -185,11 +185,10 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
             a += '\t'+str(batchanno[i-1]) if batches is not None else None
             annos.append(str(c)+'\t'+str(a))
 
-        with gzip.open(table, 'wb') as t:
-            t.write(bytes(str(line)+'\n',encoding='UTF8'))
         with gzip.open(anno, 'wb') as a:
             a.write(bytes('\n'.join(annos)+'\n',encoding='UTF-8'))
 
+        toprint = str(line)+'\n'
         for z in range(1,len(myMatrix)):
             zeilen = myMatrix[z]
             willprint = False
@@ -199,8 +198,10 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                 if (int(zeilen[x]) >= cutoff):
                     willprint = True
             if willprint:
-                with gzip.open(table, 'ab') as t:
-                    t.write(bytes(str(line)+'\n',encoding='UTF8'))
+                toprint = toprint + str(line)+'\n'
+
+        with gzip.open(table, 'wb') as t:
+            t.write(bytes(str(toprint),encoding='UTF8'))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
