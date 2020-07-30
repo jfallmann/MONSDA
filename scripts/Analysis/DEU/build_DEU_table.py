@@ -162,6 +162,7 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                         if sample_counter==1:
                             newListi=[]
                             myMatrix.append(newListi)
+                            myMatrix[lineNumber].append(str(columns[0]))
                         if len(columns) > 1 and columns[-1] != columns[0]:
                             myMatrix[lineNumber].append(round(float(columns[-1])))
                         else:

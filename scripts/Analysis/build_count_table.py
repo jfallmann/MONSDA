@@ -158,7 +158,7 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                     if '#' in line[0:5] or '.bam' in line[-10:]:
                         continue
                     columns = line.strip().split('\t')
-                    if columns[0] != "name" and columns[0] != "Geneid" and columns[1]!="count":
+                    if columns[0] != "name" and columns[0] != "Geneid" and columns[1] != "count":
                         lineNumber+=1
                         if sample_counter==1:
                             newListi=[]
