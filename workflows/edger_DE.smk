@@ -6,13 +6,14 @@ comparison = comparable_as_string2(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
-            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
-            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}{comparison}_genes_{sort}.tsv", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            plot = expand("{outdir}{comparison}_MD.png", outdir=outdir, comparison=compstr),
+    input:  all = expand("{outdir}EDGER_DE_All_Conditions_MDS.png", outdir=outdir),
+            allsum = expand("{outdir}EDGER_DE_All_Conditions_sum_MDS.png", outdir=outdir),
+            tbl = expand("{outdir}EDGER_DE_All_Conditions_normalized_table.tsv.gz", outdir=outdir),
+            bcv = expand("{outdir}EDGER_DE_All_Conditions_BCV.png", outdir=outdir),
+            qld = expand("{outdir}EDGER_DE_All_Conditions_QLDisp.png", outdir=outdir),
+            dift = expand("{outdir}EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
+            sigdift = expand("{outdir}Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
+            plot = expand("{outdir}EDGER_DE_{comparison}_MD.png", outdir=outdir, comparison=compstr),
             session = expand("{outdir}EDGER_DE_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
@@ -44,14 +45,14 @@ rule prepare_count_table:
 rule run_edger:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.themall.input.all,
-            rules.themall.input.allsum,
-            rules.themall.input.tbl,
-            rules.themall.input.bcv,
-            rules.themall.input.qld,
-            rules.themall.input.dift,
-            rules.themall.input.plot,
-            rules.themall.input.session
+    output: all = rules.themall.input.all,
+            sum = rules.themall.input.allsum,
+            tbl = rules.themall.input.tbl,
+            bcv = rules.themall.input.bcv,
+            qld = rules.themall.input.qld,
+            dift = rules.themall.input.dift,
+            plot = rules.themall.input.plot,
+            session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -59,3 +60,11 @@ rule run_edger:
             outdir = outdir,
             compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
+
+rule filter_significant_edgerDE:
+    input:  dift = rules.run_edger.output.dift
+    output: sigdift  = rules.themall.input.sigdift
+    log:    expand("LOGS/{outdir}filter_edgerDE.log",outdir=outdir)
+    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
+    threads: 1
+    shell: "cd {outdir} && for i in EDGER_*.tsv.gz;do if [ -s \"$i\" ];then for i in EDGER_DE*pValue-sorted.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > $i\_Sig.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > $i\_SigUP.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > $i\_SigDOWN.tsv.gz;done;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"

@@ -6,8 +6,9 @@ comparison = comparable_as_string2(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  plot = expand("{outdir}{comparison}_DESeq2_MA.pdf", outdir=outdir, comparison=compstr),
-            csv  = expand("{outdir}{comparison}_DESeq2.csv.gz", outdir=outdir, comparison=compstr),
+    input:  plot = expand("{outdir}DESeq2_{comparison}_MA.pdf", outdir=outdir, comparison=compstr),
+            tbl  = expand("{outdir}DESeq2_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
+            sigtbl  = expand("{outdir}Sig_DESeq2_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
             pca  = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
             vst  = expand("{outdir}DESeq2_VST_and_log2.pdf", outdir=outdir),
@@ -44,14 +45,14 @@ rule prepare_count_table:
 rule run_deseq2:
     input:  cnt  = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.themall.input.plot,
-            rules.themall.input.rld,
-            rules.themall.input.vsd,
-            rules.themall.input.csv,
-            rules.themall.input.heat,
-            rules.themall.input.pca,
-            rules.themall.input.vst,
-            rules.themall.input.session
+    output: plt = rules.themall.input.plot,
+            rld = rules.themall.input.rld,
+            vsd = rules.themall.input.vsd,
+            tbl = rules.themall.input.tsv,
+            heat = rules.themall.input.heat,
+            pca = rules.themall.input.pca,
+            vst = rules.themall.input.vst,
+            session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_deseq2.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -59,3 +60,11 @@ rule run_deseq2:
             outdir = outdir,
             compare = comparison
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {threads} 2> {log}"
+
+rule filter_significant_deseq2:
+    input:  tbl = rules.run_deseq2.output.tbl
+    output: sigtbl  = rules.themall.input.sigtbl
+    log:    expand("LOGS/{outdir}filter_deseq2.log",outdir=outdir)
+    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
+    threads: 1
+    shell: "cd {outdir} && for i in DESeq2_*.tsv.gz;do if [ -s \"$i\" ];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){print}' |gzip > Sig_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){print}' |gzip > SigUP_$i;done && for i in DEXSeq_*.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){print}' |gzip > SigDOWN_$i; else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"

@@ -93,16 +93,19 @@ tmm <- as.data.frame(cpm(dge))
 colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-write.table(tmm, file=paste(outdir,"All_Conditions_normalized_table.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+
+setwd(outdir)
+
+write.table(as.data.frame(tmm), gzfile="EDGER_DE_All_Conditions_normalized_table.tsv.gz, sep="\t", quote=F, row.names=FALSE,col.names=NA)
 
 ## create file MDS-plot with and without sumarized replicates
-out <- paste(outdir,"All_Conditions_MDS.png",sep="")
+out <- "EDGER_DE_All_Conditions_MDS.png"
 png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
 DGEsum <- sumTechReps(dge, ID=groups)
-out <- paste(outdir,"All_Conditions_sum_MDS.png", sep="")
+out <- "EDGER_DE_All_Conditions_sum_MDS.png"
 png(out, width = 400, height = 400)
 colors <- RainbowColor(DGEsum$samples$group)
 plotMDS(DGEsum, col=colors)
@@ -112,7 +115,7 @@ dev.off()
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- paste(outdir,"All_Conditions_BCV.png",sep="")
+out <- "EDGER_DE_All_Conditions_BCV.png"
 png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
@@ -121,12 +124,10 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- paste(outdir,"All_Conditions_QLDisp.png",sep="")
+out <- "EDGER_DE_All_Conditions_QLDisp.png"
 png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
-
-print('EDGERISHERE')
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
@@ -156,12 +157,12 @@ for(contrast in comparisons[[1]]){
 
                                         # create sorted tables
         tops <- topTags(lrt, n=nrow(lrt$table), sort.by="logFC")
-        write.table(tops, file=paste(outdir,contrast_name,"_genes_logFC-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops), gzfile=paste("EDGER_DE_",contrast_name,"_genes_logFC-sorted.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
         tops <- topTags(lrt, n=nrow(lrt$table), sort.by="PValue")
-        write.table(tops, file=paste(outdir,contrast_name,"_genes_pValue-sorted.tsv",sep=""), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(tops), gzfile=paste("EDGER_DE_",contrast_name,"_genes_pValue-sorted.tsv.gz",sep=""), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
-        out <- paste(outdir,contrast_name,"_MD.png",sep="")
+        out <- paste("EDGER_DE_",contrast_name,"_MD.png",sep="")
         png(out, width = 400, height = 400)
         plotMD(lrt, main=contrast_name)
         abline(h=c(-1, 1), col="blue")
@@ -171,11 +172,11 @@ for(contrast in comparisons[[1]]){
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)
-        file.create(paste(outdir,contrast_name,"_genes_logFC-sorted.tsv",sep=""))
-        file.create(paste(outdir,contrast_name,"_genes_pValue-sorted.tsv",sep=""))
-        file.create(paste(outdir,contrast_name,"_MD.png",sep=""))
+        file.create(paste("EDGER_DE_",contrast_name,"_genes_logFC-sorted.tsv.gz",sep=""))
+        file.create(paste("EDGER_DE_",contrast_name,"_genes_pValue-sorted.tsv.gz",sep=""))
+        file.create(paste("EDGER_DE_",contrast_name,"_MD.png",sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }
 
-save.image(file = paste(outdir,"EDGER_DE_SESSION.gz",sep=""), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = "EDGER_DE_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

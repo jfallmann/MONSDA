@@ -6,13 +6,14 @@ comparison = comparable_as_string2(config,'DAS')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}All_Conditions_sum_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}All_Conditions_normalized_table.tsv", outdir=outdir),
-            bcv = expand("{outdir}All_Conditions_BCV.png", outdir=outdir),
-            qld = expand("{outdir}All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}{comparison}_diffSplice_{test}.tsv", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
+    input:  all = expand("{outdir}EDGER_DAS_All_Conditions_MDS.png", outdir=outdir),
+            allsum = expand("{outdir}EDGER_DAS_All_Conditions_sum_MDS.png", outdir=outdir),
+            tbl = expand("{outdir}EDGER_DAS_All_Conditions_normalized_table.tsv.gz", outdir=outdir),
+            bcv = expand("{outdir}EDGER_DAS_All_Conditions_BCV.png", outdir=outdir),
+            qld = expand("{outdir}EDGER_DAS_All_Conditions_QLDisp.png", outdir=outdir),
+            dift = expand("{outdir}EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
+            sigdift = expand("{outdir}Sig_EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
+            tops = expand("{outdir}EDGER_DAS_{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
@@ -59,3 +60,11 @@ rule run_edger:
             outdir = outdir,
             compare = comparison
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
+
+rule filter_significant_edgerDAS:
+    input:  dift = rules.run_edger.output.dift
+    output: sigdift  = rules.themall.input.sigdift
+    log:    expand("LOGS/{outdir}filter_edgerDAS.log",outdir=outdir)
+    conda:  "nextsnakes/envs/"+DEUENV+".yaml"
+    threads: 1
+    shell: "cd {outdir} && for i in EDGER_*.tsv.gz;do if [ -s \"$i\" ];then for i in EDGER_DE*pValue-sorted.tsv.gz;do zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > $i\_Sig.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > $i\_SigUP.tsv.gz;done && for i in *pValue-sorted.tsv;do cat $i| tail -n+2 |grep -v -w 'NA'|perl -F$'\t' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > $i\_SigDOWN.tsv.gz;done;else touch Sig_$i SigUP_$i SigDOWN_$i; fi;done"
