@@ -79,7 +79,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
 
-write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE,col.names=NA)
+write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- "EDGER_DEU_All_Conditions_MDS.png"

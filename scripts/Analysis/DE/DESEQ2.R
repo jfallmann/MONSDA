@@ -110,7 +110,7 @@ for(contrast in comparison[[1]]){
         resOrdered <- res[order(res$log2FoldChange),]
 
                                         #write the table to a tsv file
-        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DESeq2_",contrast_name,'.tsv.gz',sep="")), sep="\t", row.names=FALSE)
+        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DESeq2_",contrast_name,'.tsv.gz',sep="")), sep="\t", row.names=FALSE, quote=F)
 
                                         #plotMA
         pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))

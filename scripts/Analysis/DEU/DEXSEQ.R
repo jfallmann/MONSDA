@@ -173,7 +173,7 @@ for(contrast in comparisons[[1]]){
         rm(dxdpair)
 
         csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
-        write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE)
+        write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE, quote=F)
 
         htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
