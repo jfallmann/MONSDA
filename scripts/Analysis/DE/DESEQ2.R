@@ -34,6 +34,7 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
 }
 
+## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(sampleData$type)) > 1){
     if (length(levels(sampleData$batch)) > 1){
         design = ~0 + type + batch + condition

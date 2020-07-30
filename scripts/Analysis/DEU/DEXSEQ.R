@@ -8,6 +8,9 @@ suppressPackageStartupMessages({
     require(DEXSeq)
 })
 
+#define notin
+`%notin%` = Negate(`%in%`)
+
 args <- commandArgs(trailingOnly = TRUE)
 
 anname    <- args[1]
@@ -28,6 +31,7 @@ sampleData <- as.data.frame(sampleData)
 comparisons <- strsplit(cmp, ",")
 print(paste("Will analyze conditions ",comparisons,sep=""))
 
+## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(sampleData$type)) > 1){
     if (length(levels(sampleData$batch)) > 1){
         full = ~ sample + exon + type:exon + batch:exon + condition:exon
@@ -103,6 +107,8 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData,
 
         names(transcripts) <- names(exoninfo)
         if (!all(rownames(dcounts) %in% names(exoninfo))) {
+            print(head(rownames(dcounts)))
+            print(head(names(exoninfo)))            
             stop("Count files do not correspond to the flattened annotation file")
         }
         matching <- match(rownames(dcounts), names(exoninfo))
