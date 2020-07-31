@@ -1,5 +1,5 @@
 DASBIN, DASENV = env_bin_from_config3(config,'DAS')
-COUNTBIN, COUNTENV = ['featureCounts','countreads']#env_bin_from_config2(SAMPLES,config,'COUNTING')
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DAS/DIEGO/"
 comparison = comparable_as_string2(config,'DAS')
