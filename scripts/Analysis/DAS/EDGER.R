@@ -40,6 +40,7 @@ sampleData <- as.data.frame(sampleData)
 groups <- factor(sampleData$condition)
 samples <- rownames(sampleData)
 types <- factor(sampleData$type)
+batches <- factor(sampleData$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
