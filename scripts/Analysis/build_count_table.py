@@ -231,7 +231,7 @@ if __name__ == '__main__':
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
-        prepare_table(args.conditions, args.replicates, args.types, args.batches, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff)
+        prepare_table(args.conditions, args.replicates, args.types, args.batches, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff, args.ids)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
