@@ -63,8 +63,8 @@ rule run_edgerDEU:
 
 rule filter_significant_edgerDEU:
     input:  dift = rules.run_edgerDEU.output.dift
-    output: sigdift  = rules.themall.input.sigdift
+    output: sigdift = rules.themall.input.sigdift
     log:    expand("LOGS/{outdir}filter_edgerDEU.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}EDGER_DE*pValue-sorted.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir|Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn; else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    shell: "for i in {outdir}EDGER_DEU*pValue-sorted.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn; else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
