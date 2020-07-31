@@ -45,14 +45,14 @@ rule prepare_count_table:
 rule run_edgerDAS:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
-    output: rules.themall.input.all,
-            rules.themall.input.allsum,
-            rules.themall.input.tbl,
-            rules.themall.input.bcv,
-            rules.themall.input.qld,
-            rules.themall.input.dift,
-            rules.themall.input.tops,
-            rules.themall.input.session
+    output: all = rules.themall.input.all,
+            sum = rules.themall.input.allsum,
+            tbl = rules.themall.input.tbl,
+            bcv = rules.themall.input.bcv,
+            qld = rules.themall.input.qld,
+            dift = rules.themall.input.dift,
+            tops = rules.themall.input.tops,
+            session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
