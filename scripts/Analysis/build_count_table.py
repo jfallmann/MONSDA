@@ -21,7 +21,6 @@ def parseargs():
     parser.add_argument("-t", "--types", required=False, type=str, help="Sequencing types to compare" )
     parser.add_argument("-b", "--batches", required=False, type=str, help="Sample batches to compare" )
     parser.add_argument("-r", "--replicates", required=True, type=str, help="Replicates belonging to conditions" )
-    parser.add_argument("--cutoff", dest='cutoff', type=int, default=0 ,help="cutoff for minimum count" )
     parser.add_argument("-p", "--paired", required=False, type=str, default=None, help="Sequencing strategy for sample name processing" )
     parser.add_argument("--table", dest='table', required=True, type=str, default='counts.table' ,help="Name of table to write to" )
     parser.add_argument("--anno", dest='anno', required=True, type=str, default='counts.anno' ,help="Name of anno to write to" )
@@ -46,7 +45,7 @@ class Sample_list(object):
         self.replicate_types = list()
         self.replicate_batches = list()
 
-def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None, cutoff=None, ids=None):
+def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None,  ids=None):
     try:
         #slist,
         logid = scriptname+'.prepare_table: '
@@ -191,14 +190,10 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
         toprint = str(line)+'\n'
         for z in range(1,len(myMatrix)):
             zeilen = myMatrix[z]
-            willprint = False
             line = str(zeilen[0])+"\t"
             for x in range(1,len(zeilen)):
                 line = line + str(zeilen[x])+"\t"
-                if (int(zeilen[x]) >= cutoff):
-                    willprint = True
-            if willprint:
-                toprint = toprint + str(line)+'\n'
+            toprint = toprint + str(line)+'\n'
 
         with gzip.open(table, 'wb') as t:
             t.write(bytes(str(toprint),encoding='UTF8'))
@@ -231,7 +226,7 @@ if __name__ == '__main__':
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
-        prepare_table(args.conditions, args.replicates, args.types, args.batches, args.paired, args.table, args.anno, args.sample_name, args.order, args.cutoff, args.ids)
+        prepare_table(args.conditions, args.replicates, args.types, args.batches, args.paired, args.table, args.anno, args.sample_name, args.order, args.ids)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
