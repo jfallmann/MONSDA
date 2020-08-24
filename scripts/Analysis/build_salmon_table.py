@@ -139,12 +139,12 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
 
                 if (sample_name):
                     myMatrix[0].append(my_groups[gruppies].replicate_names[condition_index])
-                    os.symlink(replicates, replicates.replace('quant.sf',my_groups[gruppies].replicate_names[condition_index]+'.sf'))
+                    os.symlink(os.path.abspath(replicates),replicates.replace('quant.sf',my_groups[gruppies].replicate_names[condition_index]+'.sf'))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
                     batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
                 else:
                     myMatrix[0].append(str(my_groups[gruppies].group_name)+'_'+str(rep_nr))
-                    os.symlink(replicates, os.path.join(os.path.abspath(table),str(my_groups[gruppies].group_name)+'_'+str(rep_nr)+'.sf'))
+                    os.symlink(os.path.abspath(replicates),os.path.join(os.path.abspath(table),str(my_groups[gruppies].group_name)+'_'+str(rep_nr)+'.sf'))
                     typeanno.append(my_groups[gruppies].replicate_types[condition_index])
                     batchanno.append(my_groups[gruppies].replicate_batches[condition_index])
 
