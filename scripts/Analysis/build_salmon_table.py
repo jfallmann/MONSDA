@@ -198,4 +198,4 @@ if __name__ == '__main__':
         log.error(logid+''.join(tbe.format()))
 
 #
-# build_salmon_anno.py ends here
+# build_salmon_table.py ends here
