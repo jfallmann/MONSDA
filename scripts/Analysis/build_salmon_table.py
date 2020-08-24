@@ -20,8 +20,8 @@ def parseargs():
     parser.add_argument("-r", "--replicates", required=True, type=str, help="Replicates belonging to conditions" )
     parser.add_argument("-b", "--batches", required=False, type=str, help="Sample batches to compare" )
     parser.add_argument("-p", "--paired", required=False, type=str, default=None, help="Sequencing strategy for sample name processing" )
-    parser.add_argument("--table", dest='table', required=True, type=str, default='counts.table' ,help="Name of table to write to" )
-    parser.add_argument("--anno", dest='anno', required=True, type=str, default='counts.anno' ,help="Name of anno to write to" )
+    parser.add_argument("--table", dest='table', required=True, type=str, default='Table' ,help="Name of Table directory to write to" )
+    parser.add_argument("--anno", dest='anno', required=True, type=str, default='Anno.gz' ,help="Name of anno to write to" )
     parser.add_argument("--loglevel", default='INFO', help="Log verbosity" )
 
     if len(sys.argv)==1:
@@ -51,11 +51,11 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
         list_size = 0
 
         # CLEANUP
-        oldtab = os.path.abspath(table)
+        #oldtab = os.path.abspath(table)
         oldanno = os.path.abspath(anno)
-        for oldfile in glob.glob(oldtab):
-            os.rename(oldfile,oldfile+'.bak')
-            log.warning(logid+'Found old table file'+oldfile+', was moved to '+oldfile+'.bak')
+        #for oldfile in glob.glob(oldtab):
+        #    os.rename(oldfile,oldfile+'.bak')
+        #    log.warning(logid+'Found old table file'+oldfile+', was moved to '+oldfile+'.bak')
         for oldfile in glob.glob(oldanno):
             os.rename(oldfile,oldfile+'.bak')
             log.warning(logid+'Found old anno file'+oldfile+', was moved to '+oldfile+'.bak')
