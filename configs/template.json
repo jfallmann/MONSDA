@@ -214,7 +214,7 @@
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
-                    "BATCHES": ["1","1","2"], #batch number for sample                    
+                    "BATCHES": ["1","1","2"], #batch number for sample
                     "OPTIONS":
                     [
                         {
@@ -305,6 +305,38 @@
                             "-q": "0.01",
                             "-z": "1.0",
                             "-r": ""
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "DTU" : {
+        "TOOLS" :
+        {
+            "dexseq"  : "Analysis/DTU/DEXSEQ.R",
+            "drimseq"  : "Analysis/DTU/DRIMSEQ.py"
+        },
+        "COMPARABLE" :
+        {
+            "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
+                    "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
+                    "BATCHES": ["1","1","2"], #batch number for sample
+                    "OPTIONS":
+                    [
+                        { # salmon index options
+                            "-l": "A",
+                            "--gencode": ""
+                        },
+                        { # salmon quant options
+                            "--gcBias":""
                         }
                     ]
                 }
