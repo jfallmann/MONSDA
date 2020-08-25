@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun 16 13:50:17 2020 (+0200)
+# Last-Updated: Tue Aug 25 10:45:31 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2005
+#     Update #: 2007
 # URL:
 # Doc URL:
 # Keywords:
@@ -331,6 +331,55 @@ def genomename(s, config):
                         return str(x)
 
 @check_run
+def transcriptomepath(s, config):
+    logid=scriptname+'.Collection_transcriptomepath: '
+    sa = os.path.basename(str(s))
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config["SAMPLES"])
+    log.debug(logid+'TRANSCRIPTOMEPATH: '+str([sa,cond,sk]))
+    for skey in sk:
+        klist = value_extract(skey, config["SOURCE"])
+        for k in klist:
+            for x, y in config["TRANSCRIPTOME"].items():
+                log.debug(logid+'TRANSCRIPTOMEPATH: '+str([x,y,k]))
+                if str(k) == str(y) or str(k) == str(x):
+                    return os.path.join(str(x),str(y))
+
+@check_run
+def transcriptome(s, config):
+    logid=scriptname+'.Collection_transcriptome: '
+    sa = os.path.basename(str(s))
+    sp = source_from_sample(str(s),config)
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config['SAMPLES'])
+    for skey in sk:
+        klist = value_extract(skey, config['SOURCE'])
+        for k in klist:
+            for x, y in config['TRANSCRIPTOME'].items():
+                log.debug(logid+str([k, x, y]))
+                if str(k) == str(x):
+                    return str(y)
+
+@check_run
+def fulltranscriptomepath(sa, config):
+    ret=list()
+    for s in sa:
+        l = config["TRANSCRIPTOME"][s]
+        ret.append(os.path.join(str(s),str(l)))
+    return ret
+
+@check_run
+def transcriptomename(s, config):
+    s = os.path.basename(str(s))
+    for k,v in config["SAMPLES"].items():
+        for g,l in v.items():
+            if s in l:
+                for x, y in config["TRANSCRIPTOME"].items():
+                    if g == y:
+                        return str(x)
+
+
+@check_run
 def namefromfile(s, config):
     if 'NAME' not in config:
         return ''
@@ -378,6 +427,8 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             matchinggenome=config['SOURCE'][src][treat][setup]
             tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
+            if 'TRANSCRIPTOME' in config:
+                tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
                     if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
