@@ -44,8 +44,8 @@ if (length(levels(sampleData$type)) > 1){
 }
 
 #get comparables
-comparison <- strsplit(cmp, ",")
-print(paste("Will analyze conditions ",comparison,sep=""))
+comparisons <- strsplit(cmp, ",")
+print(paste("Will analyze conditions ",comparisons,sep=""))
 
 countfiles = unlist(strsplit(countfile,','))
 
