@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 18:22:39 2020 (+0200)
+# Last-Updated: Thu Aug 27 10:08:13 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1038
+#     Update #: 1040
 # URL:
 # Doc URL:
 # Keywords:
@@ -75,8 +75,10 @@ def parseargs():
 def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
+        config = load_configfile(configfile)
+        refdir = config['REFERENCES']
         if skeleton:
-            for subdir in ['SubSnakes', 'RAW', 'REFERENCES', 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', refdir, 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
@@ -84,7 +86,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 makeoutdir(subdir)
 
         subdir = 'SubSnakes'
-        config = load_configfile(configfile)
         argslist = list()
         if useconda:
             argslist.append("--use-conda")
@@ -467,7 +468,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     subwork = analysis
                     SAMPLES = get_samples_postprocess(config,subwork)
                     log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
-                    
+
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
                     #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
