@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "", #which workflows do you want to run
-    "REFERENCE": "GENOMES", #where to find the reference genomes, default is a directory GENOMES
+    "REFERENCE": "REFERENCES", #where to find the reference genomes, default is a directory REFERENCES
     "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fa.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta

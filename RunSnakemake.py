@@ -76,7 +76,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         if skeleton:
-            for subdir in ['SubSnakes', 'RAW', 'GENOMES', 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', 'REFERENCES', 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
