@@ -324,6 +324,7 @@ for(contrast in comparisons[[1]]){
     )
     csvout <- paste('IsoformSwitchAnalyzeR_DRIM_',contrast_name,'.tsv.gz', sep='')
     write.table(as.data.frame(topdrim), gzfile(csvout), sep="\t", row.names=FALSE, quote=F)
+    save.image(file = paste("IsoformSwitchAnalyzeR",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
     
   }, error=function(e){
     rm(res,resOrdered)

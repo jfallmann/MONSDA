@@ -175,6 +175,9 @@ for(contrast in comparisons[[1]]){
         png(out, width = 400, height = 400)
         plotMD(qlf, main=contrast_name)
         dev.off()
+
+        save.image(file = paste("EDGER_DEU",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+        
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)

@@ -117,6 +117,8 @@ for(contrast in comparison[[1]]){
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
+        save.image(file = paste("DESEQ2",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+        
         rm(res,resOrdered, BPPARAM)
 
 

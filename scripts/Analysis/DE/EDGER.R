@@ -167,7 +167,8 @@ for(contrast in comparisons[[1]]){
         abline(h=c(-1, 1), col="blue")
         dev.off()
 
-
+        save.image(file = paste("EDGER_DE",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+        
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)
