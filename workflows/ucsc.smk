@@ -31,17 +31,7 @@ elif all(checklist2):
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
 else:
-    if not stranded or stranded == 'fr':
-        rule BamToBed:
-            input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
-            output: "UCSC/{file}_mapped_sorted.bed.gz",
-                    "UCSC/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
-            conda:  "nextsnakes/envs/bedtools.yaml"
-            threads: 1
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
-    elif stranded and stranded == 'rf':
+    if not stranded or (stranded == 'fr' or stranded == 'ISF') :
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
                     "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
@@ -51,6 +41,16 @@ else:
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+    elif stranded and (stranded == 'rf' or stranded == 'ISR'):
+        rule BamToBed:
+            input:  "MAPPED/{file}_mapped_sorted.bam",
+                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+            output: "UCSC/{file}_mapped_sorted.bed.gz",
+                    "UCSC/{file}_mapped_unique.bed.gz"
+            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
+            conda:  "nextsnakes/envs/bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
         #        shell:  "bedtools bamtobed -split -i {input[0]} |gzip > {output[0]} && bedtools bamtobed -split -i {input[1]} |gzip > {output[1]}"
 rule index_fa:
     input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
