@@ -170,8 +170,6 @@ for(contrast in comparisons[[1]]){
 
         dxr1 = DEXSeqResults( dxdpair )
 
-        rm(dxdpair)
-
         csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE, quote=F)
 
@@ -179,10 +177,13 @@ for(contrast in comparisons[[1]]){
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
-        rm(dxr1)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
+        save.image(file = paste("DEXSeq",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
 
+        rm(dxdpair)
+        rm(dxr1)
+        
     }, error=function(e){
         print(warnings)
         file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))

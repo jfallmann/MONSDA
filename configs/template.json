@@ -1,10 +1,13 @@
 {
     "WORKFLOWS": "", #which workflows do you want to run
-    "REFERENCE": "GENOMES", #where to find the reference genomes, default is a directory GENOMES
+    "REFERENCE": "REFERENCES", #where to find the reference genomes, default is a directory REFERENCES
     "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
-    "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fasta.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
+    "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fa.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
                 "organism": "Genomefile"
+              },
+    "TRANSCRIPTOME": { #which transcriptome to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the transcriptome.fa.gz file and the value 'Transcriptomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
+                "organism": "Transcriptomefile"
               },
     "SOURCE": {  #which organisms are to be parsed for which samples, organisms need to have subdirectories in you 'REFERENCE' directory and contain the corresponding fasta files
                  "id": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. for id 'id' and condition 'condition' with setting 'setting' the genome defined for organism in the 'GENOME' section of the config will be used
@@ -27,7 +30,7 @@
                                        }
                         }
                },
-    "SEQUENCING" : {
+    "SEQUENCING": {
         "id": { #key for source and genome
                 "condition": { # sample id
                                "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
@@ -48,7 +51,6 @@
                              }
               }
     },
-
 #QC options
     "QC": {
         "id": { #key for source and genome
@@ -214,7 +216,7 @@
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
-                    "BATCHES": ["1","1","2"], #batch number for sample                    
+                    "BATCHES": ["1","1","2"], #batch number for sample
                     "OPTIONS":
                     [
                         {
@@ -305,6 +307,38 @@
                             "-q": "0.01",
                             "-z": "1.0",
                             "-r": ""
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "DTU" : {
+        "TOOLS" :
+        {
+            "dexseq"  : "Analysis/DTU/DEXSEQ.R",
+            "drimseq"  : "Analysis/DTU/DRIMSEQ.py"
+        },
+        "COMPARABLE" :
+        {
+            "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
+                    "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
+                    "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
+                    "BATCHES": ["1","1","2"], #batch number for sample
+                    "OPTIONS":
+                    [
+                        { # salmon index options
+                            "-l": "A",
+                            "--gencode": ""
+                        },
+                        { # salmon quant options
+                            "--gcBias":""
                         }
                     ]
                 }

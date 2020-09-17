@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jun 16 14:47:00 2020 (+0200)
+# Last-Updated: Thu Aug 27 10:09:01 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1408
+#     Update #: 1411
 # URL:
 # Doc URL:
 # Keywords:
@@ -59,6 +59,7 @@ def parseargs():
     parser.add_argument("-d", "--directory", type=str, default='${PWD}', help='Directory to work in')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start nextflow with, capped by MAXTHREADS in config!')
     parser.add_argument("--clean", action="store_true", help='Cleanup workdir, append -n to see list of files to clean or -f to actually remove those files')
+    parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -67,7 +68,7 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs=None):
+def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, optionalargs=None):
     try:
         logid = scriptname+'.run_nextflow: '
         argslist = list()
@@ -83,12 +84,18 @@ def run_nextflow (configfile, workdir, procs, loglevel, clean=None, optionalargs
             log.debug(logid+'JOB CODE '+str(job))
             sys.exit()
 
+        config = load_configfile(configfile)
+        refdir = config['REFERENCES']
         workdir = os.path.abspath(str.join(os.sep,[workdir,'NextFlowWork']))
-        for subdir in ['SubFlows', 'LOGS', 'TMP', workdir]:  # Add RAW for nanopore preprocessing
-            makeoutdir(subdir)
+        if skeleton:
+            for subdir in ['SubSnakes', 'RAW', refdir, 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+                makeoutdir(subdir)
+            sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
+        else:
+            for subdir in ['SubFlows', 'LOGS', 'TMP', workdir]:  # Add RAW for nanopore preprocessing
+                makeoutdir(subdir)
 
         subdir = 'SubFlows'
-        config = load_configfile(configfile)
 
         argslist = list()
         if optionalargs and len(optionalargs) > 0:
@@ -678,7 +685,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.loglevel, knownargs.clean, optionalargs[0])
+        run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton ,knownargs.loglevel, knownargs.clean, optionalargs[0])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

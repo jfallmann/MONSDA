@@ -60,7 +60,7 @@ def parseargs():
     parser.add_argument("-a", "--append", action="store_true", help='If set configuration will be appended to existing json')
     parser.add_argument("-t", "--template", type=str, default='snakes/configs/template.json', help='Template config to build from, per default the one that comes with this repository, change only when you know what you do')
     parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'RAW\',\'MAPPING\',\'TRIMMING\',\'QC\',\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\',\'DAS\']')
-    parser.add_argument("-r", "--refdir", type=str, default='GENOMES', help='Path to directory with reference genome')
+    parser.add_argument("-r", "--refdir", type=str, default='REFERENCES', help='Path to directory with reference genome')
     parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
     parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr,unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
     parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
@@ -127,7 +127,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
     gens = defaultdict()
     if genomes:
         gens = {key: value for (key, value) in [x.split(':') for x in genomes.split(',')]}
-        log.debug(logid+'GENOMES: '+str(gens))
+        log.debug(logid+'REFERENCES: '+str(gens))
     else:
         if not append:
             log.error(logid+'No mapping of genome to genome fasta found, please provide -g option')

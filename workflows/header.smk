@@ -43,12 +43,16 @@ except Exception as err:
     log.error(''.join(tbe.format()))
 
 logid = 'header.smk: '
-REFERENCE=config["REFERENCE"]
-GENOME=config["GENOME"]
-NAME=config["NAME"]
-BINS=config["BINS"]
-MAXTHREAD=int(config["MAXTHREADS"])
-SOURCE=sources(config)
+REFERENCE = config["REFERENCE"]
+GENOME = config["GENOME"]
+if 'TRANSCRIPTOME' in config:
+    TRANSCRIPTOME = config["TRANSCRIPTOME"]
+else:
+    TRANSCRIPTOME = GENOME
+NAME = config["NAME"]
+BINS = config["BINS"]
+MAXTHREAD = int(config["MAXTHREADS"])
+SOURCE = sources(config)
 
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
 

@@ -105,7 +105,7 @@ def create_json_config(configfile, append, template, preprocess, workflows, post
     gens = defaultdict()
     if genomes:
         gens = {key: value for (key, value) in [x.split(':') for x in genomes.split(',')]}
-        log.debug(logid+'GENOMES: '+str(gens))
+        log.debug(logid+'REFERENCES: '+str(gens))
     else:
         if not append:
             log.error(logid+'No mapping of genome to genome fasta found, please provide -g option')
@@ -435,7 +435,7 @@ def rename(config,job,oldics,oldtodos,*args):
                             proof =call[2]
                             if 'ANNOTATION' in key:
                                 org = config['SOURCE'][ics[0][0]][ics[1][0]][ics[2][0]]
-                                files = os.listdir(os.path.join(project,'GENOMES',org))
+                                files = os.listdir(os.path.join(project,'REFERENCES',org))
                                 if len(files) > 0:
                                     print(f"Following annotation-files are available for {org}:")
                                     print("\n")
@@ -445,7 +445,7 @@ def rename(config,job,oldics,oldtodos,*args):
                                     while True:
                                         anno = conversation(text,None,proof)
                                         if anno not in files:
-                                            a = conversation(f"WARNING: {anno} is not yet in /GENOMES/{org} \nEnter 'y' for enter it anyway or enter 'n' to try again.",None)
+                                            a = conversation(f"WARNING: {anno} is not yet in /REFERENCES/{org} \nEnter 'y' for enter it anyway or enter 'n' to try again.",None)
                                             if 'n' in a:
                                                 continue
                                             if 'y' in a:
@@ -642,7 +642,7 @@ if __name__ == '__main__':
                 configfile = f"config_{name}.json"
 
                 folder_content = os.listdir('../')
-                if 'FASTQ' in folder_content or 'GENOMES' in folder_content:
+                if 'FASTQ' in folder_content or 'REFERENCES' in folder_content:
                     set_folder=conversation("It looks like you already set up your project-folder. We would therefor skip setting it up now. Enter 'n' if you want to do that anyway.", None)
                 else:
                     explain('projectfolder.txt')
@@ -655,7 +655,7 @@ if __name__ == '__main__':
                                 exit()
                             os.mkdir(project)
                             os.mkdir(os.path.join(project,"FASTQ"))
-                            os.mkdir(os.path.join(project,"GENOMES"))
+                            os.mkdir(os.path.join(project,"REFERENCES"))
                             os.symlink(cwd, os.path.join(project,'snakes'))
                             break
                         else:
@@ -701,16 +701,16 @@ if __name__ == '__main__':
                 fasta_dict={}
                 organisms = conversation("enter all organisms you have in your analysis",None)
                 for organism in organisms.split(","):
-                    os.mkdir(os.path.join(project,"GENOMES",organism))
+                    os.mkdir(os.path.join(project,"REFERENCES",organism))
                     fasta_dict.update({organism:conversation(f"enter the basename(!) of the fa.gz file appending to {organism}", None)})
-                    print("Now you can add Genome reference files to your GENOMES folder\n")
+                    print("Now you can add Genome reference files to your REFERENCES folder\n")
                     while True:
                         file=conversation(f"Enter one file-path you want to symlink to {organism} or enter 'n' to go to the next ics",None)
                         if file=='n':
                             break
                         if os.path.isfile(file):
                             try:
-                                os.symlink(file, os.path.join(project,'GENOMES',organism,os.path.basename(file)))
+                                os.symlink(file, os.path.join(project,'REFERENCES',organism,os.path.basename(file)))
                             except:
                                 print("hmm, an error occured.. maybe this file is already linked. try again!")
                         else:
@@ -727,7 +727,7 @@ if __name__ == '__main__':
                 workflows=workflows,
                 postprocess=postprocess,
                 ics=",".join(ICS),
-                refdir="GENOMES",
+                refdir="REFERENCES",
                 binaries="scripts",
                 procs="10",
                 genomemap=",".join([id+":organism" for id in IDs.split(",")]),
