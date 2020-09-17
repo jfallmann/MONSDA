@@ -76,7 +76,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         config = load_configfile(configfile)
-        refdir = config['REFERENCES']
+        refdir = config['REFERENCE']
         if skeleton:
             for subdir in ['SubSnakes', 'RAW', refdir, 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
                 makeoutdir(subdir)
