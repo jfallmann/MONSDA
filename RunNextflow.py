@@ -85,7 +85,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
             sys.exit()
 
         config = load_configfile(configfile)
-        refdir = config['REFERENCES']
+        refdir = config['REFERENCE']
         workdir = os.path.abspath(str.join(os.sep,[workdir,'NextFlowWork']))
         if skeleton:
             for subdir in ['SubSnakes', 'RAW', refdir, 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
