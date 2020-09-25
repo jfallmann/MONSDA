@@ -623,7 +623,10 @@ def runjob(jobtorun):
                 break
             if output and output != '':
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output or 'Execution complete' in output:
-                    log.error(logid+'STOPPING: '+str(output))
+                    if outerr:
+                        log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
+                    else:
+                        log.error(logid+'STOPPING: '+str(output))
                     log.info('PLEASE CHECK LOG AT LOGS/RunNextflow.log')
                     job.kill()
                     sys.exit()
