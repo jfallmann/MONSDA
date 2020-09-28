@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Aug 27 10:08:13 2020 (+0200)
+# Last-Updated: Mon Sep 28 18:28:53 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1040
+#     Update #: 1041
 # URL:
 # Doc URL:
 # Keywords:
@@ -294,7 +294,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         END OF PREPROCESSING, START OF PROCESSING
         '''
 
-        allmap = 'expand("UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
+        allmap = 'expand("MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
         allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
