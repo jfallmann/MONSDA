@@ -48,8 +48,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
              bins = BINS,
-             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DEU")['OPTIONS'][1].items())
-    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
+    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_dexseq:
     input:  cnt  = rules.prepare_count_table.output.tbl,

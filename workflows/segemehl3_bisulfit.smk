@@ -18,7 +18,7 @@ if paired == 'paired':
                 index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
                 index2 = lambda wildcards: expand(rules.generate_index.output.idx2, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
-        output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
+        output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
@@ -33,7 +33,7 @@ else:
                 index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
                 index2 = lambda wildcards: expand(rules.generate_index.output.idx2, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
                 ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
-        output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
+        output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"

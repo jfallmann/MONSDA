@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 29 14:38:04 2020 (+0200)
+# Last-Updated: Tue Sep 29 15:32:45 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1043
+#     Update #: 1047
 # URL:
 # Doc URL:
 # Keywords:
@@ -113,7 +113,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         preprocess = subworkflows = postprocess = None
 
         #Define workflow stages
-        pre = ['QC','RAW']
+        pre = ['QC','SRA']
         sub = ['QC','MAPPING','TRIMMING']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
@@ -123,11 +123,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            #for x in subworkflows:
-            #    wfs.remove(x)
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
+            if 'MAPPING' in subworkflows and 'QC' in preprocess:
+                preprocess.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
@@ -165,19 +165,19 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
 
-        if preprocess and 'RAW' in preprocess:
-            if 'RAW' not in config:
-                log.error(logid+'No configuration with key \'RAW\' for file download found. Nothing to do!')
+        if preprocess and 'SRA' in preprocess:
+            if 'SRA' not in config:
+                log.error(logid+'No configuration with key \'SRA\' for file download found. Nothing to do!')
             makeoutdir('FASTQ')
             makeoutdir('TMP')
-            preprocess.remove('RAW')
+            preprocess.remove('SRA')
             SAMPLES = download_samples(config)
             log.info(logid+'PRESAMPLES: '+str(SAMPLES))
             conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
             log.info(logid+'PRECONDITIONS: '+str(conditions))
             for condition in conditions:
                 subconf = NestedDefaultDict()
-                subwork = 'RAW'
+                subwork = 'SRA'
                 listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                 if listoftools is None:
                     log.warning(logid+'No entry fits condition '+str(condition)+' for preprocessing step '+str(subwork))
@@ -223,7 +223,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
 
-        rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=os.path.join(samplecond(SAMPLES,config)[0]))\n'
+        rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
         if preprocess:
             log.info(logid+'STARTING PREPROCESSING')
@@ -295,9 +295,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         allmap = 'expand("MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
-        allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)[:-1]))'
-        allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)[:-1]))'
-        alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)[:-1]))'
+        allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+        allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+        alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
 
         if subworkflows:

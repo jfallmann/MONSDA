@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Aug 27 10:09:01 2020 (+0200)
+# Last-Updated: Tue Sep 29 15:33:26 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1411
+#     Update #: 1412
 # URL:
 # Doc URL:
 # Keywords:
@@ -119,11 +119,11 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            for x in subworkflows:
-                wfs.remove(x)
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
+            if 'MAPPING' in subworkflows and 'QC' in preprocess:
+                preprocess.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None

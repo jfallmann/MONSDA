@@ -37,14 +37,14 @@
                              }
               }
     },
-#RAW options
-    "RAW": {
+#SRA options
+    "SRA": {
         "id": { #key for source and genome
                 "condition": { # sample id
                                "setting": {
                                    "ENV" : "sra",  # name of conda env for raw file download
                                    "OPTIONS":
-                                   [  #RAW options here if any, paired is not required, will be resolved by rules
+                                   [  #SRA options here if any, paired is not required, will be resolved by rules
                                       {}
                                    ]
                                }
@@ -225,10 +225,7 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        },
-                        {
-                            "--cutoff": "10"
-                        } #options for count table creation, filtering counts below threshold
+                        }
                     ]
                 }
             }
@@ -261,10 +258,7 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        },
-                        {
-                            "--cutoff": "10"
-                        } #options for count table creation, filtering counts below threshold
+                        }
                     ]
                 }
             }
@@ -298,9 +292,6 @@
                             "--fraction": "",
                             "-O": ""
                         },
-                        {
-                            "--cutoff": "10"
-                        }, #options for count table creation, filtering counts below threshold
                         { # analysis options for diego
                             "-c": "10",
                             "-d": "3",

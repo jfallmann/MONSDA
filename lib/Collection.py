@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Aug 25 10:45:31 2020 (+0200)
+# Last-Updated: Tue Sep 29 15:25:40 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2007
+#     Update #: 2008
 # URL:
 # Doc URL:
 # Keywords:
@@ -409,7 +409,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS', 'RAW']:
+            if subwork not in ['DE', 'DEU', 'DAS', 'SRA']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         src, treat, setup = condition
@@ -431,7 +431,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                 tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
             for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
-                    if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
+                    if any([subwork == x for x in ['QC','MAPPING','TRIMMING','SRA']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')

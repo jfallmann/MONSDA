@@ -39,8 +39,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DE'),
              bins = BINS,
-             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DE")['OPTIONS'][1].items())
-    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} {params.tpara} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edgerDE:
     input:  tbl = rules.prepare_count_table.output.tbl,
