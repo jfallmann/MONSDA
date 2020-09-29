@@ -36,7 +36,7 @@ rule count_mappers:
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_mappers:
-    input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  u = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: u = "COUNTS/{file}_mapped_unique.count"
     log:    "LOGS/{file}/count_unique_mappers.log"
     conda:  "nextsnakes/envs/samtools.yaml"
@@ -58,7 +58,7 @@ rule featurecount:
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
-    input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
+    input:  u = "MAPPED/{file}_mapped_sorted_unique.bam",
     output: t = temp("COUNTS/Featurecounts_{feat}s/{file}_tmp_uni.counts"),
             c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"

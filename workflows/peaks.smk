@@ -51,7 +51,7 @@ else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "PEAKS/{file}_mapped_sorted.bed.gz",
                     "PEAKS/{file}_mapped_unique.bed.gz"
             log:    "LOGS/PEAKS/bam2bed_{file}.log"
@@ -61,7 +61,7 @@ else:
     elif stranded and stranded == 'rf':
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "PEAKS/{file}_mapped_sorted.bed.gz",
                     "PEAKS/{file}_mapped_unique.bed.gz"
             log:    "LOGS/PEAKS/bam2bed_{file}.log"

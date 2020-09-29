@@ -17,7 +17,7 @@ rule themall:
             session = expand("{outdir}DESeq2_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DE_deseq/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DE/Featurecounts_DE/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_deseq2_unique.log"

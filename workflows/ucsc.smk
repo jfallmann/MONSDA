@@ -34,7 +34,7 @@ else:
     if not stranded or (stranded == 'fr' or stranded == 'ISF') :
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "UCSC/{file}_mapped_sorted.bed.gz",
                     "UCSC/{file}_mapped_unique.bed.gz"
             log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
@@ -44,7 +44,7 @@ else:
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "UCSC/{file}_mapped_sorted.bed.gz",
                     "UCSC/{file}_mapped_unique.bed.gz"
             log:    "LOGS/UCSC/{file}_ucscbamtobed.log"

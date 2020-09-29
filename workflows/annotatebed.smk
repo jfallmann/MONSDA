@@ -31,7 +31,7 @@ else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
@@ -42,7 +42,7 @@ else:
         rule BamToBed:
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"

@@ -17,7 +17,7 @@ rule themall:
             session = expand("{outdir}EDGER_DEU_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DEU/Featurecounts_DEU/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_DEU_edger_unique.log"

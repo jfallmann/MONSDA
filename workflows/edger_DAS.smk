@@ -17,7 +17,7 @@ rule themall:
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_edger/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"

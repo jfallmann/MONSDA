@@ -10,7 +10,7 @@ rule themall:
             csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=compstr)
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"

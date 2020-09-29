@@ -30,8 +30,8 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
     rule qc_uniquemapped:
-        input:  r1 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-                r2 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam.bai"
+        input:  r1 = "MAPPED/{file}_mapped_sorted_unique.bam",
+                r2 = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
         output: o1 = report("QC/FASTQC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
         log:    "LOGS/{file}/fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
@@ -68,8 +68,8 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
     rule qc_uniquemapped:
-        input:  r1 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-                r2 = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam.bai"
+        input:  r1 = "MAPPED/{file}_mapped_sorted_unique.bam",
+                r2 = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
         output: o1 = report("QC/FASTQC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
         log:    "LOGS/{file}/fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
