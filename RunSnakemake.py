@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 29 15:32:45 2020 (+0200)
+# Last-Updated: Tue Oct 20 17:34:50 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1047
+#     Update #: 1048
 # URL:
 # Doc URL:
 # Keywords:
@@ -27,16 +27,16 @@
 # General Public License for more details.
 # <http://www.gnu.org/licenses/>.
 
-import glob, os, sys, inspect, json, shutil
-from collections import defaultdict
+import os, sys, json, shutil
 import traceback as tb
 from snakemake import load_configfile
 from snakemake.utils import validate, min_version
 import argparse
 import subprocess
 import re
+
 min_version("5.8.2")
-scriptname=os.path.basename(__file__).replace('.py','')
+scriptname=os.path.basename(__file__).replace('.py', '')
 
 from lib.Logger import *
 #Logging
@@ -76,13 +76,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
     try:
         logid = scriptname+'.run_snakemake: '
         config = load_configfile(configfile)
-        refdir = config['REFERENCE']
         if skeleton:
-            for subdir in ['SubSnakes', 'RAW', refdir, 'FASTQ', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'RAW', 'FASTQ', 'LOGS', 'TMP']:
                 makeoutdir(subdir)
             sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
         else:
-            for subdir in ['SubSnakes', 'LOGS', 'TMP']:  # Add RAW for nanopore preprocessing
+            for subdir in ['SubSnakes', 'LOGS', 'TMP']:
                 makeoutdir(subdir)
 
         subdir = 'SubSnakes'
@@ -535,7 +534,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         log.info('Workflows executed without error!')
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -593,7 +592,7 @@ def runjob(jobtorun):
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -623,7 +622,8 @@ if __name__ == '__main__':
         log.debug(logid+str(log.handlers))
 
         run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.unlock, optionalargs[0])
-    except Exception as err:
+
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

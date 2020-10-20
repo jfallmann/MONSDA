@@ -43,18 +43,13 @@ except Exception as err:
     log.error(''.join(tbe.format()))
 
 logid = 'header.smk: '
-REFERENCE = config["REFERENCE"]
-GENOME = config["GENOME"]
-if 'TRANSCRIPTOME' in config:
-    TRANSCRIPTOME = config["TRANSCRIPTOME"]
-else:
-    TRANSCRIPTOME = GENOME
-NAME = config["NAME"]
+
+#Config Parsing
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
-SOURCE = sources(config)
-
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+SETTINGS = keysets_from_dict(config["SAMPLES"])
+REFDIR = str.join(os.sep,SETTINGS[:-1])
 
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')

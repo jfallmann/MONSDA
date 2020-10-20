@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Sep 29 15:25:40 2020 (+0200)
+# Last-Updated: Tue Oct 20 17:37:37 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2008
+#     Update #: 2016
 # URL:
 # Doc URL:
 # Keywords:
@@ -84,6 +84,7 @@ import collections
 from collections import defaultdict, OrderedDict
 import six
 import logging
+import hashlib
 from snakemake import load_configfile
 
 try:
@@ -157,7 +158,7 @@ def get_samples(config):
     logid = scriptname+'.Collection_get_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -169,7 +170,7 @@ def get_samples(config):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
@@ -186,7 +187,7 @@ def get_samples_postprocess(config,subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -198,7 +199,7 @@ def get_samples_postprocess(config,subwork):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
@@ -221,7 +222,7 @@ def download_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    for k in keysets_from_dict(config['SOURCE']):
+    for k in keysets_from_dict(config['SAMPLES']):
         ret.append(k)
     log.debug(logid+str(ret))
     return list(set(ret))
@@ -416,7 +417,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         log.debug(logid+str([env,exe,src,treat,setup]))
         tempconf = NestedDefaultDict()
         try:
-            for key in ['REFERENCE', 'BINS','MAXTHREADS']:
+            for key in ['BINS','MAXTHREADS']:
                 tempconf[key] = config[key]
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -425,11 +426,11 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
         try:
-            matchinggenome=config['SOURCE'][src][treat][setup]
-            tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
-            if 'TRANSCRIPTOME' in config:
-                tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
-            for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
+            #matchinggenome=config['SOURCE'][src][treat][setup]
+            #tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
+            #if 'TRANSCRIPTOME' in config:
+            #    tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
+            for key in ['SAMPLES', 'SEQUENCING', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
                     if any([subwork == x for x in ['QC','MAPPING','TRIMMING','SRA']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
@@ -1427,6 +1428,14 @@ def makelogdir(logdir):
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     return logdir
+
+@check_run
+def get_dict_hash(d):
+    logid = scriptname+'.get_dict_hash: '
+    log.debug(logid+'INPUT DICT: '+str(d))
+    ret = str(abs(hashlib.sha256(bytes(str(sorted(d.items())),'utf-8')).hexdigest()))
+    log.debug(logid+'HASH: '+ret)
+    return ret
 
 #
 # Collection.py ends here

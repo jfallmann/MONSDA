@@ -62,7 +62,7 @@ def check_run(func):
         try:
             return func(*args, **kwargs)
 
-        except Exception as err:
+        except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             tbe = tb.TracebackException(
                 exc_type, exc_value, exc_tb,
@@ -863,7 +863,7 @@ if __name__ == '__main__':
         print("\n")
 
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
         exc_type, exc_value, exc_tb,

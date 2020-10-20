@@ -1,14 +1,17 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+REFERENCE = subdict(config['MAPPING'],SETTINGS)['REFERENCE']
+INDEX = subdict(config['MAPPING'],SETTINGS)['INDEX']
 
 rule generate_index:
-    input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
-    output: idx = expand("{ref}/{{dir}}/{map}/{{extension}}/{{gen}}{{name}}_{{extension}}/{map}.idx", ref=REFERENCE, map=MAPPERENV)
-    log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
+    input:  ref = REFERENCE
+    output: idx = INDEX,
+            uidx = expand("{refd}/{unikey}.idx", ref=REFDIR, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    log:    expand("LOGS/{map}.idx.log", map=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: 1
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items())
-    shell:  "{params.indexer} index -p {output.idx} {params.ipara} {input.fa} 2> {log} && touch {output.idx}"
+    shell:  "{params.indexer} index -p {output.uidx} {params.ipara} {input.fa} 2> {log} && ln -s {output.uidx} {output.idx}"
 
 bwaalg = MAPPERBIN.split(' ')[1]
 
@@ -17,8 +20,8 @@ if bwaalg == 'mem':
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
-                    index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    index = rules.generate_index.output.idx,
+                    ref = REFERENCE
             output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
             log:    "LOGS/{file}/mapping.log"
@@ -31,8 +34,8 @@ if bwaalg == 'mem':
     else:
         rule mapping:
             input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-                    index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    index = rules.generate_index.output.idx,
+                    ref = REFERENCE
             output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
             log:    "LOGS/{file}/mapping.log"
@@ -47,8 +50,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
-                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    ref = REFERENCE
             output: sai1 = report("MAPPED/{file}_mapped.R1.sai", category="MAPPING"),
                     sai2 = report("MAPPED/{file}_mapped.R2.sai", category="MAPPING"),
                     mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
@@ -80,8 +82,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
     else: #handled like samse
         rule mapping:
             input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    ref = REFERENCE
             output: sai = report("MAPPED/{file}_mapped.sai", category="MAPPING"),
                     mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
@@ -110,8 +111,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 elif bwaalg == 'samse':
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-                #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                ref = REFERENCE
         output: sai = report("MAPPED/{file}_mapped.sai", category="MAPPING"),
                 mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
@@ -127,8 +127,7 @@ elif bwaalg == 'sampe':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
-                #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                ref = REFERENCE
         output: sai1 = report("MAPPED/{file}_mapped.R1.sai", category="MAPPING"),
                 sai2 = report("MAPPED/{file}_mapped.R2.sai", category="MAPPING"),
                 mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
@@ -146,8 +145,7 @@ elif bwaalg == 'bwasw':
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
-                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    ref = REFERENCE
             output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
             log:    "LOGS/{file}/mapping.log"
@@ -160,8 +158,7 @@ elif bwaalg == 'bwasw':
     else:
         rule mapping:
             input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                    ref = REFERENCE
             output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
             log:    "LOGS/{file}/mapping.log"

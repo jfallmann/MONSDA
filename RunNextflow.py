@@ -601,7 +601,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
 
         log.info('Workflows executed without error!')
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -659,7 +659,7 @@ def runjob(jobtorun):
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -689,7 +689,7 @@ if __name__ == '__main__':
         log.debug(logid+str(log.handlers))
 
         run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton ,knownargs.loglevel, knownargs.clean, optionalargs[0])
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

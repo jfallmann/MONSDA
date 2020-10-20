@@ -1,23 +1,27 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+REFERENCE = subdict(config['MAPPING'],SETTINGS)['REFERENCE']
+INDEX = str.split(',',subdict(config['MAPPING'],SETTINGS)['INDEX'])
 
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
-    output: idx1 = expand("{ref}/{{dir}}/{map}/{{gen}}{{name}}_{{extension}}_{map}.idx", ref=REFERENCE, map=MAPPERENV)
-	        idx2 = expand("{ref}/{{dir}}/{map}/{{gen}}{{name}}_{{extension}}_{map}_second.idx", ref=REFERENCE, map=MAPPERENV)
-    log:    expand("LOGS/{{dir}}/{{gen}}{{name}}_{{extension}}_{map}.idx.log", map=MAPPERENV)
+    output: idx1 = INDEX[0],
+	        idx2 = INDEX[1],
+            uidx1 = expand("{refd}/{unikey}.idx", ref=REFDIR, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+            uidx2 = expand("{refd}/{unikey}.idx", ref=REFDIR, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))+'second'
+    log:    expand("LOGS/{map}.idx.log", map=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items())
-    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.idx} -y {output.idx2} 2> {log}"
+    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} 2> {log} && ln -s {output.uidx1} {output.idx1} && ln -s {output.uidx2} {output.idx2}"
 
 if paired == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{file}_r1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{file}_r2_trimmed.fastq.gz",
-                index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                index2 = lambda wildcards: expand(rules.generate_index.output.idx2, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                index = rules.generate_index.output.idx,
+                index2 = rules.generate_index.output.idx2,
+                ref = REFERENCE
         output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
@@ -30,9 +34,9 @@ if paired == 'paired':
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-                index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                index2 = lambda wildcards: expand(rules.generate_index.output.idx2, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), map=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
-                ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
+                index = rules.generate_index.output.idx,
+                index2 = rules.generate_index.output.idx2,
+                ref = REFERENCE
         output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
         log:    "LOGS/{file}/mapping.log"
