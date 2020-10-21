@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Oct 20 17:37:37 2020 (+0200)
+# Last-Updated: Wed Oct 21 09:53:47 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2016
+#     Update #: 2023
 # URL:
 # Doc URL:
 # Keywords:
@@ -1029,15 +1029,15 @@ def dict_inst(d):
 @check_run
 def getFromDict(dataDict, mapList):
     logid = scriptname+'.Collection_getFromDict: '
-    log.debug(logid+'MAPLIST: '+str(mapList))
+    log.debug(logid+'MAPLIST: '+str(mapList)+'\tDict: '+str(dataDict))
     ret = dataDict
     for k in mapList:
         if k in dataDict:
             log.debug(logid+'k: '+str(k))
             dataDict = dataDict[k]
+            log.debug(logid+'subdict: '+str(dataDict))
         else:
             return list([])
-    log.debug(logid+'MIDRET: '+str(ret))
     if ret != dataDict:
         log.debug(logid+'RET: '+str(dataDict))
         return list([dataDict])
@@ -1068,6 +1068,8 @@ def subDict(dataDict, mapList):
         log.debug(logid+'k: '+str(k))
         if k in ret:
             ret = ret[k]
+        else:
+            log.debug(logid+'No k in dict')
     return ret
 
 @check_run
@@ -1433,7 +1435,7 @@ def makelogdir(logdir):
 def get_dict_hash(d):
     logid = scriptname+'.get_dict_hash: '
     log.debug(logid+'INPUT DICT: '+str(d))
-    ret = str(abs(hashlib.sha256(bytes(str(sorted(d.items())),'utf-8')).hexdigest()))
+    ret = str(hashlib.sha256(bytes(str(sorted(d.items())),'utf-8')).hexdigest())
     log.debug(logid+'HASH: '+ret)
     return ret
 

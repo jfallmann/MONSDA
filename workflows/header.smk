@@ -1,4 +1,11 @@
-import glob, os, sys, inspect, snakemake, json, shutil, logging
+import glob
+import os
+import sys
+import inspect
+import snakemake
+import json
+import shutil
+import logging
 import tempfile
 import traceback as tb
 from collections import defaultdict
@@ -48,8 +55,9 @@ logid = 'header.smk: '
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-SETTINGS = keysets_from_dict(config["SAMPLES"])
-REFDIR = str.join(os.sep,SETTINGS[:-1])
+SETTINGS = keysets_from_dict(config["SAMPLES"])[0]
+SETS = os.sep.join(SETTINGS)
+log.debug(logid+'SETS: '+SETS)
 
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
@@ -65,6 +73,21 @@ stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
+#MAPPING Variables
+if 'MAPPING' in config:
+    MAPCONF = subDict(config['MAPPING'], SETTINGS)
+    log.debug(logid+'MAPPINGCONFIG: '+str(SETTINGS)+'\t'+str(MAPCONF))
+    REFERENCE = MAPCONF['REFERENCE']
+    REFDIR = str(os.path.dirname(REFERENCE))
+    ANNO = MAPCONF.get('ANNOTATION')
+    MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+    log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
+    INDICES = MAPCONF['INDEX'].split(',') if 'INDEX' in MAPCONF else list(expand("{refd}/INDICES/{mape}/{unikey}.idx", ref=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])))
+    INDEX = str(os.path.abspath(INDICES[0]))
+    INDEX2 = str(os.path.abspath(INDICES[1])) if len(INDICES) > 1 else None
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
+
+#Peak Calling Variables
 if 'PEAKS' in config:
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')

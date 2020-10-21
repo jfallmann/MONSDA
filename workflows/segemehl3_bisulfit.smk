@@ -1,19 +1,19 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
-REFERENCE = subdict(config['MAPPING'],SETTINGS)['REFERENCE']
-INDEX = str.split(',',subdict(config['MAPPING'],SETTINGS)['INDEX'])
 
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
-    output: idx1 = INDEX[0],
-	        idx2 = INDEX[1],
-            uidx1 = expand("{refd}/{unikey}.idx", ref=REFDIR, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
-            uidx2 = expand("{refd}/{unikey}.idx", ref=REFDIR, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))+'second'
-    log:    expand("LOGS/{map}.idx.log", map=MAPPERENV)
+    output: idx1 = INDEX,
+	        idx2 = INDEX2,
+            uidx1 = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+            uidx2 = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))+'second'
+    log:    expand("LOGS/{mape}.idx.log", mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items())
-    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} 2> {log} && ln -s {output.uidx1} {output.idx1} && ln -s {output.uidx2} {output.idx2}"
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
+            linkidx1 = lambda wildcards, output: str(os.path.abspath(output.uidx1[0])),
+            linkidx2 = lambda wildcards, output: str(os.path.abspath(output.uidx2[0]))
+    shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} 2> {log} && ln -fs {params.linkidx1} {output.idx1} && ln -s {params.linkidx2} {output.idx2}"
 
 if paired == 'paired':
     rule mapping:
