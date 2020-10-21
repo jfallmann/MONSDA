@@ -3,19 +3,19 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}/star.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
             tmp = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV)),
             tmpa = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
+            ipara = lambda w: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
             anno = ANNO,
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,[str(output.uidx[0]).split(os.sep)][:-1]))),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx).split(os.sep)[:-1]))),
             genpath = expand("{refd}/INDICES/{mape}/{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
-    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.genpath}\SAindex\" ]]; then ln -fs {params.genpath} {output.idx} && touch {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -s {params.linkidx} {output.idx} && touch output.uidx && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
+    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.genpath}\SAindex\" ]]; then ln -fs {params.genpath} {output.idx} && touch {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:

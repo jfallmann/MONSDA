@@ -73,6 +73,7 @@ stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
+
 #MAPPING Variables
 if 'MAPPING' in config:
     MAPCONF = subDict(config['MAPPING'], SETTINGS)
@@ -82,9 +83,18 @@ if 'MAPPING' in config:
     ANNO = MAPCONF.get('ANNOTATION')
     MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
     log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
-    INDICES = MAPCONF['INDEX'].split(',') if 'INDEX' in MAPCONF else list(expand("{refd}/INDICES/{mape}/{unikey}.idx", ref=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])))
-    INDEX = str(os.path.abspath(INDICES[0]))
-    INDEX2 = str(os.path.abspath(INDICES[1])) if len(INDICES) > 1 else None
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    INDICES = MAPCONF['INDEX'].split(',') if 'INDEX' in MAPCONF else list(UIDX)
+    INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+
+    if len(INDICES) > 1:
+        if str(os.path.abspath(INDICES[1])) not in UIDX:
+            INDEX2 = str(os.path.abspath(INDICES[1]))
+        else:
+            INDEX2 = str(os.path.abspath(INDICES[1]))+'_idx'
+    else:
+        INDEX2 = None
+
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
 
 #Peak Calling Variables

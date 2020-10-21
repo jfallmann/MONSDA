@@ -3,14 +3,14 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
             tmp = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,[str(output.uidx[0]).split(os.sep)][:-1]))),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1])))
     shell:  "zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {params.linkidx} {output.idx}"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN

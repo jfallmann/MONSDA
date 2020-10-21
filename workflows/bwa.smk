@@ -3,14 +3,14 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  ref = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: 1
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,[str(output.uidx[0]).split(os.sep)][:-1]))),
-    shell:  "{params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -s {params.linkidx} {output.idx}"
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1])))
+    shell:  "{params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx}"
 
 bwaalg = MAPPERBIN.split(' ')[1]
 
