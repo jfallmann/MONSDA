@@ -3,7 +3,7 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 rule generate_index:
     input:  ref = REFERENCE
     output: idx = directory(INDEX),
-            uidx = expand("{refd}/INDICES/{mape}_{unikey}/{idx}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]), idx=str(INDEX).split(os.sep)[-1])
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]), pref=PREFIX)
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: 1
@@ -28,8 +28,9 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN
-            shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+                    mapp = MAPPERBIN,
+                    idx = lambda wildcards, input: str.join(os.sep,[str(input.index),PREFIX]) if PREFIX != '' else input.prefix
+            shell: "{params.mapp} {params.mpara} -t {threads} {params.idx} {input.r1} {input.r2} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
     else:
         rule mapping:
@@ -42,8 +43,9 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN
-            shell:  "{params.mapp} {params.mpara} -t {threads} {input.index} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+                    mapp = MAPPERBIN,
+                    idx = lambda wildcards, input: str.join(os.sep,[str(input.index),PREFIX]) if PREFIX != '' else input.prefix
+            shell:  "{params.mapp} {params.mpara} -t {threads} {params.idx} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
 elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to continue the workflow
     if paired == 'paired': # handled like sampe
@@ -59,8 +61,8 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN,
-                    mapp1=MAPPERBIN.split(' ')[0]
+                    mapp = MAPPERBIN,
+                    mapp1 = MAPPERBIN.split(' ')[0]
             shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2}| tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
@@ -90,8 +92,8 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN,
-                    mapp1=MAPPERBIN.split(' ')[0]
+                    mapp = MAPPERBIN,
+                    mapp1 = MAPPERBIN.split(' ')[0]
             shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
@@ -119,8 +121,8 @@ elif bwaalg == 'samse':
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                mapp=MAPPERBIN,
-                mapp1=MAPPERBIN.split(' ')[0]
+                mapp = MAPPERBIN,
+                mapp1 = MAPPERBIN.split(' ')[0]
         shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
 elif bwaalg == 'sampe':
@@ -136,8 +138,8 @@ elif bwaalg == 'sampe':
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                mapp=MAPPERBIN,
-                mapp1=MAPPERBIN.split(' ')[0]
+                mapp = MAPPERBIN,
+                mapp1 = MAPPERBIN.split(' ')[0]
         shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2}| tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
 elif bwaalg == 'bwasw':
@@ -152,7 +154,7 @@ elif bwaalg == 'bwasw':
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN
+                    mapp = MAPPERBIN
             shell: "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
     else:
@@ -165,5 +167,5 @@ elif bwaalg == 'bwasw':
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-                    mapp=MAPPERBIN
+                    mapp = MAPPERBIN
             shell:  "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"

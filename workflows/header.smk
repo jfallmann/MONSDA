@@ -86,6 +86,7 @@ if 'MAPPING' in config:
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
     INDICES = MAPCONF['INDEX'].split(',') if 'INDEX' in MAPCONF else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+    PREFIX = MAPCONF['PREFIX'] if 'PREFIX' in MAPCONF else ''
 
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
@@ -93,21 +94,21 @@ if 'MAPPING' in config:
         else:
             INDEX2 = str(os.path.abspath(INDICES[1]))+'_idx'
     else:
-        INDEX2 = None
+        INDEX2 = ''
 
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
 
 #Peak Calling Variables
 if 'PEAKS' in config:
+    PEAKCONF = subDict(config['PEAKS'], SETTINGS)
+    REFERENCE = PEAKCONF['REFERENCE']
+    REFDIR = str(os.path.dirname(REFERENCE))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION')
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
-    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
-    if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
-        ANNOPEAK = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
-    else:
-        ANNOPEAK = None
+    peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
     try:
-        all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
+        all([x in peakcallconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
@@ -115,14 +116,14 @@ if 'PEAKS' in config:
         )
         log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
 
-    MINPEAKRATIO = peakconf['MINPEAKRATIO']
-    PEAKDISTANCE = peakconf['PEAKDISTANCE']
-    PEAKWIDTH = peakconf['PEAKWIDTH']
-    PEAKCUTOFF = peakconf['PEAKCUTOFF']
-    MINPEAKHEIGHT = peakconf['MINPEAKHEIGHT']
-    USRLIMIT = peakconf['USRLIMIT']
+    MINPEAKRATIO = peakcallconf['MINPEAKRATIO']
+    PEAKDISTANCE = peakcallconf['PEAKDISTANCE']
+    PEAKWIDTH = peakcallconf['PEAKWIDTH']
+    PEAKCUTOFF = peakcallconf['PEAKCUTOFF']
+    MINPEAKHEIGHT = peakcallconf['MINPEAKHEIGHT']
+    USRLIMIT = peakcallconf['USRLIMIT']
 
-    if 'PREPROCESS' in peakconf:
-        PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
+    if 'PREPROCESS' in peakcallconf:
+        PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakcallconf['PREPROCESS'].items())
     else:
         PREPROCESS = ''
