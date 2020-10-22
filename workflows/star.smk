@@ -2,8 +2,8 @@ MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 
 rule generate_index:
     input:  fa = REFERENCE
-    output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}_{unikey}/idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
+    output: idx = directory(INDEX),
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/{idx}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]), idx=str(INDEX).split(os.sep)[-1]),
             tmp = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV)),
             tmpa = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
@@ -12,10 +12,9 @@ rule generate_index:
     params: mapp = MAPPERBIN,
             ipara = lambda w: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
             anno = ANNO,
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx).split(os.sep)[:-1]))),
-            genpath = expand("{refd}/INDICES/{mape}/{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1]))),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
-    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.genpath}\SAindex\" ]]; then ln -fs {params.genpath} {output.idx} && touch {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.genpath} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
+    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.linkidx}/SAindex\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.idx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.tmpidx} --outTmpDir {params.tmpidx} --genomeDir {params.linkidx} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && cat {params.tmpidx}Log.out >> {log} && rm -f {params.tmpidx}Log.out && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:
@@ -32,12 +31,9 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
-                genpath = expand("{refd}/INDICES/{mape}/{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
                 anno = ANNO,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-                #genpath = lambda wildcards: os.path.abspath("{ref}/{dir}/{map}/{extension}/{gen}{name}_{extension}".format(ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))
-                #anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'MAPPING')['ANNOTATION']]),
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {params.genpath} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate1 {output.unmapped_r1} 2>> {log} && mv {output.tmp}.Unmapped.out.mate2 {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.index} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate1 {output.unmapped_r1} 2>> {log} && mv {output.tmp}.Unmapped.out.mate2 {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
     rule mapping:
@@ -52,7 +48,6 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
-                genpath = expand("{refd}/INDICES/{mape}/{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0])),
                 anno = ANNO,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {params.genpath} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate* {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.index} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate* {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
