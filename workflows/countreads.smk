@@ -51,7 +51,7 @@ rule featurecount:
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION'],
+            anno = ANNOTATION['GFF'] if ANNOTATION.get('GFF') else ANNOTATION.get('GTF'),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
@@ -65,7 +65,7 @@ rule featurecount_unique:
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION'],
+            anno = ANNOTATION['GFF'] if ANNOTATION.get('GFF') else ANNOTATION.get('GTF'),
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Oct 23 10:29:26 2020 (+0200)
+# Last-Updated: Fri Oct 23 15:20:12 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2042
+#     Update #: 2047
 # URL:
 # Doc URL:
 # Keywords:
@@ -689,7 +689,7 @@ def samplecond(sample,config):
             log.debug(logid+'TMPLIST: '+str(tmplist))
             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
-                s = re.sub(r'_[r|R][1|2]','',s)
+                s = re.sub(r'_[r|R|][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
@@ -718,7 +718,8 @@ def checkpaired(sample,config):
     paired = ''
     for s in sample:  # Currently only one condition per sample-SETUP possible
         log.debug(logid+'SAMPLE: '+str(s))
-        check = conditiononly(sample,config)
+        check = conditiononly(s, config)
+        log.debug(logid+'CHECK: '+str(check))
         p = subDict(config['SETTINGS'], check)
         paired = p.get('SEQUENCING')
     log.debug(logid+'SEQUENCING: '+str(paired))
@@ -730,7 +731,7 @@ def checkpaired_rep(sample,config):
     log.debug(logid+'SAMPLE: '+str(sample))
     ret = list()
     for s in sample:
-        check = conditiononly(sample,config)
+        check = conditiononly(s,config)
         #check = os.path.dirname(s).split(os.sep)
         #p = getFromDict(config['SEQUENCING'],tmplist)[0]
         p = subDict(config['SETTINGS'], check)
@@ -747,7 +748,7 @@ def checkstranded(sample,config):
     for s in sample:
         #check = os.path.dirname(s).split(os.sep)
         #p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        check = conditiononly(sample,config)
+        check = conditiononly(s,config)
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
         stranded = p.get('SEQUENCING').split(',')[1] if len(p.get('SEQUENCING').split(',')) > 1 else ''

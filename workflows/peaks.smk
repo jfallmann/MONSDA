@@ -72,16 +72,16 @@ else:
 rule index_fa:
     input:  REFERENCE
     output: expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
-    log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
+    log:    expand("LOGS/PEAKS/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz',''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
-    output: expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    log:    "LOGS/PEAKS/{org}/{gen}{name}/chromsize.log"
+    input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz',''))
+    output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz',''))
+    log:    expand("LOGS/PEAKS/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz',''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -245,7 +245,7 @@ if ANNOPEAK is not None:
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
-                anno = ANNOPEAK
+                anno = ANNOPEAK['GFF'] if ANNOPEAK.get('GFF') else ANNOPEAK.get('GTF')
         shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}"
 
     rule PeakToBedg:

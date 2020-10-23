@@ -72,7 +72,6 @@ INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNOTATION = SETTINGS.get('ANNOTATION')
 
-
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
 paired = checkpaired([SAMPLES[0]], config)
@@ -151,12 +150,32 @@ if 'PEAKS' in config:
     else:
         PREPROCESS = ''
 
-# UCSC Variables
-if 'UCSC' in config:
-    UCONF = subDict(config['UCSC'], SETUP)
-    log.debug(logid+'UCSCCONFIG: '+str(SETUP)+'\t'+str(UCONF))
-    REFERENCE = UCONF.get('REFERENCE')
-    if REF:
-        REFERENCE = REF
-        REFDIR = str(os.path.dirname(REFERENCE))
+# UCSC/COUNTING Variables
+for x in ['UCSC', 'COUNTING']:
+    if x in config:
+        XCONF = subDict(config[x], SETUP)
+        log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+        REF = XCONF.get('REFERENCE')
+        XANNO = XCONF.get('ANNOTATION')
+        if XANNO:
+            ANNOTATION = XANNO
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
+
+# DE/DEU/DAS/DTU Variables
+for x in ['DE', 'DEU', 'DAS', 'DTU']:
+    if x in config:
+        XCONF = subDict(config[x], SETUP)
+        log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+        REF = XCONF.get('REFERENCE')
+        XANNO = XCONF.get('ANNOTATION')
+        if XANNO:
+            ANNOTATION = XANNO
+        else:
+            ANNOTATION = ANNOTATION['GTF']
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))

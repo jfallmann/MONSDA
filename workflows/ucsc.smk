@@ -52,18 +52,18 @@ else:
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
 
 rule index_fa:
-    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
-    output: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscindexfa.log"
+    input:  REFERENCE
+    output: expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
+    log:    expand("LOGS/UCSC/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz',''))
     conda:  "nextsnakes/envs/samtools.yaml"
-    params: bins = BINS
     threads: 1
+    params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input: expand("{ref}/{{org}}/{{gen}}{{name}}.fa.fai",ref=REFERENCE)
-    output: expand("{ref}/{{org}}/{{gen}}{{name}}.chrom.sizes",ref=REFERENCE)
-    log:    "LOGS/UCSC/{org}/{gen}{name}_ucscgetchrom.log"
+    input:  expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
+    output: expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
+    log:    expand("LOGS/UCSC/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz',''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -80,7 +80,7 @@ for file in samplecond(SAMPLES,config):
 if all(checklist):
     rule BedToBedg:
         input:  "BED/{file}_mapped_{type}.{orient}.bedg.gz",
-                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "nextsnakes/envs/ucsc.yaml"
@@ -91,7 +91,7 @@ if all(checklist):
 elif all(checklist2):
     rule BedToBedg:
         input:  "PEAKS/{file}_mapped_{type}.{orient}.bedg.gz",
-                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
         output: "UCSC/{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "nextsnakes/envs/ucsc.yaml"
@@ -102,8 +102,8 @@ elif all(checklist2):
 else:
     rule BedToBedg:
         input:  bed = "UCSC/{file}_mapped_{type}.bed.gz",
-                fai = lambda wildcards: "{ref}/{gen}{name}.fa.fai".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
-                sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+                fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
+                sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
         output: fw = "UCSC/{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{file}_{type}_ucscbedtobedgraph.log"
@@ -136,7 +136,7 @@ rule BedgToUCSC:
     conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     priority: 100               # This should be finished before we generate tracks
-    params: sizes = lambda wildcards: "{ref}/{gen}{name}.chrom.sizes".format(ref=REFERENCE,gen=genomepath(wildcards.file,config),name=namefromfile(wildcards.file, config))
+    params: sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
@@ -149,7 +149,7 @@ rule GenerateTrack:
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
-            gen = lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
+            gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
             options = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'UCSC')['OPTIONS'][0].items()),
-            uid = lambda wildcards: "{src}".format(src=SETS)
+            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+SETS.replace(os.sep,'_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

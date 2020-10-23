@@ -13,9 +13,9 @@ rule themall:
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
 
 rule prepare_deu_annotation:
-    input:   anno   = expand("{ref}/{gen}/{anno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), anno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'])
-    output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
-             deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
+    input:   anno = ANNOTATION
+    output:  countgtf = expand("{refd}/{countanno}", ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+             deugtf   = expand("{refd}/{deuanno}", ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:     "LOGS/featurecount_dexseq_annotation.log"
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -25,8 +25,8 @@ rule prepare_deu_annotation:
 
 rule featurecount_dexseq_unique:
     input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam",
-            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
-            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DEU/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
