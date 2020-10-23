@@ -51,17 +51,27 @@ except Exception as err:
 
 logid = 'header.smk: '
 
-#Config Parsing
+#Parse SUBCONFIG
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-SETTINGS = keysets_from_dict(config["SAMPLES"])[0]
-SETS = os.sep.join(SETTINGS)
-log.debug(logid+'SETS: '+SETS)
 
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
+
+SETUP = keysets_from_dict(config["SAMPLES"])[0]
+SETS = os.sep.join(SETUP)
+SETTINGS = subDict(config['SETTINGS'], SETUP)
+
+# Parse SETTINGS
+SEQUENCING = SETTINGS.get('SEQUENCING')
+REFERENCE = SETTINGS.get('REFERENCE')
+REFDIR = str(os.path.dirname(REFERENCE))
+INDEX = SETTINGS.get('INDEX')
+PREFIX = SETTINGS.get('PREFIX')
+ANNOTATION = SETTINGS.get('ANNOTATION')
+
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -74,19 +84,28 @@ if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
 
-#MAPPING Variables
+# MAPPING Variables
 if 'MAPPING' in config:
-    MAPCONF = subDict(config['MAPPING'], SETTINGS)
-    log.debug(logid+'MAPPINGCONFIG: '+str(SETTINGS)+'\t'+str(MAPCONF))
-    REFERENCE = MAPCONF['REFERENCE']
-    REFDIR = str(os.path.dirname(REFERENCE))
+    MAPCONF = subDict(config['MAPPING'], SETUP)
+    log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
+    REF = MAPCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
     ANNO = MAPCONF.get('ANNOTATION')
+    if ANNO:
+        ANNOTATION = ANNO
     MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
-    log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
+    IDX = MAPCONF.get('INDEX')
+    if IDX:
+        INDEX = IDX
+        log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
-    INDICES = MAPCONF['INDEX'].split(',') if 'INDEX' in MAPCONF else list(UIDX)
+    INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
-    PREFIX = MAPCONF['PREFIX'] if 'PREFIX' in MAPCONF else ''
+    PRE = MAPCONF.get('PREFIX')
+    if PRE:
+        PREFIX = PRE
 
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
@@ -98,12 +117,16 @@ if 'MAPPING' in config:
 
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
 
-#Peak Calling Variables
+# Peak Calling Variables
 if 'PEAKS' in config:
-    PEAKCONF = subDict(config['PEAKS'], SETTINGS)
-    REFERENCE = PEAKCONF['REFERENCE']
-    REFDIR = str(os.path.dirname(REFERENCE))
+    PEAKCONF = subDict(config['PEAKS'], SETUP)
+    REF = PEAKCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
     ANNOPEAK = PEAKCONF.get('ANNOTATION')
+    if ANNOPEAK:
+        ANNOTATION = ANNOPEAK
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
     peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
@@ -127,3 +150,13 @@ if 'PEAKS' in config:
         PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakcallconf['PREPROCESS'].items())
     else:
         PREPROCESS = ''
+
+# UCSC Variables
+if 'UCSC' in config:
+    UCONF = subDict(config['UCSC'], SETUP)
+    log.debug(logid+'UCSCCONFIG: '+str(SETUP)+'\t'+str(UCONF))
+    REFERENCE = UCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))

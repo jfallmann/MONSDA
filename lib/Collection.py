@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Oct 21 09:53:47 2020 (+0200)
+# Last-Updated: Fri Oct 23 10:29:26 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 2023
+#     Update #: 2042
 # URL:
 # Doc URL:
 # Keywords:
@@ -265,15 +265,6 @@ def sampleslong(config):
     return ret
 
 @check_run
-def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SOURCE!
-    ret = list()
-    for x,y in config["SOURCE"].items():
-        for s in config["SAMPLES"][x]:
-            for n in config["SAMPLES"][x][s]:
-                ret.append(str(n))
-    return ret
-
-@check_run
 def get_placeholder(config):
     ret = list()
     if 'PH' in (config):
@@ -426,11 +417,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
         try:
-            #matchinggenome=config['SOURCE'][src][treat][setup]
-            #tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
-            #if 'TRANSCRIPTOME' in config:
-            #    tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
-            for key in ['SAMPLES', 'SEQUENCING', subwork]:
+            for key in ['SAMPLES', 'SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
                     if any([subwork == x for x in ['QC','MAPPING','TRIMMING','SRA']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
@@ -489,14 +476,13 @@ def pathstogenomes(samples, config):
 def tool_params(sample, runstate, config, subconf):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
-    t = genome(sample,config)
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
-    log.debug(logid+str([sample,runstate,subconf,t,x]))
+    log.debug(logid+str([sample,runstate,subconf,x]))
     mp = subDict(config[subconf],x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
@@ -701,8 +687,9 @@ def samplecond(sample,config):
             tmplist = check
             tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
-            if getFromDict(config['SEQUENCING'],tmplist) == 'paired':
-                s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
+            if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+                #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+                s = re.sub(r'_[r|R][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
@@ -729,18 +716,12 @@ def checkpaired(sample,config):
     logid = scriptname+'.Collection_checkpaired: '
     ret = list()
     paired = ''
-    for s in sample:
+    for s in sample:  # Currently only one condition per sample-SETUP possible
         log.debug(logid+'SAMPLE: '+str(s))
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            if r in p:
-                tmplist.append(r)
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-                tmplist = tmplist[:2]
-    log.debug(logid+'PAIRED: '+str(paired))
+        check = conditiononly(sample,config)
+        p = subDict(config['SETTINGS'], check)
+        paired = p.get('SEQUENCING')
+    log.debug(logid+'SEQUENCING: '+str(paired))
     return paired
 
 @check_run
@@ -749,11 +730,12 @@ def checkpaired_rep(sample,config):
     log.debug(logid+'SAMPLE: '+str(sample))
     ret = list()
     for s in sample:
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        log.debug(logid+'S: '+str(tmplist))
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        ret.append(str(p).replace(',','_'))
+        check = conditiononly(sample,config)
+        #check = os.path.dirname(s).split(os.sep)
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        p = subDict(config['SETTINGS'], check)
+        paired = p.get('SEQUENCING')
+        ret.append(str(paired).replace(',','_'))
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)
 
@@ -763,15 +745,17 @@ def checkstranded(sample,config):
     ret = list()
     stranded = ''
     for s in sample:
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        #check = os.path.dirname(s).split(os.sep)
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        check = conditiononly(sample,config)
+        p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            if r in p:
-                tmplist.append(r)
-                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
-                tmplist = tmplist[:2]
+        stranded = p.get('SEQUENCING').split(',')[1] if len(p.get('SEQUENCING').split(',')) > 1 else ''
+        #for r in runstate_from_sample([s],config):
+        #    if r in p:
+        #        tmplist.append(r)
+        #        stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
+        #        tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
@@ -782,20 +766,21 @@ def post_checkpaired(sample,config):
     paired = ''
     for s in sample:
         log.debug(logid+'SAMPLE: '+str(sample))
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        log.debug(logid+'TMP: '+str(tmplist))
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        check = conditiononly(sample,config)
+        p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
+        paired = p.get('SEQUENCING').split(',')[0]
+        #check = os.path.dirname(s).split(os.sep)
+        #tmplist = check
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
         #if not dict_inst(p):
         #paired = p[0] if 'paired' in p or 'unpaired' in p or 'singlecell' in p else ''
-        log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            log.debug(logid+'R: '+str(r))
-            if r in p:
-                tmplist.append(r)
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-                tmplist = tmplist[:2]
+        #for r in runstate_from_sample([s],config):
+        #    log.debug(logid+'R: '+str(r))
+        #    if r in p:
+        #        tmplist.append(r)
+        #        paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+        #        tmplist = tmplist[:2]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
