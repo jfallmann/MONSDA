@@ -5,7 +5,7 @@ if paired == 'paired':
     rule qc_raw:
         input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=list(SAMPLES), read=['R1','R2'])
         output: o1 = report(expand("QC/FASTQC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']), category="QC")
-        log:    expand("LOGS/{rawfile}/fastqc_{read}_raw.log", rawfile=list(SAMPLES), read=['R1','R2'])
+        log:    expand("LOGS/{rawfile}/fastqc_raw.log", rawfile=list(SAMPLES))
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
@@ -14,7 +14,7 @@ if paired == 'paired':
     rule qc_trimmed:
         input:  r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1", "R2"])
         output: o1 = report(expand("QC/FASTQC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config), read=['R1','R2']), category="QC")
-        log:    expand("LOGS/{file}/fastqc_{read}_trimmed.log", file=samplecond(SAMPLES,config), read=['R1','R2'])
+        log:    expand("LOGS/{file}/fastqc_trimmed.log", file=samplecond(SAMPLES,config))
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())

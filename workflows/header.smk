@@ -82,6 +82,7 @@ stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
+dedup = config.get('DEDUP')
 
 # MAPPING Variables
 if 'MAPPING' in config:
@@ -129,25 +130,28 @@ if 'PEAKS' in config:
     if ANNOPEAK:
         ANNOTATION = ANNOPEAK
     else:
-        ANNOTATION = ANNOTATION['GTF']
+        ANNOTATION = ANNOTATION.get('GTF') if 'GTF' in ANNOTATION else ANNOTATION.get('GFF')  # by default GTF forma
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
-    peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
-    try:
-        all([x in peakcallconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
 
-    MINPEAKRATIO = peakcallconf['MINPEAKRATIO']
-    PEAKDISTANCE = peakcallconf['PEAKDISTANCE']
-    PEAKWIDTH = peakcallconf['PEAKWIDTH']
-    PEAKCUTOFF = peakcallconf['PEAKCUTOFF']
-    MINPEAKHEIGHT = peakcallconf['MINPEAKHEIGHT']
-    USRLIMIT = peakcallconf['USRLIMIT']
+    PEAKBIN, PEAKENV = env_bin_from_config2(SAMPLES,config,'PEAKS')
+    if PEAKBIN == 'peaks':
+        peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
+        try:
+            all([x in peakcallconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
+        except Exception as err:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tbe = tb.TracebackException(
+                exc_type, exc_value, exc_tb,
+            )
+            log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
+
+        MINPEAKRATIO = peakcallconf['MINPEAKRATIO']
+        PEAKDISTANCE = peakcallconf['PEAKDISTANCE']
+        PEAKWIDTH = peakcallconf['PEAKWIDTH']
+        PEAKCUTOFF = peakcallconf['PEAKCUTOFF']
+        MINPEAKHEIGHT = peakcallconf['MINPEAKHEIGHT']
+        USRLIMIT = peakcallconf['USRLIMIT']
 
     if 'PREPROCESS' in peakcallconf:
         PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakcallconf['PREPROCESS'].items())
@@ -164,7 +168,7 @@ for x in ['UCSC', 'COUNTING']:
         if XANNO:
             ANNOTATION = XANNO
         else:
-            ANNOTATION = ANNOTATION['GTF']
+            ANNOTATION = ANNOTATION.get('GTF') if 'GTF' in ANNOTATION else ANNOTATION.get('GFF')  # by default GTF forma
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))

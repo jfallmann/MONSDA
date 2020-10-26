@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 14:48:52 2020 (+0100)
+# Last-Updated: Mon Oct 26 16:58:17 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1076
+#     Update #: 1080
 # URL:
 # Doc URL:
 # Keywords:
@@ -299,7 +299,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
         alldedupqc = 'expand("QC/Multi/DEDUP_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-        alldedup = 'rule themall:\n    input: expand("DEDUP_FASTQ/{file}_{read}.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{file}.fastq.gz", file=samplecond(SAMPLES,config))'
+        alldedup = 'rule themall:\n    input: expand("DEDUP_FASTQ/{file}_{read}_dedup.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{file}_dedup.fastq.gz", file=samplecond(SAMPLES,config))'
         alltrimdedupqc = 'expand("QC/Multi/DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
         if subworkflows:
@@ -434,7 +434,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for condition in conditions:
                 subconf = NestedDefaultDict()
                 for subwork in postprocess:
-                    if any(subwork == x for x in ['DE', 'DEU', 'DAS']):
+                    if any(subwork == x for x in ['DE', 'DEU', 'DAS', 'DTU']):
                         continue
 
                     SAMPLES = get_samples_postprocess(config,subwork)
@@ -484,7 +484,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'JOB CODE '+str(job))
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
-            for analysis in ['DE', 'DEU', 'DAS']:
+            for analysis in ['DE', 'DEU', 'DAS', 'DTU']:
                 if analysis in config and analysis in postprocess:
 
                     subwork = analysis

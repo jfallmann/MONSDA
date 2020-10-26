@@ -16,8 +16,8 @@ if paired == 'paired':
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 wl = rules.whitelist.output.wl
-        output: o1 = "DEDUP_FASTQ/{file}_R1.fastq.gz",
-                o2 = "DEDUP_FASTQ/{file}_R2.fastq.gz",
+        output: o1 = "DEDUP_FASTQ/{file}_R1_dedup.fastq.gz",
+                o2 = "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
         log:   "LOGS/{file}_dedup_extract.log"
         conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
         threads: MAXTHREAD
@@ -39,7 +39,7 @@ else:
     rule extract:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                 wl = rules.whitelist.output.wl
-        output: o1 = "DEDUP_FASTQ/{file}.fastq.gz"
+        output: o1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
         log:   "LOGS/{file}_dedup_extract.log"
         conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
         threads: MAXTHREAD
