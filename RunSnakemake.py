@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 10:52:12 2020 (+0100)
+# Last-Updated: Mon Oct 26 11:54:57 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1060
+#     Update #: 1069
 # URL:
 # Doc URL:
 # Keywords:
@@ -125,7 +125,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
-            if 'MAPPING' in subworkflows and 'QC' in preprocess:
+            if 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
                 preprocess.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
@@ -337,14 +337,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                 smkout.write('rule themall:\n\tinput:\t'+allrawqc+'\n\n')
 
                 if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
-                    log.info(logid+'Mapping without QC!')
+                    log.info(logid+'Mapping without QC for condition '+str(condition)+'!')
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write('rule themall:\n\tinput:\t'+allmap+'\n\n')
                         smkout.write('\n\n')
 
                 if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
-                    log.info(logid+'Simulating read trimming as trimming is not part of the workflow!')
+                    log.info(logid+'Simulating read trimming as trimming is not part of the workflow for condition '+str(condition)+'!')
                     makeoutdir('TRIMMED_FASTQ')
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.smk'))
                     with open(smko, 'a') as smkout:
@@ -353,14 +353,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         smkout.write('\n\n')
 
                 if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
-                    log.info(logid+'Trimming without QC!')
+                    log.info(logid+'Trimming without QC for condition'+str(condition)+'!')
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(alltrim+'\n')
                         smkout.write('\n\n')
 
                 if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
-                    log.info(logid+'DEDUP without QC!')
+                    log.info(logid+'DEDUP without QC for condition'+str(condition)+'!')
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             smkout.write(alldedup+'\n')
@@ -379,13 +379,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                         if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             if 'DEDUP' in subworkflows:
-                                subname = toolenv+'dedup_trim.smk'
+                                subname = toolenv+'_dedup_trim.smk'
                             else:
                                 subname = toolenv+'_trim.smk'
 
                         if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                             if 'DEDUP' in subworkflows:
-                                subname = toolenv+'dedup.smk'
+                                subname = toolenv+'_dedup.smk'
                             else:
                                 subname = toolenv+'_raw.smk'
 
@@ -401,11 +401,12 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smkf,'r') as smk:
                             smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                         smkout.write('\n\n')
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+                    if 'QC' in subworkflows:
+                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                        with open(smko, 'a') as smkout:
+                            with open(smkf,'r') as smk:
+                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                            smkout.write('\n\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
                 with open(smko, 'a') as smkout:

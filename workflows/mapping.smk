@@ -41,3 +41,25 @@ rule sam2bamuniq:
     params: bins=BINS,
             fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
     shell: "zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
+
+rule dedupbam:
+    input:  bam = rules.sam2bam.output.bam
+    output: bam = report("MAPPED/{file}_mapped_sorted_dedup.bam", category="DEDUP")
+    log:    "LOGS/{file}/dedupbam.log"
+    conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
+    threads: MAXTHREAD
+    params: fn = lambda wildcards: "{fn}".format(fn=str(sample_from_path(wildcards.file))),
+            dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            dedup=DEDUPBIN
+    shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} > {output.bam} 2>> {log}"
+
+rule dedupuniqbam:
+    input:  bam = rules.sam2bamuniq.output.uniqbam
+    output: bam = report("MAPPED/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP")
+    log:    "LOGS/{file}/dedupuniqbam.log"
+    conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
+    threads: MAXTHREAD
+    params: fn = lambda wildcards: "{fn}".format(fn=str(sample_from_path(wildcards.file))),
+            dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            dedup=DEDUPBIN
+    shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} > {output.bam} 2>> {log}"
