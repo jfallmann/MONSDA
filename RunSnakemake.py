@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 16:58:17 2020 (+0100)
+# Last-Updated: Mon Oct 26 18:31:53 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1080
+#     Update #: 1081
 # URL:
 # Doc URL:
 # Keywords:
@@ -429,11 +429,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         else:
             log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
 
-        if postprocess:
 
+        if postprocess:
             for condition in conditions:
-                subconf = NestedDefaultDict()
                 for subwork in postprocess:
+                    subconf = NestedDefaultDict()
                     if any(subwork == x for x in ['DE', 'DEU', 'DAS', 'DTU']):
                         continue
 
@@ -463,7 +463,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                     line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
-                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:

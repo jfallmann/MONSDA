@@ -189,7 +189,7 @@ rule PreprocessPeaks:
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
-             opts=PREPROCESS
+             opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][0].items()),
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]} 2> {log}"
 
 rule Find_Peaks:
@@ -198,12 +198,7 @@ rule Find_Peaks:
     log:    "LOGS/PEAKS/findpeaks{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
-    params: limitratio=MINPEAKRATIO,
-            ratio=PEAKCUTOFF,
-            distance=PEAKDISTANCE,
-            width=PEAKWIDTH,
-            cutoff=MINPEAKHEIGHT,
-            userlimit=USRLIMIT,
+    params: opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][1].items()),
             bins=BINS
     shell:  "perl {params.bins}/Analysis/FindPeaks.pl -p {input[0]} -r {params.ratio} -l {params.limitratio} -t {params.distance} -w {params.width} -c {params.cutoff} -a {params.userlimit} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
@@ -219,7 +214,7 @@ rule Find_Peaks:
 rule UnzipGenome:
     input:  ref = REFERENCE,
     output: fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz',''))
-    log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
+    log:    "LOGS/PEAKS/indexfa.log"
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS

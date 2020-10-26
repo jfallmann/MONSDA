@@ -1,4 +1,4 @@
-COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
+PEAKBIN, PEAKENV = env_bin_from_config2(SAMPLES,config,'PEAKS')
 
 wildcard_constraints:
     type = "sorted|unique" if not dedup else "sorted_dedup|unique_dedup"
@@ -211,36 +211,36 @@ else:
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 rule PreprocessPeaks:
-    input:  "PEAKS/{file}_mapped_{type}.bedg.gz"
-    output: "PEAKS/{file}_prepeak_{type}.bed.gz",
+    input:  bedg = "PEAKS/{file}_mapped_{type}.bedg.gz"
+    output: pre = "PEAKS/{file}_prepeak_{type}.bed.gz",
     log:    "LOGS/PEAKS/prepeak_{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
-             opts=PREPROCESS
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]} 2> {log}"
+             opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][0].items()),
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input.bedg} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
-rule Piranha:
-    input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
-    output: "PEAKS/{file}_pir_peak_{type}.bed.gz"
+rule FindPeaks:
+    input:  pre = rules.PreprocessPeaks.output.pre
+    output: peak = "PEAKS/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/findpeaks{type}_{file}.log"
-    conda:  "snakes/envs/"+PEAKENV+".yaml"
+    conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
     threads: 1
-    params: ppara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][0].items()),
+    params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][1].items()),
             peak = PEAKBIN
-    shell:  "| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+    shell:  "{params.peak} {params.ppara} {input.pre} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
     output: fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz',''))
-    log:    "LOGS/PEAKS/{org}/{gen}{name}/indexfa.log"
+    log:    "LOGS/PEAKS/indexfa.log"
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
-    input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
+    input:  pk = rules.FindPeaks.output.peak,
             fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz',''))
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),

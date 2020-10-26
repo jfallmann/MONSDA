@@ -190,18 +190,15 @@
             "condition": {
                 "setting": {  # See above
                               "ENV" : "peaks",
+                              "BIN" : "peaks"
                               "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
                               "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
                               [
-                                  {
-                                      "MINPEAKRATIO": "0.6",
-                                      "PEAKDISTANCE": "1",
-                                      "PEAKWIDTH": "5",
-                                      "PEAKCUTOFF": "0.8",
-                                      "MINPEAKHEIGHT": "3",
-                                      "USRLIMIT": "3"
+                                  {  # Preprocessor options
+                                  },
+                                  {  # Options for peak finder
                                   }
                               ]
                            }

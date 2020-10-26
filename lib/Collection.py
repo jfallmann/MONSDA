@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 10:55:33 2020 (+0100)
+# Last-Updated: Mon Oct 26 18:21:46 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2051
+#     Update #: 2052
 # URL:
 # Doc URL:
 # Keywords:
@@ -419,7 +419,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             for key in ['SAMPLES', 'SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
-                    if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING', 'SRA']]):
+                    if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
