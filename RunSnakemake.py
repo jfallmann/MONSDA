@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 11:54:57 2020 (+0100)
+# Last-Updated: Mon Oct 26 14:48:52 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1069
+#     Update #: 1076
 # URL:
 # Doc URL:
 # Keywords:
@@ -113,7 +113,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         #Define workflow stages
         pre = ['QC','SRA']
-        sub = ['QC','MAPPING','TRIMMING','DEDUP']
+        sub = ['QC','DEDUP','TRIMMING','MAPPING']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
         wfs = config['WORKFLOWS'].split(',')
@@ -578,7 +578,7 @@ def runjob(jobtorun):
             if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
-                if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output:
+                if any(x in output for x in ['ERROR', 'Error', 'error', 'Exception']) and not 'Workflow finished' in output or 'Workflow finished' in outerr :
                     if outerr:
                         log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
                     else:
@@ -589,7 +589,7 @@ def runjob(jobtorun):
                 else:
                     log.info(logid+str(output))
             if outerr and outerr != '':
-                if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and any(x in outerr for x in ['ERROR','Error','error','Exception']):
+                if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and not 'Workflow finished' in output and any(x in outerr for x in ['ERROR', 'Error', 'error', 'Exception']):
                     log.error(logid+'STOPPING: '+str(outerr))
                     log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
                     job.kill()
