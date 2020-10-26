@@ -11,7 +11,7 @@ rule generate_index:
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda w: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
-            anno = ANNO,
+            anno = ANNOTATION,
             linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1]))),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
             pref = PREFIX
@@ -32,7 +32,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
-                anno = ANNO,
+                anno = ANNOTATION,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.index} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate1 {output.unmapped_r1} 2>> {log} && mv {output.tmp}.Unmapped.out.mate2 {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
@@ -49,6 +49,6 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
-                anno = ANNO,
+                anno = ANNOTATION,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.index} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && mv {output.tmp}.Unmapped.out.mate* {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"

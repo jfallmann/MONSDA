@@ -94,6 +94,8 @@ if 'MAPPING' in config:
     ANNO = MAPCONF.get('ANNOTATION')
     if ANNO:
         ANNOTATION = ANNO
+    else:
+        ANNOTATION = ANNOTATION.get('GTF') if 'GTF' in ANNOTATION else ANNOTATION.get('GFF')  # by default GTF format will be used
     MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
@@ -126,6 +128,8 @@ if 'PEAKS' in config:
     ANNOPEAK = PEAKCONF.get('ANNOTATION')
     if ANNOPEAK:
         ANNOTATION = ANNOPEAK
+    else:
+        ANNOTATION = ANNOTATION['GTF']
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
     peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
@@ -159,6 +163,8 @@ for x in ['UCSC', 'COUNTING']:
         XANNO = XCONF.get('ANNOTATION')
         if XANNO:
             ANNOTATION = XANNO
+        else:
+            ANNOTATION = ANNOTATION['GTF']
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))

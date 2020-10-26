@@ -9,13 +9,19 @@
                                        }
                         }
                },
-    "SEQUENCING": {
-        "id": { #key for source and genome
-                "condition": { # sample id
-                               "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
-                             }
-              }
-    },
+    "SETTINGS": {
+        "id": {
+            "condition": {
+                "setting": {
+                    "SEQUENCING": "unpaired",  #or paired and stranded info comma separated
+                    "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",  #default Referene Genome fa.gz file
+                    "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings
+                    "PREFIX": "idx",  #if needed, prefix for mapping software can be set here
+                    "ANNOTATION": {
+                        "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
+                        "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
+                    }
+                },
 #SRA options
     "SRA": {
         "id": { #key for source and genome
@@ -64,16 +70,38 @@
                       }
                   }
                 },
+#Deduplication options
+    "DEDUP": { #options for trimming for each sample/condition
+                  "id": {
+                      "condition": {
+                          "setting": { # See above
+                                       "ENV": "umitools", # name of conda env for dedup
+                                       "BIN": "umi_tools", # name of binary for dedup
+                                       "OPTIONS":
+                                       [
+                                           {  # dedup whitelist options,
+                                              "-q": "15",
+                                              "--length": "8", #READ_MINLEN discard reads shorter than that
+                                              "-e": "0.15"
+                                           },
+                                           {  # dedup extract options
+
+                                           }
+                                       ]
+                                     }
+                      }
+                  }
+                },
 #MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
                  "id": {
                      "condition": {
                          "setting": {
-                             "ENV": "star", # which conda env to use for mapping
-                             "BIN": "STAR", #how the mapper binary is called
-                             "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
-                             "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
-                             "OPTIONS": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                             "ENV": "star",  # which conda env to use for mapping
+                             "BIN": "STAR",  #how the mapper binary is called
+                             "REFERENCE": "$PATHTO/genome.fa.gz",  #Path to the gzipped Genome FASTA file, overwrites SETTINGS
+                             "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
+                             "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                              [
                                  {  #indexing options
                                     "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
@@ -84,8 +112,7 @@
                                     "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
                                     "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
                                     "--outSAMprimaryFlag AllBestScore": ""
-                                 },
-                                 "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index, can be empty or skipped
+                                 }
                              ]
                          }
                      }

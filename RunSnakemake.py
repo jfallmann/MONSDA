@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Oct 20 17:34:50 2020 (+0200)
+# Last-Updated: Mon Oct 26 10:52:12 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1048
+#     Update #: 1060
 # URL:
 # Doc URL:
 # Keywords:
@@ -113,7 +113,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         #Define workflow stages
         pre = ['QC','SRA']
-        sub = ['QC','MAPPING','TRIMMING']
+        sub = ['QC','MAPPING','TRIMMING','DEDUP']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
         wfs = config['WORKFLOWS'].split(',')
@@ -293,11 +293,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         END OF PREPROCESSING, START OF PROCESSING
         '''
 
-        allmap = 'expand("MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))'
+        allmap = 'expand("MAPPED/{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'expand("MAPPED/{file}_mapped_sorted_unique_dedup.bam", file=samplecond(SAMPLES,config))'
         allqc  = 'expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         allrawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrimqc = 'expand("QC/Multi/TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
         alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
+        alldedupqc = 'expand("QC/Multi/DEDUP_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+        alldedup = 'rule themall:\n    input: expand("DEDUP_FASTQ/{file}_{read}.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{file}.fastq.gz", file=samplecond(SAMPLES,config))'
+        alltrimdedupqc = 'expand("QC/Multi/DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
@@ -320,9 +323,15 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         with open(smko, 'a') as smkout:
                             smkout.write('rule themall:\n\tinput:\t'+allmap+',\n\t\t'+allqc+'\n\n')
                     else:
-                        if 'TRIMMING' in subworkflows:
+                        if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
                             with open(smko, 'a') as smkout:
                                 smkout.write('rule themall:\n\tinput:\t'+alltrimqc+'\n\n')
+                        elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
+                            with open(smko, 'a') as smkout:
+                                smkout.write('rule themall:\n\tinput:\t'+alltrimdedupqc+'\n\n')
+                        elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
+                            with open(smko, 'a') as smkout:
+                                smkout.write('rule themall:\n\tinput:\t'+alldedupqc+'\n\n')
                         else:
                             with open(smko, 'a') as smkout:
                                 smkout.write('rule themall:\n\tinput:\t'+allrawqc+'\n\n')
@@ -350,6 +359,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             smkout.write(alltrim+'\n')
                         smkout.write('\n\n')
 
+                if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
+                    log.info(logid+'DEDUP without QC!')
+                    with open(smko, 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(alldedup+'\n')
+                        smkout.write('\n\n')
+
                 subconf = NestedDefaultDict()
                 for subwork in subworkflows:
                     log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
@@ -362,10 +378,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'SUBWORKFLOW: '+str([subwork,toolenv,subname,condition, subsamples, subconf]))
 
                         if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
-                            subname = toolenv+'_trim.smk'
+                            if 'DEDUP' in subworkflows:
+                                subname = toolenv+'dedup_trim.smk'
+                            else:
+                                subname = toolenv+'_trim.smk'
 
                         if subwork == 'QC' and not 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
-                            subname = toolenv+'_raw.smk'
+                            if 'DEDUP' in subworkflows:
+                                subname = toolenv+'dedup.smk'
+                            else:
+                                subname = toolenv+'_raw.smk'
 
                         smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
                         with open(smko, 'a') as smkout:

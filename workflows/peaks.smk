@@ -245,7 +245,7 @@ if ANNOPEAK is not None:
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
-                anno = ANNOPEAK['GFF'] if ANNOPEAK.get('GFF') else ANNOPEAK.get('GTF')
+                anno = ANNOTATION
         shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}"
 
     rule PeakToBedg:

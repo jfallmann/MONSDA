@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Oct 23 15:20:12 2020 (+0200)
+# Last-Updated: Mon Oct 26 10:55:33 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2047
+#     Update #: 2051
 # URL:
 # Doc URL:
 # Keywords:
@@ -419,14 +419,14 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             for key in ['SAMPLES', 'SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], [src, treat, setup])) <1:
-                    if any([subwork == x for x in ['QC','MAPPING','TRIMMING','SRA']]):
+                    if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING', 'SRA']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
                 else:
                     tempconf[key][src][treat][setup] = config[key][src][treat][setup]
 
-            if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
+            if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
