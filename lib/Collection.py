@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 18:21:46 2020 (+0100)
+# Last-Updated: Tue Oct 27 11:49:39 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2052
+#     Update #: 2082
 # URL:
 # Doc URL:
 # Keywords:
@@ -404,8 +404,6 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             if subwork not in ['DE', 'DEU', 'DAS', 'SRA']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
-        src, treat, setup = condition
-        log.debug(logid+str([env,exe,src,treat,setup]))
         tempconf = NestedDefaultDict()
         try:
             for key in ['BINS','MAXTHREADS']:
@@ -418,19 +416,19 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             log.error(''.join(tbe.format()))
         try:
             for key in ['SAMPLES', 'SETTINGS', subwork]:
-                if len(getFromDict(config[subwork], [src, treat, setup])) <1:
+                if len(getFromDict(config[subwork], condition)) <1:
                     if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
                 else:
-                    tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+                    tempconf[key] = subSetDict(config[key],condition)
 
             if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
-                    tempconf['MAPPING'][src][treat][setup] = config['MAPPING'][src][treat][setup]
+                    tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
                 if 'TOOLS' in config[subwork]:
@@ -1056,6 +1054,16 @@ def subDict(dataDict, mapList):
             ret = ret[k]
         else:
             log.debug(logid+'No k in dict')
+    return ret
+
+@check_run
+def subSetDict(dataDict, mapList):
+    logid = scriptname+'.Collection_subDict: '
+    log.debug(logid+str(mapList))
+    parse = subDict(dataDict, mapList)
+    ret = {}
+    nested_set(ret, mapList, parse)
+    log.debug(logid+str(ret))
     return ret
 
 @check_run
