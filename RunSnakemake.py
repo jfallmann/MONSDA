@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Oct 26 18:31:53 2020 (+0100)
+# Last-Updated: Wed Oct 28 12:24:12 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1081
+#     Update #: 1083
 # URL:
 # Doc URL:
 # Keywords:
@@ -437,9 +437,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     if any(subwork == x for x in ['DE', 'DEU', 'DAS', 'DTU']):
                         continue
 
-                    SAMPLES = get_samples_postprocess(config,subwork)
+                    SAMPLES = get_samples_postprocess(config, subwork)
                     log.info(logid+'STARTING POSTPROCESSING '+str(subwork)+' WITH SAMPLES '+str(SAMPLES))
-
                     log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     log.debug(logid+str([listoftools,listofconfigs]))
@@ -487,7 +486,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 if analysis in config and analysis in postprocess:
 
                     subwork = analysis
-                    SAMPLES = get_samples_postprocess(config,subwork)
+                    SAMPLES = get_samples_postprocess(config, subwork)
                     log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
 
                     subconf = NestedDefaultDict()

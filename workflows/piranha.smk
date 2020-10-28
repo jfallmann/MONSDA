@@ -128,12 +128,12 @@ rule extendbed:
 rule rev_extendbed:
     input:  pks = "PEAKS/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
+    output: ext = "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output[0]} -g {input.ref}  2> {log}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
 
 checklist = list()
 checklist2 = list()
