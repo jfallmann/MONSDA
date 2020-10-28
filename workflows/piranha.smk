@@ -1,53 +1,53 @@
 PEAKBIN, PEAKENV = env_bin_from_config2(SAMPLES,config,'PEAKS')
 
 wildcard_constraints:
-    type = "sorted|unique" if not rundedup else "sorted_dedup|unique_dedup"
+    type = "sorted|sorted_unique" if not rundedup else "sorted|unique|sorted_dedup|sorted_unique_dedup"
 
 if ANNOPEAK is not None:
     if not rundedup:
         rule themall:
-            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.fw.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.re.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup'])
+            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.fw.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.re.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
 
 else:
     if not rundedup:
         rule themall:
-            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
-                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.fw.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.re.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.re.bw",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup']),
-                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup'])
+            input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.fw.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.re.bw.trackdone",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.fw.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/{file}_peak_{type}.re.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_peak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_prepeak_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{file}_peak_seq_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
 
 
 checklist = list()
@@ -78,24 +78,20 @@ elif all(checklist2):
 else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "MAPPED/{file}_mapped_{type}.bam",
-                    "MAPPED/{file}_mapped_{type}.bam"
-            output: "PEAKS/{file}_mapped_{type}.bed.gz",
-                    "PEAKS/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/bam2bed_{file}.log"
+            input:  "MAPPED/{file}_mapped_{type}.bam"
+            output: "PEAKS/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/bam2bed_{file}_{type}.log"
             threads: 1
             conda:  "nextsnakes/envs/bedtools.yaml"
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
     elif stranded and stranded == 'rf':
         rule BamToBed:
-            input:  "MAPPED/{file}_mapped_{type}.bam",
-                    "MAPPED/{file}_mapped_{type}.bam"
-            output: "PEAKS/{file}_mapped_{type}.bed.gz",
-                    "PEAKS/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/bam2bed_{file}.log"
+            input:  "MAPPED/{file}_mapped_{type}.bam"
+            output: "PEAKS/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/bam2bed_{file}_{type}.log"
             threads: 1
             conda:  "nextsnakes/envs/bedtools.yaml"
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
 rule index_fa:
     input:  REFERENCE
@@ -228,7 +224,7 @@ rule FindPeaks:
     threads: 1
     params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][1].items()),
             peak = PEAKBIN
-    shell:  "{params.peak} {params.ppara} {input.pre} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
+    shell:  "{params.peak} {params.ppara} <(zcat {input.pre}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -265,43 +261,68 @@ if ANNOPEAK is not None:
     rule PeakToBedg:
         input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
                 pa = rules.AnnotatePeak.output
-        output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
-                "UCSC/{file}_peak_{type}.re.bedg.gz",
-                temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
-                temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+        output: fw = "UCSC/{file}_peak_{type}.fw.bedg.gz",
+                re = "UCSC/{file}_peak_{type}.re.bedg.gz",
+                tfw = temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
+                trw = temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
-        params: out=expand("UCSC/{source}",source=SETS),
-                bins=BINS,
+        params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
         input:  pk = "PEAKS/{file}_peak_{type}.bed.gz"
-        output: "UCSC/{file}_peak_{type}.fw.bedg.gz",
-                "UCSC/{file}_peak_{type}.re.bedg.gz",
-                temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
-                temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+        output: fw = "UCSC/{file}_peak_{type}.fw.bedg.gz",
+                re = "UCSC/{file}_peak_{type}.re.bedg.gz",
+                tfw = temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
+                tre = temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
-        params: out=expand("UCSC/{source}",source=SOURCE),
-                bins=BINS,
+        params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output[2]} -y {output[3]} -a track 2>> {log} && zcat {output[2]}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output[0]} 2>> {log} &&  zcat {output[2]}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[1]} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+
+### This step normalized the bedg files for comparison in the browser
+rule NormalizeBedg:
+    input:  fw = rules.PeakToBedg.output.fw,
+            re = rules.PeakToBedg.output.re
+    output: fw = "UCSC/{file}_peak_{type}.fw.norm.bedg.gz",
+            re = "UCSC/{file}_peak_{type}.re.norm.bedg.gz"
+    log:    "LOGS/UCSC/{file}_{type}_ucscpeaknormalizebedgraph.log"
+    conda:  "nextsnakes/envs/perl.yaml"
+    threads: 1
+    shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule PeakToUCSC:
-    input:  "UCSC/{file}_peak_{type}.fw.bedg.gz",
-            "UCSC/{file}_peak_{type}.re.bedg.gz"
-    output: "UCSC/{file}_peak_{type}.fw.bw",
-            "UCSC/{file}_peak_{type}.re.bw",
-            temp("UCSC/{file}_{type}fw_tmp"),
-            temp("UCSC/{file}_{type}re_tmp")
+    input:  fw = rules.NormalizeBedg.output.fw,
+            re = rules.NormalizeBedg.output.re
+    output: fw = "UCSC/{file}_peak_{type}.fw.bw",
+            re = "UCSC/{file}_peak_{type}.re.bw",
+            tfw = temp("UCSC/{file}_{type}fw_tmp"),
+            tre = temp("UCSC/{file}_{type}re_tmp")
     log:    "LOGS/PEAKS/peak2ucsc{file}_{type}.log"
     conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    shell:  "zcat {input[0]} > {output[2]} 2>> {log} && bedGraphToBigWig {output[2]} {params.sizes} {output[0]} 2>> {log} && zcat {input[1]} > {output[3]} 2>> {log} && bedGraphToBigWig {output[3]} {params.sizes} {output[1]} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {params.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {params.sizes} {output.re} 2>> {log}"
+
+rule GenerateTrack:
+    input:  fw = rules.PeakToUCSC.output.fw,
+            re = rules.PeakToUCSC.output.re
+    output: "UCSC/{file}_peak_{type}.fw.bw.trackdone",
+            "UCSC/{file}_peak_{type}.re.bw.trackdone"
+    log:    "LOGS/UCSC/{file}_peak_{type}.log"
+    conda:  "nextsnakes/envs/base.yaml"
+    threads: MAXTHREAD
+    params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
+            bins = os.path.abspath(BINS),
+            gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
+            options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
+            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+'PEAKS_'+SETS.replace(os.sep,'_'))
+    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

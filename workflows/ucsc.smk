@@ -1,8 +1,8 @@
 wildcard_constraints:
-    type="sorted|unique"
+    type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"
 
 rule themall:
-    input: expand("UCSC/{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config),type=['sorted','unique'], orient=['fw','re'])
+    input: expand("UCSC/{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re']) if not rundedup else expand("UCSC/{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'])
 
 checklist = list()
 checklist2 = list()
@@ -32,24 +32,20 @@ elif all(checklist2):
 else:
     if not stranded or (stranded == 'fr' or stranded == 'ISF') :
         rule BamToBed:
-            input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "MAPPED/{file}_mapped_sorted_unique.bam"
-            output: "UCSC/{file}_mapped_sorted.bed.gz",
-                    "UCSC/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
+            input:  "MAPPED/{file}_mapped_{type}.bam",
+            output: "UCSC/{file}_mapped_{type}.bed.gz",
+            log:    "LOGS/UCSC/{file}_{type}_ucscbamtobed.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
-            input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "MAPPED/{file}_mapped_sorted_unique.bam"
-            output: "UCSC/{file}_mapped_sorted.bed.gz",
-                    "UCSC/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/UCSC/{file}_ucscbamtobed.log"
+            input:  "MAPPED/{file}_mapped_{type}.bam",
+            output: "UCSC/{file}_mapped_{type}.bed.gz",
+            log:    "LOGS/UCSC/{file}_{type}_ucscbamtobed.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
 rule index_fa:
     input:  REFERENCE
@@ -127,7 +123,7 @@ rule NormalizeBedg:
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
 rule BedgToUCSC:
     input:  fw = rules.NormalizeBedg.output.fw,
-            re = rules.NormalizeBedg.output.re,
+            re = rules.NormalizeBedg.output.re
     output: fw = "UCSC/{file}_mapped_{type}.fw.bw",
             re = "UCSC/{file}_mapped_{type}.re.bw",
             t1 = temp("UCSC/{file}_mapped_{type}.fw.tmp"),

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Oct 27 14:06:09 2020 (+0100)
+# Last-Updated: Wed Oct 28 15:22:00 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2086
+#     Update #: 2098
 # URL:
 # Doc URL:
 # Keywords:
@@ -421,10 +421,11 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
+                        return None, None
                 else:
                     tempconf[key] = subSetDict(config[key],condition)
                     if key == 'SETTINGS' and config.get('DEDUP'):
-                        tempconf['SETTINGS']['RUNDEDUP'] = 'True'
+                        tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
             if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
                 if subwork == 'COUNTING':

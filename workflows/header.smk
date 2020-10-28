@@ -71,7 +71,9 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
-rundedup = bool(SETTINGS.get('RUNDEDUP'))
+rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
+if rundedup:
+    log.info('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -132,18 +134,6 @@ if 'PEAKS' in config:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
-
-    PEAKBIN, PEAKENV = env_bin_from_config2(SAMPLES,config,'PEAKS')
-    if PEAKBIN == 'peaks':
-        peakcallconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][1]
-        try:
-            all([x in peakcallconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
-        except Exception as err:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            tbe = tb.TracebackException(
-                exc_type, exc_value, exc_tb,
-            )
-            log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
 
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:
