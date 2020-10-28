@@ -1,6 +1,6 @@
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-if not dedup:
+if not rundedup:
     rule themall:
         input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
                 expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),

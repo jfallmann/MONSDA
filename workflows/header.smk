@@ -71,6 +71,7 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
+rundedup = bool(SETTINGS.get('RUNDEDUP'))
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -81,8 +82,6 @@ if paired == 'paired':
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
-
-dedup = config.get('DEDUP')
 
 # MAPPING Variables
 if 'MAPPING' in config:

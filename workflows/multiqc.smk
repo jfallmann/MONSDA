@@ -1,4 +1,4 @@
-if dedup:
+if rundedup:
     if paired == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2']),

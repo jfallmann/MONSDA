@@ -1,10 +1,10 @@
 PEAKBIN, PEAKENV = env_bin_from_config2(SAMPLES,config,'PEAKS')
 
 wildcard_constraints:
-    type = "sorted|unique" if not dedup else "sorted_dedup|unique_dedup"
+    type = "sorted|unique" if not rundedup else "sorted_dedup|unique_dedup"
 
 if ANNOPEAK is not None:
-    if not dedup:
+    if not rundedup:
         rule themall:
             input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
                     expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),
@@ -28,7 +28,7 @@ if ANNOPEAK is not None:
                     expand("PEAKS/{file}_peak_anno_{type}.bed.gz",file=samplecond(SAMPLES,config), type=['sorted_dedup','unique_dedup'])
 
 else:
-    if not dedup:
+    if not rundedup:
         rule themall:
             input:  expand("PEAKS/{file}_mapped_{type}.bedg.gz",file=samplecond(SAMPLES,config), type=['sorted','unique']),
                     expand("UCSC/{file}_peak_{type}.fw.bw",file=samplecond(SAMPLES,config), type=['sorted','unique']),

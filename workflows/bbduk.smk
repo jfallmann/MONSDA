@@ -2,8 +2,8 @@ TRIMBIN, TRIMENV = env_bin_from_config2(MAPSAMPLES,config,'TRIMMING')
 
 if paired = 'paired':
 	rule bbduk_trim:
-	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not dedup else "DEDUP_FASTQ/{file}_R1_dedup.fastq.gz",
-	            r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not dedup else "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
+	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{file}_R1_dedup.fastq.gz",
+	            r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
 	    output: o1 = "TRIMMED_FASTQ/{file}_R1_val_1.fq.gz",
 	            o2 = "TRIMMED_FASTQ/{file}_R2_val_2.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
@@ -24,7 +24,7 @@ if paired = 'paired':
 	    shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"
 else:
 	rule bbduk_trim:
-	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not dedup else "DEDUP_FASTQ/{file}_dedup.fastq.gz"
+	    input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{file}_dedup.fastq.gz"
 	    output: o1 = "TRIMMED_FASTQ/{file}_trimmed.fq.gz"
 	    log:    "LOGS/{file}_trim.log"
 	    conda: "nextsnakes/envs/"+TRIMENV+".yaml"
