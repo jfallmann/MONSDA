@@ -71,7 +71,7 @@
                   }
                 },
 #Deduplication options
-    "DEDUP": { #options for trimming for each sample/condition
+    "DEDUP": { #options for deduplication for each sample/condition
                   "id": {
                       "condition": {
                           "setting": { # See above
@@ -80,12 +80,11 @@
                                        "OPTIONS":
                                        [
                                            {  # dedup whitelist options,
-                                              "-q": "15",
-                                              "--length": "8", #READ_MINLEN discard reads shorter than that
-                                              "-e": "0.15"
+                                              "--extract-method": "string",
+                                              "--bc-pattern": "AGANNNNACGT"
                                            },
                                            {  # dedup extract options
-
+                                              "--extract-umi-method": "read_id"
                                            }
                                        ]
                                      }
@@ -189,16 +188,15 @@
         "id": {
             "condition": {
                 "setting": {  # See above
-                              "ENV" : "peaks",
-                              "BIN" : "peaks"
-                              "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
-                              "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
+                              "ENV" : "piranha",
+                              "BIN" : "Piranha"
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
                               [
                                   {  # Preprocessor options
                                   },
                                   {  # Options for peak finder
+                                     "-b":"10"
                                   }
                               ]
                            }
