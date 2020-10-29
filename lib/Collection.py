@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Oct 28 15:22:00 2020 (+0100)
+# Last-Updated: Thu Oct 29 18:06:49 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2098
+#     Update #: 2120
 # URL:
 # Doc URL:
 # Keywords:
@@ -676,7 +676,7 @@ def runstate_from_sample(sample,config):
     return ret
 
 @check_run
-def samplecond(sample,config):
+def samplecond(sample, config):
     logid = scriptname+'.Collection_samplecond: '
     ret = list()
     for s in sample:
@@ -760,6 +760,40 @@ def checkstranded(sample,config):
         #        tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
+
+@check_run
+def set_pairings(samples, config):
+    logid = scriptname+'.Collection_get_pairings: '
+    ret = list()
+    check = conditiononly(samples[0], config)
+    p = subDict(config['PEAKS'], check)
+    pairlist = p['OPTIONS'][0].get('PAIRINGS')
+    log.debug('PAIRLIST: '+str(pairlist))
+    if pairlist:
+        for pair in pairlist:
+            for s, c in pair.items():
+                ret.append(s)
+    else:
+        return samples
+    return ret
+
+@check_run
+def get_pairing(sample, subsample,  config):
+    logid = scriptname+'.Collection_get_pairings: '
+    ret = ''
+    check = conditiononly(sample, config)
+    print('CONDITIONFOUND: '+str(check))
+    p = subDict(config['PEAKS'], check)
+    pairlist = p['OPTIONS'][0].get('PAIRINGS')
+    if pairlist:
+        for pair in pairlist:
+            for s, c in pair.items():
+                if s in sample:
+                    s = samplecond([sample], config)
+                    c = samplecond([c], config)
+                    return '-c '+str(c)+'_mapped_'+str(subsample)+'.bam'
+    else:
+        return ''
 
 @check_run
 def post_checkpaired(sample,config):

@@ -53,7 +53,8 @@ else:
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
-    for type in ['sorted','unique']:
+    checktype = ['sorted','unique'] if not rundedup else ['sorted_dedup','sorted_unique_dedup']
+    for type in checktype:
         checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
         checklist2.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
 
