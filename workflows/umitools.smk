@@ -9,7 +9,7 @@ if paired == 'paired':
             output: wl = "DEDUP_FASTQ/{file}_whitelist"
             log:   "LOGS/{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} whitelist {params.dpara} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
@@ -22,7 +22,7 @@ if paired == 'paired':
                     o2 = "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
             log:   "LOGS/{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
@@ -34,7 +34,7 @@ if paired == 'paired':
                     o2 = "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
             log:   "LOGS/{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
@@ -47,7 +47,7 @@ else:
             output: wl = "DEDUP_FASTQ/{file}_whitelist"
             log:   "LOGS/{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} whitelist {params.dpara} --log={log} --stdin={input.r1} --stdout={output.wl}"
@@ -58,7 +58,7 @@ else:
             output: o1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
             log:   "LOGS/{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
@@ -69,7 +69,7 @@ else:
             output: o1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
             log:   "LOGS/{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
-            threads: MAXTHREAD
+            threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --stdin={input.r1} --stdout={output.o1}"
@@ -79,7 +79,7 @@ rule dedupbam:
     output: bam = report("MAPPED/{file}_mapped_sorted_dedup.bam", category="DEDUP")
     log:    "LOGS/{file}/dedupbam.log"
     conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
-    threads: MAXTHREAD
+    threads: 1
     params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
             dedup = DEDUPBIN
     shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
@@ -90,7 +90,7 @@ rule dedupuniqbam:
     output: bam = report("MAPPED/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP")
     log:    "LOGS/{file}/dedupuniqbam.log"
     conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
-    threads: MAXTHREAD
+    threads: 1
     params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
             dedup = DEDUPBIN
     shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
