@@ -79,12 +79,14 @@
                                        "BIN": "umi_tools", # name of binary for dedup
                                        "OPTIONS":
                                        [
-                                           {  # dedup whitelist options,
+                                           {  # umitools whitelist options,
                                               "--extract-method": "string",
                                               "--bc-pattern": "AGANNNNACGT"
                                            },
-                                           {  # dedup extract options
+                                           {  # umitools extract options
                                               "--extract-umi-method": "read_id"
+                                           },
+                                           {  # umitools dedup options
                                            }
                                        ]
                                      }
