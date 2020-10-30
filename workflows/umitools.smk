@@ -1,5 +1,5 @@
 DEDUPBIN, DEDUPENV = env_bin_from_config2(SAMPLES,config,'DEDUP')
-wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items()) if tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items() else None
+wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items() else None
 
 if paired == 'paired':
     if wlparams:
