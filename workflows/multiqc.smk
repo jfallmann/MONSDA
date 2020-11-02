@@ -13,7 +13,7 @@ if rundedup:
             output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{condition}/tmp"),
                     lst = "QC/Multi/{condition}/qclist.txt"
-            log:    "LOGS/{condition}/multiqc.log"
+            log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
@@ -32,7 +32,7 @@ if rundedup:
             output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{condition}/tmp"),
                     lst = "QC/Multi/{condition}/qclist.txt"
-            log:    "LOGS/{condition}/multiqc.log"
+            log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
@@ -49,7 +49,7 @@ else:
             output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{condition}/tmp"),
                     lst = "QC/Multi/{condition}/qclist.txt"
-            log:    "LOGS/{condition}/multiqc.log"
+            log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
@@ -65,7 +65,7 @@ else:
             output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{condition}/tmp"),
                     lst = "QC/Multi/{condition}/qclist.txt"
-            log:    "LOGS/{condition}/multiqc.log"
+            log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
