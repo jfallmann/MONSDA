@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Oct 29 18:06:49 2020 (+0100)
+# Last-Updated: Mon Nov  2 11:28:00 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2120
+#     Update #: 2121
 # URL:
 # Doc URL:
 # Keywords:
@@ -424,7 +424,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                         return None, None
                 else:
                     tempconf[key] = subSetDict(config[key],condition)
-                    if key == 'SETTINGS' and config.get('DEDUP'):
+                    if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
             if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):

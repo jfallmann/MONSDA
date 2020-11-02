@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Oct 29 17:56:00 2020 (+0100)
+# Last-Updated: Mon Nov  2 12:06:26 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1087
+#     Update #: 1089
 # URL:
 # Doc URL:
 # Keywords:
@@ -257,7 +257,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                     line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                                     line = re.sub(condapath,'conda:  "../',line)
                                     smkout.write(line)
-                                #smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                             smkout.write('\n\n')
 
                         if subwork == 'QC':
@@ -301,7 +300,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             alltrim = 'rule themall:\n    input: expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
             alldedupqc = 'expand("QC/Multi/DEDUP_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
             alldedup = 'rule themall:\n    input: expand("DEDUP_FASTQ/{file}_{read}_dedup.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{file}_dedup.fastq.gz", file=samplecond(SAMPLES,config))'
-            alltrimdedupqc = 'expand("QC/Multi/DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+            alltrimdedupqc = 'expand("QC/Multi/DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:

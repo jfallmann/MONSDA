@@ -39,7 +39,6 @@ if paired == 'paired':
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
-
 else:
     if wlparams:
         rule whitelist:
