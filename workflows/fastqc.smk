@@ -9,7 +9,7 @@ if paired == 'paired':
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
 
     rule qc_trimmed:
         input:  r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1", "R2"])
@@ -18,7 +18,7 @@ if paired == 'paired':
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
 
     rule qc_mapped:
         input:  r1 = "MAPPED/{file}_mapped_sorted.sam.gz"
@@ -46,7 +46,7 @@ if paired == 'paired':
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
 
 else:
     rule qc_raw:
@@ -56,7 +56,7 @@ else:
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
 
     rule qc_trimmed:
         input:  r1 = expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))
@@ -65,7 +65,7 @@ else:
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
 
     rule qc_mapped:
         input:   r1 = "MAPPED/{file}_mapped_sorted.sam.gz"
@@ -93,4 +93,4 @@ else:
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell:  "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
+        shell: "arr=({input.r1}); orr=({output.o1}); lrr=({log}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> ${{lrr[$i]}};done"
