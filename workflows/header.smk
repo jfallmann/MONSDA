@@ -71,6 +71,7 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
+CLIP = SETTINGS.get('CLIP')
 rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
     log.info('DEDUPLICATION ENABLED')
@@ -132,7 +133,8 @@ if 'PEAKS' in config:
         ANNOTATION = ANNOPEAK
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
-    CLIP = checkclip(SAMPLES, config)
+    if not CLIP:
+        CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
 
 # UCSC/COUNTING Variables

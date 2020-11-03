@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Nov  2 12:06:26 2020 (+0100)
+# Last-Updated: Tue Nov  3 11:39:02 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1089
+#     Update #: 1101
 # URL:
 # Doc URL:
 # Keywords:
@@ -182,6 +182,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     log.warning(logid+'No entry fits condition '+str(condition)+' for preprocessing step '+str(subwork))
                     continue
                 toolenv, toolbin = map(str,listoftools[0])
+                if toolenv is None or toolbin is None:
+                    continue
                 subconf.update(listofconfigs[0])
                 subname = toolenv+'.smk'
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
@@ -240,8 +242,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         continue
 
                     for i in range(0,len(listoftools)):
-
                         toolenv, toolbin = map(str,listoftools[i])
+                        if toolenv is None or toolbin is None:
+                            continue
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
                         subname = toolenv+'.smk'
@@ -371,6 +374,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
+                        if toolenv is None or toolbin is None:
+                            continue
                         subconf.update(listofconfigs[i])
                         subsamples = list(set(sampleslong(subconf)))
                         subname = toolenv+'.smk'
@@ -433,7 +438,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for condition in conditions:
                 for subwork in postprocess:
                     subconf = NestedDefaultDict()
-                    if any(subwork == x for x in ['DE', 'DEU', 'DAS', 'DTU']):
+                    if any(subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']):
                         continue
 
                     SAMPLES = get_samples_postprocess(config, subwork)
@@ -447,6 +452,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                     for i in range(0,len(listoftools)):
                         toolenv, toolbin = map(str,listoftools[i])
+                        if toolenv is None or toolbin is None:
+                            continue
                         subconf.update(listofconfigs[i])
                         subname = toolenv+'.smk'
                         subsamples = list(set(sampleslong(subconf)))
@@ -481,7 +488,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'JOB CODE '+str(job))
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
-            for analysis in ['DE', 'DEU', 'DAS', 'DTU']:
+            for analysis in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
                 if analysis in config and analysis in postprocess:
 
                     subwork = analysis
@@ -490,28 +497,26 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                     subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-                    #listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
                     listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
-                    if listoftools is None:# or listoftoolscount is None:
+                    if listoftools is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork))
 
                     for key in config[subwork]['TOOLS']:
                         log.info(logid+'... with Tool: '+key)
                         toolenv = key
                         toolbin = config[subwork]['TOOLS'][key]
-                        #countenv, countbin = map(str,listoftoolscount[0]) #Counting per analysis rule now
                         subconf = NestedDefaultDict()
                         for i in listofconfigs:
+                            if i is None:
+                                continue
                             i[subwork+'ENV'] = toolenv
                             i[subwork+'BIN'] = toolbin
-                            #i['COUNTBIN'] = 'featureCounts'#This is hard coded where needed for now
-                            #i['COUNTENV'] = 'countreads'#This is hard coded where needed for now
                         for i in range(len(listoftools)):
+                            if listofconfigs[i] is None:
+                                continue
                             subconf = merge_dicts(subconf,listofconfigs[i])
 
-                        #for x in range(0,len(listofconfigscount)): ### muss hier auch noch gefiltert werden?
-                        #    subconf = merge_dicts(subconf,listofconfigscount[x])
                         subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))

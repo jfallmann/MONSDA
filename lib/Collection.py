@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Nov  2 11:28:00 2020 (+0100)
+# Last-Updated: Tue Nov  3 16:57:33 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2121
+#     Update #: 2184
 # URL:
 # Doc URL:
 # Keywords:
@@ -395,13 +395,13 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             env = str(subDict(config[subwork],condition)[stage+'ENV'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS']:
+            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
                 log.warning('Key ENV not found for '+subwork+' this can be intentional')
             env = ''
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS', 'SRA']:
+            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         tempconf = NestedDefaultDict()
@@ -421,13 +421,14 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
-                        return None, None
+                        toollist.append([None,None])
+                        configs.append(None)
                 else:
                     tempconf[key] = subSetDict(config[key],condition)
                     if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
-            if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
+            if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
@@ -686,12 +687,16 @@ def samplecond(sample, config):
         log.debug(logid+'CHECK: '+str(check))
         for r in runstate_from_sample([s],config):
             tmplist = check
-            tmplist.append(r)
+            if r not in tmplist:
+                tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
                 s = re.sub(r'_[r|R|][1|2]','',s)
-            ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+            if r not in s.split(os.sep):
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+            else:
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
 
@@ -763,37 +768,35 @@ def checkstranded(sample,config):
 
 @check_run
 def set_pairings(samples, config):
-    logid = scriptname+'.Collection_get_pairings: '
+    logid = scriptname+'.Collection_set_pairings: '
     ret = list()
-    check = conditiononly(samples[0], config)
-    p = subDict(config['PEAKS'], check)
-    pairlist = p['OPTIONS'][0].get('PAIRINGS')
-    log.debug('PAIRLIST: '+str(pairlist))
+    log.debug(logid+'SAMPLES: '+str(samples))
+    pairlist = config['PEAKS'].get('COMPARABLE')
+    log.debug(logid+'PAIRLIST: '+str(pairlist))
     if pairlist:
-        for pair in pairlist:
-            for s, c in pair.items():
-                ret.append(s)
+        for k, v in pairlist.items():
+            for x in samples:
+                if k in x:
+                    ret.extend(samplecond([x],config))
     else:
         return samples
     return ret
 
 @check_run
-def get_pairing(sample, subsample,  config):
+def get_pairing(sample, stype, config, samples):
     logid = scriptname+'.Collection_get_pairings: '
-    ret = ''
-    check = conditiononly(sample, config)
-    print('CONDITIONFOUND: '+str(check))
-    p = subDict(config['PEAKS'], check)
-    pairlist = p['OPTIONS'][0].get('PAIRINGS')
+    pairlist = config['PEAKS'].get('COMPARABLE')
+    log.debug(logid+'PAIRLIST: '+str(pairlist))
     if pairlist:
-        for pair in pairlist:
-            for s, c in pair.items():
-                if s in sample:
-                    s = samplecond([sample], config)
-                    c = samplecond([c], config)
-                    return '-c '+str(c)+'_mapped_'+str(subsample)+'.bam'
-    else:
-        return ''
+        for k, v in pairlist.items():
+            for x in samples:
+                if v in x:
+                    matching = samplecond([x],config)[0]
+    log.debug(logid+'matching: '+str(matching))
+    matching.replace('MAPPED/','')
+    print('PAIRINGS: '+sample+': '+str(matching))
+    log.debug(logid+' -c '+str(matching)+'_mapped_'+str(stype)+'.bam')
+    return '-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam'
 
 @check_run
 def post_checkpaired(sample,config):
@@ -910,6 +913,30 @@ def comparable_as_string2(config, subwork):
         complist = []
         for key, value in combined:
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
+
+@check_run
+def comparable_as_string3(config, subwork):
+    logid=scriptname+'.comparable_as_string: '
+    check = config[subwork].get('COMPARABLE')
+    if check:
+        log.debug(logid+'determine comparables in '+subwork)
+        complist  = []
+        compdict=config[subwork]['COMPARABLE']
+        for key in compdict:
+            for value in compdict[key]:
+                complist.append(f"{key}-vs-{value}")
+        compstr = ','.join(complist)
+        return compstr
+    else:
+        log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
+        groups_by_condition = list(yield_from_dict("GROUPS",config))
+        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        combined = list(set(combinations(flattened,2)))
+        complist = []
+        for key, value in combined:
+            complist.append(f"{key}-vs-{value}")
         compstr = ','.join(complist)
         return compstr
 
