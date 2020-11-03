@@ -87,6 +87,7 @@ import logging
 import hashlib
 from snakemake import load_configfile
 import functools
+import json
 
 
 try:
@@ -167,6 +168,10 @@ def check_run(func):
 #             )
 #             log.error(logid+''.join(tbe.format()))
 #     return func_wrapper
+
+@check_run
+def print_json(paramdict):
+        print(json.dumps(paramdict,indent=4))
 
 @check_run
 def sources(config):
