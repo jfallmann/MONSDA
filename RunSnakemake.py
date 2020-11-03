@@ -218,9 +218,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         SAMPLES = get_samples(config)
-        log.info(logid+'SAMPLES: '+str(SAMPLES))
+        log.info(logid+'SAMPLES: \n\t'+'\n\t'.join(SAMPLES))
         conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
-        log.info(logid+'CONDITIONS: '+str(conditions))
+        log.info(logid+'CONDITIONS: \n\t'+'\n\t'.join(['-'.join(list(x)) for x in conditions]))
 
         rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 

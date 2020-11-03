@@ -88,7 +88,10 @@ import hashlib
 from snakemake import load_configfile
 import functools
 import json
+<<<<<<< HEAD
 
+=======
+>>>>>>> b4404b3afd9da5008c3ce12c70c8a01e456264e7
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -170,8 +173,13 @@ def check_run(func):
 #     return func_wrapper
 
 @check_run
+<<<<<<< HEAD
 def print_json(paramdict):
         print(json.dumps(paramdict,indent=4))
+=======
+def printable_dict(paramdict):
+    return(json.dumps(paramdict,indent=4))
+>>>>>>> b4404b3afd9da5008c3ce12c70c8a01e456264e7
 
 @check_run
 def sources(config):
@@ -425,13 +433,13 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             env = str(subDict(config[subwork],condition)[stage+'ENV'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS']:
+            if subwork not in ['DE', 'DEU', 'DAS', 'DTU']:
                 log.warning('Key ENV not found for '+subwork+' this can be intentional')
             env = ''
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS', 'SRA']:
+            if subwork not in ['DE', 'DEU', 'DAS', 'DTU', 'SRA']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
         tempconf = NestedDefaultDict()
@@ -457,7 +465,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                     if key == 'SETTINGS' and config.get('DEDUP'):
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
-            if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
+            if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
@@ -883,7 +891,8 @@ def comparable_as_string(config, subwork):
 @check_run
 def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
-    check = config[subwork].get('COMPARABLE')
+    log.info(logid+'this is the config: '+'\n'+printable_dict(config))
+    check = config[subwork]['COMPARABLE']
     if check:
         log.debug(logid+'determine comparables in '+subwork)
         complist  = []
