@@ -86,6 +86,8 @@ import six
 import logging
 import hashlib
 from snakemake import load_configfile
+import functools
+
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -129,11 +131,19 @@ class NestedDefaultDict(defaultdict):
 ##############################
 ########Snakemake Subs########
 ##############################
+
 def check_run(func):
+    @functools.wraps(func)
     def func_wrapper(*args, **kwargs):
         logid=scriptname+'.Collection_func_wrapper: '
+        args_repr = [repr(a) for a in args]
+        kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+        signature = ", ".join(args_repr + kwargs_repr)
+        print(f"Calling {func.__name__}({signature})")
         try:
-            return func(*args, **kwargs)
+            value = func(*args, **kwargs)
+            print(f"{func.__name__!r} returned {value!r}")
+            return value
 
         except Exception as err:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -142,6 +152,21 @@ def check_run(func):
             )
             log.error(logid+''.join(tbe.format()))
     return func_wrapper
+
+# def check_run(func):
+#     @functools.wraps(func)
+#     def func_wrapper(*args, **kwargs):
+#         logid=scriptname+'.Collection_func_wrapper: '
+#         try:
+#             return func(*args, **kwargs)
+#
+#         except Exception as err:
+#             exc_type, exc_value, exc_tb = sys.exc_info()
+#             tbe = tb.TracebackException(
+#                 exc_type, exc_value, exc_tb,
+#             )
+#             log.error(logid+''.join(tbe.format()))
+#     return func_wrapper
 
 @check_run
 def sources(config):
