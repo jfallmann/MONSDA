@@ -1,50 +1,35 @@
 {
     "WORKFLOWS": "", #which workflows do you want to run
-    "REFERENCE": "REFERENCES", #where to find the reference genomes, default is a directory REFERENCES
     "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
-    "GENOME": { #which genomes to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the genome.fa.gz file and the value 'Genomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
-                "organism": "Genomefile"
-              },
-    "TRANSCRIPTOME": { #which transcriptome to use and how the reference fasta is named, 'organism' must be a subdirectory of REFERENCE and contain the transcriptome.fa.gz file and the value 'Transcriptomefile' is the name of this fasta without file ending .fa.gz, we always asume files to be gzipped fastas. Make sure the directory exists and contains the fasta
-                "organism": "Transcriptomefile"
-              },
-    "SOURCE": {  #which organisms are to be parsed for which samples, organisms need to have subdirectories in you 'REFERENCE' directory and contain the corresponding fasta files
-                 "id": { #key is subdir of REFERENCE, see GENOME, you can specify which genomes to use for which dataset identifier, e.g. for id 'id' and condition 'condition' with setting 'setting' the genome defined for organism in the 'GENOME' section of the config will be used
-                         "condition": {
-                             "setting": "organism"
-                         }
-                       }
-              },
-    "NAME": { #extension for genome file name in case different types of reference are used, e.g. genomic, artificial, organelle ...
-              "id": {#first key is Sample ID defined by IdConditionSetting in Configurator.py
-                     "condition": { #Whatever identifier you want to use for this dataset e.g. Date, Labname, treatment, ...
-                                    "setting": ""  #Key is identifier for this set of options, e.g. mapper name, standard, fancynewmethod, ... Value is either empty or can be a string that is part of the genome name, e.g. extended, artificial ...
-                                  }
-                    }
-            },
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
                           "condition": { # sample id
-                                         "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2 extension, this will be appended automatically
+                                         "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2/_R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2/_R1/_R2 extension, this will be appended automatically
                                        }
                         }
                },
-    "SEQUENCING": {
-        "id": { #key for source and genome
-                "condition": { # sample id
-                               "setting": "unpaired" # setup and sequencing type, either paired or unpaired. If stranded add strandedness according to http://rseqc.sourceforge.net/#infer-experiment-py as comma separated value (rf Assumes a stranded library fr-firststrand [1+-,1-+,2++,2--], fr Assumes a stranded library fr-secondstrand [1++,1--,2+-,2-+]), e.g. paired,fr
-                             }
-              }
-    },
-#RAW options
-    "RAW": {
+    "SETTINGS": {
+        "id": {
+            "condition": {
+                "setting": {
+                    "SEQUENCING": "unpaired",  #or paired and stranded info comma separated
+                    "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",  #default Referene Genome fa.gz file
+                    "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings
+                    "PREFIX": "idx",  #if needed, prefix for mapping software can be set here
+                    "ANNOTATION": {
+                        "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
+                        "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
+                    }
+                },
+#SRA options
+    "SRA": {
         "id": { #key for source and genome
                 "condition": { # sample id
                                "setting": {
                                    "ENV" : "sra",  # name of conda env for raw file download
                                    "OPTIONS":
-                                   [  #RAW options here if any, paired is not required, will be resolved by rules
+                                   [  #SRA options here if any, paired is not required, will be resolved by rules
                                       {}
                                    ]
                                }
@@ -85,15 +70,37 @@
                       }
                   }
                 },
+#Deduplication options
+    "DEDUP": { #options for deduplication for each sample/condition
+                  "id": {
+                      "condition": {
+                          "setting": { # See above
+                                       "ENV": "umitools", # name of conda env for dedup
+                                       "BIN": "umi_tools", # name of binary for dedup
+                                       "OPTIONS":
+                                       [
+                                           {  # dedup whitelist options,
+                                              "--extract-method": "string",
+                                              "--bc-pattern": "AGANNNNACGT"
+                                           },
+                                           {  # dedup extract options
+                                              "--extract-umi-method": "read_id"
+                                           }
+                                       ]
+                                     }
+                      }
+                  }
+                },
 #MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
                  "id": {
                      "condition": {
                          "setting": {
-                             "ENV": "star", # which conda env to use for mapping
-                             "BIN": "STAR", #how the mapper binary is called
-                             "ANNOTATION": "genome_or_other.gff3.gz", #should only be relevant for star, but who knows
-                             "OPTIONS": # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                             "ENV": "star",  # which conda env to use for mapping
+                             "BIN": "STAR",  #how the mapper binary is called
+                             "REFERENCE": "$PATHTO/genome.fa.gz",  #Path to the gzipped Genome FASTA file, overwrites SETTINGS
+                             "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
+                             "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                              [
                                  {  #indexing options
                                     "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
@@ -104,8 +111,7 @@
                                     "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
                                     "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
                                     "--outSAMprimaryFlag AllBestScore": ""
-                                 },
-                                 "std" #name extension for index, useful to discriminate between eg std and bisulfite seg index, can be empty or skipped
+                                 }
                              ]
                          }
                      }
@@ -122,7 +128,8 @@
                           "setting": {  # See above
                                         "ENV": "countreads", #see above
                                         "BIN": "featureCounts",
-                                        "ANNOTATION": "genome_or_other.gff3.gz", #gtf or gff annotation for count tool
+                                        "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                                        "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                                         "OPTIONS":
                                         [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
                                            {
@@ -144,8 +151,9 @@
                 "setting": { # See above
                              "ENV": "annotatebed",
                              "BIN": "annotate", #default, if you have a specific binary for annotation state here, may need extra tweaking of workflow though
-                             "ANNOTATION": "genome_or_other.gff3.gz", #The annotation used to annotate reads
-                             "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' wil
+                             "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                             "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
+                             "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will annoate exons only, comma separated list for multiple features
                              "OPTIONS":
                              [
                                  {
@@ -180,18 +188,15 @@
         "id": {
             "condition": {
                 "setting": {  # See above
-                              "ENV" : "peaks",
-                              "ANNOTATION": "genome_or_other.gff3.gz",
+                              "ENV" : "piranha",
+                              "BIN" : "Piranha"
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
                               [
-                                  {
-                                      "MINPEAKRATIO": "0.6",
-                                      "PEAKDISTANCE": "1",
-                                      "PEAKWIDTH": "5",
-                                      "PEAKCUTOFF": "0.8",
-                                      "MINPEAKHEIGHT": "3",
-                                      "USRLIMIT": "3"
+                                  {  # Preprocessor options
+                                  },
+                                  {  # Options for peak finder
+                                     "-b":"10"
                                   }
                               ]
                            }
@@ -212,7 +217,8 @@
         "id": {
             "condition": {
                 "setting": {
-                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                    "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
@@ -225,10 +231,7 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        },
-                        {
-                            "--cutoff": "10"
-                        } #options for count table creation, filtering counts below threshold
+                        }
                     ]
                 }
             }
@@ -248,7 +251,8 @@
         "id": {
             "condition": {
                 "setting": {
-                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                    "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
@@ -261,10 +265,7 @@
                             "-f": "",
                             "--fraction": "",
                             "-O": ""
-                        },
-                        {
-                            "--cutoff": "10"
-                        } #options for count table creation, filtering counts below threshold
+                        }
                     ]
                 }
             }
@@ -284,7 +285,8 @@
         "id": {
             "condition": {
                 "setting": {
-                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                    "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
@@ -298,9 +300,6 @@
                             "--fraction": "",
                             "-O": ""
                         },
-                        {
-                            "--cutoff": "10"
-                        }, #options for count table creation, filtering counts below threshold
                         { # analysis options for diego
                             "-c": "10",
                             "-d": "3",
@@ -326,7 +325,8 @@
         "id": {
             "condition": {
                 "setting": {
-                    "ANNOTATION": "genome_or_other.gtf.gz", #gtf file for featurecount and dexseq/edger
+                    "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
+                    "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                     "GROUPS":  ["WT","KO1","KO2"], #Conditions of samples can be different than the condition setting
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty

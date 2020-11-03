@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Aug 25 10:45:31 2020 (+0200)
+# Last-Updated: Wed Oct 28 15:22:00 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2007
+#     Update #: 2098
 # URL:
 # Doc URL:
 # Keywords:
@@ -84,6 +84,7 @@ import collections
 from collections import defaultdict, OrderedDict
 import six
 import logging
+import hashlib
 from snakemake import load_configfile
 
 try:
@@ -157,7 +158,7 @@ def get_samples(config):
     logid = scriptname+'.Collection_get_samples: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -169,7 +170,7 @@ def get_samples(config):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
@@ -186,7 +187,7 @@ def get_samples_postprocess(config,subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    check = [os.path.join('FASTQ',str(x)+'*.fastq.gz') for x in SAMPLES]
+    check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -198,7 +199,7 @@ def get_samples_postprocess(config,subwork):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
@@ -221,7 +222,7 @@ def download_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    for k in keysets_from_dict(config['SOURCE']):
+    for k in keysets_from_dict(config['SAMPLES']):
         ret.append(k)
     log.debug(logid+str(ret))
     return list(set(ret))
@@ -261,15 +262,6 @@ def sampleslong(config):
             ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
     ret= list(set(ret))
     log.debug(logid+str(ret))
-    return ret
-
-@check_run
-def samplesonly(config):        # THIS IS NOT ADVISED, SAMPLES INDEPENDENT OF SOURCE!
-    ret = list()
-    for x,y in config["SOURCE"].items():
-        for s in config["SAMPLES"][x]:
-            for n in config["SAMPLES"][x][s]:
-                ret.append(str(n))
     return ret
 
 @check_run
@@ -409,14 +401,12 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['DE', 'DEU', 'DAS', 'RAW']:
+            if subwork not in ['DE', 'DEU', 'DAS', 'SRA']:
                 log.warning('Key BIN not found for '+subwork+' this can be intentional')
             exe = ''
-        src, treat, setup = condition
-        log.debug(logid+str([env,exe,src,treat,setup]))
         tempconf = NestedDefaultDict()
         try:
-            for key in ['REFERENCE', 'BINS','MAXTHREADS']:
+            for key in ['BINS','MAXTHREADS']:
                 tempconf[key] = config[key]
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -425,24 +415,23 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
         try:
-            matchinggenome=config['SOURCE'][src][treat][setup]
-            tempconf['GENOME'][matchinggenome] = config['GENOME'][matchinggenome]
-            if 'TRANSCRIPTOME' in config:
-                tempconf['TRANSCRIPTOME'][matchinggenome] = config['TRANSCRIPTOME'][matchinggenome]
-            for key in ['NAME', 'SOURCE', 'SAMPLES', 'SEQUENCING', subwork]:
-                if len(getFromDict(config[subwork], [src, treat, setup])) <1:
-                    if any([subwork == x for x in ['QC','MAPPING','TRIMMING','RAW']]):
+            for key in ['SAMPLES', 'SETTINGS', subwork]:
+                if len(getFromDict(config[subwork], condition)) <1:
+                    if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
                         log.warning(logid+'Keys '+str(condition)+' not defined for '+str(key)+', will be removed from SAMPLES for this analysis')
+                        return None, None
                 else:
-                    tempconf[key][src][treat][setup] = config[key][src][treat][setup]
+                    tempconf[key] = subSetDict(config[key],condition)
+                    if key == 'SETTINGS' and config.get('DEDUP'):
+                        tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
-            if any([subwork == x for x in ['DE','DEU','DAS','COUNTING']]):
+            if any([subwork == x for x in ['DE', 'DEU', 'DAS', 'COUNTING']]):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
-                    tempconf['MAPPING'][src][treat][setup] = config['MAPPING'][src][treat][setup]
+                    tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
                 if 'TOOLS' in config[subwork]:
@@ -488,14 +477,13 @@ def pathstogenomes(samples, config):
 def tool_params(sample, runstate, config, subconf):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
-    t = genome(sample,config)
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
-    log.debug(logid+str([sample,runstate,subconf,t,x]))
+    log.debug(logid+str([sample,runstate,subconf,x]))
     mp = subDict(config[subconf],x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
@@ -700,8 +688,9 @@ def samplecond(sample,config):
             tmplist = check
             tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
-            if getFromDict(config['SEQUENCING'],tmplist) == 'paired':
-                s=re.sub(r'_[r|R|\A\Z][1|2]','',s)
+            if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+                #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+                s = re.sub(r'_[r|R|][1|2]','',s)
             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
@@ -728,18 +717,13 @@ def checkpaired(sample,config):
     logid = scriptname+'.Collection_checkpaired: '
     ret = list()
     paired = ''
-    for s in sample:
+    for s in sample:  # Currently only one condition per sample-SETUP possible
         log.debug(logid+'SAMPLE: '+str(s))
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            if r in p:
-                tmplist.append(r)
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-                tmplist = tmplist[:2]
-    log.debug(logid+'PAIRED: '+str(paired))
+        check = conditiononly(s, config)
+        log.debug(logid+'CHECK: '+str(check))
+        p = subDict(config['SETTINGS'], check)
+        paired = p.get('SEQUENCING')
+    log.debug(logid+'SEQUENCING: '+str(paired))
     return paired
 
 @check_run
@@ -748,11 +732,12 @@ def checkpaired_rep(sample,config):
     log.debug(logid+'SAMPLE: '+str(sample))
     ret = list()
     for s in sample:
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        log.debug(logid+'S: '+str(tmplist))
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
-        ret.append(str(p).replace(',','_'))
+        check = conditiononly(s,config)
+        #check = os.path.dirname(s).split(os.sep)
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        p = subDict(config['SETTINGS'], check)
+        paired = p.get('SEQUENCING')
+        ret.append(str(paired).replace(',','_'))
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)
 
@@ -762,15 +747,17 @@ def checkstranded(sample,config):
     ret = list()
     stranded = ''
     for s in sample:
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        #check = os.path.dirname(s).split(os.sep)
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        check = conditiononly(s,config)
+        p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            if r in p:
-                tmplist.append(r)
-                stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
-                tmplist = tmplist[:2]
+        stranded = p.get('SEQUENCING').split(',')[1] if len(p.get('SEQUENCING').split(',')) > 1 else ''
+        #for r in runstate_from_sample([s],config):
+        #    if r in p:
+        #        tmplist.append(r)
+        #        stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
+        #        tmplist = tmplist[:2]
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
 
@@ -781,20 +768,21 @@ def post_checkpaired(sample,config):
     paired = ''
     for s in sample:
         log.debug(logid+'SAMPLE: '+str(sample))
-        check = os.path.dirname(s).split(os.sep)
-        tmplist = check
-        log.debug(logid+'TMP: '+str(tmplist))
-        p = getFromDict(config['SEQUENCING'],tmplist)[0]
+        check = conditiononly(sample,config)
+        p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
+        paired = p.get('SEQUENCING').split(',')[0]
+        #check = os.path.dirname(s).split(os.sep)
+        #tmplist = check
+        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
         #if not dict_inst(p):
         #paired = p[0] if 'paired' in p or 'unpaired' in p or 'singlecell' in p else ''
-        log.debug(logid+'P: '+str(p))
-        for r in runstate_from_sample([s],config):
-            log.debug(logid+'R: '+str(r))
-            if r in p:
-                tmplist.append(r)
-                paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
-                tmplist = tmplist[:2]
+        #for r in runstate_from_sample([s],config):
+        #    log.debug(logid+'R: '+str(r))
+        #    if r in p:
+        #        tmplist.append(r)
+        #        paired = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[0]
+        #        tmplist = tmplist[:2]
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
@@ -1028,15 +1016,15 @@ def dict_inst(d):
 @check_run
 def getFromDict(dataDict, mapList):
     logid = scriptname+'.Collection_getFromDict: '
-    log.debug(logid+'MAPLIST: '+str(mapList))
+    log.debug(logid+'MAPLIST: '+str(mapList)+'\tDict: '+str(dataDict))
     ret = dataDict
     for k in mapList:
         if k in dataDict:
             log.debug(logid+'k: '+str(k))
             dataDict = dataDict[k]
+            log.debug(logid+'subdict: '+str(dataDict))
         else:
             return list([])
-    log.debug(logid+'MIDRET: '+str(ret))
     if ret != dataDict:
         log.debug(logid+'RET: '+str(dataDict))
         return list([dataDict])
@@ -1067,6 +1055,18 @@ def subDict(dataDict, mapList):
         log.debug(logid+'k: '+str(k))
         if k in ret:
             ret = ret[k]
+        else:
+            log.debug(logid+'No k in dict')
+    return ret
+
+@check_run
+def subSetDict(dataDict, mapList):
+    logid = scriptname+'.Collection_subDict: '
+    log.debug(logid+str(mapList))
+    parse = subDict(dataDict, mapList)
+    ret = {}
+    nested_set(ret, mapList, parse)
+    log.debug(logid+str(ret))
     return ret
 
 @check_run
@@ -1427,6 +1427,14 @@ def makelogdir(logdir):
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     return logdir
+
+@check_run
+def get_dict_hash(d):
+    logid = scriptname+'.get_dict_hash: '
+    log.debug(logid+'INPUT DICT: '+str(d))
+    ret = str(hashlib.sha256(bytes(str(sorted(d.items())),'utf-8')).hexdigest())
+    log.debug(logid+'HASH: '+ret)
+    return ret
 
 #
 # Collection.py ends here

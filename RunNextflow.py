@@ -8,9 +8,9 @@
 # Created: Mon May 18 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Aug 27 10:09:01 2020 (+0200)
+# Last-Updated: Tue Sep 29 15:33:26 2020 (+0200)
 #           By: Joerg Fallmann
-#     Update #: 1411
+#     Update #: 1412
 # URL:
 # Doc URL:
 # Keywords:
@@ -119,11 +119,11 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = None
-            for x in subworkflows:
-                wfs.remove(x)
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
+            if 'MAPPING' in subworkflows and 'QC' in preprocess:
+                preprocess.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
@@ -601,7 +601,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
 
         log.info('Workflows executed without error!')
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -623,7 +623,10 @@ def runjob(jobtorun):
                 break
             if output and output != '':
                 if any(x in output for x in ['ERROR','Error','error','Exception']) and not 'Workflow finished' in output or 'Execution complete' in output:
-                    log.error(logid+'STOPPING: '+str(output))
+                    if outerr:
+                        log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
+                    else:
+                        log.error(logid+'STOPPING: '+str(output))
                     log.info('PLEASE CHECK LOG AT LOGS/RunNextflow.log')
                     job.kill()
                     sys.exit()
@@ -656,7 +659,7 @@ def runjob(jobtorun):
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,
@@ -686,7 +689,7 @@ if __name__ == '__main__':
         log.debug(logid+str(log.handlers))
 
         run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton ,knownargs.loglevel, knownargs.clean, optionalargs[0])
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

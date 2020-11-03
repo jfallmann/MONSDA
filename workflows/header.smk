@@ -1,4 +1,11 @@
-import glob, os, sys, inspect, snakemake, json, shutil, logging
+import glob
+import os
+import sys
+import inspect
+import snakemake
+import json
+import shutil
+import logging
 import tempfile
 import traceback as tb
 from collections import defaultdict
@@ -43,22 +50,30 @@ except Exception as err:
     log.error(''.join(tbe.format()))
 
 logid = 'header.smk: '
-REFERENCE = config["REFERENCE"]
-GENOME = config["GENOME"]
-if 'TRANSCRIPTOME' in config:
-    TRANSCRIPTOME = config["TRANSCRIPTOME"]
-else:
-    TRANSCRIPTOME = GENOME
-NAME = config["NAME"]
+
+#Parse SUBCONFIG
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
-SOURCE = sources(config)
-
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
 
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
+
+SETUP = keysets_from_dict(config["SAMPLES"])[0]
+SETS = os.sep.join(SETUP)
+SETTINGS = subDict(config['SETTINGS'], SETUP)
+
+# Parse SETTINGS
+SEQUENCING = SETTINGS.get('SEQUENCING')
+REFERENCE = SETTINGS.get('REFERENCE')
+REFDIR = str(os.path.dirname(REFERENCE))
+INDEX = SETTINGS.get('INDEX')
+PREFIX = SETTINGS.get('PREFIX')
+ANNO = SETTINGS.get('ANNOTATION')
+rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
+if rundedup:
+    log.info('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -70,31 +85,84 @@ stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
 
+# MAPPING Variables
+if 'MAPPING' in config:
+    MAPCONF = subDict(config['MAPPING'], SETUP)
+    log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
+    REF = MAPCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    MANNO = MAPCONF.get('ANNOTATION')
+    if MANNO:
+        ANNOTATION = MANNO
+    else:
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
+    MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+    IDX = MAPCONF.get('INDEX')
+    if IDX:
+        INDEX = IDX
+        log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    INDICES = INDEX.split(',') if INDEX else list(UIDX)
+    INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+    PRE = MAPCONF.get('PREFIX')
+    if PRE:
+        PREFIX = PRE
+
+    if len(INDICES) > 1:
+        if str(os.path.abspath(INDICES[1])) not in UIDX:
+            INDEX2 = str(os.path.abspath(INDICES[1]))
+        else:
+            INDEX2 = str(os.path.abspath(INDICES[1]))+'_idx'
+    else:
+        INDEX2 = ''
+
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
+
+# Peak Calling Variables
 if 'PEAKS' in config:
+    PEAKCONF = subDict(config['PEAKS'], SETUP)
+    REF = PEAKCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION')
+    if ANNOPEAK:
+        ANNOTATION = ANNOPEAK
+    else:
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
     CLIP = checkclip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+CLIP+' protocol')
-    peakconf = tool_params(SAMPLES[0],None,config,'PEAKS')['OPTIONS'][0]
-    if 'ANNOTATION' in tool_params(SAMPLES[0],None,config,'PEAKS'):
-        ANNOPEAK = tool_params(SAMPLES[0],None,config,'PEAKS')['ANNOTATION']
-    else:
-        ANNOPEAK = None
-    try:
-        all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
-    except Exception as err:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-        )
-        log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
 
-    MINPEAKRATIO = peakconf['MINPEAKRATIO']
-    PEAKDISTANCE = peakconf['PEAKDISTANCE']
-    PEAKWIDTH = peakconf['PEAKWIDTH']
-    PEAKCUTOFF = peakconf['PEAKCUTOFF']
-    MINPEAKHEIGHT = peakconf['MINPEAKHEIGHT']
-    USRLIMIT = peakconf['USRLIMIT']
+# UCSC/COUNTING Variables
+for x in ['UCSC', 'COUNTING']:
+    if x in config:
+        XCONF = subDict(config[x], SETUP)
+        log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+        REF = XCONF.get('REFERENCE')
+        XANNO = XCONF.get('ANNOTATION')
+        if XANNO:
+            ANNOTATION = XANNO
+        else:
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
 
-    if 'PREPROCESS' in peakconf:
-        PREPROCESS = ' '.join("{!s} {!s}".format(key,val) for (key,val) in peakconf['PREPROCESS'].items())
-    else:
-        PREPROCESS = ''
+# DE/DEU/DAS/DTU Variables
+for x in ['DE', 'DEU', 'DAS', 'DTU']:
+    if x in config:
+        XCONF = subDict(config[x], SETUP)
+        log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+        REF = XCONF.get('REFERENCE')
+        XANNO = XCONF.get('ANNOTATION')
+        if XANNO:
+            ANNOTATION = XANNO
+        else:
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))

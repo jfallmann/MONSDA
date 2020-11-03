@@ -76,8 +76,8 @@ process uniqsam{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("unique.sam.gz") > 0)   "UNIQUE_MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") > 0)       "UNIQUE_MAPPED/$CONDITION/$filename"
+        if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".log") > 0)       "MAPPED/$CONDITION/$filename"
         else null
     }
 
@@ -104,9 +104,9 @@ process sam2bamuniq{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".bam") > 0)       "UNIQUE_MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".bai") > 0)  "UNIQUE_MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") > 0)  "UNIQUE_MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".bam") > 0)       "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".bai") > 0)  "MAPPED/$CONDITION/$filename"
+        else if (filename.indexOf(".log") > 0)  "MAPPED/$CONDITION/$filename"
         else null
     }
 

@@ -86,7 +86,7 @@ def check_run(func):
         try:
             return func(*args, **kwargs)
 
-        except Exception as err:
+        except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             tbe = tb.TracebackException(
                 exc_type, exc_value, exc_tb,
@@ -364,7 +364,7 @@ if __name__ == '__main__':
 
         create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.workflows, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, knownargs.annotation, optionalargs[0])
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

@@ -10,14 +10,14 @@ rule themall:
             csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=compstr)
 
 rule featurecount_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno  = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'DAS')['ANNOTATION']]),
+            anno  = ANNOTATION,
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
@@ -45,8 +45,7 @@ rule prepare_junction_usage_matrix:
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
-            tpara  = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][1].items())
-    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
+    shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
     input:  anno = rules.prepare_junction_usage_matrix.output.anno
@@ -68,7 +67,7 @@ rule run_diego:
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][2].items()),
+            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][1].items()),
             outdir = outdir,
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]

@@ -1,6 +1,5 @@
 rule themall:
     input: expand("BED/{file}_anno_seq_{type}_merged.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
-           #expand("DONE/BED/{file}_{type}",file=samplecond(SAMPLES,config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -31,7 +30,7 @@ else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
@@ -42,7 +41,7 @@ else:
         rule BamToBed:
         rule BamToBed:
             input:  "MAPPED/{file}_mapped_sorted.bam",
-                    "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+                    "MAPPED/{file}_mapped_sorted_unique.bam"
             output: "BED/{file}_mapped_sorted.bed.gz",
                     "BED/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
@@ -57,23 +56,23 @@ rule AnnotateBed:
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS,
-            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOTATION']]),
+            anno = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOTATION'],
             annop = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'ANNOTATE')['OPTIONS'][0].items()),
             annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOFEATURE']
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule UnzipGenome:
-    input:  expand("{ref}/{{org}}/{{gen}}{{name}}.fa.gz",ref=REFERENCE),
-    output: fa = expand("{ref}/{{org}}/{{gen}}{{name}}_fastafrombed.fa",ref=REFERENCE)
-    log:    "LOGS/Peaks/{org}/{gen}{name}/indexfa.log"
+    input:  subdict(config['ANNOTATE'],SETTINGS)['REFERENCE'],
+    output: subdict(config['ANNOTATE'],SETTINGS)['REFERENCE'].replace('.fa.gz','_fastafrombed.fa')
+    log:    "LOGS/Peaks/UnzipGenome.log"
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+    shell:  "zcat {input} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output} && {params.bins}/Preprocessing/indexfa.sh {output} 2> {log}"
 
 rule AddSequenceToBed:
     input:  bd = rules.AnnotateBed.output,
-            fa = lambda wildcards: "{ref}/{gen}{name}_fastafrombed.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config))
+            fa = rules.UnzipGenome.output
     output: bed = "BED/{file}_anno_seq_{type}.bed.gz",
             bt = temp("BED/{file}_bed_chr_{type}.tmp"),
             bs = temp("BED/{file}_bed_seq_{type}.tmp")

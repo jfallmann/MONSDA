@@ -52,7 +52,7 @@ workflow QC_MAPPING{
     }
     M1SAMPLES.sort()
     U1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../UNIQUE_MAPPED/"+element+"_mapped_sorted_unique.bam"
+        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped_sorted_unique.bam"
     }
     U1SAMPLES.sort()
 

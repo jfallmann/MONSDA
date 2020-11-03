@@ -13,9 +13,9 @@ rule themall:
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
 
 rule prepare_deu_annotation:
-    input:   anno   = expand("{ref}/{gen}/{anno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), anno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'])
-    output:  countgtf = expand("{ref}/{gen}/{countanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
-             deugtf   = expand("{ref}/{gen}/{deuanno}", ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
+    input:   anno = ANNOTATION
+    output:  countgtf = expand("{refd}/{countanno}", ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+             deugtf   = expand("{refd}/{deuanno}", ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:     "LOGS/featurecount_dexseq_annotation.log"
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -24,9 +24,9 @@ rule prepare_deu_annotation:
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
 rule featurecount_dexseq_unique:
-    input:  reads = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
-            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), countanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_fc_dexseq.gtf')),
-            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFERENCE, gen=os.path.dirname(genomepath(SAMPLES[0],config)), deuanno=tool_params(SAMPLES[0], None, config, 'DEU')['ANNOTATION'].replace('.gtf','_dexseq.gtf'))
+    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam",
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DEU/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
@@ -48,8 +48,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DEU'),
              bins = BINS,
-             tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DEU")['OPTIONS'][1].items())
-    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} {params.tpara} 2> {log}"
+    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_dexseq:
     input:  cnt  = rules.prepare_count_table.output.tbl,

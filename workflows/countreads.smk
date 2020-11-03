@@ -1,9 +1,17 @@
 COUNTBIN, COUNTENV = env_bin_from_config2(SAMPLES,config,'COUNTING')
 
-rule themall:
-    input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
-            expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
-            expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
+if not rundedup:
+    rule themall:
+        input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
+else:
+    rule themall:
+        input:  expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_dedup.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique_dedup.counts", file=samplecond(SAMPLES,config), feat=config['COUNTING']['FEATURES'].keys()),
+                expand("COUNTS/{file}.summary", file=samplecond(SAMPLES,config))
 
 if paired == 'paired':
     rule count_fastq:
@@ -36,9 +44,25 @@ rule count_mappers:
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_mappers:
-    input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  u = "MAPPED/{file}_mapped_sorted_unique.bam"
     output: u = "COUNTS/{file}_mapped_unique.count"
     log:    "LOGS/{file}/count_unique_mappers.log"
+    conda:  "nextsnakes/envs/samtools.yaml"
+    threads: MAXTHREAD
+    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
+
+rule count_dedup_mappers:
+    input:  m = "MAPPED/{file}_mapped_sorted_dedup.bam"
+    output: m = "COUNTS/{file}_mapped_dedup.count"
+    log:    "LOGS/{file}/countdedupmappers.log"
+    conda:  "nextsnakes/envs/samtools.yaml"
+    threads: MAXTHREAD
+    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
+
+rule count_unique_dedup_mappers:
+    input:  u = "MAPPED/{file}_mapped_sorted_unique_dedup.bam"
+    output: u = "COUNTS/{file}_mapped_unique_dedup.count"
+    log:    "LOGS/{file}/count_unique_dedupmappers.log"
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
@@ -51,32 +75,74 @@ rule featurecount:
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            anno = ANNOTATION,
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
-    input:  u = "UNIQUE_MAPPED/{file}_mapped_sorted_unique.bam",
+    input:  u = "MAPPED/{file}_mapped_sorted_unique.bam",
     output: t = temp("COUNTS/Featurecounts_{feat}s/{file}_tmp_uni.counts"),
             c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{file}/featurecount_{feat}s_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(wildcards.file, config)),tool_params(wildcards.file, None, config, 'COUNTING')['ANNOTATION']]),
+            anno = ANNOTATION,
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.reads} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
-rule summarize_counts:
-    input:  f = rules.count_fastq.output,
-            m = rules.count_mappers.output,
-            u = rules.count_unique_mappers.output
-    output: "COUNTS/{file}.summary"
-    log:    "LOGS/{file}/summarize_counts.log"
-    conda:  "nextsnakes/envs/base.yaml"
-    threads: 1
-    shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+rule featurecount_dedup:
+    input:  s = "MAPPED/{file}_mapped_sorted_dedup.bam",
+    output: t = temp("COUNTS/Featurecounts_{feat}s/{file}_dedup_tmp.counts"),
+            c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_dedup.counts"
+    log:    "LOGS/{file}/featurecount_{feat}s_dedup.log"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: countb = COUNTBIN,
+            anno = ANNOTATION,
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+
+rule featurecount_unique_dedup:
+    input:  u = "MAPPED/{file}_mapped_sorted_unique_dedup.bam",
+    output: t = temp("COUNTS/Featurecounts_{feat}s/{file}_dedup_tmp_uni.counts"),
+            c = "COUNTS/Featurecounts_{feat}s/{file}_mapped_sorted_unique_dedup.counts"
+    log:    "LOGS/{file}/featurecount_{feat}s_unique_dedup.log"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: countb = COUNTBIN,
+            anno = ANNOTATION,
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "COUNTING")['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+
+if config.get('DEDUP'):
+    rule summarize_counts:
+        input:  f = rules.count_fastq.output,
+                m = rules.count_mappers.output,
+                u = rules.count_unique_mappers.output,
+                d = rules.count_dedup_mappers.output,
+                x = rules.count_unique_dedup_mappers.output,
+        output: "COUNTS/{file}.summary"
+        log:    "LOGS/{file}/summarize_counts.log"
+        conda:  "nextsnakes/envs/base.yaml"
+        threads: 1
+        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+
+else:
+    rule summarize_counts:
+        input:  f = rules.count_fastq.output,
+                m = rules.count_mappers.output,
+                u = rules.count_unique_mappers.output
+        output: "COUNTS/{file}.summary"
+        log:    "LOGS/{file}/summarize_counts.log"
+        conda:  "nextsnakes/envs/base.yaml"
+        threads: 1
+        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"

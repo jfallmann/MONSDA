@@ -124,12 +124,12 @@ rule extendbed:
 rule rev_extendbed:
     input:  pks = "PEAKS/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    output: "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
+    output: ext = "PEAKS/{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    "LOGS/PEAKS/bam2bed{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output[0]} -g {input.ref}  2> {log}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
 
 checklist = list()
 checklist2 = list()
@@ -207,33 +207,24 @@ else:
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 rule PreprocessPeaks:
-    input:  "PEAKS/{file}_mapped_{type}.bedg.gz"
-    output: "PEAKS/{file}_prepeak_{type}.bed.gz",
+    input:  bedg = "PEAKS/{file}_mapped_{type}.bedg.gz"
+    output: pre = "PEAKS/{file}_prepeak_{type}.bed.gz",
     log:    "LOGS/PEAKS/prepeak_{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
              opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][0].items()),
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input[0]} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output[0]} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input.bedg} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
-rule Find_Peaks:
-    input:  "PEAKS/{file}_prepeak_{type}.bed.gz"
-    output: "PEAKS/{file}_peak_{type}.bed.gz"
+rule FindPeaks:
+    input:  pre = rules.PreprocessPeaks.output.pre
+    output: peak = "PEAKS/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/findpeaks{type}_{file}.log"
-    conda:  "nextsnakes/envs/perl.yaml"
+    conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
     threads: 1
-    params: opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][1].items()),
-            bins=BINS
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
-
-#rule QuantPeaks:
-#   input:  "PEAKS/{source}/Peak_{file}.bed.gz"
-#   output: "PEAKS/{source}/QuantPeak_{file}.bed.gz"
-#   params: limit=config["MINPEAKHEIGHT},
-#       distance=config["PEAKDISTANCE},
-#       width=config["PEAKWIDTH},
-#       ratio=config["PEAKCUTOFF}
-#   shell:
+    params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")['OPTIONS'][1].items()),
+            peak = PEAKBIN
+    shell:  "{params.peak} {params.ppara} <(zcat {input.pre}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -245,7 +236,7 @@ rule UnzipGenome:
     shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
-    input:  pk = "PEAKS/{file}_peak_{type}.bed.gz",
+    input:  pk = rules.FindPeaks.output.peak,
             fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz',''))
     output: peak = "PEAKS/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{file}_peak_chr_{type}.tmp"),
@@ -273,7 +264,7 @@ if ANNOPEAK is not None:
         output: fw = "UCSC/{file}_peak_{type}.fw.bedg.gz",
                 re = "UCSC/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
-                tre = temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+                trw = temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/peak2bedg{file}_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
@@ -333,5 +324,5 @@ rule GenerateTrack:
             bins = os.path.abspath(BINS),
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
-            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+"PEAKS_"+SETS.replace(os.sep,'_'))
+            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+'PEAKS_'+SETS.replace(os.sep,'_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
