@@ -88,10 +88,7 @@ import hashlib
 from snakemake import load_configfile
 import functools
 import json
-<<<<<<< HEAD
 
-=======
->>>>>>> b4404b3afd9da5008c3ce12c70c8a01e456264e7
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -173,13 +170,8 @@ def check_run(func):
 #     return func_wrapper
 
 @check_run
-<<<<<<< HEAD
-def print_json(paramdict):
-        print(json.dumps(paramdict,indent=4))
-=======
 def printable_dict(paramdict):
     return(json.dumps(paramdict,indent=4))
->>>>>>> b4404b3afd9da5008c3ce12c70c8a01e456264e7
 
 @check_run
 def sources(config):
