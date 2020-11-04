@@ -60,7 +60,7 @@ if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
-SETUP = keysets_from_dict(config["SAMPLES"])[0]
+SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
 SETS = os.sep.join(SETUP)
 SETTINGS = subDict(config['SETTINGS'], SETUP)
 
@@ -71,10 +71,10 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
-CLIP = SETTINGS.get('CLIP')
+IP = SETTINGS.get('IP')
 rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
-    log.info('DEDUPLICATION ENABLED')
+    log.debug('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -133,9 +133,9 @@ if 'PEAKS' in config:
         ANNOTATION = ANNOPEAK
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
-    if not CLIP:
-        CLIP = checkclip(SAMPLES, config)
-    log.info(logid+'Running Peak finding for '+CLIP+' protocol')
+    if not IP:
+        IP = check_ip(SAMPLES, config)
+    log.info(logid+'Running Peak finding for '+IP+' protocol')
 
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:

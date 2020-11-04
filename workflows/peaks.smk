@@ -105,7 +105,7 @@ rule rev_extendbed:
     params: bins=BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output[0]} -g {input.ref}  2> {log}"
 
-if CLIP == 'iCLIP':
+if IP == 'iCLIP':
      rule BedToBedg:
         input:  bed = "BED/{file}_mapped_extended_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
@@ -118,7 +118,7 @@ if CLIP == 'iCLIP':
                 odir=lambda wildcards,output:(os.path.dirname(output[0]))
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
-elif CLIP == 'revCLIP':
+elif IP == 'revCLIP':
     rule BedToBedg:
         input:  bed = "BED/{file}_mapped_revtrimmed_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),

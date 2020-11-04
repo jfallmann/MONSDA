@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Nov  3 11:39:02 2020 (+0100)
+# Last-Updated: Wed Nov  4 09:27:31 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1101
+#     Update #: 1104
 # URL:
 # Doc URL:
 # Keywords:
@@ -63,6 +63,7 @@ def parseargs():
     parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
+    parser.add_argument("--save", type=str, default=None, help='Do not run jobs from wrapper, create named text file containing jobs and arguments for manual running instead')
     parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
@@ -72,7 +73,7 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, unlock=None, optionalargs=None):
+def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
         config = load_configfile(configfile)
@@ -646,7 +647,7 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.unlock, optionalargs[0])
+        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.save, knownargs.unlock, optionalargs[0])
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()

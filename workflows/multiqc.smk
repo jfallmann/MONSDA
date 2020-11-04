@@ -1,3 +1,8 @@
+moutdir = 'QC/Multi/'+str(QCENV)+'/'
+
+wildcard_constraints:
+    moutdir = moutdir
+
 if rundedup:
     if paired == 'paired':
         rule multiqc:
@@ -10,9 +15,9 @@ if rundedup:
                     expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
-            output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{condition}/tmp"),
-                    lst = "QC/Multi/{condition}/qclist.txt"
+            output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("{moutdir}{condition}/tmp"),
+                    lst = "{moutdir}{condition}/qclist.txt"
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
@@ -29,9 +34,9 @@ if rundedup:
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
                     expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
-            output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{condition}/tmp"),
-                    lst = "QC/Multi/{condition}/qclist.txt"
+            output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("{moutdir}{condition}/tmp"),
+                    lst = "{moutdir}{condition}/qclist.txt"
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
@@ -46,9 +51,9 @@ else:
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config))
-            output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{condition}/tmp"),
-                    lst = "QC/Multi/{condition}/qclist.txt"
+            output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("{moutdir}{condition}/tmp"),
+                    lst = "{moutdir}{condition}/qclist.txt"
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
@@ -62,9 +67,9 @@ else:
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config))
-            output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{condition}/tmp"),
-                    lst = "QC/Multi/{condition}/qclist.txt"
+            output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("{moutdir}{condition}/tmp"),
+                    lst = "{moutdir}{condition}/qclist.txt"
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
