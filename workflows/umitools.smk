@@ -1,16 +1,24 @@
 DEDUPBIN, DEDUPENV = env_bin_from_config2(SAMPLES,config,'DEDUP')
-wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items() else None
+dedupoutdir = 'DEDUP_FASTQ/'+str(DEDUPENV)+'/'
+
+wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP")['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][0].items() else None
+
+wildcard_constraints:
+    rawfile = '|'.join(list(SAMPLES)),
+    read = "R1|R2"
+    outdir = dedupoutdir
+
 
 if paired == 'paired':
     if wlparams:
         rule whitelist:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-            output: wl = "DEDUP_FASTQ/{file}_whitelist"
-            log:   "LOGS/{file}_dedup_whitelist.log"
+            output: wl = "{outdir}{file}_whitelist"
+            log:   "LOGS/{outdir}{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} whitelist {params.dpara} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
 
@@ -18,24 +26,24 @@ if paired == 'paired':
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     wl = rules.whitelist.output.wl
-            output: o1 = "DEDUP_FASTQ/{file}_R1_dedup.fastq.gz",
-                    o2 = "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
-            log:   "LOGS/{file}_dedup_extract.log"
+            output: o1 = "{outdir}{file}_R1_dedup.fastq.gz",
+                    o2 = "{outdir}{file}_R2_dedup.fastq.gz"
+            log:   "LOGS/{outdir}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
     else:
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-            output: o1 = "DEDUP_FASTQ/{file}_R1_dedup.fastq.gz",
-                    o2 = "DEDUP_FASTQ/{file}_R2_dedup.fastq.gz"
-            log:   "LOGS/{file}_dedup_extract.log"
+            output: o1 = "{outdir}{file}_R1_dedup.fastq.gz",
+                    o2 = "{outdir}{file}_R2_dedup.fastq.gz"
+            log:   "LOGS/{outdir}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
@@ -43,53 +51,53 @@ else:
     if wlparams:
         rule whitelist:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-            output: wl = "DEDUP_FASTQ/{file}_whitelist"
-            log:   "LOGS/{file}_dedup_whitelist.log"
+            output: wl = "{outdir}{file}_whitelist"
+            log:   "LOGS/{outdir}{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} whitelist {params.dpara} --log={log} --stdin={input.r1} --stdout={output.wl}"
 
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     wl = rules.whitelist.output.wl
-            output: o1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
-            log:   "LOGS/{file}_dedup_extract.log"
+            output: o1 = "{outdir}{file}_dedup.fastq.gz"
+            log:   "LOGS/{outdir}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
 
     else:
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-            output: o1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
-            log:   "LOGS/{file}_dedup_extract.log"
+            output: o1 = "{outdir}{file}_dedup.fastq.gz"
+            log:   "LOGS/{outdir}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "{params.dedup} extract {params.dpara} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
 rule dedupbam:
-    input:  bam = "MAPPED/{file}_mapped_sorted.bam"
-    output: bam = report("MAPPED/{file}_mapped_sorted_dedup.bam", category="DEDUP")
-    log:    "LOGS/{file}/dedupbam.log"
+    input:  bam = expand("MAPPED/{mape}/{{file}}_mapped_sorted.bam", mape=MAPENV)
+    output: bam = report(expand("MAPPED/{mape}/{{file}}_mapped_sorted_dedup.bam", mape=MAPENV), category="DEDUP")
+    log:    "LOGS/{outdir}{file}/dedupbam.log"
     conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
     threads: 1
-    params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
+    params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][2].items()),
             dedup = DEDUPBIN
     shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
 
 rule dedupuniqbam:
-    input:  bam = "MAPPED/{file}_mapped_sorted_unique.bam",
+    input:  bam = expand("MAPPED/{mape}/{{file}}_mapped_sorted_unique.bam", mape=MAPENV),
             check = rules.dedupbam.output.bam
-    output: bam = report("MAPPED/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP")
-    log:    "LOGS/{file}/dedupuniqbam.log"
+    output: bam = report(expand("MAPPED/{mape}/{file}_mapped_sorted_unique_dedup.bam", mape=MAPENV), category="DEDUP")
+    log:    "LOGS/{outdir}{file}/dedupuniqbam.log"
     conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
     threads: 1
-    params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
+    params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")[DEDUPENV]['OPTIONS'][2].items()),
             dedup = DEDUPBIN
     shell: "{params.dedup} dedup {params.dpara} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"

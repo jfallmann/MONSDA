@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Nov  4 11:56:14 2020 (+0100)
+# Last-Updated: Wed Nov  4 16:12:12 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2242
+#     Update #: 2300
 # URL:
 # Doc URL:
 # Keywords:
@@ -62,7 +62,10 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import glob, os, snakemake
+import glob
+import os
+import snakemake
+import json
 import numpy as np
 import heapq
 import itertools
@@ -329,6 +332,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
 
+
         tempconf[subwork+'ENV'] = env
         tempconf[subwork+'BIN'] = exe
         toollist.append([env,exe])
@@ -337,6 +341,191 @@ def create_subworkflow(config, subwork, conditions, stage=''):
     log.debug(logid+str([toollist,configs]))
 
     return toollist, configs
+
+@check_run
+def make_sub(subwork, config, samples, condition, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
+    logid=scriptname+'.Collection_make_sub: '
+    log.debug(logid+'WORK: '+str(subwork))
+    jobstorun = list()
+
+    condapath=re.compile(r'conda:\s+"')
+    logfix=re.compile(r'loglevel="INFO"')
+    subconf = NestedDefaultDict()
+
+    rawqc  = 'expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+
+    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+    if listoftools is None:
+        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+        return None
+
+    for key in config[subwork]['TOOLS']:
+        log.info(logid+'Running '+str(subwork)+' with Tool: '+key)
+        toolenv = key
+        toolbin = config[subwork]['TOOLS'][key]
+        subconf = NestedDefaultDict()
+
+        for i in listofconfigs:
+            if i is None:
+                continue
+            i[subwork+'ENV'] = toolenv
+            i[subwork+'BIN'] = toolbin
+
+            subconf = merge_dicts(subconf,i)
+
+            if not subname:
+                subname = toolenv+'.smk'
+            subsamples = list(set(sampleslong(subconf)))
+            log.debug(logid+str(subwork)+': '+str([toolenv,subname,condition, subsamples, subconf]))
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
+
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        smkout.write(line)
+                smkout.write('\n\n')
+
+            if subwork == 'QC':
+                subname = toolenv+'_raw.smk'
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
+                    smkout.write(re.sub(condapath, 'conda:  "../', smk.read()))
+                smkout.write('\n\n')
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    smkout.write(smk.read())
+
+            confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+            if os.path.exists(confo):
+                os.rename(confo,confo+'.bak')
+            with open(confo, 'a') as confout:
+                json.dump(subconf, confout)
+
+            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk']))), c=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json']))), d=workdir, rest=' '.join(argslist))
+            jobstorun.append(jobtorun)
+
+    return jobstorun
+
+@check_run
+def make_main(workflow, smkt, config, samples, condition, subdir, loglevel, subname=None):
+    logid=scriptname+'.Collection_make_sub: '
+    log.debug(logid+'WORK: '+str(subwork))
+    jobtorun = None
+
+    condapath=re.compile(r'conda:\s+"')
+    logfix=re.compile(r'loglevel="INFO"')
+    subconf = NestedDefaultDict()
+    tmpdir = subdir+os.sep()+'TMP'
+    makeoutdir(tmpdir)
+
+    toollist = list()
+    idx = -1
+    for subwork in workflows:
+        toollist.append(list())
+        idx+=1
+        log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
+        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+        if listoftools is None:
+            log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+            return None
+
+        for k,v in config[subwork]['TOOLS'].items():
+            log.info(logid+'Preparing '+str(subwork)+' with Tool: '+key)
+            toolenv = k
+            toolbin = v
+            toollist[idx].append(k)
+
+            subconf = NestedDefaultDict()
+
+            for i in listofconfigs:
+                if i is None:
+                    continue
+                i[subwork+'ENV'] = toolenv
+                i[subwork+'BIN'] = toolbin
+
+            for i in range(len(listoftools)):
+                if listofconfigs[i] is None:
+                    continue
+                subconf = merge_dicts(subconf, listofconfigs[i])
+
+            if not subname:
+                subname = toolenv+'.smk'
+            subsamples = list(set(sampleslong(subconf)))
+            log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subsamples, subconf]))
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), toolenv, 'subsnake.smk'])))
+
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath,'conda:  "../',line)
+                        smkout.write(line)
+                smkout.write('\n\n')
+
+                with open(smkt,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath,'conda:  "../',line)
+                        smkout.write(line)
+                smkout.write('\n\n')
+
+
+            if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                if 'DEDUP' in workflow:
+                    subname = toolenv+'_dedup_trim.smk'
+                else:
+                    subname = toolenv+'_trim.smk'
+
+            if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                if 'DEDUP' in subworkflows:
+                    subname = toolenv+'_dedup.smk'
+                else:
+                    subname = toolenv+'_raw.smk'
+
+            if 'MAPPING' in subworkflows:
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                with open(smko, 'a') as smkout:
+                    with open(smkf,'r') as smk:
+                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                    smkout.write('\n\n')
+                if 'QC' in subworkflows:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    with open(smko, 'a') as smkout:
+                        with open(smkf,'r') as smk:
+                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                        smkout.write('\n\n')
+
+        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+        with open(smko, 'a') as smkout:
+            with open(smkf,'r') as smk:
+                smkout.write(smk.read())
+
+            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition),toolenv,'subconfig.json'])))
+            if os.path.exists(confo):
+                os.rename(confo,confo+'.bak')
+                with open(confo, 'a') as confout:
+                    json.dump(subconf, confout)
+
+    # HIER WEITER: List of tool combinations -> make one smk and cnf and create jobtorun
+
+            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolbin,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
+
+    return jobtorun
 
 
 @check_run
@@ -571,10 +760,12 @@ def checkpaired(sample, config):
         check = conditiononly(s, config)
         log.debug(logid+'CHECK: '+str(check))
         p = subDict(config['SETTINGS'], check)
-        pairedlist = p.get('SEQUENCING')
-        samplelist = p.get('SAMPLES')
-        x = samplelist.index(s.split(os.sep)[-1])
-        paired = pairedlist[x]
+        paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
     log.debug(logid+'SEQUENCING: '+str(paired))
     return paired
 
@@ -587,10 +778,12 @@ def checkpaired_rep(sample,config):
     for s in sample:
         check = conditiononly(s,config)
         p = subDict(config['SETTINGS'], check)
-        pairedlist = p.get('SEQUENCING')
-        samplelist = p.get('SAMPLES')
-        x = samplelist.index(s.split(os.sep)[-1])
-        paired = pairedlist[x]
+        paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
         ret.append(str(paired).replace(',','_'))
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)
@@ -605,10 +798,12 @@ def checkstranded(sample,config):
         check = conditiononly(s,config)
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
-        pairedlist = p.get('SEQUENCING')
-        samplelist = p.get('SAMPLES')
-        x = samplelist.index(s.split(os.sep)[-1])
-        paired = pairedlist[x]
+        paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
         stranded = paired.split(',')[1] if len(paired.split(',')) > 1 else ''
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded

@@ -1,12 +1,10 @@
 QCBIN, QCENV = env_bin_from_config3(SAMPLES, config, 'QC')
-outdir = 'QC/'+str(QCENV)+'/'
+qcoutdir = 'QC/'+str(QCENV)+'/'
 moutdir = 'QC/Multi/'+str(QCENV)+'/'
 
 wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES)),
     read = "R1|R2"
-    outdir = outdir
-    moutdir = moutdir
 
 if paired == 'paired':
     log.info('Running paired mode QC')
