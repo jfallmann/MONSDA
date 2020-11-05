@@ -1,4 +1,11 @@
 TRIMBIN, TRIMENV = env_bin_from_config2(SAMPLES,config,'TRIMMING')
+trimoutdir = 'TRIMMED_FASTQ/'+str(TRIMENV)+'/'
+
+wildcard_constraints:
+    rawfile = '|'.join(list(SAMPLES)),
+    read = "R1|R2"
+    outdir = trimoutdir
+    moutdir = moutdir
 
 if paired == 'paired':
 	rule cutadapt_trim:
