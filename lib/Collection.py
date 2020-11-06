@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Nov  4 16:12:12 2020 (+0100)
+# Last-Updated: Fri Nov  6 13:18:16 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2300
+#     Update #: 2319
 # URL:
 # Doc URL:
 # Keywords:
@@ -280,16 +280,22 @@ def create_subworkflow(config, subwork, conditions, stage=''):
         try:
             env = str(subDict(config[subwork],condition)[stage+'ENV'])
         except:
-            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
-                log.warning('Key ENV not found for '+subwork+' this can be intentional')
+            if 'TOOLS' not in config[subwork]:
+                log.error('No tool environment found for '+subwork+'! Either key ENV or TOOLS must be set for '+str(condition)+'!')
             env = ''
         try:
             exe = str(subDict(config[subwork],condition)[stage+'BIN'])
         except:
-            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
-                log.warning('Key BIN not found for '+subwork+' this can be intentional')
+            if 'TOOLS' not in config[subwork]:
+                log.error('No tool binary found for '+subwork+'! Either key BIN or TOOLS must be set for '+str(condition)+'!')
             exe = ''
+
         tempconf = NestedDefaultDict()
+        if env != '' and exe != '':
+            toollist.append([env,exe])
+            tempconf[subwork+'ENV'] = env
+            tempconf[subwork+'BIN'] = exe
+
         try:
             for key in ['BINS','MAXTHREADS']:
                 tempconf[key] = config[key]
@@ -312,10 +318,11 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                     tempconf[key] = subSetDict(config[key],condition)
                     if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
-                if 'TOOLS' in config[subwork]:
-                    tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
-                    for k,v in config[subwork]['TOOLS'].items():
-                        toollist.append([k,v])
+
+            if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
+                tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
+                for k,v in config[subwork]['TOOLS'].items():
+                    toollist.append([k,v])
 
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
                 if subwork == 'COUNTING':
@@ -332,10 +339,6 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
 
-
-        tempconf[subwork+'ENV'] = env
-        tempconf[subwork+'BIN'] = exe
-        toollist.append([env,exe])
         configs.append(tempconf)
 
     log.debug(logid+str([toollist,configs]))
@@ -343,7 +346,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
     return toollist, configs
 
 @check_run
-def make_sub(subwork, config, samples, condition, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
+def make_sub(subwork, config, samples, conditions, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
     logid=scriptname+'.Collection_make_sub: '
     log.debug(logid+'WORK: '+str(subwork))
     jobstorun = list()
@@ -354,7 +357,7 @@ def make_sub(subwork, config, samples, condition, subdir, threads, workdir, args
 
     rawqc  = 'expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
-    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
     if listoftools is None:
         log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
         return None
@@ -418,7 +421,15 @@ def make_sub(subwork, config, samples, condition, subdir, threads, workdir, args
     return jobstorun
 
 @check_run
-def make_main(workflow, smkt, config, samples, condition, subdir, loglevel, subname=None):
+def get_combos(wf, config):
+    logid=scriptname+'.Collection_get_combos: '
+    for w in wf:
+
+
+    log.debug(logid+'WORK: '+str(subwork))
+
+@check_run
+def make_main(todos, workflows, config, samples, conditions, subdir, loglevel, subname=None):
     logid=scriptname+'.Collection_make_sub: '
     log.debug(logid+'WORK: '+str(subwork))
     jobtorun = None
@@ -429,86 +440,79 @@ def make_main(workflow, smkt, config, samples, condition, subdir, loglevel, subn
     tmpdir = subdir+os.sep()+'TMP'
     makeoutdir(tmpdir)
 
+    add = ''.join(todos)
+
+    confs = defaultdict()
     toollist = list()
     idx = -1
-    for subwork in workflows:
-        toollist.append(list())
-        idx+=1
-        log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
-        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-        if listoftools is None:
-            log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-            return None
+    for condition in conditions:
+        subconf = NestedDefaultDict()
 
-        for k,v in config[subwork]['TOOLS'].items():
-            log.info(logid+'Preparing '+str(subwork)+' with Tool: '+key)
-            toolenv = k
-            toolbin = v
-            toollist[idx].append(k)
+        for subwork in workflows:
+            toollist.append(list())
+            idx+=1
+            log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            if listoftools is None:
+                log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                return None
 
-            subconf = NestedDefaultDict()
+            for k,v in [toolenvs.split(',') for toolenvs in listoftools]:
+                log.info(logid+'Preparing '+str(subwork)+' with Tool: '+key)
+                toolenv = k
+                toolbin = v
+                toollist[idx].extend(k)
 
-            for i in listofconfigs:
-                if i is None:
-                    continue
-                i[subwork+'ENV'] = toolenv
-                i[subwork+'BIN'] = toolbin
+                for i in listofconfigs:
+                    if i is None:
+                        continue
+                    i[subwork+'ENV'] = toolenv
+                    i[subwork+'BIN'] = toolbin
 
-            for i in range(len(listoftools)):
-                if listofconfigs[i] is None:
-                    continue
-                subconf = merge_dicts(subconf, listofconfigs[i])
+                for i in range(len(listoftools)):
+                    if listofconfigs[i] is None:
+                        continue
+                    subconf = merge_dicts(subconf, listofconfigs[i])
 
-            if not subname:
                 subname = toolenv+'.smk'
-            subsamples = list(set(sampleslong(subconf)))
-            log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subsamples, subconf]))
+                subsamples = list(set(sampleslong(subconf)))
+                log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subsamples, subconf]))
 
-            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), toolenv, 'subsnake.smk'])))
+                if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                    if 'DEDUP' in workflow:
+                        subname = toolenv+'_dedup_trim.smk'
+                    else:
+                        subname = toolenv+'_trim.smk'
 
-            if os.path.exists(smko):
-                os.rename(smko,smko+'.bak')
+                if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                    if 'DEDUP' in subworkflows:
+                        subname = toolenv+'_dedup.smk'
+                    else:
+                        subname = toolenv+'_raw.smk'
+
+
+
+        if 'MAPPING' in subworkflows:
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
             with open(smko, 'a') as smkout:
                 with open(smkf,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                        line = re.sub(condapath,'conda:  "../',line)
-                        smkout.write(line)
+                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                 smkout.write('\n\n')
-
-                with open(smkt,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                        line = re.sub(condapath,'conda:  "../',line)
-                        smkout.write(line)
-                smkout.write('\n\n')
-
-
-            if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
-                if 'DEDUP' in workflow:
-                    subname = toolenv+'_dedup_trim.smk'
-                else:
-                    subname = toolenv+'_trim.smk'
-
-            if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
-                if 'DEDUP' in subworkflows:
-                    subname = toolenv+'_dedup.smk'
-                else:
-                    subname = toolenv+'_raw.smk'
-
-            if 'MAPPING' in subworkflows:
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+            if 'QC' in subworkflows:
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
                     smkout.write('\n\n')
-                if 'QC' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+
+
+        # HIER WEITER: 1 config/smk pro condition auf stack, dann combi basteln aus toolenvs -> name, rausschreiben
+        smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), toolenv, 'subsnake.smk'])))
+        if os.path.exists(smko):
+            os.rename(smko,smko+'.bak')
+        with open(smko, 'a') as smkout:
+
+
 
         smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
         with open(smko, 'a') as smkout:
@@ -688,8 +692,6 @@ def runstate_from_sample(sample, config):
     for s in sample:
         n = s.split(os.sep)[-1]
         s = os.path.dirname(s)
-        #if len(s.split(os.sep)) > 2:  # CHECK should be last time we use predefined depths
-        #    s = str.join(os.sep,s.split(os.sep)[-3:])
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
         log.debug(logid+'SETTINGS: '+str(c))
@@ -701,7 +703,7 @@ def runstate_from_sample(sample, config):
                         if k not in ret:
                             ret.append(k)
             else:
-                ret.append(s)
+                ret.extend(s.split(os.sep))
         else:
             if n in c:
                 k = s.split(os.sep)[-1]
@@ -741,12 +743,13 @@ def conditiononly(sample,config):
     ret = list()
     paired = False
     check = os.path.dirname(sample).split(os.sep)
-    log.debug(logid+str(check))
+    ret.extend(check)
+    log.debug(logid+'CHECK: '+str(check))
     for r in runstate_from_sample([sample],config):
-        log.debug(logid+str(r))
+        log.debug(logid+'runstate '+str(r))
         if r not in ret:
             ret.append(r)
-    log.debug(logid+str(ret))
+    log.debug(logid+'ret: '+str(ret))
     return ret
 
 

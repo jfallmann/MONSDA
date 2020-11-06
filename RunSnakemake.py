@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Nov  4 16:10:00 2020 (+0100)
+# Last-Updated: Fri Nov  6 12:55:24 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1141
+#     Update #: 1160
 # URL:
 # Doc URL:
 # Keywords:
@@ -229,7 +229,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         logfix=re.compile(r'loglevel="INFO"')  # REMOVE
 
         if subworkflows:
-            allmap = 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique.bam", outdir=outdir, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'expand("{outdir}{file}_mapped_sorted_unique_dedup.bam", outdir=outdir, file=samplecond(SAMPLES,config))'
+
+            allmap = 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique.bam", outdir=outdir, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique_dedup.bam", outdir=outdir, file=samplecond(SAMPLES,config))'
             allqc  = 'expand("{moutdir}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
             allrawqc  = 'rule themall:\n\tinput:\texpand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
             alltrimqc = 'rule themall:\n\tinput:\texpand("{moutdir}TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
@@ -238,66 +239,68 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             alldedup = 'rule themall:\n\tinput: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))'
             alltrimdedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
-            log.info(logid+'STARTING PROCESSING')
+            todos = list()
+            log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
 
-            for condition in conditions:
-                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'tmpsnake.smk'])))
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    todos.append(line)
+            todos.append('\n\n')
 
-                if 'QC' in subworkflows and 'QC' in config:
-                    makeoutdir('QC')
-                    if 'MAPPING' in subworkflows:
-                        with open(smko, 'a') as smkout:
-                            smkout.write(allmap+',\n\t\t'+allqc+'\n\n')
+            if 'QC' in subworkflows and 'QC' in config:
+                makeoutdir('QC')
+                if 'MAPPING' in subworkflows:
+                    todos.append(allmap+',\n\t\t'+allqc+'\n\n')
+                else:
+                    if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
+                        todos.append(alltrimqc+'\n\n')
+                    elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
+                        todos.append(alltrimdedupqc+'\n\n')
+                    elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
+                        todos.append(alldedupqc+'\n\n')
                     else:
-                        if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
-                            with open(smko, 'a') as smkout:
-                                smkout.write(alltrimqc+'\n\n')
-                        elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
-                            with open(smko, 'a') as smkout:
-                                smkout.write(alltrimdedupqc+'\n\n')
-                        elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
-                            with open(smko, 'a') as smkout:
-                                smkout.write(alldedupqc+'\n\n')
-                        else:
-                            with open(smko, 'a') as smkout:
-                                smkout.write(allrawqc+'\n\n')
+                        todos.append(allrawqc+'\n\n')
 
-                if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
-                    log.info(logid+'Mapping without QC for condition '+str(condition)+'!')
-                    with open(smko, 'a') as smkout:
-                        smkout.write(allmap+'\n\n')
+            if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
+                log.info(logid+'Mapping without QC!')
+                todos.append(allmap+'\n\n')
 
-                if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
-                    log.info(logid+'Simulating read trimming as trimming is not part of the subworkflows for condition '+str(condition)+'!')
-                    makeoutdir('TRIMMED_FASTQ')
-                    smkf = os.path.abspath(os.path.join('nextsnakes','subworkflowss','simulatetrim.smk'))
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                        smkout.write('\n\n')
+            if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
+                log.info(logid+'Simulated read trimming only!')
+                makeoutdir('TRIMMED_FASTQ')
+                smkf = os.path.abspath(os.path.join('nextsnakes','subworkflows','simulatetrim.smk'))
+                with open(smkf,'r') as smk:
+                    todos.append(re.sub(condapath,'conda:  "../',smk.read()))
+                todos.append('\n\n')
 
-                if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
-                    log.info(logid+'Trimming without QC for condition'+str(condition)+'!')
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(alltrim+'\n')
-                        smkout.write('\n\n')
+            if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
+                log.info(logid+'Trimming without QC!')
+                with open(smkf,'r') as smk:
+                    todos.append(alltrim+'\n')
+                todos.append('\n\n')
 
-                if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
-                    log.info(logid+'DEDUP without QC for condition'+str(condition)+'!')
-                    with open(smko, 'a') as smkout:
-                        with open(smkf,'r') as smk:
-                            smkout.write(alldedup+'\n')
-                        smkout.write('\n\n')
+            if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
+                log.info(logid+'DEDUP without QC!')
+                with open(smkf,'r') as smk:
+                    todos.append(alldedup+'\n')
+                todos.append('\n\n')
 
-                    #jobstorun = make_main(subworkflows, smko, config, SAMPLES, condition, smko, subdir, loglevel, 'pre_', )
+            jobstorun = make_main(todos, subworkflows, config, SAMPLES, conditions, subdir, loglevel)
 
-        else:
-            log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
+    else:
+        log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
 
+
+        '''
+        END OF PROCESSING, START OF POSTPROCESSING
+        '''
 
         if postprocess:
             for condition in conditions:
+                log.info('STARTING POSTPROCESSING FOR '+str(condition))
                 for subwork in postprocess:
                     subconf = NestedDefaultDict()
                     if any(subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']):
@@ -349,7 +352,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
 
-            #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
+            #THIS SECTION IS FOR PEAKS, DE, DEU, DAS, DTU ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
             for analysis in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
                 if analysis in config and analysis in postprocess:
 
