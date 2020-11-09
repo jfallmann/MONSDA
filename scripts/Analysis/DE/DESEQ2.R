@@ -19,13 +19,19 @@ availablecores <- as.integer(args[5])
 ### MAIN ###
 ############
 
+## set thread-usage
+BPPARAM = MulticoreParam(workers=availablecores)
+
+## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
 sampleData <- as.data.frame(sampleData)
-#head(sampleData)
-comparison<-strsplit(cmp, ",")
+
+## Combinations of conditions
+comparison <- strsplit(cmp, ",")
+
+## readin counttable
 countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
-#head(countData)
 
 setwd(outdir)
 
@@ -59,13 +65,11 @@ dds <- DESeqDataSetFromMatrix(countData = countData,
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
-#print(head(dds))
 
 #run for each pair of conditions
-BPPARAM = MulticoreParam(workers=availablecores)
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
 
-    #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+#Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
 
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
@@ -74,7 +78,7 @@ pdf(paste("DESeq2","PCA.pdf",sep="_"))
 print(plotPCA(rld, intgroup=c('condition')))
 dev.off()
 
-    #We also write the normalized counts to file
+#We also write the normalized counts to file
 write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
 
@@ -118,7 +122,7 @@ for(contrast in comparison[[1]]){
         dev.off()
 
         save.image(file = paste("DESEQ2",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-        
+
         rm(res,resOrdered, BPPARAM)
 
 
