@@ -7,7 +7,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  all = expand("{outdir}EDGER_DAS_All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}EDGER_DAS_All_Conditions_sum_MDS.png", outdir=outdir),
             tbl = expand("{outdir}EDGER_DAS_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DAS_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DAS_All_Conditions_QLDisp.png", outdir=outdir),
@@ -45,7 +44,6 @@ rule run_edgerDAS:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
     output: all = rules.themall.input.all,
-            sum = rules.themall.input.allsum,
             tbl = rules.themall.input.tbl,
             bcv = rules.themall.input.bcv,
             qld = rules.themall.input.qld,
