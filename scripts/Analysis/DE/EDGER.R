@@ -106,12 +106,15 @@ png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
-DGEsum <- sumTechReps(dge, ID=groups)
-out <- "EDGER_DE_All_Conditions_sum_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(DGEsum$samples$group)
-plotMDS(DGEsum, col=colors)
-dev.off()
+if (length(levels(groups)) > 2){
+    print("Will plot MDS for Count sums")
+    DGEsum <- sumTechReps(dge, ID=groups)
+    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
+    png(out, width = 400, height = 400)
+    colors <- RainbowColor(DGEsum$samples$group)
+    plotMDS(DGEsum, col=colors)
+    dev.off()
+}
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
