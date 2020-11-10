@@ -23,16 +23,16 @@ if paired == 'paired':
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
+                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
+                summary = "MAPPED/{file}.summary"
         log:    "LOGS/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
-                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index,
-                summary = lambda wildcards: str.join(os.sep,["MAPPED", wildcards.file])
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} --new-summary {params.summary}.summary 2>> {log} && touch {output.unmapped}"
+                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} --summary-file {output.summary} 2>> {log} && touch {output.unmapped}"
 
 else:
     rule mapping:
@@ -40,13 +40,13 @@ else:
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
+                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz",
+                summary = "MAPPED/{file}.summary"
         log:    "LOGS/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
-                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index,
-                summary = lambda wildcards: str.join(os.sep,["MAPPED", wildcards.file])
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} --new-summary {params.summary}.summary 2>> {log} && touch {output.unmapped}"
+                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} --summary-file {output.summary} 2>> {log} && touch {output.unmapped}"
