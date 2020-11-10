@@ -47,6 +47,6 @@ else:
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
-                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index
+                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index,
                 summary = lambda wildcards: str.join(os.sep,["MAPPED", wildcards.file])
         shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} --new-summary {params.summary}.summary 2>> {log} && touch {output.unmapped}"
