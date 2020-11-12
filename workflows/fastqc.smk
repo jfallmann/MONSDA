@@ -12,7 +12,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{rawfile}_fastqc_{read}_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 5
+        priority: 7
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -22,7 +22,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_{read}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 4
+        priority: 6
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -32,7 +32,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_{read}_fastqc_trimmed.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 3
+        priority: 5
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -42,7 +42,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_fastqc_mapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 2
+        priority: 4
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
@@ -53,7 +53,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 1
+        priority: 3
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
 
@@ -64,7 +64,7 @@ else:
         log:    "LOGS/QC/{rawfile}_fastqc_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 5
+        priority: 7
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -74,7 +74,7 @@ else:
         log:    "LOGS/QC/{file}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 4
+        priority: 6
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -84,7 +84,7 @@ else:
         log:    "LOGS/QC/{file}_fastqc_trimmed.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 3
+        priority: 5
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
@@ -94,7 +94,7 @@ else:
         log:     "LOGS/QC/{file}_fastqc_mapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 2
+        priority: 4
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
@@ -105,6 +105,6 @@ else:
         log:    "LOGS/QC/{file}_fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 1
+        priority: 3
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
