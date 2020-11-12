@@ -14,12 +14,14 @@ rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam
     output: bam = report("MAPPED/{file}_mapped_sorted.bam", category="2BAM"),
             bamindex = "MAPPED/{file}_mapped_sorted.bam.bai"
+			#fn = temp("TMP/SortBam/{file})
     log:    "LOGS/{file}/sam2bam.log"
     conda: "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
-    params: bins = BINS,
-            fn = lambda wildcards: "{fn}".format(fn=str(sample_from_path(wildcards.file)))
-    shell: "zcat {input.sortedsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.bam} --threads {threads} && samtools index {output.bam} 2> {log}"
+    params: bins = BINS
+            #fn = lambda wildcards: "{fn}".format(fn=str.join(os.sep(),['TMP', 'SortBam, str(sample_from_path(wildcards.file))]))
+    #shell: "touch {output.fn} && zcat {input.sortedsam} | samtools view -bS - | samtools sort -T {output.fn} -o {output.bam} --threads {threads} && samtools index {output.bam} 2> {log}"
+	shell: "zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}"
 
 rule uniqsam:
     input:  sortedsam = rules.sortsam.output.sortedsam,
@@ -36,10 +38,12 @@ rule sam2bamuniq:
            bam = rules.sam2bam.output
     output:  uniqbam = report("MAPPED/{file}_mapped_sorted_unique.bam", category="2BAM"),
              uniqbamindex = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
+			 #fn = temp("TMP/SortBam/{file})
     log:     "LOGS/{file}/sam2bamuniq.log"
     conda:   "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
     priority: 1               # This should be finished before we do anything else
-    params: bins = BINS,
-            fn = lambda wildcards: "{fn}".format(fn=sample_from_path(wildcards.file))
-    shell: "zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {params.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
+    params: bins = BINS
+            #fn = lambda wildcards: "{fn}".format(fn=str.join(os.sep(),['TMP', 'SortBam, str(sample_from_path(wildcards.file))]))
+    #shell: "touch {output.fn} && zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {output.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
+	shell: "zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}"
