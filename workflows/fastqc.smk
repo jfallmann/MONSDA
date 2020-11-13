@@ -42,7 +42,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_fastqc_mapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 4
+        priority: 2
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
@@ -53,7 +53,7 @@ if paired == 'paired':
         log:    "LOGS/QC/{file}_fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 3
+        priority: 1
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
 
@@ -94,7 +94,7 @@ else:
         log:     "LOGS/QC/{file}_fastqc_mapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 4
+        priority: 2
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
 
@@ -105,6 +105,6 @@ else:
         log:    "LOGS/QC/{file}_fastqc_uniquemapped.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        priority: 3
+        priority: 1
         params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
