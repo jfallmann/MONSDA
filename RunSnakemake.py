@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Nov  3 11:39:02 2020 (+0100)
+# Last-Updated: Fri Nov 13 16:55:48 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1101
+#     Update #: 1102
 # URL:
 # Doc URL:
 # Keywords:
@@ -323,7 +323,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     makeoutdir('QC')
                     if 'MAPPING' in subworkflows:
                         with open(smko, 'a') as smkout:
-                            smkout.write('rule themall:\n\tinput:\t'+allmap+',\n\t\t'+allqc+'\n\n')
+                            #smkout.write('rule themall:\n\tinput:\t'+allmap+',\n\t\t'+allqc+'\n\n')
+                            smkout.write('rule themall:\n\tinput:\t'+allqc+'\n\n')
                     else:
                         if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
                             with open(smko, 'a') as smkout:
