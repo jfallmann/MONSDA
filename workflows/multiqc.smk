@@ -7,8 +7,8 @@ if rundedup:
                     expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
             output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{condition}/tmp"),

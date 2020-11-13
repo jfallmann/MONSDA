@@ -6,7 +6,7 @@ rule sortsam:
     log:    "LOGS/{file}/sortsam.log"
     conda: "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
-    priority: 4
+    priority: 100
     params: linkto = lambda wildcards, output: os.path.basename(output.sortedsam)
     shell: "set +o pipefail;samtools view -H {input.mapps}|grep -P '^@HD' |pigz -p {threads} -f > {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@RG'|pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} ; export LC_ALL=C;samtools view -h {input.mapps} | grep -v \"^@\"|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} ; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2> {log}"# && rm -f {input.mapps} && touch {input.mapps}"
 
@@ -42,7 +42,7 @@ rule sam2bamuniq:
     log:     "LOGS/{file}/sam2bamuniq.log"
     conda:   "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
-    priority: 3               # This should be finished before we do anything else
+    priority: 30               # This should be finished before we do anything else
     params: bins = BINS
             #fn = lambda wildcards: "{fn}".format(fn=str.join(os.sep(),['TMP', 'SortBam, str(sample_from_path(wildcards.file))]))
     #shell: "touch {output.fn} && zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {output.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
