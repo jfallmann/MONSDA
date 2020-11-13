@@ -46,4 +46,4 @@ rule sam2bamuniq:
     params: bins = BINS
             #fn = lambda wildcards: "{fn}".format(fn=str.join(os.sep(),['TMP', 'SortBam, str(sample_from_path(wildcards.file))]))
     #shell: "touch {output.fn} && zcat {input.uniqsam} | samtools view -bS - | samtools sort -T {output.fn} -o {output.uniqbam} --threads {threads} && samtools index {output.uniqbam} 2> {log}"
-	shell: "zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}"
+	shell: "zcat {input.uniqsam} | samtools view -bS - > {output.uniqbam} && samtools index {output.uniqbam} 2> {log}"

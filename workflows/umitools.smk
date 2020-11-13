@@ -13,7 +13,7 @@ if paired == 'paired':
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
+            shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
 
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
@@ -27,7 +27,7 @@ if paired == 'paired':
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
+            shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
     else:
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
@@ -40,7 +40,7 @@ if paired == 'paired':
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
+            shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
 else:
     if wlparams:
@@ -53,7 +53,7 @@ else:
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}"
+            shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}"
 
         rule extract:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
@@ -65,7 +65,7 @@ else:
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
+            shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
 
     else:
         rule extract:
@@ -77,7 +77,7 @@ else:
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
-            shell:  "{params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
+            shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
 rule dedupbam:
     input:  bam = "MAPPED/{file}_mapped_sorted.bam"
@@ -88,7 +88,7 @@ rule dedupbam:
     threads: 1
     params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
             dedup = DEDUPBIN
-    shell: "{params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
+    shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
 
 rule dedupuniqbam:
     input:  bam = "MAPPED/{file}_mapped_sorted_unique.bam",
@@ -100,4 +100,4 @@ rule dedupuniqbam:
     threads: 1
     params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
             dedup = DEDUPBIN
-    shell: "{params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
+    shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
