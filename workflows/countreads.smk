@@ -123,7 +123,7 @@ rule featurecount_unique_dedup:
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
-if config.get('DEDUP'):
+if rundedup:
     rule summarize_counts:
         input:  f = rules.count_fastq.output,
                 m = rules.count_mappers.output,
