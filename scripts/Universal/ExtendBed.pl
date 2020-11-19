@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 #Script ExtendBed.pl;
-#Last changed Time-stamp: <2020-03-12 16:53:33 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
+#Last changed Time-stamp: <2020-11-16 13:22:19 fall> by Joerg Fallmann <joerg.fallmann@univie.ac.at>
 ###############
 ###Use stuff
 ###############
@@ -37,18 +37,18 @@ pod2usage(-verbose => 0) unless GetOptions(
     "genome|g=s"   => \$g,
     "bedfile|b=s"  => \$b,
     "outfile|o=s"  => \$o,
-    "left|l=s"	   => \$l,
-    "right|r=s"	   => \$r,
+    "left|l=s"     => \$l,
+    "right|r=s"    => \$r,
     "extend|e=s"   => \$e,
-    "up|u=s"	   => \$u,
-    "down|d=s"	   => \$d,
-    "trim|t=s"	   => \my $trim,
-	"min|f=s"	   => \$m,
-	"original|k=s" => \$keep,
-	"bedtwelve|i=s"=> \$introns,
-    "help|h"	   => sub{pod2usage(-verbose => 1)},
-    "man|m"		   => sub{pod2usage(-verbose => 2)},
-    "verbose"	   => sub{ $VERBOSE++ }
+    "up|u=s"       => \$u,
+    "down|d=s"     => \$d,
+    "trim|t=s"     => \my $trim,
+    "min|f=s"      => \$m,
+    "original|k=s" => \$keep,
+    "bedtwelve|i=s"=> \$introns,
+    "help|h"       => sub{pod2usage(-verbose => 1)},
+    "man|m"        => sub{pod2usage(-verbose => 2)},
+    "verbose"      => sub{ $VERBOSE++ }
     );
 
 ###############
@@ -60,8 +60,8 @@ my $pid = $$;
 print STDERR $job,"\n";
 
 unless ( -f $b ) {
-	warn "Could not open bed file for processing, please provide via the -b option!\n";
-	pod2usage(-verbose => 0);
+    warn "Could not open bed file for processing, please provide via the -b option!\n";
+    pod2usage(-verbose => 0);
 }
 
 unless ( $e || $l || $r || $u || $d){
@@ -72,6 +72,7 @@ unless ( $e || $l || $r || $u || $d){
 if ($e){
     $l=nearest(1,$e/2);
     $r=nearest(1,$e/2);
+	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
 }
 
 $l=0 unless $l;
@@ -81,15 +82,15 @@ $u=0 unless $u;
 
 my $sizes;
 if (-f $g){
-	open (my $Genome, "<:gzip(autopop)",$g);
-	while (<$Genome>){
-		chomp $_;
-		my ($chr,$size)=split (/\t/,$_);
-		$sizes->{$chr}=$size;
-	}
+    open (my $Genome, "<:gzip(autopop)",$g);
+    while (<$Genome>){
+        chomp $_;
+        my ($chr,$size)=split (/\t/,$_);
+        $sizes->{$chr}=$size;
+    }
 }
 else{
-	$sizes=Collection::fetch_chrom_sizes($g,$g.".chrom.sizes");
+    $sizes=Collection::fetch_chrom_sizes($g,$g.".chrom.sizes");
 }
 
 my $filextension;
@@ -114,7 +115,7 @@ if ($trim){
 
 my($filename, $dirs, $suffix) = fileparse($b,'.bed');
 if ($b =~ '.bed.gz$'){
-	($filename, $dirs, $suffix) = fileparse($b,'.bed.gz');
+    ($filename, $dirs, $suffix) = fileparse($b,'.bed.gz');
 }
 
 $o = $filename.$filextension.$suffix unless ($o);
@@ -134,120 +135,120 @@ while(<$Bed>){
     my $right  = 0;
     my $left   = 0;
     my $width  = nearest(1,($end-$start)/2);
-	if ($keep){
-		my $original = join("\t",$start,$end);
-		push @rest, $original;
-	}
-	$width = 0 if ($d > 0 || $u > 0 || !$e || $l > 0 || $r > 0);
+    if ($keep){
+        my $original = join("\t",$start,$end);
+        push @rest, $original;
+    }
+    $width = 0 if ($d > 0 || $u > 0 || !$e || $l > 0 || $r > 0);
     $end+=1 if (($end-$start)%2) && $width > 0;
 
-	if (defined $m && (($end - $start) >= $m) ){
-		if (@rest){
-			print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\t",join("\t",@rest),"\n";
-		}
-		else{
-			print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\n";
-		}
-		next;
-	}
-	else{
-		my $tstart = $start;
-		my $tend = $end;
-		if ($strand eq "+" || $strand eq '.' || $strand eq 'u'){
-			if ($d > 0){
-				$start = $tend;
-				$r = $d;
-			}
-			if ($u > 0){
-				$end = $tstart;
-				$end += 1 if $tstart == 0;
-				$l = $u;
-			}
-			$right=$r;
-			$left=$l;
-		}
-		elsif ($strand eq "-"){
-			if ($u > 0){
-				$start = $tend;
-				$l = $u;
-			}
-			if ($d > 0){
-				$end = $tstart;
-				$end += 1 if $tstart == 0;
-				$r = $d;
-			}
-			$right=$l;
-			$left=$r;
-		}
-		if (($right-$width) <= 0){
-			$right = 0;
-		}
-		else{
-			$right-=$width;
-		}
-		if (($left-$width) <= 0 ){
-			$left = 0;
-		}
-		else{
-			$left-=$width;
-		}
+    if (defined $m && (($end - $start) >= $m) ){
+        if (@rest){
+            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\t",join("\t",@rest),"\n";
+        }
+        else{
+            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\n";
+        }
+        next;
+    }
+    else{
+        my $tstart = $start;
+        my $tend = $end;
+        if ($strand eq "+" || $strand eq '.' || $strand eq 'u'){
+            if ($d > 0){
+                $start = $tend;
+                $r = $d;
+            }
+            if ($u > 0){
+                $end = $tstart;
+                $end += 1 if $tstart == 0;
+                $l = $u;
+            }
+            $right=$r;
+            $left=$l;
+        }
+        elsif ($strand eq "-"){
+            if ($u > 0){
+                $start = $tend;
+                $l = $u;
+            }
+            if ($d > 0){
+                $end = $tstart;
+                $end += 1 if $tstart == 0;
+                $r = $d;
+            }
+            $right=$l;
+            $left=$r;
+        }
+        if (($right-$width) <= 0){
+            $right = 0;
+        }
+        else{
+            $right-=$width;
+        }
+        if (($left-$width) <= 0 ){
+            $left = 0;
+        }
+        else{
+            $left-=$width;
+        }
 
-		if ( $start-$left >= 1 ){
-			if ($end+$right >= $sizes->{$chrom}){
-				$end = $sizes->{$chrom};
-			}
-			else{
-				$end += $right;
-			}
-			$start -= $left;
-			if ($trim){
-				if (($end-$start) > ($e+1)){
-					my $finalsize = nearest(1,(($end-$start)-$e)/2);
-					$start+=$finalsize;
-					$end-=$finalsize;
-				}
-			}
-			print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
-		}
-		elsif ( $start-$left <= 0 ){
-			$start = 0;
-			if ($end+$right >= $sizes->{$chrom}){
-				$end = $sizes->{$chrom};
-			}
-			else{
-				$end += $right;
-			}
-			if ($trim){
-				if (($end-$start) > ($e+1)){
-					my $finalsize = nearest(1,(($end-$start)-$e)/2);
-					$start+=$finalsize;
-					$end-=$finalsize;
-				}
-			}
-			print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
-		}
-		else{
-			die "Something wrong here!\n";
-		}
-		if (@rest){
-			if ($introns){
-				my @blocks = split(',',$rest[5]);
-				my @blocksizes = split(',',$rest[4]);
+        if ( $start-$left >= 1 ){
+            if ($end+$right >= $sizes->{$chrom}){
+                $end = $sizes->{$chrom};
+            }
+            else{
+                $end += $right;
+            }
+            $start -= $left;
+            if ($trim){
+                if (($end-$start) > ($e+1)){
+                    my $finalsize = nearest(1,(($end-$start)-$e)/2);
+                    $start+=$finalsize;
+                    $end-=$finalsize;
+                }
+            }
+            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
+        }
+        elsif ( $start-$left <= 0 ){
+            $start = 0;
+            if ($end+$right >= $sizes->{$chrom}){
+                $end = $sizes->{$chrom};
+            }
+            else{
+                $end += $right;
+            }
+            if ($trim){
+                if (($end-$start) > ($e+1)){
+                    my $finalsize = nearest(1,(($end-$start)-$e)/2);
+                    $start+=$finalsize;
+                    $end-=$finalsize;
+                }
+            }
+            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
+        }
+        else{
+            die "Something wrong here!\n";
+        }
+        if (@rest){
+            if ($introns){
+                my @blocks = split(',',$rest[5]);
+                my @blocksizes = split(',',$rest[4]);
 
-				for (1..$#blocks){
-					$blocks[$_] += $tstart - $start;
-				}
-				$blocksizes[0] += $tstart - $start;
-				$blocksizes[-1] += $end - $tend;
+                for (1..$#blocks){
+                    $blocks[$_] += $tstart - $start;
+                }
+                $blocksizes[0] += $tstart - $start;
+                $blocksizes[-1] += $end - $tend;
 
-				$rest[4] = join(',',@blocksizes);
-				$rest[5] = join(',',@blocks);
-			}
-			print $Out "\t";
-			print $Out join ( "\t", @rest );
-		}
-		print $Out "\n";
-	}
+                $rest[4] = join(',',@blocksizes);
+                $rest[5] = join(',',@blocks);
+            }
+            print $Out "\t";
+            print $Out join ( "\t", @rest );
+        }
+        print $Out "\n";
+    }
 }
 
 
@@ -257,65 +258,65 @@ while(<$Bed>){
 
 __END__
 
-	=head1 NAME
+    =head1 NAME
 
-	ExtendBed.pl - Extends bed entries strand specific one- or two-sided or equal.
+    ExtendBed.pl - Extends bed entries strand specific one- or two-sided or equal.
 
-	=head1 SYNOPSIS
-	ExtendBed.pl [-g I<FILE>] [-b I<FILE>] [-o I<FILE>] [-e I<Interger>] [-l I<Interger>] [-r I<Interger>]
-	[options]
+    =head1 SYNOPSIS
+    ExtendBed.pl [-g I<FILE>] [-b I<FILE>] [-o I<FILE>] [-e I<Interger>] [-l I<Interger>] [-r I<Interger>]
+    [options]
 
-	=head1 OPTIONS
+    =head1 OPTIONS
 
-	=over
+    =over
 
-	=item B<-g>
+    =item B<-g>
 
-	File containing chromosome sizes
+    File containing chromosome sizes
 
-	=item B<-b>
+    =item B<-b>
 
-	Bed file for extension
+    Bed file for extension
 
-	=item B<-o>
+    =item B<-o>
 
-	Output file name
+    Output file name
 
-	=item B<-e>
+    =item B<-e>
 
-	Extension to total length from both sides
+    Extension to total length from both sides
 
-	=item B<-l>
+    =item B<-l>
 
-	Extension to total length from 5' end
+    Extension to total length from 5' end
 
-	=item B<-r>
+    =item B<-r>
 
-	Extension to total length from 3' end
+    Extension to total length from 3' end
 
-	=item B<-f>
+    =item B<-f>
 
-	Extend if length smaller than -f (e.g. for MEME)
+    Extend if length smaller than -f (e.g. for MEME)
 
-	=item B<--help -h>
+    =item B<--help -h>
 
-	Print short help
+    Print short help
 
-	=item B<--man>
+    =item B<--man>
 
-	Prints the manual page and exits
+    Prints the manual page and exits
 
-	=back
+    =back
 
-	=head1 DESCRIPTION
+    =head1 DESCRIPTION
 
-	This program extends Bed files to a total length of at least -e, -r or -l nucleotides, or at least to begin or end of the corresponding chromosome
+    This program extends Bed files to a total length of at least -e, -r or -l nucleotides, or at least to begin or end of the corresponding chromosome
 
-	=head1 AUTHOR
+    =head1 AUTHOR
 
-	Joerg Fallmann E<lt>joerg.fallmann@univie.ac.atE<gt>
+    Joerg Fallmann E<lt>joerg.fallmann@univie.ac.atE<gt>
 
-	=cut
+    =cut
 
 
-	##################################END################################
+    ##################################END################################

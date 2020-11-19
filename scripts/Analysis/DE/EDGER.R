@@ -88,6 +88,9 @@ if (length(levels(types)) > 1){
     }
 }
 
+print(paste('FITTING DESIGN: ',design, sep=""))
+
+
 ## create file normalized table
 tmm <- as.data.frame(cpm(dge))
 colnames(tmm) <- t(dge$samples$samples)
@@ -97,18 +100,21 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 setwd(outdir)
 write.table(as.data.frame(tmm), gzfile("EDGER_DE_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
 
-## create file MDS-plot with and without sumarized replicates
+## create file MDS-plot with and without summarized replicates
 out <- "EDGER_DE_All_Conditions_MDS.png"
 png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
-DGEsum <- sumTechReps(dge, ID=groups)
-out <- "EDGER_DE_All_Conditions_sum_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(DGEsum$samples$group)
-plotMDS(DGEsum, col=colors)
-dev.off()
+if (length(levels(groups)) > 2){
+    print("Will plot MDS for Count sums")
+    DGEsum <- sumTechReps(dge, ID=groups)
+    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
+    png(out, width = 400, height = 400)
+    colors <- RainbowColor(DGEsum$samples$group)
+    plotMDS(DGEsum, col=colors)
+    dev.off()
+}
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
@@ -168,7 +174,7 @@ for(contrast in comparisons[[1]]){
         dev.off()
 
         save.image(file = paste("EDGER_DE",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-        
+
     }, error=function(e){
         rm(contrast,lrt,tops)
         print(warnings)

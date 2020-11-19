@@ -12,8 +12,8 @@ if rundedup:
                     expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
             output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("{moutdir}{condition}/tmp"),
@@ -21,7 +21,7 @@ if rundedup:
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
     else:
         rule multiqc:
@@ -40,7 +40,7 @@ if rundedup:
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
 else:
     if paired == 'paired':
@@ -57,7 +57,7 @@ else:
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
     else:
         rule multiqc:
@@ -73,4 +73,4 @@ else:
             log:    "LOGS/QC/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"

@@ -7,7 +7,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  all = expand("{outdir}EDGER_DE_All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}EDGER_DE_All_Conditions_sum_MDS.png", outdir=outdir),
             tbl = expand("{outdir}EDGER_DE_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DE_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DE_All_Conditions_QLDisp.png", outdir=outdir),
@@ -45,7 +44,6 @@ rule run_edgerDE:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
     output: all = rules.themall.input.all,
-            sum = rules.themall.input.allsum,
             tbl = rules.themall.input.tbl,
             bcv = rules.themall.input.bcv,
             qld = rules.themall.input.qld,
@@ -66,4 +64,4 @@ rule filter_significant_edgerDE:
     log:    expand("LOGS/{outdir}filter_edgerDE.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}EDGER_DE*pValue-sorted.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    shell: "set +o pipefail;for i in {outdir}EDGER_DE*pValue-sorted.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i|head -n1 |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[5]);if ($F[5] < 0.05 && ($F[1] <= -1.5 ||$F[1] >= 1.5) ){{print}}' |gzip >> {outdir}Sig_$fn && zcat $i|head -n1 |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[5]);if ($F[5] < 0.05 && ($F[1] >= 1.5) ){{print}}' |gzip >> {outdir}SigUP_$fn && zcat $i|head -n1 |gzip > {outdir}SigDOWN_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[5]);if ($F[5] < 0.05 && ($F[1] <= -1.5) ){{print}}' |gzip >> {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

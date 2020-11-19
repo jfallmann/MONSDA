@@ -70,7 +70,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/../QC/FASTQC/${CONDITION}/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s ${workflow.workDir}/../QC/FASTQC/${CONDITION}/.
     """
 }
 

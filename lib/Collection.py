@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Nov  6 13:18:16 2020 (+0100)
+# Last-Updated: Thu Nov 19 14:34:00 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2319
+#     Update #: 2202
 # URL:
 # Doc URL:
 # Keywords:
@@ -826,6 +826,7 @@ def set_pairings(samples, config):
                     ret.extend(samplecond([x],config))
     else:
         return samples
+    log.debug(logid+'return: '+str(ret))
     return ret
 
 
@@ -833,17 +834,23 @@ def set_pairings(samples, config):
 def get_pairing(sample, stype, config, samples):
     logid = scriptname+'.Collection_get_pairings: '
     pairlist = config['PEAKS'].get('COMPARABLE')
-    log.debug(logid+'PAIRLIST: '+str(pairlist))
+    matching = ''
+    log.debug(logid+'PAIRLIST: '+str(pairlist)+' SAMPLE: '+str(sample))
     if pairlist:
         for k, v in pairlist.items():
-            for x in samples:
-                if v in x:
-                    matching = samplecond([x],config)[0]
-    log.debug(logid+'matching: '+str(matching))
-    matching.replace('MAPPED/','')
-    print('PAIRINGS: '+sample+': '+str(matching))
-    log.debug(logid+' -c '+str(matching)+'_mapped_'+str(stype)+'.bam')
-    return '-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam'
+            if k in sample:
+                for x in samples:
+                    if v in x:
+                        log.debug(logid+'Match found: '+str(v)+' : '+str(x))
+                        matching = samplecond([x], config)[0].replace('MAPPED/','')
+                        log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
+        log.debug(logid+'-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam')
+        return '-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam'
+    else:
+        log.debug(logid+'No matching sample found')
+        return ''
+
+
 
 
 @check_run
