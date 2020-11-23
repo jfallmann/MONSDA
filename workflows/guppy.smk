@@ -6,7 +6,7 @@ wildcard_constraints:
 rule call_base:
     input:  f5 = "RAW/{rawfile}.fast5"
     output: fq = "FASTQ/{rawfile}.fastq.gz"
-    log:    expand("LOGS/{sets}/{cape}.call.log", sets=SETS, cape=CALLERENV)
+    log:    expand("LOGS/BASECALL/{rawfile}_guppy.log")
     conda:  "nextsnakes/envs/"+CALLERENV+".yaml"
     threads: int(MAXTHREAD/2)
     params: caller = CALLERBIN,
