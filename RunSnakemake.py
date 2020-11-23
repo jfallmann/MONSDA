@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Nov 13 16:55:48 2020 (+0100)
+# Last-Updated: Mon Nov 23 09:23:06 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1102
+#     Update #: 1106
 # URL:
 # Doc URL:
 # Keywords:
@@ -112,7 +112,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         preprocess = subworkflows = postprocess = None
 
         #Define workflow stages
-        pre = ['QC','SRA']
+        pre = ['QC','SRA','BASECALL']
         sub = ['QC','TRIMMING','MAPPING','DEDUP']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
@@ -164,13 +164,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
 
-        if preprocess and 'SRA' in preprocess:
-            if 'SRA' not in config:
-                log.error(logid+'No configuration with key \'SRA\' for file download found. Nothing to do!')
+        for proc in [x for x in preprocess if x in ['SRA', 'BASECALL']]:
+            if proc not in config:
+                log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
             makeoutdir('FASTQ')
             makeoutdir('TMP')
-            preprocess.remove('SRA')
-            SAMPLES = download_samples(config)
+            preprocess.remove(proc)
+
+            if proc == 'SRA':
+                SAMPLES = download_samples(config)
+            elif proc == 'BASECALL':
+                SAMPLES = basecall_samples(config)
+            else:
+                SAMPLES = get_samples(config)
+
             log.info(logid+'PRESAMPLES: '+str(SAMPLES))
             conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
             log.info(logid+'PRECONDITIONS: '+str(conditions))

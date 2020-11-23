@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Nov 10 09:54:09 2020 (+0100)
+# Last-Updated: Mon Nov 23 10:42:53 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2201
+#     Update #: 2203
 # URL:
 # Doc URL:
 # Keywords:
@@ -217,6 +217,29 @@ def download_samples(config):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'DOWNLOAD_SAMPLES_LONG: '+str(SAMPLES))
     return SAMPLES
+
+@check_run
+def basecall_samples(config):
+    logid = scriptname+'.Collection_basecall_samples: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('RAW',str(x).replace('.fast5','')+'*.fast5') for x in SAMPLES]
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
+            RETSAMPLES.extend([x.replace('.fast5','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
 
 @check_run
 def get_conditions(samples, config):

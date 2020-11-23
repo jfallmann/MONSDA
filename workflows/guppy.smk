@@ -1,26 +1,16 @@
-MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+CALLERBIN, CALLERENV = env_bin_from_config2(SAMPLES,config,'BASECALL')
 
-rule generate_index:
-    input:  fa = REFERENCE
-    output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
-    conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
-    threads: MAXTHREAD
-    params: indexer=MAPPERBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell: "{params.indexer} {params.ipara} -t {threads} -d {output.uidx} {input.fa} 2> {log} && ln -s {params.linkidx} {output.idx}"
+wildcard_constraints:
+    rawfile = '|'.join(list(SAMPLES)),
 
-rule mapping:
-    input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-            index = rules.generate_index.output.idx
-            ref = REFERENCE
-    output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
-            unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-    log:    "LOGS/{file}/mapping.log"
-    conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
-    threads: MAXTHREAD
-    params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
-            mapp=MAPPERBIN
-    shell: "{params.mapp}  {params.mpara} -t {threads} {input.index} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+rule call_base:
+    input:  f5 = "RAW/{rawfile}.fast5"
+    output: fq = "FASTQ/{rawfile}.fastq.gz"
+    log:    expand("LOGS/{sets}/{cape}.call.log", sets=SETS, cape=CALLERENV)
+    conda:  "nextsnakes/envs/"+CALLERENV+".yaml"
+    threads: int(MAXTHREAD/2)
+    params: caller = CALLERBIN,
+            cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'CALLING')['OPTIONS'][0].items()),
+            f5dir = lambda wildcards, input: os.path.dirname(input.f5),
+            fqdir = lambda wildcards, input: os.path.dirname(output.fq)
+    shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {threads} --verbose_logs --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log}"
