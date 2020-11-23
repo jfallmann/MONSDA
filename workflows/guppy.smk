@@ -8,7 +8,9 @@ rule themall:
 
 rule call_base:
     input:  f5 = "RAW/{rawfile}.fast5"
-    output: fq = "FASTQ/{rawfile}.fastq.gz"
+    output: fq = "FASTQ/{rawfile}.fastq.gz",
+            summary = "FASTQ/{rawfile}_summary.txt",
+            telemetry = "FASTQ/{rawfile}_telemetry.js"
     log:    "LOGS/BASECALL/{rawfile}_guppy.log"
     conda:  "nextsnakes/envs/"+CALLERENV+".yaml"
     threads: int(MAXTHREAD/4) if int(MAXTHREAD/4) >= 1 else 1
@@ -17,4 +19,4 @@ rule call_base:
             f5dir = lambda wildcards, input: os.path.dirname(input.f5),
             fqdir = lambda wildcards, output: os.path.dirname(output.fq),
             callers = lambda wildcards, threads: int(MAXTHREAD/threads)
-    shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {params.callers} --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log} && cat fastq_runid_*.fastq.gz > {output.fq} && rm -f fastq_runid_*.fastq.gz"
+    shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {params.callers} --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log} && cat {params.fqdir}/fastq_runid_*.fastq.gz > {output.fq} && rm -f {params.fqdir}/fastq_runid_*.fastq.gz && mv {params.fqdir}/sequencing_summary.txt {output.summary} &&  mv {params.fqdir}/sequencing_telemetry.js {output.telemetry} && cat {params.fqdir}/*.log >> {log} && rm -f {params.fqdir}/*.log"
