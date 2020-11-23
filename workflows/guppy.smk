@@ -16,5 +16,5 @@ rule call_base:
             cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'BASECALL')['OPTIONS'][0].items()),
             f5dir = lambda wildcards, input: os.path.dirname(input.f5),
             fqdir = lambda wildcards, output: os.path.dirname(output.fq),
-            callers = lambda wildcards: int(MAXTHREAD/wildcards.threads)
+            callers = lambda wildcards, threads: int(MAXTHREAD/threads)
     shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {threads} --verbose_logs --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log}"
