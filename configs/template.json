@@ -36,6 +36,21 @@
                              }
               }
     },
+#BASECALL options
+    "BASECALL": {
+        "id": { #key for source and genome
+                "condition": { # sample id
+                               "setting": {
+                                   "ENV" : "guppy",  # name of conda env for raw file download
+                                   "BIN" : "~/.local/bin/guppy-cpu/bin/guppy_basecaller", #PATH to guppy executable
+                                   "OPTIONS":
+                                   [  #SRA options here if any, paired is not required, will be resolved by rules
+                                      {}
+                                   ]
+                               }
+                             }
+              }
+    },
 #QC options
     "QC": {
         "id": { #key for source and genome
