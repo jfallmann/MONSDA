@@ -17,4 +17,4 @@ rule call_base:
             f5dir = lambda wildcards, input: os.path.dirname(input.f5),
             fqdir = lambda wildcards, output: os.path.dirname(output.fq),
             callers = lambda wildcards, threads: int(MAXTHREAD/threads)
-    shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {threads} --verbose_logs --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log}"
+    shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {params.callers} --verbose_logs --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log}"
