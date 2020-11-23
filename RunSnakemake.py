@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Nov 23 11:42:53 2020 (+0100)
+# Last-Updated: Mon Nov 23 13:41:17 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1113
+#     Update #: 1114
 # URL:
 # Doc URL:
 # Keywords:
@@ -101,6 +101,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
+        config['MAXTHREADS'] = procs
 
         if unlock:
             log.info(logid+'Unlocking directory')
