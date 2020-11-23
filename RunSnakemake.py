@@ -109,27 +109,32 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
 
-        preprocess = subworkflows = postprocess = None
+        preprocess = subworkflows = postprocess = []
 
         #Define workflow stages
         pre = ['QC','SRA']
-        sub = ['QC','TRIMMING','MAPPING','DEDUP']
-        post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
+        sub = ['QC','DEDUP','TRIMMING','MAPPING']
+        post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','DTU','ANNOTATE']
 
         wfs = config['WORKFLOWS'].split(',')
 
         if 'WORKFLOWS' in config:
             subworkflows = [x for x in wfs if x in sub]
             if len(subworkflows) == 0 or subworkflows[0] == '':
-                subworkflows = None
+                subworkflows = []
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
-                preprocess = None
-            if subworkflows and 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
+# <<<<<<< HEAD
+#                 preprocess = None
+#             if subworkflows and 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
+# =======
+                preprocess = []
+            if 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
+# >>>>>>> DTU
                 preprocess.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
-                postprocess = None
+                postprocess = []
         else:
             log.error('NO WORKFLOWS DEFINED, NOTHING TO DO!')
             sys.exit()
@@ -220,9 +225,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         SAMPLES = get_samples(config)
-        log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES,config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
-        log.info(logid+'CONDITIONS: '+str(conditions))
+        log.info(logid+'SAMPLES: \n\t'+'\n\t'.join(SAMPLES))
+        conditions = get_conditions_rec(config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES,config)]))]
+        log.info(logid+'CONDITIONS: \n\t'+'\n\t'.join(['-'.join(list(x)) for x in conditions]))
 
         rawqc  = 'expand("QC/Multi/RAW/{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
@@ -493,6 +498,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                     subwork = analysis
                     SAMPLES = get_samples_postprocess(config, subwork)
+                    # SAMPLES = get_values_rec(config['SAMPLES'])
                     log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
 
                     subconf = NestedDefaultDict()

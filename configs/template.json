@@ -21,7 +21,10 @@
                         "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
                         "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
                     }
-                },
+                }
+            }
+        }
+    },
 #SRA options
     "SRA": {
         "id": { #key for source and genome
@@ -191,7 +194,7 @@
             "condition": {
                 "setting": {  # See above
                               "ENV" : "piranha",
-                              "BIN" : "Piranha"
+                              "BIN" : "Piranha",
                               "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
                               "OPTIONS":
                               [

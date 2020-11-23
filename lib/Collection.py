@@ -86,6 +86,11 @@ import six
 import logging
 import hashlib
 from snakemake import load_configfile
+import functools
+import json
+import textwrap
+# from string import join, split
+
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -129,7 +134,48 @@ class NestedDefaultDict(defaultdict):
 ##############################
 ########Snakemake Subs########
 ##############################
+
+# def check_run(func):
+#     @functools.wraps(func)
+#     def func_wrapper(*args, **kwargs):
+#         logid=scriptname+'.Collection_func_wrapper: '
+#         args_repr = [' | arg:\n'+repr(a) for a in args]
+#         kwargs_repr = [f" | kwarg:\n{k}={v!r}" for k, v in kwargs.items()]
+#         log.info(f"Calling:  {func.__name__}( ... )")
+#         counter = 1
+#         for arg in args:
+#             log.info(f" | arg{counter}:")
+#             if isinstance(arg, dict):
+#                 log.info(f" | {json.dumps(arg,indent=4)}")
+#             else:
+#                 log.info(f" | {arg}")
+#             counter+=1
+#         counter = 1
+#         for kwarg in kwargs:
+#             log.info(f" | arg{counter}:")
+#             log.info(f" | {kwarg}")
+#             counter+=1
+#         log.info("")
+#         # signature = "\n ".join(args_repr + kwargs_repr)
+#         # log.info(logid+f"\n\nCalling {func.__name__}(\n{signature})")
+#         try:
+#             value = func(*args, **kwargs)
+#             log.info(f" |>>> {func.__name__} returned:")
+#             if isinstance(value, dict):
+#                 log.info(f"{json.dumps(value,indent=4)}\n")
+#             log.info(f"{value}\n")
+#             return value
+#
+#         except Exception as err:
+#             exc_type, exc_value, exc_tb = sys.exc_info()
+#             tbe = tb.TracebackException(
+#                 exc_type, exc_value, exc_tb,
+#             )
+#             log.error(logid+''.join(tbe.format()))
+#     return func_wrapper
+
 def check_run(func):
+    @functools.wraps(func)
     def func_wrapper(*args, **kwargs):
         logid=scriptname+'.Collection_func_wrapper: '
         try:
@@ -142,6 +188,10 @@ def check_run(func):
             )
             log.error(logid+''.join(tbe.format()))
     return func_wrapper
+
+@check_run
+def printable_dict(paramdict):
+    return(json.dumps(paramdict,indent=4))
 
 @check_run
 def sources(config):
@@ -159,6 +209,8 @@ def get_samples(config):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
+    for c in check:
+        log.debug(logid+'check: '+str(c))
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -181,6 +233,14 @@ def get_samples(config):
 
     log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
     return RETSAMPLES
+
+@check_run
+def get_values_rec(config):
+    for key, value in config.items():
+        if isinstance(value, dict):
+            yield from get_values_rec(value)
+        else:
+            yield value
 
 @check_run
 def get_samples_postprocess(config,subwork):
@@ -219,7 +279,7 @@ def download_samples(config):
     return SAMPLES
 
 @check_run
-def get_conditions(samples, config):
+def get_conditions(config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
     for k in keysets_from_dict(config['SAMPLES']):
@@ -228,41 +288,83 @@ def get_conditions(samples, config):
     return list(set(ret))
 
 @check_run
-def get_samples_from_dir(id, condition, setting, config):
-    logid = scriptname+'.Collection_get_samples_from_dir: '
-    pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
-    log.debug(logid+str(pat))
-    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    log.debug(logid+str(ret))
-    if len(ret) > 0:
-        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
-        for x in seqtype:
-            if 'unpaired' not in x:
-                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
-                for i in range(len(renamelist)):
-                    if renamelist[i] != ret[i]:
-                        os.rename(ret[i],renamelist[i])
-            else:
-                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
-        return list(set(ret))
-    else:
-        return list()
-
-@check_run
-def sampleslong(config):
-    logid = scriptname+'.Collection_sampleslong: '
+def get_conditions_rec(config, keylist=[]):
+    logid = scriptname+'.Collection_get_conditions_rec: '
+    if keylist == []:
+        config = config['SAMPLES']
     ret = list()
-    tosearch = list()
-    for k in keysets_from_dict(config['SAMPLES']):
-        tosearch.append(k)
-    log.debug(logid+'keys: '+str(tosearch))
-    for search in tosearch:
-        for x in list(set(getFromDict(config['SAMPLES'],search)[0])):
-            ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
-    ret= list(set(ret))
+    for k,v in config.items():
+        keylist.append(k)
+        if not isinstance(v,dict):
+            ret.append(tuple(keylist))
+        else:
+            ret.extend(get_conditions_rec(v, keylist))
+        keylist.pop()
     log.debug(logid+str(ret))
     return ret
+
+            # @check_run
+            # def get_samples_from_dir(id, condition, setting, config):
+            #     logid = scriptname+'.Collection_get_samples_from_dir: '
+            #     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
+            #     log.debug(logid+str(pat))
+            #     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
+            #     log.debug(logid+str(ret))
+            #     if len(ret) > 0:
+            #         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
+            #         for x in seqtype:
+            #             if 'unpaired' not in x:
+            #                 ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+            #                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
+            #                 for i in range(len(renamelist)):
+            #                     if renamelist[i] != ret[i]:
+            #                         os.rename(ret[i],renamelist[i])
+            #             else:
+            #                 ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
+            #         return list(set(ret))
+            #     else:
+            #         return list()
+
+# @check_run
+# def sampleslong(config):
+#     logid = scriptname+'.Collection_sampleslong: '
+#     ret = list()
+#     tosearch = list()
+#     for k in keysets_from_dict(config['SAMPLES']):
+#         tosearch.append(k)
+#     log.debug(logid+'keys: '+str(tosearch))
+#     for search in tosearch:
+#         for x in list(set(getFromDict(config['SAMPLES'],search)[0])):
+#             ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
+#     ret= list(set(ret))
+#     log.debug(logid+str(ret))
+#     return ret
+
+@check_run #needs a config dict including 'SAMPLES' key. returns list with absolute pathes for each sample. walks recursively through config['SAMPLES'] dict.
+def sampleslong(config, keylist=[], first_call=False):
+    logid = scriptname+'.Collection_sampleslong: '
+    if keylist==[]:
+        first_call = True
+        config = config['SAMPLES']
+    ret=list()
+    pathlist = list()
+    for k,v in config.items():
+        keylist.append(k)
+        if not dict_inst(v):
+            for item in v:
+                pathlist.append(keylist+[item])
+                log.debug(logid+str(pathlist))
+        else:
+            pathlist.extend(sampleslong(v, keylist))
+        keylist.pop()
+    if not first_call:
+        return pathlist
+    else:
+        for p in pathlist:
+            log.debug(logid+str(p))
+            ret.append(os.path.join(*list(p)))
+        log.debug(logid+'ret: '+str(ret))
+        return ret
 
 @check_run
 def get_placeholder(config):
@@ -274,7 +376,7 @@ def get_placeholder(config):
         ret.append('_')
     return ret
 
-@check_run
+@check_run # SOURCE???
 def genomepath(s, config):
     logid=scriptname+'.Collection_genomepath: '
     sa = os.path.basename(str(s))
@@ -289,7 +391,7 @@ def genomepath(s, config):
                 if str(k) == str(y) or str(k) == str(x):
                     return os.path.join(str(x),str(y))
 
-@check_run
+@check_run # SOURCE???
 def genome(s, config):
     logid=scriptname+'.Collection_genome: '
     sa = os.path.basename(str(s))
@@ -322,7 +424,7 @@ def genomename(s, config):
                     if g == y:
                         return str(x)
 
-@check_run
+@check_run # SOURCE???
 def transcriptomepath(s, config):
     logid=scriptname+'.Collection_transcriptomepath: '
     sa = os.path.basename(str(s))
@@ -337,7 +439,7 @@ def transcriptomepath(s, config):
                 if str(k) == str(y) or str(k) == str(x):
                     return os.path.join(str(x),str(y))
 
-@check_run
+@check_run # SOURCE???
 def transcriptome(s, config):
     logid=scriptname+'.Collection_transcriptome: '
     sa = os.path.basename(str(s))
@@ -613,7 +715,7 @@ def rmempty(check):
             ret.append(f)
     return ret
 
-@check_run
+@check_run # SOURCE???
 def source_from_sample(sample, config):
     logid=scriptname+'.Collection_source_from_sample: '
     s = os.path.dirname(str(sample))
@@ -652,7 +754,7 @@ def anno_from_source(source, config, step):
     log.debug(logid+str(ret))
     return ret
 
-@check_run
+@check_run # list of sample pathes
 def runstate_from_sample(sample,config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
@@ -681,24 +783,52 @@ def samplecond(sample, config):
     logid = scriptname+'.Collection_samplecond: '
     ret = list()
     for s in sample:
+        log.debug(logid+str(s))
         s = s.replace('.fastq.gz','')
-        log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
-        log.debug(logid+'CHECK: '+str(check))
-        for r in runstate_from_sample([s],config):
-            tmplist = check
-            if r not in tmplist:
-                tmplist.append(r)
-            log.debug(logid+'TMPLIST: '+str(tmplist))
-            if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
-                #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
-                s = re.sub(r'_[r|R|][1|2]','',s)
-            if r not in s.split(os.sep):
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-            else:
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),os.path.basename(s)))
+# <<<<<<< HEAD
+#         log.debug(logid+'CHECK: '+str(check))
+#         for r in runstate_from_sample([s],config):
+#             tmplist = check
+#             if r not in tmplist:
+#                 tmplist.append(r)
+#             log.debug(logid+'TMPLIST: '+str(tmplist))
+#             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+#                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+#                 s = re.sub(r'_[r|R|][1|2]','',s)
+#             if r not in s.split(os.sep):
+#                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+#             else:
+#                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),os.path.basename(s)))
+# =======
+        get_values_rec(config)
+        if not 'unpaired' in subDict(config['SETTINGS'],check)['SEQUENCING']:
+            #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+            s = re.sub(r'_[r|R|][1|2]','',s)
+        ret.append(s)
+        log.debug(logid+str(s))
+# >>>>>>> DTU
     log.debug(logid+'RETURN: '+str(ret))
     return ret
+# @check_run
+# def samplecond(sample,config):
+#     logid = scriptname+'.Collection_samplecond: '
+#     ret = list()
+#     for s in sample:
+#         s = s.replace('.fastq.gz','')
+#         log.debug(logid+'SAMPLE: '+str(s))
+#         check = os.path.dirname(s).split(os.sep)
+#         log.debug(logid+'CHECK: '+str(check))
+#         for r in runstate_from_sample([s],config):
+#             tmplist = check
+#             tmplist.append(r)
+#             log.debug(logid+'TMPLIST: '+str(tmplist))
+#             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+#                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+#                 s = re.sub(r'_[r|R|][1|2]','',s)
+#             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+#     log.debug(logid+'RETURN: '+str(ret))
+#     return ret
 
 @check_run
 def conditiononly(sample,config):
@@ -890,7 +1020,8 @@ def comparable_as_string(config, subwork):
 @check_run
 def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
-    check = config[subwork].get('COMPARABLE')
+    log.info(logid+'this is the config: '+'\n'+printable_dict(config))
+    check = config[subwork]['COMPARABLE']
     if check:
         log.debug(logid+'determine comparables in '+subwork)
         complist  = []
@@ -943,7 +1074,7 @@ def comparable_as_string3(config, subwork):
 ##############################
 ########Nextflow Subs########
 ##############################
-@check_run
+@check_run # SOURCE???
 def nf_fetch_params(configfile):
     logid=scriptname+'.nf_fetch_params: '
 
