@@ -11,9 +11,10 @@ rule call_base:
     output: fq = "FASTQ/{rawfile}.fastq.gz"
     log:    "LOGS/BASECALL/{rawfile}_guppy.log"
     conda:  "nextsnakes/envs/"+CALLERENV+".yaml"
-    threads: int(MAXTHREAD/2)
+    threads: int(MAXTHREAD/4) if int(MAXTHREAD/4) >= 1 else 1
     params: caller = CALLERBIN,
             cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'BASECALL')['OPTIONS'][0].items()),
             f5dir = lambda wildcards, input: os.path.dirname(input.f5),
-            fqdir = lambda wildcards, output: os.path.dirname(output.fq)
+            fqdir = lambda wildcards, output: os.path.dirname(output.fq),
+            callers = lambda wildcards: int(MAXTHREAD/wildcards.threads)
     shell: "{params.caller} {params.cpara} --recursive --cpu_threads_per_caller {threads} --num_callers {threads} --verbose_logs --compress_fastq -i {params.f5dir} -s {params.fqdir} 2> {log}"
