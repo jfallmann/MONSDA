@@ -1,7 +1,7 @@
 CALLERBIN, CALLERENV = env_bin_from_config2(SAMPLES,config,'BASECALL')
 
 wildcard_constraints:
-    rawfile = '|'.join(list(SAMPLES)),
+    rawfile = '|'.join(list(SAMPLES))
 
 rule call_base:
     input:  f5 = "RAW/{rawfile}.fast5"
