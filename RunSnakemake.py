@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Nov 23 11:37:08 2020 (+0100)
+# Last-Updated: Mon Nov 23 11:38:56 2020 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1107
+#     Update #: 1108
 # URL:
 # Doc URL:
 # Keywords:
@@ -164,7 +164,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
 
-        for proc in preprocess:
+        for proc in [x for x in preprocess if config.get(x)]:
             if proc not in config:
                 log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
             makeoutdir('FASTQ')
