@@ -14,7 +14,7 @@ rule generate_index:
 
 rule mapping:
     input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
-            index = rules.generate_index.output.idx
+            index = rules.generate_index.output.idx,
             ref = REFERENCE
     output: mapped = report("MAPPED/{file}_mapped.sam", category="MAPPING"),
             unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
