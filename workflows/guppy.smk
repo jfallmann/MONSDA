@@ -4,7 +4,7 @@ wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES))
 
 rule themall:
-    input: expand("FASTQ/{rawfile}.fastq.gz", rawfile = SAMPLES, read=['R1','R2'])
+    input: expand("FASTQ/{rawfile}.fastq.gz", rawfile = SAMPLES)
 
 rule call_base:
     input:  f5 = "RAW/{rawfile}.fast5"
