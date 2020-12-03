@@ -362,7 +362,7 @@
   "DTU": {
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
-      "drimseq": "Analysis/DTU/DRIMSEQ.py"
+      "drimseq": "Analysis/DTU/DRIMSEQ.R"
     },
     "COMPARABLE": {
       "contrast_WTvsKO": [

@@ -57,8 +57,9 @@ rule run_edgerDE:
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = outdir,
-            compare = comparison
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
+            compare = comparison,
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'DTU')['OPTIONS'][2].items())
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} {params.cpara} 2> {log} "
 
 rule filter_significant_edgerDE:
     input:  dift = rules.run_edgerDE.output.dift

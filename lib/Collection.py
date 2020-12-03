@@ -376,6 +376,34 @@ def get_placeholder(config):
         ret.append('_')
     return ret
 
+@check_run
+def get_summary_dirs(config):
+    logid=scriptname+'.get_summary_dirs: '
+    ret=list()
+    for key in config["SUMMARY"].keys():
+        log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
+        if key in config['WORKFLOWS'].split(','):
+            if isinstance(config['SUMMARY'][key],dict):
+                if "TOOLS" in config["SUMMARY"][key].keys():
+                    for tool in config['SUMMARY'][key]['TOOLS']:
+                        ret.append(f"{key}/{tool.upper()}")
+    log.info(logid+'RETURN: '+str(ret))
+    return ret
+
+@check_run
+def get_summary_cutoff(config):
+    logid=scriptname+'.get_summary_cutoff: '
+    ret=list()
+    for key in config["SUMMARY"].keys():
+        log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
+        if key in config['WORKFLOWS'].split(','):
+            if isinstance(config['SUMMARY'][key],dict):
+                if "CUTOFF" in config["SUMMARY"][key].keys():
+                    cuts = [f'{k}:{v}' for (k,v) in config['SUMMARY'][key]['CUTOFF'][0].items()]
+                    ret.append(f"{key}={'+'.join(cuts)}")
+    log.info(logid+'RETURN: '+str(ret))
+    return ret
+
 @check_run # SOURCE???
 def genomepath(s, config):
     logid=scriptname+'.Collection_genomepath: '
@@ -576,7 +604,7 @@ def pathstogenomes(samples, config):
                             ret.append(os.path.join(str(x),str(y)))
     return sorted(list(set(ret)))
 
-@check_run
+@check_run # needs string of sample, runstate(?) can be NONE, config and key of workflow as subconf -> returns the subdict of the called sample in the workflow key including OPTIONS key
 def tool_params(sample, runstate, config, subconf):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
@@ -754,7 +782,7 @@ def anno_from_source(source, config, step):
     log.debug(logid+str(ret))
     return ret
 
-@check_run # list of sample pathes
+@check_run # sample as list and config file with SAMPLES key, reutrns list or single key(condition of sample)  ???
 def runstate_from_sample(sample,config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
@@ -762,7 +790,7 @@ def runstate_from_sample(sample,config):
         n = s.split(os.sep)[-1]
         s = os.path.dirname(s)
         if len(s.split(os.sep)) > 2:
-            s = str.join(os.sep,s.split(os.sep)[-3:])
+            s = str.join(os.sep,s.split(os.sep)[-3:])   #ICS problem
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SAMPLES"],s.split(os.sep))[0]
         if dict_inst(c):
@@ -779,7 +807,7 @@ def runstate_from_sample(sample,config):
     return ret
 
 @check_run
-def samplecond(sample, config):
+def samplecond(sample, config): # takes list of sample names (including .fastq.gz) and returns a list with their conditions as directory path without fastq.gz ( ["condition/of/sample", ... ])
     logid = scriptname+'.Collection_samplecond: '
     ret = list()
     for s in sample:

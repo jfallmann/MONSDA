@@ -563,6 +563,41 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
 
+        # SUMMARY RUN
+
+        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
+        smko = os.path.abspath(os.path.join(subdir,'summary_subsnake.smk'))
+        if os.path.exists(smko):
+            os.rename(smko,smko+'.bak')
+        with open(smko, 'a') as smkout:
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    smkout.write(line)
+            smkout.write('\n\n')
+        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
+        with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
+            with open(smkf,'r') as smk:
+                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+            smkout.write('\n')
+
+        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+        with open(smko, 'a') as smkout:
+            with open(smkf,'r') as smk:
+                smkout.write(smk.read())
+
+        confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
+        if os.path.exists(confo):
+            os.rename(confo,confo+'.bak')
+        with open(confo, 'a') as confout:
+            json.dump(config, confout)
+
+        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=smko,c=confo,d=workdir,rest=' '.join(argslist))
+        log.info(logid+'RUNNING '+str(jobtorun))
+        job = runjob(jobtorun)
+        log.debug(logid+'JOB CODE '+str(job))
+
         log.info('Workflows executed without error!')
 
     except Exception:
