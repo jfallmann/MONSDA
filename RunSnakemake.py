@@ -493,20 +493,24 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'JOB CODE '+str(job))
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
+            summary_tools_dict = NestedDefaultDict()
             for analysis in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
                 if analysis in config and analysis in postprocess:
+
+                    summary_tools_dict[analysis]=[k for k in config[analysis]['TOOLS'].keys()]
 
                     subwork = analysis
                     SAMPLES = get_samples_postprocess(config, subwork)
                     # SAMPLES = get_values_rec(config['SAMPLES'])
                     log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
 
-                    subconf = NestedDefaultDict()
+                    # subconf = NestedDefaultDict()
                     log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
                     listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
                     if listoftools is None:
                         log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork))
+
 
                     for key in config[subwork]['TOOLS']:
                         log.info(logid+'... with Tool: '+key)
@@ -523,7 +527,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                 continue
                             subconf = merge_dicts(subconf,listofconfigs[i])
 
-                        subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
+                        subname = toolenv+'_'+subwork+'.smk'
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
 
@@ -560,45 +564,53 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         job = runjob(jobtorun)
                         log.debug(logid+'JOB CODE '+str(job))
 
+            # SUMMARY RUN
+
+            log.debug(logid+'make SUMMARY of postprocessing analyses')
+            subconf = NestedDefaultDict()
+            for key in ['BINS','MAXTHREADS','SAMPLES', 'SETTINGS']:
+                subconf[key]=config[key]
+            subconf['WORKFLOWS'].merge(summary_tools_dict)
+
+            log.info(str(subconf))
+
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
+            smko = os.path.abspath(os.path.join(subdir,'summary_subsnake.smk'))
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
+                        line = re.sub(condapath,'conda:  "../',line)
+                        smkout.write(line)
+                smkout.write('\n\n')
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
+            with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+                smkout.write('\n')
+
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+            with open(smko, 'a') as smkout:
+                with open(smkf,'r') as smk:
+                    smkout.write(smk.read())
+
+            confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
+            if os.path.exists(confo):
+                os.rename(confo,confo+'.bak')
+            with open(confo, 'a') as confout:
+                json.dump(subconf, confout)
+
+            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=smko,c=confo,d=workdir,rest=' '.join(argslist))
+            log.info(logid+'RUNNING '+str(jobtorun))
+            job = runjob(jobtorun)
+            log.debug(logid+'JOB CODE '+str(job))
+
+            log.info('Workflows executed without error!')
+
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
-
-        # SUMMARY RUN
-
-        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-        smko = os.path.abspath(os.path.join(subdir,'summary_subsnake.smk'))
-        if os.path.exists(smko):
-            os.rename(smko,smko+'.bak')
-        with open(smko, 'a') as smkout:
-            with open(smkf,'r') as smk:
-                for line in smk.readlines():
-                    line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
-                    line = re.sub(condapath,'conda:  "../',line)
-                    smkout.write(line)
-            smkout.write('\n\n')
-        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
-        with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
-            with open(smkf,'r') as smk:
-                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-            smkout.write('\n')
-
-        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
-        with open(smko, 'a') as smkout:
-            with open(smkf,'r') as smk:
-                smkout.write(smk.read())
-
-        confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
-        if os.path.exists(confo):
-            os.rename(confo,confo+'.bak')
-        with open(confo, 'a') as confout:
-            json.dump(config, confout)
-
-        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=smko,c=confo,d=workdir,rest=' '.join(argslist))
-        log.info(logid+'RUNNING '+str(jobtorun))
-        job = runjob(jobtorun)
-        log.debug(logid+'JOB CODE '+str(job))
-
-        log.info('Workflows executed without error!')
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()

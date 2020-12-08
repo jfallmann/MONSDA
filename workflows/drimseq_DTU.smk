@@ -10,9 +10,12 @@ log.info(logid+"COMPARISON: "+str(comparison))
 
 rule themall:
     input:  session = expand("{outdir}/DRIMSEQ_DTU_SESSION.gz", outdir=outdir),
-            res1 = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
-            res2 = expand("{outdir}/DTU_DRIMSEQ_{comparison}_stageR-filtered.tsv.gz", outdir=outdir, comparison=compstr),
-            res3 = expand("{outdir}/DTU_DRIMSEQ_{comparison}_post-hoc-filtered-on-SD.tsv.gz", outdir=outdir, comparison=compstr)
+            sig = expand("{outdir}/Sig_DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr),
+            sig_d = expand("{outdir}/SigDOWN_DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr),
+            sig_u = expand("{outdir}/SigUP_DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr),
+            res_t = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_transcripts.tsv.gz", outdir=outdir, comparison=compstr)
+            # res_stager = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_stageR-filtered.tsv.gz", outdir=outdir, comparison=compstr),
+            # res_posthoc = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_post-hoc-filtered-on-SD.tsv.gz", outdir=outdir, comparison=compstr)
 
 rule salmon_index:
     input:  fa = REFERENCE
@@ -65,15 +68,30 @@ rule create_annotation_table:
 rule run_DTU:
     input:  anno = rules.create_annotation_table.output.anno,
     output: session = rules.themall.input.session,
-            res1 = rules.themall.input.res1,
-            res2 = rules.themall.input.res2,
-            res3 = rules.themall.input.res3
+            res = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr),
+            res_t = rules.themall.input.res_t
+            # res_stager = rules.themall.input.res_stager,
+            # res_posthoc = rules.themall.input.res_posthoc,
     log:    expand("LOGS/{outdir}run_DTU.log",outdir=outdir)
-    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    conda:  "nextsnakes/envs/"+DTUENV+"_DTU.yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS,DTUBIN]),
             compare = comparison,
             outdir = outdir,
             ref = ANNOTATION,
+            cutts = get_cutoff_as_string(config, 'DTU')
             # pvcut = lambda wildcards: ' '.join(f"{val}" for (key,val) in tool_params(SAMPLES[0], None ,config, 'DTU')['OPTIONS'][2].items())
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {threads} 2> {log}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {threads} {params.cutts} 2> {log}"
+
+rule filter_significant:
+    input:  tbl = rules.run_DTU.output.res
+    output: sig  = rules.themall.input.sig,
+            sig_d  = rules.themall.input.sig_d,
+            sig_u  = rules.themall.input.sig_u,
+    log:    expand("LOGS/{outdir}filter_drimseq.log",outdir=outdir)
+    conda:  "nextsnakes/envs/"+DTUENV+"_DTU.yaml"
+    threads: 1
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1]),
+    # shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut} ||$F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigDOWN_$fn;else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi;done 2> {log}"
+    shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} {{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} {{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} {{print}}' |gzip > {outdir}/SigDOWN_$fn;else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi;done 2> {log}"

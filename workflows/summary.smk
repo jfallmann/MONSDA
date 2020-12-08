@@ -1,23 +1,25 @@
 from datetime import datetime
 logid = 'summary.smk '
 
-outdir = "SUMMARY"
+outdir = "REPORTS"
 
 rule themall:
     # input:  summary_files = expand("{outdir}/rmarkdown_summary.{format}", outdir=outdir, format=config["SUMMARY"]["FORMAT"]),
     #         summary_Rmd = expand("{outdir}/rmarkdown_summary.Rmd", outdir=outdir, analyses="-".join(config["SUMMARY"].keys()))
-    input:  summary_files = expand("{outdir}/rmarkdown_summary.txt", outdir=outdir)
+    input:  summary_allpost = expand("{outdir}/summary_postprocessing.pdf", outdir=outdir),
+            summarys = expand("{dir}/summary.pdf", dir=get_summary_dirs(config))
 
 rule make_rmd:
-    input:  expand("{dir}", dir=get_summary_dirs(config))
-    output: files = rules.themall.input.summary_files,
+    input:  expand("{files}", files=get_summary_files(config))
+    output: expand("{outdir}/summary_postprocessing.Rmd", outdir=outdir)
     log:    expand("LOGS/{outdir}/summary.log", outdir=outdir)
     conda:  "nextsnakes/envs/summary.yaml"
-    params: bins = os.path.join(BINS,config["SUMMARY"]["BIN"]),
-            formats =   '+'.join(config["SUMMARY"]["FORMAT"]),
-            cutoff = get_summary_cutoff(config),
-            dirs = '+'.join(get_summary_dirs(config))
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {params.dirs} {params.formats} {outdir} {params.cutoff} 2> {log}"
+    shell:  "Rscript --no-environ --no-restore --no-save nextsnakes/scripts/Analysis/SUMMARY.Rmd {input} {outdir} 2> {log}"
 
 rule knitr_rmd:
-    input :
+    input:  rules.make_rmd.output
+    output: rules.themall.input.summary_allpost,
+            rules.themall.input.summarys
+    log:    expand("LOGS/{outdir}/summary.log", outdir=outdir)
+    conda:  "nextsnakes/envs/summary.yaml"
+    shell:  "R rmarkdown::render('{input}',output_file='{output}')"

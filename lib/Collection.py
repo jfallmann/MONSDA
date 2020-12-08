@@ -377,31 +377,48 @@ def get_placeholder(config):
     return ret
 
 @check_run
-def get_summary_dirs(config):
-    logid=scriptname+'.get_summary_dirs: '
-    ret=list()
-    for key in config["SUMMARY"].keys():
-        log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
-        if key in config['WORKFLOWS'].split(','):
-            if isinstance(config['SUMMARY'][key],dict):
-                if "TOOLS" in config["SUMMARY"][key].keys():
-                    for tool in config['SUMMARY'][key]['TOOLS']:
-                        ret.append(f"{key}/{tool.upper()}")
-    log.info(logid+'RETURN: '+str(ret))
+def get_cutoff_as_string(config, subwork):
+    logid=scriptname+'.get_cutoff: '
+    cutoffs = [f"{k}:{v}" for (k,v) in config[subwork]['CUTOFF'][0].items()]
+    ret = '-'.join(cutoffs)
+    log.info(logid+'CUTOFFS: '+str(ret))
     return ret
 
 @check_run
-def get_summary_cutoff(config):
-    logid=scriptname+'.get_summary_cutoff: '
+def get_summary_dirs(config):
+    logid=scriptname+'.get_summary_dirs: '
     ret=list()
-    for key in config["SUMMARY"].keys():
-        log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
-        if key in config['WORKFLOWS'].split(','):
-            if isinstance(config['SUMMARY'][key],dict):
-                if "CUTOFF" in config["SUMMARY"][key].keys():
-                    cuts = [f'{k}:{v}' for (k,v) in config['SUMMARY'][key]['CUTOFF'][0].items()]
-                    ret.append(f"{key}={'+'.join(cuts)}")
-    log.info(logid+'RETURN: '+str(ret))
+    for work,tools in config['WORKFLOWS'].items():
+        for tool in tools:
+            ret.append(f"{work}/{tool.upper()}")
+    log.debug(logid+str(ret))
+    return ret
+#
+# @check_run
+# def get_summary_cutoff(config):
+#     logid=scriptname+'.get_summary_cutoff: '
+#     ret=list()
+#     for key in config["SUMMARY"].keys():
+#         log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
+#         if key in config['WORKFLOWS'].split(','):
+#             if isinstance(config['SUMMARY'][key],dict):
+#                 if "CUTOFF" in config["SUMMARY"][key].keys():
+#                     cuts = [f'{k}:{v}' for (k,v) in config['SUMMARY'][key]['CUTOFF'][0].items()]
+#                     ret.append(f"{key}={'+'.join(cuts)}")
+#     log.info(logid+'RETURN: '+str(ret))
+#     return ret
+
+@check_run
+def get_summary_files(config):
+    logid=scriptname+'.get_summary_files: '
+    ret=list()
+    for work,tools in config['WORKFLOWS'].items():
+        for tool in tools:
+            log.info(logid+'make summary of '+str(work)+' - '+str(tool))
+            for f in glob.glob(f"{work}/{tool.upper()}/*significants.tsv.gz"):
+            # for f in glob.glob(f"{work}/{tool.upper()}/*"):
+                ret.append(f)
+    log.debug(logid+str(ret))
     return ret
 
 @check_run # SOURCE???
@@ -559,6 +576,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
+                tempconf[subwork]['CUTOFF']=config[subwork]['CUTOFF']
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':

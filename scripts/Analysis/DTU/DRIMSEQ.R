@@ -14,10 +14,12 @@ gtf     <- args[2]
 outdir  <- args[3]
 cmp     <- args[4]
 cores   <- as.integer(args[5])
-pvcut   <- args[6]
-lfccut  <- args[7]
+cutts   <- args[6]
 
-
+# define cutoffs
+cutoffs <- strsplit(cutts, '-')[[1]]
+pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
+lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
@@ -149,8 +151,9 @@ for(contrast in comparisons[[1]]){
   res$pvalue <- no.na(res$pvalue)
   res.txp$pvalue <- no.na(res.txp$pvalue)
 
-  # create pvalue and adjusted pvalue table as DRIMSeq result
-  write.table(as.data.frame(res.txp), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+  # CREATE RESULTS TABLE
+  write.table(as.data.frame(res), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+  write.table(as.data.frame(res.txp), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
   # # plot the estimated proportions for one of the significant genes
   # idx <- which(res$adj_pvalue < 0.05)[1]
@@ -160,46 +163,44 @@ for(contrast in comparisons[[1]]){
   # plotProportions(d, res$gene_id[idx], "condition")
   # dev.off()
 
-  #  stageR following DRIMSeq
-  pScreen <- res$pvalue
-  strp <- function(x) substr(x,1,15)
-  names(pScreen) <- strp(res$gene_id)
+  # #  stageR following DRIMSeq
+  # pScreen <- res$pvalue
+  # strp <- function(x) substr(x,1,15)
+  # names(pScreen) <- strp(res$gene_id)
+  #
+  # pConfirmation <- matrix(res.txp$pvalue, ncol=1)
+  # rownames(pConfirmation) <- strp(res.txp$feature_id)
+  #
+  # tx2gene <- res.txp[,c("feature_id", "gene_id")]
+  # for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
+  #
+  # stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
+  #                       pScreenAdjusted=FALSE, tx2gene=tx2gene)
+  # stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=pv_cut)
+  # suppressWarnings({
+  #   drim.padj <- getAdjustedPValues(stageRObj, order=FALSE,
+  #                                   onlySignificantGenes=TRUE)
+  # })
+  # # head(drim.padj)
+  #
+  # write.table(as.data.frame(drim.padj), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+  #
+  # # Post-hoc filtering
+  # res.txp.filt <- DRIMSeq::results(d, level="feature")
+  # smallProportionSD <- function(d, filter=0.1) {
+  #   cts <- as.matrix(subset(counts(d), select=-c(gene_id, feature_id)))
+  #   gene.cts <- rowsum(cts, counts(d)$gene_id)
+  #   total.cts <- gene.cts[match(counts(d)$gene_id, rownames(gene.cts)),]
+  #   props <- cts/total.cts
+  #   propSD <- sqrt(rowVars(props))
+  #   propSD < filter
+  # }
+  # filt <- smallProportionSD(d)
+  # res.txp.filt$pvalue[filt] <- 1
+  # res.txp.filt$adj_pvalue[filt] <- 1
+  #
+  # write.table(as.data.frame(res.txp.filt), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_post-hoc-filtered-on-SD.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-  pConfirmation <- matrix(res.txp$pvalue, ncol=1)
-  rownames(pConfirmation) <- strp(res.txp$feature_id)
-
-  tx2gene <- res.txp[,c("feature_id", "gene_id")]
-  for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
-
-  stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
-                        pScreenAdjusted=FALSE, tx2gene=tx2gene)
-  stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
-  suppressWarnings({
-    drim.padj <- getAdjustedPValues(stageRObj, order=FALSE,
-                                    onlySignificantGenes=TRUE)
-  })
-  # head(drim.padj)
-
-  write.table(as.data.frame(drim.padj), gzfile(paste("DTU_DRIMSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-  # Post-hoc filtering
-  res.txp.filt <- DRIMSeq::results(d, level="feature")
-  smallProportionSD <- function(d, filter=0.1) {
-    cts <- as.matrix(subset(counts(d), select=-c(gene_id, feature_id)))
-    gene.cts <- rowsum(cts, counts(d)$gene_id)
-    total.cts <- gene.cts[match(counts(d)$gene_id, rownames(gene.cts)),]
-    props <- cts/total.cts
-    propSD <- sqrt(rowVars(props))
-    propSD < filter
-  }
-  filt <- smallProportionSD(d)
-  res.txp.filt$pvalue[filt] <- 1
-  res.txp.filt$adj_pvalue[filt] <- 1
-
-  write.table(as.data.frame(res.txp.filt), gzfile(paste("DTU_DRIMSEQ",contrast_name,"post-hoc-filtered-on-SD.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-  # CREATE SUMMARY TABLE
-  write.table(as.data.frame(res.txp.filt), gzfile(paste("SUMTABLE","_DTU","_DRIMSEQ_",contrast_name,".tsv.gz", sep="")), sep="\t", quote=F, row.names=FALSE)
 
 }
 
