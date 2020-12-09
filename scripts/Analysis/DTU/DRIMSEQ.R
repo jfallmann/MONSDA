@@ -142,6 +142,18 @@ for(contrast in comparisons[[1]]){
 
   comparison_objs <- append(comparison_objs, d)
 
+  proportions <- DRIMSeq::proportions(d)
+
+  samples_of_group_A <- subset(samples(d), condition==A)$sample_id
+  samples_of_group_B <- subset(samples(d), condition==B)$sample_id
+
+  proportions[paste(A[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_A)])
+  proportions[paste(B[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_B)])
+  proportions["lfc"] <- log2(proportions[paste(A[[1]],"mean",sep='_')]) - log2(proportions[paste(B[[1]],"mean",sep='_')])
+  props_transcripts<-proportions[c("feature_id","lfc")]
+  props_genes <- aggregate(proportions, list(proportions$gene_id), mean)[c("Group.1","lfc")]
+  colnames(props_genes) <- c("gene_id", "lfc")
+
   # generate a single p-value per gene and transcript
   res <- DRIMSeq::results(d)
   res.txp <- DRIMSeq::results(d, level="feature")
@@ -150,6 +162,11 @@ for(contrast in comparisons[[1]]){
   no.na <- function(x) ifelse(is.na(x), 1, x)
   res$pvalue <- no.na(res$pvalue)
   res.txp$pvalue <- no.na(res.txp$pvalue)
+
+  res <- merge(props_genes, res)
+  res.txp <- merge(props_transcripts,res.txp )
+  res <- res[,c(1,6,2,3,4,5)]
+  res.txp <- res.txp[,c(1,7,2,3,4,5,6)]
 
   # CREATE RESULTS TABLE
   write.table(as.data.frame(res), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)

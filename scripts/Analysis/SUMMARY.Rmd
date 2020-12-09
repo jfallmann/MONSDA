@@ -4,7 +4,7 @@ pres_date <- Sys.Date()
 ```
 
 ---
-title:  "NextSnakes SUMMARY"
+title:  "POSTPROCESSING SUMMARY"
 author: `r author`
 date:   `r pres_date`
 output: html_document
@@ -13,27 +13,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-suppressPackageStartupMessages({
-  library(tximport)
-  library(GenomicFeatures)
-  library(DRIMSeq)
-  library(stageR)
-  library(DEXSeq)
-  library(DESeq2)
-  library(edgeR)
-})
-
 # args <- commandArgs(trailingOnly = TRUE)
 # input     <- args[1]
 # formats   <- args[2]
 # outdir    <- args[3]
 # cutoffs    <- args[4]
 
-input     <- "DTU/DRIMSEQ+DE/EDGER"
-formats   <- "html+pdf"
-outdir    <- "SUMMARY"
-cutoffs   <- "DTU=pvalue:0.5+lfc:1.5"
-condis    <- "mikelove-group1-out1+mikelove-group1-out2+mikelove-group1-out3+mikelove-group2-out1+mikelove-group2-out2+mikelove-group2-out3"
+input     <- "DTU/DRIMSEQ/SigUP_DTU_DRIMSEQ_1_vs_2_results_genes.tsv.gz DTU/DRIMSEQ/SigDOWN_DTU_DRIMSEQ_1_vs_2_results_genes.tsv.gz DTU/DRIMSEQ/Sig_DTU_DRIMSEQ_1_vs_2_results_genes.tsv.gz"
+outdir    <- "REPORTS"
 
 setwd("PROJECTS/DTU_dev")
 

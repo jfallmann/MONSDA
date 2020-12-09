@@ -415,7 +415,7 @@ def get_summary_files(config):
     for work,tools in config['WORKFLOWS'].items():
         for tool in tools:
             log.info(logid+'make summary of '+str(work)+' - '+str(tool))
-            for f in glob.glob(f"{work}/{tool.upper()}/*significants.tsv.gz"):
+            for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
             # for f in glob.glob(f"{work}/{tool.upper()}/*"):
                 ret.append(f)
     log.debug(logid+str(ret))
