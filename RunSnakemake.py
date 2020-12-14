@@ -493,11 +493,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'JOB CODE '+str(job))
 
             #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
-            summary_tools_dict = NestedDefaultDict()
+            summary_tools_set = set()
+            summary_tools_dict = dict()
             for analysis in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
                 if analysis in config and analysis in postprocess:
 
-                    summary_tools_dict[analysis]=[k for k in config[analysis]['TOOLS'].keys()]
+                    for k in config[analysis]['TOOLS'].keys():
+                        summary_tools_set.add('-'.join([analysis,k]))
+                    summary_tools_dict[analysis] = [k for k in config[analysis]['TOOLS'].keys()]
 
                     subwork = analysis
                     SAMPLES = get_samples_postprocess(config, subwork)
@@ -565,6 +568,29 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.debug(logid+'JOB CODE '+str(job))
 
             # SUMMARY RUN
+
+            log.debug(logid+'create rmd for summary')
+            sum_path = os.path.join('nextsnakes','scripts','Analysis','SUMMARY')
+            rmd_header = os.path.abspath(os.path.join(sum_path,'header_summary.Rmd'))
+            rmd_summary = os.path.abspath(os.path.join('REPORTS','SUMMARY','summary.Rmd'))
+            if os.path.exists(rmd_summary):
+                os.rename(rmd_summary,rmd_summary+'_'+datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")+'.bak')
+            if not os.path.exists('REPORTS/SUMMARY'):
+                os.mkdir('REPORTS/SUMMARY')
+            with open(rmd_summary, 'a') as write_file:
+                with open(rmd_header,'r') as read_file:
+                    for line in read_file.readlines():
+                        write_file.write(line)
+
+            for file in os.listdir(sum_path):
+                file_path = os.path.abspath(os.path.join('nextsnakes','scripts','Analysis','SUMMARY',file))
+                if file.startswith('SUM_'):
+                    file_tools = re.findall('[A-Z]+-[a-z]+', file)
+                    if set(file_tools).issubset(summary_tools_set):
+                        with open(rmd_summary, 'a') as write_file:
+                            with open(file_path,'r') as read_file:
+                                for line in read_file.readlines():
+                                    write_file.write(line)
 
             log.debug(logid+'make SUMMARY of postprocessing analyses')
             subconf = NestedDefaultDict()

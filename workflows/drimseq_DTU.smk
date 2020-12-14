@@ -69,7 +69,8 @@ rule run_DTU:
     input:  anno = rules.create_annotation_table.output.anno,
     output: session = rules.themall.input.session,
             res_t = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_transcripts.tsv.gz", outdir=outdir, comparison=compstr),
-            res_g = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr)
+            res_g = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_genes.tsv.gz", outdir=outdir, comparison=compstr),
+            res_p = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_proportions.tsv.gz", outdir=outdir, comparison=compstr)
             # res_stager = rules.themall.input.res_stager,
             # res_posthoc = rules.themall.input.res_posthoc,
     log:    expand("LOGS/{outdir}run_DTU.log",outdir=outdir)
@@ -95,5 +96,4 @@ rule filter_significant:
     params: #pv_cut = get_cutoff_as_string(config, 'DTU')[0]['pval'] if get_cutoff_as_string(config, 'DTU')[0]['pval'] else 0.05,
             pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
             lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
-    # shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut} ||$F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigDOWN_$fn;else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi;done 2> {log}"
-    shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5){{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] < 0.05 && ($F[2] >= 1.5){{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] < 0.05 && ($F[2] <= -1.5){{print}}' |gzip > {outdir}/SigDOWN_$fn; else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi; done 2> {log}"
+    shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5)){{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < 0.05 && ($F[2] >= 1.5)){{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < 0.05 && ($F[2] <= -1.5)){{print}}' |gzip > {outdir}/SigDOWN_$fn; else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi; done 2> {log}"

@@ -1,25 +1,20 @@
 from datetime import datetime
 logid = 'summary.smk '
 
-outdir = "REPORTS"
+outdir = "REPORTS/SUMMARY"
 
 rule themall:
-    # input:  summary_files = expand("{outdir}/rmarkdown_summary.{format}", outdir=outdir, format=config["SUMMARY"]["FORMAT"]),
-    #         summary_Rmd = expand("{outdir}/rmarkdown_summary.Rmd", outdir=outdir, analyses="-".join(config["SUMMARY"].keys()))
-    input:  summary_allpost = expand("{outdir}/summary_postprocessing.pdf", outdir=outdir),
-            summarys = expand("{dir}/summary.pdf", dir=get_summary_dirs(config))
+    input:  summary_all = expand("{outdir}/SUMMARY.pdf", outdir=outdir)
+            # summarys = expand("{dir}/SUMMARY.pdf", dir=get_summary_dirs(config))
 
 rule make_rmd:
     input:  expand("{files}", files=get_summary_files(config))
-    output: expand("{outdir}/summary_postprocessing.Rmd", outdir=outdir)
-    log:    expand("LOGS/{outdir}/summary.log", outdir=outdir)
+    output: rules.themall.input.summary_all
+            # rules.themall.input.summarys
+    log:    expand("LOGS/{outdir}/make_rmd.log", outdir=outdir)
     conda:  "nextsnakes/envs/summary.yaml"
-    shell:  "Rscript --no-environ --no-restore --no-save nextsnakes/scripts/Analysis/SUMMARY.Rmd {input} {outdir} 2> {log}"
-
-rule knitr_rmd:
-    input:  rules.make_rmd.output
-    output: rules.themall.input.summary_allpost,
-            rules.themall.input.summarys
-    log:    expand("LOGS/{outdir}/summary.log", outdir=outdir)
-    conda:  "nextsnakes/envs/summary.yaml"
-    shell:  "R rmarkdown::render('{input}',output_file='{output}')"
+    params: outdir = outdir,
+            rmd = os.path.join(outdir,'summary.Rmd'),
+            inputstring = lambda wildcards, input: '-'.join(input),
+            currentpath = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"..")
+    shell:  "Rscript -e \"rmarkdown::render('{params.rmd}',params=list(files='{params.inputstring}',root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.pdf')\" 2> {log}"
