@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 08:08:32 2021 (+0100)
+# Last-Updated: Mon Jan  4 08:40:16 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1119
+#     Update #: 1130
 # URL:
 # Doc URL:
 # Keywords:
@@ -183,10 +183,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             conditions = get_conditions(SAMPLES,config)
             log.info(logid+'PRECONDITIONS: '+str(conditions))
 
-            subwork = 'SRA'
+            subwork = proc
 
             for condition in conditions:
-
+                log.debug("CONDITION: "+str(condition))
                 jobstorun = make_sub(subwork, config, SAMPLES, condition, subdir, threads, workdir, argslist, loglevel)
                 for job in jobstorun:
                     with open('Jobs', 'a') as j:
@@ -507,10 +507,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                 continue
                             i[subwork+'ENV'] = toolenv
                             i[subwork+'BIN'] = toolbin
-                        for i in range(len(listoftools)):
-                            if listofconfigs[i] is None:
-                                continue
-                            subconf = merge_dicts(subconf,listofconfigs[i])
+                            subconf = merge_dicts(subconf,i)
 
                         subname = toolenv+'.smk' if toolenv != 'edger' else toolenv+'_'+subwork+'.smk'
                         subsamples = sampleslong(subconf)

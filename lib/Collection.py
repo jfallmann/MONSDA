@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 08:20:48 2021 (+0100)
+# Last-Updated: Mon Jan  4 09:27:44 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2205
+#     Update #: 2217
 # URL:
 # Doc URL:
 # Keywords:
@@ -314,6 +314,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             exe = ''
 
         tempconf = NestedDefaultDict()
+        tempconf['SAMPLES'] = subDict(config['SETTINGS'],condition)['SAMPLES']
         if env != '' and exe != '':
             toollist.append([env,exe])
             tempconf[subwork+'ENV'] = env
@@ -369,7 +370,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
     return toollist, configs
 
 @check_run
-def make_sub(subwork, config, samples, conditions, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
+def make_sub(subwork, config, samples, condition, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
     logid=scriptname+'.Collection_make_sub: '
     log.debug(logid+'WORK: '+str(subwork))
     jobstorun = list()
@@ -378,9 +379,7 @@ def make_sub(subwork, config, samples, conditions, subdir, threads, workdir, arg
     logfix=re.compile(r'loglevel="INFO"')
     subconf = NestedDefaultDict()
 
-    rawqc  = 'expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-
-    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
     if listoftools is None:
         log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
         return None
@@ -423,7 +422,6 @@ def make_sub(subwork, config, samples, conditions, subdir, threads, workdir, arg
             smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
             with open(smko, 'a') as smkout:
                 with open(smkf,'r') as smk:
-                    smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
                     smkout.write(re.sub(condapath, 'conda:  "../', smk.read()))
                 smkout.write('\n\n')
 
@@ -623,7 +621,7 @@ def make_main(workflows, config, samples, conditions, subdir, loglevel, subname=
 
 
 @check_run
-def tool_params(sample, runstate, config, subconf):
+def tool_params(sample, runstate, config, subconf, tool):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     mp = OrderedDict()
@@ -633,7 +631,7 @@ def tool_params(sample, runstate, config, subconf):
     if runstate not in x:
         x.append(runstate)
     log.debug(logid+str([sample,runstate,subconf,x]))
-    mp = subDict(config[subconf],x)
+    mp = subDict(config[subconf],x)[tool]
     log.debug(logid+'DONE: '+str(mp))
     return mp
 
