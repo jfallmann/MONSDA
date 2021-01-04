@@ -150,7 +150,7 @@ rule PreprocessPeaks:
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params:  bins=BINS,
-             opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")[PEAKENV]['OPTIONS'][0].items()),
+             opts=lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input.bedg} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
@@ -159,7 +159,7 @@ rule FindPeaks:
     log:    "LOGS/{outdir}findpeaks_{type}_{file}.log"
     conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
     threads: 1
-    params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")[PEAKENV]['OPTIONS'][1].items()),
+    params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
             peak = PEAKBIN
     shell:  "{params.peak} {params.ppara} <(zcat {input.pre}) |tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 

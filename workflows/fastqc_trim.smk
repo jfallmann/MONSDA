@@ -8,6 +8,9 @@ wildcard_constraints:
     outdir = outdir
     moutdir = moutdir
 
+rule themall:
+    input: expand("{moutdir}TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:

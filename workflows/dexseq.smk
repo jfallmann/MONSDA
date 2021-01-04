@@ -33,7 +33,7 @@ rule featurecount_dexseq_unique:
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
-            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
+            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU", COUNTENV)['OPTIONS'][0].items()),
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''

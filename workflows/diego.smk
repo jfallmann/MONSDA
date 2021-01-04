@@ -18,7 +18,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno  = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS", COUNTENV)['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
@@ -67,7 +67,7 @@ rule run_diego:
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS")['OPTIONS'][1].items()),
+            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS", DASENV)['OPTIONS'][1].items()),
             outdir = outdir,
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]

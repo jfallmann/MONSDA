@@ -52,7 +52,7 @@ rule FindPeaks:
     conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
     threads: 1
     params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES),
-            ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS")[PEAKENV]['OPTIONS'][0].items()),
+            ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "PEAKS", PEAKENV)[PEAKENV]['OPTIONS'][0].items()),
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,

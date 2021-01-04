@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 09:27:44 2021 (+0100)
+# Last-Updated: Mon Jan  4 10:22:18 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2217
+#     Update #: 2223
 # URL:
 # Doc URL:
 # Keywords:
@@ -461,13 +461,6 @@ def make_main(workflows, config, samples, conditions, subdir, loglevel, subname=
     makeoutdir(tmpdir)
 
     allmap = 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique.bam", outdir=outdir, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique_dedup.bam", outdir=outdir, file=samplecond(SAMPLES,config))'
-    allqc  = 'expand("{moutdir}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    allrawqc  = 'rule themall:\n\tinput:\texpand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alltrimqc = 'rule themall:\n\tinput:\texpand("{moutdir}TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alltrim = 'rule themall:\n\tinput: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))'
-    alldedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alldedup = 'rule themall:\n\tinput: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))'
-    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
     todos = list()
     log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
@@ -621,7 +614,7 @@ def make_main(workflows, config, samples, conditions, subdir, loglevel, subname=
 
 
 @check_run
-def tool_params(sample, runstate, config, subconf, tool):
+def tool_params(sample, runstate, config, subconf, tool = None):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     mp = OrderedDict()
@@ -631,7 +624,7 @@ def tool_params(sample, runstate, config, subconf, tool):
     if runstate not in x:
         x.append(runstate)
     log.debug(logid+str([sample,runstate,subconf,x]))
-    mp = subDict(config[subconf],x)[tool]
+    mp = subDict(config[subconf],x)[tool] if tool else subDict(config[subconf],x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
 
