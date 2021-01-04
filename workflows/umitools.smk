@@ -120,6 +120,7 @@ else:
             log:    "LOGS/{file}/dedupbam.log"
             conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
+            priority: 0               # This should be done after all mapping is done
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
                     dedup = DEDUPBIN
             shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
@@ -132,6 +133,7 @@ else:
             log:    "LOGS/{file}/dedupuniqbam.log"
             conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
+            priority: 0               # This should be done after all mapping is done
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEDUP")['OPTIONS'][2].items()),
                     dedup = DEDUPBIN
             shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Nov 19 15:52:42 2020 (+0100)
+# Last-Updated: Mon Jan  4 08:20:48 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2214
+#     Update #: 2205
 # URL:
 # Doc URL:
 # Keywords:
@@ -212,6 +212,29 @@ def download_samples(config):
     return SAMPLES
 
 @check_run
+def basecall_samples(config):
+    logid = scriptname+'.Collection_basecall_samples: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('RAW',str(x).replace('.fast5','')+'*.fast5') for x in SAMPLES]
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
+            RETSAMPLES.extend([x.replace('.fast5','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
+
+@check_run
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
@@ -230,7 +253,7 @@ def get_samples_from_dir(id, condition, setting, config):  # CHECK
     if len(ret) > 0:
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
-            if 'unpaired' not in x:
+            if 'single' not in x:
                 ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
@@ -793,7 +816,7 @@ def samplecond(sample, config):
             if r not in tmplist:
                 tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
-            if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+            if not 'single' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
                 s = re.sub(r'_[r|R|][1|2]','',s)
             if r not in s.split(os.sep):
