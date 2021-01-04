@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 08:40:16 2021 (+0100)
+# Last-Updated: Mon Jan  4 17:00:18 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1130
+#     Update #: 1146
 # URL:
 # Doc URL:
 # Keywords:
@@ -196,46 +196,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         jid = runjob(job)
                         log.debug(logid+'JOB CODE '+str(jid))
 
-#                subconf = NestedDefaultDict()
-#                subwork = proc
-#                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-#                if listoftools is None:
-#                    log.warning(logid+'No entry fits condition '+str(condition)+' for preprocessing step '+str(subwork))
-#                    continue
-#                toolenv, toolbin = map(str,listoftools[0])
-#                if toolenv is None or toolbin is None:
-#                    continue
-#                subconf.update(listofconfigs[0])
-#                subname = toolenv+'.smk'
-#                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-#                smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolenv,'subsnake.smk'])))
-#                if os.path.exists(smko):
-#                    os.rename(smko,smko+'.bak')
-#                with open(smko, 'a') as smkout:
-#                    with open(smkf,'r') as smk:
-#                        for line in smk.readlines():
-#                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-#                            line = re.sub(condapath, 'conda:  "../', line)
-#                            smkout.write(line)
-#                    smkout.write('\n\n')
-#
-#                smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
-#                with open(smko, 'a') as smkout:
-#                    with open(smkf,'r') as smk:
-#                        smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-#                    smkout.write('\n\n')
-#
-#                confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolenv,'subconfig.json'])))
-#                if os.path.exists(confo):
-#                    os.rename(confo,confo+'.bak')
-#                with open(confo, 'a') as confout:
-#                    json.dump(subconf, confout)
-#
-#                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolenv,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),subwork,toolenv,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
-#                log.info(logid+'RUNNING '+str(jobtorun))
-#                job = runjob(jobtorun)
-#                log.debug(logid+'JOB CODE '+str(job))
-
         '''
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
         '''
@@ -264,44 +224,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             log.info(logid+'RUNNING '+str(job))
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
- #                       smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
- #                       smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolenv,'subsnake.smk'])))
- #                       if os.path.exists(smko):
- #                           os.rename(smko,smko+'.bak')
- #                       with open(smko, 'a') as smkout:
- #                           with open(smkf,'r') as smk:
- #                               for line in smk.readlines():
- #                                   line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
- #                                   line = re.sub(condapath,'conda:  "../',line)
- #                                   smkout.write(line)
- #                           smkout.write('\n\n')
- #
- #                       if subwork == 'QC':
- #                           subname = toolenv+'_raw.smk'
- #
- #                       smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
- #                       with open(smko, 'a') as smkout:
- #                           with open(smkf,'r') as smk:
- #                               smkout.write('rule themall:\n\tinput:\t'+rawqc+'\n\n')
- #                               smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
- #                           smkout.write('\n\n')
- #
- #                       smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
- #                       with open(smko, 'a') as smkout:
- #                           with open(smkf,'r') as smk:
- #                               smkout.write(smk.read())
- #
- #                       confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolenv,'subconfig.json'])))
- #                       if os.path.exists(confo):
- #                           os.rename(confo,confo+'.bak')
- #                       with open(confo, 'a') as confout:
- #                           json.dump(subconf, confout)
- #
- #                       jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolenv,'subsnake.smk']))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork,toolenv,'subconfig.json']))),d=workdir,rest=' '.join(argslist))
- #                       log.info(logid+'RUNNING '+str(jobtorun))
- #                       job = runjob(jobtorun)
- #                       log.debug(logid+'JOB CODE '+str(job))
-
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
 
@@ -418,8 +340,20 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 #                            smkout.write('\n\n')
 
         if subworkflows:
+            combinations = get_combos(subworkflows, config, conditions)
 
-            jobstorun = make_main(subworkflows, config, SAMPLES, conditions, subdir, loglevel)
+            jobs = make_main(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+
+            for job in jobs:
+                smko, confo = job
+                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist))
+
+                with open('Jobs', 'a') as j:
+                    j.write(job)
+                    if not save:
+                        log.info(logid+'RUNNING '+str(job))
+                        jid = runjob(job)
+                        log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
