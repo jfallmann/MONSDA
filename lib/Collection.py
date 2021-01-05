@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 16:58:02 2021 (+0100)
+# Last-Updated: Tue Jan  5 09:39:21 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2394
+#     Update #: 2436
 # URL:
 # Doc URL:
 # Keywords:
@@ -370,14 +370,15 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     return toollist, configs
 
 @check_run
-def make_sub(subwork, config, samples, condition, subdir, threads, workdir, argslist, loglevel, state='', subname=None):
+def make_sub(subwork, config, samples, condition, subdir, loglevel, state='', subname=None):
     logid=scriptname+'.Collection_make_sub: '
     log.debug(logid+'WORK: '+str(subwork))
-    jobstorun = list()
 
     condapath=re.compile(r'conda:\s+"')
     logfix=re.compile(r'loglevel="INFO"')
     subconf = NestedDefaultDict()
+
+    jobs = list()
 
     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
     if listoftools is None:
@@ -436,10 +437,9 @@ def make_sub(subwork, config, samples, condition, subdir, threads, workdir, args
             with open(confo, 'a') as confout:
                 json.dump(subconf, confout)
 
-            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk']))), c=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json']))), d=workdir, rest=' '.join(argslist))
-            jobstorun.append(jobtorun)
+            jobs.append([smko, confo])
 
-    return jobstorun
+    return jobs
 
 @check_run
 def get_combos(wfs, config, conditions):
@@ -471,6 +471,8 @@ def get_comboname(combinations):
     combname = NestedDefaultDict()
 
     for condition in combinations:
+        combname[condition]['envs'] = list()
+        combname[condition]['works'] = list()
         combos = combinations[condition]
         for combi in combos:
             envs = list()
@@ -479,8 +481,8 @@ def get_comboname(combinations):
                 for work, env in step.items():
                     envs.append(env)
                     works.append(work)
-            combname[condition]['envs'].append(join('-', envs))
-            combname[condition]['works'].append(join('-', works))
+            combname[condition]['envs'].append(str.join('-', envs))
+            combname[condition]['works'].append(str.join('-', works))
 
     return combname
 
@@ -489,7 +491,6 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
     logid=scriptname+'.Collection_make_sub: '
 
     log.debug(logid+'WORK: '+str(subworkflows))
-    jobstorun = list()
 
     condapath=re.compile(r'conda:\s+"')
     logfix=re.compile(r'loglevel="INFO"')
@@ -504,6 +505,7 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
     alltrimdedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
 
     todos = list()
+
     log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
 
     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
@@ -552,8 +554,10 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
             todos.append(alldedup+'\n')
         todos.append('\n\n')
 
+
     add = ''.join(todos)        # RuleThemAll for snakemake depending on chosen workflows
     subjobs = list()
+    jobs = list()
 
     if combinations:
         combname = get_comboname(combinations)
@@ -562,12 +566,15 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
             envlist =  combname[condition]['envs']
 
             for i in range(len(worklist)):
-                works = split('-', workslist[i])
-                envs = split('-', envlist[i])
+                log.debug(logid+' LISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
+                works = worklist[i].split('-')
+                envs = envlist[i].split('-')
+
+                log.debug(logid+' LISTS: '+str(works)+'\t'+str(envs))
 
                 for j in range(len(works)):
                     subconf = NestedDefaultDict()
-                    listoftools, listofconfigs = create_subworkflow(config, works[i], [condition])
+                    listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
 
                     if listoftools is None:
                         log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
@@ -576,10 +583,10 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                     sconf = listofconfigs[0]
                     for a in range(0,len(listoftools)):
                         toolenv, toolbin = map(str, listoftools[a])
-                        if toolenv != ens[j] or toolbin is None:
+                        if toolenv != envs[j] or toolbin is None:
                             continue
-                        sconf[subwork+'ENV'] = toolenv
-                        sconf[subwork+'BIN'] = toolbin
+                        sconf[works[j]+'ENV'] = toolenv
+                        sconf[works[j]+'BIN'] = toolbin
                         subconf.update(sconf)
                         subname = toolenv+'.smk'
                         subsamples = list(set(sampleslong(subconf)))
@@ -591,13 +598,13 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                                 subjobs.append(line)
                             subjobs.append('\n\n')
 
-                        if subwork == 'QC' and 'TRIMMING' in works and not 'MAPPING' in works:
+                        if works[j] == 'QC' and 'TRIMMING' in works and not 'MAPPING' in works:
                             if 'DEDUP' in works:
                                 subname = toolenv+'_dedup_trim.smk'
                             else:
                                 subname = toolenv+'_trim.smk'
 
-                        if subwork == 'QC' and not 'TRIMMING' in works and not 'MAPPING' in works:
+                        if works[j] == 'QC' and not 'TRIMMING' in works and not 'MAPPING' in works:
                             if 'DEDUP' in subworkflows:
                                 subname = toolenv+'_dedup.smk'
                             else:
@@ -637,9 +644,9 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                             os.rename(smko, smko+'.bak')
                         with open(smko, 'a') as smkout:
                             smkout.write(add)
-                            smkout.write(join('',subjobs))
+                            smkout.write(''.join(subjobs))
 
-                        confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition),toolenv,'subconfig.json'])))
+                        confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),toolenv,'subconfig.json'])))
                         if os.path.exists(confo):
                             os.rename(confo,confo+'.bak')
                         with open(confo, 'a') as confout:

@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan  4 17:00:18 2021 (+0100)
+# Last-Updated: Tue Jan  5 09:39:55 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1146
+#     Update #: 1155
 # URL:
 # Doc URL:
 # Keywords:
@@ -187,10 +187,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
             for condition in conditions:
                 log.debug("CONDITION: "+str(condition))
-                jobstorun = make_sub(subwork, config, SAMPLES, condition, subdir, threads, workdir, argslist, loglevel)
+                jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel)
+
+                jobstorun = list()
+                for job in jobs:
+                    smko, confo = job
+                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist)))
+
                 for job in jobstorun:
                     with open('Jobs', 'a') as j:
-                        j.write(job)
+                        j.write(job+os.linesep)
                     if not save:
                         log.info(logid+'RUNNING '+str(job))
                         jid = runjob(job)
@@ -219,7 +225,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                     for job in jobstorun:
                         with open('Jobs', 'a') as j:
-                            j.write(job)
+                            j.write(job+'\n')
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
                             jid = runjob(job)
@@ -344,12 +350,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
             jobs = make_main(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
+            jobstorun = list()
             for job in jobs:
                 smko, confo = job
-                jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist))
+                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist)))
 
+            for job in jobstorun:
                 with open('Jobs', 'a') as j:
-                    j.write(job)
+                    j.write(job+os.linesep)
                     if not save:
                         log.info(logid+'RUNNING '+str(job))
                         jid = runjob(job)
