@@ -1,5 +1,5 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DEU/DEXSEQ/"
 comparison = comparable_as_string2(config,'DEU')
@@ -24,12 +24,12 @@ rule prepare_deu_annotation:
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
 rule featurecount_dexseq_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam",
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DEU/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
+            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,

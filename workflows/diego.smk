@@ -1,5 +1,5 @@
 DASBIN, DASENV = env_bin_from_config3(config,'DAS')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DAS/DIEGO/"
 comparison = comparable_as_string2(config,'DAS')
@@ -10,10 +10,10 @@ rule themall:
             csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=compstr)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecounts_DAS_diego_unique.log"
+            cts   = "DAS/Featurecounts_DAS/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,

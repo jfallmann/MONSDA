@@ -1,4 +1,4 @@
-moutdir = 'QC/Multi/'+str(QCENV)+'/'
+moutdir = 'QC/MultiQC/'
 
 wildcard_constraints:
     moutdir = moutdir

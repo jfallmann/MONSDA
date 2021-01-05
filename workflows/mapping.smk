@@ -1,7 +1,7 @@
 rule sortsam:
     input:  mapps = rules.mapping.output.mapped
-    output: sortedsam = report("MAPPED/{file}_mapped_sorted.sam.gz", category="SORTING"),
-            tmphead = temp("MAPPED/{file}_mapped_header.gz"),
+    output: sortedsam = report("MAPPED/{combo}{file}_mapped_sorted.sam.gz", category="SORTING"),
+            tmphead = temp("MAPPED/{combo}{file}_mapped_header.gz"),
             tmpfile = temp("TMP/{file}")
     log:    "LOGS/{file}/sortsam.log"
     conda: "nextsnakes/envs/samtools.yaml"
@@ -12,8 +12,8 @@ rule sortsam:
 
 rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam
-    output: bam = report("MAPPED/{file}_mapped_sorted.bam", category="2BAM"),
-            bamindex = "MAPPED/{file}_mapped_sorted.bam.bai"
+    output: bam = report("MAPPED/{combo}{file}_mapped_sorted.bam", category="2BAM"),
+            bamindex = "MAPPED/{combo}{file}_mapped_sorted.bam.bai"
     log:    "LOGS/{file}/sam2bam.log"
     conda: "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD
@@ -23,7 +23,7 @@ rule sam2bam:
 rule uniqsam:
     input:  sortedsam = rules.sortsam.output.sortedsam,
             bam = rules.sam2bam.output
-    output: uniqsam = report("MAPPED/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
+    output: uniqsam = report("MAPPED/{combo}{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
     log: "LOGS/{file}/uniqsam.log"
     conda: "nextsnakes/envs/base.yaml"
     threads: MAXTHREAD
@@ -33,8 +33,8 @@ rule uniqsam:
 rule sam2bamuniq:
     input: uniqsam = rules.uniqsam.output,
            bam = rules.sam2bam.output
-    output:  uniqbam = report("MAPPED/{file}_mapped_sorted_unique.bam", category="2BAM"),
-             uniqbamindex = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
+    output:  uniqbam = report("MAPPED/{combo}{file}_mapped_sorted_unique.bam", category="2BAM"),
+             uniqbamindex = "MAPPED/{combo}{file}_mapped_sorted_unique.bam.bai"
     log:     "LOGS/{file}/sam2bamuniq.log"
     conda:   "nextsnakes/envs/samtools.yaml"
     threads: MAXTHREAD

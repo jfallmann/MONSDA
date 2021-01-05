@@ -1,4 +1,4 @@
-QCBIN, QCENV = env_bin_from_config3(SAMPLES, config, 'QC')
+QCBIN, QCENV = env_bin_from_config3( config, 'QC')
 outdir = 'QC/'+str(QCENV)+'/'
 moutdir = 'QC/Multi/'+str(QCENV)+'/'
 
@@ -8,8 +8,8 @@ wildcard_constraints:
     outdir = outdir,
     moutdir = moutdir
 
-#rule themall:
-    #input:  expand("{moutdir}DEDUP_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+rule themall:
+    input:  expand("{moutdir}DEDUP_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
@@ -23,7 +23,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{file}_{read}_dedup.fastq.gz"
+        input:  r1 = "DEDUP_FASTQ/{combo}{file}_{read}_dedup.fastq.gz"
         output: o1 = report("{outdir}{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{outdir}{file}_{read}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
@@ -53,7 +53,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{file}_dedup.fastq.gz"
+        input:  r1 = "DEDUP_FASTQ/{combo}{file}_dedup.fastq.gz"
         output: o1 = report("{outdir}{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{outdir}{file}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan  5 10:19:21 2021 (+0100)
+# Last-Updated: Tue Jan  5 12:10:52 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2437
+#     Update #: 2477
 # URL:
 # Doc URL:
 # Keywords:
@@ -374,11 +374,10 @@ def make_sub(subwork, config, samples, condition, subdir, loglevel, state='', su
     logid=scriptname+'.Collection_make_sub: '
     log.debug(logid+'WORK: '+str(subwork))
 
-    condapath=re.compile(r'conda:\s+"')
-    logfix=re.compile(r'loglevel="INFO"')
     subconf = NestedDefaultDict()
-
     jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
 
     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
     if listoftools is None:
@@ -397,39 +396,49 @@ def make_sub(subwork, config, samples, condition, subdir, loglevel, state='', su
             i[subwork+'ENV'] = toolenv
             i[subwork+'BIN'] = toolbin
 
-            subconf = merge_dicts(subconf,i)
+            subconf = merge_dicts(subconf, i)
+            subjobs = list()
 
             if not subname:
                 subname = toolenv+'.smk'
+
             subsamples = list(set(sampleslong(subconf)))
             log.debug(logid+str(subwork)+': '+str([toolenv,subname,condition, subsamples, subconf]))
 
             smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-            smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
-
-            if os.path.exists(smko):
-                os.rename(smko,smko+'.bak')
-            with open(smko, 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                        line = re.sub(condapath, 'conda:  "../', line)
-                        smkout.write(line)
-                smkout.write('\n\n')
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
 
             if subwork == 'QC':
                 subname = toolenv+'_raw.smk'
 
             smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
-            with open(smko, 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    smkout.write(re.sub(condapath, 'conda:  "../', smk.read()))
-                smkout.write('\n\n')
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
 
             smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
+
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
             with open(smko, 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    smkout.write(smk.read())
+                smkout.write(''.join(subjobs))
+                smkout.write('\n\n')
 
             confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
             if os.path.exists(confo):
@@ -490,74 +499,12 @@ def get_comboname(combinations):
 def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
     logid=scriptname+'.Collection_make_sub: '
 
-    log.debug(logid+'WORK: '+str(subworkflows))
-
-    condapath = re.compile(r'conda:\s+"')
-    logfix = re.compile(r'loglevel="INFO"')
-
-    allmap = 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique.bam", outdir=outdir, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique_dedup.bam", outdir=outdir, file=samplecond(SAMPLES,config))'
-    allqc  = 'expand("{moutdir}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    allrawqc  = 'rule themall:\n\tinput:\texpand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alltrimqc = 'rule themall:\n\tinput:\texpand("{moutdir}TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alltrim = 'rule themall:\n\tinput: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))'
-    alldedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-    alldedup = 'rule themall:\n\tinput: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))'
-    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("{moutdir}DEDUP_TRIMMED_RAW/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
-
-    todos = list()
-
     log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
 
-    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-    with open(smkf,'r') as smk:
-        for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath,'conda:  "../',line)
-            todos.append(line)
-    todos.append('\n\n')
-
-    if 'QC' in subworkflows and 'QC' in config:
-        makeoutdir('QC')
-        if 'MAPPING' in subworkflows:
-            todos.append(allmap+',\n\t\t'+allqc+'\n\n')
-        else:
-            if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
-                todos.append(alltrimqc+'\n\n')
-            elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
-                todos.append(alltrimdedupqc+'\n\n')
-            elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
-                todos.append(alldedupqc+'\n\n')
-            else:
-                todos.append(allrawqc+'\n\n')
-
-    if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
-        log.info(logid+'Mapping without QC!')
-        todos.append(allmap+'\n\n')
-
-    if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
-        log.info(logid+'Simulated read trimming only!')
-        makeoutdir('TRIMMED_FASTQ')
-        smkf = os.path.abspath(os.path.join('nextsnakes', 'subworkflows', 'simulatetrim.smk'))
-        with open(smkf,'r') as smk:
-            todos.append(re.sub(condapath, 'conda:  "../', smk.read()))
-        todos.append('\n\n')
-
-    if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
-        log.info(logid+'Trimming without QC!')
-        with open(smkf, 'r') as smk:
-            todos.append(alltrim+'\n')
-        todos.append('\n\n')
-
-    if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
-        log.info(logid+'DEDUP without QC!')
-        with open(smkf, 'r') as smk:
-            todos.append(alldedup+'\n')
-        todos.append('\n\n')
-
-
-    add = ''.join(todos)        # RuleThemAll for snakemake depending on chosen workflows
     subjobs = list()
     jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
         combname = get_comboname(combinations)
@@ -569,6 +516,7 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                 log.debug(logid+' LISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
                 works = worklist[i].split('-')
                 envs = envlist[i].split('-')
+                add = ''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i]))        # RuleThemAll for snakemake depending on chosen workflows
 
                 log.debug(logid+' LISTS: '+str(works)+'\t'+str(envs))
 
@@ -673,10 +621,7 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                     subname = toolenv+'.smk'
                     subsamples = list(set(sampleslong(subconf)))
 
-                    with open(smkf,'r') as smk:
-                        for line in smk.readlines():
-                            subjobs.append(line)
-                        subjobs.append('\n\n')
+                    add = ''.join(rulethemall(subworkflows))        # RuleThemAll for snakemake depending on chosen workflows
 
                     if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
                         if 'DEDUP' in workflow:
@@ -736,6 +681,71 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
                     jobs.append([smko, confo])
 
     return jobs
+
+
+@check_run
+def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
+    logid=scriptname+'.Collection_rulethemall: '
+
+    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{{combo}}{file}_mapped_sorted_unique.bam", file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{{combo}}{file}_mapped_sorted_unique_dedup.bam", file=samplecond(SAMPLES,config))'
+    allqc  = 'expand("QC/MultiQC/{condition}/{{combo}}multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/MultiQC/RAW/{condition}/{{combo}}multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/MultiQC/TRIMMED_RAW/{condition}/{{combo}}multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{{combo}}{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{{combo}}{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))'
+    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/MultiQC/DEDUP_RAW/{condition}/{{combo}}multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{{combo}}{file}_{read}_dedup.fastq.gz", file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{{combo}}{file}_dedup.fastq.gz", file=samplecond(SAMPLES,config))'
+    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/MultiQC/DEDUP_TRIMMED_RAW/{condition}/{{combo}}multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+
+    todos = list()
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+    with open(smkf,'r') as smk:
+        for line in smk.readlines():
+            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+            line = re.sub(condapath,'conda:  "../',line)
+            todos.append(line)
+    todos.append('\nwildcard_constraints:\n\tcombo = \''+str(combo)+os.sep+'\'\n')
+    todos.append('\n\n')
+
+    if 'QC' in subworkflows and 'QC' in config:
+        makeoutdir('QC')
+        if 'MAPPING' in subworkflows:
+            todos.append(allmap+',\n\t\t'+allqc+'\n\n')
+        else:
+            if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
+                todos.append(alltrimqc+'\n\n')
+            elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
+                todos.append(alltrimdedupqc+'\n\n')
+            elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
+                todos.append(alldedupqc+'\n\n')
+            else:
+                todos.append(allrawqc+'\n\n')
+
+    if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
+        log.info(logid+'Mapping without QC!')
+        todos.append(allmap+'\n\n')
+
+    if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
+        log.info(logid+'Simulated read trimming only!')
+        makeoutdir('TRIMMED_FASTQ')
+        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'simulatetrim.smk'))
+        with open(smkf,'r') as smk:
+            todos.append(re.sub(condapath, 'conda:  "../', smk.read()))
+        todos.append('\n\n')
+
+    if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
+        log.info(logid+'Trimming without QC!')
+        with open(smkf, 'r') as smk:
+            todos.append(alltrim+'\n')
+        todos.append('\n\n')
+
+    if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
+        log.info(logid+'DEDUP without QC!')
+        with open(smkf, 'r') as smk:
+            todos.append(alldedup+'\n')
+        todos.append('\n\n')
+
+    return todos
 
 @check_run
 def tool_params(sample, runstate, config, subconf, tool = None):
@@ -1054,8 +1064,6 @@ def get_pairing(sample, stype, config, samples):
     else:
         log.debug(logid+'No matching sample found')
         return ''
-
-
 
 
 @check_run

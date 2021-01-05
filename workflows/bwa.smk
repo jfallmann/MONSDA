@@ -1,4 +1,4 @@
-MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
 
 rule generate_index:
     input:  ref = REFERENCE
@@ -18,13 +18,13 @@ bwaalg = MAPPERBIN.split(' ')[1]
 if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
     if paired == 'paired':
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
-                    r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
+            input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
+                    r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
                     index = rules.generate_index.output.idx,
                     ref = REFERENCE
-            output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -34,12 +34,12 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
 
     else:
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+            input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
                     index = rules.generate_index.output.idx,
                     ref = REFERENCE
-            output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -50,14 +50,14 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
 elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to continue the workflow
     if paired == 'paired': # handled like sampe
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
-                    r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
+            input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
+                    r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
                     ref = REFERENCE
-            output: sai1 = report("MAPPED/{file}_mapped.R1.sai", category="MAPPING"),
-                    sai2 = report("MAPPED/{file}_mapped.R2.sai", category="MAPPING"),
-                    mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: sai1 = report("MAPPED/{combo}{file}_mapped.R1.sai", category="MAPPING"),
+                    sai2 = report("MAPPED/{combo}{file}_mapped.R2.sai", category="MAPPING"),
+                    mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -66,15 +66,15 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2}| tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
-#            input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
-#                    r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
+#            input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
+#                    r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
 #                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
 #                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
-#            output: sai1 = report("MAPPED/{file}_mapped.R1.sai", category="MAPPING"),
-#                    sai2 = report("MAPPED/{file}_mapped.R2.sai", category="MAPPING"),
-#                    mapped = "UNMAPPED/{file}_mapped.sam",
-#                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-#            log:    "LOGS/{file}/mapping.log"
+#            output: sai1 = report("MAPPED/{combo}{file}_mapped.R1.sai", category="MAPPING"),
+#                    sai2 = report("MAPPED/{combo}{file}_mapped.R2.sai", category="MAPPING"),
+#                    mapped = "UNMAPPED/{combo}{file}_mapped.sam",
+#                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+#            log:    "LOGS/{combo}{file}/mapping.log"
 #            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -83,12 +83,12 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 
     else: #handled like samse
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+            input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
                     ref = REFERENCE
-            output: sai = report("MAPPED/{file}_mapped.sai", category="MAPPING"),
-                    mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: sai = report("MAPPED/{combo}{file}_mapped.sai", category="MAPPING"),
+                    mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -97,13 +97,13 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
-#            input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+#            input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
 #                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file,config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None ,config, 'MAPPING', 2)),
 #                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file,config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
-#            output: sai = report("MAPPED/{file}_mapped.sai", category="MAPPING"),
-#                    mapped = "UNMAPPED/{file}_mapped.sam",
-#                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-#            log:    "LOGS/{file}/mapping.log"
+#            output: sai = report("MAPPED/{combo}{file}_mapped.sai", category="MAPPING"),
+#                    mapped = "UNMAPPED/{combo}{file}_mapped.sam",
+#                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+#            log:    "LOGS/{combo}{file}/mapping.log"
 #            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -112,12 +112,12 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 
 elif bwaalg == 'samse':
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+        input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
                 ref = REFERENCE
-        output: sai = report("MAPPED/{file}_mapped.sai", category="MAPPING"),
-                mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{file}/mapping.log"
+        output: sai = report("MAPPED/{combo}{file}_mapped.sai", category="MAPPING"),
+                mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+        log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -127,14 +127,14 @@ elif bwaalg == 'samse':
 
 elif bwaalg == 'sampe':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
                 ref = REFERENCE
-        output: sai1 = report("MAPPED/{file}_mapped.R1.sai", category="MAPPING"),
-                sai2 = report("MAPPED/{file}_mapped.R2.sai", category="MAPPING"),
-                mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{file}/mapping.log"
+        output: sai1 = report("MAPPED/{combo}{file}_mapped.R1.sai", category="MAPPING"),
+                sai2 = report("MAPPED/{combo}{file}_mapped.R2.sai", category="MAPPING"),
+                mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+        log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -145,12 +145,12 @@ elif bwaalg == 'sampe':
 elif bwaalg == 'bwasw':
     if paired == 'paired':
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{file}_R1_trimmed.fastq.gz",
-                    r2 = "TRIMMED_FASTQ/{file}_R2_trimmed.fastq.gz",
+            input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
+                    r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
                     ref = REFERENCE
-            output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),
@@ -159,11 +159,11 @@ elif bwaalg == 'bwasw':
 
     else:
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{file}_trimmed.fastq.gz",
+            input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
                     ref = REFERENCE
-            output: mapped = temp(report("MAPPED/{file}_mapped.sam", category="MAPPING")),
-                    unmapped = "UNMAPPED/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{file}/mapping.log"
+            output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
+            log:    "LOGS/{combo}{file}/mapping.log"
             conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'MAPPING')['OPTIONS'][1].items()),

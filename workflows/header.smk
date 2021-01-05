@@ -99,7 +99,7 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
-    MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX

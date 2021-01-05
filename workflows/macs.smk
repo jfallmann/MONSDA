@@ -46,7 +46,7 @@ else:
 
 
 rule FindPeaks:
-    input:  bam = "MAPPED/{file}_mapped_{type}.bam"
+    input:  bam = "MAPPED/{combo}{file}_mapped_{type}.bam"
     output: peak = "{outdir}{file}_peak_{type}.bed.gz"
     log:    "LOGS/{outdir}findpeaks_macs_{type}_{file}.log"
     conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
@@ -93,10 +93,10 @@ if ANNOPEAK is not None:
     rule PeakToBedg:
         input:  pk = "{outdir}{file}_peak_{type}.bed.gz",
                 pa = rules.AnnotatePeak.output
-        output: fw = "UCSC/{file}_peak_{type}.fw.bedg.gz",
-                re = "UCSC/{file}_peak_{type}.re.bedg.gz",
-                tfw = temp("UCSC/{file}_peak_{type}.fw.tmp.gz"),
-                trw = temp("UCSC/{file}_peak_{type}.re.tmp.gz"),
+        output: fw = "UCSC/{combo}{file}_peak_{type}.fw.bedg.gz",
+                re = "UCSC/{combo}{file}_peak_{type}.re.bedg.gz",
+                tfw = temp("UCSC/{combo}{file}_peak_{type}.fw.tmp.gz"),
+                trw = temp("UCSC/{combo}{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/{outdir}peak2bedg_{file}_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1

@@ -1,5 +1,5 @@
 QCBIN, QCENV = env_bin_from_config3(config, 'QC')
-qcoutdir = 'QC/'+str(QCENV)+'/'
+outdir = 'QC/'+str(QCENV)+'/'
 moutdir = 'QC/Multi/'+str(QCENV)+'/'
 
 wildcard_constraints:
@@ -8,8 +8,8 @@ wildcard_constraints:
     outdir = outdir,
     moutdir = moutdir
 
-#rule themall:
-#    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+rule themall:
+    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
@@ -23,7 +23,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
-        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], outdir=qcoutdir)
+        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], outdir=outdir)
         output: html = report("{moutdir}RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("{moutdir}RAW/{condition}/tmp"),
                 lst = "{moutdir}RAW/{condition}/qclist.txt"
@@ -43,7 +43,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
-        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), outdir=qcoutdir)
+        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), outdir=outdir)
         output: html = report("{moutdir}RAW/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("{moutdir}RAW/{condition}/tmp"),
                 lst = "{moutdir}RAW/{condition}/qclist.txt"

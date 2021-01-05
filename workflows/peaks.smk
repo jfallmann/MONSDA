@@ -51,16 +51,16 @@ else:
 
 if not stranded or stranded == 'fr':
     rule BamToBed:
-        input:  "MAPPED/{file}_mapped_{type}.bam"
-        output: "BED/{file}_mapped_{type}.bed.gz"
+        input:  "MAPPED/{combo}{file}_mapped_{type}.bam"
+        output: "BED/{combo}{file}_mapped_{type}.bed.gz"
         log:    expand("LOGS/{outdir}bam2bed_{{file}}_{{type}}.log", outdir=outdir)
         threads: 1
         conda:  "nextsnakes/envs/bedtools.yaml"
         shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 elif stranded and stranded == 'rf':
     rule BamToBed:
-        input:  "MAPPED/{file}_mapped_{type}.bam"
-        output: "BED/{file}_mapped_{type}.bed.gz"
+        input:  "MAPPED/{combo}{file}_mapped_{type}.bam"
+        output: "BED/{combo}{file}_mapped_{type}.bed.gz"
         log:    expand("LOGS/{outdir}bam2bed_{{file}}_{{type}}.log", outdir=outdir)
         threads: 1
         conda:  "nextsnakes/envs/bedtools.yaml"
@@ -85,9 +85,9 @@ rule get_chromsize_genomic:
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
 
 rule extendbed:
-    input:  pks = "BED/{file}_mapped_{type}.bed.gz",
+    input:  pks = "BED/{combo}{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    output: ext = "BED/{file}_mapped_extended_{type}.bed.gz"
+    output: ext = "BED/{combo}{file}_mapped_extended_{type}.bed.gz"
     log:    expand("LOGS/{outdir}bam2bed_{{type}}_{{file}}.log", outdir=outdir)
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
@@ -95,9 +95,9 @@ rule extendbed:
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
 
 rule rev_extendbed:
-    input:  pks = "BED/{file}_mapped_{type}.bed.gz",
+    input:  pks = "BED/{combo}{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    output: "BED/{file}_mapped_revtrimmed_{type}.bed.gz"
+    output: "BED/{combo}{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    expand("LOGS/{outdir}bam2bed_{{type}}_{{file}}.log", outdir=outdir)
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
@@ -106,7 +106,7 @@ rule rev_extendbed:
 
 if IP == 'iCLIP':
      rule BedToBedg:
-        input:  bed = "BED/{file}_mapped_extended_{type}.bed.gz",
+        input:  bed = "BED/{combo}{file}_mapped_extended_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
         output: concat = "{outdir}{file}_mapped_{type}.bedg.gz"
@@ -119,7 +119,7 @@ if IP == 'iCLIP':
 
 elif IP == 'revCLIP':
     rule BedToBedg:
-        input:  bed = "BED/{file}_mapped_revtrimmed_{type}.bed.gz",
+        input:  bed = "BED/{combo}{file}_mapped_revtrimmed_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
         output: concat = "{outdir}{file}_mapped_{type}.bedg.gz"
@@ -132,10 +132,10 @@ elif IP == 'revCLIP':
 
 else:
     rule BedToBedg:
-        input:  bed = "BED/{file}_mapped_{type}.bed.gz",
+        input:  bed = "BED/{combo}{file}_mapped_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-        output: concat = "BED/{file}_mapped_{type}.bedg.gz"
+        output: concat = "BED/{combo}{file}_mapped_{type}.bedg.gz"
         log:    "LOGS/{outdir}bed2bedgraph_{type}_{file}.log"
         conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
