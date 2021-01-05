@@ -7,14 +7,14 @@ if rundedup:
     if paired == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2']),
-                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES,config),read=['R1','R2']),
-                    expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES,config),read=['R1','R2']),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
+                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config),read=['R1','R2']),
+                    expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config),read=['R1','R2']),
+                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config)),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES, config))
             output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("{moutdir}{condition}/tmp"),
                     lst = "{moutdir}{condition}/qclist.txt"
@@ -26,14 +26,14 @@ if rundedup:
     else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES)),
-                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES,config))
+                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config)),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES, config))
             output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("{moutdir}{condition}/tmp"),
                     lst = "{moutdir}{condition}/qclist.txt"
@@ -46,11 +46,11 @@ else:
     if paired == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2']),
-                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES,config),read=['R1','R2']),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config))
+                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config),read=['R1','R2']),
+                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config))
             output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("{moutdir}{condition}/tmp"),
                     lst = "{moutdir}{condition}/qclist.txt"
@@ -62,11 +62,11 @@ else:
     else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES)),
-                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES,config)),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES,config))
+                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config)),
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config))
             output: html = report("{moutdir}{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("{moutdir}{condition}/tmp"),
                     lst = "{moutdir}{condition}/qclist.txt"

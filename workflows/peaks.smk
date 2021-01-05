@@ -2,7 +2,6 @@ PEAKBIN, PEAKENV = env_bin_from_config3(config,'PEAKS')
 outdir = 'PEAKS/'+str(PEAKENV)+'/'
 bedout = 'BED/'+str(SETS)+'/'
 
-
 wildcard_constraints:
     type = "sorted|sorted_unique" if not rundedup else "sorted|unique|sorted_dedup|sorted_unique_dedup",
     outdir = outdir

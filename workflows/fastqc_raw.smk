@@ -5,9 +5,11 @@ moutdir = 'QC/Multi/'+str(QCENV)+'/'
 wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES)),
     read = "R1|R2",
+    outdir = outdir,
+    moutdir = moutdir
 
-rule themall:
-    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+#rule themall:
+#    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
