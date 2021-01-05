@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan  5 10:36:07 2021 (+0100)
+# Last-Updated: Tue Jan  5 16:11:53 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1156
+#     Update #: 1181
 # URL:
 # Doc URL:
 # Keywords:
@@ -132,6 +132,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 preprocess = None
             if subworkflows and 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
                 preprocess.remove('QC')
+            elif preprocess and 'QC' in preprocess and not any(['TRIMMING','MAPPING','DEDUP']) in subworkflows:
+                subworkflows.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
                 postprocess = None
@@ -160,47 +162,49 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         log.debug(logid+'WORKFLOWS: '+str([preprocess,subworkflows,postprocess]))
 
         '''
-        START TO PROCESS
+        START TO PREPROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
+        if preprocess:
+            for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
+                log.info(logid+'Preprocess '+str(proc))
+                if proc not in config:
+                    log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
+                makeoutdir('FASTQ')
+                makeoutdir('TMP')
 
-        for proc in [x for x in preprocess if config.get(x)]:
-            log.debug(logid+'Preprocess '+str(proc))
-            if proc not in config:
-                log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
-            makeoutdir('FASTQ')
-            makeoutdir('TMP')
-            preprocess.remove(proc)
+                if proc == 'SRA':
+                    SAMPLES = download_samples(config)
+                    preprocess.remove(proc)
+                elif proc == 'BASECALL':
+                    SAMPLES = basecall_samples(config)
+                    preprocess.remove(proc)
+                else:
+                    #SAMPLES = get_samples(config)
+                    continue  #We only want download/basecall here
 
-            if proc == 'SRA':
-                SAMPLES = download_samples(config)
-            elif proc == 'BASECALL':
-                SAMPLES = basecall_samples(config)
-            else:
-                SAMPLES = get_samples(config)
+                log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
+                conditions = get_conditions(SAMPLES,config)
+                log.debug(logid+'PRECONDITIONS: '+str(conditions))
 
-            log.info(logid+'PRESAMPLES: '+str(SAMPLES))
-            conditions = get_conditions(SAMPLES,config)
-            log.info(logid+'PRECONDITIONS: '+str(conditions))
+                subwork = proc
 
-            subwork = proc
+                for condition in conditions:
+                    log.info("CONDITION: "+str(condition))
+                    jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel)
 
-            for condition in conditions:
-                log.debug("CONDITION: "+str(condition))
-                jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel)
+                    jobstorun = list()
+                    for job in jobs:
+                        smko, confo = job
+                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
-                jobstorun = list()
-                for job in jobs:
-                    smko, confo = job
-                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist)))
-
-                for job in jobstorun:
-                    with open('Jobs', 'a') as j:
-                        j.write(job+os.linesep)
-                    if not save:
-                        log.info(logid+'RUNNING '+str(job))
-                        jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                    for job in jobstorun:
+                        with open('Jobs', 'a') as j:
+                            j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
 
         '''
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
@@ -221,15 +225,21 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 for subwork in preprocess:
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
-                    jobstorun = make_sub(subwork, config, SAMPLES, condition, subdir, threads, workdir, argslist, loglevel)
+                    jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel, 'Pre')
+
+                    jobstorun = list()
+                    for job in jobs:
+                        smko, confo = job
+                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                     for job in jobstorun:
                         with open('Jobs', 'a') as j:
-                            j.write(job+'\n')
+                            j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
+
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
 
@@ -238,14 +248,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         if subworkflows:
-            combinations = get_combos(subworkflows, config, conditions)
-
+            combinations = get_combo(subworkflows, config, conditions)
             jobs = make_main(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
             jobstorun = list()
             for job in jobs:
                 smko, confo = job
-                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo , d=workdir, rest=' '.join(argslist)))
+                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
             for job in jobstorun:
                 with open('Jobs', 'a') as j:
