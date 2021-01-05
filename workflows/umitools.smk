@@ -1,5 +1,5 @@
-DEDUPBIN, DEDUPENV = env_bin_from_config2(SAMPLES,config,'DEDUP')
-dedupoutdir = 'DEDUP_FASTQ/'+str(DEDUPENV)+'/'
+DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
+outdir = 'DEDUP_FASTQ/'+str(DEDUPENV)+'/'
 
 wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP",DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None ,config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
 

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan  5 09:39:21 2021 (+0100)
+# Last-Updated: Tue Jan  5 10:19:21 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2436
+#     Update #: 2437
 # URL:
 # Doc URL:
 # Keywords:
@@ -492,8 +492,8 @@ def make_main(subworkflows, config, samples, conditions, subdir, loglevel, subna
 
     log.debug(logid+'WORK: '+str(subworkflows))
 
-    condapath=re.compile(r'conda:\s+"')
-    logfix=re.compile(r'loglevel="INFO"')
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
 
     allmap = 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique.bam", outdir=outdir, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("{outdir}{file}_mapped_sorted_unique_dedup.bam", outdir=outdir, file=samplecond(SAMPLES,config))'
     allqc  = 'expand("{moutdir}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
