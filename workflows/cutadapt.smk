@@ -1,9 +1,9 @@
 TRIMBIN, TRIMENV = env_bin_from_config3(config,'TRIMMING')
 #outdir = 'TRIMMED_FASTQ/'+str(TRIMENV)+'/'
 
-wildcard_constraints:
-    file = '|'.join(list(samplecond(SAMPLES,config))),
-    read = "R1|R2"
+#wildcard_constraints:
+#    file = '|'.join(list(samplecond(SAMPLES,config))),
+#    read = "R1|R2"
 #    outdir = outdir
 
 #rule trimthemall:

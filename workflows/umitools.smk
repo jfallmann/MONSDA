@@ -5,7 +5,7 @@ wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAM
 wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES)),
     read = "R1|R2",
-    outdir = dedupoutdir
+#    outdir = dedupoutdir
 
 #rule dedupthemall:
 #    input: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))
@@ -20,7 +20,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
 
@@ -34,7 +34,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
     else:
@@ -47,7 +47,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
@@ -59,7 +59,7 @@ if paired == 'paired':
         conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
                 dedup = DEDUPBIN
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
 
@@ -72,7 +72,7 @@ if paired == 'paired':
         conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
                 dedup = DEDUPBIN
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
 
@@ -86,7 +86,7 @@ else:
             log:   "LOGS/{combo}{file}_dedup_whitelist.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}"
 
@@ -98,7 +98,7 @@ else:
             log:   "LOGS/{combo}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
 
@@ -110,7 +110,7 @@ else:
             log:   "LOGS/{combo}{file}_dedup_extract.log"
             conda: "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
@@ -122,7 +122,7 @@ else:
             conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
             priority: 0               # This should be done after all mapping is done
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
                     dedup = DEDUPBIN
             shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
 
@@ -135,6 +135,6 @@ else:
             conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
             threads: 1
             priority: 0               # This should be done after all mapping is done
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
                     dedup = DEDUPBIN
             shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"

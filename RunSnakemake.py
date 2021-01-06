@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan  5 16:11:53 2021 (+0100)
+# Last-Updated: Wed Jan  6 09:39:08 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1181
+#     Update #: 1199
 # URL:
 # Doc URL:
 # Keywords:
@@ -118,7 +118,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         #Define workflow stages
         pre = ['QC','SRA','BASECALL']
-        sub = ['QC','TRIMMING','MAPPING','DEDUP']
+        sub = ['TRIMMING','MAPPING','DEDUP','QC']
         post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','ANNOTATE']
 
         wfs = config['WORKFLOWS'].split(',')
@@ -130,9 +130,10 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             preprocess = [x for x in wfs if x in pre]
             if len(preprocess) == 0 or preprocess[0] == '':
                 preprocess = None
-            if subworkflows and 'MAPPING' in subworkflows and preprocess and 'QC' in preprocess:
+            log.debug(logid+'Intermediate-WORKFLOWS: '+str([preprocess, subworkflows, postprocess]))
+            if subworkflows and any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP']) and preprocess and 'QC' in preprocess:
                 preprocess.remove('QC')
-            elif preprocess and 'QC' in preprocess and not any(['TRIMMING','MAPPING','DEDUP']) in subworkflows:
+            if preprocess and 'QC' in preprocess and not any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP']):
                 subworkflows.remove('QC')
             postprocess = [x for x in wfs if x in post]
             if len(postprocess) == 0 or postprocess[0] == '':
@@ -159,13 +160,13 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             except KeyError:
                 log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
 
-        log.debug(logid+'WORKFLOWS: '+str([preprocess,subworkflows,postprocess]))
+        log.debug(logid+'WORKFLOWS: '+str([preprocess, subworkflows, postprocess]))
 
         '''
         START TO PREPROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
-        if preprocess:
+        if preprocess:          # Maybe SRA only
             for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
                 log.info(logid+'Preprocess '+str(proc))
                 if proc not in config:
@@ -191,7 +192,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 for condition in conditions:
                     log.info("CONDITION: "+str(condition))
-                    jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel)
+                    jobs = make_pre(subwork, config, SAMPLES, condition, subdir, loglevel)
 
                     jobstorun = list()
                     for job in jobs:
@@ -225,7 +226,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 for subwork in preprocess:
                     log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
-                    jobs = make_sub(subwork, config, SAMPLES, condition, subdir, loglevel, 'Pre')
+                    jobs = make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, 'Pre')
 
                     jobstorun = list()
                     for job in jobs:
@@ -249,7 +250,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         if subworkflows:
             combinations = get_combo(subworkflows, config, conditions)
-            jobs = make_main(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+            jobs = make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
             jobstorun = list()
             for job in jobs:

@@ -104,7 +104,7 @@ if 'MAPPING' in config:
     if IDX:
         INDEX = IDX
         log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
-    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
@@ -168,3 +168,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
+
+combo = ''
+
+####HEADER ENDS HERE####

@@ -27,7 +27,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
         shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.index} -j {input.index2} -q {input.r1} -p {input.r2} --threads {threads} -o {output.mapped} -u {output.unmapped} 2> {log}"
 
@@ -42,6 +42,6 @@ else:
         log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None ,config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
         shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.index} -j {input.index2} -q {input.query} --threads {threads} -o {output.mapped} -u {output.unmapped} 2> {log}"
