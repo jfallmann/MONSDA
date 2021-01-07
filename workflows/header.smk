@@ -99,18 +99,20 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
-    MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX
-        log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
+    if not INDEX:
+        INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
     if PRE:
         PREFIX = PRE
-
+    if not PREFIX:
+        PREFIX = ''
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
             INDEX2 = str(os.path.abspath(INDICES[1]))

@@ -1,4 +1,4 @@
-MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
+MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
 
 rule generate_index:
     input:  fa = REFERENCE

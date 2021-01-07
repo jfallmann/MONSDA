@@ -8,7 +8,7 @@ rule generate_index:
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: 1
     params: indexer = MAPPERBIN.split(' ')[0],
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0].items()),
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
             linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1]))),
             tolink = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.idx).split(os.sep)[:-1])))
     shell:  "if [[ -f \"{output.uidx}\/*\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\" ; else {params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"

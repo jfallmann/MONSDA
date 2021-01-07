@@ -1,5 +1,8 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
 
+if not PREFIX:
+    PREFIX = ''
+
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
@@ -9,10 +12,9 @@ rule generate_index:
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN.split(' ')[0],
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.uidx[0]).split(os.sep)[:-1]))),
-            tolink = lambda wildcards, output: str(os.path.abspath(str.join(os.sep,str(output.idx).split(os.sep)[:-1])))
-    shell:  "if [[ -f \"{output.uidx}\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1])))
+    shell:  "if [[ -f \"{params.linkidx}/idx\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
 
@@ -28,10 +30,10 @@ if paired == 'paired':
         log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
-                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index
+                pref = lambda wildcards, input: str.join(os.sep,[input.index, PREFIX]) if PREFIX != '' else input.index
         shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {output.unmapped} --new-summary --summary-file {output.summary} 2>> {log} && touch {output.unmapped}"
 
 else:
@@ -45,8 +47,8 @@ else:
         log:    "LOGS/{combo}{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
-                pref = lambda wildcards, input: str.join(os.sep,[input.index,PREFIX]) if PREFIX != '' else input.index
+                pref = lambda wildcards, input: str.join(os.sep,[input.index, PREFIX]) if PREFIX != '' else input.index
         shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} --new-summary --summary-file {output.summary} 2>> {log} && touch {output.unmapped}"

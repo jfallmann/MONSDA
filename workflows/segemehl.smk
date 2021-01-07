@@ -3,7 +3,7 @@ MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}/SAindex", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
+            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
     threads: MAXTHREAD

@@ -1,52 +1,52 @@
 PEAKBIN, PEAKENV = env_bin_from_config3(config,'PEAKS')
-outdir = 'PEAKS/'+str(PEAKENV)+'/'
+#outdir = 'PEAKS/'+str(PEAKENV)+'/'
 PEAKSAMPLES = set_pairings(SAMPLES, config)
 
 wildcard_constraints:
     type = "sorted|sorted_unique" if not rundedup else "sorted|unique|sorted_dedup|sorted_unique_dedup",
-    outdir = outdir
+#    outdir = outdir
 
 if ANNOPEAK is not None:
     if not rundedup:
         rule themall:
-            input:  expand("UCSC/{outdir}{file}_peak_{type}.fw.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.fw.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("{outdir}{file}_peak_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("{outdir}{file}_peak_seq_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("{outdir}{file}_peak_anno_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{combo}{file}_peak_anno_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("UCSC/{outdir}{file}_peak_{type}.fw.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.fw.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("{outdir}{file}_peak_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("{outdir}{file}_peak_seq_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("{outdir}{file}_peak_anno_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_anno_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
 
 else:
     if not rundedup:
         rule themall:
-            input:  expand("UCSC/{outdir}{file}_peak_{type}.fw.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.fw.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("{outdir}{file}_peak_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
-                    expand("{outdir}{file}_peak_seq_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("UCSC/{outdir}{file}_peak_{type}.fw.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bw.trackdone", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.fw.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/{outdir}{file}_peak_{type}.re.bedg.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("{outdir}{file}_peak_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("{outdir}{file}_peak_seq_{type}.bed.gz", outdir=outdir, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
 
 
 rule FindPeaks:
-    input:  bam = "MAPPED/{combo}{file}_mapped_{type}.bam"
+    input:  bam = expand("MAPPED/{combo}{file}_mapped_{type}.bam", combo=str.join('_',str.split('_',combo)[:-1]), file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"]) if not rundedup else expand("MAPPED/{combo}{file}_mapped_{type}.bam", combo=str.join('_',str.split('_',combo)[:-1]), file=samplecond(SAMPLES,config), type=["sorted_dedup", "sorted_unique_dedup"])
     output: peak = "{outdir}{file}_peak_{type}.bed.gz"
     log:    "LOGS/{outdir}findpeaks_macs_{type}_{file}.log"
     conda:  "nextsnakes/envs/"+PEAKENV+".yaml"

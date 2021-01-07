@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan  6 21:55:39 2021 (+0100)
+# Last-Updated: Thu Jan  7 15:02:11 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2550
+#     Update #: 2587
 # URL:
 # Doc URL:
 # Keywords:
@@ -117,6 +117,7 @@ except Exception as err:
     )
     print(''.join(tbe.format()),file=sys.stderr)
 
+
 #Class
 class NestedDefaultDict(defaultdict):
     def __init__(self, *args, **kwargs):
@@ -132,6 +133,8 @@ class NestedDefaultDict(defaultdict):
 ##############################
 ########Snakemake Subs########
 ##############################
+
+
 def check_run(func):
     def func_wrapper(*args, **kwargs):
         logid=scriptname+'.Collection_func_wrapper: '
@@ -145,6 +148,7 @@ def check_run(func):
             )
             log.error(logid+''.join(tbe.format()))
     return func_wrapper
+
 
 @check_run
 def get_samples(config):
@@ -175,10 +179,11 @@ def get_samples(config):
     log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
     return RETSAMPLES
 
+
 @check_run
 def get_samples_postprocess(config,subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
-    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
@@ -445,6 +450,9 @@ def get_combo(wfs, config, conditions):
     logid=scriptname+'.Collection_get_combo: '
     combos = NestedDefaultDict()
 
+    if wfs is None:
+        return None
+
     for condition in conditions:
         ret = list()
         for subwork in wfs:
@@ -636,40 +644,123 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-                    if 'MAPPING' in works:
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
-                        with open(smkf,'r') as smk:
-                            for line in smk.readlines():
-                                line = re.sub(condapath, 'conda:  "../', line)
-                                subjobs.append(line)
-                            subjobs.append('\n\n')
-                        if 'QC' in subworkflows:
-                            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
-                            with open(smkf,'r') as smk:
-                                for line in smk.readlines():
-                                    line = re.sub(condapath, 'conda:  "../', line)
-                                    subjobs.append(line)
-                                subjobs.append('\n\n')
+            if 'MAPPING' in works:
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+                if 'QC' in subworkflows:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
 
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
+            with open(smko, 'a') as smkout:
+                smkout.write(add)
+                smkout.write(join('',subjobs))
+
+            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            if os.path.exists(confo):
+                os.rename(confo,confo+'.bak')
+            with open(confo, 'a') as confout:
+                json.dump(subconf, confout)
+
+            jobs.append([smko, confo])
+
+    return jobs
+
+
+@check_run
+def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
+    logid=scriptname+'.Collection_make_post: '
+
+    log.info(logid+'STARTING POSTPROCESSING FOR '+str(conditions))
+
+    jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            subwork = postworkflow
+            envlist = combname[condition]['envs']
+            log.debug(logid+'POSTLISTS: '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
+            subconf = NestedDefaultDict()
+            add = list()
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf, 'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    add.append(line)
+
+            for i in range(len(envlist)):
+                envs = envlist[i].split('-')
+                subjobs = list()
+
+                log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
+                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+
+                if listoftools is None:
+                    log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                    continue
+
+                sconf = listofconfigs[0]
+                for a in range(0,len(listoftools)):
+                    toolenv, toolbin = map(str, listoftools[a])
+                    sconf[subwork+'ENV'] = toolenv
+                    sconf[subwork+'BIN'] = toolbin
+
+                    # Add variable for combination string
+                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n\tread = "R1|R2"\n')
+                    subjobs.append('\n\n')
+                    subconf.update(sconf)
+
+                    subname = toolenv+'.smk'
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+                    # Append footer and write out subsnake and subconf per condition
                     smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                             line = re.sub(condapath,'conda:  "../',line)
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-                    smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), toolenv, 'subsnake.smk'])))
+                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subsnake.smk'])))
                     if os.path.exists(smko):
-                        os.rename(smko,smko+'.bak')
-                    with open(smko, 'a') as smkout:
-                        smkout.write(add)
-                        smkout.write(join('',subjobs))
+                        os.rename(smko, smko+'.bak')
+                    with open(smko, 'w') as smkout:
+                        smkout.write(''.join(add))
+                        smkout.write(''.join(subjobs))
 
-                    confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), toolenv, 'subconfig.json'])))
+                    confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subconfig.json'])))
                     if os.path.exists(confo):
                         os.rename(confo,confo+'.bak')
-                    with open(confo, 'a') as confout:
+                    with open(confo, 'w') as confout:
                         json.dump(subconf, confout)
 
                     jobs.append([smko, confo])

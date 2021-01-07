@@ -1,22 +1,28 @@
+if combo:
+    combo = str.join('_',str.split('_',combo)[:-1])
+else:
+    combo = ''
+
 wildcard_constraints:
-    type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"
+    type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup",
+    combo=combo
 
 rule themall:
-    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re']) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone",file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'])
+    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re'], combo=combo) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'], combo=combo)
 
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES,config):
-    checktype = ['sorted','unique'] if not rundedup else ['sorted_dedup','sorted_unique_dedup']
+    checktype = ['sorted', 'unique'] if not rundedup else ['sorted_dedup', 'sorted_unique_dedup']
     for type in checktype:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+file+'_mapped_'+type+'.bed.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.bed.gz')))
+        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.bed.gz')))
 
 if all(checklist):
     rule BamToBed:
         input:  "BED/{combo}{file}_mapped_{type}.bed.gz"
         output: "UCSC/{combo}{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/UCSC/linkbed{file}_{type}.log"
+        log:    "LOGS/UCSC/{combo}{file}_{type}_linkbed.log"
         conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
@@ -25,7 +31,7 @@ elif all(checklist2):
     rule BamToBed:
         input:  "PEAKS/{combo}{file}_mapped_{type}.bed.gz"
         output: "UCSC/{combo}{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/UCSC/linkbed{file}_{type}.log"
+        log:    "LOGS/UCSC/{combo}{file}_{type}_linkbed.log"
         conda:  "nextsnakes/envs/base.yaml"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
@@ -50,17 +56,17 @@ else:
 
 rule index_fa:
     input:  REFERENCE
-    output: expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
-    log:    expand("LOGS/UCSC/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz',''))
+    output: expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/UCSC/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz',''))
-    output: expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
-    log:    expand("LOGS/UCSC/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz',''))
+    input:  expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', ''))
+    output: expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/UCSC/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -71,13 +77,13 @@ checklist2 = list()
 for file in samplecond(SAMPLES,config):
     for type in ['sorted','unique']:
         for orient in ['fw','rw']:
-            checklist.append(os.path.isfile(os.path.abspath('BED/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
-            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist.append(os.path.isfile(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
 
 if all(checklist):
     rule BedToBedg:
         input:  "BED/{combo}{file}_mapped_{type}.{orient}.bedg.gz",
-                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
+                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
         output: "UCSC/{combo}{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{combo}{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "nextsnakes/envs/ucsc.yaml"
@@ -88,7 +94,7 @@ if all(checklist):
 elif all(checklist2):
     rule BedToBedg:
         input:  "PEAKS/{combo}{file}_mapped_{type}.{orient}.bedg.gz",
-                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
+                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
         output: "UCSC/{combo}{file}_mapped_{type}.{orient}.bedg.gz"
         log:    "LOGS/UCSC/{combo}{file}_{type}_{orient}_ucscbedtobedgraph.log"
         conda:  "nextsnakes/envs/ucsc.yaml"
@@ -99,8 +105,8 @@ elif all(checklist2):
 else:
     rule BedToBedg:
         input:  bed = "UCSC/{combo}{file}_mapped_{type}.bed.gz",
-                fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz','')),
-                sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
+                fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', '')),
+                sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "UCSC/{combo}{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{combo}{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{combo}{file}_{type}_ucscbedtobedgraph.log"
@@ -147,6 +153,6 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
-            options = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'UCSC')['OPTIONS'][0].items()),
-            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+SETS.replace(os.sep,'_'))
+            options = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'UCSC', 'ucsc')['OPTIONS'][0].items()),
+            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
