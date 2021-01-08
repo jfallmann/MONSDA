@@ -1,0 +1,238 @@
+{
+  "WORKFLOWS": "DTU,DE,SUMMARY",
+  "BINS": "nextsnakes/scripts",
+  "MAXTHREADS": "1",
+  "COMMENTS": "sample downloads: https://zenodo.org/record/1291404, https://zenodo.org/record/1291375, https://zenodo.org/record/1291443",
+  "SAMPLES": {
+    "mikelove": {
+      "group1": [
+        "out_1",
+        "out_2",
+        "out_3"
+      ],
+      "group2": [
+        "out_1",
+        "out_2",
+        "out_3"
+      ]
+    }
+  },
+  "SETTINGS": {
+    "mikelove": {
+      "group1": {
+        "SEQUENCING": "paired",
+        "REFERENCE": "GENOMES/hg38/gencode.v35.transcripts.fa.gz",
+        "INDEX": "GENOMES/hg38/INDICES/salmon.idx",
+        "PREFIX": "idx",
+        "ANNOTATION": {
+          "GTF": "GENOMES/hg38/gencode.v35.annotation.gtf.gz",
+          "GFF": "GENOMES/hg38/gencode.v35.annotation.gff3.gz"
+        }
+      },
+      "group2": {
+        "SEQUENCING": "paired",
+        "REFERENCE": "GENOMES/hg38/gencode.v35.transcripts.fa.gz",
+        "INDEX": "GENOMES/hg38/INDICES/salmon.idx",
+        "PREFIX": "idx",
+        "ANNOTATION": {
+          "GTF": "GENOMES/hg38/gencode.v35.annotation.gtf.gz",
+          "GFF": "GENOMES/hg38/gencode.v35.annotation.gff3.gz"
+        }
+      }
+    }
+  },
+  "MAPPING": {
+    "mikelove": {
+      "group1": {
+          "ENV": "star",
+          "BIN": "STAR",
+          "REFERENCE":  "GENOMES/hg38/gencode.v35.transcripts.fa.gz",
+          "ANNOTATION": "GENOMES/hg38/gencode.v35.annotation.gtf.gz",
+          "OPTIONS": [
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--genomeSAindexNbases": "13"
+            },
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--outSAMprimaryFlag AllBestScore": ""
+            }
+          ]
+      }
+    }
+  },
+  "DTU": {
+    "TOOLS": {
+      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+    },
+    "CUTOFF": [
+      {
+        "pvalue": "0.05",
+        "lfc": "1.5"
+      }
+    ],
+    "COMPARABLE": {
+      "1_vs_2": [
+        [
+          "group1"
+        ],
+        [
+          "group2"
+        ]
+      ]
+    },
+    "mikelove": {
+      "group1": {
+        "GROUPS": [
+          "group1",
+          "group1",
+          "group1"
+        ],
+        "REPLICATES": [
+          "out_1",
+          "out_2",
+          "out_3"
+        ],
+        "TYPES": [
+          "standard",
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1",
+          "1"
+        ],
+        "OPTIONS": [
+          {
+            "--gencode": ""
+          },
+          {
+            "-l": "A",
+            "--gcBias": ""
+          },
+          "std"
+        ]
+      },
+      "group2": {
+        "GROUPS": [
+          "group2",
+          "group2",
+          "group2"
+        ],
+        "REPLICATES": [
+          "out_1",
+          "out_2",
+          "out_3"
+        ],
+        "TYPES": [
+          "standard",
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1",
+          "1"
+        ],
+        "OPTIONS": [
+          {
+            "--gencode": ""
+          },
+          {
+            "-l": "A",
+            "--gcBias": ""
+          },
+          "std"
+        ]
+      }
+    }
+  },
+  "DE": {
+    "TOOLS": {
+      "edger": "Analysis/DE/EDGER_2.R"
+    },
+    "CUTOFF": [
+      {
+        "pvalue": "0.05",
+        "lfc": "1.5"
+      }
+    ],
+    "COMPARABLE": {
+      "1_vs_2": [
+        [
+          "group1"
+        ],
+        [
+          "group2"
+        ]
+      ]
+    },
+    "mikelove": {
+      "group1": {
+        "GROUPS": [
+          "group1",
+          "group1",
+          "group1"
+        ],
+        "REPLICATES": [
+          "out_1",
+          "out_2",
+          "out_3"
+        ],
+        "TYPES": [
+          "standard",
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1",
+          "1"
+        ],
+        "OPTIONS": [
+          {
+              "-t": "gene",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+          }
+        ]
+      },
+      "group2": {
+        "GROUPS": [
+          "group2",
+          "group2",
+          "group2"
+        ],
+        "REPLICATES": [
+          "out_1",
+          "out_2",
+          "out_3"
+        ],
+        "TYPES": [
+          "standard",
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1",
+          "1"
+        ],
+        "OPTIONS": [
+          {
+              "-t": "gene",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+          }
+        ]
+      }
+    }
+  }
+}
