@@ -586,10 +586,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 file_path = os.path.abspath(os.path.join('nextsnakes','scripts','Analysis','SUMMARY',file))
                 if file.startswith('SUM_'):
                     file_tools = re.findall('[A-Z]+-[a-z]+', file)
+                    works = re.findall('[A-Z]+(?=-)', file)
+                    log.info(logid+'worksTODO: '+str(works))
                     if set(file_tools).issubset(summary_tools_set):
                         with open(rmd_summary, 'a') as write_file:
                             with open(file_path,'r') as read_file:
-                                for line in read_file.readlines():
+                                if 'percompare' in os.path.basename(file_path):
+                                    for comparison in config[works[0]]['COMPARABLE'].keys():
+                                        for line in read_file.readlines():
+                                            line = re.sub('COMPARISON',comparison,line)
+                                            write_file.write(line)
+                                else:
                                     write_file.write(line)
 
             log.debug(logid+'make SUMMARY of postprocessing analyses')

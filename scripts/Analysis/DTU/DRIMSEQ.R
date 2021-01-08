@@ -64,6 +64,8 @@ d <- dmDSdata(counts=counts, samples=samps)
 #   (2) it has a relative abundance proportion of at least 0.1 in at least n.small samples
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
 
+setwd(outdir)
+
 n <- nrow(samps)
 n.small <- n/length(levels(samps$condition))  # its not really the smallest group, needs to be improved
 d <- dmFilter(d,
@@ -102,17 +104,14 @@ if (length(levels(types)) > 1){
 
 comparison_objs <- list()
 
+
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
-
-  setwd(outdir)
 
   contrast_name <- strsplit(contrast,":")[[1]][1]
   contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
   print(paste("Comparing ",contrast_name, sep=""))
-
-
 
   # determine contrast
   A <- strsplit(contrast_groups[[1]][1], "\\+")
@@ -169,6 +168,7 @@ for(contrast in comparisons[[1]]){
   res.txp <- res.txp[,c(1,7,2,3,4,5,6)]
 
   # CREATE RESULTS TABLE
+  write.table(as.data.frame(proportions), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
   write.table(as.data.frame(res), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
   write.table(as.data.frame(res.txp), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 

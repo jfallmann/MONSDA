@@ -1,15 +1,16 @@
 ---
-title: "POSTPROCESSING SUMMARY REPORT"
-geometry: "left=1cm,right=1cm,top=2cm,bottom=2cm"
+title: "NEXTSNAKES SUMMARY REPORT"
 fontsize: 10pt
 output:
-  pdf_document: default
+  rmdformats::readthedown:
+  html_document:
+    toc_depth: 3
 params:
   date: !r Sys.Date()
   root: ''
   outdir: ''
-  files: ''
 ---
+
 
 \begin{center}
 `r params$date`\
@@ -19,24 +20,13 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = params$root)
-
-works <- list()
-analyses <- list()
-files <- strsplit(params$files,'-')
-for( f in files[[1]]){analyses <- c(analyses,paste(strsplit(f,'/')[[1]][1],strsplit(f,'/')[[1]][2],sep='/'))}
-for( f in files[[1]]){works <- c(works,strsplit(f,'/')[[1]][1])}
-analyses <- unique(analyses)
-works <- unique(works)
-
-
 ```
 
-# OVERVIEW
-```{r, overwiev, echo=FALSE, results='asis'}
-files <- strsplit(params$files,'-')
-for (w in 1:length(works[[1]])) {
-  cat('\n')
-  cat(paste('- ',works[[1]][w]))
-  cat('\n')
-  }
-```
+# OVERVIEW {.tabset}
+Uebersicht, welche daten, mit welchen tools verarbeitet wurden und weiter Infos...
+
+## Data
+daten daten daten
+
+## Tools
+tools tools tools
