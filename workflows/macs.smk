@@ -1,8 +1,10 @@
 PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
 PEAKSAMPLES = set_pairings(SAMPLES, config)
 
-wildcard_constraints:
-    file = samplecond(PEAKSAMPLES, config)
+#wildcard_constraints:
+#    file = samplecond(PEAKSAMPLES, config)
+
+log.info('PEAKSAMPLES: '+str(PEAKSAMPLES))
 
 if ANNOPEAK is not None:
     if not rundedup:
@@ -44,21 +46,21 @@ else:
 
 
 rule FindPeaks:
-    input:  bam = expand("MAPPED/{scombo}{{file}}_mapped_{{type}}.bam", scombo=scombo) if not rundedup else expand("MAPPED/{scombo}{{file}}_mapped_{{type}}.bam", scombo=scombo)
+    input:  bam = expand("MAPPED/{scombo}{{file}}_mapped_{{type}}.bam", scombo=scombo)
     output: peak = "PEAKS/{combo}{file}_peak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}findpeaks_macs_{type}_{file}.log"
+    log:    "LOGS/PEAKS/{combo}{file}_findpeaks_macs_{type}.log"
     conda:  "nextsnakes/envs/"+PEAKENV+".yaml"
     threads: 1
-    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES),
+    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES, scombo),
             ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,
-    shell:  "{params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} &&  2> {log}"
+    shell:  "export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} &&  2> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
-    output: fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz', ''))
+    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}indexfa.log", combo=combo)
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
@@ -67,21 +69,21 @@ rule UnzipGenome:
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,
-            fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz', ''))
+            fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', ''))
     output: peak = "PEAKS/{combo}{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{combo}{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{combo}{file}_peak_seq_{type}.tmp")
-    log:    "LOGS/PEAKS/{combo}seq2peaks_{type}_{file}.log"
+    log:    "LOGS/PEAKS/{combo}{file}_seq2peaks_{type}.log"
     conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 if ANNOPEAK is not None:
     rule AnnotatePeak:
         input:  "PEAKS/{combo}{file}_peak_seq_{type}.bed.gz"
         output: "PEAKS/{combo}{file}_peak_anno_{type}.bed.gz"
-        log:    "LOGS/PEAKS/{combo}annotatepeaks_{type}_{file}.log"
+        log:    "LOGS/PEAKS/{combo}{file}_annotatepeaks_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
@@ -95,7 +97,7 @@ if ANNOPEAK is not None:
                 re = "PEAKS/{combo}{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}{file}_peak_{type}.fw.tmp.gz"),
                 trw = temp("PEAKS/{combo}{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}peak2bedg_{file}_{type}.log"
+        log:    "LOGS/PEAKS/{combo}{file}_peak2bedg_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
@@ -109,7 +111,7 @@ else:
                 re = "PEAKS/{combo}{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}{file}_peak_{type}.fw.tmp.gz"),
                 tre = temp("PEAKS/{combo}{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}peak2bedg_{file}_{type}.log"
+        log:    "LOGS/PEAKS/{combo}{file}_peak2bedg_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
         params: bins=BINS,
@@ -122,7 +124,7 @@ rule NormalizeBedg:
             re = rules.PeakToBedg.output.re
     output: fw = "PEAKS/{combo}{file}_peak_{type}.fw.norm.bedg.gz",
             re = "PEAKS/{combo}{file}_peak_{type}.re.norm.bedg.gz"
-    log:    "LOGS/PEAKS/{combo}ucscpeaknormalizebedgraph_{file}_{type}.log"
+    log:    "LOGS/PEAKS/{combo}{file}_ucscpeaknormalizebedgraph_{type}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.fw}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;1000000/$(zcat {input.re}|cut -f4|sort -u|wc -l)\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
@@ -136,7 +138,7 @@ rule PeakToUCSC:
             re = "UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw",
             tfw = temp("UCSC/PEAKS/{combo}{file}_{type}fw_tmp"),
             tre = temp("UCSC/PEAKS/{combo}{file}_{type}re_tmp")
-    log:    "LOGS/PEAKS/{combo}peak2ucsc_{file}_{type}.log"
+    log:    "LOGS/PEAKS/{combo}{file}_peak2ucsc_{type}.log"
     conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
@@ -147,12 +149,12 @@ rule GenerateTrack:
             re = rules.PeakToUCSC.output.re
     output: "UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone",
             "UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone"
-    log:    "LOGS/PEAKS/{combo}peaktrack_{file}_{type}.log"
+    log:    "LOGS/PEAKS/{combo}{file}_peaktrack_{type}.log"
     conda:  "nextsnakes/envs/base.yaml"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
-            gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
+            gen = REFDIR,  #lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
             uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+'PEAKS_'+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

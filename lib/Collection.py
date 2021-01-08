@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan  8 14:40:20 2021 (+0100)
+# Last-Updated: Fri Jan  8 17:43:18 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2593
+#     Update #: 2596
 # URL:
 # Doc URL:
 # Keywords:
@@ -1119,7 +1119,7 @@ def set_pairings(samples, config):
 
 
 @check_run
-def get_pairing(sample, stype, config, samples):
+def get_pairing(sample, stype, config, samples, scombo=''):
     logid = scriptname+'.Collection_get_pairings: '
     pairlist = config['PEAKS'].get('COMPARABLE')
     matching = ''
@@ -1132,8 +1132,8 @@ def get_pairing(sample, stype, config, samples):
                         log.debug(logid+'Match found: '+str(v)+' : '+str(x))
                         matching = samplecond([x], config)[0].replace('MAPPED/','')
                         log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
-        log.debug(logid+'-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam')
-        return '-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam'
+        log.debug(logid+'-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam')
+        return '-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam'
     else:
         log.debug(logid+'No matching sample found')
         return ''

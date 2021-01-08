@@ -151,16 +151,15 @@ rule PreprocessPeaks:
              opts=lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input.bedg} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
-
-rule Find_Peaks:
-    input:  "PEAKS/{combo}{file}_prepeak_{type}.bed.gz"
-    output: "PEAKS/{combo}{file}_peak_{type}.bed.gz"
+rule FindPeaks:
+    input:  pre = "PEAKS/{combo}{file}_prepeak_{type}.bed.gz"
+    output: peak = "PEAKS/{combo}{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}{file}findpeaks_{type}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
     params: opts=lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
             bins=BINS
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p {input.pre} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 
 #rule QuantPeaks:
 #   input:  "{outdir}{source}/Peak_{file}.bed.gz"
@@ -181,16 +180,16 @@ rule UnzipGenome:
     shell:  "zcat {input[0]} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
-    input:  pk = "PEAKS/{combo}{file}_peak_{type}.bed.gz",
+    input:  pk = rules.FindPeaks.output.peak,
             fa = expand("{ref}_fastafrombed.fa",ref=REFERENCE.replace('.fa.gz', ''))
     output: peak = "PEAKS/{combo}{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{combo}{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{combo}{file}_peak_seq_{type}.tmp")
-    log:    "LOGS/PEAKS/{combo}{file}seq2peaks_{type}.log"
+    log:    "LOGS/PEAKS/{combo}seq2peaks_{type}_{file}.log"
     conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 if ANNOPEAK is not None:
     rule AnnotatePeak:
