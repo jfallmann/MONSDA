@@ -1,5 +1,5 @@
 {
-  "WORKFLOWS": "DTU,DE,SUMMARY",
+  "WORKFLOWS": "MAPPING,QC,TRIMMING,DTU,DE,SUMMARY",
   "BINS": "nextsnakes/scripts",
   "MAXTHREADS": "1",
   "COMMENTS": "sample downloads: https://zenodo.org/record/1291404, https://zenodo.org/record/1291375, https://zenodo.org/record/1291443",
@@ -62,6 +62,32 @@
           ]
       }
     }
+  },
+  "QC": {
+    "mikelove": {
+      "group1": {
+          "ENV": "fastqc",
+          "BIN": "fastqc",
+          "OPTIONS": [
+            {}
+          ]
+        }
+      }
+  },
+  "TRIMMING": {
+    "mikelove": {
+      "group1": {
+          "ENV": "trimgalore",
+          "BIN": "trim_galore",
+          "OPTIONS": [
+            {
+              "-q": "15",
+              "--length": "8",
+              "-e": "0.15"
+            }
+          ]
+        }
+      }
   },
   "DTU": {
     "TOOLS": {
