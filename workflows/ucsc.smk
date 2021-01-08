@@ -1,7 +1,4 @@
-if combo:
-    combo = str.join('_',str.split('_',combo)[:-1])
-else:
-    combo = ''
+combo = combo.split(os.sep)[0]+os.sep  # Unlike countreads we only have one env/bin to run ucsc tracks so we do not need scombo but can directly overwrite combo
 
 wildcard_constraints:
     type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup",

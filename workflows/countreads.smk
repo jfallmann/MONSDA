@@ -1,5 +1,5 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config, 'COUNTING')
-scombo = combo.split(os.sep)[0]+os.sep
+scombo = combo.split(os.sep)[0]+os.sep  # scombo is used where we do not want the env in the input/output name
 
 if not rundedup:
     rule themall:
@@ -16,8 +16,8 @@ else:
 
 if paired == 'paired':
     rule count_fastq:
-        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0], read=["R1", "R2"]),
-                r2 = expand("TRIMMED_FASTQ/{combo}{{file}}_{read}_trimmed.fastq.gz", combo=scombo, read=["R1", "R2"])
+        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{{read}}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                r2 = expand("TRIMMED_FASTQ/{combo}{{file}}_{{read}}_trimmed.fastq.gz", combo=scombo)
         output: r1 = "COUNTS/{combo}{file}_raw_{read}_fq.count",
                 r2 = "COUNTS/{combo}{file}_trimmed_{read}_fq.count"
         log:    "LOGS/{combo}{file}_{read}/countfastq.log"
@@ -28,7 +28,7 @@ if paired == 'paired':
 else:
     rule count_fastq:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = expand("TRIMMED_FASTQ/{combo}{{file}}_trimmed.fastq.gz", combo=scombo, read=["R1", "R2"])
+                r2 = expand("TRIMMED_FASTQ/{combo}{{file}}_trimmed.fastq.gz", combo=scombo)
         output: r1 = "COUNTS/{combo}{file}_raw_fq.count",
                 r2 = "COUNTS/{combo}{file}_trimmed_fq.count"
         log:    "LOGS/{combo}{file}/countfastq.log"

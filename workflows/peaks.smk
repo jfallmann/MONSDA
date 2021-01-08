@@ -2,6 +2,8 @@ PEAKBIN, PEAKENV = env_bin_from_config3(config,'PEAKS')
 #outdir = 'PEAKS/'+str(PEAKENV)+'/'
 #bedout = 'BED/'+str(SETS)+'/'
 
+
+
 wildcard_constraints:
     type = "sorted|sorted_unique" if not rundedup else "sorted|unique|sorted_dedup|sorted_unique_dedup",
 #    outdir = outdir
@@ -19,14 +21,14 @@ if ANNOPEAK is not None:
                     expand("PEAKS/{combo}{file}_peak_anno_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_prepeak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_peak_anno_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_prepeak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_anno_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
 else:
     if not rundedup:
@@ -40,13 +42,13 @@ else:
                     expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted','sorted_unique'])
     else:
         rule themall:
-            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_prepeak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup']),
-                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted_dedup','sorted_unique_dedup'])
+            input:  expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bw.trackdone", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.fw.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("UCSC/PEAKS/{combo}{file}_peak_{type}.re.bedg.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_prepeak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']),
+                    expand("PEAKS/{combo}{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES,config), type=['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
 
 if not stranded or stranded == 'fr':

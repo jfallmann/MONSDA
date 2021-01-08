@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan  7 15:02:11 2021 (+0100)
+# Last-Updated: Fri Jan  8 08:39:49 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2587
+#     Update #: 2588
 # URL:
 # Doc URL:
 # Keywords:
@@ -181,7 +181,7 @@ def get_samples(config):
 
 
 @check_run
-def get_samples_postprocess(config,subwork):
+def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
     SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
