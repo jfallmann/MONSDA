@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan  8 08:39:49 2021 (+0100)
+# Last-Updated: Fri Jan  8 10:40:18 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2588
+#     Update #: 2591
 # URL:
 # Doc URL:
 # Keywords:
@@ -713,7 +713,6 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
-                subjobs = list()
 
                 log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
                 listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -724,12 +723,14 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
                 sconf = listofconfigs[0]
                 for a in range(0,len(listoftools)):
+                    subjobs = list()
+
                     toolenv, toolbin = map(str, listoftools[a])
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
 
                     # Add variable for combination string
-                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n\tread = "R1|R2"\n')
+                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n'+'\nscombo = \''+str(envlist[i])+os.sep+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2"\n')
                     subjobs.append('\n\n')
                     subconf.update(sconf)
 

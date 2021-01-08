@@ -1,5 +1,5 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config, 'COUNTING')
-scombo = combo.split(os.sep)[0]+os.sep  # scombo is used where we do not want the env in the input/output name
+#scombo = combo.split(os.sep)[0]+os.sep  # scombo is used where we do not want the env in the input/output name
 
 if not rundedup:
     rule themall:

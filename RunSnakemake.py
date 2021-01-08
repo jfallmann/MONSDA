@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan  7 09:59:05 2021 (+0100)
+# Last-Updated: Fri Jan  8 09:30:02 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1207
+#     Update #: 1208
 # URL:
 # Doc URL:
 # Keywords:
@@ -277,7 +277,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 SAMPLES = get_samples_postprocess(config, subwork)
 
-                if subwork in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
+                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
                     continue
 
                 combinations = get_combo(subworkflows, config, conditions)

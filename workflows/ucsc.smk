@@ -1,43 +1,23 @@
-combo = combo.split(os.sep)[0]+os.sep  # Unlike countreads we only have one env/bin to run ucsc tracks so we do not need scombo but can directly overwrite combo
+#combo = combo.split(os.sep)[0]+os.sep  # Unlike countreads we only have one env/bin to run ucsc tracks so we do not need scombo but can directly overwrite combo
 
 wildcard_constraints:
     type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup",
-    combo=combo
+    combo=scombo                # Only needed for ucsc.smk
 
 rule themall:
-    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re'], combo=combo) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'], combo=combo)
+    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re'], combo=scombo) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'], combo=scombo)
 
 checklist = list()
-checklist2 = list()
 for file in samplecond(SAMPLES,config):
     checktype = ['sorted', 'unique'] if not rundedup else ['sorted_dedup', 'sorted_unique_dedup']
     for type in checktype:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.bed.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
-if all(checklist):
-    rule BamToBed:
-        input:  "BED/{combo}{file}_mapped_{type}.bed.gz"
-        output: "UCSC/{combo}{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/UCSC/{combo}{file}_{type}_linkbed.log"
-        conda:  "nextsnakes/envs/base.yaml"
-        threads: 1
-        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
-        shell:  "ln -s {params.abs} {output}"
-elif all(checklist2):
-    rule BamToBed:
-        input:  "PEAKS/{combo}{file}_mapped_{type}.bed.gz"
-        output: "UCSC/{combo}{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/UCSC/{combo}{file}_{type}_linkbed.log"
-        conda:  "nextsnakes/envs/base.yaml"
-        threads: 1
-        params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
-        shell:  "ln -s {params.abs} {output}"
-else:
+if not all(checklist):
     if not stranded or (stranded == 'fr' or stranded == 'ISF') :
         rule BamToBed:
             input:  "MAPPED/{combo}{file}_mapped_{type}.bam",
-            output: "UCSC/{combo}{file}_mapped_{type}.bed.gz",
+            output: "BED/{combo}{file}_mapped_{type}.bed.gz",
             log:    "LOGS/UCSC/{combo}{file}_{type}_ucscbamtobed.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
@@ -45,7 +25,7 @@ else:
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
             input:  "MAPPED/{combo}{file}_mapped_{type}.bam",
-            output: "UCSC/{combo}{file}_mapped_{type}.bed.gz",
+            output: "BED/{combo}{file}_mapped_{type}.bed.gz",
             log:    "LOGS/UCSC/{combo}{file}_{type}_ucscbamtobed.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
@@ -74,34 +54,12 @@ checklist2 = list()
 for file in samplecond(SAMPLES,config):
     for type in ['sorted','unique']:
         for orient in ['fw','rw']:
-            checklist.append(os.path.isfile(os.path.abspath('BED/'+combo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
-            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+combo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+scombo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
 
-if all(checklist):
+if not all(checklist):
     rule BedToBedg:
-        input:  "BED/{combo}{file}_mapped_{type}.{orient}.bedg.gz",
-                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
-        output: "UCSC/{combo}{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{combo}{file}_{type}_{orient}_ucscbedtobedgraph.log"
-        conda:  "nextsnakes/envs/ucsc.yaml"
-        threads: 1
-        params: abs = lambda wildcards: os.path.abspath('BED/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
-        shell:  "ln -s {params.abs} {output}"
-
-elif all(checklist2):
-    rule BedToBedg:
-        input:  "PEAKS/{combo}{file}_mapped_{type}.{orient}.bedg.gz",
-                expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
-        output: "UCSC/{combo}{file}_mapped_{type}.{orient}.bedg.gz"
-        log:    "LOGS/UCSC/{combo}{file}_{type}_{orient}_ucscbedtobedgraph.log"
-        conda:  "nextsnakes/envs/ucsc.yaml"
-        threads: 1
-        params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.'+wildcards.orient+'.bedg.gz')
-        shell:  "ln -s {params.abs} {output}"
-
-else:
-    rule BedToBedg:
-        input:  bed = "UCSC/{combo}{file}_mapped_{type}.bed.gz",
+        input:  bed = "BED/{combo}{file}_mapped_{type}.bed.gz",
                 fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "UCSC/{combo}{file}_mapped_{type}.fw.bedg.gz",
