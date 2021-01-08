@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan  8 10:40:18 2021 (+0100)
+# Last-Updated: Fri Jan  8 14:40:20 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2591
+#     Update #: 2593
 # URL:
 # Doc URL:
 # Keywords:
@@ -730,7 +730,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     sconf[subwork+'BIN'] = toolbin
 
                     # Add variable for combination string
-                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n'+'\nscombo = \''+str(envlist[i])+os.sep+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2"\n')
+                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n'+'\nscombo = \''+str(envlist[i])+os.sep+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                     subjobs.append('\n\n')
                     subconf.update(sconf)
 

@@ -1,7 +1,6 @@
 #combo = combo.split(os.sep)[0]+os.sep  # Unlike countreads we only have one env/bin to run ucsc tracks so we do not need scombo but can directly overwrite combo
 
 wildcard_constraints:
-    type="sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup",
     combo=scombo                # Only needed for ucsc.smk
 
 rule themall:
@@ -9,7 +8,7 @@ rule themall:
 
 checklist = list()
 for file in samplecond(SAMPLES,config):
-    checktype = ['sorted', 'unique'] if not rundedup else ['sorted_dedup', 'sorted_unique_dedup']
+    checktype = ['sorted', 'unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']
     for type in checktype:
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
