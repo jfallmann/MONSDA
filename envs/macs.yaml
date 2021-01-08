@@ -30,6 +30,7 @@ dependencies:
   - gxx_impl_linux-64=9.3.0
   - gxx_linux-64=9.3.0
   - harfbuzz=2.7.4
+  - htslib=1.11
   - icu=68.1
   - jpeg=9d
   - kernel-headers_linux-64=2.6.32
@@ -38,6 +39,7 @@ dependencies:
   - libblas=3.9.0
   - libcblas=3.9.0
   - libcurl=7.71.1
+  - libdeflate=1.6
   - libedit=3.1.20191231
   - libev=4.33
   - libffi=3.3
@@ -75,6 +77,7 @@ dependencies:
   - python_abi=3.8
   - r-base=4.0.3
   - readline=8.0
+  - samtools=1.11
   - sed=4.8
   - setuptools=51.0.0
   - sqlite=3.34.0

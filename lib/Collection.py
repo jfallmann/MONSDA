@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan  8 17:43:18 2021 (+0100)
+# Last-Updated: Fri Jan  8 18:17:26 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2596
+#     Update #: 2602
 # URL:
 # Doc URL:
 # Keywords:
@@ -167,10 +167,10 @@ def get_samples(config):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
@@ -197,10 +197,10 @@ def get_samples_postprocess(config, subwork):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
@@ -280,8 +280,8 @@ def sampleslong(config):
         tosearch.append(k)
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
-        for x in list(set(getFromDict(config['SETTINGS'],search)[0]['SAMPLES'])):
-            ret.append(os.path.join(str.join(os.sep,search),x))
+        for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES'])):
+            ret.append(os.path.join(str.join(os.sep, search), x))
     ret= list(set(ret))
     log.debug(logid+str(ret))
     return ret
@@ -306,27 +306,27 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     configs = list()
     for condition in conditions:
         try:
-            env = str(subDict(config[subwork],condition)[stage+'ENV'])
+            env = str(subDict(config[subwork], condition)[stage+'ENV'])
         except:
             if 'TOOLS' not in config[subwork]:
                 log.error('No tool environment found for '+subwork+'! Either key ENV or TOOLS must be set for '+str(condition)+'!')
             env = ''
         try:
-            exe = str(subDict(config[subwork],condition)[stage+'BIN'])
+            exe = str(subDict(config[subwork], condition)[stage+'BIN'])
         except:
             if 'TOOLS' not in config[subwork]:
                 log.error('No tool binary found for '+subwork+'! Either key BIN or TOOLS must be set for '+str(condition)+'!')
             exe = ''
 
         tempconf = NestedDefaultDict()
-        tempconf['SAMPLES'] = subDict(config['SETTINGS'],condition)['SAMPLES']
+        tempconf['SAMPLES'] = subDict(config['SETTINGS'], condition)['SAMPLES']
         if env != '' and exe != '':
-            toollist.append([env,exe])
+            toollist.append([env, exe])
             tempconf[subwork+'ENV'] = env
             tempconf[subwork+'BIN'] = exe
 
         try:
-            for key in ['BINS','MAXTHREADS']:
+            for key in ['BINS', 'MAXTHREADS']:
                 tempconf[key] = config[key]
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -715,7 +715,10 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 envs = envlist[i].split('-')
 
                 log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
-                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                if subwork in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
+                else:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
 
                 if listoftools is None:
                     log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
@@ -1111,7 +1114,7 @@ def set_pairings(samples, config):
         for k, v in pairlist.items():
             for x in samples:
                 if k in x:
-                    ret.extend(samplecond([x],config))
+                    ret.extend(samplecond([x], config))
     else:
         return samples
     log.debug(logid+'return: '+str(ret))
@@ -1123,14 +1126,14 @@ def get_pairing(sample, stype, config, samples, scombo=''):
     logid = scriptname+'.Collection_get_pairings: '
     pairlist = config['PEAKS'].get('COMPARABLE')
     matching = ''
-    log.debug(logid+'PAIRLIST: '+str(pairlist)+' SAMPLE: '+str(sample))
+    log.debug(logid+'PAIRLIST: '+str(pairlist)+' SAMPLE: '+str(sample)+' SAMPLES: '+str(samples)+' Combo: '+str(scombo))
     if pairlist:
         for k, v in pairlist.items():
             if k in sample:
                 for x in samples:
                     if v in x:
                         log.debug(logid+'Match found: '+str(v)+' : '+str(x))
-                        matching = samplecond([x], config)[0].replace('MAPPED/','')
+                        matching = samplecond([x], config)[0].replace('MAPPED/', '')
                         log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
         log.debug(logid+'-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam')
         return '-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam'
