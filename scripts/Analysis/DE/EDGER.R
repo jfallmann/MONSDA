@@ -1,19 +1,34 @@
-
 suppressPackageStartupMessages({
     require(BiocParallel)
     require(dplyr)
     require(edgeR)
 })
 
-args <- commandArgs(trailingOnly = TRUE)
+options(echo=TRUE)
 
+## ARGS
+args <- commandArgs(trailingOnly = TRUE)
 anname          <- args[1]
 countfile       <- args[2]
-outdir          <- args[3]
-cmp             <- args[4]
-availablecores  <- as.integer(args[5])
+gtf             <- args[3]
+outdir          <- args[4]
+cmp             <- args[5]
+availablecores  <- as.integer(args[6])
+pval_cut        <- args[7]
+lfc_cut         <- args[8]
+print(args)
 
-## Gives Colors for MDS Plot
+## FUNCS
+get_gene_name <- function(id, df){
+  name_list <- df$gene_name[df['gene_id'] == id]
+  if(length(unique(name_list)) == 1){
+    return(name_list[1])
+  }else{
+    message(paste("WARNING: ambigous gene id: ",id))
+    return (paste("ambigous",id,sep="_"))
+  }
+}
+
 RainbowColor <- function(groups){
   groupsAsNumbers <- as.numeric(groups)
   spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
@@ -24,14 +39,15 @@ RainbowColor <- function(groups){
   return(cl)
 }
 
+### SCRIPT
+print(paste('Run EdgeR DE with ',availablecores,' cores',sep=''))
 
-### MAIN ###
-############
-
-## set thread-usage
+# set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
-print(paste('Will run EdgeR DE with ',availablecores,' cores',sep=''))
+# load gtf
+gtf.rtl <- rtracklayer::import(gtf)
+gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
@@ -55,7 +71,6 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 
 ## get genes names out
 genes <- rownames(countData)
-
 dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genes)
 
 ## filter low counts
@@ -128,16 +143,20 @@ png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
 
+comparison_objs <- list()
+
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
+    BPPARAM = MulticoreParam(workers=availablecores)
+
     print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
 
-                                        # determine contrast
+        # determine contrast
         A <- strsplit(contrast_groups[[1]][1], "\\+")
         B <- strsplit(contrast_groups[[1]][2], "\\+")
         minus <- 1/length(A[[1]])*(-1)
@@ -151,30 +170,38 @@ for(contrast in comparisons[[1]]){
         }
         contrast <- as.numeric(contrast[,1])
 
-                                        # likelihood-ratiotest
-        lrt <- glmLRT(fit, contrast=contrast)
 
-                                        # create sorted tables
-        tops <- topTags(lrt, n=nrow(lrt$table), sort.by="logFC")
-        write.table(as.data.frame(tops), gzfile(paste("EDGER_DE_",contrast_name,"_genes_logFC-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
-        tops <- topTags(lrt, n=nrow(lrt$table), sort.by="PValue")
-        write.table(as.data.frame(tops), gzfile(paste("EDGER_DE_",contrast_name,"_genes_pValue-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
+        # # reduce data for testing
+        # fit <- fit[1:250,]
 
-        ## plot lFC vs CPM
-        out <- paste("EDGER_DE_",contrast_name,"_MD.png",sep="")
-        png(out, width = 400, height = 400)
-        plotMD(lrt, main=contrast_name)
-        abline(h=c(-1, 1), col="blue")
-        dev.off()
+        # TESTING
+        # lrt <- glmLRT(fit, contrast=contrast) ## likelihood-ratiotest
+        qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
 
-        save.image(file = paste("EDGER_DE",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-        
+        # add comp object to list for image
+        comparison_objs <- append(comparison_objs, qlf)
+
+        # # Add gene names  (check how gene_id col is named )
+        # qlf$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
+
+        # create results table
+        write.table(as.data.frame(qlf), gzfile(paste("DE","EDGER",contrast_name,"results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+        # ## plot lFC vs CPM
+        # out <- paste("EDGER_DE_",contrast_name,"_MD.png",sep="")
+        # png(out, width = 400, height = 400)
+        # plotMD(qlf, main=contrast_name)
+        # abline(h=c(-1, 1), col="blue")
+        # dev.off()
+
+        # cleanup
+        rm(qlf, BPPARAM)
+        print(paste('cleanup done for ', contrast_name, sep=''))
+
     }, error=function(e){
-        rm(contrast,lrt,tops)
         print(warnings)
-        file.create(paste("EDGER_DE_",contrast_name,"_genes_logFC-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DE_",contrast_name,"_genes_pValue-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DE_",contrast_name,"_MD.png",sep=""))
+        file.create(paste("DE","EDGER",contrast_name,"results.tsv.gz", sep="_"))
+        # file.create(paste("EDGER_DE_",contrast_name,"_MD.png",sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }

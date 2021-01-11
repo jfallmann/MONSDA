@@ -6,8 +6,8 @@ comparison = comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input: tbl  = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
-           sigtbl  = expand("{outdir}Sig_DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
+    input: tbl  = expand("{outdir}DEU_DEXSEQ_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
+           sigtbl  = expand("{outdir}Sig_DEU_DEXSEQ_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
            plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=compstr),
            html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=compstr),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
@@ -72,4 +72,6 @@ rule filter_significant_dexseq:
     log:    expand("LOGS/{outdir}filter_dexseq.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}DEXSeq_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] <= -1.5 ||$F[9] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "for i in {outdir}DEU_DEXSEQ_*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut} ||$F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

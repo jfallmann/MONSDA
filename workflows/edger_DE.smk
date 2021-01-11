@@ -8,12 +8,13 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 rule themall:
     input:  all = expand("{outdir}EDGER_DE_All_Conditions_MDS.png", outdir=outdir),
             allsum = expand("{outdir}EDGER_DE_All_Conditions_sum_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}EDGER_DE_All_Conditions_normalized.tsv.gz", outdir=outdir),
+            tbl = expand("{outdir}DE_EDGER_DE_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DE_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DE_All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            sigdift = expand("{outdir}Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["pValue-sorted"]),
-            plot = expand("{outdir}EDGER_DE_{comparison}_MD.png", outdir=outdir, comparison=compstr),
+            # dift = expand("{outdir}EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
+            # sigdift = expand("{outdir}Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["pValue-sorted"]),
+            # plot = expand("{outdir}EDGER_DE_{comparison}_MD.png", outdir=outdir, comparison=compstr),
+            res = expand("{outdir}DE_EDGER_{comparison}_results.tsv.gz", outdir=outdir, comparison = compstr),
             session = expand("{outdir}EDGER_DE_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
@@ -49,8 +50,9 @@ rule run_edgerDE:
             tbl = rules.themall.input.tbl,
             bcv = rules.themall.input.bcv,
             qld = rules.themall.input.qld,
-            dift = rules.themall.input.dift,
-            plot = rules.themall.input.plot,
+            res = rules.themall.input.res,
+            # dift = rules.themall.input.dift,
+            # plot = rules.themall.input.plot,
             session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
@@ -58,8 +60,9 @@ rule run_edgerDE:
     params: bins   = str.join(os.sep,[BINS,DEBIN]),
             outdir = outdir,
             compare = comparison,
+            ref = ANNOTATION
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'DTU')['OPTIONS'][2].items())
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} {params.cpara} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {threads} {params.cpara} 2> {log} "
 
 rule filter_significant_edgerDE:
     input:  dift = rules.run_edgerDE.output.dift
@@ -67,4 +70,6 @@ rule filter_significant_edgerDE:
     log:    expand("LOGS/{outdir}filter_edgerDE.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}EDGER_DE*pValue-sorted.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "for i in {outdir}EDGER_DE*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

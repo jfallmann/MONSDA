@@ -6,7 +6,19 @@ suppressPackageStartupMessages({
   library(DEXSeq)
   library(DESeq2)
   library(edgeR)
+  library(rtracklayer)
 })
+
+
+get_gene_name <- function(id, df){
+  name_list <- df$gene_name[df['gene_id'] == id]
+  if(length(unique(name_list)) == 1){
+    return(name_list[1])
+  }else{
+    message(paste("WARNING: ambigous gene id: ",id))
+    return (paste("ambigous",id,sep="_"))
+  }
+}
 
 args <- commandArgs(trailingOnly = TRUE)
 anname  <- args[1]
@@ -16,6 +28,9 @@ cmp     <- args[4]
 cores   <- as.integer(args[5])
 
 
+# load gtf
+gtf.rtl <- rtracklayer::import(gtf)
+gtf.df <- as.data.frame(gtf.rtl)
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
@@ -96,10 +111,10 @@ if (length(levels(types)) > 1){
 }
 
 
+setwd(outdir)
+
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
-
-  setwd(outdir)
 
   contrast_name <- strsplit(contrast,":")[[1]][1]
   contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
@@ -142,29 +157,33 @@ for(contrast in comparisons[[1]]){
   qval <- perGeneQValue(dxr)
   dxr.g <- data.frame(gene=names(qval),qval)
 
-  columns <- c("featureID","groupID","pvalue")
+  columns <- c("featureID","groupID","pvalue","padj")
   dxr <- as.data.frame(dxr[,columns])
+
+  dxr$Gene  <- lapply(dxr$groupID, function(x){get_gene_name(x,gtf.df)})
+  dxr <- dxr[,c(1,2,5,3,4)]
+  dxr <- apply(dxr,2,as.character)
 
   write.table(as.data.frame(dxr), gzfile(paste("DTU_DEXSEQ",contrast_name,"results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-  # stageR following DEXSeq
-  strp <- function(x) substr(x,1,15)
-  pConfirmation <- matrix(dxr$pvalue,ncol=1)
-  dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
-  pScreen <- qval
-  names(pScreen) <- strp(names(pScreen))
-  tx2gene <- as.data.frame(dxr[,c("featureID", "groupID")])
-  for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
+  # # stageR following DEXSeq
+  # strp <- function(x) substr(x,1,15)
+  # pConfirmation <- matrix(dxr$pvalue,ncol=1)
+  # dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
+  # pScreen <- qval
+  # names(pScreen) <- strp(names(pScreen))
+  # tx2gene <- as.data.frame(dxr[,c("featureID", "groupID")])
+  # for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
+  #
+  # stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
+  #                       pScreenAdjusted=TRUE, tx2gene=tx2gene)
+  # stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
+  # suppressWarnings({
+  #   dex.padj <- getAdjustedPValues(stageRObj, order=FALSE,
+  #                                  onlySignificantGenes=TRUE)
+  # })
 
-  stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
-                        pScreenAdjusted=TRUE, tx2gene=tx2gene)
-  stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
-  suppressWarnings({
-    dex.padj <- getAdjustedPValues(stageRObj, order=FALSE,
-                                   onlySignificantGenes=TRUE)
-  })
-
-  write.table(as.data.frame(dex.padj), gzfile(paste("DTU_DEXSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+  # write.table(as.data.frame(dex.padj), gzfile(paste("DTU_DEXSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 }
 

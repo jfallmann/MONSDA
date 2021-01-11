@@ -597,7 +597,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                                             line = re.sub('COMPARISON',comparison,line)
                                             write_file.write(line)
                                 else:
-                                    write_file.write(line)
+                                    for line in read_file.readlines():
+                                        line = re.sub('COMPARISON',comparison,line)
+                                        write_file.write(line)
 
             log.debug(logid+'make SUMMARY of postprocessing analyses')
             subconf = NestedDefaultDict()

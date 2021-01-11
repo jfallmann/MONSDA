@@ -11,9 +11,9 @@ rule themall:
             tbl = expand("{outdir}EDGER_DAS_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DAS_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DAS_All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            sigdift = expand("{outdir}Sig_EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}EDGER_DAS_{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
+            res = expand("{outdir}DAS_EDGER_{comparison}_results_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
+            sigdift = expand("{outdir}Sig_DAS_EDGER_{comparison}_results_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
+            # tops = expand("{outdir}EDGER_DAS_{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
@@ -49,8 +49,8 @@ rule run_edgerDAS:
             tbl = rules.themall.input.tbl,
             bcv = rules.themall.input.bcv,
             qld = rules.themall.input.qld,
-            dift = rules.themall.input.dift,
-            tops = rules.themall.input.tops,
+            res = rules.themall.input.res,
+            # tops = rules.themall.input.tops,
             session = rules.themall.input.session
     log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
@@ -66,4 +66,6 @@ rule filter_significant_edgerDAS:
     log:    expand("LOGS/{outdir}filter_edgerDAS.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}EDGER_DAS*_diffSplice_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "for i in {outdir}DAS_EDGER*_results_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

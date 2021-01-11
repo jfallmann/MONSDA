@@ -3,7 +3,7 @@
 ## COMPARISON
 
 ### Read-in Files {.tabset}
-```{r, files, include = TRUE, echo = TRUE, message = TRUE, warning = TRUE}
+```{r, DTU_DRIMSEQ_files, include = TRUE, echo = TRUE, message = TRUE, warning = TRUE}
 f.1 <- 'DTU/DRIMSEQ/DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
 f.2 <- 'DTU/DRIMSEQ/DTU_DRIMSEQ_COMPARISON_results_proportions.tsv.gz'
 f.3 <- 'DTU/DRIMSEQ/Sig_DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
@@ -13,7 +13,7 @@ f.6 <- 'DTU/DRIMSEQ/Sig_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
 f.7 <- 'DTU/DRIMSEQ/SigDOWN_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
 f.8 <- 'DTU/DRIMSEQ/SigUP_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
 ```
-```{r, read_tables, include = TRUE, echo = FALSE, message = FALSE, warning = TRUE}
+```{r, DTU_DRIMSEQ_read_tables, include = TRUE, echo = FALSE, message = FALSE, warning = TRUE}
 library(tidyr)
 all_genes       <- tidyr::drop_na(read.table(gzfile(f.1), header = TRUE))
 proportions     <- tidyr::drop_na(read.table(gzfile(f.2), header = TRUE))
@@ -27,55 +27,55 @@ sig_up_transcripts    <- tidyr::drop_na(read.table(gzfile(f.8), header = TRUE))
 ```
 
 #### f.1
-```{r, DT_tables_1, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_1, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(all_genes)
 ```
 
 #### f.2
-```{r, DT_tables_2, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_2, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(proportions)
 ```
 #### f.3
-```{r, DT_tables_3, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_3, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_all_genes)
 ```
 
 #### f.4
-```{r, DT_tables_4, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_4, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_down_genes)
 ```
 
 #### f.5
-```{r, DT_tables_5, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_5, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_up_genes)
 ```
 
 #### f.6
-```{r, DT_tables_6, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_6, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_all_transcripts)
 ```
 
 #### f.7
-```{r, DT_tables_7, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_7, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_down_transcripts)
 ```
 
 #### f.8
-```{r, DT_tables_8, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+```{r, DTU_DRIMSEQ_tables_8, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
 library(DT)
 DT::datatable(sig_up_transcripts)
 ```
 
 ### Overview of DEG and DTU found
 
-```{r, echo=FALSE, results = 'asis', warning = FALSE}
+```{r, DTU_DRIMSEQ_overviewTable, echo=FALSE, results = 'asis', warning = FALSE}
 library(knitr)
 library(kableExtra)
 
@@ -107,7 +107,7 @@ kable(overview, caption = "Overview DE numbers") %>%
                         "Number of Genes with DTU found by DRIMSeq" = 1))
 ```
 
-```{r, echo=FALSE, results = 'asis', warning = FALSE}
+```{r, DTU_DRIMSEQ_sigTable, echo=FALSE, results = 'asis', warning = FALSE}
 library(knitr)
 library(kableExtra)
 
@@ -115,7 +115,7 @@ kable(sig_all_genes[,c(7,1,2,3)], caption = "significant DEG's by adjusted P-val
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T)
 ```
 
-```{r, echo=FALSE, results = 'asis', warning = FALSE}
+```{r, DTU_DRIMSEQ_DRIMTable, echo=FALSE, results = 'asis', warning = FALSE}
 library(knitr)
 library(kableExtra)
 library(tidyr)
@@ -127,13 +127,13 @@ kable(df, caption = "Genes with DTU found by DRIMSeq",  row.names = F) %>%
 
 ### DTU Plots
 
-```{r,echo=FALSE}
+```{r, DTU_DRIMSEQ_definePlotHeight, echo=F, warning = T}
 of_interest <- all_genes[all_genes$adj_pvalue < 0.05,]
-plot_height <- length(which(!is.na(of_interest$gene_id)))/5
+plot_height <- 2 * round(nrow(of_interest)/2)
 ```
 
 
-```{r plot, fig.width=10, fig.height=plot_height, echo=FALSE, message = TRUE, warning = FALSE}
+```{r DTU_DRIMSEQ_DTUplots, fig.width=10, fig.height=plot_height, echo=FALSE, message = TRUE, warning = FALSE}
 suppressPackageStartupMessages({
   library(tidyverse)
   library(ggplot2)
@@ -141,10 +141,7 @@ suppressPackageStartupMessages({
   library(plyr)
 })
 
-
-of_interest <- all_genes[all_genes$adj_pvalue < 0.05,]
-
-limit <- 10
+limit <- 1000
 
 plotlist <- list()
 counter=1
@@ -178,3 +175,4 @@ for(gene in of_interest$Gene){
 }
 margin = theme(plot.margin = unit(c(1.5,0.5,0,0.5), "cm"))
 grid.arrange(grobs = lapply(plotlist, "+", margin),ncol = 2)
+```
