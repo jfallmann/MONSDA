@@ -8,9 +8,12 @@ suppressPackageStartupMessages({
     require(DEXSeq)
 })
 
-#define notin
+options(echo=TRUE)
+
+## define notin
 `%notin%` = Negate(`%in%`)
 
+## ARGS
 args <- commandArgs(trailingOnly = TRUE)
 
 anname    <- args[1]
@@ -20,9 +23,18 @@ outdir    <- args[4]
 cmp       <- args[5]
 availablecores <- as.integer(args[6])
 
-### MAIN ###
-############
+## FUNCS
+get_gene_name <- function(id, df){
+  name_list <- df$gene_name[df['gene_id'] == id]
+  if(length(unique(name_list)) == 1){
+    return(name_list[1])
+  }else{
+    message(paste("WARNING: ambigous gene id: ",id))
+    return (paste("ambigous",id,sep="_"))
+  }
+}
 
+### SCRIPT
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
@@ -140,17 +152,17 @@ for(contrast in comparisons[[1]]){
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    print(paste("Comparing ",contrast_name, sep=""))
-
     BPPARAM = MulticoreParam(workers=availablecores)
 
-                                        #initialize empty objects
+    print(paste("Comparing ",contrast_name, sep=""))
+
+    # initialize empty objects
     dxdpair=""
     dxr1=""
 
     tryCatch({
 
-                                                # determine contrast
+        # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
         C <- c(A,B)
@@ -170,24 +182,21 @@ for(contrast in comparisons[[1]]){
 
         dxr1 = DEXSeqResults( dxdpair )
 
-        csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
+        csvout <- paste('DEU','DEXSEQ',contrast_name,'results.tsv.gz', sep='_')
         write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE, quote=F)
 
         htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
+        # cleanup
+        rm(dxdpair, dxr1)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
-        save.image(file = paste("DEXSeq",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-
-        rm(dxdpair)
-        rm(dxr1)
-        
     }, error=function(e){
         print(warnings)
         file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
-        csvout <- paste('DEXSeq_',contrast_name,'.tsv.gz', sep='')
+        csvout <- paste('DEU','DEXSEQ',contrast_name,'results.tsv.gz', sep='_')
         file.create(csvout)
         pathout <- paste('DEXSeqReport',contrast_name,sep='_')
         htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
@@ -197,4 +206,4 @@ for(contrast in comparisons[[1]]){
     })
 }
 
-save.image(file = "DEXSeq_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = "DEXSeq_DEU_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

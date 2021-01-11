@@ -1,5 +1,5 @@
 DEBIN, DEENV = env_bin_from_config3(config,'DE')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DE/DESEQ2/"
 comparison = comparable_as_string2(config,'DE')
@@ -7,7 +7,7 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  plot = expand("{outdir}DESeq2_{comparison}_MA.pdf", outdir=outdir, comparison=compstr),
-            tbl  = expand("{outdir}DESeq2_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
+            tbl  = expand("{outdir}DE_DESEQ2_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
             sigtbl  = expand("{outdir}Sig_DESeq2_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
             heat = expand("{outdir}DESeq2_heatmap{i}.pdf", outdir=outdir,i=[1,2,3,"_samplebysample"]),
             pca  = expand("{outdir}DESeq2_PCA.pdf", outdir=outdir),
@@ -17,15 +17,15 @@ rule themall:
             session = expand("{outdir}DESeq2_SESSION.gz", outdir=outdir)# R object?
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DE_deseq/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DE/Featurecounts_DE/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecounts_deseq2_unique.log"
+            cts   = "DE/Featurecounts_DE/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecounts_deseq2_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DE")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DE", DEENV)['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
@@ -66,4 +66,6 @@ rule filter_significant_deseq2:
     log:    expand("LOGS/{outdir}filter_deseq2.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    shell: "set +o pipefail;for i in {outdir}DESeq2_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| head -n1 |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip >> {outdir}Sig_$fn && zcat $i| head -n1 |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip >> {outdir}SigUP_$fn && zcat $i|head -n1 |gzip > {outdir}SigDOWN_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip >> {outdir}SigDOWN_$fn; else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "set +o pipefail; for i in {outdir}DE_DESEQ2*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pvcut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn; else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

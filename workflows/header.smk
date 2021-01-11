@@ -10,6 +10,7 @@ import tempfile
 import traceback as tb
 from collections import defaultdict
 from itertools import combinations
+import re
 
 cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../nextsnakes/lib"),os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 for x in cmd_subfolder:
@@ -60,7 +61,7 @@ if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
-SETUP = keysets_from_dict(config["SAMPLES"])[0]
+SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
 SETS = os.sep.join(SETUP)
 SETTINGS = subDict(config['SETTINGS'], SETUP)
 
@@ -71,10 +72,10 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
-CLIP = SETTINGS.get('CLIP')
+IP = SETTINGS.get('IP')
 rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
-    log.info('DEDUPLICATION ENABLED')
+    log.debug('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -99,18 +100,20 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
-    MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX
-        log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
-    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    if not INDEX:
+        INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
     if PRE:
         PREFIX = PRE
-
+    if not PREFIX:
+        PREFIX = ''
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
             INDEX2 = str(os.path.abspath(INDICES[1]))
@@ -133,9 +136,9 @@ if 'PEAKS' in config:
         ANNOTATION = ANNOPEAK
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
-    if not CLIP:
-        CLIP = checkclip(SAMPLES, config)
-    log.info(logid+'Running Peak finding for '+CLIP+' protocol')
+    if not IP:
+        IP = check_ip(SAMPLES, config)
+    log.info(logid+'Running Peak finding for '+IP+' protocol')
 
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:
@@ -168,3 +171,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
     log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
+
+combo = ''
+
+####HEADER ENDS HERE####

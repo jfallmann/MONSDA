@@ -1,13 +1,13 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DEU/DEXSEQ/"
 comparison = comparable_as_string2(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input: tbl  = expand("{outdir}DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
-           sigtbl  = expand("{outdir}Sig_DEXSeq_{comparison}.tsv.gz", outdir=outdir, comparison=compstr),
+    input: tbl  = expand("{outdir}DEU_DEXSEQ_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
+           sigtbl  = expand("{outdir}Sig_DEU_DEXSEQ_{comparison}_results.tsv.gz", outdir=outdir, comparison=compstr),
            plot = expand("{outdir}DEXSeq_{comparison}_DispEsts.pdf", outdir=outdir, comparison=compstr),
            html = expand("{outdir}DEXSeqReport_{comparison}/DEXSeq_{comparison}.html", outdir=outdir, comparison=compstr),
            session = expand("{outdir}DEXSeq_SESSION.gz", outdir=outdir)
@@ -24,16 +24,16 @@ rule prepare_deu_annotation:
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
 rule featurecount_dexseq_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam",
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DEU/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecounts_dexseq_unique.log"
+            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
-            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU")['OPTIONS'][0].items()),
+            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DEU", COUNTENV)['OPTIONS'][0].items()),
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
@@ -72,4 +72,6 @@ rule filter_significant_dexseq:
     log:    expand("LOGS/{outdir}filter_dexseq.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    shell: "set +o pipefail;for i in {outdir}DEXSeq_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i|head -n1 |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] <= -1.5 ||$F[9] >= 1.5) ){{print}}' |gzip >> {outdir}Sig_$fn && zcat $i|head -n1 |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] >= 1.5) ){{print}}' |gzip >> {outdir}SigUP_$fn && zcat $i|head -n1 |gzip > {outdir}SigDOWN_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < 0.05 && ($F[9] <= -1.5) ){{print}}' |gzip >> {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "set +o pipefail; for i in {outdir}DEU_DEXSEQ_*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut} ||$F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[9]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

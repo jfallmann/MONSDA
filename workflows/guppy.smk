@@ -1,4 +1,4 @@
-CALLERBIN, CALLERENV = env_bin_from_config2(SAMPLES,config,'BASECALL')
+CALLERBIN, CALLERENV = env_bin_from_config3(config,'BASECALL')
 
 wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES))
@@ -15,7 +15,7 @@ rule call_base:
     conda:  "nextsnakes/envs/"+CALLERENV+".yaml"
     threads: MAXTHREAD
     params: caller = CALLERBIN,
-            cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'BASECALL')['OPTIONS'][0].items()),
+            cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'][0].items()),
             f5dir = lambda wildcards, input: os.path.dirname(input.f5),
             f5file = lambda wildcards, input: os.path.basename(input.f5),
             fqdir = lambda wildcards, output: os.path.dirname(output.fq),
