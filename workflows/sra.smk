@@ -1,10 +1,10 @@
 SAMPLES = download_samples(config)
-RAWBIN, RAWENV = env_bin_from_config2(SAMPLES,config,'RAW')
+RAWBIN, RAWENV = env_bin_from_config3(config,'RAW')
 
 if paired == 'paired':
     log.info('Downloading paired fastq files from SRA')
     rule themall:
-        input: expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile = SAMPLES, read=['R1','R2'])
+        input: expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
 
     rule get_from_sra:
         output: fq = expand("FASTQ/{{rawfile}}_{read}.fastq.gz", read=['R1','R2'])

@@ -86,29 +86,6 @@ dge <- dge[keep, , keep.lib.sizes=FALSE]
 ## normalize with TMM
 dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
 
-## create file normalized table
-tmm <- as.data.frame(cpm(dge))
-colnames(tmm) <- t(dge$samples$samples)
-tmm$ID <- dge$genes$genes
-tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-
-setwd(outdir)
-
-write.table(as.data.frame(tmm), gzfile("EDGER_DAS_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
-
-## create file MDS-plot with and without sumarized replicates
-out <- "EDGER_DAS_All_Conditions_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(dge$samples$group)
-plotMDS(dge, col=colors)
-dev.off()
-DGEsum <- sumTechReps(dge, ID=groups)
-out <- "EDGER_DAS_All_Conditions_sum_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(DGEsum$samples$group)
-plotMDS(DGEsum, col=colors)
-dev.off()
-
 ##name types and levels for design
 bl <- sapply("batch",paste0,levels(batches)[-1])
 tl <- sapply("type",paste0,levels(types)[-1])
@@ -130,6 +107,35 @@ if (length(levels(types)) > 1){
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
     }
+}
+
+print(paste('FITTING DESIGN: ',design, sep=""))
+
+
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
+
+setwd(outdir)
+
+write.table(as.data.frame(tmm), gzfile("EDGER_DAS_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
+
+## create file MDS-plot with and without sumarized replicates
+out <- "EDGER_DAS_All_Conditions_MDS.png"
+png(out, width = 400, height = 400)
+colors <- RainbowColor(dge$samples$group)
+plotMDS(dge, col=colors)
+dev.off()
+if (length(levels(groups)) > 2){
+    print("Will plot MDS for Count sums")
+    DGEsum <- sumTechReps(dge, ID=groups)
+    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
+    png(out, width = 400, height = 400)
+    colors <- RainbowColor(DGEsum$samples$group)
+    plotMDS(DGEsum, col=colors)
+    dev.off()
 }
 
 ## estimate Dispersion
@@ -191,6 +197,20 @@ for(contrast in comparisons[[1]]){
         write.table(as.data.frame(tops),gzfile(paste("DAS","EDGER",contrast_name,"results_simesTest.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
+<<<<<<< HEAD
+        write.table(as.data.frame(tops),gzfile(paste("EDGER_DAS_",contrast_name,"_diffSplice_exonTest.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
+
+                                        # create files diffSplicePlots
+        tops <- topSpliceDGE(sp, test="simes", n=10)
+        for(i in 1:10){
+            geneID <- tops$genes[i]
+            out <- paste("EDGER_DAS_",contrast_name,"_topSplice_simes_",i,".png",sep="")
+            png(out, width = 800, height = 400)
+            plotSpliceDGE(sp, geneid=geneID, genecol="genes")
+            dev.off()
+        }
+        save.image(file = paste("EDGER_DAS",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+=======
         write.table(as.data.frame(tops),gzfile(paste("DAS","EDGER",contrast_name,"results_exonTest.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # # create files diffSplicePlots
@@ -206,6 +226,7 @@ for(contrast in comparisons[[1]]){
         # cleanup
         rm(contrast,lrt,tops,BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
+>>>>>>> DTU
 
     }, error=function(e){
         print(warnings)

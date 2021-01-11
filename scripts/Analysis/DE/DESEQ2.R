@@ -28,14 +28,23 @@ get_gene_name <- function(id, df){
   }
 }
 
+<<<<<<< HEAD
+## set thread-usage
+BPPARAM = MulticoreParam(workers=availablecores)
+
+## Annotation
+=======
 ### SCRIPT
+>>>>>>> DTU
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
 sampleData <- as.data.frame(sampleData)
-#head(sampleData)
-comparison<-strsplit(cmp, ",")
+
+## Combinations of conditions
+comparison <- strsplit(cmp, ",")
+
+## readin counttable
 countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
-#head(countData)
 
 setwd(outdir)
 
@@ -69,13 +78,11 @@ dds <- DESeqDataSetFromMatrix(countData = countData,
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
-#print(head(dds))
 
 #run for each pair of conditions
-BPPARAM = MulticoreParam(workers=availablecores)
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
 
-    #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+#Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
 
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
@@ -84,7 +91,7 @@ pdf(paste("DESeq2","PCA.pdf",sep="_"))
 print(plotPCA(rld, intgroup=c('condition')))
 dev.off()
 
-    #We also write the normalized counts to file
+#We also write the normalized counts to file
 write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
 
@@ -123,8 +130,14 @@ for(contrast in comparison[[1]]){
         # # Add gene names  (check how gene_id col is named )
         # resOrdered$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
 
+<<<<<<< HEAD
+        save.image(file = paste("DESEQ2",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+
+        rm(res,resOrdered, BPPARAM)
+=======
         # write the table to a tsv file
         write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_")), sep="\t", row.names=FALSE, quote=F)
+>>>>>>> DTU
 
         # # plotMA
         # pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))

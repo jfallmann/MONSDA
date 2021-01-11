@@ -1,5 +1,5 @@
 DASBIN, DASENV = env_bin_from_config3(config,'DAS')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DAS/EDGER/"
 comparison = comparable_as_string2(config,'DAS')
@@ -7,7 +7,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  all = expand("{outdir}EDGER_DAS_All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}EDGER_DAS_All_Conditions_sum_MDS.png", outdir=outdir),
             tbl = expand("{outdir}EDGER_DAS_All_Conditions_normalized.tsv.gz", outdir=outdir),
             bcv = expand("{outdir}EDGER_DAS_All_Conditions_BCV.png", outdir=outdir),
             qld = expand("{outdir}EDGER_DAS_All_Conditions_QLDisp.png", outdir=outdir),
@@ -17,15 +16,15 @@ rule themall:
             session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("{outdir}Featurecounts_DAS_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
+            cts   = "DAS/Featurecounts_DAS/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecount_DAS_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno  = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS", COUNTENV)['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
@@ -45,7 +44,6 @@ rule run_edgerDAS:
     input:  tbl = rules.prepare_count_table.output.tbl,
             anno = rules.prepare_count_table.output.anno,
     output: all = rules.themall.input.all,
-            sum = rules.themall.input.allsum,
             tbl = rules.themall.input.tbl,
             bcv = rules.themall.input.bcv,
             qld = rules.themall.input.qld,
@@ -68,4 +66,4 @@ rule filter_significant_edgerDAS:
     threads: 1
     params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
             lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
-    shell: "for i in {outdir}DAS_EDGER*_results_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    shell: "set +o pipefail; for i in {outdir}DAS_EDGER*_results_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"

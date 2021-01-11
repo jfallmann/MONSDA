@@ -87,29 +87,6 @@ dge <- dge[keep, , keep.lib.sizes=FALSE]
 ## normalize with TMM
 dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
 
-## create file normalized table
-tmm <- as.data.frame(cpm(dge))
-colnames(tmm) <- t(dge$samples$samples)
-tmm$ID <- dge$genes$genes
-tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-
-setwd(outdir)
-
-write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
-
-## create file MDS-plot with and without sumarized replicates
-out <- "EDGER_DEU_All_Conditions_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(dge$samples$group)
-plotMDS(dge, col=colors)
-dev.off()
-DGEsum <- sumTechReps(dge, ID=groups)
-out <- "EDGER_DEU_All_Conditions_sum_MDS.png"
-png(out, width = 400, height = 400)
-colors <- RainbowColor(DGEsum$samples$group)
-plotMDS(DGEsum, col=colors)
-dev.off()
-
 ##name types and levels for design
 bl <- sapply("batch",paste0,levels(batches)[-1])
 tl <- sapply("type",paste0,levels(types)[-1])
@@ -131,6 +108,34 @@ if (length(levels(types)) > 1){
         design <- model.matrix(~0+groups, data=sampleData)
         colnames(design) <- levels(groups)
     }
+}
+
+print(paste('FITTING DESIGN: ',design, sep=""))
+
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
+
+setwd(outdir)
+
+write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
+
+## create file MDS-plot with and without sumarized replicates
+out <- "EDGER_DEU_All_Conditions_MDS.png"
+png(out, width = 400, height = 400)
+colors <- RainbowColor(dge$samples$group)
+plotMDS(dge, col=colors)
+dev.off()
+if (length(levels(groups)) > 2){
+    print("Will plot MDS for Count sums")
+    DGEsum <- sumTechReps(dge, ID=groups)
+    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
+    png(out, width = 400, height = 400)
+    colors <- RainbowColor(DGEsum$samples$group)
+    plotMDS(DGEsum, col=colors)
+    dev.off()
 }
 
 ## estimate Dispersion
@@ -199,6 +204,11 @@ for(contrast in comparisons[[1]]){
         rm(qlf, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
+<<<<<<< HEAD
+        save.image(file = paste("EDGER_DEU",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+
+=======
+>>>>>>> DTU
     }, error=function(e){
         print(warnings)
         file.create(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_"))

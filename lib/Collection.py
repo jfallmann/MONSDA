@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Nov  3 16:57:33 2020 (+0100)
+# Last-Updated: Mon Jan 11 17:41:26 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2184
+#     Update #: 2611
 # URL:
 # Doc URL:
 # Keywords:
@@ -62,11 +62,14 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import glob, os, snakemake
+import glob
+import os
+import snakemake
+import json
 import numpy as np
 import heapq
 import itertools
-from itertools import combinations
+from itertools import combinations, product
 from operator import itemgetter
 from natsort import natsorted, ns
 import traceback as tb
@@ -119,6 +122,7 @@ except Exception as err:
     )
     print(''.join(tbe.format()),file=sys.stderr)
 
+
 #Class
 class NestedDefaultDict(defaultdict):
     def __init__(self, *args, **kwargs):
@@ -135,44 +139,6 @@ class NestedDefaultDict(defaultdict):
 ########Snakemake Subs########
 ##############################
 
-# def check_run(func):
-#     @functools.wraps(func)
-#     def func_wrapper(*args, **kwargs):
-#         logid=scriptname+'.Collection_func_wrapper: '
-#         args_repr = [' | arg:\n'+repr(a) for a in args]
-#         kwargs_repr = [f" | kwarg:\n{k}={v!r}" for k, v in kwargs.items()]
-#         log.info(f"Calling:  {func.__name__}( ... )")
-#         counter = 1
-#         for arg in args:
-#             log.info(f" | arg{counter}:")
-#             if isinstance(arg, dict):
-#                 log.info(f" | {json.dumps(arg,indent=4)}")
-#             else:
-#                 log.info(f" | {arg}")
-#             counter+=1
-#         counter = 1
-#         for kwarg in kwargs:
-#             log.info(f" | arg{counter}:")
-#             log.info(f" | {kwarg}")
-#             counter+=1
-#         log.info("")
-#         # signature = "\n ".join(args_repr + kwargs_repr)
-#         # log.info(logid+f"\n\nCalling {func.__name__}(\n{signature})")
-#         try:
-#             value = func(*args, **kwargs)
-#             log.info(f" |>>> {func.__name__} returned:")
-#             if isinstance(value, dict):
-#                 log.info(f"{json.dumps(value,indent=4)}\n")
-#             log.info(f"{value}\n")
-#             return value
-#
-#         except Exception as err:
-#             exc_type, exc_value, exc_tb = sys.exc_info()
-#             tbe = tb.TracebackException(
-#                 exc_type, exc_value, exc_tb,
-#             )
-#             log.error(logid+''.join(tbe.format()))
-#     return func_wrapper
 
 def check_run(func):
     @functools.wraps(func)
@@ -189,19 +155,6 @@ def check_run(func):
             log.error(logid+''.join(tbe.format()))
     return func_wrapper
 
-@check_run
-def printable_dict(paramdict):
-    return(json.dumps(paramdict,indent=4))
-
-@check_run
-def sources(config):
-    logid = scriptname+'.Collection_sources: '
-    ret = list()
-    search =  [x[0] for x in keysets_from_dict(config["SOURCE"]) if x[0] != 'last']
-    if len(getFromDict(config['SAMPLES'],search)) > 0:
-        ret.extend(search)
-    log.debug(logid+str(ret))
-    return ret
 
 @check_run
 def get_samples(config):
@@ -222,10 +175,10 @@ def get_samples(config):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
@@ -234,18 +187,11 @@ def get_samples(config):
     log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
     return RETSAMPLES
 
-@check_run
-def get_values_rec(config):
-    for key, value in config.items():
-        if isinstance(value, dict):
-            yield from get_values_rec(value)
-        else:
-            yield value
 
 @check_run
-def get_samples_postprocess(config,subwork):
+def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
-    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork],conditiononly(x,config))) > 0 ]
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
@@ -259,10 +205,10 @@ def get_samples_postprocess(config,subwork):
         if f:
             f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
             if paired == 'paired':
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s),re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','',os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz','') for x in f])
+                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found, please check config file')
@@ -279,92 +225,75 @@ def download_samples(config):
     return SAMPLES
 
 @check_run
-def get_conditions(config):
+def basecall_samples(config):
+    logid = scriptname+'.Collection_basecall_samples: '
+    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
+    check = [os.path.join('RAW',str(x).replace('.fast5','')+'*.fast5') for x in SAMPLES]
+    RETSAMPLES = list()
+    for i in range(len(check)):
+        s = check[i]
+        log.debug(logid+'SEARCHING: '+s)
+        f = glob.glob(s)
+        log.debug(logid+'SAMPLECHECK: '+str(f))
+        if f:
+            f = list(set([str.join(os.sep,s.split(os.sep)[1:]) for s in f]))
+            RETSAMPLES.extend([x.replace('.fast5','') for x in f])
+    log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
+    if len(RETSAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit()
+
+    log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
+    return RETSAMPLES
+
+@check_run
+def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    for k in keysets_from_dict(config['SAMPLES']):
+    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         ret.append(k)
     log.debug(logid+str(ret))
     return list(set(ret))
 
 @check_run
-def get_conditions_rec(config, keylist=[]):
-    logid = scriptname+'.Collection_get_conditions_rec: '
-    if keylist == []:
-        config = config['SAMPLES']
+def get_samples_from_dir(id, condition, setting, config):  # CHECK
+    logid = scriptname+'.Collection_get_samples_from_dir: '
+    pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
+    log.debug(logid+str(pat))
+    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
+    log.debug(logid+str(ret))
+    if len(ret) > 0:
+        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
+        for x in seqtype:
+            if 'single' not in x:
+                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
+                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
+                for i in range(len(renamelist)):
+                    if renamelist[i] != ret[i]:
+                        os.rename(ret[i],renamelist[i])
+            else:
+                ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
+        return list(set(ret))
+    else:
+        return list()
+
+
+@check_run
+def sampleslong(config):
+    logid = scriptname+'.Collection_sampleslong: '
     ret = list()
-    for k,v in config.items():
-        keylist.append(k)
-        if not isinstance(v,dict):
-            ret.append(tuple(keylist))
-        else:
-            ret.extend(get_conditions_rec(v, keylist))
-        keylist.pop()
+    tosearch = list()
+    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
+        tosearch.append(k)
+    log.debug(logid+'keys: '+str(tosearch))
+    for search in tosearch:
+        for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES'])):
+            ret.append(os.path.join(str.join(os.sep, search), x))
+    ret= list(set(ret))
     log.debug(logid+str(ret))
     return ret
 
-            # @check_run
-            # def get_samples_from_dir(id, condition, setting, config):
-            #     logid = scriptname+'.Collection_get_samples_from_dir: '
-            #     pat = os.path.abspath(os.path.join('FASTQ',id, condition, '*.fastq.gz'))
-            #     log.debug(logid+str(pat))
-            #     ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-            #     log.debug(logid+str(ret))
-            #     if len(ret) > 0:
-            #         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
-            #         for x in seqtype:
-            #             if 'unpaired' not in x:
-            #                 ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','',os.path.basename(s)) for s in ret]))
-            #                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
-            #                 for i in range(len(renamelist)):
-            #                     if renamelist[i] != ret[i]:
-            #                         os.rename(ret[i],renamelist[i])
-            #             else:
-            #                 ret = list(set([re.sub(r'.fastq.gz','',os.path.basename(s)) for s in ret]))
-            #         return list(set(ret))
-            #     else:
-            #         return list()
-
-# @check_run
-# def sampleslong(config):
-#     logid = scriptname+'.Collection_sampleslong: '
-#     ret = list()
-#     tosearch = list()
-#     for k in keysets_from_dict(config['SAMPLES']):
-#         tosearch.append(k)
-#     log.debug(logid+'keys: '+str(tosearch))
-#     for search in tosearch:
-#         for x in list(set(getFromDict(config['SAMPLES'],search)[0])):
-#             ret.append(os.path.join(str.join(os.sep,search[:-1]),x))
-#     ret= list(set(ret))
-#     log.debug(logid+str(ret))
-#     return ret
-
-@check_run #needs a config dict including 'SAMPLES' key. returns list with absolute pathes for each sample. walks recursively through config['SAMPLES'] dict.
-def sampleslong(config, keylist=[], first_call=False):
-    logid = scriptname+'.Collection_sampleslong: '
-    if keylist==[]:
-        first_call = True
-        config = config['SAMPLES']
-    ret=list()
-    pathlist = list()
-    for k,v in config.items():
-        keylist.append(k)
-        if not dict_inst(v):
-            for item in v:
-                pathlist.append(keylist+[item])
-                log.debug(logid+str(pathlist))
-        else:
-            pathlist.extend(sampleslong(v, keylist))
-        keylist.pop()
-    if not first_call:
-        return pathlist
-    else:
-        for p in pathlist:
-            log.debug(logid+str(p))
-            ret.append(os.path.join(*list(p)))
-        log.debug(logid+'ret: '+str(ret))
-        return ret
 
 @check_run
 def get_placeholder(config):
@@ -376,43 +305,32 @@ def get_placeholder(config):
         ret.append('_')
     return ret
 
+
 @check_run
 def get_cutoff_as_string(config, subwork):
     logid=scriptname+'.get_cutoff: '
-    cutoffs = [f"{k}:{v}" for (k,v) in config[subwork]['CUTOFF'][0].items()]
+    cutoffs = [f"{k}:{v}" for (k, v) in config[subwork]['CUTOFF'][0].items()]
     ret = '-'.join(cutoffs)
     log.info(logid+'CUTOFFS: '+str(ret))
     return ret
+
 
 @check_run
 def get_summary_dirs(config):
     logid=scriptname+'.get_summary_dirs: '
     ret=list()
-    for work,tools in config['WORKFLOWS'].items():
+    for work, tools in config['WORKFLOWS'].items():
         for tool in tools:
             ret.append(f"{work}/{tool.upper()}")
     log.debug(logid+str(ret))
     return ret
-#
-# @check_run
-# def get_summary_cutoff(config):
-#     logid=scriptname+'.get_summary_cutoff: '
-#     ret=list()
-#     for key in config["SUMMARY"].keys():
-#         log.info(logid+'KEY: '+str(config['SUMMARY'][key]))
-#         if key in config['WORKFLOWS'].split(','):
-#             if isinstance(config['SUMMARY'][key],dict):
-#                 if "CUTOFF" in config["SUMMARY"][key].keys():
-#                     cuts = [f'{k}:{v}' for (k,v) in config['SUMMARY'][key]['CUTOFF'][0].items()]
-#                     ret.append(f"{key}={'+'.join(cuts)}")
-#     log.info(logid+'RETURN: '+str(ret))
-#     return ret
+
 
 @check_run
 def get_summary_files(config):
     logid=scriptname+'.get_summary_files: '
     ret=list()
-    for work,tools in config['WORKFLOWS'].items():
+    for work, tools in config['WORKFLOWS'].items():
         for tool in tools:
             log.info(logid+'make summary of '+str(work)+' - '+str(tool))
             for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
@@ -421,139 +339,36 @@ def get_summary_files(config):
     log.debug(logid+str(ret))
     return ret
 
-@check_run # SOURCE???
-def genomepath(s, config):
-    logid=scriptname+'.Collection_genomepath: '
-    sa = os.path.basename(str(s))
-    cond= s.split(os.sep)[-2]
-    sk = find_key_for_value(sa, config["SAMPLES"])
-    log.debug(logid+'GENOMEPATH: '+str([sa,cond,sk]))
-    for skey in sk:
-        klist = value_extract(skey, config["SOURCE"])
-        for k in klist:
-            for x, y in config["GENOME"].items():
-                log.debug(logid+'GENOMEPATH: '+str([x,y,k]))
-                if str(k) == str(y) or str(k) == str(x):
-                    return os.path.join(str(x),str(y))
-
-@check_run # SOURCE???
-def genome(s, config):
-    logid=scriptname+'.Collection_genome: '
-    sa = os.path.basename(str(s))
-    sp = source_from_sample(str(s),config)
-    cond= s.split(os.sep)[-2]
-    sk = find_key_for_value(sa, config['SAMPLES'])
-    for skey in sk:
-        klist = value_extract(skey, config['SOURCE'])
-        for k in klist:
-            for x, y in config['GENOME'].items():
-                log.debug(logid+str([k, x, y]))
-                if str(k) == str(x):
-                    return str(y)
 
 @check_run
-def fullgenomepath(sa, config):
-    ret=list()
-    for s in sa:
-        l = config["GENOME"][s]
-        ret.append(os.path.join(str(s),str(l)))
-    return ret
-
-@check_run
-def genomename(s, config):
-    s = os.path.basename(str(s))
-    for k,v in config["SAMPLES"].items():
-        for g,l in v.items():
-            if s in l:
-                for x, y in config["GENOME"].items():
-                    if g == y:
-                        return str(x)
-
-@check_run # SOURCE???
-def transcriptomepath(s, config):
-    logid=scriptname+'.Collection_transcriptomepath: '
-    sa = os.path.basename(str(s))
-    cond= s.split(os.sep)[-2]
-    sk = find_key_for_value(sa, config["SAMPLES"])
-    log.debug(logid+'TRANSCRIPTOMEPATH: '+str([sa,cond,sk]))
-    for skey in sk:
-        klist = value_extract(skey, config["SOURCE"])
-        for k in klist:
-            for x, y in config["TRANSCRIPTOME"].items():
-                log.debug(logid+'TRANSCRIPTOMEPATH: '+str([x,y,k]))
-                if str(k) == str(y) or str(k) == str(x):
-                    return os.path.join(str(x),str(y))
-
-@check_run # SOURCE???
-def transcriptome(s, config):
-    logid=scriptname+'.Collection_transcriptome: '
-    sa = os.path.basename(str(s))
-    sp = source_from_sample(str(s),config)
-    cond= s.split(os.sep)[-2]
-    sk = find_key_for_value(sa, config['SAMPLES'])
-    for skey in sk:
-        klist = value_extract(skey, config['SOURCE'])
-        for k in klist:
-            for x, y in config['TRANSCRIPTOME'].items():
-                log.debug(logid+str([k, x, y]))
-                if str(k) == str(x):
-                    return str(y)
-
-@check_run
-def fulltranscriptomepath(sa, config):
-    ret=list()
-    for s in sa:
-        l = config["TRANSCRIPTOME"][s]
-        ret.append(os.path.join(str(s),str(l)))
-    return ret
-
-@check_run
-def transcriptomename(s, config):
-    s = os.path.basename(str(s))
-    for k,v in config["SAMPLES"].items():
-        for g,l in v.items():
-            if s in l:
-                for x, y in config["TRANSCRIPTOME"].items():
-                    if g == y:
-                        return str(x)
-
-
-@check_run
-def namefromfile(s, config):
-    if 'NAME' not in config:
-        return ''
-    else:
-        sa = os.path.basename(str(s))
-        cond= s.split(os.sep)[-2]
-        sk = find_key_for_value(sa, config["SAMPLES"])
-        for skey in sk:
-            klist = value_extract(skey, config["NAME"])
-            for k in klist:
-                if str(skey) == str(cond):
-                    return str(k)
-
-@check_run
-def create_subworkflow(config, subwork, conditions, stage=''):
+def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     logid = scriptname+'.Collection_create_subworkflow: '
     log.debug(logid+str([config, subwork, conditions, stage]))
     toollist = list()
     configs = list()
     for condition in conditions:
         try:
-            env = str(subDict(config[subwork],condition)[stage+'ENV'])
+            env = str(subDict(config[subwork], condition)[stage+'ENV'])
         except:
-            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
-                log.warning('Key ENV not found for '+subwork+' this can be intentional')
+            if 'TOOLS' not in config[subwork]:
+                log.error('No tool environment found for '+subwork+'! Either key ENV or TOOLS must be set for '+str(condition)+'!')
             env = ''
         try:
-            exe = str(subDict(config[subwork],condition)[stage+'BIN'])
+            exe = str(subDict(config[subwork], condition)[stage+'BIN'])
         except:
-            if subwork not in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'SRA']:
-                log.warning('Key BIN not found for '+subwork+' this can be intentional')
+            if 'TOOLS' not in config[subwork]:
+                log.error('No tool binary found for '+subwork+'! Either key BIN or TOOLS must be set for '+str(condition)+'!')
             exe = ''
+
         tempconf = NestedDefaultDict()
+        tempconf['SAMPLES'] = subDict(config['SETTINGS'], condition)['SAMPLES']
+        if env != '' and exe != '':
+            toollist.append([env, exe])
+            tempconf[subwork+'ENV'] = env
+            tempconf[subwork+'BIN'] = exe
+
         try:
-            for key in ['BINS','MAXTHREADS']:
+            for key in ['BINS', 'MAXTHREADS']:
                 tempconf[key] = config[key]
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -562,7 +377,7 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
         try:
-            for key in ['SAMPLES', 'SETTINGS', subwork]:
+            for key in ['SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], condition)) <1:
                     if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
@@ -575,6 +390,11 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                     if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
                         tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
 
+            if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
+                tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
+                for k,v in config[subwork]['TOOLS'].items():
+                    toollist.append([k,v])
+
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
                 tempconf[subwork]['CUTOFF']=config[subwork]['CUTOFF']
                 if subwork == 'COUNTING':
@@ -583,8 +403,6 @@ def create_subworkflow(config, subwork, conditions, stage=''):
                     tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
-                if 'TOOLS' in config[subwork]:
-                    tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
 
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -593,9 +411,6 @@ def create_subworkflow(config, subwork, conditions, stage=''):
             )
             log.error(''.join(tbe.format()))
 
-        tempconf[subwork+'ENV'] = env
-        tempconf[subwork+'BIN'] = exe
-        toollist.append([env,exe])
         configs.append(tempconf)
 
     log.debug(logid+str([toollist,configs]))
@@ -603,27 +418,457 @@ def create_subworkflow(config, subwork, conditions, stage=''):
     return toollist, configs
 
 @check_run
-def namefrompath(p, config):
-    p = os.path.dirname(p).split(os.sep)
-    klist = getFromDict(config["NAME"],p) if 'NAME' in config else list('')
-    for k in klist:
-        return str(k)
+def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', subname=None):
+    logid=scriptname+'.Collection_make_pre: '
+    log.debug(logid+'WORK: '+str(subwork))
+
+    subjobs = list()
+    jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+    if listoftools is None:
+        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+        return None
+
+    for i in range(0,len(listoftools)):
+        toolenv, toolbin = map(str, listoftools[i])
+        subconf = NestedDefaultDict()
+        sconf = listofconfigs[0]
+        sconf[subwork+'ENV'] = toolenv
+        sconf[subwork+'BIN'] = toolbin
+        subconf.update(sconf)
+        subname = toolenv+'.smk'
+        log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
+
+        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+        with open(smkf,'r') as smk:
+            for line in smk.readlines():
+                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                line = re.sub(condapath,'conda:  "../',line)
+                subjobs.append(line)
+            subjobs.append('\n\n')
+
+        if subwork == 'QC':
+            subname = toolenv+'_raw.smk'
+
+        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+        with open(smkf, 'r') as smk:
+            for line in smk.readlines():
+                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                line = re.sub(condapath, 'conda:  "../', line)
+                subjobs.append(line)
+            subjobs.append('\n\n')
+
+        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+        with open(smkf, 'r') as smk:
+            for line in smk.readlines():
+                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                line = re.sub(condapath, 'conda:  "../' ,line)
+                subjobs.append(line)
+            subjobs.append('\n\n')
+
+        smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
+
+        if os.path.exists(smko):
+            os.rename(smko, smko+'.bak')
+        with open(smko, 'a') as smkout:
+            smkout.write(''.join(subjobs))
+            smkout.write('\n\n')
+
+        confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+        if os.path.exists(confo):
+            os.rename(confo, confo+'.bak')
+        with open(confo, 'a') as confout:
+            json.dump(subconf, confout)
+
+        jobs.append([smko, confo])
+
+    log.debug(logid+'JOBS: '+str(jobs))
+    return jobs
 
 @check_run
-def pathstogenomes(samples, config):
-    ret = list()
-    for s in samples:
-        s = os.path.basename(s)
-        for k,v in config["SAMPLES"].items():
-            for g,l in v.items():
-                if s in l:
-                    for x, y in config["GENOME"].items():
-                        if g == y:
-                            ret.append(os.path.join(str(x),str(y)))
-    return sorted(list(set(ret)))
+def get_combo(wfs, config, conditions):
+    logid=scriptname+'.Collection_get_combo: '
+    combos = NestedDefaultDict()
 
-@check_run # needs string of sample, runstate(?) can be NONE, config and key of workflow as subconf -> returns the subdict of the called sample in the workflow key including OPTIONS key
-def tool_params(sample, runstate, config, subconf):
+    if wfs is None:
+        return None
+
+    for condition in conditions:
+        ret = list()
+        for subwork in wfs:
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            if listoftools is None:
+                log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                return None
+
+            tools = list()
+            for k,v in [toolenvs for toolenvs in listoftools]:
+                tools.append({subwork:k})
+                log.debug(logid+'Preparing '+str(subwork)+' for condition '+str(condition)+' with Tool: '+str(tools))
+            ret.append(tools)
+
+        combos[condition] = itertools.product(*ret)
+
+    #no debug log here or iterator will be consumed
+    return combos
+
+@check_run
+def get_combo_name(combinations):
+    logid=scriptname+'.Collection_get_combo_name: '
+    combname = NestedDefaultDict()
+
+    for condition in combinations:
+        combname[condition]['envs'] = list()
+        combname[condition]['works'] = list()
+        combos = combinations[condition]
+        for combi in combos:
+            envs = list()
+            works = list()
+            for step in combi:
+                for work, env in step.items():
+                    envs.append(env)
+                    works.append(work)
+            combname[condition]['envs'].append(str.join('-', envs))
+            combname[condition]['works'].append(str.join('-', works))
+
+    log.debug(logid+'ComboName: '+str(combname))
+    return combname
+
+@check_run
+def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
+    logid=scriptname+'.Collection_make_sub: '
+
+    log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
+
+    jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            worklist = combname[condition]['works']
+            envlist  = combname[condition]['envs']
+            log.debug(logid+'LISTS: '+str(condition)+'\t'+str(worklist)+'\t'+str(envlist))
+            subconf = NestedDefaultDict()
+            add = list()
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    add.append(line)
+
+            for i in range(len(worklist)):
+                log.debug(logid+' SUBLISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
+                works = worklist[i].split('-')
+                envs = envlist[i].split('-')
+                subjobs = list()
+                # Add variable for combination string
+                subjobs.append('\ncombo = \''+str(envlist[i])+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES,config))),\n\tread = "R1|R2"\n')
+                subjobs.append('\n\n')
+                # Add rulethemall based on chosen workflows
+                subjobs.append(''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i])))        # RuleThemAll for snakemake depending on chosen workflows
+
+                for j in range(len(works)):
+                    listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
+
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                        return None
+
+                    sconf = listofconfigs[0]
+                    for a in range(0,len(listoftools)):
+                        toolenv, toolbin = map(str, listoftools[a])
+                        if toolenv != envs[j] or toolbin is None:
+                            continue
+                        sconf[works[j]+'ENV'] = toolenv
+                        sconf[works[j]+'BIN'] = toolbin
+                        subconf.update(sconf)
+                        subname = toolenv+'.smk'
+
+                        if works[j] == 'QC' and 'TRIMMING' in works and not 'MAPPING' in works:
+                            if 'DEDUP' in works:
+                                subname = toolenv+'_dedup_trim.smk'
+                            else:
+                                subname = toolenv+'_trim.smk'
+
+                        if works[j] == 'QC' and not 'TRIMMING' in works and not 'MAPPING' in works:
+                            if 'DEDUP' in subworkflows:
+                                subname = toolenv+'_dedup.smk'
+                            else:
+                                subname = toolenv+'_raw.smk'
+
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                        with open(smkf,'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
+
+                if 'MAPPING' in works:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+                if 'QC' in subworkflows:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+                # Append footer and write out subsnake and subconf per condition
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath,'conda:  "../',line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+
+                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], 'subsnake.smk'])))
+                if os.path.exists(smko):
+                    os.rename(smko, smko+'.bak')
+                with open(smko, 'w') as smkout:
+                    smkout.write(''.join(add))
+                    smkout.write(''.join(subjobs))
+
+                confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), envlist[i], 'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo,confo+'.bak')
+                with open(confo, 'w') as confout:
+                    json.dump(subconf, confout)
+
+                jobs.append([smko, confo])
+
+    else:
+        for condition in conditions:
+            for subwork in subworkflows:
+                log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
+                listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                if listoftools is None:
+                    log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                    return None
+                sconf = listofconfigs[0]
+                for i in range(0,len(listoftools)):
+                    toolenv, toolbin = map(str,listoftools[i])
+                    if toolenv is None or toolbin is None:
+                        continue
+                    sconf[subwork+'ENV'] = toolenv
+                    sconf[subwork+'BIN'] = toolbin
+                    subconf.update(sconf)
+                    subname = toolenv+'.smk'
+
+                    add = ''.join(rulethemall(subworkflows))        # RuleThemAll for snakemake depending on chosen workflows
+
+                    if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                        if 'DEDUP' in workflow:
+                            subname = toolenv+'_dedup_trim.smk'
+                        else:
+                            subname = toolenv+'_trim.smk'
+
+                    if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                        if 'DEDUP' in subworkflows:
+                            subname = toolenv+'_dedup.smk'
+                        else:
+                            subname = toolenv+'_raw.smk'
+
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+            if 'MAPPING' in works:
+                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+                if 'QC' in subworkflows:
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
+            if os.path.exists(smko):
+                os.rename(smko,smko+'.bak')
+            with open(smko, 'a') as smkout:
+                smkout.write(add)
+                smkout.write(join('',subjobs))
+
+            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            if os.path.exists(confo):
+                os.rename(confo,confo+'.bak')
+            with open(confo, 'a') as confout:
+                json.dump(subconf, confout)
+
+            jobs.append([smko, confo])
+
+    return jobs
+
+
+@check_run
+def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
+    logid=scriptname+'.Collection_make_post: '
+
+    log.info(logid+'STARTING POSTPROCESSING FOR '+str(conditions))
+
+    jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            subwork = postworkflow
+            envlist = combname[condition]['envs']
+            log.debug(logid+'POSTLISTS: '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
+            subconf = NestedDefaultDict()
+            add = list()
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf, 'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../',line)
+                    add.append(line)
+
+            for i in range(len(envlist)):
+                envs = envlist[i].split('-')
+
+                log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
+                if subwork in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
+                else:
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+
+                if listoftools is None:
+                    log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                    continue
+
+                sconf = listofconfigs[0]
+                for a in range(0,len(listoftools)):
+                    subjobs = list()
+
+                    toolenv, toolbin = map(str, listoftools[a])
+                    sconf[subwork+'ENV'] = toolenv
+                    sconf[subwork+'BIN'] = toolbin
+
+                    # Add variable for combination string
+                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n'+'\nscombo = \''+str(envlist[i])+os.sep+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                    subjobs.append('\n\n')
+                    subconf.update(sconf)
+
+                    subname = toolenv+'.smk'
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+                    # Append footer and write out subsnake and subconf per condition
+                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath,'conda:  "../',line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
+
+                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subsnake.smk'])))
+                    if os.path.exists(smko):
+                        os.rename(smko, smko+'.bak')
+                    with open(smko, 'w') as smkout:
+                        smkout.write(''.join(add))
+                        smkout.write(''.join(subjobs))
+
+                    confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subconfig.json'])))
+                    if os.path.exists(confo):
+                        os.rename(confo,confo+'.bak')
+                    with open(confo, 'w') as confout:
+                        json.dump(subconf, confout)
+
+                    jobs.append([smko, confo])
+
+    return jobs
+
+
+@check_run
+def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
+    logid=scriptname+'.Collection_rulethemall: '
+
+    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES,config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES,config))'
+    allqc  = 'expand("QC/Multi/{combo}{condition}/multiqc_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)), combo=combo)'
+    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_raw_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)), combo=combo)'
+    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)), combo=combo)'
+    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES,config))'
+    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))'
+    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES,config))'
+    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trim_dedup_report.html", condition=str.join(os.sep,conditiononly(SAMPLES[0],config)), combo=combo)'
+
+    todos = list()
+
+    if 'QC' in subworkflows and 'QC' in config:
+        makeoutdir('QC')
+        if 'MAPPING' in subworkflows:
+            todos.append(allmap+',\n\t\t'+allqc+'\n\n')
+        else:
+            if 'TRIMMING' in subworkflows and 'DEDUP' not in subworkflows:
+                todos.append(alltrimqc+'\n\n')
+            elif 'TRIMMING' in subworkflows and 'DEDUP' in subworkflows:
+                todos.append(alltrimdedupqc+'\n\n')
+            elif 'DEDUP' in subworkflows and 'TRIMMING' not in subworkflows:
+                todos.append(alldedupqc+'\n\n')
+            else:
+                todos.append(allrawqc+'\n\n')
+
+    if 'MAPPING' in subworkflows and 'QC' not in subworkflows:
+        log.info(logid+'Mapping without QC!')
+        todos.append(allmap+'\n\n')
+
+    if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
+        log.info(logid+'Simulated read trimming only!')
+        makeoutdir('TRIMMED_FASTQ')
+        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'simulatetrim.smk'))
+        with open(smkf,'r') as smk:
+            todos.append(re.sub(condapath, 'conda:  "../', smk.read()))
+        todos.append('\n\n')
+
+    if 'TRIMMING' in subworkflows and 'QC' not in subworkflows and 'MAPPING' not in subworkflows:
+        log.info(logid+'Trimming without QC!')
+        todos.append(alltrim+'\n\n')
+
+    if 'DEDUP' in subworkflows and 'QC' not in subworkflows and 'TRIMMING' not in subworkflows and 'MAPPING' not in subworkflows:
+        log.info(logid+'DEDUP without QC!')
+        todos.append(alldedup+'\n\n')
+
+    return todos
+
+
+@check_run
+def tool_params(sample, runstate, config, subconf, tool = None):
     logid=scriptname+'.Collection_tool_params: '
     log.debug(logid+'Samples: '+str(sample))
     mp = OrderedDict()
@@ -633,9 +878,10 @@ def tool_params(sample, runstate, config, subconf):
     if runstate not in x:
         x.append(runstate)
     log.debug(logid+str([sample,runstate,subconf,x]))
-    mp = subDict(config[subconf],x)
+    mp = subDict(config[subconf],x)[tool] if tool else subDict(config[subconf],x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
+
 
 @check_run
 def get_reps(samples,config,analysis):
@@ -667,6 +913,7 @@ def get_reps(samples,config,analysis):
     log.debug(logid+'RETURN: '+str(rets))
     return rets
 
+
 @check_run
 def get_diego_samples(samples,config,analysis):
     logid=scriptname+'.Collection_get_diego_samples: '
@@ -689,6 +936,7 @@ def get_diego_samples(samples,config,analysis):
 
         log.debug(logid+'RETURN: '+str(slist))
     return slist
+
 
 @check_run
 def get_diego_groups(samples,config,analysis):
@@ -714,6 +962,7 @@ def get_diego_groups(samples,config,analysis):
     log.debug(logid+'RETURN: '+str(slist))
     return slist
 
+
 @check_run
 def env_bin_from_config(samples, config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config: '
@@ -722,6 +971,7 @@ def env_bin_from_config(samples, config, subconf):
     for k in getFromDict(config[subconf],s):
         mb, me = k['BIN'], k['ENV']
     return mb,me
+
 
 @check_run
 def env_bin_from_config2(samples, config, subconf):
@@ -743,6 +993,7 @@ def env_bin_from_config2(samples, config, subconf):
         log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
+
 @check_run
 def env_bin_from_config3(config, subconf):
     logid=scriptname+'.Collection_env_bin_from_config3: '
@@ -753,6 +1004,7 @@ def env_bin_from_config3(config, subconf):
     log.debug(logid+str([str(mb),str(me)]))
     return mb, me
 
+
 @check_run
 def rmempty(check):
     ret = list()
@@ -761,68 +1013,39 @@ def rmempty(check):
             ret.append(f)
     return ret
 
-@check_run # SOURCE???
-def source_from_sample(sample, config):
-    logid=scriptname+'.Collection_source_from_sample: '
-    s = os.path.dirname(str(sample))
-    cond= s.split(os.sep)
-    log.debug(logid+str([s,cond]))
-    ret = getFromDict(config["SOURCE"],cond)[0]
-    return ret
 
 @check_run
 def sample_from_path(path):
     ret = str(os.path.join(os.path.split(str(path))[-1]))
     return ret
 
-@check_run
-def anno_from_file(sample, config, step):
-    logid = scriptname+'.Collection_anno_from_file: '
-    p = os.path.dirname(genomepath(sample, config))
-    s = source_from_sample(sample,config)
-    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
-    log.debug(logid+str(ret))
-    return ret
 
 @check_run
-def anno_from_source(source, config, step):
-    logid = scriptname+'.Collection_anno_from_source: '
-    s = source.split(os.sep)[0:-1]
-    p = s[0]
-    samp = source.split(os.sep)[-1]
-    log.debug(logid+str(s))
-    runstate = runstate_from_sample([samp], config)[0]
-    lst = list()
-    lst.extend(s)
-    lst.append(runstate)
-    log.debug(logid+str(lst))
-    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
-    log.debug(logid+str(ret))
-    return ret
-
-@check_run # sample as list and config file with SAMPLES key, reutrns list or single key(condition of sample)  ???
-def runstate_from_sample(sample,config):
+def runstate_from_sample(sample, config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
         n = s.split(os.sep)[-1]
         s = os.path.dirname(s)
-        if len(s.split(os.sep)) > 2:
-            s = str.join(os.sep,s.split(os.sep)[-3:])   #ICS problem
         log.debug(logid+'SAMPLE: '+s)
-        c = getFromDict(config["SAMPLES"],s.split(os.sep))[0]
+        c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
+        log.debug(logid+'SETTINGS: '+str(c))
         if dict_inst(c):
-            for k,v in c.items():
-                log.debug(logid+'k,v: '+str([str(k),str(v)]))
-                if n in v:
-                    if k not in ret:
-                        ret.append(k)
+            if not c.get('SAMPLES'):
+                for k,v in c.items():
+                    log.debug(logid+'k,v: '+str([str(k),str(v)]))
+                    if n in v:
+                        if k not in ret:
+                            ret.append(k)
+            else:
+                ret.extend(s.split(os.sep))
         else:
             if n in c:
                 k = s.split(os.sep)[-1]
                 ret.append(k)
     log.debug(logid+'RETURN: '+str(ret))
     return ret
+
 
 @check_run
 def samplecond(sample, config): # takes list of sample names (including .fastq.gz) and returns a list with their conditions as directory path without fastq.gz ( ["condition/of/sample", ... ])
@@ -832,49 +1055,22 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
         log.debug(logid+str(s))
         s = s.replace('.fastq.gz','')
         check = os.path.dirname(s).split(os.sep)
-# <<<<<<< HEAD
-#         log.debug(logid+'CHECK: '+str(check))
-#         for r in runstate_from_sample([s],config):
-#             tmplist = check
-#             if r not in tmplist:
-#                 tmplist.append(r)
-#             log.debug(logid+'TMPLIST: '+str(tmplist))
-#             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
-#                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
-#                 s = re.sub(r'_[r|R|][1|2]','',s)
-#             if r not in s.split(os.sep):
-#                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-#             else:
-#                 ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),os.path.basename(s)))
-# =======
-        get_values_rec(config)
-        if not 'unpaired' in subDict(config['SETTINGS'],check)['SEQUENCING']:
-            #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
-            s = re.sub(r'_[r|R|][1|2]','',s)
-        ret.append(s)
-        log.debug(logid+str(s))
-# >>>>>>> DTU
+        log.debug(logid+'CHECK: '+str(check))
+        for r in runstate_from_sample([s],config):
+            tmplist = check
+            if r not in tmplist:
+                tmplist.append(r)
+            log.debug(logid+'TMPLIST: '+str(tmplist))
+            if not 'single' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
+                #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
+                s = re.sub(r'_[r|R|][1|2]','',s)
+            if r not in s.split(os.sep):
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
+            else:
+                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),os.path.basename(s)))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
-# @check_run
-# def samplecond(sample,config):
-#     logid = scriptname+'.Collection_samplecond: '
-#     ret = list()
-#     for s in sample:
-#         s = s.replace('.fastq.gz','')
-#         log.debug(logid+'SAMPLE: '+str(s))
-#         check = os.path.dirname(s).split(os.sep)
-#         log.debug(logid+'CHECK: '+str(check))
-#         for r in runstate_from_sample([s],config):
-#             tmplist = check
-#             tmplist.append(r)
-#             log.debug(logid+'TMPLIST: '+str(tmplist))
-#             if not 'unpaired' in subDict(config['SETTINGS'],tmplist)['SEQUENCING']:
-#                 #s = re.sub(r'_[r|R|\A\Z][1|2]','',s)  # Not working with python > 3.7
-#                 s = re.sub(r'_[r|R|][1|2]','',s)
-#             ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r),os.path.basename(s)))
-#     log.debug(logid+'RETURN: '+str(ret))
-#     return ret
+
 
 @check_run
 def conditiononly(sample,config):
@@ -882,30 +1078,35 @@ def conditiononly(sample,config):
     ret = list()
     paired = False
     check = os.path.dirname(sample).split(os.sep)
-    log.debug(logid+str(check))
+    ret.extend(check)
+    log.debug(logid+'CHECK: '+str(check))
     for r in runstate_from_sample([sample],config):
-        log.debug(logid+str(r))
-        if len(ret) < 3:
-            ret.extend(check)
-            if r not in ret:
-                if len(ret) < 3:
-                    ret.append(r)
-    log.debug(logid+str(ret))
+        log.debug(logid+'runstate '+str(r))
+        if r not in ret:
+            ret.append(r)
+    log.debug(logid+'ret: '+str(ret))
     return ret
 
+
 @check_run
-def checkpaired(sample,config):
+def checkpaired(sample, config):
     logid = scriptname+'.Collection_checkpaired: '
     ret = list()
     paired = ''
-    for s in sample:  # Currently only one condition per sample-SETUP possible
+    for s in sample:
         log.debug(logid+'SAMPLE: '+str(s))
         check = conditiononly(s, config)
         log.debug(logid+'CHECK: '+str(check))
         p = subDict(config['SETTINGS'], check)
         paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
     log.debug(logid+'SEQUENCING: '+str(paired))
     return paired
+
 
 @check_run
 def checkpaired_rep(sample,config):
@@ -914,13 +1115,17 @@ def checkpaired_rep(sample,config):
     ret = list()
     for s in sample:
         check = conditiononly(s,config)
-        #check = os.path.dirname(s).split(os.sep)
-        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
         p = subDict(config['SETTINGS'], check)
         paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
         ret.append(str(paired).replace(',','_'))
     log.debug(logid+'PAIRED: '+str(ret))
     return str.join(',',ret)
+
 
 @check_run
 def checkstranded(sample,config):
@@ -928,19 +1133,19 @@ def checkstranded(sample,config):
     ret = list()
     stranded = ''
     for s in sample:
-        #check = os.path.dirname(s).split(os.sep)
-        #p = getFromDict(config['SEQUENCING'],tmplist)[0]
         check = conditiononly(s,config)
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
-        stranded = p.get('SEQUENCING').split(',')[1] if len(p.get('SEQUENCING').split(',')) > 1 else ''
-        #for r in runstate_from_sample([s],config):
-        #    if r in p:
-        #        tmplist.append(r)
-        #        stranded = getFromDict(config['SEQUENCING'],tmplist)[0].split(',')[1] if len(getFromDict(config['SEQUENCING'],tmplist)[0].split(',')) > 1 else ''
-        #        tmplist = tmplist[:2]
+        paired = p.get('SEQUENCING')
+        # Per sample paired, not implemented yet
+        #pairedlist = p.get('SEQUENCING')
+        #samplelist = p.get('SAMPLES')
+        #x = samplelist.index(s.split(os.sep)[-1])
+        #paired = pairedlist[x]
+        stranded = paired.split(',')[1] if len(paired.split(',')) > 1 else ''
     log.debug(logid+'STRANDEDNESS: '+str(stranded))
     return stranded
+
 
 @check_run
 def set_pairings(samples, config):
@@ -953,26 +1158,33 @@ def set_pairings(samples, config):
         for k, v in pairlist.items():
             for x in samples:
                 if k in x:
-                    ret.extend(samplecond([x],config))
+                    ret.extend(samplecond([x], config))
     else:
         return samples
+    log.debug(logid+'return: '+str(ret))
     return ret
 
+
 @check_run
-def get_pairing(sample, stype, config, samples):
+def get_pairing(sample, stype, config, samples, scombo=''):
     logid = scriptname+'.Collection_get_pairings: '
     pairlist = config['PEAKS'].get('COMPARABLE')
-    log.debug(logid+'PAIRLIST: '+str(pairlist))
+    matching = ''
+    log.debug(logid+'PAIRLIST: '+str(pairlist)+' SAMPLE: '+str(sample)+' SAMPLES: '+str(samples)+' Combo: '+str(scombo))
     if pairlist:
         for k, v in pairlist.items():
-            for x in samples:
-                if v in x:
-                    matching = samplecond([x],config)[0]
-    log.debug(logid+'matching: '+str(matching))
-    matching.replace('MAPPED/','')
-    print('PAIRINGS: '+sample+': '+str(matching))
-    log.debug(logid+' -c '+str(matching)+'_mapped_'+str(stype)+'.bam')
-    return '-c MAPPED/'+str(matching)+'_mapped_'+str(stype)+'.bam'
+            if k in sample:
+                for x in samples:
+                    if v in x:
+                        log.debug(logid+'Match found: '+str(v)+' : '+str(x))
+                        matching = samplecond([x], config)[0].replace('MAPPED/', '')
+                        log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
+        log.debug(logid+'-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam')
+        return '-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam'
+    else:
+        log.debug(logid+'No matching sample found')
+        return ''
+
 
 @check_run
 def post_checkpaired(sample,config):
@@ -999,9 +1211,10 @@ def post_checkpaired(sample,config):
     log.debug(logid+'PAIRED: '+str(paired))
     return paired
 
+
 @check_run
-def checkclip(sample,config):
-    logid = scriptname+'.Collection_checkclip: '
+def check_IP(sample,config):
+    logid = scriptname+'.Collection_check_IP: '
     ret = list()
     clip = ''
     for s in sample:
@@ -1023,6 +1236,7 @@ def checkclip(sample,config):
     log.debug(logid+'CLIP is: '+str(clip))
     return str(clip)
 
+
 @check_run
 def check_tool_params(sample, runstate, config, subconf, idx):
     try:
@@ -1038,6 +1252,7 @@ def check_tool_params(sample, runstate, config, subconf, idx):
             return 'std'
         else:
             return ''
+
 
 @check_run
 def comparable_as_string(config, subwork):
@@ -1062,6 +1277,7 @@ def comparable_as_string(config, subwork):
             complist.append(f"{key}-vs-{value}")
         compstr = ','.join(complist)
         return compstr
+
 
 @check_run
 def comparable_as_string2(config, subwork):
@@ -1093,6 +1309,7 @@ def comparable_as_string2(config, subwork):
         compstr = ','.join(complist)
         return compstr
 
+
 @check_run
 def comparable_as_string3(config, subwork):
     logid=scriptname+'.comparable_as_string: '
@@ -1116,6 +1333,7 @@ def comparable_as_string3(config, subwork):
             complist.append(f"{key}-vs-{value}")
         compstr = ','.join(complist)
         return compstr
+
 
 ##############################
 ########Nextflow Subs########
@@ -1179,6 +1397,7 @@ def nf_fetch_params(configfile):
 
     return retconf
 
+
 @check_run
 def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflows=None, condition=None):
     logid=scriptname+'.nf_tool_params: '
@@ -1241,6 +1460,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)
+
 
 ##############################
 #########Python Subs##########
@@ -1333,19 +1553,18 @@ def merge_dicts(d,u):
     return d
 
 @check_run
-def keysets_from_dict(dictionary,original=None):  # Only works for equal depth keysets, needs tweaking for other use cases
+def keysets_from_dict(dictionary, search=None, original=None):  # Only works for equal depth keysets, needs tweaking for other use cases
     logid = scriptname+'.Collection_keysets_from_dict: '
 
     keylist = list()
     if dict_inst(dictionary):
-        for k,v in keys_from_dict(dictionary).items():
+        for k,v in keys_from_dict(dictionary, search).items():
             keylist.append(v)
         log.debug(logid+'kl:'+str(keylist))
         combis = list(itertools.product(*keylist))
         log.debug(logid+'cs:'+str(combis))
         ret = list()
         for combi in combis:
-            log.debug(logid+'combi: '+str(combi))
             if len(getFromDict(dictionary,combi)) >= 1:
                 log.debug(logid+'found: '+str(combi))
                 ret.append(combi)
@@ -1356,25 +1575,29 @@ def keysets_from_dict(dictionary,original=None):  # Only works for equal depth k
         return keylist
 
 @check_run
-def keys_from_dict(dictionary,first=True,lvl=0,save=None):
+def keys_from_dict(dictionary, search=None, save=None, first=True, lvl=0):
     logid = scriptname+'.Collection_keys_from_dict: '
 
     if first:
         first = False
         end = depth(dictionary)
         save = defaultdict(list)
-        log.debug(logid+'END:'+str(end))
+        log.debug(logid+'TOTALDEPTH:'+str(end))
 
     if dict_inst(dictionary):
         log.debug(logid+'dictDEPTH: '+str(depth(dictionary)))
         log.debug(logid+'dictLEVEL: '+str(lvl))
         for k,v in dictionary.items():
-            save[lvl].append(k)
-            log.debug(logid+str(save))
-            if dict_inst(v):
-                save = keys_from_dict(v,first,lvl+1,save)
+            if not search or (search and k != search):
+                save[lvl].append(k)
+                log.debug(logid+'TMPSAVE: '+str(save))
+                if dict_inst(v):
+                    save = keys_from_dict(v, search, save, first, lvl+1)
+                else:
+                    continue
             else:
-                continue
+                log.debug(logid+'Found search: '+str(save))
+                return save
         return save
     else:
         return save
@@ -1672,6 +1895,188 @@ def get_dict_hash(d):
     log.debug(logid+'INPUT DICT: '+str(d))
     ret = str(hashlib.sha256(bytes(str(sorted(d.items())),'utf-8')).hexdigest())
     log.debug(logid+'HASH: '+ret)
+    return ret
+
+########################################
+############## DEPRECATED ##############
+########################################
+
+@check_run
+def sources(config):
+    logid = scriptname+'.Collection_sources: '
+    ret = list()
+    search =  [x[0] for x in keysets_from_dict(config["SOURCE"]) if x[0] != 'last']
+    if len(getFromDict(config['SAMPLES'],search)) > 0:
+        ret.extend(search)
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def genomepath(s, config):
+    logid=scriptname+'.Collection_genomepath: '
+    sa = os.path.basename(str(s))
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config["SAMPLES"])
+    log.debug(logid+'GENOMEPATH: '+str([sa,cond,sk]))
+    for skey in sk:
+        klist = value_extract(skey, config["SOURCE"])
+        for k in klist:
+            for x, y in config["GENOME"].items():
+                log.debug(logid+'GENOMEPATH: '+str([x,y,k]))
+                if str(k) == str(y) or str(k) == str(x):
+                    return os.path.join(str(x),str(y))
+
+@check_run
+def genome(s, config):
+    logid=scriptname+'.Collection_genome: '
+    sa = os.path.basename(str(s))
+    sp = source_from_sample(str(s),config)
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config['SAMPLES'])
+    for skey in sk:
+        klist = value_extract(skey, config['SOURCE'])
+        for k in klist:
+            for x, y in config['GENOME'].items():
+                log.debug(logid+str([k, x, y]))
+                if str(k) == str(x):
+                    return str(y)
+
+@check_run
+def fullgenomepath(sa, config):
+    ret=list()
+    for s in sa:
+        l = config["GENOME"][s]
+        ret.append(os.path.join(str(s),str(l)))
+    return ret
+
+@check_run
+def genomename(s, config):
+    s = os.path.basename(str(s))
+    for k,v in config["SAMPLES"].items():
+        for g,l in v.items():
+            if s in l:
+                for x, y in config["GENOME"].items():
+                    if g == y:
+                        return str(x)
+
+@check_run
+def transcriptomepath(s, config):
+    logid=scriptname+'.Collection_transcriptomepath: '
+    sa = os.path.basename(str(s))
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config["SAMPLES"])
+    log.debug(logid+'TRANSCRIPTOMEPATH: '+str([sa,cond,sk]))
+    for skey in sk:
+        klist = value_extract(skey, config["SOURCE"])
+        for k in klist:
+            for x, y in config["TRANSCRIPTOME"].items():
+                log.debug(logid+'TRANSCRIPTOMEPATH: '+str([x,y,k]))
+                if str(k) == str(y) or str(k) == str(x):
+                    return os.path.join(str(x),str(y))
+
+@check_run
+def transcriptome(s, config):
+    logid=scriptname+'.Collection_transcriptome: '
+    sa = os.path.basename(str(s))
+    sp = source_from_sample(str(s),config)
+    cond= s.split(os.sep)[-2]
+    sk = find_key_for_value(sa, config['SAMPLES'])
+    for skey in sk:
+        klist = value_extract(skey, config['SOURCE'])
+        for k in klist:
+            for x, y in config['TRANSCRIPTOME'].items():
+                log.debug(logid+str([k, x, y]))
+                if str(k) == str(x):
+                    return str(y)
+
+@check_run
+def fulltranscriptomepath(sa, config):
+    ret=list()
+    for s in sa:
+        l = config["TRANSCRIPTOME"][s]
+        ret.append(os.path.join(str(s),str(l)))
+    return ret
+
+@check_run
+def transcriptomename(s, config):
+    s = os.path.basename(str(s))
+    for k,v in config["SAMPLES"].items():
+        for g,l in v.items():
+            if s in l:
+                for x, y in config["TRANSCRIPTOME"].items():
+                    if g == y:
+                        return str(x)
+
+
+@check_run
+def namefromfile(s, config):
+    if 'NAME' not in config:
+        return ''
+    else:
+        sa = os.path.basename(str(s))
+        cond= s.split(os.sep)[-2]
+        sk = find_key_for_value(sa, config["SAMPLES"])
+        for skey in sk:
+            klist = value_extract(skey, config["NAME"])
+            for k in klist:
+                if str(skey) == str(cond):
+                    return str(k)
+
+
+@check_run
+def namefrompath(p, config):
+    p = os.path.dirname(p).split(os.sep)
+    klist = getFromDict(config["NAME"],p) if 'NAME' in config else list('')
+    for k in klist:
+        return str(k)
+
+@check_run
+def pathstogenomes(samples, config):
+    ret = list()
+    for s in samples:
+        s = os.path.basename(s)
+        for k,v in config["SAMPLES"].items():
+            for g,l in v.items():
+                if s in l:
+                    for x, y in config["GENOME"].items():
+                        if g == y:
+                            ret.append(os.path.join(str(x),str(y)))
+    return sorted(list(set(ret)))
+
+
+@check_run
+def source_from_sample(sample, config):
+    logid=scriptname+'.Collection_source_from_sample: '
+    s = os.path.dirname(str(sample))
+    cond= s.split(os.sep)
+    log.debug(logid+str([s,cond]))
+    ret = getFromDict(config["SOURCE"],cond)[0]
+    return ret
+
+
+@check_run
+def anno_from_file(sample, config, step):
+    logid = scriptname+'.Collection_anno_from_file: '
+    p = os.path.dirname(genomepath(sample, config))
+    s = source_from_sample(sample,config)
+    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],s)[step])
+    log.debug(logid+str(ret))
+    return ret
+
+@check_run
+def anno_from_source(source, config, step):
+    logid = scriptname+'.Collection_anno_from_source: '
+    s = source.split(os.sep)[0:-1]
+    p = s[0]
+    samp = source.split(os.sep)[-1]
+    log.debug(logid+str(s))
+    runstate = runstate_from_sample([samp], config)[0]
+    lst = list()
+    lst.extend(s)
+    lst.append(runstate)
+    log.debug(logid+str(lst))
+    ret = os.path.join(config["REFERENCE"],p,subDict(config["ANNOTATE"],lst)[step])
+    log.debug(logid+str(ret))
     return ret
 
 #
