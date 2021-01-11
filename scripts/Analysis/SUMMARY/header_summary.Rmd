@@ -1,0 +1,32 @@
+---
+title: "NEXTSNAKES SUMMARY REPORT"
+fontsize: 10pt
+output:
+  rmdformats::readthedown:
+  html_document:
+    toc_depth: 3
+params:
+  date: !r Sys.Date()
+  root: ''
+  outdir: ''
+---
+
+
+\begin{center}
+`r params$date`\
+\end{center}
+***
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = params$root)
+```
+
+# OVERVIEW {.tabset}
+Uebersicht, welche daten, mit welchen tools verarbeitet wurden und weiter Infos...
+
+## Data
+daten daten daten
+
+## Tools
+tools tools tools

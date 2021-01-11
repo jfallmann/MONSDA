@@ -1,0 +1,416 @@
+{
+  "WORKFLOWS": "",
+  "BINS": "nextsnakes/scripts",
+  "MAXTHREADS": "20",
+  "SAMPLES": {
+    "id": {
+      "condition": {
+        "setting": [
+          "Sample_1_r1",
+          "Sample_1_r2"
+        ]
+      }
+    }
+  },
+  "SETTINGS": {
+    "id": {
+      "condition": {
+        "setting": {
+          "SEQUENCING": "unpaired",
+          "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",
+          "INDEX": "GENOMES/Dm6/INDICES/star",
+          "PREFIX": "idx",
+          "ANNOTATION": {
+            "GTF": "GENOMES/Dm6/dm6.gtf.gz",
+            "GFF": "GENOMES/Dm6/dm6.gff3.gz"
+          }
+        }
+      }
+    }
+  },
+  "SRA": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "sra",
+          "OPTIONS": [
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "QC": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "fastqc",
+          "BIN": "fastqc",
+          "OPTIONS": [
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "TRIMMING": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "trimgalore",
+          "BIN": "trim_galore",
+          "OPTIONS": [
+            {
+              "-q": "15",
+              "--length": "8",
+              "-e": "0.15"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DEDUP": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "umitools",
+          "BIN": "umi_tools",
+          "OPTIONS": [
+            {
+              "--extract-method": "string",
+              "--bc-pattern": "AGANNNNACGT"
+            },
+            {
+              "--extract-umi-method": "read_id"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "MAPPING": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "star",
+          "BIN": "STAR",
+          "REFERENCE": "$PATHTO/genome.fa.gz",
+          "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",
+          "OPTIONS": [
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--genomeSAindexNbases": "13"
+            },
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--outSAMprimaryFlag AllBestScore": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "COUNTING": {
+    "FEATURES": {
+      "exon": "Parent",
+      "gene": "ID"
+    },
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "countreads",
+          "BIN": "featureCounts",
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "OPTIONS": [
+            {
+              "-f": "",
+              "--fraction": "",
+              "-p": "",
+              "-O": "",
+              "-M": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ANNOTATE": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "annotatebed",
+          "BIN": "annotate",
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "ANNOFEATURE": "gene",
+          "OPTIONS": [
+            {
+              "-w": "ON"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "UCSC": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "ucsc",
+          "OPTIONS": [
+            {
+              "-n": "DM6_unpaired_Mapping",
+              "-s": "dm6_st",
+              "-l": "UCSC_DM6_unpaired_Mapping",
+              "-b": "UCSC_dm6_star"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "PEAKS": {
+    "id": {
+      "condition": {
+        "setting": {
+          "ENV": "piranha",
+          "BIN": "Piranha",
+          "CLIP": "iCLIP",
+          "OPTIONS": [
+            {},
+            {
+              "-b": "10"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DE": {
+    "TOOLS": {
+      "deseq2": "Analysis/DE/DESEQ2.R",
+      "edger": "Analysis/DE/EDGER.R"
+    },
+    "COMPARABLE": {
+      "contrast_WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO1",
+          "KO2"
+        ]
+      ]
+    },
+    "id": {
+      "condition": {
+        "setting": {
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "GROUPS": [
+            "WT",
+            "KO1",
+            "KO2"
+          ],
+          "REPLICATES": [
+            "SAMPLE1_r1",
+            "SAMPLE2_r2",
+            "SAMPLE2_r3"
+          ],
+          "TYPES": [
+            "standard",
+            "standard",
+            "standard"
+          ],
+          "BATCHES": [
+            "1",
+            "1",
+            "2"
+          ],
+          "OPTIONS": [
+            {
+              "-t": "gene",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DEU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DEU/DEXSEQ.R",
+      "edger": "Analysis/DEU/EDGER.R"
+    },
+    "COMPARABLE": {
+      "contrast_WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO1",
+          "KO2"
+        ]
+      ]
+    },
+    "id": {
+      "condition": {
+        "setting": {
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "GROUPS": [
+            "WT",
+            "KO1",
+            "KO2"
+          ],
+          "REPLICATES": [
+            "SAMPLE1_r1",
+            "SAMPLE2_r2",
+            "SAMPLE2_r3"
+          ],
+          "TYPES": [
+            "standard",
+            "standard",
+            "standard"
+          ],
+          "BATCHES": [
+            "1",
+            "1",
+            "2"
+          ],
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DAS": {
+    "TOOLS": {
+      "edger": "Analysis/DAS/EDGER.R",
+      "diego": "Analysis/DAS/DIEGO.py"
+    },
+    "COMPARABLE": {
+      "contrast_WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO1",
+          "KO2"
+        ]
+      ]
+    },
+    "id": {
+      "condition": {
+        "setting": {
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "GROUPS": [
+            "WT",
+            "KO1",
+            "KO2"
+          ],
+          "REPLICATES": [
+            "SAMPLE1_r1",
+            "SAMPLE2_r2",
+            "SAMPLE2_r3"
+          ],
+          "TYPES": [
+            "standard",
+            "standard",
+            "standard"
+          ],
+          "BATCHES": [
+            "1",
+            "1",
+            "2"
+          ],
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "-c": "10",
+              "-d": "3",
+              "-q": "0.01",
+              "-z": "1.0",
+              "-r": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DTU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DTU/DEXSEQ.R",
+      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+    },
+    "COMPARABLE": {
+      "contrast_WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO1",
+          "KO2"
+        ]
+      ]
+    },
+    "id": {
+      "condition": {
+        "setting": {
+          "REFERENCE": "Genomes/genome/genome.fa.gz",
+          "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz",
+          "GROUPS": [
+            "WT",
+            "KO1",
+            "KO2"
+          ],
+          "REPLICATES": [
+            "SAMPLE1_r1",
+            "SAMPLE2_r2",
+            "SAMPLE2_r3"
+          ],
+          "TYPES": [
+            "standard",
+            "standard",
+            "standard"
+          ],
+          "BATCHES": [
+            "1",
+            "1",
+            "2"
+          ],
+          "OPTIONS": [
+            {
+              "-l": "A",
+              "--gencode": ""
+            },
+            {
+              "--gcBias": ""
+            }
+          ]
+        }
+      }
+    }
+  }
+}

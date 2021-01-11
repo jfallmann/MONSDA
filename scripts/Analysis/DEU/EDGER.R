@@ -5,33 +5,48 @@ suppressPackageStartupMessages({
     require(edgeR)
 })
 
-args <- commandArgs(trailingOnly = TRUE)
+options(echo=TRUE)
 
+## ARGS
+args <- commandArgs(trailingOnly = TRUE)
 anname          <- args[1]
 countfile       <- args[2]
 outdir          <- args[3]
 cmp             <- args[4]
 availablecores  <- as.integer(args[5])
+print(args)
 
-## Gives Colors for MDS Plot
+## FUNCS
+get_gene_name <- function(id, df){
+  name_list <- df$gene_name[df['gene_id'] == id]
+  if(length(unique(name_list)) == 1){
+    return(name_list[1])
+  }else{
+    message(paste("WARNING: ambigous gene id: ",id))
+    return (paste("ambigous",id,sep="_"))
+  }
+}
+
 RainbowColor <- function(groups){
-    groupsAsNumbers <- as.numeric(groups)
-    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-    cl <- c()
-    for(i in groupsAsNumbers){
-        cl <- c(cl,spektrum[i])
-    }
-    return(cl)
+  groupsAsNumbers <- as.numeric(groups)
+  spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
+  cl <- c()
+  for(i in groupsAsNumbers){
+    cl <- c(cl,spektrum[i])
+  }
+  return(cl)
 }
 
 
-### MAIN ###
-############
+### SCRIPT
+print(paste('Will run EdgeR DEU with ',availablecores,' cores',sep=''))
 
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
-print(paste('Will run EdgeR DEU with ',availablecores,' cores',sep=''))
+# load gtf
+gtf.rtl <- rtracklayer::import(gtf)
+gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
@@ -141,15 +156,20 @@ png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
 
+comparison_objs <- list()
+
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
+    BPPARAM = MulticoreParam(workers=availablecores)
+
     print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
-                                        # determine contrast
+
+        # determine contrast
         A <- strsplit(contrast_groups[[1]][1], "\\+")
         B <- strsplit(contrast_groups[[1]][2], "\\+")
         minus <- 1/length(A[[1]])*(-1)
@@ -163,32 +183,36 @@ for(contrast in comparisons[[1]]){
         }
         contrast <- as.numeric(contrast[,1])
 
-                                        # quasi-likelihood F-Test
+        # quasi-likelihood F-Test
         qlf <- glmQLFTest(fit, contrast = contrast)
         is.de <- decideTests(qlf, p.value=0.05)
         summary(is.de)
 
-                                        # create sorted tables
-        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-        write.table(as.data.frame(tops), gzfile(paste("EDGER_DEU_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
+        # add comp object to list for image
+        comparison_objs <- append(comparison_objs, qlf)
 
-        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-        write.table(as.data.frame(tops), gzfile(paste("EDGER_DEU_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep="")), sep="\t", quote=F, row.names=FALSE)
+        # create results table
+        write.table(as.data.frame(qlf), gzfile(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-                                        # create file MD-plot
-        out <- paste("EDGER_DEU_",contrast_name,"_MD.png",sep="")
-        png(out, width = 400, height = 400)
-        plotMD(qlf, main=contrast_name)
-        dev.off()
+        # # create file MD-plot
+        # out <- paste("EDGER_DEU_",contrast_name,"_MD.png",sep="")
+        # png(out, width = 400, height = 400)
+        # plotMD(qlf, main=contrast_name)
+        # dev.off()
 
+        # cleanup
+        rm(qlf, BPPARAM)
+        print(paste('cleanup done for ', contrast_name, sep=''))
+
+<<<<<<< HEAD
         save.image(file = paste("EDGER_DEU",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
 
+=======
+>>>>>>> DTU
     }, error=function(e){
-        rm(contrast,lrt,tops)
         print(warnings)
-        file.create(paste("EDGER_DEU_",contrast_name,"_exons_logFC-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DEU_",contrast_name,"_exons_pValue-sorted.tsv.gz",sep=""))
-        file.create(paste("EDGER_DEU_",contrast_name,"_MD.png",sep=""))
+        file.create(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_"))
+        # file.create(paste("EDGER_DEU_",contrast_name,"_MD.png",sep=""))
         cat("WARNING :",conditionMessage(e), "\n")
     } )
 }

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan  8 18:17:26 2021 (+0100)
+# Last-Updated: Mon Jan 11 17:41:26 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2602
+#     Update #: 2611
 # URL:
 # Doc URL:
 # Keywords:
@@ -89,6 +89,11 @@ import six
 import logging
 import hashlib
 from snakemake import load_configfile
+import functools
+import json
+import textwrap
+# from string import join, split
+
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
@@ -136,6 +141,7 @@ class NestedDefaultDict(defaultdict):
 
 
 def check_run(func):
+    @functools.wraps(func)
     def func_wrapper(*args, **kwargs):
         logid=scriptname+'.Collection_func_wrapper: '
         try:
@@ -156,6 +162,8 @@ def get_samples(config):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ',str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
+    for c in check:
+        log.debug(logid+'check: '+str(c))
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -299,6 +307,40 @@ def get_placeholder(config):
 
 
 @check_run
+def get_cutoff_as_string(config, subwork):
+    logid=scriptname+'.get_cutoff: '
+    cutoffs = [f"{k}:{v}" for (k, v) in config[subwork]['CUTOFF'][0].items()]
+    ret = '-'.join(cutoffs)
+    log.info(logid+'CUTOFFS: '+str(ret))
+    return ret
+
+
+@check_run
+def get_summary_dirs(config):
+    logid=scriptname+'.get_summary_dirs: '
+    ret=list()
+    for work, tools in config['WORKFLOWS'].items():
+        for tool in tools:
+            ret.append(f"{work}/{tool.upper()}")
+    log.debug(logid+str(ret))
+    return ret
+
+
+@check_run
+def get_summary_files(config):
+    logid=scriptname+'.get_summary_files: '
+    ret=list()
+    for work, tools in config['WORKFLOWS'].items():
+        for tool in tools:
+            log.info(logid+'make summary of '+str(work)+' - '+str(tool))
+            for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
+            # for f in glob.glob(f"{work}/{tool.upper()}/*"):
+                ret.append(f)
+    log.debug(logid+str(ret))
+    return ret
+
+
+@check_run
 def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     logid = scriptname+'.Collection_create_subworkflow: '
     log.debug(logid+str([config, subwork, conditions, stage]))
@@ -354,6 +396,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     toollist.append([k,v])
 
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
+                tempconf[subwork]['CUTOFF']=config[subwork]['CUTOFF']
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
@@ -823,6 +866,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
 
     return todos
 
+
 @check_run
 def tool_params(sample, runstate, config, subconf, tool = None):
     logid=scriptname+'.Collection_tool_params: '
@@ -1004,12 +1048,12 @@ def runstate_from_sample(sample, config):
 
 
 @check_run
-def samplecond(sample, config):
+def samplecond(sample, config): # takes list of sample names (including .fastq.gz) and returns a list with their conditions as directory path without fastq.gz ( ["condition/of/sample", ... ])
     logid = scriptname+'.Collection_samplecond: '
     ret = list()
     for s in sample:
+        log.debug(logid+str(s))
         s = s.replace('.fastq.gz','')
-        log.debug(logid+'SAMPLE: '+str(s))
         check = os.path.dirname(s).split(os.sep)
         log.debug(logid+'CHECK: '+str(check))
         for r in runstate_from_sample([s],config):
@@ -1238,7 +1282,8 @@ def comparable_as_string(config, subwork):
 @check_run
 def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
-    check = config[subwork].get('COMPARABLE')
+    log.info(logid+'this is the config: '+'\n'+printable_dict(config))
+    check = config[subwork]['COMPARABLE']
     if check:
         log.debug(logid+'determine comparables in '+subwork)
         complist  = []
@@ -1293,7 +1338,7 @@ def comparable_as_string3(config, subwork):
 ##############################
 ########Nextflow Subs########
 ##############################
-@check_run
+@check_run # SOURCE???
 def nf_fetch_params(configfile):
     logid=scriptname+'.nf_fetch_params: '
 

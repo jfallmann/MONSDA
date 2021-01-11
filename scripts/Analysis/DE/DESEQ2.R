@@ -7,22 +7,35 @@ suppressPackageStartupMessages({
 })
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE)
-print(args)
 
+## ARGS
+args <- commandArgs(trailingOnly = TRUE)
 anname <- args[1]
 inname <- args[2]
 outdir <- args[3]
 cmp    <- args[4]
 availablecores <- as.integer(args[5])
+print(args)
 
-### MAIN ###
-############
+### FUNCS
+get_gene_name <- function(id, df){
+  name_list <- df$gene_name[df['gene_id'] == id]
+  if(length(unique(name_list)) == 1){
+    return(name_list[1])
+  }else{
+    message(paste("WARNING: ambigous gene id: ",id))
+    return (paste("ambigous",id,sep="_"))
+  }
+}
 
+<<<<<<< HEAD
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
 ## Annotation
+=======
+### SCRIPT
+>>>>>>> DTU
 sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
 sampleData <- as.data.frame(sampleData)
@@ -82,6 +95,7 @@ dev.off()
 write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
 
+comparison_objs <- list()
 
 for(contrast in comparison[[1]]){
 
@@ -92,45 +106,51 @@ for(contrast in comparison[[1]]){
 
     tryCatch({
 
-                                        # determine contrast
+        # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
-
         tempa <- droplevels(sampleData[sampleData$condition %in% A,])
         tempb <- droplevels(sampleData[sampleData$condition %in% B,])
-
         plus <- 1/length(A)
         minus <- 1/length(B)*-1
 
         BPPARAM = MulticoreParam(workers=availablecores)
 
-                                        #initialize empty objects
+        # initialize empty objects
         res=""
         resOrdered=""
-
         res <- results(dds,contrast=list(paste('condition',levels(tempa$condition),sep=''),paste('condition',levels(tempb$condition),sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
 
-                                        #sort and output
+        # add comp object to list for image
+        comparison_objs <- append(comparison_objs, res)
+
+        # sort and output
         resOrdered <- res[order(res$log2FoldChange),]
 
-                                        #write the table to a tsv file
-        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DESeq2_",contrast_name,'.tsv.gz',sep="")), sep="\t", row.names=FALSE, quote=F)
+        # # Add gene names  (check how gene_id col is named )
+        # resOrdered$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
 
-                                        #plotMA
-        pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
-        plotMA(res, ylim=c(-3,3))
-        dev.off()
-
+<<<<<<< HEAD
         save.image(file = paste("DESEQ2",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
 
         rm(res,resOrdered, BPPARAM)
+=======
+        # write the table to a tsv file
+        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_")), sep="\t", row.names=FALSE, quote=F)
+>>>>>>> DTU
 
+        # # plotMA
+        # pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
+        # plotMA(res, ylim=c(-3,3))
+        # dev.off()
 
+        # cleanup
+        rm(res,resOrdered, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
+
     }, error=function(e){
         rm(res,resOrdered)
-        file.create(paste("DESeq2_",contrast_name,'.tsv.gz',sep=""))
-        file.create(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
+        file.create(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_"))
         print(warnings)
         cat("WARNING :",conditionMessage(e), "\n")
     } )
@@ -189,4 +209,4 @@ dev.off()
 
 ##############################
 
-save.image(file = "DESeq2_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = "DESeq2_DE_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
