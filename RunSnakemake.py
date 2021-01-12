@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 12 08:57:40 2021 (+0100)
+# Last-Updated: Tue Jan 12 11:03:13 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1221
+#     Update #: 1229
 # URL:
 # Doc URL:
 # Keywords:
@@ -278,7 +278,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if postprocess:
             summary_tools_set = set()
             summary_tools_dict = dict()
-
+            summary_wfs = list()
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
@@ -290,6 +290,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     smko, confo = job
 
                     if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
+                        summary_wfs.append(subwork)  # Define which workflows should be summarized
                         summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
                         toolenv = smko.split('_')[-2]
                         summary_tools_set.add('-'.join([subwork, toolenv]))
@@ -305,10 +306,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             log.debug(logid+'JOB CODE '+str(jid))
 
             # SUMMARY RUN
-
             log.debug(logid+'create rmd for summary')
 
-            jobs = make_summary(summary_tools_set, summary_tools_dict, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+            jobs = make_summary(summary_tools_set, summary_tools_dict, config, summary_wfs, conditions, subdir, loglevel, combinations=combinations)
             jobstorun = list()
 
             for job in jobs:
@@ -322,7 +322,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.info(logid+'RUNNING '+str(job))
                         jid = runjob(job)
                         log.debug(logid+'JOB CODE '+str(jid))
-
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 12 08:59:39 2021 (+0100)
+# Last-Updated: Tue Jan 12 11:03:03 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2624
+#     Update #: 2637
 # URL:
 # Doc URL:
 # Keywords:
@@ -447,7 +447,7 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
         with open(smkf,'r') as smk:
             for line in smk.readlines():
                 line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath,'conda:  "../',line)
+                line = re.sub(condapath, 'conda:  "../', line)
                 subjobs.append(line)
             subjobs.append('\n\n')
 
@@ -466,7 +466,7 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
         with open(smkf, 'r') as smk:
             for line in smk.readlines():
                 line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../' ,line)
+                line = re.sub(condapath, 'conda:  "../', line)
                 subjobs.append(line)
             subjobs.append('\n\n')
 
@@ -822,88 +822,100 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
+def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summary_wfs, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
     logid=scriptname+'.Collection_make_summary: '
 
     log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
 
     jobs = list()
+    subjobs = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
+    makeoutdir('REPORTS/SUMMARY')
     sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
     rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
     rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-
-    SAMPLES = get_samples_postprocess(config, subwork)
     combinations = get_combo(subworkflows, config, conditions)
 
     if os.path.exists(rmd_summary):
         os.rename(rmd_summary, rmd_summary+'_'+datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")+'.bak')
 
-    makeoutdir('REPORTS/SUMMARY')
-
-    with open(rmd_summary, 'a') as write_file:
-        with open(rmd_header,'r') as read_file:
-            for line in read_file.readlines():
-                write_file.write(line)
+    with open(rmd_header,'r') as read_file:
+        for line in read_file.readlines():
+            subjobs.append(line)
+        subjobs.append('\n\n')
 
     for file in os.listdir(sum_path):
-        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY',file))
+        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY', file))
         if file.startswith('SUM_'):
             file_tools = re.findall('[A-Z]+-[a-z]+', file)
             works = re.findall('[A-Z]+(?=-)', file)
-            log.info(logid+'worksTODO: '+str(works))
             if set(file_tools).issubset(summary_tools_set):
-                with open(rmd_summary, 'a') as write_file:
-                    with open(file_path, 'r') as read_file:
-                        if 'percompare' in os.path.basename(file_path):
-                            for comparison in config[works[0]]['COMPARABLE'].keys():
-                                for line in read_file.readlines():
-                                    line = re.sub('COMPARISON',comparison,line)
-                                    write_file.write(line)
-                        else:
+                with open(file_path, 'r') as read_file:
+                    if 'percompare' in os.path.basename(file_path):
+                        for comparison in config[works[0]]['COMPARABLE'].keys():
                             for line in read_file.readlines():
-                                line = re.sub('COMPARISON',comparison,line)
-                                write_file.write(line)
+                                line = re.sub('COMPARISON', comparison, line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
+                    else:
+                        for line in read_file.readlines():
+                            line = re.sub('COMPARISON', comparison, line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
 
-    log.debug(logid+'make SUMMARY of postprocessing analyses')
+    with open(rmd_summary, 'a') as sumf:
+        sumf.write(''.join(subjobs))
+        sumf.write('\n\n')
+
+    subjobs = list()
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+    with open(smkf,'r') as smk:
+        for line in smk.readlines():
+            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+            line = re.sub(condapath, 'conda:  "../', line)
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'summary.smk'))
+    with open(smkf,'r') as smk:
+        for line in smk.readlines():
+            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+            line = re.sub(condapath, 'conda:  "../', line)
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+    with open(smkf, 'r') as smk:
+        for line in smk.readlines():
+            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+            line = re.sub(condapath, 'conda:  "../', line)
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smko = os.path.abspath(os.path.join(subdir, 'summary_subsnake.smk'))
+    if os.path.exists(smko):
+        os.rename(smko, smko+'.bak')
+    with open(smko, 'a') as smkout:
+        smkout.write(''.join(subjobs))
+        smkout.write('\n\n')
+
     subconf = NestedDefaultDict()
     for key in ['BINS', 'MAXTHREADS', 'SAMPLES', 'SETTINGS']:
         subconf[key] = config[key]
     subconf['WORKFLOWS'].merge(summary_tools_dict)
 
-    log.info(str(subconf))
-
-    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-    smko = os.path.abspath(os.path.join(subdir, 'summary_subsnake.smk'))
-    if os.path.exists(smko):
-        os.rename(smko,smko+'.bak')
-    with open(smko, 'a') as smkout:
-        with open(smkf,'r') as smk:
-            for line in smk.readlines():
-                line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
-                line = re.sub(condapath,'conda:  "../',line)
-                smkout.write(line)
-        smkout.write('\n\n')
-    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
-    with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
-        with open(smkf,'r') as smk:
-            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-        smkout.write('\n')
-
-    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
-    with open(smko, 'a') as smkout:
-        with open(smkf,'r') as smk:
-            smkout.write(smk.read())
-
-    confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
+    confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
     if os.path.exists(confo):
-        os.rename(confo,confo+'.bak')
+        os.rename(confo, confo+'.bak')
     with open(confo, 'a') as confout:
         json.dump(subconf, confout)
 
+    jobs.append([smko, confo])
 
+    return jobs
 
 
 @check_run
