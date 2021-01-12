@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan 11 17:41:26 2021 (+0100)
+# Last-Updated: Tue Jan 12 08:59:39 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2611
+#     Update #: 2624
 # URL:
 # Doc URL:
 # Keywords:
@@ -396,7 +396,8 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     toollist.append([k,v])
 
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
-                tempconf[subwork]['CUTOFF']=config[subwork]['CUTOFF']
+                if config[subwork].get('CUTOFF'):
+                    tempconf[subwork]['CUTOFF'] = config[subwork]['CUTOFF']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
@@ -737,6 +738,8 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
+    summary_tools_set = set()
+    summary_tools_dict = dict()
 
     if combinations:
         combname = get_combo_name(combinations)
@@ -772,6 +775,9 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     subjobs = list()
 
                     toolenv, toolbin = map(str, listoftools[a])
+                    if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
+                        toolenv = toolenv+'_'+subwork
+
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
 
@@ -790,7 +796,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                         subjobs.append('\n\n')
 
                     # Append footer and write out subsnake and subconf per condition
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath,'conda:  "../',line)
@@ -806,13 +812,98 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
                     confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subconfig.json'])))
                     if os.path.exists(confo):
-                        os.rename(confo,confo+'.bak')
+                        os.rename(confo, confo+'.bak')
                     with open(confo, 'w') as confout:
                         json.dump(subconf, confout)
 
                     jobs.append([smko, confo])
 
     return jobs
+
+
+@check_run
+def make_summary(summary_tools_set, summary_tools_dict, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
+    logid=scriptname+'.Collection_make_summary: '
+
+    log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
+
+    jobs = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
+    rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
+    rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
+
+    SAMPLES = get_samples_postprocess(config, subwork)
+    combinations = get_combo(subworkflows, config, conditions)
+
+    if os.path.exists(rmd_summary):
+        os.rename(rmd_summary, rmd_summary+'_'+datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")+'.bak')
+
+    makeoutdir('REPORTS/SUMMARY')
+
+    with open(rmd_summary, 'a') as write_file:
+        with open(rmd_header,'r') as read_file:
+            for line in read_file.readlines():
+                write_file.write(line)
+
+    for file in os.listdir(sum_path):
+        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY',file))
+        if file.startswith('SUM_'):
+            file_tools = re.findall('[A-Z]+-[a-z]+', file)
+            works = re.findall('[A-Z]+(?=-)', file)
+            log.info(logid+'worksTODO: '+str(works))
+            if set(file_tools).issubset(summary_tools_set):
+                with open(rmd_summary, 'a') as write_file:
+                    with open(file_path, 'r') as read_file:
+                        if 'percompare' in os.path.basename(file_path):
+                            for comparison in config[works[0]]['COMPARABLE'].keys():
+                                for line in read_file.readlines():
+                                    line = re.sub('COMPARISON',comparison,line)
+                                    write_file.write(line)
+                        else:
+                            for line in read_file.readlines():
+                                line = re.sub('COMPARISON',comparison,line)
+                                write_file.write(line)
+
+    log.debug(logid+'make SUMMARY of postprocessing analyses')
+    subconf = NestedDefaultDict()
+    for key in ['BINS', 'MAXTHREADS', 'SAMPLES', 'SETTINGS']:
+        subconf[key] = config[key]
+    subconf['WORKFLOWS'].merge(summary_tools_dict)
+
+    log.info(str(subconf))
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+    smko = os.path.abspath(os.path.join(subdir, 'summary_subsnake.smk'))
+    if os.path.exists(smko):
+        os.rename(smko,smko+'.bak')
+    with open(smko, 'a') as smkout:
+        with open(smkf,'r') as smk:
+            for line in smk.readlines():
+                line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
+                line = re.sub(condapath,'conda:  "../',line)
+                smkout.write(line)
+        smkout.write('\n\n')
+    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
+    with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
+        with open(smkf,'r') as smk:
+            smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
+        smkout.write('\n')
+
+    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+    with open(smko, 'a') as smkout:
+        with open(smkf,'r') as smk:
+            smkout.write(smk.read())
+
+    confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
+    if os.path.exists(confo):
+        os.rename(confo,confo+'.bak')
+    with open(confo, 'a') as confout:
+        json.dump(subconf, confout)
+
+
 
 
 @check_run

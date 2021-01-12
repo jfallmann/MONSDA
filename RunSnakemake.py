@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan 11 15:04:55 2021 (+0100)
+# Last-Updated: Tue Jan 12 08:57:40 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1213
+#     Update #: 1221
 # URL:
 # Doc URL:
 # Keywords:
@@ -33,7 +33,7 @@ import json
 import shutil
 import traceback as tb
 from snakemake import load_configfile
-from snakemake.utils import validate, min_version
+from snakemake.utils import min_version
 import argparse
 import subprocess
 import re
@@ -276,19 +276,24 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         if postprocess:
+            summary_tools_set = set()
+            summary_tools_dict = dict()
+
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-
-                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                    continue
-
                 combinations = get_combo(subworkflows, config, conditions)
                 jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
                 for job in jobs:
                     smko, confo = job
+
+                    if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
+                        summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
+                        toolenv = smko.split('_')[-2]
+                        summary_tools_set.add('-'.join([subwork, toolenv]))
+
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                 for job in jobstorun:
@@ -299,155 +304,25 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
 
-            #THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
-            summary_tools_set = set()
-            summary_tools_dict = dict()
-
-            for analysis in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
-                if analysis in config and analysis in postprocess:
-
-                    for k in config[analysis]['TOOLS'].keys():
-                        summary_tools_set.add('-'.join([analysis,k]))
-                    summary_tools_dict[analysis] = [k for k in config[analysis]['TOOLS'].keys()]
-
-                    subwork = analysis
-                    SAMPLES = get_samples_postprocess(config, subwork)
-                    # SAMPLES = get_values_rec(config['SAMPLES'])
-                    log.info(logid+'STARTING '+analysis+' Analysis '+' WITH SAMPLES '+str(SAMPLES))
-
-                    # subconf = NestedDefaultDict()
-                    log.debug(logid+'SUBWORK: '+str(subwork)+' CONDITION: '+str(conditions))
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
-
-                    if listoftools is None:
-                        log.error(logid+'No entry fits condition '+str(conditions)+' for postprocessing step '+str(subwork))
-
-
-                    for key in config[subwork]['TOOLS']:
-                        log.info(logid+'... with Tool: '+key)
-                        toolenv = key
-                        toolbin = config[subwork]['TOOLS'][key]
-                        subconf = NestedDefaultDict()
-                        for i in listofconfigs:
-                            if i is None:
-                                continue
-                            i[subwork+'ENV'] = toolenv
-                            i[subwork+'BIN'] = toolbin
-                            subconf = merge_dicts(subconf,i)
-
-                        subname = toolenv+'_'+subwork+'.smk'
-                        subsamples = sampleslong(subconf)
-                        log.debug(logid+'POSTPROCESS: '+str([toolenv,subname, subsamples, subconf]))
-
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-                        smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk'])))
-                        if os.path.exists(smko):
-                            os.rename(smko,smko+'.bak')
-                        with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                for line in smk.readlines():
-                                    line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
-                                    line = re.sub(condapath,'conda:  "../',line)
-                                    smkout.write(line)
-                            smkout.write('\n\n')
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows',subname))
-                        with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subsnake.smk']))), 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                            smkout.write('\n')
-
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
-                        with open(smko, 'a') as smkout:
-                            with open(smkf,'r') as smk:
-                                smkout.write(smk.read())
-
-                        confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork,toolenv,'subconfig.json'])))
-                        if os.path.exists(confo):
-                            os.rename(confo,confo+'.bak')
-                        with open(confo, 'a') as confout:
-                            json.dump(subconf, confout)
-
-                        jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subsnake.smk'])]))),c=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join([subwork,toolenv,'subconfig.json'])]))),d=workdir,rest=' '.join(argslist))
-                        log.info(logid+'RUNNING '+str(jobtorun))
-                        job = runjob(jobtorun)
-                        log.debug(logid+'JOB CODE '+str(job))
-
             # SUMMARY RUN
 
             log.debug(logid+'create rmd for summary')
-            sum_path = os.path.join('nextsnakes','scripts','Analysis','SUMMARY')
-            rmd_header = os.path.abspath(os.path.join(sum_path,'header_summary.Rmd'))
-            rmd_summary = os.path.abspath(os.path.join('REPORTS','SUMMARY','summary.Rmd'))
-            if os.path.exists(rmd_summary):
-                os.rename(rmd_summary,rmd_summary+'_'+datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")+'.bak')
-            if not os.path.exists('REPORTS/SUMMARY'):
-                os.mkdir('REPORTS/SUMMARY')
-            with open(rmd_summary, 'a') as write_file:
-                with open(rmd_header,'r') as read_file:
-                    for line in read_file.readlines():
-                        write_file.write(line)
 
-            for file in os.listdir(sum_path):
-                file_path = os.path.abspath(os.path.join('nextsnakes','scripts','Analysis','SUMMARY',file))
-                if file.startswith('SUM_'):
-                    file_tools = re.findall('[A-Z]+-[a-z]+', file)
-                    works = re.findall('[A-Z]+(?=-)', file)
-                    log.info(logid+'worksTODO: '+str(works))
-                    if set(file_tools).issubset(summary_tools_set):
-                        with open(rmd_summary, 'a') as write_file:
-                            with open(file_path,'r') as read_file:
-                                if 'percompare' in os.path.basename(file_path):
-                                    for comparison in config[works[0]]['COMPARABLE'].keys():
-                                        for line in read_file.readlines():
-                                            line = re.sub('COMPARISON',comparison,line)
-                                            write_file.write(line)
-                                else:
-                                    for line in read_file.readlines():
-                                        line = re.sub('COMPARISON',comparison,line)
-                                        write_file.write(line)
+            jobs = make_summary(summary_tools_set, summary_tools_dict, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+            jobstorun = list()
 
-            log.debug(logid+'make SUMMARY of postprocessing analyses')
-            subconf = NestedDefaultDict()
-            for key in ['BINS','MAXTHREADS','SAMPLES', 'SETTINGS']:
-                subconf[key]=config[key]
-            subconf['WORKFLOWS'].merge(summary_tools_dict)
+            for job in jobs:
+                smko, confo = job
+                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
-            log.info(str(subconf))
+            for job in jobstorun:
+                with open('Jobs', 'a') as j:
+                    j.write(job+os.linesep)
+                    if not save:
+                        log.info(logid+'RUNNING '+str(job))
+                        jid = runjob(job)
+                        log.debug(logid+'JOB CODE '+str(jid))
 
-            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.smk'))
-            smko = os.path.abspath(os.path.join(subdir,'summary_subsnake.smk'))
-            if os.path.exists(smko):
-                os.rename(smko,smko+'.bak')
-            with open(smko, 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(logfix,'loglevel="'+loglevel+'"',line)
-                        line = re.sub(condapath,'conda:  "../',line)
-                        smkout.write(line)
-                smkout.write('\n\n')
-            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','summary.smk'))
-            with open(os.path.abspath(os.path.join(subdir,'summary_subsnake.smk')), 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    smkout.write(re.sub(condapath,'conda:  "../',smk.read()))
-                smkout.write('\n')
-
-            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
-            with open(smko, 'a') as smkout:
-                with open(smkf,'r') as smk:
-                    smkout.write(smk.read())
-
-            confo = os.path.abspath(os.path.join(subdir,'summary_subconfig.json'))
-            if os.path.exists(confo):
-                os.rename(confo,confo+'.bak')
-            with open(confo, 'a') as confout:
-                json.dump(subconf, confout)
-
-            jobtorun = 'snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads,s=smko,c=confo,d=workdir,rest=' '.join(argslist))
-            log.info(logid+'RUNNING '+str(jobtorun))
-            job = runjob(jobtorun)
-            log.debug(logid+'JOB CODE '+str(job))
-
-            log.info('Workflows executed without error!')
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
