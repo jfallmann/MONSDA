@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 12 11:03:03 2021 (+0100)
+# Last-Updated: Tue Jan 12 11:14:44 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2637
+#     Update #: 2638
 # URL:
 # Doc URL:
 # Keywords:
@@ -211,7 +211,7 @@ def get_samples_postprocess(config, subwork):
                 RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
-        log.error(logid+'No samples found, please check config file')
+        log.error(logid+'No samples found for '+str(subwork)+', please check config file')
         sys.exit()
 
     log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
