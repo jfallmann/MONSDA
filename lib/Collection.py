@@ -824,7 +824,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summary_wfs, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
     logid=scriptname+'.Collection_make_summary: '
 
     log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
@@ -838,7 +838,7 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summ
     sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
     rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
     rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-    combinations = get_combo(combinations, config, conditions)
+    combinations = get_combo(summary_tools_dict.keys(), config, conditions)
 
     if os.path.exists(rmd_summary):
         os.rename(rmd_summary, rmd_summary+'.bak')
@@ -905,7 +905,7 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summ
         smkout.write('\n\n')
 
     subconf = NestedDefaultDict()
-    for key in ['BINS', 'MAXTHREADS', 'SAMPLES', 'SETTINGS']:
+    for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
         subconf[key] = config[key]
     subconf['WORKFLOWS'].merge(summary_tools_dict)
 

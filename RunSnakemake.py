@@ -37,6 +37,7 @@ from snakemake.utils import min_version
 import argparse
 import subprocess
 import re
+import itertools as it
 
 min_version("5.8.2")
 scriptname=os.path.basename(__file__).replace('.py', '')
@@ -278,7 +279,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         if postprocess:
             summary_tools_set = set()
             summary_tools_dict = dict()
-            summary_wfs = list()
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
@@ -290,10 +290,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     smko, confo = job
 
                     if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                        summary_wfs.append(subwork)  # Define which workflows should be summarized
                         summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
-                        toolenv = smko.split('_')[-2]
-                        summary_tools_set.add('-'.join([subwork, toolenv]))
+                        for value in summary_tools_dict[subwork]:
+                            summary_tools_set.add('-'.join([subwork, value]))
 
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
@@ -306,14 +305,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             log.debug(logid+'JOB CODE '+str(jid))
 
             # SUMMARY RUN
-            log.debug(logid+"XXXXXXXXXXXXXXXXXX: set "+str(summary_tools_set))
-            log.debug(logid+"XXXXXXXXXXXXXXXXXX: dict "+str(summary_tools_dict))
-            log.debug(logid+"XXXXXXXXXXXXXXXXXX: wfs "+str(summary_wfs))
-            log.debug(logid+"XXXXXXXXXXXXXXXXXX: cond "+str(conditions))
-            log.debug(logid+"XXXXXXXXXXXXXXXXXX: comb "+str(combinations))
-            log.debug(logid+'create rmd for summary')
-
-            jobs = make_summary(summary_tools_set, summary_tools_dict, config, summary_wfs, conditions, subdir, loglevel, combinations=combinations)
+            jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
             jobstorun = list()
 
             for job in jobs:
