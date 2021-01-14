@@ -286,6 +286,7 @@ def sampleslong(config):
     tosearch = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(k)
+    log.debug(logid+str("MOIN"))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
         for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES'])):
@@ -492,6 +493,7 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
 @check_run
 def get_combo(wfs, config, conditions):
     logid=scriptname+'.Collection_get_combo: '
+    log.debug(logid+str(wfs)+str(conditions))
     combos = NestedDefaultDict()
 
     if wfs is None:
@@ -822,7 +824,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summary_wfs, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
     logid=scriptname+'.Collection_make_summary: '
 
     log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
@@ -836,10 +838,10 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summ
     sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
     rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
     rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-    combinations = get_combo(subworkflows, config, conditions)
+    combinations = get_combo(summary_tools_dict.keys(), config, conditions)
 
     if os.path.exists(rmd_summary):
-        os.rename(rmd_summary, rmd_summary+'_'+datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S")+'.bak')
+        os.rename(rmd_summary, rmd_summary+'.bak')
 
     with open(rmd_header,'r') as read_file:
         for line in read_file.readlines():
@@ -903,7 +905,7 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, summ
         smkout.write('\n\n')
 
     subconf = NestedDefaultDict()
-    for key in ['BINS', 'MAXTHREADS', 'SAMPLES', 'SETTINGS']:
+    for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
         subconf[key] = config[key]
     subconf['WORKFLOWS'].merge(summary_tools_dict)
 
@@ -1385,7 +1387,7 @@ def comparable_as_string(config, subwork):
 @check_run
 def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
-    log.info(logid+'this is the config: '+'\n'+printable_dict(config))
+    log.info(logid+'this is the config: '+str(config))
     check = config[subwork]['COMPARABLE']
     if check:
         log.debug(logid+'determine comparables in '+subwork)
