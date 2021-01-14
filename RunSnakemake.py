@@ -306,6 +306,11 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             log.debug(logid+'JOB CODE '+str(jid))
 
             # SUMMARY RUN
+            log.debug(logid+"XXXXXXXXXXXXXXXXXX: set "+str(summary_tools_set))
+            log.debug(logid+"XXXXXXXXXXXXXXXXXX: dict "+str(summary_tools_dict))
+            log.debug(logid+"XXXXXXXXXXXXXXXXXX: wfs "+str(summary_wfs))
+            log.debug(logid+"XXXXXXXXXXXXXXXXXX: cond "+str(conditions))
+            log.debug(logid+"XXXXXXXXXXXXXXXXXX: comb "+str(combinations))
             log.debug(logid+'create rmd for summary')
 
             jobs = make_summary(summary_tools_set, summary_tools_dict, config, summary_wfs, conditions, subdir, loglevel, combinations=combinations)
