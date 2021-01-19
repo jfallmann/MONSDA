@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 19 14:38:21 2021 (+0100)
+# Last-Updated: Tue Jan 19 14:42:51 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2643
+#     Update #: 2644
 # URL:
 # Doc URL:
 # Keywords:
@@ -269,7 +269,7 @@ def get_samples_from_dir(id, condition, setting, config):  # CHECK
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
             if 'single' not in x:
-                ret = list(set([re.sub(r'_r1|_R1|_r2|_R2|.fastq.gz','', os.path.basename(s)) for s in ret]))
+                ret = list(set([re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s)) for s in ret]))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
                     if renamelist[i] != ret[i]:
