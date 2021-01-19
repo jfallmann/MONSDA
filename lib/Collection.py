@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 19 14:42:51 2021 (+0100)
+# Last-Updated: Tue Jan 19 14:53:12 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2644
+#     Update #: 2646
 # URL:
 # Doc URL:
 # Keywords:
@@ -268,7 +268,7 @@ def get_samples_from_dir(id, condition, setting, config):  # CHECK
     if len(ret) > 0:
         seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
         for x in seqtype:
-            if 'single' not in x:
+            if 'unpaired' not in x:
                 ret = list(set([re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s)) for s in ret]))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
@@ -1171,7 +1171,7 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
             if r not in tmplist:
                 tmplist.append(r)
             log.debug(logid+'TMPLIST: '+str(tmplist))
-            if not 'single' in subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
+            if not 'unpaired' in subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
                 #s = re.sub(r'_[r|R|\A\Z][1|2]','', s)  # Not working with python > 3.7
                 s = re.sub(r'_[r|R|][1|2]','', s)
             if r not in s.split(os.sep):
