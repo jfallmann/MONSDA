@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 19 10:53:51 2021 (+0100)
+# Last-Updated: Tue Jan 19 14:38:21 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2640
+#     Update #: 2643
 # URL:
 # Doc URL:
 # Keywords:
@@ -785,8 +785,11 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
 
+                    scombo = str(envlist[i])+os.sep if envlist[i] != '' else ''
+                    combo = str.join(os.sep, [str(envlist[i]), toolenv])+os.sep if envlist[i] != '' else toolenv+os.sep
+
                     # Add variable for combination string
-                    subjobs.append('\ncombo = \''+str.join(os.sep, [str(envlist[i]), toolenv])+os.sep+'\'\n'+'\nscombo = \''+str(envlist[i])+os.sep+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                     subjobs.append('\n\n')
                     subconf.update(sconf)
 
