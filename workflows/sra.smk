@@ -11,8 +11,8 @@ if paired == 'paired':
         log:    "LOGS/RAW/{rawfile}.log"
         conda:  "nextsnakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
-        params: outdir = lambda w, output: expand("{cond}",cond=[os.path.dirname(x) for x in output.fq]),
-                ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in SAMPLES])
+        params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
+                ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])
         shell:  "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP --split-files ${{arr[$i]}} 2> {log};done && cd ${{orr[$i]}} && rename _1 _R1 *.fastq && rename _2 _R2 *.fastq && pigz -p {threads} *.fastq"
 
 else:
@@ -25,6 +25,6 @@ else:
         log:    "LOGS/RAW/{rawfile}.log"
         conda:  "nextsnakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
-        params: outdir = lambda w, output: expand("{cond}",cond=os.path.dirname(output.fq)),
-                ids = lambda w: expand("{accession}",accession = [os.path.basename(x) for x in SAMPLES])
+        params: outdir = lambda w, output: expand("{cond}", cond=os.path.dirname(output.fq)),
+                ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])
         shell: "arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[$i]}} -e {threads} -t TMP ${{arr[$i]}} 2> {log};done && cd ${{orr[$i]}} && pigz -p {threads} *.fastq"

@@ -9,7 +9,7 @@ wildcard_constraints:
 #    moutdir = moutdir
 
 #rule themall:
-#    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+#    input:  expand("{moutdir}RAW/{condition}/multiqc_report.html", moutdir = moutdir, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
@@ -19,7 +19,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}{rawfile}_fastqc_{read}_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None , config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
@@ -39,7 +39,7 @@ else:
         log:    "LOGS/{combo}{rawfile}_fastqc_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None , config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:

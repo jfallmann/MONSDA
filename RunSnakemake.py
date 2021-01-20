@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 12 11:03:13 2021 (+0100)
+# Last-Updated: Wed Jan 20 22:30:58 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1229
+#     Update #: 1230
 # URL:
 # Doc URL:
 # Keywords:
@@ -189,7 +189,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     continue  #We only want download/basecall here
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(SAMPLES,config)
+                conditions = get_conditions(SAMPLES, config)
                 log.debug(logid+'PRECONDITIONS: '+str(conditions))
 
                 subwork = proc
@@ -217,7 +217,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES,config)
+        conditions = get_conditions(SAMPLES, config)
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:
@@ -339,8 +339,8 @@ def runjob(jobtorun):
 
         while True:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
-            outerr = str.join('',outerr).rstrip()
+            output = str.join('', output).rstrip()
+            outerr = str.join('', outerr).rstrip()
             if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
@@ -367,14 +367,14 @@ def runjob(jobtorun):
 
         if job.returncode == 0:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
+            output = str.join('', output).rstrip()
             if output and output != '':
                 log.info(logid+'JOB FINISHED: '+output)
             return job.poll()
         else:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
-            outerr = str.join('',outerr).rstrip()
+            output = str.join('', output).rstrip()
+            outerr = str.join('', outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
                 log.error(logid+'ERROR: '+outerr+output)
                 log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')

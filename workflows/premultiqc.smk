@@ -1,5 +1,5 @@
 rule qcall:
-    input: expand("QC/Multi/{condition}/multiqc_report.html",condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))
+    input: expand("QC/Multi/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))
 
 if paired == 'paired':
     rule multiqc:

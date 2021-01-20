@@ -2,12 +2,12 @@ TRIMBIN, TRIMENV = env_bin_from_config3(config,'TRIMMING')
 #outdir = 'TRIMMED_FASTQ'
 
 #wildcard_constraints:
-#    file = '|'.join(list(samplecond(SAMPLES,config))),
+#    file = '|'.join(list(samplecond(SAMPLES, config))),
 #    read = "R1|R2"
 #    outdir = outdir
 
 #rule trimthemall:
-#    input: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))
+#    input: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config))
 
 if paired == 'paired':
     rule trimgalore_trim:
@@ -18,7 +18,7 @@ if paired == 'paired':
         log:   "LOGS/{combo}{file}_trim.log"
         conda: "nextsnakes/envs/"+TRIMENV+".yaml"
         threads: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
-        params: odir=lambda wildcards,output:os.path.dirname(output.o1),
+        params: odir=lambda wildcards, output:os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'][0].items()),
                 trim=TRIMBIN
         shell:  "{params.trim} --cores {threads} --paired --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"

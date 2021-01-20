@@ -9,7 +9,7 @@ QCBIN, QCENV = env_bin_from_config3( config, 'QC')
 #    moutdir = moutdir
 
 #rule themall:
-#    input:  expand("QC/Multi/{combo}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+#    input:  expand("QC/Multi/{combo}{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))
 
 if paired == 'paired':
     log.info('Running paired mode QC')
@@ -19,7 +19,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}{rawfile}_fastqc_{read}_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
@@ -28,12 +28,12 @@ if paired == 'paired':
         log:    "LOGS/{combo}{file}_{read}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
-                expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES,config), read=['R1','R2'], combo=combo)
+                expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo)
         output: html = report("QC/Multi/{combo}{condition}/multiqc_dedup_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}{condition}/tmp"),
                 lst = "QC/Multi/{combo}{condition}/qclist_dedup.txt"
@@ -49,7 +49,7 @@ else:
         log:    "LOGS/{combo}{rawfile}_fastqc_raw.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
@@ -58,12 +58,12 @@ else:
         log:    "LOGS/{combo}{file}_fastqc_dedup.log"
         conda:  "nextsnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule multiqc:
         input: expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
-		       expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES,config), combo=combo)
+		       expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config), combo=combo)
         output: html = report("QC/Multi/{combo}{condition}/multiqc_dedup_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}{condition}/tmp"),
                 lst = "QC/Multi/{combo}{condition}/qclist_dedup.txt"
