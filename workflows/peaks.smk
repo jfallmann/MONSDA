@@ -268,5 +268,5 @@ rule GenerateTrack:
             bins = os.path.abspath(BINS),
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
-            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+"PEAKS_"+SETS.replace(os.sep, '_'))
+            uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+"PEAKS_"+combo+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

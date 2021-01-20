@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 19 14:53:12 2021 (+0100)
+# Last-Updated: Tue Jan 19 16:01:37 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2646
+#     Update #: 2648
 # URL:
 # Doc URL:
 # Keywords:
@@ -18,7 +18,8 @@
 #
 
 # Commentary:
-#
+# TODO for arbitrary depth:
+# runstate_from_sample, sampleslong, samplecond,
 #
 #
 #
@@ -1135,7 +1136,6 @@ def runstate_from_sample(sample, config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
-        n = s.split(os.sep)[-1]
         s = os.path.dirname(s)
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
