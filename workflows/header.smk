@@ -122,8 +122,6 @@ if 'MAPPING' in config:
     else:
         INDEX2 = ''
 
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE, REFDIR, INDEX, str(INDEX2)]))
-
 # Peak Calling Variables
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
@@ -154,7 +152,6 @@ for x in ['UCSC', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE, REFDIR]))
 
 # DE/DEU/DAS/DTU Variables
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
@@ -170,7 +167,6 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE, REFDIR]))
 
 combo = ''
 

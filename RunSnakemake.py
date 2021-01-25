@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Jan 20 22:30:58 2021 (+0100)
+# Last-Updated: Mon Jan 25 22:07:30 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1230
+#     Update #: 1247
 # URL:
 # Doc URL:
 # Keywords:
@@ -110,7 +110,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         if unlock:
             log.info(logid+'Unlocking directory')
-            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes','workflows','header.smk')), c=configfile)
+            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk')), c=configfile)
             log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
@@ -118,14 +118,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         preprocess = subworkflows = postprocess = []
 
         #Define workflow stages
-        pre = ['QC','SRA','BASECALL']
-        sub = ['TRIMMING','MAPPING','DEDUP','QC']
-        post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','DTU','ANNOTATE']
+        pre = ['QC', 'SRA', 'BASECALL']
+        sub = ['TRIMMING', 'MAPPING', 'DEDUP', 'QC']
+        post = ['COUNTING', 'UCSC', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']
 
-        wfs = config['WORKFLOWS'].split(',')
+        wfs = [x.replace(' ','') for x in config['WORKFLOWS'].split(',')]
 
         if 'WORKFLOWS' in config:
-            subworkflows = [x for x in wfs if x in sub]
+            log.debug(logid+'CONFIG-WORKFLOWS: '+str(wfs)+'\t'+str(pre)+'\t'+str(sub)+'\t'+str(post))
+            subworkflows = [str(x) for x in wfs if x in sub]
+            log.debug(logid+'Sub: '+str(subworkflows))
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = []
             preprocess = [x for x in wfs if x in pre]

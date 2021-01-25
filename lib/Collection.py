@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 19 16:01:37 2021 (+0100)
+# Last-Updated: Mon Jan 25 21:47:24 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2648
+#     Update #: 2673
 # URL:
 # Doc URL:
 # Keywords:
@@ -163,14 +163,12 @@ def get_samples(config):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ', str(x).replace('.fastq.gz', '')+'*.fastq.gz') for x in SAMPLES]
-    for c in check:
-        log.debug(logid+'check: '+str(c))
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
+        log.debug(logid+'SEARCHING: '+s)
         paired = checkpaired([SAMPLES[i]], config)
         log.debug(logid+'PAIRED: '+str(paired))
-        log.debug(logid+'SEARCHING: '+s)
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
@@ -289,12 +287,11 @@ def sampleslong(config):
     tosearch = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(k)
-    log.debug(logid+str("MOIN"))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
         for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES'])):
             ret.append(os.path.join(str.join(os.sep, search), x))
-    ret= list(set(ret))
+    ret = list(set(ret))
     log.debug(logid+str(ret))
     return ret
 
@@ -424,7 +421,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
 
 @check_run
 def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', subname=None):
-    logid=scriptname+'.Collection_make_pre: '
+    logid = scriptname+'.Collection_make_pre: '
     log.debug(logid+'WORK: '+str(subwork))
 
     subjobs = list()
@@ -457,6 +454,12 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
 
         if subwork == 'QC':
             subname = toolenv+'_raw.smk'
+
+        # Add variable for combination string
+        subjobs.append('\ncombo = \''+str(subname.replace('.smk', ''))+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+        subjobs.append('\n\n')
+        # Add rulethemall based on chosen workflows
+        subjobs.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, subname.replace('.smk', ''))))        # RuleThemAll for snakemake depending on chosen workflows
 
         smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
         with open(smkf, 'r') as smk:
@@ -1186,7 +1189,6 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
 def conditiononly(sample, config):
     logid = scriptname+'.Collection_conditiononly: '
     ret = list()
-    paired = False
     check = os.path.dirname(sample).split(os.sep)
     ret.extend(check)
     log.debug(logid+'CHECK: '+str(check))
@@ -1201,7 +1203,6 @@ def conditiononly(sample, config):
 @check_run
 def checkpaired(sample, config):
     logid = scriptname+'.Collection_checkpaired: '
-    ret = list()
     paired = ''
     for s in sample:
         log.debug(logid+'SAMPLE: '+str(s))
