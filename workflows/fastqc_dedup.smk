@@ -1,4 +1,4 @@
-QCBIN, QCENV = env_bin_from_config3( config, 'QC')
+QCBIN, QCENV = env_bin_from_config3(config, 'QC')
 #outdir = 'QC/'+str(QCENV)+'/'
 #moutdir = 'QC/Multi/'+str(QCENV)+'/'
 

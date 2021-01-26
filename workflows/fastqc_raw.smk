@@ -2,7 +2,7 @@ QCBIN, QCENV = env_bin_from_config3(config, 'QC')
 #outdir = 'QC/'+str(QCENV)+'/'
 #moutdir = 'QC/Multi/'+str(QCENV)+'/'
 
-wildcard_constraints:
+#wildcard_constraints:
     #    rawfile = '|'.join(list(SAMPLES)),
     #    read = "R1|R2"
     #    outdir = outdir,

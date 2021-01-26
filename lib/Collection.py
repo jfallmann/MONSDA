@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan 25 21:47:24 2021 (+0100)
+# Last-Updated: Tue Jan 26 10:24:19 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2673
+#     Update #: 2740
 # URL:
 # Doc URL:
 # Keywords:
@@ -173,7 +173,7 @@ def get_samples(config):
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            if paired == 'paired':
+            if 'paired' not in paired:
                 RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
@@ -205,7 +205,7 @@ def get_samples_postprocess(config, subwork):
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            if paired == 'paired':
+            if 'paired' in paired:
                 RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
@@ -248,6 +248,7 @@ def basecall_samples(config):
     log.debug(logid+'SAMPLES: '+str(RETSAMPLES))
     return RETSAMPLES
 
+
 @check_run
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
@@ -257,41 +258,47 @@ def get_conditions(samples, config):
     log.debug(logid+str(ret))
     return list(set(ret))
 
+
 @check_run
-def get_samples_from_dir(id, condition, setting, config):  # CHECK
+def get_samples_from_dir(search, config):  # CHECK
     logid = scriptname+'.Collection_get_samples_from_dir: '
-    pat = os.path.abspath(os.path.join('FASTQ', id, condition, '*.fastq.gz'))
-    log.debug(logid+str(pat))
-    ret = natsorted(glob.glob(pat), key=lambda y: y.lower())
-    log.debug(logid+str(ret))
-    if len(ret) > 0:
-        seqtype = getFromDict(config, ['SEQUENCING', id, condition, setting])
-        for x in seqtype:
-            if 'unpaired' not in x:
-                ret = list(set([re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s)) for s in ret]))
+    samples = [x.replace(' ', '') for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES']))]
+    for x in range(len(search), len(search)-1, -1):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
+        pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
+        log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
+        check = natsorted(glob.glob(pat), key=lambda y: y.lower())
+        log.debug(logid+'check: '+str(check))
+        if len(check) > 0:
+            ret = list()
+            paired = checkpaired([os.sep.join([os.sep.join(search), check[0].split(os.sep)[-1]])], config)
+            if 'paired' in paired:
+                log.debug(logid+'SEARCHING: '+str([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check]))
+                ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check if any(c in s for c in samples)])))
+                log.debug(logid+'FOUND: '+str(ret))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
                     if renamelist[i] != ret[i]:
+                        log.warning('SAMPLE NAMES CONTAIN LOWER CASE r1/r2 INSTEAD OF R1/R2 FOR PAIRED END SEQUENCING, THEY WILL BE RENAMED')
                         os.rename(ret[i], renamelist[i])
             else:
-                ret = list(set([re.sub(r'.fastq.gz','', os.path.basename(s)) for s in ret]))
-        return list(set(ret))
-    else:
-        return list()
+                log.debug(logid+'SEARCHING: '+str([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in check]))
+                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in check if any(c in s for c in samples)])
+
+            log.debug(logid+'RETURN: '+str(ret))
+            return list(set(ret))
+    log.warning(logid+'NO SAMPLES FOUND')
+    return list()
 
 
 @check_run
 def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
-    ret = list()
     tosearch = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
-        tosearch.append(k)
+        tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
-        for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES'])):
-            ret.append(os.path.join(str.join(os.sep, search), x))
-    ret = list(set(ret))
+        ret = get_samples_from_dir(search, config)
     log.debug(logid+str(ret))
     return ret
 
@@ -1166,21 +1173,22 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
     ret = list()
     for s in sample:
         log.debug(logid+str(s))
-        s = s.replace('.fastq.gz','')
+        s = s.replace('.fastq.gz', '')
         check = os.path.dirname(s).split(os.sep)
         log.debug(logid+'CHECK: '+str(check))
+        tmplist = check
         for r in runstate_from_sample([s], config):
-            tmplist = check
             if r not in tmplist:
                 tmplist.append(r)
-            log.debug(logid+'TMPLIST: '+str(tmplist))
-            if not 'unpaired' in subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
-                #s = re.sub(r'_[r|R|\A\Z][1|2]','', s)  # Not working with python > 3.7
-                s = re.sub(r'_[r|R|][1|2]','', s)
-            if r not in s.split(os.sep):
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)),"{c}".format(c=r), os.path.basename(s)))
-            else:
-                ret.append(os.path.join("{p}".format(p=os.path.dirname(s)), os.path.basename(s)))
+        log.debug(logid+'TMPLIST: '+str(tmplist))
+        paired = checkpaired([s], config)
+        if 'paired' in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
+            s = re.sub(r'_[r|R|][1|2]', '', s)
+        r = os.sep.join(tmplist)
+        if r not in s:
+            ret.append(os.sep.join([os.path.dirname(s), r, os.path.basename(s)]))
+        else:
+            ret.append(os.sep.join([os.path.dirname(s), os.path.basename(s)]))
     log.debug(logid+'RETURN: '+str(ret))
     return ret
 
@@ -1475,7 +1483,7 @@ def nf_fetch_params(configfile):
     stranded = checkstranded([sample], config)
     retconf["STRANDED"] = stranded
 
-    if paired == 'paired':
+    if 'paired' in paired:
         log.info('RUNNING NEXTFLOW IN PAIRED READ MODE')
     if stranded != '':
         log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
