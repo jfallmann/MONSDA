@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 26 14:58:10 2021 (+0100)
+# Last-Updated: Tue Jan 26 17:06:23 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2773
+#     Update #: 2791
 # URL:
 # Doc URL:
 # Keywords:
@@ -1148,23 +1148,24 @@ def runstate_from_sample(sample, config):
     for s in sample:
         if len(getFromDict(config["SETTINGS"], s.split(os.sep))) < 1:
             s = os.path.dirname(s)
-        n = s.split(os.sep)[-1]
+            n = s.split(os.sep)[-1]
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
         log.debug(logid+'SETTINGS: '+str(c))
         if dict_inst(c):
             if not c.get('SAMPLES'):
                 for k, v in c.items():
-                    log.debug(logid+'k, v: '+str([str(k), str(v)]))
-                    #if n in v:
-                    if k not in ret:
-                        ret.append(k)
+                    log.debug(logid+'k: '+str(k)+', v: '+str(v)+' c: '+str(c))
+                    if dict_inst(v) and v.get('SAMPLES'):
+                        if k not in ret:
+                            ret.append(k)
             else:
+                log.debug(logid+'c: '+str(c))
                 ret.extend(s.split(os.sep))
         else:
-            if n in c:
-                k = s.split(os.sep)[-1]
-                ret.append(k)
+            log.debug(logid+'c: '+str(c)+', k: '+str(s.split(os.sep)[-1]))
+            k = s.split(os.sep)[-1]
+            ret.append(k)
     log.debug(logid+'RETURN: '+str(ret))
     return ret
 
@@ -1199,13 +1200,18 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
 def conditiononly(sample, config):
     logid = scriptname+'.Collection_conditiononly: '
     ret = list()
-    check = os.path.dirname(sample).split(os.sep)
-    ret.extend(check)
-    log.debug(logid+'CHECK: '+str(check))
+    check = sample.split(os.sep)
+    checkdir = check[:-1]
+    sname = check[-1]
+    ret.extend(checkdir)
+    log.debug(logid+'CHECK: '+str(checkdir))
     for r in runstate_from_sample([sample], config):
         log.debug(logid+'runstate '+str(r))
         if r not in ret:
-            ret.append(r)
+            tmp = check[:-1]
+            tmp.append(r)
+            if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
+                ret.append(r)
     log.debug(logid+'ret: '+str(ret))
     return ret
 
