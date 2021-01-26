@@ -2,10 +2,6 @@ DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
 wlparams = ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None , config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None , config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
 
-print('TEST SAMPLES: '+str(SAMPLES))
-print('TEST FILES: '+str('|'.join(list(samplecond(SAMPLES, config)))))
-print('TEST LAMBDA: '+str([x for x in SAMPLES if x.split(os.sep)[-1] in '|'.join(list(samplecond(SAMPLES, config)))]))
-
 #wildcard_constraints:
 #    rawfile = '|'.join(list(SAMPLES)),
 #    read = "R1|R2",
