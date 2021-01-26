@@ -73,7 +73,7 @@ INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
 IP = SETTINGS.get('IP')
-rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
+rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
     log.debug('DEDUPLICATION ENABLED')
 

@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 26 10:24:19 2021 (+0100)
+# Last-Updated: Tue Jan 26 14:58:10 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2740
+#     Update #: 2773
 # URL:
 # Doc URL:
 # Keywords:
@@ -192,7 +192,7 @@ def get_samples(config):
 @check_run
 def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
-    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], samplecond(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ', str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
@@ -253,7 +253,7 @@ def basecall_samples(config):
 def get_conditions(samples, config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
-    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
+    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):
         ret.append(k)
     log.debug(logid+str(ret))
     return list(set(ret))
@@ -263,7 +263,7 @@ def get_conditions(samples, config):
 def get_samples_from_dir(search, config):  # CHECK
     logid = scriptname+'.Collection_get_samples_from_dir: '
     samples = [x.replace(' ', '') for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES']))]
-    for x in range(len(search), len(search)-1, -1):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
+    for x in range(len(search), len(search)-2, -1):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
         pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
         log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
@@ -396,7 +396,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                 else:
                     tempconf[key] = subSetDict(config[key], condition)
                     if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
-                        tempconf['SETTINGS']['RUNDEDUP'] = 'enabled'
+                        tempconf['RUNDEDUP'] = 'enabled'
 
             if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
                 tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
@@ -1146,7 +1146,9 @@ def runstate_from_sample(sample, config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
-        s = os.path.dirname(s)
+        if len(getFromDict(config["SETTINGS"], s.split(os.sep))) < 1:
+            s = os.path.dirname(s)
+        n = s.split(os.sep)[-1]
         log.debug(logid+'SAMPLE: '+s)
         c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
         log.debug(logid+'SETTINGS: '+str(c))
@@ -1154,9 +1156,9 @@ def runstate_from_sample(sample, config):
             if not c.get('SAMPLES'):
                 for k, v in c.items():
                     log.debug(logid+'k, v: '+str([str(k), str(v)]))
-                    if n in v:
-                        if k not in ret:
-                            ret.append(k)
+                    #if n in v:
+                    if k not in ret:
+                        ret.append(k)
             else:
                 ret.extend(s.split(os.sep))
         else:
@@ -1186,7 +1188,7 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
             s = re.sub(r'_[r|R|][1|2]', '', s)
         r = os.sep.join(tmplist)
         if r not in s:
-            ret.append(os.sep.join([os.path.dirname(s), r, os.path.basename(s)]))
+            ret.append(os.sep.join([r, os.path.basename(s)]))
         else:
             ret.append(os.sep.join([os.path.dirname(s), os.path.basename(s)]))
     log.debug(logid+'RETURN: '+str(ret))
@@ -1596,8 +1598,8 @@ def getFromDict(dataDict, mapList):
     log.debug(logid+'MAPLIST: '+str(mapList)+'\tDict: '+str(dataDict))
     ret = dataDict
     for k in mapList:
+        log.debug(logid+'k: '+str(k))
         if k in dataDict:
-            log.debug(logid+'k: '+str(k))
             dataDict = dataDict[k]
             log.debug(logid+'subdict: '+str(dataDict))
         else:
@@ -1634,6 +1636,7 @@ def subDict(dataDict, mapList):
             ret = ret[k]
         else:
             log.debug(logid+'No k in dict')
+            return None
     return ret
 
 @check_run
@@ -1680,15 +1683,20 @@ def keysets_from_dict(dictionary, search=None, original=None):  # Only works for
         for k, v in keys_from_dict(dictionary, search).items():
             keylist.append(v)
         log.debug(logid+'kl:'+str(keylist))
-        combis = list(itertools.product(*keylist))
+        combis = list()
+        for i in range(1, len(keylist)+1):
+            subkeylist = keylist[0:i]
+            combis.extend(list(itertools.product(*subkeylist)))
         log.debug(logid+'cs:'+str(combis))
         ret = list()
         for combi in combis:
-            if len(getFromDict(dictionary, combi)) >= 1:
-                log.debug(logid+'found: '+str(combi))
-                ret.append(combi)
-            else:
-                continue
+            #if len(getFromDict(dictionary, combi)) >= 1:
+            check = subDict(dictionary, combi)
+            log.debug(logid+'checking: '+str(check))
+            if isvalid(check):
+                if (isinstance(check, dict) and check.get("SAMPLES")) or isinstance(check, str):
+                    log.debug(logid+'found: '+str(combi))
+                    ret.append(combi)
         return ret
     else:
         return keylist
