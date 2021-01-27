@@ -1,32 +1,24 @@
 ---
 title: "NEXTSNAKES SUMMARY REPORT"
-fontsize: 10pt
+date: "`r Sys.Date()`"
+author: "`r Sys.getenv('LOGNAME')`"
 output:
   rmdformats::readthedown:
-  html_document:
-    toc_depth: 3
+    code_folding: show
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+pkgdown:
+  as_is: true
 params:
-  date: !r Sys.Date()
   root: ''
   outdir: ''
 ---
 
 
-\begin{center}
-`r params$date`\
-\end{center}
-***
-
 ```{r setup, include=FALSE}
+library(knitr)
+library(ggplot2)
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = params$root)
 ```
-
-# OVERVIEW {.tabset}
-Uebersicht, welche daten, mit welchen tools verarbeitet wurden und weiter Infos...
-
-## Data
-daten daten daten
-
-## Tools
-tools tools tools

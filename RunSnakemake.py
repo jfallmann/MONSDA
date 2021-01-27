@@ -277,8 +277,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         '''
 
         if postprocess:
-            summary_tools_set = set()
-            summary_tools_dict = dict()
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
@@ -288,11 +286,6 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
                 for job in jobs:
                     smko, confo = job
-
-                    if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                        summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
-                        for value in summary_tools_dict[subwork]:
-                            summary_tools_set.add('-'.join([subwork, value]))
 
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
@@ -305,7 +298,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             log.debug(logid+'JOB CODE '+str(jid))
 
             # SUMMARY RUN
-            jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
+            jobs = make_summary(config, subdir, loglevel)
             jobstorun = list()
 
             for job in jobs:

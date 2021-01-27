@@ -327,18 +327,18 @@ def get_summary_dirs(config):
     return ret
 
 
-@check_run
-def get_summary_files(config):
-    logid=scriptname+'.get_summary_files: '
-    ret=list()
-    for work, tools in config['WORKFLOWS'].items():
-        for tool in tools:
-            log.info(logid+'make summary of '+str(work)+' - '+str(tool))
-            for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
-            # for f in glob.glob(f"{work}/{tool.upper()}/*"):
-                ret.append(f)
-    log.debug(logid+str(ret))
-    return ret
+# @check_run
+# def get_summary_files(config):
+#     logid=scriptname+'.get_summary_files: '
+#     ret=list()
+#     for work, tools in config['WORKFLOWS'].items():
+#         for tool in tools:
+#             log.info(logid+'make summary of '+str(work)+' - '+str(tool))
+#             for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
+#             # for f in glob.glob(f"{work}/{tool.upper()}/*"):
+#                 ret.append(f)
+#     log.debug(logid+str(ret))
+#     return ret
 
 
 @check_run
@@ -824,7 +824,84 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(config, subdir, loglevel):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+    logid=scriptname+'.Collection_make_summary: '
+
+    output = "REPORTS/SUMMARY/summary.Rmd"
+    jobs = list()
+    lines = list()
+    condapath = re.compile(r'conda:\s+"')
+    logfix = re.compile(r'loglevel="INFO"')
+
+    # Add Header
+    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis','SUMMARY')
+    rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
+
+    with open(rmd_header,'r') as read_file:
+        for line in read_file.readlines():
+            lines.append(line)
+        lines.append('\n\n')
+
+    # Add rMarkdown snippets
+    snippets = glob.glob("REPORTS/SUMMARY/RmdSnippets/*")
+    for snippet in snippets:
+        with open(snippet,'r') as read_file:
+            for line in read_file.readlines():
+                lines.append(line)
+
+    if os.path.exists(output):
+        os.rename(output, output+'.bak')
+    with open(output, 'a') as writefile:
+        for line in lines:
+            writefile.write(line)
+        writefile.write('\n\n')
+
+    subjobs = list()
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+    with open(smkf,'r') as smk:
+        for line in smk.readlines():
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'summary.smk'))
+    with open(smkf,'r') as smk:
+        for line in smk.readlines():
+            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+            line = re.sub(condapath, 'conda:  "../', line)
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+    with open(smkf, 'r') as smk:
+        for line in smk.readlines():
+            subjobs.append(line)
+        subjobs.append('\n\n')
+
+    smko = os.path.abspath(os.path.join(subdir, 'summary_subsnake.smk'))
+    if os.path.exists(smko):
+        os.rename(smko, smko+'.bak')
+    with open(smko, 'a') as smkout:
+        smkout.write(''.join(subjobs))
+        smkout.write('\n\n')
+
+    subconf = NestedDefaultDict()
+    for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
+        subconf[key] = config[key]
+
+    confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
+    if os.path.exists(confo):
+        os.rename(confo, confo+'.bak')
+    with open(confo, 'a') as confout:
+        json.dump(subconf, confout)
+
+    jobs.append([smko, confo])
+
+    return jobs
+
+
+@check_run
+def make_summary_old(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
     logid=scriptname+'.Collection_make_summary: '
 
     log.info(logid+'CREATING SUMMARY FOR '+str(conditions))

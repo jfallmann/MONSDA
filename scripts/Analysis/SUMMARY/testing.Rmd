@@ -1,0 +1,178 @@
+
+# DIFFERENTIAL TRANSCRIPT USAGE with DRIMSeq {.tabset}
+## COMPARISON
+
+### Read-in Files {.tabset}
+```{r, DTU_DRIMSEQ_files, include = TRUE, echo = TRUE, message = TRUE, warning = TRUE}
+f.1 <- 'DTU/DRIMSEQ/DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
+f.2 <- 'DTU/DRIMSEQ/DTU_DRIMSEQ_COMPARISON_results_proportions.tsv.gz'
+f.3 <- 'DTU/DRIMSEQ/Sig_DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
+f.4 <- 'DTU/DRIMSEQ/SigDOWN_DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
+f.5 <- 'DTU/DRIMSEQ/SigUP_DTU_DRIMSEQ_COMPARISON_results_genes.tsv.gz'
+f.6 <- 'DTU/DRIMSEQ/Sig_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
+f.7 <- 'DTU/DRIMSEQ/SigDOWN_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
+f.8 <- 'DTU/DRIMSEQ/SigUP_DTU_DRIMSEQ_COMPARISON_results_transcripts.tsv.gz'
+```
+```{r, DTU_DRIMSEQ_read_tables, include = TRUE, echo = FALSE, message = FALSE, warning = TRUE}
+library(tidyr)
+all_genes       <- tidyr::drop_na(read.table(gzfile(f.1), header = TRUE))
+proportions     <- tidyr::drop_na(read.table(gzfile(f.2), header = TRUE))
+sig_all_genes   <- tidyr::drop_na(read.table(gzfile(f.3), header = TRUE))
+sig_down_genes  <- tidyr::drop_na(read.table(gzfile(f.4), header = TRUE))
+sig_up_genes    <- tidyr::drop_na(read.table(gzfile(f.5), header = TRUE))
+sig_all_transcripts   <- tidyr::drop_na(read.table(gzfile(f.6), header = TRUE))
+sig_down_transcripts  <- tidyr::drop_na(read.table(gzfile(f.7), header = TRUE))
+sig_up_transcripts    <- tidyr::drop_na(read.table(gzfile(f.8), header = TRUE))
+
+```
+
+#### f.1
+```{r, DTU_DRIMSEQ_tables_1, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(all_genes)
+```
+
+#### f.2
+```{r, DTU_DRIMSEQ_tables_2, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(proportions)
+```
+#### f.3
+```{r, DTU_DRIMSEQ_tables_3, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_all_genes)
+```
+
+#### f.4
+```{r, DTU_DRIMSEQ_tables_4, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_down_genes)
+```
+
+#### f.5
+```{r, DTU_DRIMSEQ_tables_5, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_up_genes)
+```
+
+#### f.6
+```{r, DTU_DRIMSEQ_tables_6, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_all_transcripts)
+```
+
+#### f.7
+```{r, DTU_DRIMSEQ_tables_7, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_down_transcripts)
+```
+
+#### f.8
+```{r, DTU_DRIMSEQ_tables_8, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}
+library(DT)
+DT::datatable(sig_up_transcripts)
+```
+
+### Overview of DEG and DTU found
+
+```{r, DTU_DRIMSEQ_overviewTable, echo=FALSE, results = 'asis', warning = FALSE}
+library(knitr)
+library(kableExtra)
+
+number <- c(nrow(all_genes),
+             nrow(sig_all_genes),
+             nrow(sig_down_genes),
+             nrow(sig_up_genes),
+             nrow(sig_all_transcripts),
+             nrow(sig_down_transcripts),
+             nrow(sig_up_transcripts),
+             nrow(all_genes[all_genes$adj_pvalue < 0.05,])
+           )
+category  <- c("Number of Genes checked",
+                "all",
+                "down regulated",
+                "up regulated",
+                "all",
+                "down regulated",
+                "up regulated",
+                "all"
+              )
+overview <- data.frame(category,number)
+
+kable(overview, caption = "Overview DE numbers") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = T)%>%
+  group_rows(index = c(" " = 1,
+                        "Number of significant DE Genes filtered by adjusted P-value and Log Fold Change" = 3,
+                        "Number of significant DE Transripts filtered by adjusted P-value and Log Fold Change" = 3,
+                        "Number of Genes with DTU found by DRIMSeq" = 1))
+```
+
+```{r, DTU_DRIMSEQ_sigTable, echo=FALSE, results = 'asis', warning = FALSE}
+library(knitr)
+library(kableExtra)
+
+kable(sig_all_genes[,c(7,1,2,3)], caption = "significant DEG's by adjusted P-value and Log Fold Change") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T)
+```
+
+```{r, DTU_DRIMSEQ_DRIMTable, echo=FALSE, results = 'asis', warning = FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyr)
+df <- all_genes[all_genes$adj_pvalue < 0.05,][,c(7,1,2,3)]
+kable(df, caption = "Genes with DTU found by DRIMSeq",  row.names = F) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  scroll_box(width = "100%", height = "400px")
+```
+
+### DTU Plots
+
+```{r, DTU_DRIMSEQ_definePlotHeight, echo=F, warning = T}
+of_interest <- all_genes[all_genes$adj_pvalue < 0.05,]
+plot_height <- 2 * round(nrow(of_interest)/2)
+```
+
+
+```{r DTU_DRIMSEQ_DTUplots, fig.width=10, fig.height=plot_height, echo=FALSE, message = TRUE, warning = FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(ggplot2)
+  library(gridExtra)
+  library(plyr)
+})
+
+limit <- 1000
+
+plotlist <- list()
+counter=1
+for(gene in of_interest$Gene){
+  if(counter>limit){break}
+  if(is.na(gene)){next}
+  p <- subset(proportions, Gene == gene)[,c(2,9,10)]
+  names(p) <- c("Transcript","group1","group2")
+  df <- p %>% tidyr::gather(Condition,Percentage,group1:group2)
+
+  plotlist[[gene]] <- ggplot(df,aes(x=Condition,y=Percentage,fill=Transcript))+
+    ggtitle(paste(gene," (",of_interest$gene_id[of_interest$Gene == gene][which(!is.na(of_interest$gene_id[of_interest$Gene == gene]))],")")) +
+    geom_bar( width = 0.5, stat="identity") +
+    geom_segment(data = tidyr::spread(df, Condition, Percentage)[(nrow(df)/2):1,],
+                 colour = "black",
+                 linetype = "dotted",
+                 size=0.3,
+                 aes(x = 1.03 + 0.5/2,
+                     xend = 1.97 - 0.5/2,
+                     yend = cumsum(group2),
+                     y = cumsum(group1))) +
+    theme(panel.background = element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank(),
+          plot.title.position = "plot",
+          plot.title = element_text(size=12),
+          panel.grid = element_blank())+
+    coord_flip()
+
+  counter <- counter+1
+}
+margin = theme(plot.margin = unit(c(1.5,0.5,0,0.5), "cm"))
+grid.arrange(grobs = lapply(plotlist, "+", margin),ncol = 2)
+```

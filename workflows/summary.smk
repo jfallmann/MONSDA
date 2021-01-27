@@ -8,13 +8,11 @@ rule themall:
             # summarys = expand("{dir}/SUMMARY.pdf", dir=get_summary_dirs(config))
 
 rule make_rmd:
-    input:  expand("{files}", files=get_summary_files(config))
+    input:  os.path.join(outdir,'summary.Rmd')
     output: rules.themall.input.summary_all
             # rules.themall.input.summarys
     log:    expand("LOGS/{outdir}/make_rmd.log", outdir=outdir)
     conda:  "nextsnakes/envs/summary.yaml"
     params: outdir = outdir,
-            rmd = os.path.join(outdir,'summary.Rmd'),
-            inputstring = lambda wildcards, input: '-'.join(input),
             currentpath = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"..")
-    shell:  "Rscript -e \"rmarkdown::render('{params.rmd}',params=list(root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.html')\" 2> {log}"
+    shell:  "Rscript -e \"rmarkdown::render('{input}',params=list(root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.html')\" 2> {log}"
