@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan 28 15:19:48 2021 (+0100)
+# Last-Updated: Thu Jan 28 15:29:23 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2840
+#     Update #: 2848
 # URL:
 # Doc URL:
 # Keywords:
@@ -837,6 +837,79 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                         json.dump(subconf, confout)
 
                     jobs.append([smko, confo])
+
+    else:
+        subwork = postworkflow
+        subconf = NestedDefaultDict()
+        add = list()
+
+        for condition in conditions:
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf, 'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath,'conda:  "../', line)
+                    add.append(line)
+
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+
+            if listoftools is None:
+                log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                continue
+
+            sconf = listofconfigs[0]
+            for a in range(0, len(listoftools)):
+                subjobs = list()
+
+                toolenv, toolbin = map(str, listoftools[a])
+                if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
+                    toolenv = toolenv+'_'+subwork
+
+                sconf[subwork+'ENV'] = toolenv
+                sconf[subwork+'BIN'] = toolbin
+
+                scombo = ''
+                combo = toolenv+os.sep
+
+                # Add variable for combination string
+                subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                subjobs.append('\n\n')
+                subconf.update(sconf)
+
+                subname = toolenv+'.smk'
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+
+                # Append footer and write out subsnake and subconf per condition
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+
+                te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten toolenv if subwork is already added
+                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), subwork, te, 'subsnake.smk'])))
+                if os.path.exists(smko):
+                    os.rename(smko, smko+'.bak')
+                with open(smko, 'w') as smkout:
+                    smkout.write(''.join(add))
+                    smkout.write(''.join(subjobs))
+
+                confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), subwork, te, 'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo, confo+'.bak')
+                with open(confo, 'w') as confout:
+                    json.dump(subconf, confout)
+
+                jobs.append([smko, confo])
+
 
     return jobs
 
