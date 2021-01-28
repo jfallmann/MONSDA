@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan 28 13:53:14 2021 (+0100)
+# Last-Updated: Thu Jan 28 15:04:54 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2827
+#     Update #: 2838
 # URL:
 # Doc URL:
 # Keywords:
@@ -818,11 +818,11 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath,'conda:  "../', line)
+                            line = re.sub(condapath, 'conda:  "../', line)
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-                    te = str.split('_', toolenv)[0:1] if '_' in toolenv else toolenv # shorten toolenv is subwork is already added
+                    te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten toolenv if subwork is already added
                     smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
                     if os.path.exists(smko):
                         os.rename(smko, smko+'.bak')
