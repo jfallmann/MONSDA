@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan 28 15:04:54 2021 (+0100)
+# Last-Updated: Thu Jan 28 15:19:48 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2838
+#     Update #: 2840
 # URL:
 # Doc URL:
 # Keywords:
@@ -510,7 +510,7 @@ def get_combo(wfs, config, conditions):
     log.debug(logid+str(wfs)+str(conditions))
     combos = NestedDefaultDict()
 
-    if wfs is None:
+    if wfs is None or len(wfs) < 1:
         return None
 
     for condition in conditions:
