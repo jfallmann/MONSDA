@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 26 17:06:23 2021 (+0100)
+# Last-Updated: Thu Jan 28 08:46:59 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2791
+#     Update #: 2795
 # URL:
 # Doc URL:
 # Keywords:
@@ -315,12 +315,11 @@ def get_placeholder(config):
 
 
 @check_run
-def get_cutoff_as_string(config, subwork):
-    logid=scriptname+'.get_cutoff: '
-    cutoffs = [f"{k}:{v}" for (k, v) in config[subwork]['CUTOFF'][0].items()]
-    ret = '-'.join(cutoffs)
-    log.info(logid+'CUTOFFS: '+str(ret))
-    return ret
+def get_cutoff_as_string(config, subwork, cf):
+    logid = scriptname+'.get_cutoff: '
+    cutoff = str(config[subwork]['CUTOFFS'].get(cf))
+    log.info(logid+'CUTOFFS: '+str(cf)+':'+cutoff)
+    return cutoff
 
 
 @check_run
@@ -404,8 +403,8 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     toollist.append([k, v])
 
             if any([subwork == x for x in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'COUNTING']]):
-                if config[subwork].get('CUTOFF'):
-                    tempconf[subwork]['CUTOFF'] = config[subwork]['CUTOFF']  #else '.05'
+                if config[subwork].get('CUTOFFS'):
+                    tempconf[subwork]['CUTOFFS'] = config[subwork]['CUTOFFS']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
@@ -1186,7 +1185,7 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
         log.debug(logid+'TMPLIST: '+str(tmplist))
         paired = checkpaired([s], config)
         if 'paired' in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
-            s = re.sub(r'_[r|R|][1|2]', '', s)
+            s = re.sub(r'_[r|R|][1|2]\.', '', s)
         r = os.sep.join(tmplist)
         if r not in s:
             ret.append(os.sep.join([r, os.path.basename(s)]))

@@ -11,7 +11,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
+    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DAS/Featurecounts_DAS/{combo}{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{combo}{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -24,7 +24,7 @@ rule featurecount_unique:
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule create_samplemaps:
-    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES, config))
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output: smap = expand("{outdir}Tables/samplemap.txt", outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt", outdir=outdir)
     log:    expand("LOGS/{outdir}create_samplemaps.log", outdir=outdir)
