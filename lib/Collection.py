@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan 28 08:46:59 2021 (+0100)
+# Last-Updated: Thu Jan 28 13:53:14 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2795
+#     Update #: 2827
 # URL:
 # Doc URL:
 # Keywords:
@@ -192,7 +192,8 @@ def get_samples(config):
 @check_run
 def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
-    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], samplecond(x, config))) > 0 ] #only those samples where postprocessing steps are defined for in config
+
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 and ( not config[subwork].get('EXCLUDE') or os.path.basename(x) not in config[subwork]['EXCLUDE'] ) ]  # only those samples where postprocessing steps are defined for in config
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ', str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
@@ -200,16 +201,17 @@ def get_samples_postprocess(config, subwork):
         s = check[i]
         paired = checkpaired([SAMPLES[i]], config)
         log.debug(logid+'PAIRED: '+str(paired))
-        log.debug(logid+'SEARCHING: '+s)
         f = glob.glob(s)
         log.debug(logid+'SAMPLECHECK: '+str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
             if 'paired' in paired:
-                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz','', os.path.basename(s))) for s in f])))
+                RETSAMPLES.extend(list(set([os.path.join(os.path.dirname(s), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))) for s in f])))
                 log.debug(logid+'PAIREDSAMPLES: '+str(f))
             else:
                 RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
+        else:
+            log.debug(logid+'SAMPLECHECK: '+str(f))
     log.debug(logid+'SAMPLETEST: '+str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid+'No samples found for '+str(subwork)+', please check config file')
@@ -820,14 +822,15 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subsnake.smk'])))
+                    te = str.split('_', toolenv)[0:1] if '_' in toolenv else toolenv # shorten toolenv is subwork is already added
+                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
                     if os.path.exists(smko):
                         os.rename(smko, smko+'.bak')
                     with open(smko, 'w') as smkout:
                         smkout.write(''.join(add))
                         smkout.write(''.join(subjobs))
 
-                    confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), envlist[i], subwork, toolenv, 'subconfig.json'])))
+                    confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subconfig.json'])))
                     if os.path.exists(confo):
                         os.rename(confo, confo+'.bak')
                     with open(confo, 'w') as confout:
@@ -1176,12 +1179,17 @@ def samplecond(sample, config): # takes list of sample names (including .fastq.g
     for s in sample:
         log.debug(logid+str(s))
         s = s.replace('.fastq.gz', '')
-        check = os.path.dirname(s).split(os.sep)
-        log.debug(logid+'CHECK: '+str(check))
-        tmplist = check
+        check = s.split(os.sep)
+        checkdir = check[:-1]
+        sname = check[-1]
+        tmplist = checkdir
+        log.debug(logid+'CHECK: '+str(checkdir))
         for r in runstate_from_sample([s], config):
             if r not in tmplist:
-                tmplist.append(r)
+                tmp = check[:-1]
+                tmp.append(r)
+                if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
+                    tmplist.append(r)
         log.debug(logid+'TMPLIST: '+str(tmplist))
         paired = checkpaired([s], config)
         if 'paired' in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
