@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Jan 28 15:29:23 2021 (+0100)
+# Last-Updated: Fri Jan 29 18:05:56 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2848
+#     Update #: 2854
 # URL:
 # Doc URL:
 # Keywords:
@@ -193,7 +193,7 @@ def get_samples(config):
 def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
 
-    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 and ( not config[subwork].get('EXCLUDE') or os.path.basename(x) not in config[subwork]['EXCLUDE'] ) ]  # only those samples where postprocessing steps are defined for in config
+    SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 and ( not config[subwork].get('EXCLUDE') or os.path.basename(x) not in config[subwork]['EXCLUDE'] ) ]  # only those samples where postprocessing steps are defined for in config, should we make this a per condition check?
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
     check = [os.path.join('FASTQ', str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
@@ -319,7 +319,7 @@ def get_placeholder(config):
 @check_run
 def get_cutoff_as_string(config, subwork, cf):
     logid = scriptname+'.get_cutoff: '
-    cutoff = str(config[subwork]['CUTOFFS'].get(cf))
+    cutoff = str(config[subwork]['CUTOFFS'].get(cf)) if config[subwork].get('CUTOFFS') else '.05' if cf == 'pval' else '1.5'
     log.info(logid+'CUTOFFS: '+str(cf)+':'+cutoff)
     return cutoff
 

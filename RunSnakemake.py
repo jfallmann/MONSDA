@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Mon Jan 25 22:07:30 2021 (+0100)
+# Last-Updated: Fri Jan 29 13:24:02 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1247
+#     Update #: 1250
 # URL:
 # Doc URL:
 # Keywords:
@@ -284,7 +284,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                combinations = get_combo(subworkflows, config, conditions)
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
                 jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
