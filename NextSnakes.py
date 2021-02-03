@@ -39,7 +39,6 @@ import subprocess
 import re
 import itertools as it
 
-min_version("5.8.2")
 scriptname=os.path.basename(__file__).replace('.py', '')
 
 from lib.Logger import *
@@ -61,14 +60,15 @@ from lib.Collection import *
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
-    parser.add_argument("-g", "--debug-dag", action="store_true", help='Should the debug-dag be printed')
-    parser.add_argument("-f", "--filegraph", action="store_true", help='Should the filegraph be printed')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
     parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
     parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
     parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
     parser.add_argument("--save", type=str, default=None, help='Do not run jobs from wrapper, create named text file containing jobs and arguments for manual running instead')
     parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
+    parser.add_argument("--snakemake", action="store_true", default=True, help='Wrap around snakemake')
+    parser.add_argument("--nextflow", action="store_true", default=False, help='Wrap around nextflow')
+    parser.add_argument("--clean", action="store_true", help='Cleanup workdir (nextflow), append -n to see list of files to clean or -f to actually remove those files')
     parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
 
     if len(sys.argv)==1:
@@ -77,28 +77,18 @@ def parseargs():
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
+def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
         config = load_configfile(configfile)
-        if skeleton:
-            for subdir in ['SubSnakes', 'RAW', 'FASTQ', 'LOGS', 'TMP']:
-                makeoutdir(subdir)
-            sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
-        else:
-            for subdir in ['SubSnakes', 'LOGS', 'TMP']:
-                makeoutdir(subdir)
-
         subdir = 'SubSnakes'
+        create_skeleton(subdir)
+
         argslist = list()
         if useconda:
             argslist.append("--use-conda")
         else:
             log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. Tou can also preinstall all conda environments appending the --use-conda and the --create-envs-only arguments.')
-        if debugdag:
-            argslist.append("--debug-dag")
-        if filegraph:
-            argslist.append("--filegraph|dot|display")
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
@@ -106,7 +96,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
-        config['MAXTHREADS'] = procs
+        config['MAXTHREADS'] = threads
 
         if unlock:
             log.info(logid+'Unlocking directory')
@@ -115,64 +105,14 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
 
-        preprocess = subworkflows = postprocess = []
-
-        #Define workflow stages
-        pre = ['QC', 'SRA', 'BASECALL']
-        sub = ['TRIMMING', 'MAPPING', 'DEDUP', 'QC']
-        post = ['COUNTING', 'UCSC', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']
-
-        wfs = [x.replace(' ','') for x in config['WORKFLOWS'].split(',')]
-
-        if 'WORKFLOWS' in config:
-            log.debug(logid+'CONFIG-WORKFLOWS: '+str(wfs)+'\t'+str(pre)+'\t'+str(sub)+'\t'+str(post))
-            subworkflows = [str(x) for x in wfs if x in sub]
-            log.debug(logid+'Sub: '+str(subworkflows))
-            if len(subworkflows) == 0 or subworkflows[0] == '':
-                subworkflows = []
-            preprocess = [x for x in wfs if x in pre]
-            if len(preprocess) == 0 or preprocess[0] == '':
-                preprocess = None
-            log.debug(logid+'Intermediate-WORKFLOWS: '+str([preprocess, subworkflows, postprocess]))
-
-            if subworkflows and any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP']) and preprocess and 'QC' in preprocess:
-                preprocess.remove('QC')
-
-            if preprocess and 'QC' in preprocess and not any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP']):
-                subworkflows.remove('QC')
-
-            postprocess = [x for x in wfs if x in post]
-            if len(postprocess) == 0 or postprocess[0] == '':
-                postprocess = []
-        else:
-            log.error('NO WORKFLOWS DEFINED, NOTHING TO DO!')
-            sys.exit()
-
-        if preprocess:
-            try:
-                all([config[x] or x == '' for x in preprocess])
-            except KeyError:
-                log.warning(logid+'Not all required preprocessing steps have configuration in the config file')
-
-        if subworkflows:
-            try:
-                all([config[x] or x == 'TRIMMING' or x == '' for x in subworkflows])
-            except KeyError:
-                log.warning(logid+'Not all required subworkflows have configuration in the config file')
-
-        if postprocess:
-            try:
-                all([config[x] or x == '' for x in postprocess])
-            except KeyError:
-                log.warning(logid+'Not all required postprocessing steps have configuration in the config file')
-
-        log.debug(logid+'WORKFLOWS: '+str([preprocess, subworkflows, postprocess]))
+        # Get processes to work on
+        preprocess, subworkflows, postprocess = get_processes(config)
 
         '''
         START TO PREPROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
-        if preprocess:          # Maybe SRA only
+        if preprocess:
             for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
                 log.info(logid+'Preprocess '+str(proc))
                 if proc not in config:
@@ -307,10 +247,159 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
 
-            # SUMMARY RUN
-            jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
-            jobstorun = list()
+            # SUMMARY RUN if needed
+            if any([x in subwork for x in ['DE', 'DEU', 'DAS', 'DTU']]):
+                jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
+                jobstorun = list()
 
+                for job in jobs:
+                    smko, confo = job
+                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --    printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest='     '.join(argslist)))
+
+                for job in jobstorun:
+                    with open('Jobs', 'a') as j:
+                        j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
+
+        else:
+            log.warning(logid+'No postprocessing steps defined! Nothing to do!')
+
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(''.join(tbe.format()))
+
+
+def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, optionalargs=None):
+    try:
+        logid = scriptname+'.run_nextflow: '
+        argslist = list()
+        if optionalargs and len(optionalargs) > 0:
+            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            argslist.extend(optionalargs)
+
+        if clean:
+            log.info(logid+'Cleaning working directory')
+            jobtorun = 'nextflow clean {a}'.format(a=' '.join(argslist))
+            log.info(logid+'CLEANUP '+str(jobtorun))
+            job = runjob(jobtorun)
+            log.debug(logid+'JOB CODE '+str(job))
+            sys.exit()
+
+        config = load_configfile(configfile)
+        workdir = os.path.abspath(str.join(os.sep,[workdir,'NextFlowWork']))
+        subdir = 'SubFlows'
+        create_skeleton(subdir)
+
+        argslist = list()
+        if optionalargs and len(optionalargs) > 0:
+            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            argslist.extend(optionalargs)
+            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
+                makeoutdir('LOGS/SLURM')
+
+        threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
+        config['MAXTHREADS'] = threads
+
+        # Get processes to work on
+        preprocess, subworkflows, postprocess = get_processes(config)
+
+        '''
+        START TO PROCESS
+        IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
+        '''
+
+        if preprocess:
+            for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
+                log.info(logid+'Preprocess '+str(proc))
+                if proc not in config:
+                    log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
+                makeoutdir('FASTQ')
+                makeoutdir('TMP')
+
+                if proc == 'SRA':
+                    SAMPLES = download_samples(config)
+                    preprocess.remove(proc)
+                elif proc == 'BASECALL':
+                    SAMPLES = basecall_samples(config)
+                    preprocess.remove(proc)
+                else:
+                    continue
+
+                log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
+                conditions = get_conditions(SAMPLES, config)
+                log.debug(logid+'PRECONDITIONS: '+str(conditions))
+
+                subwork = proc
+
+                for condition in conditions:
+                    log.info("CONDITION: "+str(condition))
+                    jobs = nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel)
+
+                    jobstorun = list()
+                    for job in jobs:
+                        smko, confo = job
+                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+
+                    for job in jobstorun:
+                        with open('Jobs', 'a') as j:
+                            j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
+
+        '''
+        ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
+        '''
+
+        SAMPLES = get_samples(config)
+        log.info(logid+'SAMPLES: '+str(SAMPLES))
+        conditions = get_conditions(SAMPLES, config)
+        log.info(logid+'CONDITIONS: '+str(conditions))
+
+        if preprocess:
+            log.info(logid+'STARTING PREPROCESSING')
+            if 'QC' in preprocess and 'QC' in config:
+                makeoutdir('QC')
+
+            for condition in conditions:
+                log.debug(logid+'Working on condition: '+str(condition))
+
+                for subwork in preprocess:
+                    log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
+                    jobs = nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, 'Pre')
+
+                    jobstorun = list()
+                    for job in jobs:
+                        smko, confo = job
+                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+
+                    for job in jobstorun:
+                        with open('Jobs', 'a') as j:
+                            j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
+
+        else:
+            log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
+
+        '''
+        END OF PREPROCESSING, START OF PROCESSING
+        '''
+
+        if subworkflows:
+            combinations = get_combo(subworkflows, config, conditions)
+            jobs = nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+
+            jobstorun = list()
             for job in jobs:
                 smko, confo = job
                 jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
@@ -322,6 +411,59 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                         log.info(logid+'RUNNING '+str(job))
                         jid = runjob(job)
                         log.debug(logid+'JOB CODE '+str(jid))
+
+        else:
+            log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
+
+        '''
+        END OF PROCESSING, START OF POSTPROCESSING
+        '''
+
+        if postprocess:
+            summary_tools_set = set()
+            summary_tools_dict = dict()
+            for subwork in postprocess:
+
+                SAMPLES = get_samples_postprocess(config, subwork)
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
+                jobs = nf_make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+                jobstorun = list()
+
+                for job in jobs:
+                    smko, confo = job
+
+                    if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
+                        summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
+                        for value in summary_tools_dict[subwork]:
+                            summary_tools_set.add('-'.join([subwork, value]))
+
+                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+
+                for job in jobstorun:
+                    with open('Jobs', 'a') as j:
+                        j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
+
+            # SUMMARY RUN if needed
+            if any([x in subwork for x in ['DE', 'DEU', 'DAS', 'DTU']]):
+                jobs = nf_make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
+                jobstorun = list()
+
+                for job in jobs:
+                    smko, confo = job
+                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --    printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest='     '.join(argslist)))
+
+                for job in jobstorun:
+                    with open('Jobs', 'a') as j:
+                        j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
@@ -396,13 +538,14 @@ def runjob(jobtorun):
 ####    MAIN    ####
 ####################
 
+
 if __name__ == '__main__':
 
     logid = scriptname+'.main: '
     try:
-        args=parseargs()
-        knownargs=args[0]
-        optionalargs=args[1:]
+        args = parseargs()
+        knownargs = args[0]
+        optionalargs = args[1:]
 
         log.setLevel(knownargs.loglevel)
 
@@ -413,8 +556,16 @@ if __name__ == '__main__':
         log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
         log.debug(logid+str(log.handlers))
 
-        run_snakemake(knownargs.configfile, knownargs.debug_dag, knownargs.filegraph, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.save, knownargs.unlock, optionalargs[0])
+        if not knownargs.nextflow:
+            min_version("5.32.0")
+            run_snakemake(knownargs.configfile, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.save, knownargs.unlock, optionalargs[0])
 
+        else:
+            nf_min_version = "20.10.0.5430"
+            if nf_check_version(nf_min_version):
+                run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton , knownargs.loglevel, knownargs.clean, optionalargs[0])
+            else:
+                log.error(logid+'Minimal version of nextflow required is '+str(nf_min_version)+'! Please install or use envs/nextsnakes.yaml to create conda environment accordingly')
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
