@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 14:13:37 2021 (+0100)
+# Last-Updated: Wed Feb  3 14:35:47 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2863
+#     Update #: 2866
 # URL:
 # Doc URL:
 # Keywords:
@@ -776,7 +776,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
 
-                if subwork in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
+                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
                     listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
                 else:
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -785,9 +785,9 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
                     continue
 
+                sconf = listofconfigs[0]
                 for a in range(0, len(listoftools)):
                     subjobs = list()
-                    sconf = listofconfigs[a]
                     toolenv, toolbin = map(str, listoftools[a])
                     if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
                         toolenv = toolenv+'_'+subwork
