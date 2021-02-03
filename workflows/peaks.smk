@@ -159,7 +159,7 @@ rule FindPeaks:
     threads: 1
     params: opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
             bins = BINS
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}"
 
 #rule QuantPeaks:
 #   input:  "{outdir}{source}/Peak_{file}.bed.gz"
