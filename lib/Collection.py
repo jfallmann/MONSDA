@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 12:46:58 2021 (+0100)
+# Last-Updated: Wed Feb  3 12:47:45 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2857
+#     Update #: 2858
 # URL:
 # Doc URL:
 # Keywords:
@@ -301,7 +301,7 @@ def sampleslong(config):
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
-        ret.extend(get_samples_from_dir(search, config)
+        ret.extend(get_samples_from_dir(search, config))
     log.debug(logid+str(ret))
     return ret
 
