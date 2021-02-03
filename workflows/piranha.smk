@@ -149,7 +149,7 @@ rule PreprocessPeaks:
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k6,6 -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre
