@@ -12,7 +12,7 @@ log.info(logid+"COMPARISON: "+str(comparison))
 
 rule themall:
     input:  session = expand("{outdir}/DTU_DRIMSEQ_{combi}_SESSION.gz", outdir=outdir, combi=combi),
-            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/SUM_DTU_DRIMSEQ_{combi}.Rmd", combi=combi)
+            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/SUM_DTU_DRIMSEQ.Rmd")
 
 rule salmon_index:
     input:  fa = REFERENCE
@@ -68,6 +68,7 @@ rule run_DTU:
             res_t = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_transcripts.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
             res_g = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_genes.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
             res_p = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_proportions.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
+            res_gwp = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_genewise-precision.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
             fig_F = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_FeatPerGene.png", outdir=outdir, comparison=compstr, combi=combi),
             fig_P = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_Precision.png", outdir=outdir, comparison=compstr, combi=combi),
             fig_PV = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_PValues.png", outdir=outdir, comparison=compstr, combi=combi),

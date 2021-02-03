@@ -12,11 +12,9 @@ anname          <- args[1]
 countfile       <- args[2]
 gtf             <- args[3]
 outdir          <- args[4]
-cmp             <- args[5]
-availablecores  <- as.integer(args[6])
-pval_cut        <- args[7]
-lfc_cut         <- args[8]
-print(args)
+combi           <- args[5]
+cmp             <- args[6]
+availablecores  <- as.integer(args[7])
 
 ## FUNCS
 get_gene_name <- function(id, df){
@@ -113,10 +111,10 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
-write.table(as.data.frame(tmm), gzfile("EDGER_DE_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
+write.table(as.data.frame(tmm), gzfile("Table/DE","EDGER",combi,"DataSet","table","AllConditionsnormalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without summarized replicates
-out <- "EDGER_DE_All_Conditions_MDS.png"
+out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
 png(out, width = 400, height = 400)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
@@ -124,7 +122,7 @@ dev.off()
 if (length(levels(groups)) > 2){
     print("Will plot MDS for Count sums")
     DGEsum <- sumTechReps(dge, ID=groups)
-    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
+    out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
     png(out, width = 400, height = 400)
     colors <- RainbowColor(DGEsum$samples$group)
     plotMDS(DGEsum, col=colors)
@@ -135,7 +133,7 @@ if (length(levels(groups)) > 2){
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- "EDGER_DE_All_Conditions_BCV.png"
+out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsBCV.png", sep="_")
 png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
@@ -144,7 +142,7 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- "EDGER_DE_All_Conditions_QLDisp.png"
+out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsQLDisp.png", sep="_")
 png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
@@ -156,8 +154,6 @@ for(contrast in comparisons[[1]]){
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
-
-    BPPARAM = MulticoreParam(workers=availablecores)
 
     print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
@@ -191,30 +187,19 @@ for(contrast in comparisons[[1]]){
         # qlf$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
 
         # create results table
-        write.table(as.data.frame(qlf), gzfile(paste("DE","EDGER",contrast_name,"results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(qlf), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-        # ## plot lFC vs CPM
-        # out <- paste("EDGER_DE_",contrast_name,"_MD.png",sep="")
-        # png(out, width = 400, height = 400)
-        # plotMD(qlf, main=contrast_name)
-        # abline(h=c(-1, 1), col="blue")
-        # dev.off()
+        ## plot lFC vs CPM
+        out <- paste("Figures/DE","EDGER",combi,contrast_name,"figure","MD.png",sep="_")
+        png(out, width = 400, height = 400)
+        plotMD(qlf, main=contrast_name)
+        abline(h=c(-1, 1), col="blue")
+        dev.off()
 
         # cleanup
         rm(qlf, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
-
-<<<<<<< HEAD
-        save.image(file = paste("EDGER_DE",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-
-=======
->>>>>>> DTU
-    }, error=function(e){
-        print(warnings)
-        file.create(paste("DE","EDGER",contrast_name,"results.tsv.gz", sep="_"))
-        # file.create(paste("EDGER_DE_",contrast_name,"_MD.png",sep=""))
-        cat("WARNING :",conditionMessage(e), "\n")
-    } )
+    })
 }
 
-save.image(file = "EDGER_DE_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DE_EDGER",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

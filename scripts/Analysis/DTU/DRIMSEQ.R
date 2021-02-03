@@ -2,10 +2,6 @@ suppressPackageStartupMessages({
   library(tximport)
   library(GenomicFeatures)
   library(DRIMSeq)
-  library(stageR)
-  library(DEXSeq)
-  library(DESeq2)
-  library(edgeR)
   library(rtracklayer)
 })
 
@@ -147,7 +143,7 @@ for(contrast in comparisons[[1]]){
     }
     contrast <- as.numeric(contrast[,1])
 
-    BPPARAM = MulticoreParam(workers=cores)
+    # BPPARAM = MulticoreParam(workers=cores)
 
     # # reduce data for testing
     d <- d[1:25,]
@@ -215,17 +211,17 @@ for(contrast in comparisons[[1]]){
 
     ## Plot feature per gene histogram
     png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
-    plotData(d)
+    print(plotData(d))
     dev.off()
 
     ## Plot precision
     png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","Precision.png",sep="_"))
-    plotPrecision(d)
+    print(plotPrecision(d))
     dev.off()
 
     ## Plot gene-level p-values
     png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","PValues.png",sep="_"))
-    plotPValues(d)
+    print(plotPValues(d))
     dev.off()
 
     # plot proportions
@@ -265,46 +261,8 @@ for(contrast in comparisons[[1]]){
     write.table(figures, paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"list","sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
     # cleanup
-    rm(res,res.txp,proportions,BPPARAM)
+    rm(res,res.txp,proportions)
     print(paste('cleanup done for ', contrast_name, sep=''))
-
-    # #  stageR following DRIMSeq (included additionally in workflow by Love&Soneson&Patro)
-    # pScreen <- res$pvalue
-    # strp <- function(x) substr(x,1,15)
-    # names(pScreen) <- strp(res$gene_id)
-    #
-    # pConfirmation <- matrix(res.txp$pvalue, ncol=1)
-    # rownames(pConfirmation) <- strp(res.txp$feature_id)
-    #
-    # tx2gene <- res.txp[,c("feature_id", "gene_id")]
-    # for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
-    #
-    # stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
-    #                       pScreenAdjusted=FALSE, tx2gene=tx2gene)
-    # stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=pv_cut)
-    # suppressWarnings({
-    #   drim.padj <- getAdjustedPValues(stageRObj, order=FALSE,
-    #                                   onlySignificantGenes=TRUE)
-    # })
-    # # head(drim.padj)
-    #
-    # write.table(as.data.frame(drim.padj), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-    #
-    # # Post-hoc filtering
-    # res.txp.filt <- DRIMSeq::results(d, level="feature")
-    # smallProportionSD <- function(d, filter=0.1) {
-    #   cts <- as.matrix(subset(counts(d), select=-c(gene_id, feature_id)))
-    #   gene.cts <- rowsum(cts, counts(d)$gene_id)
-    #   total.cts <- gene.cts[match(counts(d)$gene_id, rownames(gene.cts)),]
-    #   props <- cts/total.cts
-    #   propSD <- sqrt(rowVars(props))
-    #   propSD < filter
-    # }
-    # filt <- smallProportionSD(d)
-    # res.txp.filt$pvalue[filt] <- 1
-    # res.txp.filt$adj_pvalue[filt] <- 1
-    #
-    # write.table(as.data.frame(res.txp.filt), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_post-hoc-filtered-on-SD.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
   })
 }
