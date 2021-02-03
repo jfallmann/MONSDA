@@ -99,7 +99,7 @@ rule rev_extendbed:
     log:    "LOGS/PEAKS/{scombo}{file}bam2bed_{type}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
-    params: bins=BINS
+    params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
 
 if IP == 'iCLIP':
@@ -111,8 +111,8 @@ if IP == 'iCLIP':
         log:    "LOGS/PEAKS/{combo}{file}bed2bedgraph_{type}.log"
         conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
-        params: bins=BINS,
-                odir=lambda wildcards, output:(os.path.dirname(output[0]))
+        params: bins = BINS,
+                odir = lambda wildcards, output:(os.path.dirname(output[0]))
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 elif IP == 'revCLIP':
@@ -124,8 +124,8 @@ elif IP == 'revCLIP':
         log:    "LOGS/PEAKS/{combo}bed2bedgraph_{type}_{file}.log"
         conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
-        params: bins=BINS,
-                odir=lambda wildcards, output:(os.path.dirname(output[0]))
+        params: bins = BINS,
+                odir = lambda wildcards, output:(os.path.dirname(output[0]))
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 else:
@@ -137,8 +137,8 @@ else:
         log:    "LOGS/PEAKS/{combo}bed2bedgraph_{type}_{file}.log"
         conda:  "nextsnakes/envs/bedtools.yaml"
         threads: 1
-        params: bins=BINS,
-                odir=lambda wildcards, output:(os.path.dirname(output[0]))
+        params: bins = BINS,
+                odir = lambda wildcards, output:(os.path.dirname(output[0]))
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 rule PreprocessPeaks:
@@ -147,9 +147,9 @@ rule PreprocessPeaks:
     log:    "LOGS/PEAKS/{combo}prepeak_{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
-    params:  bins=BINS,
-             opts=lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p {input.bedg} {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
+    params:  bins = BINS,
+             opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = "PEAKS/{combo}{file}_prepeak_{type}.bed.gz"
@@ -157,9 +157,9 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}{file}findpeaks_{type}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
-    params: opts=lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
-            bins=BINS
-    shell:  "set +o pipefail; perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p {input.pre} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
+    params: opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
+            bins = BINS
+    shell:  "set +o pipefail; perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}"
 
 #rule QuantPeaks:
 #   input:  "{outdir}{source}/Peak_{file}.bed.gz"
@@ -188,7 +188,7 @@ rule AddSequenceToPeak:
     log:    "LOGS/PEAKS/{combo}seq2peaks_{type}_{file}.log"
     conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1
-    params: bins=BINS
+    params: bins = BINS
     shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && fastaFromBed -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 if ANNOPEAK is not None:
@@ -198,9 +198,9 @@ if ANNOPEAK is not None:
         log:    "LOGS/PEAKS/{combo}{file}annotatepeaks_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
-        params: bins=BINS,
+        params: bins = BINS,
                 anno = ANNOTATION
-        shell:  "set +o pipefail; perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}"
+        shell:  "set +o pipefail; perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}"
 
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}{file}_peak_{type}.bed.gz",
@@ -212,9 +212,9 @@ if ANNOPEAK is not None:
         log:    "LOGS/PEAKS/{combo}{file}peak2bedg_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
-        params: bins=BINS,
+        params: bins = BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
@@ -226,9 +226,9 @@ else:
         log:    "LOGS/PEAKS/{combo}{file}peak2bedg_{type}.log"
         conda:  "nextsnakes/envs/perl.yaml"
         threads: 1
-        params: bins=BINS,
+        params: bins = BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
