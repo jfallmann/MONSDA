@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 12:38:51 2021 (+0100)
+# Last-Updated: Wed Feb  3 12:46:58 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2856
+#     Update #: 2857
 # URL:
 # Doc URL:
 # Keywords:
@@ -296,11 +296,12 @@ def get_samples_from_dir(search, config):  # CHECK
 def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     tosearch = list()
+    ret = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
-        ret = get_samples_from_dir(search, config)
+        ret.extend(get_samples_from_dir(search, config)
     log.debug(logid+str(ret))
     return ret
 
