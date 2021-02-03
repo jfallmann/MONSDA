@@ -1817,7 +1817,6 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel):
             subjobs.append('\n\n')
 
         nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
-
         if os.path.exists(nfo):
             os.rename(nfo, nfo+'.bak')
         with open(nfo, 'a') as nfout:
@@ -1827,12 +1826,12 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel):
         confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
         if os.path.exists(confo):
             os.rename(confo, confo+'.bak')
-            with open(confo, 'a') as confout:
-                json.dump(subconf, confout)
+        with open(confo, 'a') as confout:
+            json.dump(subconf, confout)
 
+        jobs.append([smko, confo])
 
-
-                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subconfig.json']))))
+        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subconfig.json']))))
                 toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
 
                 jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition))
