@@ -56,7 +56,7 @@ rule FindPeaks:
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -102,7 +102,7 @@ if ANNOPEAK is not None:
         threads: 1
         params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
@@ -116,7 +116,7 @@ else:
         threads: 1
         params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
@@ -142,7 +142,7 @@ rule PeakToUCSC:
     conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     params: sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    shell:  "set +o pipefail; zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {params.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {params.sizes} {output.re} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {params.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {params.sizes} {output.re} 2>> {log}"
 
 rule GenerateTrack:
     input:  fw = rules.PeakToUCSC.output.fw,
@@ -157,4 +157,4 @@ rule GenerateTrack:
             gen = REFDIR,  #lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
             uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+'PEAKS'+os.sep+combo+SETS.replace(os.sep, '_'))
-    shell: "set +o pipefail; echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
+    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}"

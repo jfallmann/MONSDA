@@ -149,7 +149,7 @@ rule PreprocessPeaks:
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre
@@ -159,7 +159,7 @@ rule FindPeaks:
     threads: 1
     params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
             peak = PEAKBIN
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}) |tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}) 2> {log}|tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -191,7 +191,7 @@ if ANNOPEAK is not None:
         threads: 1
         params: bins = BINS,
                 anno = ANNOTATION
-        shell:  "set +o pipefail; perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}"
+        shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}"
 
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}{file}_peak_{type}.bed.gz",
@@ -205,7 +205,7 @@ if ANNOPEAK is not None:
         threads: 1
         params: bins = BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
@@ -219,7 +219,7 @@ else:
         threads: 1
         params: bins = BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "set +o pipefail; perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
@@ -260,4 +260,4 @@ rule GenerateTrack:
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l UCSC_peaks_'+str(PEAKENV)+' -b UCSC_'+str(PEAKENV),
             uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+'PEAKS'+os.sep+combo+SETS.replace(os.sep, '_'))
-    shell: "set +o pipefail; echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"
+    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}"

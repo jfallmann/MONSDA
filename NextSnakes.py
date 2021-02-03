@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-# RunSnakemake.py ---
+# NextSnakes.py ---
 #
-# Filename: RunSnakemake.py
+# Filename: NextSnakes.py
 # Description:
 # Author: Joerg Fallmann
 # Maintainer:
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan 29 13:24:02 2021 (+0100)
+# Last-Updated: Wed Feb  3 16:35:32 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1250
+#     Update #: 1257
 # URL:
 # Doc URL:
 # Keywords:
@@ -224,6 +224,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
+                log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
                 log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
                 jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
@@ -248,7 +249,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                             log.debug(logid+'JOB CODE '+str(jid))
 
             # SUMMARY RUN if needed
-            if any([x in subwork for x in ['DE', 'DEU', 'DAS', 'DTU']]):
+            if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
                 jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
@@ -275,7 +276,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
         log.error(''.join(tbe.format()))
 
 
-def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, optionalargs=None):
+def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, optionalargs=None):
     try:
         logid = scriptname+'.run_nextflow: '
         argslist = list()
@@ -404,13 +405,13 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                 smko, confo = job
                 jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
-            for job in jobstorun:
-                with open('Jobs', 'a') as j:
-                    j.write(job+os.linesep)
-                    if not save:
-                        log.info(logid+'RUNNING '+str(job))
-                        jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                for job in jobstorun:
+                    with open('Jobs', 'a') as j:
+                        j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
@@ -573,4 +574,4 @@ if __name__ == '__main__':
         )
         log.error(logid+''.join(tbe.format()))
 
-# RunSnakemake.py ends here
+# NextSnakes.py ends here

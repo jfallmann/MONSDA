@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Fri Jan 29 18:05:56 2021 (+0100)
+# Last-Updated: Wed Feb  3 14:35:47 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2854
+#     Update #: 2866
 # URL:
 # Doc URL:
 # Keywords:
@@ -193,10 +193,9 @@ def get_samples(config):
 @check_run
 def get_samples_postprocess(config, subwork):
     logid = scriptname+'.Collection_get_samples_postprocess: '
-
     SAMPLES = [os.path.join(x) for x in sampleslong(config) if len(getFromDict(config[subwork], conditiononly(x, config))) > 0 and ( not config[subwork].get('EXCLUDE') or os.path.basename(x) not in config[subwork]['EXCLUDE'] ) ]  # only those samples where postprocessing steps are defined for in config, should we make this a per condition check?
     log.debug(logid+'SAMPLES_LONG: '+str(SAMPLES))
-    check = [os.path.join('FASTQ', str(x).replace('.fastq.gz','')+'*.fastq.gz') for x in SAMPLES]
+    check = [os.path.join('FASTQ', str(x).replace('.fastq.gz', '')+'*.fastq.gz') for x in SAMPLES]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -297,11 +296,12 @@ def get_samples_from_dir(search, config):  # CHECK
 def sampleslong(config):
     logid = scriptname+'.Collection_sampleslong: '
     tosearch = list()
+    ret = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
     for search in tosearch:
-        ret = get_samples_from_dir(search, config)
+        ret.extend(get_samples_from_dir(search, config))
     log.debug(logid+str(ret))
     return ret
 
@@ -624,7 +624,7 @@ def get_combo_name(combinations):
 
 @check_run
 def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
-    logid=scriptname+'.Collection_make_sub: '
+    logid = scriptname+'.Collection_make_sub: '
 
     log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
 
@@ -815,7 +815,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
 
 @check_run
 def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
-    logid=scriptname+'.Collection_make_post: '
+    logid = scriptname+'.Collection_make_post: '
 
     log.info(logid+'STARTING POSTPROCESSING FOR '+str(conditions))
 
@@ -844,8 +844,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
 
-                log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition))
-                if subwork in ['PEAKS', 'DE', 'DEU', 'DAS', 'DTU']:
+                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
                     listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
                 else:
                     listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
@@ -857,13 +856,14 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 sconf = listofconfigs[0]
                 for a in range(0, len(listoftools)):
                     subjobs = list()
-
                     toolenv, toolbin = map(str, listoftools[a])
                     if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
                         toolenv = toolenv+'_'+subwork
 
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
+
+                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition)+' TOOL: '+str(toolenv))
 
                     scombo = str(envlist[i])+os.sep if envlist[i] != '' else ''
                     combo = str.join(os.sep, [str(envlist[i]), toolenv])+os.sep if envlist[i] != '' else toolenv+os.sep
@@ -908,11 +908,10 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
     else:
         subwork = postworkflow
-        subconf = NestedDefaultDict()
         add = list()
 
         for condition in conditions:
-
+            subconf = NestedDefaultDict()
             smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
             with open(smkf, 'r') as smk:
                 for line in smk.readlines():
