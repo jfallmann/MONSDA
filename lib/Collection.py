@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 14:35:47 2021 (+0100)
+# Last-Updated: Thu Feb  4 18:01:07 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2866
+#     Update #: 2888
 # URL:
 # Doc URL:
 # Keywords:
@@ -269,13 +269,21 @@ def get_samples_from_dir(search, config):  # CHECK
         pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
         log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
-        log.debug(logid+'check: '+str(check))
         if len(check) > 0:
             ret = list()
-            paired = checkpaired([os.sep.join([os.sep.join(search), check[0].split(os.sep)[-1]])], config)
-            if 'paired' in paired:
-                log.debug(logid+'SEARCHING: '+str([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check]))
-                ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check if any(c in s for c in samples)])))
+            clean = list()
+            for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
+                x = c.split(os.sep)[-1]
+                for s in samples:
+                    if s+'_R' in x or s+'.fastq.gz' == x:
+                        log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
+                        clean.append(c)
+                        break
+            log.debug(logid+'checkclean: '+str(clean))
+            paired = checkpaired([os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config)
+            if paired is not None and 'paired' in paired:
+                log.debug(logid+'SEARCHING: '+str([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in clean]))
+                ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in clean])))
                 log.debug(logid+'FOUND: '+str(ret))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
@@ -283,8 +291,8 @@ def get_samples_from_dir(search, config):  # CHECK
                         log.warning('SAMPLE NAMES CONTAIN LOWER CASE r1/r2 INSTEAD OF R1/R2 FOR PAIRED END SEQUENCING, THEY WILL BE RENAMED')
                         os.rename(ret[i], renamelist[i])
             else:
-                log.debug(logid+'SEARCHING: '+str([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in check]))
-                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in check if any(c in s for c in samples)])
+                log.debug(logid+'SEARCHING: '+str([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean]))
+                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean])
 
             log.debug(logid+'RETURN: '+str(ret))
             return list(set(ret))
