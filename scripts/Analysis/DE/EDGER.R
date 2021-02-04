@@ -48,7 +48,7 @@ gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
-sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
+sampleData <- as.matrix(read.table(gzfile(anname)))
 colnames(sampleData) <- c("group","type","batch")
 sampleData <- as.data.frame(sampleData)
 groups <- factor(sampleData$group)
@@ -63,8 +63,8 @@ comparisons <- strsplit(cmp, ",")
 countData <- read.table(countfile,header = TRUE,row.names=1)
 
 #Check if names are consistent
-if (!all(rownames(sampleData) %in% colnames(countData))){
-    stop("Count file does not correspond to the annotation file")
+if (!all(sampleData$group %in% colnames(countData))){
+  stop("Count file does not correspond to the annotation file")
 }
 
 ## get genes names out
@@ -111,7 +111,7 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
-write.table(as.data.frame(tmm), gzfile("Table/DE","EDGER",combi,"DataSet","table","AllConditionsnormalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet","table","AllConditionsnormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")

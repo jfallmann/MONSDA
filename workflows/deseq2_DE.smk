@@ -73,7 +73,7 @@ rule create_summary_snippet:
             rules.run_deseq2.output.fig_plot,
             rules.run_deseq2.output.fig_vst,
             rules.run_deseq2.output.fig_heat,
-            rules.run_deseq2.output.fig_heats,
+            rules.run_deseq2.output.fig_heats
             # rules.filter_significant.output.sig,
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u,
