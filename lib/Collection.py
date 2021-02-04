@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb  4 17:45:17 2021 (+0100)
+# Last-Updated: Thu Feb  4 17:48:58 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2880
+#     Update #: 2882
 # URL:
 # Doc URL:
 # Keywords:
@@ -273,13 +273,13 @@ def get_samples_from_dir(search, config):  # CHECK
             clean = list()
             for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
                 x = c.split(os.sep)[-1]
-                if any([s+'_' in x or s+'.fastq.gz' in x for s in samples]):
+                if any([s+'_R' in x or s+'.fastq.gz' in x for s in samples]):
                     clean.append(c)
             log.debug(logid+'checkclean: '+str(clean))
             paired = checkpaired([os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config)
             if paired is not None and 'paired' in paired:
                 log.debug(logid+'SEARCHING: '+str([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in clean]))
-                ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in clean if any(c in s for c in samples)])))
+                ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in clean])))
                 log.debug(logid+'FOUND: '+str(ret))
                 renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
                 for i in range(len(renamelist)):
@@ -288,7 +288,7 @@ def get_samples_from_dir(search, config):  # CHECK
                         os.rename(ret[i], renamelist[i])
             else:
                 log.debug(logid+'SEARCHING: '+str([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean]))
-                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean if any(c in s for c in samples)])
+                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean])
 
             log.debug(logid+'RETURN: '+str(ret))
             return list(set(ret))
