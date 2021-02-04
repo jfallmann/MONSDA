@@ -1,5 +1,5 @@
 DEBIN, DEENV = env_bin_from_config3(config,'DE')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts', 'countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 combi = "COMBINATION"
 
@@ -55,7 +55,7 @@ rule run_edgerDE:
     log:    expand("LOGS/{outdir}/run_edger.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
-    params: bins   = str.join(os.sep,[BINS,DEBIN]),
+    params: bins   = str.join(os.sep,[BINS, DEBIN]),
             outdir = outdir,
             compare = comparison,
             combi = combi,

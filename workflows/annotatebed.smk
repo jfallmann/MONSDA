@@ -1,9 +1,9 @@
 rule themall:
-    input: expand("BED/{combo}{file}_anno_seq_{type}_merged.bed.gz",file=samplecond(SAMPLES,config), type=['sorted','unique'])
+    input: expand("BED/{combo}{file}_anno_seq_{type}_merged.bed.gz", file=samplecond(SAMPLES, config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
-for file in samplecond(SAMPLES,config):
+for file in samplecond(SAMPLES, config):
     for type in ['sorted','unique']:
         checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
         checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
@@ -57,13 +57,13 @@ rule AnnotateBed:
     threads: 1
     params: bins=BINS,
             anno = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOTATION'],
-            annop = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'ANNOTATE')['OPTIONS'][0].items()),
+            annop = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'ANNOTATE')['OPTIONS'][0].items()),
             annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOFEATURE']
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule UnzipGenome:
-    input:  subdict(config['ANNOTATE'],SETTINGS)['REFERENCE'],
-    output: subdict(config['ANNOTATE'],SETTINGS)['REFERENCE'].replace('.fa.gz','_fastafrombed.fa')
+    input:  subdict(config['ANNOTATE'], SETTINGS)['REFERENCE'],
+    output: subdict(config['ANNOTATE'], SETTINGS)['REFERENCE'].replace('.fa.gz','_fastafrombed.fa')
     log:    "LOGS/Peaks/UnzipGenome.log"
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
@@ -89,7 +89,7 @@ rule AddSequenceToBed:
 #    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
 #    conda:  "nextsnakes/envs/bedtools.yaml"
 #    threads: 1
-#    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE,gen=genomepath(wildcards.file,config), name=namefromfile(wildcards.file, config)),
+#    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE, gen=genomepath(wildcards.file, config), name=namefromfile(wildcards.file, config)),
 #    shell:  "export LC_ALL=C; if [ ! -f \"{params.fasta}\" ] && [ -f \"{params.fasta}.gz\" ];then zcat {params.fasta}.gz > {params.fasta};fi && fastaFromBed -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
 
 rule MergeAnnoBed:

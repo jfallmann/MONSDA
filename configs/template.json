@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "", #which workflows do you want to run "MAPPING,QC,DEDUP,TRIMMING,COUNTING,UCSC,PEAKS,ANNOTATE,DE,DEU,DAS,DTU"
+    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, UCSC, PEAKS, ANNOTATE, DE, DEU, DAS, DTU"
     "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "SAMPLES": {  #which samples to analyze
@@ -14,7 +14,7 @@
             "condition": {
                 "setting": {
                     "SAMPLES": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2/_R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2/_R1/_R2 extension, this will be appended automatically
-                    "SEQUENCING": "unpaired",  #or paired and stranded info comma separated
+                    "SEQUENCING": "single",  #or paired and stranded info comma separated
                     "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",  #default Referene Genome fa.gz file
                     "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings
                     "PREFIX": "idx",  #if needed, prefix for mapping software can be set here

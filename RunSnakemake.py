@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Tue Jan 12 11:03:13 2021 (+0100)
+# Last-Updated: Wed Feb  3 14:40:25 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1229
+#     Update #: 1252
 # URL:
 # Doc URL:
 # Keywords:
@@ -110,7 +110,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         if unlock:
             log.info(logid+'Unlocking directory')
-            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes','workflows','header.smk')), c=configfile)
+            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk')), c=configfile)
             log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
@@ -118,14 +118,16 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
         preprocess = subworkflows = postprocess = []
 
         #Define workflow stages
-        pre = ['QC','SRA','BASECALL']
-        sub = ['TRIMMING','MAPPING','DEDUP','QC']
-        post = ['COUNTING','UCSC','PEAKS','DE','DEU','DAS','DTU','ANNOTATE']
+        pre = ['QC', 'SRA', 'BASECALL']
+        sub = ['TRIMMING', 'MAPPING', 'DEDUP', 'QC']
+        post = ['COUNTING', 'UCSC', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']
 
-        wfs = config['WORKFLOWS'].split(',')
+        wfs = [x.replace(' ','') for x in config['WORKFLOWS'].split(',')]
 
         if 'WORKFLOWS' in config:
-            subworkflows = [x for x in wfs if x in sub]
+            log.debug(logid+'CONFIG-WORKFLOWS: '+str(wfs)+'\t'+str(pre)+'\t'+str(sub)+'\t'+str(post))
+            subworkflows = [str(x) for x in wfs if x in sub]
+            log.debug(logid+'Sub: '+str(subworkflows))
             if len(subworkflows) == 0 or subworkflows[0] == '':
                 subworkflows = []
             preprocess = [x for x in wfs if x in pre]
@@ -189,7 +191,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                     continue  #We only want download/basecall here
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(SAMPLES,config)
+                conditions = get_conditions(SAMPLES, config)
                 log.debug(logid+'PRECONDITIONS: '+str(conditions))
 
                 subwork = proc
@@ -217,7 +219,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES,config)
+        conditions = get_conditions(SAMPLES, config)
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:
@@ -280,7 +282,9 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                combinations = get_combo(subworkflows, config, conditions)
+                log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
                 jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
@@ -301,17 +305,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             jobs = make_summary(config, subdir, loglevel)
             jobstorun = list()
 
-            for job in jobs:
-                smko, confo = job
-                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+                for job in jobs:
+                    smko, confo = job
+                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
-            for job in jobstorun:
-                with open('Jobs', 'a') as j:
-                    j.write(job+os.linesep)
-                    if not save:
-                        log.info(logid+'RUNNING '+str(job))
-                        jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                for job in jobstorun:
+                    with open('Jobs', 'a') as j:
+                        j.write(job+os.linesep)
+                        if not save:
+                            log.info(logid+'RUNNING '+str(job))
+                            jid = runjob(job)
+                            log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
@@ -332,8 +336,8 @@ def runjob(jobtorun):
 
         while True:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
-            outerr = str.join('',outerr).rstrip()
+            output = str.join('', output).rstrip()
+            outerr = str.join('', outerr).rstrip()
             if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
@@ -360,14 +364,14 @@ def runjob(jobtorun):
 
         if job.returncode == 0:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
+            output = str.join('', output).rstrip()
             if output and output != '':
                 log.info(logid+'JOB FINISHED: '+output)
             return job.poll()
         else:
             output, outerr = job.communicate()
-            output = str.join('',output).rstrip()
-            outerr = str.join('',outerr).rstrip()
+            output = str.join('', output).rstrip()
+            outerr = str.join('', outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
                 log.error(logid+'ERROR: '+outerr+output)
                 log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')

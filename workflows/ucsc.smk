@@ -4,10 +4,10 @@ wildcard_constraints:
     combo=scombo                # Only needed for ucsc.smk
 
 rule themall:
-    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique"], orient=['fw','re'], combo=scombo) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES,config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'], combo=scombo)
+    input: expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"], orient=['fw','re'], combo=scombo) if not rundedup else expand("UCSC/{combo}{file}_mapped_{type}.{orient}.bw.trackdone", file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"], orient=['fw', 're'], combo=scombo)
 
 checklist = list()
-for file in samplecond(SAMPLES,config):
+for file in samplecond(SAMPLES, config):
     checktype = ['sorted', 'unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']
     for type in checktype:
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
@@ -32,7 +32,7 @@ if not all(checklist):
 
 rule index_fa:
     input:  REFERENCE
-    output: expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', ''))
+    output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/UCSC/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
@@ -40,8 +40,8 @@ rule index_fa:
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
 rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', ''))
-    output: expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
+    input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
+    output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/UCSC/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''))
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
@@ -50,7 +50,7 @@ rule get_chromsize_genomic:
 
 checklist = list()
 checklist2 = list()
-for file in samplecond(SAMPLES,config):
+for file in samplecond(SAMPLES, config):
     for type in ['sorted','unique']:
         for orient in ['fw','rw']:
             checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
@@ -59,8 +59,8 @@ for file in samplecond(SAMPLES,config):
 if not all(checklist):
     rule BedToBedg:
         input:  bed = "BED/{combo}{file}_mapped_{type}.bed.gz",
-                fai = expand("{ref}.fa.fai",ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "UCSC/{combo}{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{combo}{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{combo}{file}_{type}_ucscbedtobedgraph.log"
@@ -93,7 +93,7 @@ rule BedgToUCSC:
     conda:  "nextsnakes/envs/ucsc.yaml"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
-    params: sizes = expand("{ref}.chrom.sizes",ref=REFERENCE.replace('.fa.gz',''))
+    params: sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz',''))
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
@@ -106,7 +106,7 @@ rule GenerateTrack:
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
-            gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file,config)),
+            gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
             options = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'UCSC', 'ucsc')['OPTIONS'][0].items()),
             uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

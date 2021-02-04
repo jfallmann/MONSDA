@@ -1,14 +1,14 @@
 DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
-wlparams = ' '.join("{!s}={!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, "DEDUP",DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None ,config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
+wlparams = ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None , config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None , config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
 
-wildcard_constraints:
-    rawfile = '|'.join(list(SAMPLES)),
-    read = "R1|R2",
+#wildcard_constraints:
+#    rawfile = '|'.join(list(SAMPLES)),
+#    read = "R1|R2",
 #    outdir = dedupoutdir
 
 #rule dedupthemall:
-#    input: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES,config))
+#    input: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config))
 
 if paired == 'paired':
     if wlparams:

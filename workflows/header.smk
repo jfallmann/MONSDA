@@ -12,7 +12,7 @@ from collections import defaultdict
 from itertools import combinations
 import re
 
-cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../nextsnakes/lib"),os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
+cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
@@ -32,10 +32,10 @@ try:
             handler.close()
             log.removeHandler(handler)
     handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
-    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     lvl = loglevel
     log.setLevel(lvl)
@@ -73,7 +73,7 @@ INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
 IP = SETTINGS.get('IP')
-rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
+rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
     log.debug('DEDUPLICATION ENABLED')
 
@@ -122,8 +122,6 @@ if 'MAPPING' in config:
     else:
         INDEX2 = ''
 
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
-
 # Peak Calling Variables
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
@@ -154,7 +152,6 @@ for x in ['UCSC', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
 
 # DE/DEU/DAS/DTU Variables
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
@@ -170,7 +167,6 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
 
 combo = ''
 

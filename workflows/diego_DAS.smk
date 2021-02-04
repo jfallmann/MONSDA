@@ -11,40 +11,40 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{file}}_tmp.counts", outdir=outdir)),
+    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
             cts   = "DAS/Featurecounts_DAS/{combo}{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{combo}{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno  = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS", COUNTENV)['OPTIONS'][0].items()),
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DAS", COUNTENV)['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule create_samplemaps:
-    input:  cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output: smap = expand("{outdir}Tables/samplemap.txt", outdir=outdir),
             cmap = expand("{outdir}Tables/groupings.txt", outdir=outdir)
     log:    expand("LOGS/{outdir}create_samplemaps.log", outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
-    params: slist = lambda wildcards, input: get_diego_samples(input.cnd,config,'DAS'),
-            clist = lambda wildcards, input: get_diego_groups(input.cnd,config,'DAS'),
+    params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config,'DAS'),
+            clist = lambda wildcards, input: get_diego_groups(input.cnd, config,'DAS'),
             bins = BINS
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
 rule prepare_junction_usage_matrix:
     input:  smap = rules.create_samplemaps.output.smap,
-            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
+            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES, config))
     output: tbl = expand("{outdir}Tables/junction_table_dexdas.txt.gz", outdir=outdir),
-            anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
+            anno = expand("{outdir}Tables/ANNOTATION.gz", outdir=outdir)
     log:    expand("LOGS/{outdir}prepare_junction_usage_matrix.log", outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
-            dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
+            dereps = lambda wildcards, input: get_reps(input.cnd, config,'DAS'),
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
@@ -66,8 +66,8 @@ rule run_diego:
     log:    expand("LOGS/{outdir}run_diego.log", outdir=outdir)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
-    params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            dpara = lambda x: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(samplecond(SAMPLES,config)[0], None ,config, "DAS", DASENV)['OPTIONS'][1].items()),
+    params: bins   = str.join(os.sep,[BINS, DASBIN]),
+            dpara = lambda x: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None , config, "DAS", DASENV)['OPTIONS'][1].items()),
             outdir = outdir,
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in rules.themall.input.dendrogram]
