@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 14:35:47 2021 (+0100)
+# Last-Updated: Thu Feb  4 17:22:05 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2866
+#     Update #: 2871
 # URL:
 # Doc URL:
 # Keywords:
@@ -271,7 +271,11 @@ def get_samples_from_dir(search, config):  # CHECK
         log.debug(logid+'check: '+str(check))
         if len(check) > 0:
             ret = list()
-            paired = checkpaired([os.sep.join([os.sep.join(search), check[0].split(os.sep)[-1]])], config)
+            paired = None
+            for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
+                if checkpaired([os.sep.join([os.sep.join(search), check[0].split(os.sep)[-1]])], config):
+                    paired = checkpaired([os.sep.join([os.sep.join(search), check[0].split(os.sep)[-1]])], config)
+                    break
             if 'paired' in paired:
                 log.debug(logid+'SEARCHING: '+str([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check]))
                 ret.extend(list(set([os.sep.join([os.sep.join(os.path.dirname(s).split(os.sep)[1:]), re.sub(r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz', '', os.path.basename(s))]) for s in check if any(c in s for c in samples)])))
