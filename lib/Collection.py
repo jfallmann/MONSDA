@@ -7,9 +7,9 @@
 # Created: Tue Sep 18 15:39:06 2018 (+0200)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Thu Feb  4 17:53:57 2021 (+0100)
+# Last-Updated: Thu Feb  4 17:57:14 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 2885
+#     Update #: 2887
 # URL:
 # Doc URL:
 # Keywords:
@@ -274,8 +274,8 @@ def get_samples_from_dir(search, config):  # CHECK
             for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
                 x = c.split(os.sep)[-1]
                 for s in samples:
-                    log.debug(logid+'CHECK: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+c)
                     if s+'_R' in x or s+'.fastq.gz' in x:
+                        log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
                         clean.append(c)
                         break
             log.debug(logid+'checkclean: '+str(clean))
