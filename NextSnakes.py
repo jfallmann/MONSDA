@@ -29,34 +29,34 @@
 
 import os
 import sys
-import json
 import shutil
 import traceback as tb
 from snakemake import load_configfile
 from snakemake.utils import min_version
 import argparse
 import subprocess
-import re
-import itertools as it
 
-scriptname=os.path.basename(__file__).replace('.py', '')
+
+scriptname = os.path.basename(__file__).replace('.py', '')
 
 from lib.Logger import *
-#Logging
+# Logging
 import datetime
 makelogdir('LOGS')
 if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
-    open('LOGS/'+scriptname+'.log','a').close()
+    open('LOGS/'+scriptname+'.log', 'a').close()
 else:
     ts = str(datetime.datetime.fromtimestamp(os.path.getmtime(os.path.abspath('LOGS/'+scriptname+'.log'))).strftime("%Y%m%d_%H_%M_%S"))
-    shutil.copy2('LOGS/'+scriptname+'.log','LOGS/'+scriptname+'_'+ts+'.log')
+    shutil.copy2('LOGS/'+scriptname+'.log', 'LOGS/'+scriptname+'_'+ts+'.log')
 
 log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
 log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 
-#import Collection
+# import Collection
 from lib.Collection import *
 
+
+# CODE
 def parseargs():
     parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
@@ -69,20 +69,21 @@ def parseargs():
     parser.add_argument("--snakemake", action="store_true", default=True, help='Wrap around snakemake')
     parser.add_argument("--nextflow", action="store_true", default=False, help='Wrap around nextflow')
     parser.add_argument("--clean", action="store_true", help='Cleanup workdir (nextflow), append -n to see list of files to clean or -f to actually remove those files')
-    parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
+    parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING', 'ERROR', 'INFO', 'DEBUG'], help="Set log level")
 
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
     return parser.parse_known_args()
 
-def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
+
+def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
     try:
         logid = scriptname+'.run_snakemake: '
         config = load_configfile(configfile)
         subdir = 'SubSnakes'
-        create_skeleton(subdir)
+        create_skeleton(subdir, skeleton)
 
         argslist = list()
         if useconda:
@@ -127,8 +128,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                     SAMPLES = basecall_samples(config)
                     preprocess.remove(proc)
                 else:
-                    #SAMPLES = get_samples(config)
-                    continue  #We only want download/basecall here
+                    continue  # We only want download/basecall here
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
                 conditions = get_conditions(SAMPLES, config)
@@ -146,7 +146,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                         jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                     for job in jobstorun:
-                        with open('Jobs', 'a') as j:
+                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                             j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -180,7 +180,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                         jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                     for job in jobstorun:
-                        with open('Jobs', 'a') as j:
+                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                             j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -204,7 +204,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                 jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
             for job in jobstorun:
-                with open('Jobs', 'a') as j:
+                with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                     j.write(job+os.linesep)
                     if not save:
                         log.info(logid+'RUNNING '+str(job))
@@ -241,7 +241,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                 for job in jobstorun:
-                    with open('Jobs', 'a') as j:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                         j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -258,7 +258,7 @@ def run_snakemake (configfile, workdir, useconda, procs, skeleton, loglevel, sav
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --    printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest='     '.join(argslist)))
 
                 for job in jobstorun:
-                    with open('Jobs', 'a') as j:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                         j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -293,9 +293,9 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
             sys.exit()
 
         config = load_configfile(configfile)
-        workdir = os.path.abspath(str.join(os.sep,[workdir,'NextFlowWork']))
+        workdir = os.path.abspath(str.join(os.sep, [workdir, 'NextFlowWork']))
         subdir = 'SubFlows'
-        create_skeleton(subdir)
+        create_skeleton(subdir, skeleton)
 
         argslist = list()
         if optionalargs and len(optionalargs) > 0:
@@ -348,7 +348,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                         jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                     for job in jobstorun:
-                        with open('Jobs', 'a') as j:
+                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                             j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -382,7 +382,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                         jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                     for job in jobstorun:
-                        with open('Jobs', 'a') as j:
+                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                             j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -406,7 +406,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                 jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                 for job in jobstorun:
-                    with open('Jobs', 'a') as j:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                         j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -442,7 +442,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
                 for job in jobstorun:
-                    with open('Jobs', 'a') as j:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                         j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
@@ -459,7 +459,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                     jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --    printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest='     '.join(argslist)))
 
                 for job in jobstorun:
-                    with open('Jobs', 'a') as j:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
                         j.write(job+os.linesep)
                         if not save:
                             log.info(logid+'RUNNING '+str(job))
