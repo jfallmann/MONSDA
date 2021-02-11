@@ -305,17 +305,17 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
             jobs = make_summary(config, subdir, loglevel)
             jobstorun = list()
 
-                for job in jobs:
-                    smko, confo = job
-                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+            for job in jobs:
+                smko, confo = job
+                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
 
-                for job in jobstorun:
-                    with open('Jobs', 'a') as j:
-                        j.write(job+os.linesep)
-                        if not save:
-                            log.info(logid+'RUNNING '+str(job))
-                            jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+            for job in jobstorun:
+                with open('Jobs', 'a') as j:
+                    j.write(job+os.linesep)
+                    if not save:
+                        log.info(logid+'RUNNING '+str(job))
+                        jid = runjob(job)
+                        log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')

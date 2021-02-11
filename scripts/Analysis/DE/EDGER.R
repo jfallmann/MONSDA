@@ -48,13 +48,17 @@ gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
-sampleData <- as.matrix(read.table(gzfile(anname)))
+sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
+if (ncol(sampleData) == 2) {
+  sampleData$batch <- replicate(nrow(sampleData), 1)
+}
 colnames(sampleData) <- c("group","type","batch")
 sampleData <- as.data.frame(sampleData)
 groups <- factor(sampleData$group)
 samples <- rownames(sampleData)
 types <- factor(sampleData$type)
 batches <- factor(sampleData$batch)
+
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -63,8 +67,8 @@ comparisons <- strsplit(cmp, ",")
 countData <- read.table(countfile,header = TRUE,row.names=1)
 
 #Check if names are consistent
-if (!all(sampleData$group %in% colnames(countData))){
-  stop("Count file does not correspond to the annotation file")
+if (!all(rownames(sampleData) %in% colnames(countData))){
+    stop("Count file does not correspond to the annotation file")
 }
 
 ## get genes names out
@@ -101,7 +105,7 @@ if (length(levels(types)) > 1){
     }
 }
 
-print(paste('FITTING DESIGN: ',design, sep=""))
+# print(paste('FITTING DESIGN: ',design, sep=""))
 
 
 ## create file normalized table
@@ -111,7 +115,7 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet","table","AllConditionsnormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
@@ -150,10 +154,10 @@ dev.off()
 comparison_objs <- list()
 
 ## Analyze according to comparison groups
-for(contrast in comparisons[[1]]){
+for(compare in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(compare,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(compare,":")[[1]][2], "-vs-")
 
     print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
@@ -187,7 +191,7 @@ for(contrast in comparisons[[1]]){
         # qlf$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
 
         # create results table
-        write.table(as.data.frame(qlf), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
         out <- paste("Figures/DE","EDGER",combi,contrast_name,"figure","MD.png",sep="_")

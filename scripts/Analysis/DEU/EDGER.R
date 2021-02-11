@@ -159,10 +159,10 @@ dev.off()
 comparison_objs <- list()
 
 ## Analyze according to comparison groups
-for(contrast in comparisons[[1]]){
+for(compare in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(compare,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(compare,":")[[1]][2], "-vs-")
 
     BPPARAM = MulticoreParam(workers=availablecores)
 
@@ -193,7 +193,6 @@ for(contrast in comparisons[[1]]){
 
         # create results table
         write.table(as.data.frame(qlf), gzfile(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-
         # # create file MD-plot
         # out <- paste("EDGER_DEU_",contrast_name,"_MD.png",sep="")
         # png(out, width = 400, height = 400)

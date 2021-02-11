@@ -71,8 +71,8 @@ rule filter_significant_edgerDE:
     log:    expand("LOGS/{outdir}/filter_edgerDE.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
-    params: pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DE').split("-")[0]),
-            lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DE').split("-")[1])
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pval'),
+            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
     shell: "set +o pipefail; for i in {outdir}/EDGER_DE*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > {outdir}/SigDOWN_$fn;else touch {outdir}/Sig_$fn {outdir}/SigUP_$fn {outdir}/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:

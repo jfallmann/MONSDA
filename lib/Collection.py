@@ -268,12 +268,16 @@ def get_samples_from_dir(search, config):  # CHECK
         pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
         log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
+        log.debug(logid+'check: '+str(check))
         if len(check) > 0:
             ret = list()
             clean = list()
             for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
+                log.debug(logid+'check: '+str(c))
                 x = c.split(os.sep)[-1]
                 for s in samples:
+                    log.debug(logid+'x: '+str(x))
+                    log.debug(logid+'sample: '+str(s))
                     if s+'_R' in x or s+'.fastq.gz' == x:
                         log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
                         clean.append(c)
@@ -307,6 +311,7 @@ def sampleslong(config):
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
+    log.debug(logid+'tosearch: '+str(tosearch))
     for search in tosearch:
         ret.extend(get_samples_from_dir(search, config))
     log.debug(logid+str(ret))
@@ -1425,6 +1430,7 @@ def checkstranded(sample, config):
     stranded = ''
     for s in sample:
         check = conditiononly(s, config)
+        log.debug(logid+'check: '+str(check))
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
         paired = p.get('SEQUENCING')
