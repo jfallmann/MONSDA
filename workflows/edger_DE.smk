@@ -38,8 +38,8 @@ rule themall:
 #     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edgerDE:
-    input:  tbl  = expand("{outdir}/Tables/COUNTS.gz",outdir=outdir),
-            anno = expand("{outdir}/Tables/ANNOTATION.gz",outdir=outdir)
+    input:  tbl  = expand("{outdir}/Tables/{combi}_COUNTS.gz",outdir=outdir, combi=combi),
+            anno = expand("{outdir}/Tables/{combi}_ANNOTATION.gz",outdir=outdir, combi=combi)
     # input:  tbl = rules.prepare_count_table.output.tbl,
     #         anno = rules.prepare_count_table.output.anno,
     output: session = rules.themall.input.session,

@@ -77,7 +77,7 @@ def integrate_table(file):
     chunk = f"""
 ```{{r, table:{file}, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}}
 library(DT)
-table <- read.table(gzfile('{file}'), header = TRUE)
+table <- read.table(gzfile(paste(params$root,'{file}',sep='/')), header = TRUE)
 DT::datatable(table)
 ```
 

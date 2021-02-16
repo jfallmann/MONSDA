@@ -34,9 +34,11 @@ BPPARAM = MulticoreParam(workers=availablecores)
 
 ### SCRIPT
 ## Annotation
-sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
+sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
+if (ncol(sampleData) == 2) {
+  sampleData$batch <- replicate(nrow(sampleData), 1)
+}
 colnames(sampleData) <- c("condition","type","batch")
-sampleData <- as.data.frame(sampleData)
 
 ## Combinations of conditions
 comparison <- strsplit(cmp, ",")
@@ -90,8 +92,8 @@ print(plotPCA(rld, intgroup=c('condition')))
 dev.off()
 
 #We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.txt.gz", sep="_")), sep="\t", col.names=NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.txt.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
 comparison_objs <- list()
 
@@ -117,10 +119,10 @@ for(contrast in comparison[[1]]){
         # initialize empty objects
         res=""
         resOrdered=""
-        res <- results(dds,contrast=list(paste('condition',levels(tempa$condition),sep=''),paste('condition',levels(tempb$condition),sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+        res <- results(dds,contrast=list(paste('condition',tempa$condition,sep=''),paste('condition',tempb$condition,sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
 
         # add comp object to list for image
-        comparison_objs <- append(comparison_objs, res)
+        comparison_objs <- c(comparison_objs, res)
 
         # sort and output
         resOrdered <- res[order(res$log2FoldChange),]
@@ -140,12 +142,7 @@ for(contrast in comparison[[1]]){
         rm(res,resOrdered, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
-    }, error=function(e){
-        rm(res,resOrdered)
-        file.create(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_"))
-        print(warnings)
-        cat("WARNING :",conditionMessage(e), "\n")
-    } )
+    })
 }
 
 #Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
@@ -193,7 +190,7 @@ rownames(mat) <- colnames(mat) <- with(colData(dds),condition)
 #heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
 #From the Apr 2015 vignette
 hc <- hclust(distsRL)
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap_samplebysample.png",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap-samplebysample.png",sep="_"))
 heatmap.2(mat, Rowv=as.dendrogram(hc),
           symm=TRUE, trace='none',
           col = rev(hmcol), margin=c(13, 13))

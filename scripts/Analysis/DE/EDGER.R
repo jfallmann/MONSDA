@@ -119,7 +119,7 @@ write.table(as.data.frame(tmm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet"
 
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
-png(out, width = 400, height = 400)
+png(out)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
@@ -127,7 +127,7 @@ if (length(levels(groups)) > 2){
     print("Will plot MDS for Count sums")
     DGEsum <- sumTechReps(dge, ID=groups)
     out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
-    png(out, width = 400, height = 400)
+    png(out)
     colors <- RainbowColor(DGEsum$samples$group)
     plotMDS(DGEsum, col=colors)
     dev.off()
@@ -138,7 +138,7 @@ dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsBCV.png", sep="_")
-png(out, width = 400, height = 400)
+png(out)
 plotBCV(dge)
 dev.off()
 
@@ -147,7 +147,7 @@ fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsQLDisp.png", sep="_")
-png(out, width = 400, height = 400)
+png(out)
 plotQLDisp(fit)
 dev.off()
 
@@ -195,7 +195,7 @@ for(compare in comparisons[[1]]){
 
         ## plot lFC vs CPM
         out <- paste("Figures/DE","EDGER",combi,contrast_name,"figure","MD.png",sep="_")
-        png(out, width = 400, height = 400)
+        png(out)
         plotMD(qlf, main=contrast_name)
         abline(h=c(-1, 1), col="blue")
         dev.off()
