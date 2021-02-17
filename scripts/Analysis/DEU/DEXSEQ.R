@@ -16,12 +16,14 @@ options(echo=TRUE)
 ## ARGS
 args <- commandArgs(trailingOnly = TRUE)
 
-anname    <- args[1]
-countfile <- args[2]
-flatanno  <- args[3]
-outdir    <- args[4]
-cmp       <- args[5]
-availablecores <- as.integer(args[6])
+anname          <- args[1]
+countfile       <- args[2]
+gtf             <- args[3]
+flatanno        <- args[4]
+outdir          <- args[5]
+combi           <- args[6]
+cmp             <- args[7]
+availablecores  <- as.integer(args[8])
 
 ## FUNCS
 get_gene_name <- function(id, df){
@@ -36,9 +38,11 @@ get_gene_name <- function(id, df){
 
 ### SCRIPT
 ## Annotation
-sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
+sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
+if (ncol(sampleData) == 2) {
+  sampleData$batch <- replicate(nrow(sampleData), 1)
+}
 colnames(sampleData) <- c("condition","type","batch")
-sampleData <- as.data.frame(sampleData)
 #head(sampleData)
 comparisons <- strsplit(cmp, ",")
 print(paste("Will analyze conditions ",comparisons,sep=""))
@@ -172,7 +176,7 @@ for(contrast in comparisons[[1]]){
         dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
-        pdf(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name,"figure","DispEsts.png",sep="_"))
         plotDispEsts( dxdpair )
         dev.off()
 
@@ -182,28 +186,18 @@ for(contrast in comparisons[[1]]){
 
         dxr1 = DEXSeqResults( dxdpair )
 
-        csvout <- paste('DEU','DEXSEQ',contrast_name,'results.tsv.gz', sep='_')
-        write.table(as.data.frame(dxr1), gzfile(csvout), sep="\t", row.names=FALSE, quote=F)
+        out <- paste('Tables/DEU','DEXSEQ',combi,contrast_name,'table','results.tsv.gz', sep='_')
+        write.table(as.data.frame(dxr1), gzfile(out), sep="\t", row.names=FALSE, quote=F)
 
-        htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
-        pathout <- paste('DEXSeqReport',contrast_name,sep='_')
+        htmlout <- paste('DEXSeq',combi,contrast_name,'.html', sep='')
+        pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
         # cleanup
         rm(dxdpair, dxr1)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
-    }, error=function(e){
-        print(warnings)
-        file.create(paste("DEXSeq",contrast_name,"DispEsts.pdf",sep="_"))
-        csvout <- paste('DEU','DEXSEQ',contrast_name,'results.tsv.gz', sep='_')
-        file.create(csvout)
-        pathout <- paste('DEXSeqReport',contrast_name,sep='_')
-        htmlout <- paste('DEXSeq_',contrast_name,'.html', sep='')
-        file.create(paste(pathout,htmlout,sep=.Platform$file.sep))
-        rm(dxdpair,dxr1)
-        cat("WARNING :",conditionMessage(e), "\n")
     })
 }
 
-save.image(file = "DEXSeq_DEU_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DEU_DEXSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

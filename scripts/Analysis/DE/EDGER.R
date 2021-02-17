@@ -2,6 +2,7 @@ suppressPackageStartupMessages({
     require(BiocParallel)
     require(dplyr)
     require(edgeR)
+    require(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -105,7 +106,7 @@ if (length(levels(types)) > 1){
     }
 }
 
-# print(paste('FITTING DESIGN: ',design, sep=""))
+print(paste('FITTING DESIGN: ',design, sep=""))
 
 
 ## create file normalized table

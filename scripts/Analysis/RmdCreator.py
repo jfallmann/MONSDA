@@ -153,7 +153,9 @@ def create_Rmd(files, output):
                 if "table" in tree[workflow][tool][combi][comparison].keys():
                      for name in tree[workflow][tool][combi][comparison]["table"].keys():
                          lines.append(f"###### {name} \n")
-                         lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
+                         # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
+                         lines.append(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"])
+                         lines.append("\n\n")
 
     if os.path.exists(output):
         os.rename(output, output+'.bak')

@@ -950,6 +950,9 @@ def make_summary(config, subdir, loglevel):  # Need to check what we really need
     for snippet in snippets:
         with open(snippet,'r') as read_file:
             for line in read_file.readlines():
+                if line.startswith("# "):
+                    if line in lines:
+                        continue
                 lines.append(line)
 
     if os.path.exists(output):
