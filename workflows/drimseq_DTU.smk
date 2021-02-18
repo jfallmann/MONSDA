@@ -53,7 +53,7 @@ else:
 
 rule create_annotation_table:
     input:   dir  = expand(rules.mapping.output.ctsdir, file=samplecond(SAMPLES, config)),
-    output:  anno = expand("{outdir}/Tables/ANNOTATION.gz", outdir=outdir)
+    output:  anno = expand("{outdir}/Tables/{combi}_ANNOTATION.gz", outdir=outdir)
     log:     expand("LOGS/{outdir}/create_DTU_table.log", outdir=outdir)
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: 1

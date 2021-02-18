@@ -401,6 +401,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
         try:
             for key in ['SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], condition)) <1:
+                    log.info(logid+"getfromdict: "+str(subwork)+" "+str(condition))
                     if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:
@@ -422,8 +423,8 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     tempconf[subwork]['CUTOFFS'] = config[subwork]['CUTOFFS']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
-                if subwork == 'DAS':
-                    tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
+                # if subwork == 'DAS':
+                    # tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
@@ -877,6 +878,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 toolenv, toolbin = map(str, listoftools[a])
                 if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv+'_'+subwork
+                    log.info(logid+'toolenv: '+str(toolenv))
 
                 sconf[subwork+'ENV'] = toolenv
                 sconf[subwork+'BIN'] = toolbin

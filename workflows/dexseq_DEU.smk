@@ -13,8 +13,8 @@ rule themall:
 
 rule prepare_deu_annotation:
     input:   anno = ANNOTATION
-    output:  countgtf = expand("{refd}/{countanno}", ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-             deugtf   = expand("{refd}/{deuanno}", ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+    output:  countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+             deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:     "LOGS/featurecount_dexseq_annotation.log"
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -22,47 +22,46 @@ rule prepare_deu_annotation:
              countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
-# rule featurecount_dexseq_unique:
-#     input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam",
-#             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-#             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-#     output: tmp   = temp(expand("{outdir}/Featurecounts_DEU_dexseq/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
-#             cts   = "DEU/Featurecounts_DEU_dexseq/{combo}{file}_mapped_sorted_unique.counts"
-#     log:    "LOGS/{combo}{file}/featurecounts_dexseq_unique.log"
-#     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
-#     threads: MAXTHREAD
-#     params: countb  = COUNTBIN,
-#             cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DEU", COUNTENV)['OPTIONS'][0].items()),
-#             paired = lambda x: '-p' if paired == 'paired' else '',
-#             bins   = BINS,
-#             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-#     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+rule featurecount_dexseq_unique:
+    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam",
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+    output: tmp   = temp(expand("{outdir}/Featurecounts_DEU_dexseq/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}{file}/featurecounts_dexseq_unique.log"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: countb  = COUNTBIN,
+            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DEU", COUNTENV)['OPTIONS'][0].items()),
+            paired = lambda x: '-p' if paired == 'paired' else '',
+            bins   = BINS,
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
-# rule prepare_count_table:
-#     input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
-#     output:  tbl = expand("{outdir}/Tables/COUNTS.gz", outdir=outdir),
-#              anno = expand("{outdir}/Tables/ANNOTATION.gz", outdir=outdir)
-#     log:     expand("LOGS/{outdir}/prepare_count_table.log", outdir=outdir)
-#     conda:   "nextsnakes/envs/"+DEUENV+".yaml"
-#     threads: 1
-#     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DEU'),
-#              bins = BINS,
-#     shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
+rule prepare_count_table:
+    input:   cnd = expand(rules.featurecount_dexseq_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
+    output:  tbl = expand("{outdir}/Tables/COUNTS.gz", outdir=outdir),
+             anno = expand("{outdir}/Tables/ANNOTATION.gz", outdir=outdir)
+    log:     expand("LOGS/{outdir}/prepare_count_table.log", outdir=outdir)
+    conda:   "nextsnakes/envs/"+DEUENV+".yaml"
+    threads: 1
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DEU'),
+             bins = BINS,
+    shell: "{params.bins}/Analysis/DEU/build_DEU_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_dexseq:
-    input:  cnt  = expand("{outdir}/Tables/{combi}_COUNTS.gz",outdir=outdir, combi=combi),
-            anno = expand("{outdir}/Tables/{combi}_ANNOTATION.gz",outdir=outdir, combi=combi),
+    # input:  cnt  = expand("{outdir}/Tables/{combi}_COUNTS.gz",outdir=outdir, combi=combi),
+    #         anno = expand("{outdir}/Tables/{combi}_ANNOTATION.gz",outdir=outdir, combi=combi),
             # flat = expand("{deuanno}",  deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+    input:  cnt  = rules.prepare_count_table.output.tbl,
+            anno = rules.prepare_count_table.output.anno,
             flat = rules.prepare_deu_annotation.output.deugtf
-    # input:  cnt  = rules.prepare_count_table.output.tbl,
-    #         anno = rules.prepare_count_table.output.anno,
     output: html = expand("{outdir}/DEXSeqReport_{combi}_{comparison}/DEXSeq_{combi}_{comparison}.html", outdir=outdir, combi=combi, comparison=compstr),
             plot = expand("{outdir}/Figures/DEU_DEXSEQ_{combi}_{comparison}_figure_DispEsts.png", outdir=outdir, combi=combi, comparison=compstr),
+            plotMA  = expand("{outdir}/Figures/DEU_DEXSEQ_{combi}_{comparison}_figure_plotMA.png", outdir=outdir, combi=combi, comparison=compstr),
+            siglist  = expand("{outdir}/Figures/DEU_DEXSEQ_{combi}_{comparison}_list_sigGroupsFigures.png", outdir=outdir, combi=combi, comparison=compstr),
             tbl  = expand("{outdir}/Tables/DEU_DEXSEQ_{combi}_{comparison}_table_results.tsv.gz", outdir=outdir, combi=combi, comparison=compstr),
             session = rules.themall.input.session
-    # output: plot = rules.themall.input.plot,
-    #         tbl  = rules.themall.input.tbl,
-    #         html = rules.themall.input.html,
     log:    expand("LOGS/{outdir}/run_dexseq.log", outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -86,6 +85,8 @@ rule filter_significant_dexseq:
 rule create_summary_snippet:
     input:  rules.run_dexseq.output.plot,
             rules.run_dexseq.output.tbl,
+            rules.run_dexseq.output.siglist,
+            rules.run_dexseq.output.plotMA,
     output: rules.themall.input.Rmd
     log:    expand("LOGS/{outdir}/create_summary_snippet.log",outdir=outdir)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
