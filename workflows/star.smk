@@ -12,7 +12,7 @@ rule generate_index:
     params: mapp = MAPPERBIN,
             ipara = lambda w: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
             anno = ANNOTATION,
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0]))),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
             pref = PREFIX
     shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.linkidx}/{params.pref}SAindex\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.linkidx}/{params.pref} --outTmpDir {params.tmpidx} --genomeDir {params.linkidx} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && cat {params.linkidx}/{params.pref}Log.out >> {log} && rm -rf {params.tmpidx};fi"
