@@ -2,14 +2,24 @@ suppressPackageStartupMessages({
   library(tximport)
   library(GenomicFeatures)
   library(DRIMSeq)
-  library(stageR)
   library(DEXSeq)
-  library(DESeq2)
-  library(edgeR)
   library(rtracklayer)
 })
 
+options(echo=TRUE)
 
+### ARGS
+args <- commandArgs(trailingOnly = TRUE)
+anname  <- args[1]
+gtf     <- args[2]
+outdir  <- args[3]
+combi   <- args[4]
+cmp     <- args[5]
+cores   <- as.integer(args[6])
+print(args)
+
+
+### FUNCS
 get_gene_name <- function(id, df){
   name_list <- df$gene_name[df['gene_id'] == id]
   if(length(unique(name_list)) == 1){
@@ -20,17 +30,15 @@ get_gene_name <- function(id, df){
   }
 }
 
-args <- commandArgs(trailingOnly = TRUE)
-anname  <- args[1]
-gtf     <- args[2]
-outdir  <- args[3]
-cmp     <- args[4]
-cores   <- as.integer(args[5])
-
-
+### SCRIPT
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
+
+# define cutoffs
+# cutoffs <- strsplit(cutts, '-')[[1]]
+# pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
+# lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
@@ -61,6 +69,7 @@ txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
+# DRIMSEQ
 #check for integrity -> define exception..
 all(rownames(cts) %in% txdf$TXNAME)
 txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
@@ -73,7 +82,6 @@ d <- dmDSdata(counts=counts, samples=samps)
 #   (1) it has a count of at least 10 in at least n.small samples
 #   (2) it has a relative abundance proportion of at least 0.1 in at least n.small samples
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
-
 n <- nrow(samps)
 n.small <- n/length(levels(samps$condition))  # its not really the smallest group, needs to be improved
 d <- dmFilter(d,
@@ -84,12 +92,10 @@ d <- dmFilter(d,
 # shows how many of the remaining genes have N isoforms
 table(table(counts(d)$gene_id))
 
-
 # create designmatrix
-
-## original code for simple model
-# design_full <- model.matrix(~condition, data=DRIMSeq::samples(d))
-# colnames(design_full)
+#   original code for simple model
+#   design_full <- model.matrix(~condition, data=DRIMSeq::samples(d))
+#   colnames(design_full)
 
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
@@ -110,8 +116,9 @@ if (length(levels(types)) > 1){
   }
 }
 
-
+comparison_objs <- list()
 setwd(outdir)
+# dir.create(file.path(outdir,"Figures"))
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
@@ -164,7 +171,7 @@ for(contrast in comparisons[[1]]){
   dxr <- dxr[,c(1,2,5,3,4)]
   dxr <- apply(dxr,2,as.character)
 
-  write.table(as.data.frame(dxr), gzfile(paste("DTU_DEXSEQ",contrast_name,"results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+  write.table(as.data.frame(dxr), gzfile(paste("Tables/DTU","DEXSEQ",combi,contrast_name,"table","results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
   # # stageR following DEXSeq
   # strp <- function(x) substr(x,1,15)
@@ -187,4 +194,4 @@ for(contrast in comparisons[[1]]){
 
 }
 
-save.image(file = "DEXSEQ_DTU_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU","DEXSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

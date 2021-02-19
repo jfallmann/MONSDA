@@ -401,7 +401,6 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
         try:
             for key in ['SETTINGS', subwork]:
                 if len(getFromDict(config[subwork], condition)) <1:
-                    log.info(logid+"getfromdict: "+str(subwork)+" "+str(condition))
                     if any([subwork == x for x in ['QC', 'DEDUP', 'TRIMMING', 'MAPPING']]):
                         log.error(logid+'Keys '+str(condition)+' not defined for '+str(key))
                     else:

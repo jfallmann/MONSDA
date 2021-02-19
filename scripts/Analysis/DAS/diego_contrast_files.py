@@ -14,6 +14,7 @@ scriptname=os.path.basename(__file__)
 def parseargs():
     parser = argparse.ArgumentParser(description='Creates contrast list for DIEGO')
     parser.add_argument('-a', '--annofile', type=str, default="", help='')
+    parser.add_argument('-b', '--combi', type=str, default="", help='')
     parser.add_argument('-c', '--comparisons', type=str, default="", help='')
     parser.add_argument('-o', '--outdir', type=str, default="", help='')
     parser.add_argument('--loglevel', default='INFO', help="Log verbosity" )
@@ -24,7 +25,7 @@ def parseargs():
 
     return parser.parse_args()
 
-def create_tables(annofile,comparisons,outdir):
+def create_tables(annofile,combi,comparisons,outdir):
     logid = scriptname+'.create_tables: '
 
     comps = comparisons.split(",")
@@ -41,7 +42,7 @@ def create_tables(annofile,comparisons,outdir):
 
     for c in comps:
         contrast_name = c.split(":")[0]
-        log.debug('C: '+str(c) + '\tcn: '+str(contrast_name))
+        log.info('C: '+str(c) + '\tcn: '+str(contrast_name))
         contrast_group1 = [i for i in c.split(":")[1].split("-vs-")[0].split("+")]
         contrast_group2 = [i for i in c.split(":")[1].split("-vs-")[1].split("+")]
 
@@ -52,7 +53,7 @@ def create_tables(annofile,comparisons,outdir):
                 outstring += f"{contrast_name}_1\t{sample}\n"
             if sample_dict[sample] in contrast_group2:
                 outstring += f"{contrast_name}_2\t{sample}\n"
-        with open(f"{outdir}{contrast_name}_contrast.txt","w") as outfile:
+        with open(f"{outdir}/{combi}_{contrast_name}_contrast.txt","w") as outfile:
             outfile.write(outstring)
 
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         log.info('RUNNING!')
-        create_tables(args.annofile, args.comparisons, args.outdir)
+        create_tables(args.annofile, args.combi, args.comparisons, args.outdir)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

@@ -66,10 +66,9 @@ def create_file_tree(files):
     tree = NestedDefaultDict()
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
-        print(setting.split('_'))
         WF, TOOL, COMBI, COMP, RES, NAME = setting.split('_')
         EXT = os.path.basename(file).split(".", 1)[1]
-        tree[WF][TOOL][COMBI][COMP][RES][NAME][EXT] = file
+        tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
     log.info(logid+str(tree))
     return tree
 
@@ -140,13 +139,12 @@ def create_Rmd(files, output):
                 if "figure" in tree[workflow][tool][combi][comparison].keys():
                     for name in tree[workflow][tool][combi][comparison]["figure"].keys():
                         lines.append(f"####### {name} \n")
-                        lines.append(integrate_figures([tree[workflow][tool][combi][comparison]["figure"][name]["png"]]))
+                        lines.append(integrate_figures([tree[workflow][tool][combi][comparison]["figure"][name]]))
 
                 if "list" in tree[workflow][tool][combi][comparison].keys():
                     for name in tree[workflow][tool][combi][comparison]["list"].keys():
                         lines.append(f"###### {name} \n")
-                        print(str(tree[workflow][tool][combi][comparison]["list"][name][".tsv"]))
-                        lines.append(integrate_list(tree[workflow][tool][combi][comparison]["list"][name]["tsv"]))
+                        lines.append(integrate_list(tree[workflow][tool][combi][comparison]["list"][name]))
 
                 lines.append(f"##### TABLES  {{.tabset}} \n\n")
 
@@ -154,8 +152,10 @@ def create_Rmd(files, output):
                      for name in tree[workflow][tool][combi][comparison]["table"].keys():
                          lines.append(f"###### {name} \n")
                          # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
-                         lines.append(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"])
+                         lines.append(tree[workflow][tool][combi][comparison]["table"][name])
                          lines.append("\n\n")
+
+    log.info(logid+"lines: "+str(lines))
 
     if os.path.exists(output):
         os.rename(output, output+'.bak')
