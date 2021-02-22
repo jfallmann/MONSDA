@@ -21,23 +21,23 @@ print(args)
 
 ## FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 RainbowColor <- function(groups){
-  groupsAsNumbers <- as.numeric(groups)
-  spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-  cl <- c()
-  for(i in groupsAsNumbers){
-    cl <- c(cl,spektrum[i])
-  }
-  return(cl)
+    groupsAsNumbers <- as.numeric(groups)
+    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
+    cl <- c()
+    for(i in groupsAsNumbers){
+        cl <- c(cl,spektrum[i])
+    }
+    return(cl)
 }
 
 
@@ -54,7 +54,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
 if (ncol(sampleData) == 2) {
-  sampleData$batch <- replicate(nrow(sampleData), 1)
+    sampleData$batch <- replicate(nrow(sampleData), 1)
 }
 colnames(sampleData) <- c("group","type","batch")
 sampleData <- as.data.frame(sampleData)

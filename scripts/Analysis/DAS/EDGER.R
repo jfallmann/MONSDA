@@ -1,8 +1,8 @@
 suppressPackageStartupMessages({
-  require(dplyr)
-  require(BiocParallel)
-  require(edgeR)
-  require(rtracklayer)
+    require(dplyr)
+    require(BiocParallel)
+    require(edgeR)
+    require(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -20,23 +20,23 @@ print(args)
 
 ## FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 RainbowColor <- function(groups){
-  groupsAsNumbers <- as.numeric(groups)
-  spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-  cl <- c()
-  for(i in groupsAsNumbers){
+    groupsAsNumbers <- as.numeric(groups)
+    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
+    cl <- c()
+    for(i in groupsAsNumbers){
     cl <- c(cl,spektrum[i])
-  }
-  return(cl)
+    }
+    return(cl)
 }
 
 ### SCRIPT
@@ -69,7 +69,7 @@ countData <- read.table(countfile,header = TRUE,row.names=1)
 
 #Check if names are consistent
 if (!all(rownames(sampleData) %in% colnames(countData))){
-  stop("Count file does not correspond to the annotation file")
+    stop("Count file does not correspond to the annotation file")
 }
 
 ## get genes names out
@@ -98,21 +98,21 @@ tl <- sapply("type",paste0,levels(types)[-1])
 
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+types+batches, data=sampleData)
-    colnames(design) <- c(levels(groups),tl,bl)
-  } else{
-    design <- model.matrix(~0+groups+types, data=sampleData)
-    colnames(design) <- c(levels(groups),tl)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+types+batches, data=sampleData)
+        colnames(design) <- c(levels(groups),tl,bl)
+    } else{
+        design <- model.matrix(~0+groups+types, data=sampleData)
+        colnames(design) <- c(levels(groups),tl)
+    }
 } else{
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+batches, data=sampleData)
-    colnames(design) <- c(levels(groups),bl)
-  } else{
-    design <- model.matrix(~0+groups, data=sampleData)
-    colnames(design) <- levels(groups)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+batches, data=sampleData)
+        colnames(design) <- c(levels(groups),bl)
+    } else{
+        design <- model.matrix(~0+groups, data=sampleData)
+        colnames(design) <- levels(groups)
+    }
 }
 
 print(paste('FITTING DESIGN: ',design, sep=""))
@@ -134,13 +134,13 @@ colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
 if (length(levels(groups)) > 2){
-  print("Will plot MDS for Count sums")
-  DGEsum <- sumTechReps(dge, ID=groups)
-  out <- paste("Figures/DAS","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
-  png(out)
-  colors <- RainbowColor(DGEsum$samples$group)
-  plotMDS(DGEsum, col=colors)
-  dev.off()
+    print("Will plot MDS for Count sums")
+    DGEsum <- sumTechReps(dge, ID=groups)
+    out <- paste("Figures/DAS","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
+    png(out)
+    colors <- RainbowColor(DGEsum$samples$group)
+    plotMDS(DGEsum, col=colors)
+    dev.off()
 }
 
 ## estimate Dispersion
@@ -166,70 +166,70 @@ comparison_objs <- list()
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-  contrast_name <- strsplit(contrast,":")[[1]][1]
-  contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-  BPPARAM = MulticoreParam(workers=availablecores)
+    BPPARAM = MulticoreParam(workers=availablecores)
 
-  print(paste("Comparing ",contrast_name, sep=""))
-  tryCatch({
+    print(paste("Comparing ",contrast_name, sep=""))
+    tryCatch({
 
-    # determine contrast
-    A <- strsplit(contrast_groups[[1]][1], "\\+")
-    B <- strsplit(contrast_groups[[1]][2], "\\+")
-    minus <- 1/length(A[[1]])*(-1)
-    plus <- 1/length(B[[1]])
-    contrast <- cbind(integer(dim(design)[2]), colnames(design))
-    for(i in A[[1]]){
-      contrast[which(contrast[,2]==i)]<- minus
-    }
-    for(i in B[[1]]){
-      contrast[which(contrast[,2]==i)]<- plus
-    }
-    contrast <- as.numeric(contrast[,1])
+        # determine contrast
+        A <- strsplit(contrast_groups[[1]][1], "\\+")
+        B <- strsplit(contrast_groups[[1]][2], "\\+")
+        minus <- 1/length(A[[1]])*(-1)
+        plus <- 1/length(B[[1]])
+        contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        for(i in A[[1]]){
+          contrast[which(contrast[,2]==i)]<- minus
+        }
+        for(i in B[[1]]){
+          contrast[which(contrast[,2]==i)]<- plus
+        }
+        contrast <- as.numeric(contrast[,1])
 
 
-    # create files topSpliced by gene, simes and exon method
-    sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
+        # create files topSpliced by gene, simes and exon method
+        sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
 
-    # add comp object to list for image
-    comparison_objs <- append(comparison_objs, sp)
+        # add comp object to list for image
+        comparison_objs <- append(comparison_objs, sp)
 
-    tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
-    write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsGeneTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
+        write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsGeneTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-    tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
-    write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsSimesTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
+        write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsSimesTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-    tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
-    write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsDiffSpliceExonTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
+        write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsDiffSpliceExonTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-    # create files diffSplicePlots
-    tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
-    figures <- data.frame("geneID" = character(), "exonID" = character(), "file"=character(),stringsAsFactors=FALSE)
-    sigs <- which(tops$P.Value < 0.05)
+        # create files diffSplicePlots
+        tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
+        figures <- data.frame("geneID" = character(), "exonID" = character(), "file"=character(),stringsAsFactors=FALSE)
+        sigs <- which(tops$P.Value < 0.05)
 
-    limit   <- 100
-    counter <- 1
-    message("create splice plots")
-    for(gene in sigs){
-      if(counter>limit){break}
+        limit   <- 100
+        counter <- 1
+        message("create splice plots")
+        for(gene in sigs){
+            if(counter>limit){break}
 
-      name1 <- paste("Figures/DAS","EDGER",combi,contrast_name,tops$genes[gene],"figure","transcripts.png",sep="_")
-      png(name1)
-      print(plotSpliceDGE(sp, geneid=tops$genes[gene], genecol="genes"))
-      dev.off()
-      figures[counter, ] <- c(rownames(tops)[gene], tops$genes[gene], paste(outdir,name1, sep="/"))
+            name1 <- paste("Figures/DAS","EDGER",combi,contrast_name,tops$genes[gene],"figure","transcripts.png",sep="_")
+            png(name1)
+            print(plotSpliceDGE(sp, geneid=tops$genes[gene], genecol="genes"))
+            dev.off()
+            figures[counter, ] <- c(rownames(tops)[gene], tops$genes[gene], paste(outdir,name1, sep="/"))
 
-      counter <- counter+1
-    }
+            counter <- counter+1
+        }
     write.table(figures, paste("Figures/DAS","EDGER",combi,contrast_name,"list","topSpliceSimes.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
     # cleanup
     rm(contrast,lrt,tops,BPPARAM)
     print(paste('cleanup done for ', contrast_name, sep=''))
 
-  })
+    })
 }
 
 save.image(file = paste("DAS_EDGER",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

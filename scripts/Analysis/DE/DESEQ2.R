@@ -1,32 +1,32 @@
 #https://dwheelerau.com/2014/02/17/how-to-use-deseq2-to-analyse-rnaseq-data/
 
 suppressPackageStartupMessages({
-  require(utils)
-  require(BiocParallel)
-  require(DESeq2)
+    require(utils)
+    require(BiocParallel)
+    require(DESeq2)
 })
 
 options(echo=TRUE)
 
 ## ARGS
-args <- commandArgs(trailingOnly = TRUE)
-anname <- args[1]
-inname <- args[2]
-outdir <- args[3]
-cmp    <- args[4]
-combi  <- args[5]
-availablecores <- as.integer(args[6])
+args            <- commandArgs(trailingOnly = TRUE)
+anname          <- args[1]
+inname          <- args[2]
+outdir          <- args[3]
+cmp             <- args[4]
+combi           <- args[5]
+availablecores  <- as.integer(args[6])
 print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 ## set thread-usage
@@ -36,7 +36,7 @@ BPPARAM = MulticoreParam(workers=availablecores)
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
 if (ncol(sampleData) == 2) {
-  sampleData$batch <- replicate(nrow(sampleData), 1)
+    sampleData$batch <- replicate(nrow(sampleData), 1)
 }
 colnames(sampleData) <- c("condition","type","batch")
 
@@ -71,9 +71,7 @@ if (length(levels(sampleData$type)) > 1){
 print(paste('FITTING DESIGN: ',design, sep=""))
 
 #Create DESeqDataSet
-dds <- DESeqDataSetFromMatrix(countData = countData,
-                              colData = sampleData,
-                              design= design)
+dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design= design)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
@@ -83,7 +81,6 @@ dds <- dds[keep,]
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
 
 #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
-
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
