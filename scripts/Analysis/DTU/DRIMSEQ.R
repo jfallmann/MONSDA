@@ -1,8 +1,8 @@
 suppressPackageStartupMessages({
-  library(tximport)
-  library(GenomicFeatures)
-  library(DRIMSeq)
-  library(rtracklayer)
+    library(tximport)
+    library(GenomicFeatures)
+    library(DRIMSeq)
+    library(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -19,13 +19,13 @@ print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 ### SCRIPT
@@ -83,9 +83,9 @@ d <- dmDSdata(counts=counts, samples=samps)
 n <- nrow(samps)
 n.small <- n/length(levels(samps$condition))  # its not really the smallest group, needs to be improved
 d <- dmFilter(d,
-              min_samps_feature_expr=n.small, min_feature_expr=10,
-              min_samps_feature_prop=n.small, min_feature_prop=0.1,
-              min_samps_gene_expr=n, min_gene_expr=10)
+                min_samps_feature_expr=n.small, min_feature_expr=10,
+                min_samps_feature_prop=n.small, min_feature_prop=0.1,
+                min_samps_gene_expr=n, min_gene_expr=10)
 
 # shows how many of the remaining genes have N isoforms
 table(table(counts(d)$gene_id))
@@ -97,21 +97,21 @@ table(table(counts(d)$gene_id))
 
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+types+batches, data=samps)
-    colnames(design) <- c(levels(groups),tl,bl)
-  } else{
-    design <- model.matrix(~0+groups+types, data=samps)
-    colnames(design) <- c(levels(groups),tl)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+types+batches, data=samps)
+        colnames(design) <- c(levels(groups),tl,bl)
+    } else{
+        design <- model.matrix(~0+groups+types, data=samps)
+        colnames(design) <- c(levels(groups),tl)
+    }
 } else{
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+batches, data=samps)
-    colnames(design) <- c(levels(groups),bl)
-  } else{
-    design <- model.matrix(~0+groups, data=samps)
-    colnames(design) <- levels(groups)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+batches, data=samps)
+        colnames(design) <- c(levels(groups),bl)
+    } else{
+        design <- model.matrix(~0+groups, data=samps)
+        colnames(design) <- levels(groups)
+    }
 }
 
 comparison_objs <- list()
@@ -121,41 +121,38 @@ setwd(outdir)
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-  contrast <- comparisons[[1]]
+    contrast <- comparisons[[1]]
 
-  contrast_name <- strsplit(contrast,":")[[1]][1]
-  contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-  print(paste("Comparing ",contrast_name, sep=""))
-  tryCatch({
+    print(paste("Comparing ",contrast_name, sep=""))
+    tryCatch({
 
-    # determine contrast
-    A <- strsplit(contrast_groups[[1]][1], "\\+")
-    B <- strsplit(contrast_groups[[1]][2], "\\+")
-    minus <- 1/length(A[[1]])*(-1)
-    plus <- 1/length(B[[1]])
-    contrast <- cbind(integer(dim(design)[2]), colnames(design))
-    for(i in A[[1]]){
-      contrast[which(contrast[,2]==i)]<- minus
-    }
-    for(i in B[[1]]){
-      contrast[which(contrast[,2]==i)]<- plus
-    }
-    contrast <- as.numeric(contrast[,1])
+        # determine contrast
+        A <- strsplit(contrast_groups[[1]][1], "\\+")
+        B <- strsplit(contrast_groups[[1]][2], "\\+")
+        minus <- 1/length(A[[1]])*(-1)
+        plus <- 1/length(B[[1]])
+        contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        for(i in A[[1]]){
+            contrast[which(contrast[,2]==i)]<- minus
+        }
+        for(i in B[[1]]){
+            contrast[which(contrast[,2]==i)]<- plus
+        }
+        contrast <- as.numeric(contrast[,1])
 
-    # BPPARAM = MulticoreParam(workers=cores)
+        # BPPARAM = MulticoreParam(workers=cores)
 
-    # # reduce data for testing
-    d <- d[1:25,]
-
-    # 1 estimate the precision,
-    # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
-    # 3 test the coefficient associated with the difference between condition 2 and condition 1
-    set.seed(1)
-    system.time({
-      d <- dmPrecision(d, design=design)
-      d <- dmFit(d, design=design)
-      d <- dmTest(d, contrast=contrast)
+        # 1 estimate the precision,
+        # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
+        # 3 test the coefficient associated with the difference between condition 2 and condition 1
+        set.seed(1)
+        system.time({
+            d <- dmPrecision(d, design=design)
+            d <- dmFit(d, design=design)
+            d <- dmTest(d, contrast=contrast)
     })
 
     # add comp object to list for image
@@ -232,30 +229,30 @@ for(contrast in comparisons[[1]]){
     counter <- 1
     message("create proportions plots")
     for(gene in sigs){
-      if(counter>limit){break}
-      if(is.na(gene)){next}
-      suppressMessages({
-        name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
-        png(name1)
-        print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
-        dev.off()
+        if(counter>limit){break}
+        if(is.na(gene)){next}
+        suppressMessages({
+            name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
+            png(name1)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
+            dev.off()
 
-        name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
-        png(name2)
-        print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
-        dev.off()
+            name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
+            png(name2)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
+            dev.off()
 
-        name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
-        png(name3)
-        print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
-        dev.off()
+            name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
+            png(name3)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
+            dev.off()
 
-        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
-        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
-        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
 
         counter <- counter+1
-      })
+        })
     }
     colnames(figures) <- c("geneID","geneName","file")
     write.table(figures, paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"list","sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
@@ -264,7 +261,7 @@ for(contrast in comparisons[[1]]){
     rm(res,res.txp,proportions)
     print(paste('cleanup done for ', contrast_name, sep=''))
 
-  })
+    })
 }
 
 save.image(file = paste("DTU","DRIMSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
