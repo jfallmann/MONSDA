@@ -418,7 +418,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
                 if subwork == 'DAS':
-                    tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
+                    tempconf['MAPPING'] = subDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
@@ -603,7 +603,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                     listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
 
                     if listoftools is None:
-                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subworkflows))
                         return None
 
                     sconf = listofconfigs[0]
@@ -693,13 +693,13 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
 
                     add = ''.join(rulethemall(subworkflows))        # RuleThemAll for snakemake depending on chosen workflows
 
-                    if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
-                        if 'DEDUP' in workflow:
+                    if subwork == 'QC' and 'TRIMMING' in subwork and not 'MAPPING' in subwork:
+                        if 'DEDUP' in subworkflows:
                             subname = toolenv+'_dedup_trim.smk'
                         else:
                             subname = toolenv+'_trim.smk'
 
-                    if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                    if subwork == 'QC' and not 'TRIMMING' in subwork and not 'MAPPING' in subwork:
                         if 'DEDUP' in subworkflows:
                             subname = toolenv+'_dedup.smk'
                         else:
@@ -735,14 +735,14 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                     subjobs.append(line)
                 subjobs.append('\n\n')
 
-            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
+            smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
             if os.path.exists(smko):
                 os.rename(smko, smko+'.bak')
             with open(smko, 'a') as smkout:
                 smkout.write(add)
-                smkout.write(join('', subjobs))
+                smkout.write(str.join('', subjobs))
 
-            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
             if os.path.exists(confo):
                 os.rename(confo, confo+'.bak')
             with open(confo, 'a') as confout:
@@ -1584,8 +1584,9 @@ def nf_fetch_params(configfile):
         log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
     if 'PEAKS' in config:
-        retconf["CLIP"] = checkclip(SAMPLES, config)
+        retconf["IP"] = check_IP(SAMPLES, config)
         retconf["PEAKCONF"] = tool_params(sample, None, config,'PEAKS')['OPTIONS'][0]
+        peakconf = retconf["PEAKCONF"]
         if 'ANNOTATION' in tool_params(sample, None, config,'PEAKS'):
             retconf["ANNOPEAK"] = tool_params(sample, None, config,'PEAKS')['ANNOTATION']
         else:
@@ -1835,7 +1836,7 @@ def list_all_keys_of_dict(dictionary):
     for key, value in dictionary.items():
         if type(value) is dict:
             yield key
-            yield from recursive_items(value)
+            yield from list_all_keys_of_dict(value)
         else:
             yield key
 
@@ -1906,7 +1907,7 @@ def find_innermost_value_from_dict(dictionary):
                 return v
     else:
         return dictionary
-    return ret
+
 
 @check_run
 def removekey(d, key):
@@ -2006,13 +2007,6 @@ def parseseq(sequence):
     if (isinstance(sequence, StringIO)):
         seq = sequence
 
-    elif ( isinstance(sequence, str) and sequence == 'random' ):
-        rand = "\n".join(createrandseq(length, gc, number, alphabet))
-        seq = StringIO(rand)
-        o = gzip.open('Random.fa.gz','wb')
-        o.write(bytes(rand, encoding='UTF-8'))
-        o.close()
-
     elif (isinstance(sequence, str) and os.path.isfile(sequence)):
         if '.gz' in sequence :
             seq = gzip.open(sequence,'rt')
@@ -2044,7 +2038,7 @@ def idfromfa(id):
         goi, chrom = id.split(':')[::2]
         strand = str(id.split(':')[3].split('(')[1][0])
     except:
-        eprint('Fasta header is not in expected format, you will loose information on strand and chromosome')
+        print('Fasta header is not in expected format, you will loose information on strand and chromosome')
         goi = id
         chrom, strand = ['na','na']
 

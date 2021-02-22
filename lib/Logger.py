@@ -59,7 +59,7 @@ def check_run(func):
             tbe = tb.TracebackException(
                 exc_type, exc_value, exc_tb,
             )
-            log.error(''.join(tbe.format()))
+            print(''.join(tbe.format()))
     return func_wrapper
 
 #@check_run
