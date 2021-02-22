@@ -1,4 +1,4 @@
-name: diego
+name: diego_DAS
 channels:
   - conda-forge
   - bioconda
@@ -55,6 +55,3 @@ dependencies:
   - wheel=0.34.2
   - xz=5.2.5
   - zlib=1.2.11
-prefix: /home/fall/anaconda3/envs/diego
-
-

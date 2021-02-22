@@ -348,20 +348,6 @@ def get_summary_dirs(config):
     return ret
 
 
-# @check_run
-# def get_summary_files(config):
-#     logid=scriptname+'.get_summary_files: '
-#     ret=list()
-#     for work, tools in config['WORKFLOWS'].items():
-#         for tool in tools:
-#             log.info(logid+'make summary of '+str(work)+' - '+str(tool))
-#             for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
-#             # for f in glob.glob(f"{work}/{tool.upper()}/*"):
-#                 ret.append(f)
-#     log.debug(logid+str(ret))
-#     return ret
-
-
 @check_run
 def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     logid = scriptname+'.Collection_create_subworkflow: '
@@ -928,7 +914,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(config, subdir, loglevel):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(config, subdir, loglevel):
     logid=scriptname+'.Collection_make_summary: '
 
     output = "REPORTS/SUMMARY/summary.Rmd"
@@ -995,103 +981,6 @@ def make_summary(config, subdir, loglevel):  # Need to check what we really need
     subconf = NestedDefaultDict()
     for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
         subconf[key] = config[key]
-
-    confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
-    if os.path.exists(confo):
-        os.rename(confo, confo+'.bak')
-    with open(confo, 'a') as confout:
-        json.dump(subconf, confout)
-
-    jobs.append([smko, confo])
-
-    return jobs
-
-
-@check_run
-def make_summary_old(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
-    logid=scriptname+'.Collection_make_summary: '
-
-    log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
-
-    jobs = list()
-    subjobs = list()
-    condapath = re.compile(r'conda:\s+"')
-    logfix = re.compile(r'loglevel="INFO"')
-
-    makeoutdir('REPORTS/SUMMARY')
-    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
-    rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
-    rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-    combinations = get_combo(summary_tools_dict.keys(), config, conditions)
-
-    if os.path.exists(rmd_summary):
-        os.rename(rmd_summary, rmd_summary+'.bak')
-
-    with open(rmd_header,'r') as read_file:
-        for line in read_file.readlines():
-            subjobs.append(line)
-        subjobs.append('\n\n')
-
-    for file in os.listdir(sum_path):
-        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY', file))
-        if file.startswith('SUM_'):
-            file_tools = re.findall('[A-Z]+-[a-z]+', file)
-            works = re.findall('[A-Z]+(?=-)', file)
-            if set(file_tools).issubset(summary_tools_set):
-                with open(file_path, 'r') as read_file:
-                    if 'percompare' in os.path.basename(file_path):
-                        for comparison in config[works[0]]['COMPARABLE'].keys():
-                            for line in read_file.readlines():
-                                line = re.sub('COMPARISON', comparison, line)
-                                subjobs.append(line)
-                            subjobs.append('\n\n')
-                    else:
-                        for line in read_file.readlines():
-                            line = re.sub('COMPARISON', comparison, line)
-                            subjobs.append(line)
-                        subjobs.append('\n\n')
-
-    with open(rmd_summary, 'a') as sumf:
-        sumf.write(''.join(subjobs))
-        sumf.write('\n\n')
-
-    subjobs = list()
-
-    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-    with open(smkf,'r') as smk:
-        for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
-            subjobs.append(line)
-        subjobs.append('\n\n')
-
-    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'summary.smk'))
-    with open(smkf,'r') as smk:
-        for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
-            subjobs.append(line)
-        subjobs.append('\n\n')
-
-    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
-    with open(smkf, 'r') as smk:
-        for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
-            subjobs.append(line)
-        subjobs.append('\n\n')
-
-    smko = os.path.abspath(os.path.join(subdir, 'summary_subsnake.smk'))
-    if os.path.exists(smko):
-        os.rename(smko, smko+'.bak')
-    with open(smko, 'a') as smkout:
-        smkout.write(''.join(subjobs))
-        smkout.write('\n\n')
-
-    subconf = NestedDefaultDict()
-    for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
-        subconf[key] = config[key]
-    subconf['WORKFLOWS'].merge(summary_tools_dict)
 
     confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
     if os.path.exists(confo):

@@ -1,4 +1,4 @@
-name: dexseq
+name: dexseq_DEU
 channels:
   - conda-forge
   - bioconda
@@ -243,4 +243,3 @@ dependencies:
     - pyqt5-sip==4.19.18
     - pyqtchart==5.12
     - pyqtwebengine==5.12.1
-prefix: /home/roberto/miniconda3/envs/dexseq

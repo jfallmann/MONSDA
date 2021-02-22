@@ -38,11 +38,8 @@ def create_tables(annofile,combi,comparisons,outdir):
                 continue
             sample_dict[l.split("\t")[0]] = l.split("\t")[1]
 
-    log.debug(logid+'COMPS: '+str(comps))
-
     for c in comps:
         contrast_name = c.split(":")[0]
-        log.info('C: '+str(c) + '\tcn: '+str(contrast_name))
         contrast_group1 = [i for i in c.split(":")[1].split("-vs-")[0].split("+")]
         contrast_group2 = [i for i in c.split(":")[1].split("-vs-")[1].split("+")]
 
