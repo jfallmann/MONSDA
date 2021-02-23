@@ -10,10 +10,10 @@ rule themall:
             csv = expand("{outdir}{comparison}_table.csv", outdir=outdir, comparison=compstr)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DAS/Featurecounts_DAS/{combo}{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}{file}/featurecounts_DAS_diego_unique.log"
+    input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_diego/{{combo}/}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DAS/Featurecounts_DAS/{combo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}/{file}/featurecounts_DAS_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,

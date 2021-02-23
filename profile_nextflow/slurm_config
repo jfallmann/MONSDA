@@ -1,0 +1,17 @@
+profiles {
+    local {
+        process.executor = 'local'
+    }
+
+    slurm {
+        process.executor = 'slurm'
+        process.queue = 'main'
+        process.memory = '10GB'
+    }
+}
+
+process {
+  withName: '_idx|_map':{
+    memory = '200GB'
+  }
+}

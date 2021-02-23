@@ -24,12 +24,12 @@ rule prepare_deu_annotation:
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
 rule featurecount_dexseq_unique:
-    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam",
+    input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}{file}/featurecounts_dexseq_unique.log"
+    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_dexseq/{{combo}/}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}/{file}/featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,

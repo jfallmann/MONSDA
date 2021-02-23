@@ -6,22 +6,22 @@ comparison = comparable_as_string2(config, 'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}{scombo}EDGER_DE_All_Conditions_MDS.png", scombo=scombo, outdir=outdir),
-            allsum = expand("{outdir}{scombo}EDGER_DE_All_Conditions_sum_MDS.png", scombo=scombo, outdir=outdir),
-            tbl = expand("{outdir}{scombo}DE_EDGER_DE_All_Conditions_normalized.tsv.gz", scombo=scombo, outdir=outdir),
-            bcv = expand("{outdir}{scombo}EDGER_DE_All_Conditions_BCV.png", scombo=scombo, outdir=outdir),
-            qld = expand("{outdir}{scombo}EDGER_DE_All_Conditions_QLDisp.png", scombo=scombo, outdir=outdir),
+    input:  all = expand("{outdir}{scombo}/EDGER_DE_All_Conditions_MDS.png", scombo=scombo, outdir=outdir),
+            allsum = expand("{outdir}{scombo}/EDGER_DE_All_Conditions_sum_MDS.png", scombo=scombo, outdir=outdir),
+            tbl = expand("{outdir}{scombo}/DE_EDGER_DE_All_Conditions_normalized.tsv.gz", scombo=scombo, outdir=outdir),
+            bcv = expand("{outdir}{scombo}/EDGER_DE_All_Conditions_BCV.png", scombo=scombo, outdir=outdir),
+            qld = expand("{outdir}{scombo}/EDGER_DE_All_Conditions_QLDisp.png", scombo=scombo, outdir=outdir),
             # dift = expand("{outdir}EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
             # sigdift = expand("{outdir}Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", outdir=outdir, comparison=compstr, sort=["pValue-sorted"]),
             # plot = expand("{outdir}EDGER_DE_{comparison}_MD.png", outdir=outdir, comparison=compstr),
-            res = expand("{outdir}{scombo}DE_EDGER_{comparison}_results.tsv.gz", scombo=scombo, outdir=outdir, comparison = compstr),
-            session = expand("{outdir}{scombo}EDGER_DE_SESSION.gz", scombo=scombo, outdir=outdir)
+            res = expand("{outdir}{scombo}/DE_EDGER_{comparison}_results.tsv.gz", scombo=scombo, outdir=outdir, comparison = compstr),
+            session = expand("{outdir}{scombo}/EDGER_DE_SESSION.gz", scombo=scombo, outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{scombo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DE_edger/{{scombo}}{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DE/Featurecounts_DE/{scombo}{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{scombo}{file}/featurecounts_DE_edger_unique.log"
+    input:  reads = "MAPPED/{scombo}/{file}_mapped_sorted_unique.bam"
+    output: tmp   = temp(expand("{outdir}Featurecounts_DE_edger/{{scombo}/}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DE/Featurecounts_DE/{scombo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{scombo}/{file}/featurecounts_DE_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -33,9 +33,9 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = rules.featurecount_unique.output.cts
-    output:  tbl  = "{outdir}Tables/{scombo}COUNTS.gz",
-             anno = "{outdir}Tables/{scombo}ANNOTATION.gz"
-    log:     "LOGS/{outdir}/{scombo}prepare_count_table.log"
+    output:  tbl  = "{outdir}Tables/{scombo}/COUNTS.gz",
+             anno = "{outdir}Tables/{scombo}/ANNOTATION.gz"
+    log:     "LOGS/{outdir}/{scombo}/prepare_count_table.log"
     conda:   "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DE'),
@@ -53,7 +53,7 @@ rule run_edgerDE:
             # dift = rules.themall.input.dift,
             # plot = rules.themall.input.plot,
             session = rules.themall.input.session
-    log:    "LOGS/{outdir}/{scombo}run_edger.log"
+    log:    "LOGS/{outdir}/{scombo}/run_edger.log"
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
@@ -66,7 +66,7 @@ rule run_edgerDE:
 rule filter_significant_edgerDE:
     input:  dift = rules.run_edgerDE.output.dift
     output: sigdift  = rules.themall.input.sigdift
-    log:    expand("LOGS/{outdir}/{scombo}filter_edgerDE.log", outdir=outdir, scombo=scombo)
+    log:    expand("LOGS/{outdir}/{scombo}/filter_edgerDE.log", outdir=outdir, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),

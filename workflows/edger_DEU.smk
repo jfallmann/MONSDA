@@ -17,10 +17,10 @@ rule themall:
             session = expand("{outdir}EDGER_DEU_SESSION.gz", outdir=outdir)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{combo}}{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DEU/Featurecounts_DEU/{combo}{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}{file}/featurecounts_DEU_edger_unique.log"
+    input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+    output: tmp   = temp(expand("{outdir}Featurecounts_DEU_edger/{{combo}/}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DEU/Featurecounts_DEU/{combo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{combo}/{file}/featurecounts_DEU_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,

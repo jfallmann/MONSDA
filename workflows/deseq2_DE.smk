@@ -6,21 +6,21 @@ comparison = comparable_as_string2(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  plot = expand("{outdir}{scombo}DESeq2_{comparison}_MA.pdf", scombo=scombo, outdir=outdir, comparison=compstr),
-            tbl  = expand("{outdir}{scombo}DESEQ2_{comparison}_results.tsv.gz", scombo=scombo, outdir=outdir, comparison=compstr),
-            sigtbl  = expand("{outdir}{scombo}Sig_DESeq2_{comparison}.tsv.gz", scombo=scombo, outdir=outdir, comparison=compstr),
-            heat = expand("{outdir}{scombo}DESeq2_heatmap{i}.pdf", scombo=scombo, outdir=outdir, i=[1,2,3,"_samplebysample"]),
-            pca  = expand("{outdir}{scombo}DESeq2_PCA.pdf", scombo=scombo, outdir=outdir),
-            vst  = expand("{outdir}{scombo}DESeq2_VST_and_log2.pdf", scombo=scombo, outdir=outdir),
-            rld  = expand("{outdir}{scombo}DESeq2_rld.txt.gz", scombo=scombo, outdir=outdir),
-            vsd  = expand("{outdir}{scombo}DESeq2_vsd.txt.gz", scombo=scombo, outdir=outdir),
-            session = expand("{outdir}{scombo}DESeq2_SESSION.gz", scombo=scombo, outdir=outdir)# R object?
+    input:  plot = expand("{outdir}{scombo}/DESeq2_{comparison}_MA.pdf", scombo=scombo, outdir=outdir, comparison=compstr),
+            tbl  = expand("{outdir}{scombo}/DESEQ2_{comparison}_results.tsv.gz", scombo=scombo, outdir=outdir, comparison=compstr),
+            sigtbl  = expand("{outdir}{scombo}/Sig_DESeq2_{comparison}.tsv.gz", scombo=scombo, outdir=outdir, comparison=compstr),
+            heat = expand("{outdir}{scombo}/DESeq2_heatmap{i}.pdf", scombo=scombo, outdir=outdir, i=[1,2,3,"_samplebysample"]),
+            pca  = expand("{outdir}{scombo}/DESeq2_PCA.pdf", scombo=scombo, outdir=outdir),
+            vst  = expand("{outdir}{scombo}/DESeq2_VST_and_log2.pdf", scombo=scombo, outdir=outdir),
+            rld  = expand("{outdir}{scombo}/DESeq2_rld.txt.gz", scombo=scombo, outdir=outdir),
+            vsd  = expand("{outdir}{scombo}/DESeq2_vsd.txt.gz", scombo=scombo, outdir=outdir),
+            session = expand("{outdir}{scombo}/DESeq2_SESSION.gz", scombo=scombo, outdir=outdir)# R object?
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{scombo}{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DE_deseq/{{scombo}}{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DE/Featurecounts_DE/{scombo}{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{scombo}{file}/featurecounts_deseq2_unique.log"
+    input:  reads = "MAPPED/{scombo}/{file}_mapped_sorted_unique.bam"
+    output: tmp   = temp(expand("{outdir}Featurecounts_DE_deseq/{{scombo}/}{{file}}_tmp.counts", outdir=outdir)),
+            cts   = "DE/Featurecounts_DE/{scombo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/{scombo}/{file}/featurecounts_deseq2_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -32,9 +32,9 @@ rule featurecount_unique:
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, scombo=scombo, file=samplecond(SAMPLES, config))
-    output:  tbl  = "{outdir}Tables/{scombo}COUNTS.gz",
-             anno = "{outdir}Tables/{scombo}ANNOTATION.gz"
-    log:     "LOGS/{outdir}{scombo}prepare_count_table.log"
+    output:  tbl  = "{outdir}Tables/{scombo}/COUNTS.gz",
+             anno = "{outdir}Tables/{scombo}/ANNOTATION.gz"
+    log:     "LOGS/{outdir}{scombo}/prepare_count_table.log"
     conda:   "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DE'),
@@ -52,7 +52,7 @@ rule run_deseq2:
             pca = rules.themall.input.pca,
             vst = rules.themall.input.vst,
             session = rules.themall.input.session
-    log:    "LOGS/{outdir}{scombo}run_deseq2.log"
+    log:    "LOGS/{outdir}{scombo}/run_deseq2.log"
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
@@ -63,7 +63,7 @@ rule run_deseq2:
 rule filter_significant_deseq2:
     input:  tbl = rules.run_deseq2.output.tbl
     output: sigtbl  = rules.themall.input.sigtbl
-    log:    "LOGS/{outdir}{scombo}filter_deseq2.log"
+    log:    "LOGS/{outdir}{scombo}/filter_deseq2.log"
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
