@@ -1,44 +1,44 @@
 #https://dwheelerau.com/2014/02/17/how-to-use-deseq2-to-analyse-rnaseq-data/
 
 suppressPackageStartupMessages({
-  require(utils)
-  require(BiocParallel)
-  require(DESeq2)
+    require(utils)
+    require(BiocParallel)
+    require(DESeq2)
 })
 
 options(echo=TRUE)
 
 ## ARGS
-args <- commandArgs(trailingOnly = TRUE)
-anname <- args[1]
-inname <- args[2]
-outdir <- args[3]
-cmp    <- args[4]
-availablecores <- as.integer(args[5])
+args            <- commandArgs(trailingOnly = TRUE)
+anname          <- args[1]
+inname          <- args[2]
+outdir          <- args[3]
+cmp             <- args[4]
+combi           <- args[5]
+availablecores  <- as.integer(args[6])
 print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
-<<<<<<< HEAD
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
-## Annotation
-=======
 ### SCRIPT
->>>>>>> DTU
-sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
+## Annotation
+sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
+if (ncol(sampleData) == 2) {
+    sampleData$batch <- replicate(nrow(sampleData), 1)
+}
 colnames(sampleData) <- c("condition","type","batch")
-sampleData <- as.data.frame(sampleData)
 
 ## Combinations of conditions
 comparison <- strsplit(cmp, ",")
@@ -71,9 +71,7 @@ if (length(levels(sampleData$type)) > 1){
 print(paste('FITTING DESIGN: ',design, sep=""))
 
 #Create DESeqDataSet
-dds <- DESeqDataSetFromMatrix(countData = countData,
-                              colData = sampleData,
-                              design= design)
+dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design= design)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
@@ -83,17 +81,16 @@ dds <- dds[keep,]
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
 
 #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
-
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
-pdf(paste("DESeq2","PCA.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA.png",sep="_"))
 print(plotPCA(rld, intgroup=c('condition')))
 dev.off()
 
 #We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile("DESeq2_rld.txt.gz"), sep="\t", col.names=NA)
-write.table(as.data.frame(assay(vsd)), gzfile("DESeq2_vsd.txt.gz"), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
 comparison_objs <- list()
 
@@ -119,10 +116,10 @@ for(contrast in comparison[[1]]){
         # initialize empty objects
         res=""
         resOrdered=""
-        res <- results(dds,contrast=list(paste('condition',levels(tempa$condition),sep=''),paste('condition',levels(tempb$condition),sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+        res <- results(dds,contrast=list(paste('condition',tempa$condition,sep=''),paste('condition',tempb$condition,sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
 
         # add comp object to list for image
-        comparison_objs <- append(comparison_objs, res)
+        comparison_objs <- c(comparison_objs, res)
 
         # sort and output
         resOrdered <- res[order(res$log2FoldChange),]
@@ -130,30 +127,19 @@ for(contrast in comparison[[1]]){
         # # Add gene names  (check how gene_id col is named )
         # resOrdered$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
 
-<<<<<<< HEAD
-        save.image(file = paste("DESEQ2",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-
-        rm(res,resOrdered, BPPARAM)
-=======
         # write the table to a tsv file
-        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_")), sep="\t", row.names=FALSE, quote=F)
->>>>>>> DTU
+        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
-        # # plotMA
-        # pdf(paste("DESeq2",contrast_name,"MA.pdf",sep="_"))
-        # plotMA(res, ylim=c(-3,3))
-        # dev.off()
+        # plotMA
+        png(paste("Figures/DE","DESEQ2",combi,contrast_name,"figure","MA.png", sep="_"))
+        plotMA(res, ylim=c(-3,3))
+        dev.off()
 
         # cleanup
         rm(res,resOrdered, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
-    }, error=function(e){
-        rm(res,resOrdered)
-        file.create(paste("DE","DESEQ2",contrast_name,"results.tsv.gz",sep="_"))
-        print(warnings)
-        cat("WARNING :",conditionMessage(e), "\n")
-    } )
+    })
 }
 
 #Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
@@ -164,7 +150,7 @@ ord    <- ord[px[ord]<150]
 ord    <- ord[seq(1, length(ord), length=50)]
 last   <- ord[length(ord)]
 vstcol <- c('blue', 'black')
-pdf(paste("DESeq2_VST","and_log2.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","VST-and-log2.png", sep="_"))
 matplot(px[ord], cbind(assay(vsd)[, 1], log2(px))[ord, ], type='l', lty=1, col=vstcol, xlab='n', ylab='f(n)')
 legend('bottomright', legend = c(expression('variance stabilizing transformation'), expression(log[2](n/s[1]))), fill=vstcol)
 dev.off()
@@ -174,17 +160,17 @@ library('RColorBrewer')
 library('gplots')
 select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:30]
 hmcol<- colorRampPalette(brewer.pal(9, 'GnBu'))(100)
-pdf(paste("DESeq2","heatmap1.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap1.png",sep="_"))
 heatmap.2(counts(dds,normalized=TRUE)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10,6))
 dev.off()
-pdf(paste("DESeq2","heatmap2.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap2.png",sep="_"))
 heatmap.2(assay(rld)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10, 6))
 dev.off()
-pdf(paste("DESeq2","heatmap3.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap3.png",sep="_"))
 heatmap.2(assay(vsd)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10, 6))
@@ -201,7 +187,7 @@ rownames(mat) <- colnames(mat) <- with(colData(dds),condition)
 #heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
 #From the Apr 2015 vignette
 hc <- hclust(distsRL)
-pdf(paste("DESeq2","heatmap_samplebysample.pdf",sep="_"))
+png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap-samplebysample.png",sep="_"))
 heatmap.2(mat, Rowv=as.dendrogram(hc),
           symm=TRUE, trace='none',
           col = rev(hmcol), margin=c(13, 13))
@@ -209,4 +195,4 @@ dev.off()
 
 ##############################
 
-save.image(file = "DESeq2_DE_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DE","DESEQ2",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

@@ -268,12 +268,16 @@ def get_samples_from_dir(search, config):  # CHECK
         pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
         log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
+        log.debug(logid+'check: '+str(check))
         if len(check) > 0:
             ret = list()
             clean = list()
             for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
+                log.debug(logid+'check: '+str(c))
                 x = c.split(os.sep)[-1]
                 for s in samples:
+                    log.debug(logid+'x: '+str(x))
+                    log.debug(logid+'sample: '+str(s))
                     if s+'_R' in x or s+'.fastq.gz' == x:
                         log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
                         clean.append(c)
@@ -307,6 +311,7 @@ def sampleslong(config):
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
+    log.debug(logid+'tosearch: '+str(tosearch))
     for search in tosearch:
         ret.extend(get_samples_from_dir(search, config))
     log.debug(logid+str(ret))
@@ -339,20 +344,6 @@ def get_summary_dirs(config):
     for work, tools in config['WORKFLOWS'].items():
         for tool in tools:
             ret.append(f"{work}/{tool.upper()}")
-    log.debug(logid+str(ret))
-    return ret
-
-
-@check_run
-def get_summary_files(config):
-    logid=scriptname+'.get_summary_files: '
-    ret=list()
-    for work, tools in config['WORKFLOWS'].items():
-        for tool in tools:
-            log.info(logid+'make summary of '+str(work)+' - '+str(tool))
-            for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
-            # for f in glob.glob(f"{work}/{tool.upper()}/*"):
-                ret.append(f)
     log.debug(logid+str(ret))
     return ret
 
@@ -417,8 +408,8 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     tempconf[subwork]['CUTOFFS'] = config[subwork]['CUTOFFS']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
-                if subwork == 'DAS':
-                    tempconf['MAPPING'] = subDict(config['MAPPING'], condition)
+                # if subwork == 'DAS':
+                    # tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
@@ -872,6 +863,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 toolenv, toolbin = map(str, listoftools[a])
                 if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv+'_'+subwork
+                    log.info(logid+'toolenv: '+str(toolenv))
 
                 sconf[subwork+'ENV'] = toolenv
                 sconf[subwork+'BIN'] = toolbin
@@ -922,60 +914,46 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(config, subdir, loglevel):
     logid=scriptname+'.Collection_make_summary: '
 
-    log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
-
+    output = "REPORTS/SUMMARY/summary.Rmd"
     jobs = list()
-    subjobs = list()
+    lines = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
-    makeoutdir('REPORTS/SUMMARY')
-    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
+    # Add Header
+    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis','SUMMARY')
     rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
-    rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-    combinations = get_combo(summary_tools_dict.keys(), config, conditions)
-
-    if os.path.exists(rmd_summary):
-        os.rename(rmd_summary, rmd_summary+'.bak')
 
     with open(rmd_header,'r') as read_file:
         for line in read_file.readlines():
-            subjobs.append(line)
-        subjobs.append('\n\n')
+            lines.append(line)
+        lines.append('\n\n')
 
-    for file in os.listdir(sum_path):
-        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY', file))
-        if file.startswith('SUM_'):
-            file_tools = re.findall('[A-Z]+-[a-z]+', file)
-            works = re.findall('[A-Z]+(?=-)', file)
-            if set(file_tools).issubset(summary_tools_set):
-                with open(file_path, 'r') as read_file:
-                    if 'percompare' in os.path.basename(file_path):
-                        for comparison in config[works[0]]['COMPARABLE'].keys():
-                            for line in read_file.readlines():
-                                line = re.sub('COMPARISON', comparison, line)
-                                subjobs.append(line)
-                            subjobs.append('\n\n')
-                    else:
-                        for line in read_file.readlines():
-                            line = re.sub('COMPARISON', comparison, line)
-                            subjobs.append(line)
-                        subjobs.append('\n\n')
+    # Add rMarkdown snippets
+    snippets = glob.glob("REPORTS/SUMMARY/RmdSnippets/*")
+    for snippet in snippets:
+        with open(snippet,'r') as read_file:
+            for line in read_file.readlines():
+                if line.startswith("# "):
+                    if line in lines:
+                        continue
+                lines.append(line)
 
-    with open(rmd_summary, 'a') as sumf:
-        sumf.write(''.join(subjobs))
-        sumf.write('\n\n')
+    if os.path.exists(output):
+        os.rename(output, output+'.bak')
+    with open(output, 'a') as writefile:
+        for line in lines:
+            writefile.write(line)
+        writefile.write('\n\n')
 
     subjobs = list()
 
     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
     with open(smkf,'r') as smk:
         for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
             subjobs.append(line)
         subjobs.append('\n\n')
 
@@ -990,8 +968,6 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subd
     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
     with open(smkf, 'r') as smk:
         for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
             subjobs.append(line)
         subjobs.append('\n\n')
 
@@ -1005,7 +981,6 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subd
     subconf = NestedDefaultDict()
     for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
         subconf[key] = config[key]
-    subconf['WORKFLOWS'].merge(summary_tools_dict)
 
     confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
     if os.path.exists(confo):
@@ -1348,6 +1323,7 @@ def checkstranded(sample, config):
     stranded = ''
     for s in sample:
         check = conditiononly(s, config)
+        log.debug(logid+'check: '+str(check))
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
         paired = p.get('SEQUENCING')
