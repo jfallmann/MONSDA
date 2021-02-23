@@ -72,7 +72,7 @@ rule run_DTU:
             fig_files = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_list_sigGenesFigures.tsv", combo=combo, comparison=compstr, scombo=scombo)
             # res_stager = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_stageR-filtered.tsv.gz", combo=combo, comparison=compstr),
             # res_posthoc = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_post-hoc-filtered-on-SD.tsv.gz", combo=combo, comparison=compstr)
-    log:    expand("LOGS/DTU/{combo}run_DTU.log",combo=combo)
+    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log",combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
@@ -90,7 +90,7 @@ rule filter_significant:
     output: sig = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_d = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
-    log:    expand("LOGS/DTU/{combo}filter_drimseq.log",combo=combo)
+    log:    expand("LOGS/DTU/{combo}{scombo}_{comparison}/filter_drimseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: 1
     params: #pv_cut = get_cutoff_as_string(config, 'DTU')[0]['pval'] if get_cutoff_as_string(config, 'DTU')[0]['pval'] else 0.05,
@@ -110,7 +110,7 @@ rule create_summary_snippet:
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS

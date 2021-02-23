@@ -62,7 +62,7 @@ rule run_diego:
             contrast = rules.create_contrast_files.output.contrast
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
             csv = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr)
-    log:    expand("LOGS/DAS/{combo}/run_diego.log", combo=combo)
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
@@ -84,7 +84,7 @@ rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
             rules.run_diego.output.csv
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DAS/{combo}create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS

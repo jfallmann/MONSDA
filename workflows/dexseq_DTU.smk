@@ -62,7 +62,7 @@ rule run_DTU:
     input:  anno = rules.create_annotation_table.output.anno,
     output: session = rules.themall.input.session,
             res = expand("DTU/{combo}/Tables/DTU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
-    log:    expand("LOGS/DTU/{combo}run_DTU.log", combo=combo)
+    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
@@ -79,7 +79,7 @@ rule filter_significant:
     output: sig = expand("DTU/{combo}/Tables/Sig_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
     sig_d = expand("DTU/{combo}/Tables/SigDOWN_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
     sig_u = expand("DTU/{combo}/Tables/SigUP_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr)
-    log:    expand("LOGS/DTU/{combo}filter_drimseq.log", combo=combo)
+    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
@@ -92,7 +92,7 @@ rule create_summary_snippet:
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS

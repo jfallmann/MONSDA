@@ -10,7 +10,7 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("DAS/{combo}/Featurecounts_DAS_edger/{{combo}}/{{file}}_tmp.counts", combo=combo)),
+    output: tmp   = temp(expand("DAS/{combo}/Featurecounts_DAS_edger/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DAS/Featurecounts_DAS/{combo}/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{combo}/{file}/featurecount_DAS_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -47,7 +47,7 @@ rule run_edgerDAS:
             list    = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_{comparison}_list_topSpliceSimes.tsv", combo=combo, comparison = compstr, scombo=scombo),
             resS    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             resE    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo)
-    log:    expand("LOGS/DAS/{combo}/run_edger.log", combo=combo)
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison = compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
@@ -59,7 +59,7 @@ rule run_edgerDAS:
 
 rule filter_significant_edgerDAS:
     input:  dift = rules.run_edgerDAS.output.dift
-    output: sigdift  = rules.themall.input.sigdift
+    output: sigdift = rules.themall.input.sigdift
     log:    expand("LOGS/DAS/{combo}/filter_edgerDAS.log", combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1

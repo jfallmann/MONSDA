@@ -26,7 +26,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, scombo=scombo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DE/{combo}/{file}/prepare_count_table.log"
+    log:     "LOGS/DE/{combo}/{scombo}/prepare_count_table.log"
     conda:   "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DE'),
@@ -45,7 +45,7 @@ rule run_deseq2:
             vst  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_VST-and-log2.png", combo=combo, scombo=scombo),
             heat = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap{i}.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
             heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo)
-    log:    expand("LOGS/DE/{combo}/run_deseq2.log",combo=combo)
+    log:    expand("LOGS/DE/{combo}/{scombo}_run_deseq2.log", combo=combo, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
@@ -59,7 +59,7 @@ rule filter_significant_deseq2:
     output: sig = expand("DE/{combo}/Tables/Sig_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
-    log:    expand("LOGS/DE/{combo}/filter_deseq2.log",combo=combo)
+    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
@@ -83,4 +83,4 @@ rule create_summary_snippet:
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
-    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2> {log}"
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2>> {log}"

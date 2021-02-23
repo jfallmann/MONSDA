@@ -23,7 +23,7 @@ rule featurecount_dexseq_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-    output: tmp   = temp(expand("DEU/{combo}/Featurecounts_DEU_dexseq/{{combo}}/{{file}}_tmp.counts", combo=combo)),
+    output: tmp   = temp(expand("DEU/{combo}/Featurecounts_DEU_dexseq/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DEU/Featurecounts_DEU_dexseq/{combo}/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/{combo}/{file}/featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -59,7 +59,7 @@ rule run_dexseq:
             siglist  = expand("DEU/{combo}/Figures/DEU_DEXSEQ_{scombo}_{comparison}_list_sigGroupsFigures.png", combo=combo, scombo=scombo, comparison=compstr),
             tbl  = expand("DEU/{combo}/Tables/DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
             session = rules.themall.input.session
-    log:    expand("LOGS/DEU/{combo}/run_dexseq.log", combo=combo)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
@@ -72,7 +72,7 @@ rule run_dexseq:
 rule filter_significant_dexseq:
     input:  tbl = rules.run_dexseq.output.tbl
     output: sigtbl  = expand("DEU/{combo}/Sig_DEU_DEXSEQ_{comparison}_results.tsv.gz", combo=combo, comparison=compstr)
-    log:    expand("LOGS/DEU/{combo}/filter_dexseq.log", combo=combo)
+    log:    expand("LOGS/DEU/{combo}_{comparison}/filter_dexseq.log", combo=combo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pval'),
@@ -85,7 +85,7 @@ rule create_summary_snippet:
             rules.run_dexseq.output.siglist,
             rules.run_dexseq.output.plotMA,
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log" ,combo=combo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
