@@ -11,7 +11,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{scombo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DAS/{combo}/Featurecounts_DAS_diego/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DAS/Featurecounts_DAS/{scombo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{scombo}/{file}/featurecounts_DAS_diego_unique.log"
+    log:    expand("LOGS/DAS/{combo}/featurecounts_DAS_diego_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -75,7 +75,7 @@ rule run_diego:
 rule convertPDF:
     input: rules.run_diego.output.dendrogram
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.png", combo=combo, scombo=scombo, comparison=compstr)
-    log:    expand("LOGS/DAS/{combo}/convertPDF.log", combo=combo)
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/convertPDF.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     shell: "for pdfile in {input} ; do convert -verbose -density 500 -resize '800' $pdfile ${{pdfile%pdf}}png; done"

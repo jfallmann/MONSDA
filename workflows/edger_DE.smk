@@ -12,7 +12,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DE/{combo}/Featurecounts_DE_edger/{{file}}_tmp.counts", combo=combo)),
             cts   = "DE/Featurecounts_DE/{combo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}/{file}/featurecounts_DE_edger_unique.log"
+    log:    expand("LOGS/{combo}/featurecounts_DE_edger_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -46,7 +46,7 @@ rule run_edgerDE:
             res =   expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo)
             # dift =  expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
             # sigdift= expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["pValue-sorted"]),
-    log:    expand("LOGS/DE/{combo}/run_edger.log",combo=combo)
+    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
@@ -62,7 +62,7 @@ rule filter_significant_edgerDE:
     output: sig = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo)
-    log:    expand("LOGS/DE/{combo}/filter_edgerDE.log",combo=combo)
+    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_edgerDE.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pval'),

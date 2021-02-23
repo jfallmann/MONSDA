@@ -12,7 +12,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DEU/{combo}/Featurecounts_DEU_edger/{{combo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DEU/Featurecounts_DEU/{combo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/DEU/{combo}/{file}/featurecounts_DEU_edger_unique.log"
+    log:    expand("LOGS/DEU/{combo}/featurecounts_DEU_edger_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -46,7 +46,7 @@ rule run_edgerDEU:
             # dift = expand("DEU/{combo}/EDGER_DEU_{comparison}_exons_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
             # sigdift = expand("DEU/{combo}/Sig_EDGER_DEU_{comparison}_exons_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["pValue-sorted"]),
             # plot = expand("DEU/{combo}/EDGER_DEU_{comparison}_MD.png", combo=combo, comparison=compstr),
-    log:    expand("LOGS/DEU/{combo}/run_edger.log", combo=combo)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
@@ -61,7 +61,7 @@ rule filter_significant_edgerDEU:
     output: sig     = expand("DEU/{combo}/Tables/Sig_DEU_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_u   = expand("DEU/{combo}/Tables/SigUP_DEU_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d   = expand("DEU/{combo}/Tables/SigDOWN_DEU_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo)
-    log:    expand("LOGS/DEU/{combo}/filter_edgerDEU.log", combo=combo)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/filter_edgerDEU.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pval'),

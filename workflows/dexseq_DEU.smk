@@ -59,7 +59,7 @@ rule run_dexseq:
             siglist  = expand("DEU/{combo}/Figures/DEU_DEXSEQ_{scombo}_{comparison}_list_sigGroupsFigures.png", combo=combo, scombo=scombo, comparison=compstr),
             tbl  = expand("DEU/{combo}/Tables/DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
             session = rules.themall.input.session
-    log:    expand("LOGS/DEU/{combo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
@@ -72,7 +72,7 @@ rule run_dexseq:
 rule filter_significant_dexseq:
     input:  tbl = rules.run_dexseq.output.tbl
     output: sigtbl  = expand("DEU/{combo}/Sig_DEU_DEXSEQ_{comparison}_results.tsv.gz", combo=combo, comparison=compstr)
-    log:    expand("LOGS/DEU/{combo}_{comparison}/filter_dexseq.log", combo=combo, comparison=compstr)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/filter_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pval'),

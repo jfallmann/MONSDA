@@ -12,7 +12,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{scombo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DE/{combo}/Featurecounts_DE_deseq/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DE/Featurecounts_DE/{scombo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{scombo}/{file}/featurecounts_deseq2_unique.log"
+    log:    expand("LOGS/DE/{combo}/featurecounts_deseq2_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -26,7 +26,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, scombo=scombo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DE/{combo}/{scombo}/prepare_count_table.log"
+    log:     expand("LOGS/DE/{combo}/prepare_count_table.log", combo=combo)
     conda:   "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DE'),
@@ -45,7 +45,7 @@ rule run_deseq2:
             vst  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_VST-and-log2.png", combo=combo, scombo=scombo),
             heat = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap{i}.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
             heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo)
-    log:    expand("LOGS/DE/{combo}/{scombo}_run_deseq2.log", combo=combo, scombo=scombo)
+    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),

@@ -12,7 +12,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DAS/{combo}/Featurecounts_DAS_edger/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DAS/Featurecounts_DAS/{combo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}/{file}/featurecount_DAS_edger_unique.log"
+    log:    expand("LOGS/DAS/{combo}/featurecount_DAS_edger_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -60,7 +60,7 @@ rule run_edgerDAS:
 rule filter_significant_edgerDAS:
     input:  dift = rules.run_edgerDAS.output.dift
     output: sigdift = rules.themall.input.sigdift
-    log:    expand("LOGS/DAS/{combo}/filter_edgerDAS.log", combo=combo)
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_edgerDAS.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pval'),
