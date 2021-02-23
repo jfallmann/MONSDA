@@ -3,15 +3,12 @@ DTUBIN, DTUENV = env_bin_from_config3(config,'DTU')
 log.info(logid+"DTUENV: "+str(DTUENV))
 COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config2(SAMPLES, config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
-combi = "COMBINATION"
-
-outdir = "DTU/DRIMSEQ"
 comparison = comparable_as_string2(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 log.info(logid+"COMPARISON: "+str(comparison))
 
 rule themall:
-    input:  session = expand("{outdir}/DTU_DRIMSEQ_{combi}_SESSION.gz", outdir=outdir, combi=combi),
+    input:  session = expand("DTU/{combo}/DTU_DRIMSEQ_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/SUM_DTU_DRIMSEQ.Rmd")
 
 rule salmon_index:
@@ -53,8 +50,8 @@ else:
 
 rule create_annotation_table:
     input:   dir  = expand(rules.mapping.output.ctsdir, file=samplecond(SAMPLES, config)),
-    output:  anno = expand("{outdir}/Tables/{combi}_ANNOTATION.gz", outdir=outdir, combi=combi)
-    log:     expand("LOGS/{outdir}/create_DTU_table.log", outdir=outdir)
+    output:  anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
+    log:     expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.dir, config,'DTU'),
@@ -65,41 +62,41 @@ rule create_annotation_table:
 rule run_DTU:
     input:  anno = rules.create_annotation_table.output.anno,
     output: session = rules.themall.input.session,
-            res_t = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_transcripts.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-            res_g = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_genes.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-            res_p = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_proportions.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-            res_gwp = expand("{outdir}/Tables/DTU_DRIMSEQ_{combi}_{comparison}_table_genewise-precision.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-            fig_F = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_FeatPerGene.png", outdir=outdir, comparison=compstr, combi=combi),
-            fig_P = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_Precision.png", outdir=outdir, comparison=compstr, combi=combi),
-            fig_PV = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_figure_PValues.png", outdir=outdir, comparison=compstr, combi=combi),
-            fig_files = expand("{outdir}/Figures/DTU_DRIMSEQ_{combi}_{comparison}_list_sigGenesFigures.tsv", outdir=outdir, comparison=compstr, combi=combi)
-            # res_stager = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_stageR-filtered.tsv.gz", outdir=outdir, comparison=compstr),
-            # res_posthoc = expand("{outdir}/DTU_DRIMSEQ_{comparison}_results_post-hoc-filtered-on-SD.tsv.gz", outdir=outdir, comparison=compstr)
-    log:    expand("LOGS/{outdir}run_DTU.log",outdir=outdir)
+            res_t = expand("DTU/{combo}/Tables/DTU_DRIMSEQ_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            res_g = expand("DTU/{combo}/Tables/DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            res_p = expand("DTU/{combo}/Tables/DTU_DRIMSEQ_{scombo}_{comparison}_table_proportions.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            res_gwp = expand("DTU/{combo}/Tables/DTU_DRIMSEQ_{scombo}_{comparison}_table_genewise-precision.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            fig_F = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_FeatPerGene.png", combo=combo, comparison=compstr, scombo=scombo),
+            fig_P = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_Precision.png", combo=combo, comparison=compstr, scombo=scombo),
+            fig_PV = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_PValues.png", combo=combo, comparison=compstr, scombo=scombo),
+            fig_files = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_list_sigGenesFigures.tsv", combo=combo, comparison=compstr, scombo=scombo)
+            # res_stager = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_stageR-filtered.tsv.gz", combo=combo, comparison=compstr),
+            # res_posthoc = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_post-hoc-filtered-on-SD.tsv.gz", combo=combo, comparison=compstr)
+    log:    expand("LOGS/DTU/{combo}run_DTU.log",combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
-            combi = combi,
-            outdir = outdir,
+            scombo = scombo,
+            combo = combo,
             ref = ANNOTATION,
             cutts = get_cutoff_as_string(config, 'DTU')
             # pvcut = lambda wildcards: ' '.join(f"{val}" for (key,val) in tool_params(SAMPLES[0], None ,config, 'DTU')['OPTIONS'][2].items())
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.combi} {params.compare} {threads} 2> {log}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.combo} {params.scombo} {params.compare} {threads} 2> {log}"
 
 # rule filter_significant:
 #     input:  res_t = rules.run_DTU.output.res_t,
 #             res_g = rules.run_DTU.output.res_g
-#     output: sig = expand("{outdir}/Tables/Sig_DTU_DRIMSEQ_{combi}_{comparison}_table_genes.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-#             sig_d = expand("{outdir}/Tables/SigDOWN_DTU_DRIMSEQ_{combi}_{comparison}_table_genes.tsv.gz", outdir=outdir, comparison=compstr, combi=combi),
-#             sig_u = expand("{outdir}/Tables/SigUP_DTU_DRIMSEQ_{combi}_{comparison}_table_genes.tsv.gz", outdir=outdir, comparison=compstr, combi=combi)
-#     log:    expand("LOGS/{outdir}filter_drimseq.log",outdir=outdir)
+#     output: sig = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+#             sig_d = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+#             sig_u = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
+#     log:    expand("LOGS/DTU/{combo}filter_drimseq.log",combo=combo)
 #     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
 #     threads: 1
 #     params: #pv_cut = get_cutoff_as_string(config, 'DTU')[0]['pval'] if get_cutoff_as_string(config, 'DTU')[0]['pval'] else 0.05,
 #             pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
 #             lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
-#     shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > {outdir}/Tables/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > {outdir}/Tables/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > {outdir}/Tables/SigDOWN_$fn; else touch {outdir}/Tables/Sig_$fn {outdir}/Tables/SigUP_$fn {outdir}/Tables/SigDOWN_$fn; fi; done 2> {log}"
+#     shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigDOWN_$fn; else touch DTU/{combo}/Tables/Sig_$fn DTU/{combo}/Tables/SigUP_$fn DTU/{combo}/Tables/SigDOWN_$fn; fi; done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,
@@ -113,7 +110,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/{outdir}create_summary_snippet.log",outdir=outdir)
+    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
