@@ -463,7 +463,7 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
             subname = toolenv+'_raw.smk'
 
         # Add variable for combination string
-        subjobs.append('\ncombo = \''+str(subname.replace('.smk', ''))+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+        subjobs.append('\ncombo = \''+str(subname.replace('.smk', ''))+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
         subjobs.append('\n\n')
         # Add rulethemall based on chosen workflows
         subjobs.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, subname.replace('.smk', ''))))        # RuleThemAll for snakemake depending on chosen workflows
@@ -585,7 +585,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                 envs = envlist[i].split('-')
                 subjobs = list()
                 # Add variable for combination string
-                subjobs.append('\ncombo = \''+str(envlist[i])+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+                subjobs.append('\ncombo = \''+str(envlist[i])+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
                 subjobs.append('\n\n')
                 # Add rulethemall based on chosen workflows
                 subjobs.append(''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i])))        # RuleThemAll for snakemake depending on chosen workflows
@@ -594,7 +594,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                     listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
 
                     if listoftools is None:
-                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subworkflows))
                         return None
 
                     sconf = listofconfigs[0]
@@ -684,13 +684,13 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
 
                     add = ''.join(rulethemall(subworkflows))        # RuleThemAll for snakemake depending on chosen workflows
 
-                    if subwork == 'QC' and 'TRIMMING' in workflow and not 'MAPPING' in workflow:
-                        if 'DEDUP' in workflow:
+                    if subwork == 'QC' and 'TRIMMING' in subwork and not 'MAPPING' in subwork:
+                        if 'DEDUP' in subworkflows:
                             subname = toolenv+'_dedup_trim.smk'
                         else:
                             subname = toolenv+'_trim.smk'
 
-                    if subwork == 'QC' and not 'TRIMMING' in workflow and not 'MAPPING' in workflow:
+                    if subwork == 'QC' and not 'TRIMMING' in subwork and not 'MAPPING' in subwork:
                         if 'DEDUP' in subworkflows:
                             subname = toolenv+'_dedup.smk'
                         else:
@@ -726,14 +726,14 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                     subjobs.append(line)
                 subjobs.append('\n\n')
 
-            smko = os.path.abspath(os.path.join(tmpdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
+            smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'subsnake.smk'])))
             if os.path.exists(smko):
                 os.rename(smko, smko+'.bak')
             with open(smko, 'a') as smkout:
                 smkout.write(add)
-                smkout.write(join('', subjobs))
+                smkout.write(str.join('', subjobs))
 
-            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
             if os.path.exists(confo):
                 os.rename(confo, confo+'.bak')
             with open(confo, 'a') as confout:
@@ -796,8 +796,8 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
                     log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition)+' TOOL: '+str(toolenv))
 
-                    scombo = str(envlist[i])+os.sep if envlist[i] != '' else ''
-                    combo = str.join(os.sep, [str(envlist[i]), toolenv])+os.sep if envlist[i] != '' else toolenv+os.sep
+                    scombo = str(envlist[i]) if envlist[i] != '' else ''
+                    combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != '' else toolenv
 
                     # Add variable for combination string
                     subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
@@ -869,7 +869,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 sconf[subwork+'BIN'] = toolbin
 
                 scombo = ''
-                combo = toolenv+os.sep
+                combo = toolenv
 
                 # Add variable for combination string
                 subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
@@ -997,14 +997,14 @@ def make_summary(config, subdir, loglevel):
 def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
     logid=scriptname+'.Collection_rulethemall: '
 
-    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
-    allqc  = 'expand("QC/Multi/{combo}{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
-    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
-    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
-    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trim_dedup_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
+    allqc  = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
+    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
+    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
+    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_trim_dedup_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
 
     todos = list()
 
@@ -1560,8 +1560,9 @@ def nf_fetch_params(configfile):
         log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
     if 'PEAKS' in config:
-        retconf["CLIP"] = checkclip(SAMPLES, config)
+        retconf["IP"] = check_IP(SAMPLES, config)
         retconf["PEAKCONF"] = tool_params(sample, None, config,'PEAKS')['OPTIONS'][0]
+        peakconf = retconf["PEAKCONF"]
         if 'ANNOTATION' in tool_params(sample, None, config,'PEAKS'):
             retconf["ANNOPEAK"] = tool_params(sample, None, config,'PEAKS')['ANNOTATION']
         else:
@@ -1811,7 +1812,7 @@ def list_all_keys_of_dict(dictionary):
     for key, value in dictionary.items():
         if type(value) is dict:
             yield key
-            yield from recursive_items(value)
+            yield from list_all_keys_of_dict(value)
         else:
             yield key
 
@@ -1882,7 +1883,7 @@ def find_innermost_value_from_dict(dictionary):
                 return v
     else:
         return dictionary
-    return ret
+
 
 @check_run
 def removekey(d, key):
@@ -1982,13 +1983,6 @@ def parseseq(sequence):
     if (isinstance(sequence, StringIO)):
         seq = sequence
 
-    elif ( isinstance(sequence, str) and sequence == 'random' ):
-        rand = "\n".join(createrandseq(length, gc, number, alphabet))
-        seq = StringIO(rand)
-        o = gzip.open('Random.fa.gz','wb')
-        o.write(bytes(rand, encoding='UTF-8'))
-        o.close()
-
     elif (isinstance(sequence, str) and os.path.isfile(sequence)):
         if '.gz' in sequence :
             seq = gzip.open(sequence,'rt')
@@ -2020,7 +2014,7 @@ def idfromfa(id):
         goi, chrom = id.split(':')[::2]
         strand = str(id.split(':')[3].split('(')[1][0])
     except:
-        eprint('Fasta header is not in expected format, you will loose information on strand and chromosome')
+        print('Fasta header is not in expected format, you will loose information on strand and chromosome')
         goi = id
         chrom, strand = ['na','na']
 

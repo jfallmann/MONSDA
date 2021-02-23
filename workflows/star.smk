@@ -12,22 +12,22 @@ rule generate_index:
     params: mapp = MAPPERBIN,
             ipara = lambda w: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
             anno = ANNOTATION,
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))),
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0]))),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
             pref = PREFIX
     shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.linkidx}/{params.pref}SAindex\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.tmp} {output.tmpa} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && zcat {params.anno} > {output.tmpa} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {params.linkidx}/{params.pref} --outTmpDir {params.tmpidx} --genomeDir {params.linkidx} --genomeFastaFiles {output.tmp} --sjdbGTFfile {output.tmpa} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && cat {params.linkidx}/{params.pref}Log.out >> {log} && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped_r1 = "UNMAPPED/{combo}{file}_unmapped_R1.fastq.gz",
-                unmapped_r2 = "UNMAPPED/{combo}{file}_unmapped_R2.fastq.gz",
-                tmp = temp("TMP/STAROUT/{combo}{file}")
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
+                unmapped_r2 = "UNMAPPED/{combo}/{file}_unmapped_R2.fastq.gz",
+                tmp = temp("TMP/STAROUT/{combo}/{file}")
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
@@ -38,13 +38,13 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz",
-                tmp = temp("TMP/STAROUT/{combo}{file}")
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                tmp = temp("TMP/STAROUT/{combo}/{file}")
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),

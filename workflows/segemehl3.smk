@@ -14,13 +14,13 @@ rule generate_index:
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
@@ -29,12 +29,12 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
+        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),

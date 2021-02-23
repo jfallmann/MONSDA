@@ -13,21 +13,21 @@ rule generate_index:
     threads: MAXTHREAD
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1])))
+            linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0])))
     shell:  "if [[ -f \"{params.linkidx}/idx\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz",
-                summary = "MAPPED/{combo}{file}.summary"
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                summary = "MAPPED/{combo}/{file}.summary"
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
@@ -38,13 +38,13 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
+        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}{file}_unmapped.fastq.gz",
-                summary = "MAPPED/{combo}{file}.summary"
-        log:    "LOGS/{combo}{file}/mapping.log"
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                summary = "MAPPED/{combo}/{file}.summary"
+        log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),

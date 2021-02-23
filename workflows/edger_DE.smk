@@ -77,9 +77,9 @@ rule create_summary_snippet:
             rules.run_edgerDE.output.MDplot,
             rules.run_edgerDE.output.allN,
             rules.run_edgerDE.output.res
-            # rules.filter_significant.output.sig,
-            # rules.filter_significant.output.sig_d,
-            # rules.filter_significant.output.sig_u,
+            rules.filter_significant.output.sig,
+            rules.filter_significant.output.sig_d,
+            rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"

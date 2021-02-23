@@ -75,9 +75,9 @@ rule create_summary_snippet:
             rules.run_edgerDEU.output.allN,
             rules.run_edgerDEU.output.MDplot,
             rules.run_edgerDEU.output.res
-            # rules.filter_significant.output.sig,
-            # rules.filter_significant.output.sig_d,
-            # rules.filter_significant.output.sig_u,
+            rules.filter_significant.output.sig,
+            rules.filter_significant.output.sig_d,
+            rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"

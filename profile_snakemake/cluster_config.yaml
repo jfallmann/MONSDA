@@ -1,0 +1,15 @@
+__default__:
+    account: user # your account name
+    partition: main # the partition to use
+    time: 1500 # default time (minutes)
+    nodes: 1
+    output: "/SLURMLOG/{rule}.{wildcards}.out"
+    error: "/SLURMLOG/{rule}.{wildcards}.err"
+    #ntasks: 1
+    #mem: 14GB # default memory
+
+generate_index:
+    mem: 200GB
+
+mapping:
+    mem: 200GB
