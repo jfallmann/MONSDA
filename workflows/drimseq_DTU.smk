@@ -84,19 +84,19 @@ rule run_DTU:
             # pvcut = lambda wildcards: ' '.join(f"{val}" for (key,val) in tool_params(SAMPLES[0], None ,config, 'DTU')['OPTIONS'][2].items())
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.combo} {params.scombo} {params.compare} {threads} 2> {log}"
 
-# rule filter_significant:
-#     input:  res_t = rules.run_DTU.output.res_t,
-#             res_g = rules.run_DTU.output.res_g
-#     output: sig = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-#             sig_d = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-#             sig_u = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
-#     log:    expand("LOGS/DTU/{combo}filter_drimseq.log",combo=combo)
-#     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
-#     threads: 1
-#     params: #pv_cut = get_cutoff_as_string(config, 'DTU')[0]['pval'] if get_cutoff_as_string(config, 'DTU')[0]['pval'] else 0.05,
-#             pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
-#             lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
-#     shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigDOWN_$fn; else touch DTU/{combo}/Tables/Sig_$fn DTU/{combo}/Tables/SigUP_$fn DTU/{combo}/Tables/SigDOWN_$fn; fi; done 2> {log}"
+rule filter_significant:
+    input:  res_t = rules.run_DTU.output.res_t,
+            res_g = rules.run_DTU.output.res_g
+    output: sig = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_d = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_u = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/DTU/{combo}filter_drimseq.log",combo=combo)
+    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    threads: 1
+    params: #pv_cut = get_cutoff_as_string(config, 'DTU')[0]['pval'] if get_cutoff_as_string(config, 'DTU')[0]['pval'] else 0.05,
+    pv_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[0]),
+    lfc_cut = re.findall("\d+\.\d+", get_cutoff_as_string(config, 'DTU').split("-")[1])
+    shell: "for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Tables/SigDOWN_$fn; else touch DTU/{combo}/Tables/Sig_$fn DTU/{combo}/Tables/SigUP_$fn DTU/{combo}/Tables/SigDOWN_$fn; fi; done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,
@@ -105,10 +105,10 @@ rule create_summary_snippet:
             rules.run_DTU.output.fig_F,
             rules.run_DTU.output.fig_P,
             rules.run_DTU.output.fig_PV,
-            rules.run_DTU.output.fig_files
-            # rules.filter_significant.output.sig,
-            # rules.filter_significant.output.sig_d,
-            # rules.filter_significant.output.sig_u,
+            rules.run_DTU.output.fig_files,
+            rules.filter_significant.output.sig,
+            rules.filter_significant.output.sig_d,
+            rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DTU/{combo}create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"

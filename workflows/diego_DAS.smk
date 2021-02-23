@@ -82,7 +82,7 @@ rule convertPDF:
 
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
-            rules.run_diego.output.csv,
+            rules.run_diego.output.csv
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"

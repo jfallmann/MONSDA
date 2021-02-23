@@ -75,7 +75,7 @@ rule create_summary_snippet:
             rules.run_edgerDAS.output.resG,
             rules.run_edgerDAS.output.resS,
             rules.run_edgerDAS.output.resE,
-            rules.run_edgerDAS.output.list
+            rules.run_edgerDAS.output.list,
             rules.filter_significant.output.sig,
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u

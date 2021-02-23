@@ -74,7 +74,7 @@ rule create_summary_snippet:
             rules.run_edgerDEU.output.allQLD,
             rules.run_edgerDEU.output.allN,
             rules.run_edgerDEU.output.MDplot,
-            rules.run_edgerDEU.output.res
+            rules.run_edgerDEU.output.res,
             rules.filter_significant.output.sig,
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u
