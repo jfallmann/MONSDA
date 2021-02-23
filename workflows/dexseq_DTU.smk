@@ -26,7 +26,7 @@ if paired == 'paired':
                 r2 = "FASTQ/{file}_R2.fastq.gz",
                 index = rules.salmon_index.output.idx
         output: ctsdir = directory("COUNTS/Salmon/{file}")
-        log:    "LOGS/{file}/salmonquant.log"
+        log:    expand("LOGS/DTU/{combo}/salmonquant.log", combo=combo)
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),
@@ -39,7 +39,7 @@ else:
         input:  r1 = "FASTQ/{file}.fastq.gz",
                 index = rules.salmon_index.output.idx
         output: ctsdir = directory("COUNTS/Salmon/{file}")
-        log:    "LOGS/{file}/salmonquant.log"
+        log:    expand("LOGS/DTU/{combo}/salmonquant.log", combo=combo)
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),

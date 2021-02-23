@@ -12,7 +12,7 @@ rule prepare_deu_annotation:
     input:   anno = ANNOTATION
     output:  countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
              deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-    log:     "LOGS/featurecount_dexseq_annotation.log"
+    log:     expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
     conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params:  bins = BINS,
@@ -24,8 +24,8 @@ rule featurecount_dexseq_unique:
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp(expand("DEU/{combo}/Featurecounts_DEU_dexseq/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
-            cts   = "DEU/Featurecounts_DEU_dexseq/{combo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}/{file}/featurecounts_dexseq_unique.log"
+            cts   = expand("DEU/{combo}/Featurecounts_DEU_dexseq/{file}_mapped_sorted_unique.counts", combo=combo)
+    log:    expand("LOGS/DEU/{combo}/featurecounts_dexseq_unique.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
@@ -59,7 +59,7 @@ rule run_dexseq:
             siglist  = expand("DEU/{combo}/Figures/DEU_DEXSEQ_{scombo}_{comparison}_list_sigGroupsFigures.png", combo=combo, scombo=scombo, comparison=compstr),
             tbl  = expand("DEU/{combo}/Tables/DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
             session = rules.themall.input.session
-    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, scombo=scombo, comparison=compstr)
+    log:    expand("LOGS/DEU/{combo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),

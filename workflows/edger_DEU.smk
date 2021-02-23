@@ -12,7 +12,7 @@ rule featurecount_unique:
     input:  reads = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
     output: tmp   = temp(expand("DEU/{combo}/Featurecounts_DEU_edger/{{combo}}/{{file}}_tmp.counts", combo=combo)),
             cts   = "DEU/Featurecounts_DEU/{combo}/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{combo}/{file}/featurecounts_DEU_edger_unique.log"
+    log:    "LOGS/DEU/{combo}/{file}/featurecounts_DEU_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
