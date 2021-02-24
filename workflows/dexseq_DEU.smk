@@ -27,13 +27,13 @@ rule prepare_deu_annotation:
             countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation2.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
-rule featurecount_dexseq_unique:
-    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
-            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, ref=REFDIR, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, ref=REFDIR, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+rule featurecount_unique:
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo),
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts_DEU_dexseq/{file}_tmp.counts"),
             cts   = "DEU/Featurecounts_DEU_dexseq_{combo}/{file}_mapped_sorted_unique.counts"
-    log:    expand("LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log", combo=combo)
+    log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
