@@ -17,11 +17,11 @@ rule themall:
             sig = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            Rmd = expand("REPORTS/SUMMARY_{combo}/RmdSnippets/SUM_DE_DESEQ2.Rmd", combo=combo)
+            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
-    output: tmp   = temp("DE/{combo}/Featurecounts_DE_deseq/{file}_tmp.counts"),
+    output: tmp   = temp("DE/{combo}/Featurecounts_DE_deseq2/{file}_tmp.counts"),
             cts   = "DE/Featurecounts_{combo}/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -60,10 +60,10 @@ rule run_deseq2:
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
-            combo = combo,
+            outdir = 'DE/'+combo,
             compare = comparison,
             scombo = scombo
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.combo} {params.compare} {params.scombo} {threads} 2> {log}"
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {params.scombo} {threads} 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.run_deseq2.output.tbl
