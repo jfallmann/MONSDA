@@ -395,8 +395,37 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                         configs.append(None)
                 else:
                     tempconf[key] = subSetDict(config[key], condition)
-                    if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
-                        tempconf['RUNDEDUP'] = 'enabled'
+                    if key == 'SETTINGS':
+                        if config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
+                            tempconf['RUNDEDUP'] = 'enabled'
+                    else:
+                        if key in ['DE', 'DEU', 'DAS', 'DTU']:
+                            REPLICATES = subDict(config['SETTINGS'], condition)['SAMPLES']
+                            BATCHES = subDict(config['SETTINGS'], condition)['BATCHES']
+                            TYPES = subDict(config['SETTINGS'], condition)['SAMPLES']
+                            GROUPS = subDict(config['SETTINGS'], condition)['SAMPLES']
+
+                            if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
+                                for i in range(len(REPLICATES)):
+                                    if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
+                                        del BATCHES[i]
+                                        del REPLICATES[i]
+                                        del TYPES[i]
+                                        del GROUPS[i]
+
+                            tempconf[key]['REPLICATES'] = REPLICATES
+                            tempconf[key]['BATCHES'] = BATCHES
+                            tempconf[key]['TYPES'] = TYPES
+                            tempconf[key]['GROUPS'] = GROUPS
+                            tempconf['SAMPLES'] = REPLICATES
+
+                        if key in ['PEAKS']:
+                            REPLICATES = subDict(config['SETTINGS'], condition)['SAMPLES']
+                            if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
+                                for i in range(len(REPLICATES)):
+                                    if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
+                                        del REPLICATES[key]
+                            tempconf['SAMPLES'] = REPLICATES
 
             if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
                 tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
@@ -1069,12 +1098,12 @@ def get_reps(samples, config, analysis):
     for sample in samples:
         scond = sample.split(os.sep)[3:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
-        partconf = subDict(config[analysis], scond)
+        partconf = subDict(config['SETTINGS'], scond)
         log.debug(logid+'CONF: '+str(partconf))
         ret['reps'].append(sample)
-        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
-        idx = partconf['REPLICATES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[2:])], config))
+        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
+        idx = partconf['SAMPLES'].index(wcfile)
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[3:])], config))
         ret['conds'].append(partconf['GROUPS'][idx])
         ret['batches'].append(partconf['BATCHES'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
@@ -1098,8 +1127,9 @@ def get_diego_samples(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
-        partconf = subDict(config[analysis], sample.split(os.sep)[1:-1])
+        scond = sample.split(os.sep)[3:-1]
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
+        partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
         wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
         ret[wcfile].append(sample)
@@ -1122,8 +1152,9 @@ def get_diego_groups(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
-        partconf = subDict(config[analysis], sample.split(os.sep)[1:-1])
+        scond = sample.split(os.sep)[3:-1]
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
+        partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
         wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
         checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
