@@ -11,14 +11,14 @@ rule themall:
             plotMA  = expand("DEU/{combo}/Figures/DEU_DEXSEQ_{scombo}_{comparison}_figure_plotMA.png", combo=combo, scombo=scombo, comparison=compstr),
             siglist = expand("DEU/{combo}/Figures/DEU_DEXSEQ_{scombo}_{comparison}_list_sigGroupsFigures.png", combo=combo, scombo=scombo, comparison=compstr),
             tbl     = expand("DEU/{combo}/Tables/DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
-            # sig     = expand("DEU/{combo}/Tables/Sig_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            # sig_d   = expand("DEU/{combo}/Tables/SigDOWN_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            # sig_u   = expand("DEU/{combo}/Tables/SigUP_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig     = expand("DEU/{combo}/Tables/Sig_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_d   = expand("DEU/{combo}/Tables/SigDOWN_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_u   = expand("DEU/{combo}/Tables/SigUP_DEU_DEXSEQ_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/SUM_DEU_{scombo}_DEXSEQ.Rmd", scombo=scombo)
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION
-    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+    output: countgtf = expand("{countanno}",         countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -74,7 +74,7 @@ rule run_dexseq:
             ref = ANNOTATION
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {input.flat} {params.outdir} {params.scombo} {params.compare} {threads} 2> {log}"
 
-rule filter_significant_dexseq:
+rule filter_significant:
     input:  tbl = rules.run_dexseq.output.tbl
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
@@ -91,9 +91,9 @@ rule create_summary_snippet:
             rules.run_dexseq.output.tbl,
             rules.run_dexseq.output.siglist,
             rules.run_dexseq.output.plotMA,
-            # rules.filter_significant.output.sig,
-            # rules.filter_significant.output.sig_d,
-            # rules.filter_significant.output.sig_u
+            rules.filter_significant.output.sig,
+            rules.filter_significant.output.sig_d,
+            rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log" ,combo=combo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"

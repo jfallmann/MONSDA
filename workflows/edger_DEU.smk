@@ -62,13 +62,13 @@ rule run_edger:
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
-            outdir = 'DEU/'+combo,,
+            outdir = 'DEU/'+combo,
             scombo = scombo,
             compare = comparison,
             ref = ANNOTATION
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.scombo} {params.compare} {threads} 2> {log}"
 
-rule filter_significant_edgerDEU:
+rule filter_significant:
     input:  dift = rules.run_edger.output.res
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,

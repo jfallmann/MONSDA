@@ -46,8 +46,8 @@ rule prepare_count_table:
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
-    input:  tbl = rules.prepare_count_table.output.tbl,
-            anno = rules.prepare_count_table.output.anno
+    input:  tbl = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
+            anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo)
     output: session = rules.themall.input.session,
             allM    = rules.themall.input.allM,
             allsM   = rules.themall.input.allsM,
@@ -62,14 +62,14 @@ rule run_edger:
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
-            outdir = 'DE/'+combo,,
+            outdir = 'DE/'+combo,
             compare = comparison,
             scombo = scombo,
             ref = ANNOTATION
             # cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'DE')['OPTIONS'][2].items())
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.scombo} {params.compare} {threads} 2> {log} "
 
-rule filter_significant_edgerDE:
+rule filter_significant:
     input:  dift = rules.run_edger.output.res
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
