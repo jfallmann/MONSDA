@@ -46,8 +46,8 @@ rule prepare_count_table:
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_edger:
-    input:  tbl = rules.prepare_count_table.output.tbl,
-            anno = rules.prepare_count_table.output.anno,
+    input:  tbl = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
+            anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
     output: session = rules.themall.input.session,
             allM    = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
             allBCV  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),

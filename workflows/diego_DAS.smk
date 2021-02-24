@@ -24,10 +24,10 @@ rule featurecount_unique:
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule create_samplemaps:
-    input:  cnd  = expand(rules.featurecount_unique.output.cts, scombo=scombo, file=samplecond(SAMPLES, config))
-    output: smap = expand("DAS/{combo}/Tables/samplemap.txt", combo=combo),
-            cmap = expand("DAS/{combo}/Tables/groupings.txt", combo=combo)
-    log:    expand("LOGS/DAS/{combo}/create_samplemaps.log", combo=combo)
+    input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
+    output: smap = "DAS/{combo}/Tables/samplemap.txt",
+            cmap = "DAS/{combo}/Tables/groupings.txt"
+    log:    "LOGS/DAS/{combo}/create_samplemaps.log"
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config,'DAS'),
@@ -37,10 +37,10 @@ rule create_samplemaps:
 
 rule prepare_junction_usage_matrix:
     input:  smap = rules.create_samplemaps.output.smap,
-            cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES, config), scombo=scombo)
-    output: tbl = expand("DAS/{combo}/Tables/{scombo}_junction_table_dexdas.txt.gz", combo=combo, scombo=scombo),
-            anno = expand("DAS/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
-    log:    expand("LOGS/DAS/{combo}/prepare_junction_usage_matrix.log", combo=combo)
+            cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
+    output: tbl = "DAS/{combo}/Tables/{scombo}_junction_table_dexdas.txt.gz",
+            anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
+    log:    "LOGS/DAS/{combo}/prepare_{scombo}_junction_usage_matrix.log"
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
@@ -48,7 +48,7 @@ rule prepare_junction_usage_matrix:
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule create_contrast_files:
-    input:  anno = rules.prepare_junction_usage_matrix.output.anno
+    input:  anno = expand(rules.prepare_junction_usage_matrix.output.anno, combo=combo, scombo=scombo)
     output: contrast = expand("DAS/{combo}/Tables/{scombo}_{comparison}_contrast.txt", combo=combo, scombo=scombo, comparison=compstr)
     log:    expand("LOGS/DAS/{combo}/create_contrast_files.log", combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
@@ -60,11 +60,11 @@ rule create_contrast_files:
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -b {scombo} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
-    input:  tbl = rules.prepare_junction_usage_matrix.output.tbl,
-            contrast = rules.create_contrast_files.output.contrast
+    input:  tbl = expand(rules.prepare_junction_usage_matrix.output.tbl, combo=combo, scombo=scombo),
+            contrast = expand(rules.create_contrast_files.output.contrast, combo=combo, scombo=scombo)
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, scombo=scombo, comparison=compstr)
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
