@@ -1067,7 +1067,7 @@ def get_reps(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[2:-1]
+        scond = sample.split(os.sep)[3:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
         partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))

@@ -6,37 +6,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_DESEQ2_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
-            Rmd = "REPORTS/SUMMARY/RmdSnippets/SUM_DE_DESEQ2.Rmd"
-
-rule featurecount_unique:
-    input:  reads = "MAPPED/{scombo}/{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("DE/{combo}/Featurecounts_DE_deseq/{{scombo}}/{{file}}_tmp.counts", combo=combo)),
-            cts   = "DE/Featurecounts_DE/{scombo}/{file}_mapped_sorted_unique.counts"
-    log:    expand("LOGS/DE/{combo}/featurecounts_deseq2_unique.log", combo=combo)
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
-    threads: MAXTHREAD
-    params: countb = COUNTBIN,
-            anno = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DE", DEENV)['OPTIONS'][0].items()),
-            paired   = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
-
-rule prepare_count_table:
-    input:   cnd  = expand(rules.featurecount_unique.output.cts, scombo=scombo, file=samplecond(SAMPLES, config))
-    output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
-             anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     expand("LOGS/DE/{combo}/prepare_count_table.log", combo=combo)
-    conda:   "nextsnakes/envs/"+DEENV+".yaml"
-    threads: 1
-    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config,'DE'),
-             bins = BINS,
-    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
-
-rule run_deseq2:
-    input:  cnt  = rules.prepare_count_table.output.tbl,
-            anno = rules.prepare_count_table.output.anno,
-    output: session = rules.themall.input.session,
             pca  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_PCA.png", combo=combo, scombo=scombo),
             rld  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_DataSet_table_rld.tsv.gz", combo=combo, scombo=scombo),
             vsd  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_DataSet_table_vsd.tsv.gz", combo=combo, scombo=scombo),
@@ -44,7 +13,49 @@ rule run_deseq2:
             plot = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_{comparison}_figure_MA.png", combo=combo, comparison=compstr, scombo=scombo),
             vst  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_VST-and-log2.png", combo=combo, scombo=scombo),
             heat = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap{i}.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
-            heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo)
+            heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
+            sig = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            Rmd = expand("REPORTS/SUMMARY_{combo}/RmdSnippets/SUM_DE_DESEQ2.Rmd", combo=combo)
+
+rule featurecount_unique:
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
+    output: tmp   = temp("DE/{combo}/Featurecounts_DE_deseq/{file}_tmp.counts"),
+            cts   = "DE/Featurecounts_{combo}/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
+    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: countb = COUNTBIN,
+            anno = ANNOTATION,
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DE", DEENV.split('_')[0])['OPTIONS'][0].items()),
+            paired   = lambda x: '-p' if paired == 'paired' else '',
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+
+rule prepare_count_table:
+    input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
+    output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
+             anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
+    log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
+    conda:   "nextsnakes/envs/"+DEENV+".yaml"
+    threads: 1
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
+             bins = BINS
+    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+
+rule run_deseq2:
+    input:  cnt  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
+            anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
+    output: session = rules.themall.input.session,
+            pca  = rules.themall.input.pca,
+            rld  = rules.themall.input.rld,
+            vsd  = rules.themall.input.vsd,
+            tbl  = rules.themall.input.tbl,
+            plot = rules.themall.input.plot,
+            vst  = rules.themall.input.vst,
+            heat = rules.themall.input.heat,
+            heats = rules.themall.input.heats
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -54,11 +65,11 @@ rule run_deseq2:
             scombo = scombo
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.combo} {params.compare} {params.scombo} {threads} 2> {log}"
 
-rule filter_significant_deseq2:
+rule filter_significant:
     input:  tbl = rules.run_deseq2.output.tbl
-    output: sig = expand("DE/{combo}/Tables/Sig_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            sig_u = expand("DE/{combo}/Tables/SigUP_DE_DRIMSEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo)
+    output: sig = rules.themall.input.sig,
+            sig_d = rules.themall.input.sig_d,
+            sig_u = rules.themall.input.sig_u
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
