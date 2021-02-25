@@ -193,6 +193,12 @@ for(compare in comparisons[[1]]){
         # create results table
         write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
+        # create sorted results Tables
+        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
+        write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
+        write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsPValueSorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+
         ## plot lFC vs CPM
         out <- paste("Figures/DE","EDGER",combi,contrast_name,"figure","MD.png",sep="_")
         png(out)

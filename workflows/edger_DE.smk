@@ -13,8 +13,7 @@ rule themall:
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
             allN    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
             res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            # dift    =  expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            # sigdift = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_Sig_EDGER_DE_{comparison}_genes_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["pValue-sorted"]),
+            sort    =  expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["LogFCsorted","PValueSorted"]),
             sig = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
@@ -56,8 +55,7 @@ rule run_edger:
             MDplot  = rules.themall.input.MDplot,
             allN    = rules.themall.input.allN,
             res     = rules.themall.input.res
-            # dift = rules.themall.input.dift,
-            # sigdift = rules.themall.input.sigdift
+            sort    = rules.themall.input.sort,
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -70,7 +68,7 @@ rule run_edger:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.scombo} {params.compare} {threads} 2> {log} "
 
 rule filter_significant:
-    input:  dift = rules.run_edger.output.res
+    input:  sort = rules.run_edger.output.sort
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
@@ -89,6 +87,7 @@ rule create_summary_snippet:
             rules.run_edger.output.MDplot,
             rules.run_edger.output.allN,
             rules.run_edger.output.res,
+            rules.run_edger.output.sort,
             rules.filter_significant.output.sig,
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u
