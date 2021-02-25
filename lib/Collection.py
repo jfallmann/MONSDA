@@ -1318,7 +1318,10 @@ def checkpaired(sample, config):
         check = conditiononly(s, config)
         log.debug(logid+'CHECK: '+str(check))
         p = subDict(config['SETTINGS'], check)
-        paired = p.get('SEQUENCING')
+        if p:
+            paired = p.get('SEQUENCING')
+        else:
+            return None
         # Per sample paired, not implemented yet
         #pairedlist = p.get('SEQUENCING')
         #samplelist = p.get('SAMPLES')
