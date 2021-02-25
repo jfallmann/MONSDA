@@ -74,7 +74,7 @@ else:
 
 rule qc_mapped:
     input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"
-    output:  o1 = report("QC/FASTQC/{combo}/{file}_mapped_sorted_fastqc.zip", category="QC")
+    output:  o1 = report("QC/{combo}/{file}_mapped_sorted_fastqc.zip", category="QC")
     log:     "LOGS/{combo}/{file}_fastqc_mapped.log"
     conda:  "nextsnakes/envs/"+QCENV+".yaml"
     threads: MAXTHREAD
@@ -94,7 +94,7 @@ rule qc_uniquemapped:
 rule qc_dedupmapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam.bai"
-    output: o1 = report("QC/FASTQC/{combo}/{file}_mapped_sorted_dedup_fastqc.zip", category="QC")
+    output: o1 = report("QC/{combo}/{file}_mapped_sorted_dedup_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_dedupmapped.log"
     conda:  "nextsnakes/envs/"+QCENV+".yaml"
     threads: MAXTHREAD
@@ -104,7 +104,7 @@ rule qc_dedupmapped:
 rule qc_uniquededup:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam.bai"
-    output: o1 = report("QC/FASTQC/{combo}/{file}_mapped_sorted_unique_dedup_fastqc.zip", category="QC")
+    output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_dedup_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_uniquededup.log"
     conda:  "nextsnakes/envs/"+QCENV+".yaml"
     threads: MAXTHREAD
