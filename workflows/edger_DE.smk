@@ -13,10 +13,10 @@ rule themall:
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
             allN    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
             res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sort    =  expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["LogFCsorted","PValueSorted"]),
-            sig = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_u = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sort    =  expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["LogFCsorted","PValueSorted"]),
+            # sig = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            # sig_u = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            # sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
@@ -54,7 +54,7 @@ rule run_edger:
             allQLD  = rules.themall.input.allQLD,
             MDplot  = rules.themall.input.MDplot,
             allN    = rules.themall.input.allN,
-            res     = rules.themall.input.res
+            res     = rules.themall.input.res,
             sort    = rules.themall.input.sort,
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
@@ -62,22 +62,22 @@ rule run_edger:
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
             outdir = 'DE/'+combo,
             compare = comparison,
-            scombo = scombo,
+            pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION
             # cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'DE')['OPTIONS'][2].items())
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.scombo} {params.compare} {threads} 2> {log} "
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log} "
 
-rule filter_significant:
-    input:  sort = rules.run_edger.output.sort
-    output: sig = rules.themall.input.sig,
-            sig_d = rules.themall.input.sig_d,
-            sig_u = rules.themall.input.sig_u
-    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_edgerDE.log", combo=combo, comparison=compstr, scombo=scombo)
-    conda:  "nextsnakes/envs/"+DEENV+".yaml"
-    threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pval'),
-            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in DE/{combo}/EDGER_DE*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigDOWN_$fn;else touch DE/{combo}/Sig_$fn DE/{combo}/SigUP_$fn DE/{combo}/SigDOWN_$fn; fi;done 2> {log}"
+# rule filter_significant:
+#     input:  sort = rules.run_edger.output.sort
+#     output: sig = rules.themall.input.sig,
+#             sig_d = rules.themall.input.sig_d,
+#             sig_u = rules.themall.input.sig_u
+#     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_edgerDE.log", combo=combo, comparison=compstr, scombo=scombo)
+#     conda:  "nextsnakes/envs/"+DEENV+".yaml"
+#     threads: 1
+#     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pval'),
+#             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
+#     shell: "set +o pipefail; for i in DE/{combo}/EDGER_DE*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigDOWN_$fn;else touch DE/{combo}/Sig_$fn DE/{combo}/SigUP_$fn DE/{combo}/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_edger.output.allM,
@@ -88,9 +88,9 @@ rule create_summary_snippet:
             rules.run_edger.output.allN,
             rules.run_edger.output.res,
             rules.run_edger.output.sort,
-            rules.filter_significant.output.sig,
-            rules.filter_significant.output.sig_d,
-            rules.filter_significant.output.sig_u
+            # rules.filter_significant.output.sig,
+            # rules.filter_significant.output.sig_d,
+            # rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"

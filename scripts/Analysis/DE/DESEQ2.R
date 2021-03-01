@@ -18,6 +18,15 @@ combi           <- args[5]
 availablecores  <- as.integer(args[6])
 print(args)
 
+anname          <- "DE/deseq2_DE/Tables/_ANNOTATION.gz"
+inname          <- "DE/deseq2_DE/Tables/_COUNTS.gz"
+outdir          <- "DE/deseq2_DE"
+cmp             <- "ContrastWTvsKO:WT_d0+WT_d1+WT_d2+WT_d3+WT_d4-vs-KO_d0+KO_d1+KO_d2+KO_d3+KO_d4,Contrastd0:WT_d0-vs-KO_d0,Contrastd4:WT_d4-vs-KO_d4"
+combi           <- ""
+availablecores  <- 2
+
+
+
 ### FUNCS
 get_gene_name <- function(id, df){
     name_list <- df$gene_name[df['gene_id'] == id]
@@ -35,13 +44,15 @@ BPPARAM = MulticoreParam(workers=availablecores)
 ### SCRIPT
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
-if (ncol(sampleData) == 2) {
-    sampleData$batch <- replicate(nrow(sampleData), 1)
-}
 colnames(sampleData) <- c("condition","type","batch")
 
 ## Combinations of conditions
 comparison <- strsplit(cmp, ",")
+
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
 
 ## readin counttable
 countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))

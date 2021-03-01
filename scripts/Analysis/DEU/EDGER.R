@@ -53,9 +53,6 @@ gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
-if (ncol(sampleData) == 2) {
-    sampleData$batch <- replicate(nrow(sampleData), 1)
-}
 colnames(sampleData) <- c("group","type","batch")
 sampleData <- as.data.frame(sampleData)
 groups <- factor(sampleData$group)
@@ -65,6 +62,11 @@ batches <- factor(sampleData$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
+
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
 
 ## readin counttable
 countData <- read.table(countfile,header = TRUE,row.names=1)

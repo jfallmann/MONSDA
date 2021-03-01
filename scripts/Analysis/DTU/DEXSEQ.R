@@ -55,6 +55,11 @@ batches <- factor(samps$batch)
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
 
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
+
 txi <- tximport(files, type='salmon', txOut=TRUE, countsFromAbundance = "scaledTPM")
 cts <- txi$counts
 cts <- cts[rowSums(cts) > 0,]

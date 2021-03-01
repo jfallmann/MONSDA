@@ -17,6 +17,16 @@ cmp     <- args[5]
 cores   <- as.integer(args[6])
 print(args)
 
+
+anname  <- "DTU/drimseq_DTU/Tables/_ANNOTATION.gz"
+gtf     <- "GENOMES/hg38/gencode.v35.annotation.gtf.gz"
+outdir  <- "DTU/drimseq_DTU"
+combi   <- "none"
+cmp     <- "1vs2:group1-vs-group2"
+cores   <- 2
+
+
+
 ### FUNCS
 get_gene_name <- function(id, df){
     name_list <- df$gene_name[df['gene_id'] == id]
@@ -51,6 +61,11 @@ batches <- factor(samps$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
+
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
 
 txi <- tximport(files, type='salmon', txOut=TRUE, countsFromAbundance = "scaledTPM")
 cts <- txi$counts

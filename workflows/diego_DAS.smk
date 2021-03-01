@@ -6,7 +6,7 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
-            csv = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
@@ -56,8 +56,8 @@ rule create_contrast_files:
     params: bins = BINS,
             compare=comparison,
             outdir = 'DAS/'+combo+'/Tables',
-            scombo=scombo
-    shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -b {scombo} -c {params.compare} -o {params.outdir} 2> {log}"
+            pcombo = scombo if scombo != '' else 'none'
+    shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -b {params.pcombo} -c {params.compare} -o {params.outdir} 2> {log}"
 
 rule run_diego:
     input:  tbl = expand(rules.prepare_junction_usage_matrix.output.tbl, combo=combo, scombo=scombo),
@@ -70,8 +70,8 @@ rule run_diego:
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             dpara = lambda x: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None , config, "DAS", DASENV.split('_')[0])['OPTIONS'][1].items()),
             compare = compstr,
-            outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.", combo=combo, scombo=scombo, comparison=compstr)]
-    shell:  "array1=({input.contrast}); array2=({params.outfile}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} 2>> {log};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond > ${{array2[$i]}} 2>> {log};done"
+            outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr)]
+    shell:  "array1=({input.contrast}); array2=({params.outfile}); array3=({log}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} {params.dpara} 2>> ${{array3[$i]}};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond {params.dpara} > ${{array2[$i]}} 2>> ${{array3[$i]}};done"
 
 rule convertPDF:
     input: rules.run_diego.output.dendrogram

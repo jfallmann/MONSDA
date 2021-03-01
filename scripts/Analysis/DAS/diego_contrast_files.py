@@ -28,6 +28,9 @@ def parseargs():
 def create_tables(annofile,combi,comparisons,outdir):
     logid = scriptname+'.create_tables: '
 
+    if combi == 'none':
+        combi = ''
+        
     comps = comparisons.split(",")
 
     sample_dict = {}
