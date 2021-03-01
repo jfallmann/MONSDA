@@ -1301,7 +1301,7 @@ def conditiononly(sample, config):
     for r in runstate_from_sample([sample], config):
         log.debug(logid+'runstate '+str(r))
         if r not in ret:
-            tmp = check[:-1]
+            tmp = ret #this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
             tmp.append(r)
             if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
                 ret.append(r)
