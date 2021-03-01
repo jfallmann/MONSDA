@@ -278,7 +278,7 @@ def get_samples_from_dir(search, config):  # CHECK
                 for s in samples:
                     log.debug(logid+'x: '+str(x))
                     log.debug(logid+'sample: '+str(s))
-                    if s+'_R' in x or s+'.fastq.gz' == x:
+                    if s+'_R' in x or s+'_r' in x or s+'.fastq.gz' == x:
                         log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
                         clean.append(c)
                         break
@@ -1732,6 +1732,7 @@ def yield_from_dict(key, dictionary):
 @check_run
 def subDict(dataDict, mapList):
     logid = scriptname+'.Collection_subDict: '
+    log.debug(logid+str(dataDict))
     log.debug(logid+str(mapList))
     ret = dataDict
     for k in mapList:
