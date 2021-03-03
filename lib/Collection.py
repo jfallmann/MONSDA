@@ -349,7 +349,7 @@ def get_summary_dirs(config):
 
 
 @check_run
-def create_subworkflow(config, subwork, conditions, stage='', combination=None):
+def create_subworkflow(config, subwork, conditions, stage='', combination=None, samples=None):
     logid = scriptname+'.Collection_create_subworkflow: '
     log.debug(logid+str([config, subwork, conditions, stage]))
     toollist = list()
@@ -404,8 +404,9 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                             BATCHES = subDict(config['SETTINGS'], condition)['BATCHES']
                             TYPES = subDict(config['SETTINGS'], condition)['SAMPLES']
                             GROUPS = subDict(config['SETTINGS'], condition)['SAMPLES']
-
+                            Ex = list()
                             if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
+                                Ex = config[key]['EXCLUDE']
                                 for i in range(len(REPLICATES)):
                                     if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
                                         del BATCHES[i]
@@ -417,15 +418,17 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                             tempconf[key]['BATCHES'] = BATCHES
                             tempconf[key]['TYPES'] = TYPES
                             tempconf[key]['GROUPS'] = GROUPS
-                            tempconf['SAMPLES'] = REPLICATES
+                            tempconf['SAMPLES'] = [os.path.basename(x) for x in samples if x not in Ex]
 
                         if key in ['PEAKS']:
+                            Ex = list()
                             REPLICATES = subDict(config['SETTINGS'], condition)['SAMPLES']
                             if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
+                                Ex = config[key]['EXCLUDE']
                                 for i in range(len(REPLICATES)):
                                     if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
                                         del REPLICATES[key]
-                            tempconf['SAMPLES'] = REPLICATES
+                            tempconf['SAMPLES'] = [os.path.basename(x) for x in samples if x not in Ex]
 
             if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
                 tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
@@ -805,9 +808,9 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 envs = envlist[i].split('-')
 
                 if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
                 else:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition], samples=samples)
 
                 if listoftools is None:
                     log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
@@ -1301,9 +1304,11 @@ def conditiononly(sample, config):
     for r in runstate_from_sample([sample], config):
         log.debug(logid+'runstate '+str(r))
         if r not in ret:
-            tmp = ret #this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
+            tmp = list()
+            tmp.extend(ret) #this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
             tmp.append(r)
-            if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
+            log.debug(logid+'tmp: '+str(tmp))
+            if len(getFromDict(config["SETTINGS"], tmp)) > 0 and sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
                 ret.append(r)
     log.debug(logid+'ret: '+str(ret))
     return ret
@@ -1703,7 +1708,7 @@ def getFromDict(dataDict, mapList):
     ret = dataDict
     for k in mapList:
         log.debug(logid+'k: '+str(k))
-        if k in dataDict:
+        if dataDict.get(k):
             dataDict = dataDict[k]
             log.debug(logid+'subdict: '+str(dataDict))
         else:
