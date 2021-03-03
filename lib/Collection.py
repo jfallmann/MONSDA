@@ -354,6 +354,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None, 
     log.debug(logid+str([config, subwork, conditions, stage]))
     toollist = list()
     configs = list()
+    tempconf = NestedDefaultDict()
     for condition in conditions:
         try:
             env = str(subDict(config[subwork], condition)[stage+'ENV'])
@@ -398,37 +399,6 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None, 
                     if key == 'SETTINGS':
                         if config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
                             tempconf['RUNDEDUP'] = 'enabled'
-                    else:
-                        if key in ['DE', 'DEU', 'DAS', 'DTU']:
-                            REPLICATES = subDict(config['SETTINGS'], condition)['SAMPLES']
-                            BATCHES = subDict(config['SETTINGS'], condition)['BATCHES']
-                            TYPES = subDict(config['SETTINGS'], condition)['SAMPLES']
-                            GROUPS = subDict(config['SETTINGS'], condition)['SAMPLES']
-                            Ex = list()
-                            if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
-                                Ex = config[key]['EXCLUDE']
-                                for i in range(len(REPLICATES)):
-                                    if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
-                                        del BATCHES[i]
-                                        del REPLICATES[i]
-                                        del TYPES[i]
-                                        del GROUPS[i]
-
-                            tempconf[key]['REPLICATES'] = REPLICATES
-                            tempconf[key]['BATCHES'] = BATCHES
-                            tempconf[key]['TYPES'] = TYPES
-                            tempconf[key]['GROUPS'] = GROUPS
-                            tempconf['SAMPLES'] = [os.path.basename(x) for x in samples if x not in Ex]
-
-                        if key in ['PEAKS']:
-                            Ex = list()
-                            REPLICATES = subDict(config['SETTINGS'], condition)['SAMPLES']
-                            if config.get(key) and key in config['WORKFLOWS'] and config[key].get('EXCLUDE'):
-                                Ex = config[key]['EXCLUDE']
-                                for i in range(len(REPLICATES)):
-                                    if REPLICATES[i] in config[key].get('EXCLUDE') or os.path.basename(REPLICATES[i]) in config[key]['EXCLUDE']:
-                                        del REPLICATES[key]
-                            tempconf['SAMPLES'] = [os.path.basename(x) for x in samples if x not in Ex]
 
             if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
                 tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
@@ -790,10 +760,12 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
     if combinations:
         combname = get_combo_name(combinations)
-        for condition in combname:
-            subwork = postworkflow
+        subwork = postworkflow
+
+        if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
+
+            condition = list(combname.keys())[0]
             envlist = combname[condition]['envs']
-            log.debug(logid+'POSTLISTS: '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
             subconf = NestedDefaultDict()
             add = list()
 
@@ -807,67 +779,142 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
 
-                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
-                else:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition], samples=samples)
+                listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
 
                 if listoftools is None:
-                    log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-                    continue
+                    log.error(logid+'No entry in config fits processing step '+str(subwork))
 
-                sconf = listofconfigs[0]
-                for a in range(0, len(listoftools)):
-                    subjobs = list()
-                    toolenv, toolbin = map(str, listoftools[a])
-                    if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
-                        toolenv = toolenv+'_'+subwork
+            sconf = listofconfigs[0]
+            for i in range(1, len(listofconfigs)):
+                sconf = merge_dicts(sconf, listofconfigs[i])
 
-                    sconf[subwork+'ENV'] = toolenv
-                    sconf[subwork+'BIN'] = toolbin
+            for a in range(0, len(listoftools)):
+                subjobs = list()
+                toolenv, toolbin = map(str, listoftools[a])
+                if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have     more than one         defined subworkflow
+                    toolenv = toolenv+'_'+subwork
 
-                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition)+' TOOL: '+str(toolenv))
+                sconf[subwork+'ENV'] = toolenv
+                sconf[subwork+'BIN'] = toolbin
 
-                    scombo = str(envlist[i]) if envlist[i] != '' else ''
-                    combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != '' else toolenv
+                log.debug(logid+'POSTPROCESS: '+str(subwork)+' TOOL: '+str(toolenv))
 
-                    # Add variable for combination string
-                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                scombo = str(envlist[i]) if envlist[i] != '' else ''
+                combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != '' else toolenv
+
+                # Add variable for combination string
+                subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =  \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                subjobs.append('\n\n')
+                subconf.update(sconf)
+
+                subname = toolenv+'.smk'
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
                     subjobs.append('\n\n')
-                    subconf.update(sconf)
 
-                    subname = toolenv+'.smk'
-                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                # Append footer and write out subsnake and subconf per condition
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+                with open(smkf,'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-                    with open(smkf,'r') as smk:
-                        for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
-                            subjobs.append(line)
+                te = toolenv.split('_')[0] if '_' in toolenv else toolenv  #     shorten toolenv if subwork is already added
+                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
+                if os.path.exists(smko):
+                    os.rename(smko, smko+'.bak')
+                with open(smko, 'w') as smkout:
+                    smkout.write(''.join(add))
+                    smkout.write(''.join(subjobs))
+
+                confo = os.path.abspath(os.path.join(subdir,             '_'.join(['_'.join(condition), envlist[i], subwork, te,             'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo, confo+'.bak')
+                with open(confo, 'w') as confout:
+                    json.dump(subconf, confout)
+
+                jobs.append([smko, confo])
+
+        else:
+            for condition in combname:
+                envlist = combname[condition]['envs']
+                log.debug(logid+'POSTLISTS:     '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
+                subconf = NestedDefaultDict()
+                add = list()
+
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+                with open(smkf, 'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath,'conda:  "../', line)
+                        add.append(line)
+
+                for i in range(len(envlist)):
+                    envs = envlist[i].split('-')
+
+                    listoftools, listofconfigs = create_subworkflow(config, subwork,     [condition])
+
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for     processing step '+str(subwork))
+                        continue
+
+                    sconf = listofconfigs[0]
+                    for a in range(0, len(listoftools)):
+                        subjobs = list()
+                        toolenv, toolbin = map(str, listoftools[a])
+                        if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq',     'diego']:  # for all other postprocessing tools we have more than one     defined subworkflow
+                            toolenv = toolenv+'_'+subwork
+
+                        sconf[subwork+'ENV'] = toolenv
+                        sconf[subwork+'BIN'] = toolbin
+
+                        log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION:     '+str(condition)+' TOOL: '+str(toolenv))
+
+                        scombo = str(envlist[i]) if envlist[i] != '' else ''
+                        combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] !=     '' else toolenv
+
+                        # Add variable for combination string
+                        subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =     \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo     = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not     rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                         subjobs.append('\n\n')
+                        subconf.update(sconf)
 
-                    # Append footer and write out subsnake and subconf per condition
-                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
-                    with open(smkf,'r') as smk:
-                        for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
-                            subjobs.append(line)
-                        subjobs.append('\n\n')
+                        subname = toolenv+'.smk'
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     subname))
 
-                    te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten toolenv if subwork is already added
-                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
-                    if os.path.exists(smko):
-                        os.rename(smko, smko+'.bak')
-                    with open(smko, 'w') as smkout:
-                        smkout.write(''.join(add))
-                        smkout.write(''.join(subjobs))
+                        with open(smkf,'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
 
-                    confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subconfig.json'])))
-                    if os.path.exists(confo):
-                        os.rename(confo, confo+'.bak')
-                    with open(confo, 'w') as confout:
-                        json.dump(subconf, confout)
+                        # Append footer and write out subsnake and subconf per condition
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     'footer.smk'))
+                        with open(smkf,'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
 
-                    jobs.append([smko, confo])
+                        te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten     toolenv if subwork is already added
+                        smko = os.path.abspath(os.path.join(subdir,     '_'.join(['_'.join(condition), envlist[i], subwork, te,     'subsnake.smk'])))
+                        if os.path.exists(smko):
+                            os.rename(smko, smko+'.bak')
+                        with open(smko, 'w') as smkout:
+                            smkout.write(''.join(add))
+                            smkout.write(''.join(subjobs))
+
+                        confo = os.path.abspath(os.path.join(subdir,     '_'.join(['_'.join(condition), envlist[i], subwork, te,     'subconfig.json'])))
+                        if os.path.exists(confo):
+                            os.rename(confo, confo+'.bak')
+                        with open(confo, 'w') as confout:
+                            json.dump(subconf, confout)
+
+                        jobs.append([smko, confo])
 
     else:
         subwork = postworkflow
@@ -1099,14 +1146,18 @@ def get_reps(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[3:-1]
+        scond = sample.split(os.sep)[4:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
         partconf = subDict(config['SETTINGS'], scond)
         log.debug(logid+'CONF: '+str(partconf))
+
+        Ex = config[analysis].get('EXCLUDE')
+        if Ex and sample.split(os.sep)[-1] in Ex:
+            continue
         ret['reps'].append(sample)
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
         idx = partconf['SAMPLES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[3:])], config))
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config))
         ret['conds'].append(partconf['GROUPS'][idx])
         ret['batches'].append(partconf['BATCHES'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
