@@ -782,63 +782,63 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
 
                 if listoftools is None:
-                    log.error(logid+'No entry in config fits processing step '+str(subwork))
+                    log.error(logid+'No entry in config fits processing step'+str(subwork))
 
-            sconf = listofconfigs[0]
-            for i in range(1, len(listofconfigs)):
-                sconf = merge_dicts(sconf, listofconfigs[i])
+                sconf = listofconfigs[0]
+                for c in range(1, len(listofconfigs)):
+                    sconf = merge_dicts(sconf, listofconfigs[c])
 
-            for a in range(0, len(listoftools)):
-                subjobs = list()
-                toolenv, toolbin = map(str, listoftools[a])
-                if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have     more than one         defined subworkflow
-                    toolenv = toolenv+'_'+subwork
+                for a in range(0, len(listoftools)):
+                    subjobs = list()
+                    toolenv, toolbin = map(str, listoftools[a])
+                    if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq',     'diego']:  # for all other postprocessing tools we have     more than     one         defined subworkflow
+                        toolenv = toolenv+'_'+subwork
 
-                sconf[subwork+'ENV'] = toolenv
-                sconf[subwork+'BIN'] = toolbin
+                    sconf[subwork+'ENV'] = toolenv
+                    sconf[subwork+'BIN'] = toolbin
 
-                log.debug(logid+'POSTPROCESS: '+str(subwork)+' TOOL: '+str(toolenv))
+                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' TOOL: '+str(toolenv))
 
-                scombo = str(envlist[i]) if envlist[i] != '' else ''
-                combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != '' else toolenv
+                    scombo = str(envlist[i]) if envlist[i] != '' else ''
+                    combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != ''     else toolenv
 
-                # Add variable for combination string
-                subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =  \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
-                subjobs.append('\n\n')
-                subconf.update(sconf)
-
-                subname = toolenv+'.smk'
-                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
-
-                with open(smkf,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
-                        subjobs.append(line)
+                    # Add variable for combination string
+                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =      \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo =     scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not     rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                     subjobs.append('\n\n')
+                    subconf.update(sconf)
 
-                # Append footer and write out subsnake and subconf per condition
-                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
-                with open(smkf,'r') as smk:
-                    for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
-                        subjobs.append(line)
-                    subjobs.append('\n\n')
+                    subname = toolenv+'.smk'
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
 
-                te = toolenv.split('_')[0] if '_' in toolenv else toolenv  #     shorten toolenv if subwork is already added
-                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
-                if os.path.exists(smko):
-                    os.rename(smko, smko+'.bak')
-                with open(smko, 'w') as smkout:
-                    smkout.write(''.join(add))
-                    smkout.write(''.join(subjobs))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
 
-                confo = os.path.abspath(os.path.join(subdir,             '_'.join(['_'.join(condition), envlist[i], subwork, te,             'subconfig.json'])))
-                if os.path.exists(confo):
-                    os.rename(confo, confo+'.bak')
-                with open(confo, 'w') as confout:
-                    json.dump(subconf, confout)
+                    # Append footer and write out subsnake and subconf per condition
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     'footer.smk'))
+                    with open(smkf,'r') as smk:
+                        for line in smk.readlines():
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
 
-                jobs.append([smko, confo])
+                    te = toolenv.split('_')[0] if '_' in toolenv else toolenv  #     shorten     toolenv if subwork is already added
+                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition),     envlist[i], subwork, te, 'subsnake.smk'])))
+                    if os.path.exists(smko):
+                        os.rename(smko, smko+'.bak')
+                    with open(smko, 'w') as smkout:
+                        smkout.write(''.join(add))
+                        smkout.write(''.join(subjobs))
+
+                    confo = os.path.abspath(os.path.join(subdir,                 '_'.join(['_'.join(condition), envlist[i], subwork, te,                 'subconfig.json'])))
+                    if os.path.exists(confo):
+                        os.rename(confo, confo+'.bak')
+                    with open(confo, 'w') as confout:
+                        json.dump(subconf, confout)
+
+                    jobs.append([smko, confo])
 
         else:
             for condition in combname:
@@ -1181,11 +1181,11 @@ def get_diego_samples(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[3:-1]
+        scond = sample.split(os.sep)[4:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
         partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
         ret[wcfile].append(sample)
 
     log.debug(logid+'RETURN: '+str(ret))
@@ -1206,13 +1206,12 @@ def get_diego_groups(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[3:-1]
+        scond = sample.split(os.sep)[4:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
         partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
         checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
-        #wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(checkfile)
         cond = partconf['GROUPS'][idx]
         ret[cond].append(wcfile)
