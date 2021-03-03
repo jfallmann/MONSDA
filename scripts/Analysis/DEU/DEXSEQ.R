@@ -26,16 +26,6 @@ combi           <- args[6]
 cmp             <- args[7]
 availablecores  <- as.integer(args[8])
 
-anname          <- "DEU/dexseq_DEU/Tables/_ANNOTATION_1.gz"
-countfile       <- "DEU/dexseq_DEU/Tables/_COUNTS.gz"
-gtf             <- "GENOMES/hg38/gencode.v35.annotation.gtf.gz"
-flatanno        <- "GENOMES/hg38/gencode.v35.annotation_dexseq.gtf.gz"
-outdir          <- "DEU/dexseq_DEU"
-combi           <- "none"
-cmp             <- "ContrastWTvsKO:WT_d0+WT_d1+WT_d2+WT_d3+WT_d4-vs-KO_d0+KO_d1+KO_d2+KO_d3+KO_d4,Contrastd0:WT_d0-vs-KO_d0,Contrastd4:WT_d4-vs-KO_d4"
-availablecores  <- 2
-
-
 
 ## FUNCS
 get_gene_name <- function(id, df){

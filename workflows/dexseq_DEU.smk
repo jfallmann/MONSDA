@@ -18,7 +18,7 @@ rule themall:
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION
-    output: countgtf = expand("{countanno}",         countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -31,8 +31,8 @@ rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo),
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-    output: tmp   = temp("DEU/{combo}/Featurecounts_DEU_dexseq/{file}_tmp.counts"),
-            cts   = "DEU/Featurecounts_DEU_dexseq_{combo}/{file}_mapped_sorted_unique.counts"
+    output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
+            cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -50,7 +50,7 @@ rule prepare_count_table:
     log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
     conda:   "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DEU'),
              bins = BINS
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
@@ -64,7 +64,7 @@ rule run_dexseq:
             siglist = rules.themall.input.siglist,
             tbl     = rules.themall.input.tbl,
             session = rules.themall.input.session
-    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),

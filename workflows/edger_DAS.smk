@@ -18,8 +18,8 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
-    output: tmp   = temp("DAS/{combo}/Featurecounts_DE_edger/{file}_tmp.counts"),
-            cts   = "DAS/Featurecounts_{combo}/{file}_mapped_sorted_unique.counts"
+    output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
+            cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
