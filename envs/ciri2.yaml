@@ -1,0 +1,30 @@
+name: ciri2
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - bzip2=1.0.8
+  - c-ares=1.17.1
+  - ca-certificates=2020.12.5
+  - htslib=1.11
+  - krb5=1.17.2
+  - libcurl=7.71.1
+  - libdeflate=1.7
+  - libedit=3.1.20191231
+  - libev=4.33
+  - libgcc-ng=9.3.0
+  - libgomp=9.3.0
+  - libnghttp2=1.43.0
+  - libssh2=1.9.0
+  - libstdcxx-ng=9.3.0
+  - ncurses=6.2
+  - openssl=1.1.1j
+  - perl=5.32.0
+  - samtools=1.11
+  - tk=8.6.10
+  - xz=5.2.5
+  - zlib=1.2.11

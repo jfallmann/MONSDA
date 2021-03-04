@@ -52,7 +52,8 @@ except Exception as err:
 
 logid = 'header.smk: '
 
-#Parse SUBCONFIG
+
+# Parse SUBCONFIG
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
@@ -64,6 +65,7 @@ if len(SAMPLES) < 1:
 SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
 SETS = os.sep.join(SETUP)
 SETTINGS = subDict(config['SETTINGS'], SETUP)
+
 
 # Parse SETTINGS
 SEQUENCING = SETTINGS.get('SEQUENCING')
@@ -122,6 +124,7 @@ if 'MAPPING' in config:
     else:
         INDEX2 = ''
 
+
 # Peak Calling Variables
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
@@ -138,6 +141,7 @@ if 'PEAKS' in config:
         IP = check_ip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+IP+' protocol')
 
+
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:
     if x in config:
@@ -153,6 +157,7 @@ for x in ['UCSC', 'COUNTING']:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
 
+
 # DE/DEU/DAS/DTU Variables
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
     if x in config:
@@ -167,6 +172,22 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
+
+
+# CIRCS Variables
+if 'CIRCS' in config:
+    CRICCONF = subDict(config['CIRCS'], SETUP)
+    log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
+    REF = CIRCCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    CANNO = CIRCCONF.get('ANNOTATION')
+    if CANNO:
+        ANNOTATION = CANNO
+    else:
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
+
 
 combo = ''
 
