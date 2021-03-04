@@ -176,7 +176,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
 
 # CIRCS Variables
 if 'CIRCS' in config:
-    CRICCONF = subDict(config['CIRCS'], SETUP)
+    CIRCCONF = subDict(config['CIRCS'], SETUP)
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE')
     if REF:
