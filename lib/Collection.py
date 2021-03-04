@@ -263,12 +263,16 @@ def get_samples_from_dir(search, config):  # CHECK
         pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
         log.debug(logid+'REGEX: '+str(pat)+'\t'+'SAMPLES: '+str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
+        log.debug(logid+'check: '+str(check))
         if len(check) > 0:
             ret = list()
             clean = list()
             for c in check:     # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
+                log.debug(logid+'check: '+str(c))
                 x = c.split(os.sep)[-1]
                 for s in samples:
+                    log.debug(logid+'x: '+str(x))
+                    log.debug(logid+'sample: '+str(s))
                     if s+'_R' in x or s+'.fastq.gz' == x:
                         log.debug(logid+'FOUND: '+s+'_R'+' or '+s+'.fastq.gz'+' in '+x)
                         clean.append(c)
@@ -302,6 +306,7 @@ def sampleslong(config):
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
         tosearch.append(list(k))
     log.debug(logid+'keys: '+str(tosearch))
+    log.debug(logid+'tosearch: '+str(tosearch))
     for search in tosearch:
         ret.extend(get_samples_from_dir(search, config))
     log.debug(logid+str(ret))
@@ -432,6 +437,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     log.debug(logid+str([config, subwork, conditions, stage]))
     toollist = list()
     configs = list()
+    tempconf = NestedDefaultDict()
     for condition in conditions:
         try:
             env = str(subDict(config[subwork], condition)[stage+'ENV'])
@@ -473,8 +479,9 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                         configs.append(None)
                 else:
                     tempconf[key] = subSetDict(config[key], condition)
-                    if key == 'SETTINGS' and config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
-                        tempconf['RUNDEDUP'] = 'enabled'
+                    if key == 'SETTINGS':
+                        if config.get('DEDUP') and 'DEDUP' in config['WORKFLOWS']:
+                            tempconf['RUNDEDUP'] = 'enabled'
 
             if 'TOOLS' in config[subwork] and env == '' and exe == '':  # env and exe overrule TOOLS
                 tempconf[subwork]['TOOLS'] = config[subwork]['TOOLS']
@@ -486,8 +493,8 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
                     tempconf[subwork]['CUTOFFS'] = config[subwork]['CUTOFFS']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
-                if subwork == 'DAS':
-                    tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
+                # if subwork == 'DAS':
+                    # tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
@@ -660,7 +667,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                 envs = envlist[i].split('-')
                 subjobs = list()
                 # Add variable for combination string
-                subjobs.append('\ncombo = \''+str(envlist[i])+os.sep+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+                subjobs.append('\ncombo = \''+str(envlist[i])+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
                 subjobs.append('\n\n')
                 # Add rulethemall based on chosen workflows
                 subjobs.append(''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i])))        # RuleThemAll for snakemake depending on chosen workflows
@@ -806,9 +813,9 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                 os.rename(smko, smko+'.bak')
             with open(smko, 'a') as smkout:
                 smkout.write(add)
-                smkout.write(join('', subjobs))
+                smkout.write(str.join('', subjobs))
 
-            confo = os.path.abspath(os.path.join(tmpdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
             if os.path.exists(confo):
                 os.rename(confo, confo+'.bak')
             with open(confo, 'a') as confout:
@@ -833,10 +840,12 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
     if combinations:
         combname = get_combo_name(combinations)
-        for condition in combname:
-            subwork = postworkflow
+        subwork = postworkflow
+
+        if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
+
+            condition = list(combname.keys())[0]
             envlist = combname[condition]['envs']
-            log.debug(logid+'POSTLISTS: '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
             subconf = NestedDefaultDict()
             add = list()
 
@@ -850,32 +859,31 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
 
-                if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
-                else:
-                    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+                listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
 
                 if listoftools is None:
-                    log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-                    continue
+                    log.error(logid+'No entry in config fits processing step'+str(subwork))
 
                 sconf = listofconfigs[0]
+                for c in range(1, len(listofconfigs)):
+                    sconf = merge_dicts(sconf, listofconfigs[c])
+
                 for a in range(0, len(listoftools)):
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
-                    if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
+                    if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq',     'diego']:  # for all other postprocessing tools we have     more than     one         defined subworkflow
                         toolenv = toolenv+'_'+subwork
 
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
 
-                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION: '+str(condition)+' TOOL: '+str(toolenv))
+                    log.debug(logid+'POSTPROCESS: '+str(subwork)+' TOOL: '+str(toolenv))
 
-                    scombo = str(envlist[i])+os.sep if envlist[i] != '' else ''
-                    combo = str.join(os.sep, [str(envlist[i]), toolenv])+os.sep if envlist[i] != '' else toolenv+os.sep
+                    scombo = str(envlist[i]) if envlist[i] != '' else ''
+                    combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != ''     else toolenv
 
                     # Add variable for combination string
-                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =      \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                     subjobs.append('\n\n')
                     subconf.update(sconf)
 
@@ -889,28 +897,108 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                         subjobs.append('\n\n')
 
                     # Append footer and write out subsnake and subconf per condition
-                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     'footer.smk'))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda:  "../', line)
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-                    te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten toolenv if subwork is already added
-                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subsnake.smk'])))
+                    te = toolenv.split('_')[0] if '_' in toolenv else toolenv  #     shorten     toolenv if subwork is already added
+                    smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition),     envlist[i], subwork, te, 'subsnake.smk'])))
                     if os.path.exists(smko):
                         os.rename(smko, smko+'.bak')
                     with open(smko, 'w') as smkout:
                         smkout.write(''.join(add))
                         smkout.write(''.join(subjobs))
 
-                    confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], subwork, te, 'subconfig.json'])))
+                    confo = os.path.abspath(os.path.join(subdir,                 '_'.join(['_'.join(condition), envlist[i], subwork, te,                 'subconfig.json'])))
                     if os.path.exists(confo):
                         os.rename(confo, confo+'.bak')
                     with open(confo, 'w') as confout:
                         json.dump(subconf, confout)
 
                     jobs.append([smko, confo])
+
+        else:
+            for condition in combname:
+                envlist = combname[condition]['envs']
+                log.debug(logid+'POSTLISTS:     '+str(condition)+'\t'+str(subwork)+'\t'+str(envlist))
+                subconf = NestedDefaultDict()
+                add = list()
+
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+                with open(smkf, 'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath,'conda:  "../', line)
+                        add.append(line)
+
+                for i in range(len(envlist)):
+                    envs = envlist[i].split('-')
+
+                    listoftools, listofconfigs = create_subworkflow(config, subwork,     [condition])
+
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for     processing step '+str(subwork))
+                        continue
+
+                    sconf = listofconfigs[0]
+                    if subwork == 'PEAKS':
+                        for c in range(1, len(listofconfigs)):
+                            sconf = merge_dicts(sconf, listofconfigs[c])
+
+                    for a in range(0, len(listoftools)):
+                        subjobs = list()
+                        toolenv, toolbin = map(str, listoftools[a])
+                        if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq',     'diego']:  # for all other postprocessing tools we have more than one     defined subworkflow
+                            toolenv = toolenv+'_'+subwork
+
+                        sconf[subwork+'ENV'] = toolenv
+                        sconf[subwork+'BIN'] = toolbin
+
+                        log.debug(logid+'POSTPROCESS: '+str(subwork)+' CONDITION:     '+str(condition)+' TOOL: '+str(toolenv))
+
+                        scombo = str(envlist[i]) if envlist[i] != '' else ''
+                        combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] !=     '' else toolenv
+
+                        # Add variable for combination string
+                        subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =     \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo     = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not     rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                        subjobs.append('\n\n')
+                        subconf.update(sconf)
+
+                        subname = toolenv+'.smk'
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     subname))
+
+                        with open(smkf,'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
+
+                        # Append footer and write out subsnake and subconf per condition
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows',     'footer.smk'))
+                        with open(smkf,'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
+
+                        te = toolenv.split('_')[0] if '_' in toolenv else toolenv  # shorten     toolenv if subwork is already added
+                        smko = os.path.abspath(os.path.join(subdir,     '_'.join(['_'.join(condition), envlist[i], subwork, te,     'subsnake.smk'])))
+                        if os.path.exists(smko):
+                            os.rename(smko, smko+'.bak')
+                        with open(smko, 'w') as smkout:
+                            smkout.write(''.join(add))
+                            smkout.write(''.join(subjobs))
+
+                        confo = os.path.abspath(os.path.join(subdir,     '_'.join(['_'.join(condition), envlist[i], subwork, te,     'subconfig.json'])))
+                        if os.path.exists(confo):
+                            os.rename(confo, confo+'.bak')
+                        with open(confo, 'w') as confout:
+                            json.dump(subconf, confout)
+
+                        jobs.append([smko, confo])
 
     else:
         subwork = postworkflow
@@ -938,12 +1026,13 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                 toolenv, toolbin = map(str, listoftools[a])
                 if subwork in ['DE', 'DEU', 'DAS', 'DTU'] and toolbin not in ['deseq', 'diego']:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv+'_'+subwork
+                    log.info(logid+'toolenv: '+str(toolenv))
 
                 sconf[subwork+'ENV'] = toolenv
                 sconf[subwork+'BIN'] = toolbin
 
                 scombo = ''
-                combo = toolenv+os.sep
+                combo = toolenv
 
                 # Add variable for combination string
                 subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo = \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
@@ -988,60 +1077,46 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, subname=None, combinations=None):  # Need to check what we really need here, definitely conditions, config and workflows that should be summarized to retrieve combinations
+def make_summary(config, subdir, loglevel):
     logid=scriptname+'.Collection_make_summary: '
 
-    log.info(logid+'CREATING SUMMARY FOR '+str(conditions))
-
+    output = "REPORTS/SUMMARY/summary.Rmd"
     jobs = list()
-    subjobs = list()
+    lines = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
-    makeoutdir('REPORTS/SUMMARY')
-    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY')
+    # Add Header
+    sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis','SUMMARY')
     rmd_header = os.path.abspath(os.path.join(sum_path, 'header_summary.Rmd'))
-    rmd_summary = os.path.abspath(os.path.join('REPORTS', 'SUMMARY', 'summary.Rmd'))
-    combinations = get_combo(summary_tools_dict.keys(), config, conditions)
-
-    if os.path.exists(rmd_summary):
-        os.rename(rmd_summary, rmd_summary+'.bak')
 
     with open(rmd_header,'r') as read_file:
         for line in read_file.readlines():
-            subjobs.append(line)
-        subjobs.append('\n\n')
+            lines.append(line)
+        lines.append('\n\n')
 
-    for file in os.listdir(sum_path):
-        file_path = os.path.abspath(os.path.join('nextsnakes', 'scripts', 'Analysis', 'SUMMARY', file))
-        if file.startswith('SUM_'):
-            file_tools = re.findall('[A-Z]+-[a-z]+', file)
-            works = re.findall('[A-Z]+(?=-)', file)
-            if set(file_tools).issubset(summary_tools_set):
-                with open(file_path, 'r') as read_file:
-                    if 'percompare' in os.path.basename(file_path):
-                        for comparison in config[works[0]]['COMPARABLE'].keys():
-                            for line in read_file.readlines():
-                                line = re.sub('COMPARISON', comparison, line)
-                                subjobs.append(line)
-                            subjobs.append('\n\n')
-                    else:
-                        for line in read_file.readlines():
-                            line = re.sub('COMPARISON', comparison, line)
-                            subjobs.append(line)
-                        subjobs.append('\n\n')
+    # Add rMarkdown snippets
+    snippets = glob.glob("REPORTS/SUMMARY/RmdSnippets/*")
+    for snippet in snippets:
+        with open(snippet,'r') as read_file:
+            for line in read_file.readlines():
+                if line.startswith("# "):
+                    if line in lines:
+                        continue
+                lines.append(line)
 
-    with open(rmd_summary, 'a') as sumf:
-        sumf.write(''.join(subjobs))
-        sumf.write('\n\n')
+    if os.path.exists(output):
+        os.rename(output, output+'.bak')
+    with open(output, 'a') as writefile:
+        for line in lines:
+            writefile.write(line)
+        writefile.write('\n\n')
 
     subjobs = list()
 
     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
     with open(smkf,'r') as smk:
         for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
             subjobs.append(line)
         subjobs.append('\n\n')
 
@@ -1056,8 +1131,6 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subd
     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
     with open(smkf, 'r') as smk:
         for line in smk.readlines():
-            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-            line = re.sub(condapath, 'conda:  "../', line)
             subjobs.append(line)
         subjobs.append('\n\n')
 
@@ -1071,7 +1144,6 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subd
     subconf = NestedDefaultDict()
     for key in ['BINS', 'MAXTHREADS', 'SETTINGS']:
         subconf[key] = config[key]
-    subconf['WORKFLOWS'].merge(summary_tools_dict)
 
     confo = os.path.abspath(os.path.join(subdir, 'summary_subconfig.json'))
     if os.path.exists(confo):
@@ -1088,14 +1160,14 @@ def make_summary(summary_tools_set, summary_tools_dict, config, conditions, subd
 def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
     logid=scriptname+'.Collection_rulethemall: '
 
-    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
-    allqc  = 'expand("QC/Multi/{combo}{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
-    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
-    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
-    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}{condition}/multiqc_trim_dedup_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
+    allqc  = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
+    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
+    alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
+    alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_trim_dedup_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
 
     todos = list()
 
@@ -1158,14 +1230,18 @@ def get_reps(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[2:-1]
+        scond = sample.split(os.sep)[4:-1]
         log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
-        partconf = subDict(config[analysis], scond)
+        partconf = subDict(config['SETTINGS'], scond)
         log.debug(logid+'CONF: '+str(partconf))
+
+        Ex = config[analysis].get('EXCLUDE')
+        if Ex and sample.split(os.sep)[-1] in Ex:
+            continue
         ret['reps'].append(sample)
-        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
-        idx = partconf['REPLICATES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[2:])], config))
+        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
+        idx = partconf['SAMPLES'].index(wcfile)
+        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config))
         ret['conds'].append(partconf['GROUPS'][idx])
         ret['batches'].append(partconf['BATCHES'][idx])
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
@@ -1189,10 +1265,11 @@ def get_diego_samples(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
-        partconf = subDict(config[analysis], sample.split(os.sep)[1:-1])
+        scond = sample.split(os.sep)[4:-1]
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
+        partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
         ret[wcfile].append(sample)
 
     log.debug(logid+'RETURN: '+str(ret))
@@ -1213,12 +1290,12 @@ def get_diego_groups(samples, config, analysis):
     log.debug(logid+'Samples: '+str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(sample.split(os.sep)[1:-1]))
-        partconf = subDict(config[analysis], sample.split(os.sep)[1:-1])
+        scond = sample.split(os.sep)[4:-1]
+        log.debug(logid+'WORKING ON: '+str(sample)+' CONDITION: '+str(scond))
+        partconf = subDict(config[analysis], scond)
         log.debug(logid+'CONF: '+str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts','')
+        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
         checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
-        #wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts','')
         idx = partconf['REPLICATES'].index(checkfile)
         cond = partconf['GROUPS'][idx]
         ret[cond].append(wcfile)
@@ -1361,9 +1438,11 @@ def conditiononly(sample, config):
     for r in runstate_from_sample([sample], config):
         log.debug(logid+'runstate '+str(r))
         if r not in ret:
-            tmp = check[:-1]
+            tmp = list()
+            tmp.extend(ret) #this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
             tmp.append(r)
-            if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
+            log.debug(logid+'tmp: '+str(tmp))
+            if len(getFromDict(config["SETTINGS"], tmp)) > 0 and sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
                 ret.append(r)
     log.debug(logid+'ret: '+str(ret))
     return ret
@@ -1378,7 +1457,10 @@ def checkpaired(sample, config):
         check = conditiononly(s, config)
         log.debug(logid+'CHECK: '+str(check))
         p = subDict(config['SETTINGS'], check)
-        paired = p.get('SEQUENCING')
+        if p:
+            paired = p.get('SEQUENCING')
+        else:
+            return None
         # Per sample paired, not implemented yet
         #pairedlist = p.get('SEQUENCING')
         #samplelist = p.get('SAMPLES')
@@ -1414,6 +1496,7 @@ def checkstranded(sample, config):
     stranded = ''
     for s in sample:
         check = conditiononly(s, config)
+        log.debug(logid+'check: '+str(check))
         p = subDict(config['SETTINGS'], check)
         log.debug(logid+'P: '+str(p))
         paired = p.get('SEQUENCING')
@@ -1459,8 +1542,8 @@ def get_pairing(sample, stype, config, samples, scombo=''):
                         log.debug(logid+'Match found: '+str(v)+' : '+str(x))
                         matching = samplecond([x], config)[0].replace('MAPPED/', '')
                         log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
-        log.debug(logid+'-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam')
-        return '-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam'
+        log.debug(logid+'-c MAPPED'+os.sep+str(scombo)+os.sep+str(matching)+'_mapped_'+str(stype)+'.bam')
+        return '-c MAPPED'+os.sep+str(scombo)+os.sep+str(matching)+'_mapped_'+str(stype)+'.bam'
     else:
         log.debug(logid+'No matching sample found')
         return ''
@@ -1666,8 +1749,9 @@ def nf_fetch_params(configfile):
         log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
     if 'PEAKS' in config:
-        retconf["CLIP"] = checkclip(SAMPLES, config)
+        retconf["IP"] = check_IP(SAMPLES, config)
         retconf["PEAKCONF"] = tool_params(sample, None, config,'PEAKS')['OPTIONS'][0]
+        peakconf = retconf["PEAKCONF"]
         if 'ANNOTATION' in tool_params(sample, None, config,'PEAKS'):
             retconf["ANNOPEAK"] = tool_params(sample, None, config,'PEAKS')['ANNOTATION']
         else:
@@ -2238,7 +2322,7 @@ def getFromDict(dataDict, mapList):
     ret = dataDict
     for k in mapList:
         log.debug(logid+'k: '+str(k))
-        if k in dataDict:
+        if dataDict.get(k):
             dataDict = dataDict[k]
             log.debug(logid+'subdict: '+str(dataDict))
         else:
@@ -2381,7 +2465,7 @@ def list_all_keys_of_dict(dictionary):
     for key, value in dictionary.items():
         if type(value) is dict:
             yield key
-            yield from recursive_items(value)
+            yield from list_all_keys_of_dict(value)
         else:
             yield key
 
@@ -2452,7 +2536,7 @@ def find_innermost_value_from_dict(dictionary):
                 return v
     else:
         return dictionary
-    return ret
+
 
 @check_run
 def removekey(d, key):
@@ -2552,13 +2636,6 @@ def parseseq(sequence):
     if (isinstance(sequence, StringIO)):
         seq = sequence
 
-    elif ( isinstance(sequence, str) and sequence == 'random' ):
-        rand = "\n".join(createrandseq(length, gc, number, alphabet))
-        seq = StringIO(rand)
-        o = gzip.open('Random.fa.gz','wb')
-        o.write(bytes(rand, encoding='UTF-8'))
-        o.close()
-
     elif (isinstance(sequence, str) and os.path.isfile(sequence)):
         if '.gz' in sequence :
             seq = gzip.open(sequence,'rt')
@@ -2590,7 +2667,7 @@ def idfromfa(id):
         goi, chrom = id.split(':')[::2]
         strand = str(id.split(':')[3].split('(')[1][0])
     except:
-        eprint('Fasta header is not in expected format, you will loose information on strand and chromosome')
+        print('Fasta header is not in expected format, you will loose information on strand and chromosome')
         goi = id
         chrom, strand = ['na','na']
 

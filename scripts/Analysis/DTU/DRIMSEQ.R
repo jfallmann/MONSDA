@@ -1,12 +1,8 @@
 suppressPackageStartupMessages({
-  library(tximport)
-  library(GenomicFeatures)
-  library(DRIMSeq)
-  library(stageR)
-  library(DEXSeq)
-  library(DESeq2)
-  library(edgeR)
-  library(rtracklayer)
+    library(tximport)
+    library(GenomicFeatures)
+    library(DRIMSeq)
+    library(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -16,19 +12,20 @@ args <- commandArgs(trailingOnly = TRUE)
 anname  <- args[1]
 gtf     <- args[2]
 outdir  <- args[3]
-cmp     <- args[4]
-cores   <- as.integer(args[5])
+combi   <- args[4]
+cmp     <- args[5]
+cores   <- as.integer(args[6])
 print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 ### SCRIPT
@@ -37,9 +34,9 @@ gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
 # define cutoffs
-cutoffs <- strsplit(cutts, '-')[[1]]
-pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
-lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
+# cutoffs <- strsplit(cutts, '-')[[1]]
+# pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
+# lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
@@ -54,6 +51,11 @@ batches <- factor(samps$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
+
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
 
 txi <- tximport(files, type='salmon', txOut=TRUE, countsFromAbundance = "scaledTPM")
 cts <- txi$counts
@@ -86,9 +88,9 @@ d <- dmDSdata(counts=counts, samples=samps)
 n <- nrow(samps)
 n.small <- n/length(levels(samps$condition))  # its not really the smallest group, needs to be improved
 d <- dmFilter(d,
-              min_samps_feature_expr=n.small, min_feature_expr=10,
-              min_samps_feature_prop=n.small, min_feature_prop=0.1,
-              min_samps_gene_expr=n, min_gene_expr=10)
+                min_samps_feature_expr=n.small, min_feature_expr=10,
+                min_samps_feature_prop=n.small, min_feature_prop=0.1,
+                min_samps_gene_expr=n, min_gene_expr=10)
 
 # shows how many of the remaining genes have N isoforms
 table(table(counts(d)$gene_id))
@@ -100,66 +102,66 @@ table(table(counts(d)$gene_id))
 
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+types+batches, data=samps)
-    colnames(design) <- c(levels(groups),tl,bl)
-  } else{
-    design <- model.matrix(~0+groups+types, data=samps)
-    colnames(design) <- c(levels(groups),tl)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+types+batches, data=samps)
+        colnames(design) <- c(levels(groups),tl,bl)
+    } else{
+        design <- model.matrix(~0+groups+types, data=samps)
+        colnames(design) <- c(levels(groups),tl)
+    }
 } else{
-  if (length(levels(batches)) > 1){
-    design <- model.matrix(~0+groups+batches, data=samps)
-    colnames(design) <- c(levels(groups),bl)
-  } else{
-    design <- model.matrix(~0+groups, data=samps)
-    colnames(design) <- levels(groups)
-  }
+    if (length(levels(batches)) > 1){
+        design <- model.matrix(~0+groups+batches, data=samps)
+        colnames(design) <- c(levels(groups),bl)
+    } else{
+        design <- model.matrix(~0+groups, data=samps)
+        colnames(design) <- levels(groups)
+    }
 }
 
 comparison_objs <- list()
 setwd(outdir)
+# dir.create(file.path(outdir,"Figures"))
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-  contrast_name <- strsplit(contrast,":")[[1]][1]
-  contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast <- comparisons[[1]]
 
-  print(paste("Comparing ",contrast_name, sep=""))
-  tryCatch({
+    contrast_name <- strsplit(contrast,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    # determine contrast
-    A <- strsplit(contrast_groups[[1]][1], "\\+")
-    B <- strsplit(contrast_groups[[1]][2], "\\+")
-    minus <- 1/length(A[[1]])*(-1)
-    plus <- 1/length(B[[1]])
-    contrast <- cbind(integer(dim(design)[2]), colnames(design))
-    for(i in A[[1]]){
-      contrast[which(contrast[,2]==i)]<- minus
-    }
-    for(i in B[[1]]){
-      contrast[which(contrast[,2]==i)]<- plus
-    }
-    contrast <- as.numeric(contrast[,1])
+    print(paste("Comparing ",contrast_name, sep=""))
+    tryCatch({
 
-    BPPARAM = MulticoreParam(workers=availablecores)
+        # determine contrast
+        A <- strsplit(contrast_groups[[1]][1], "\\+")
+        B <- strsplit(contrast_groups[[1]][2], "\\+")
+        minus <- 1/length(A[[1]])*(-1)
+        plus <- 1/length(B[[1]])
+        contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        for(i in A[[1]]){
+            contrast[which(contrast[,2]==i)]<- minus
+        }
+        for(i in B[[1]]){
+            contrast[which(contrast[,2]==i)]<- plus
+        }
+        contrast <- as.numeric(contrast[,1])
 
-    # # reduce data for testing
-    # d <- d[1:250,]
+        # BPPARAM = MulticoreParam(workers=cores)
 
-    # 1 estimate the precision,
-    # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
-    # 3 test the coefficient associated with the difference between condition 2 and condition 1
-    set.seed(1)
-    system.time({
-      d <- dmPrecision(d, design=design)
-      d <- dmFit(d, design=design)
-      d <- dmTest(d, contrast=contrast)
+        # 1 estimate the precision,
+        # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
+        # 3 test the coefficient associated with the difference between condition 2 and condition 1
+        set.seed(1)
+        system.time({
+            d <- dmPrecision(d, design=design)
+            d <- dmFit(d, design=design)
+            d <- dmTest(d, contrast=contrast)
     })
 
     # add comp object to list for image
-    comparison_objs <- append(comparison_objs, d)
+    comparison_objs <- c(comparison_objs, d)
 
     # calculate LFC from proportions table
     proportions <- DRIMSeq::proportions(d)
@@ -180,76 +182,91 @@ for(contrast in comparisons[[1]]){
     no.na <- function(x) ifelse(is.na(x), 1, x)
     res$pvalue <- no.na(res$pvalue)
     res.txp$pvalue <- no.na(res.txp$pvalue)
+    res$adj_pvalue <- no.na(res$adj_pvalue)
+    res.txp$adj_pvalue <- no.na(res.txp$adj_pvalue)
 
-    # put together results tables
     res <- merge(props_genes, res)
     res.txp <- merge(props_transcripts,res.txp )
     res <- res[,c(1,6,2,3,4,5)]
     res.txp <- res.txp[,c(1,7,2,3,4,5,6)]
 
-    # Add gene names
     proportions$Gene  <- lapply(proportions$gene_id, function(x){get_gene_name(x,gtf.df)})
     res$Gene          <- lapply(res$gene_id, function(x){get_gene_name(x,gtf.df)})
     res.txp$Gene      <- lapply(res.txp$gene_id, function(x){get_gene_name(x,gtf.df)})
 
-    proportions <- apply(proportions,2,as.character)
-    res         <- apply(res,2,as.character)
-    res.txp     <- apply(res.txp,2,as.character)
+    res <- res[order(res$adj_pvalue),]
+    res.txp <- res.txp[order(res$adj_pvalue),]
+    proportions <- proportions[order(proportions$lfc),]
 
-    # CREATE RESULTS TABLE
-    write.table(as.data.frame(proportions), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-    write.table(as.data.frame(res), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-    write.table(as.data.frame(res.txp), gzfile(paste("DTU","DRIMSEQ",contrast_name,"results_transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+    proportions.print <- as.data.frame(apply(proportions,2,as.character))
+    res.print         <- as.data.frame(apply(res,2,as.character))
+    res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
+
+    # CREATE RESULTS TABLES
+    # setwd(file.path(outdir,"Tables"))
+    write.table(as.data.frame(proportions.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+    write.table(as.data.frame(res.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+    write.table(as.data.frame(res.txp.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+    write.table(as.data.frame(genewise_precision(d)), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genewise-precision.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+    # setwd(file.path(outdir, "Figures"))
+
+    ## Plot feature per gene histogram
+    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
+    print(plotData(d))
+    dev.off()
+
+    ## Plot precision
+    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","Precision.png",sep="_"))
+    print(plotPrecision(d))
+    dev.off()
+
+    ## Plot gene-level p-values
+    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","PValues.png",sep="_"))
+    print(plotPValues(d))
+    dev.off()
+
+    # plot proportions
+    figures <- data.frame()
+    sigs <- which(res$adj_pvalue < 0.05)
+
+    limit   <- 10
+    counter <- 1
+    message("create proportions plots")
+    for(gene in sigs){
+        if(counter>limit){break}
+        if(is.na(gene)){next}
+        suppressMessages({
+            name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
+            png(name1)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
+            dev.off()
+
+            name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
+            png(name2)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
+            dev.off()
+
+            name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
+            png(name3)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
+            dev.off()
+
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
+
+        counter <- counter+1
+        })
+    }
+    colnames(figures) <- c("geneID","geneName","file")
+    write.table(figures, paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"list","sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
     # cleanup
-    rm(res,res.txp,proportions,BPPARAM)
+    rm(res,res.txp,proportions)
     print(paste('cleanup done for ', contrast_name, sep=''))
 
-    # #  stageR following DRIMSeq (included additionally in workflow by Love&Soneson&Patro)
-    # pScreen <- res$pvalue
-    # strp <- function(x) substr(x,1,15)
-    # names(pScreen) <- strp(res$gene_id)
-    #
-    # pConfirmation <- matrix(res.txp$pvalue, ncol=1)
-    # rownames(pConfirmation) <- strp(res.txp$feature_id)
-    #
-    # tx2gene <- res.txp[,c("feature_id", "gene_id")]
-    # for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
-    #
-    # stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
-    #                       pScreenAdjusted=FALSE, tx2gene=tx2gene)
-    # stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=pv_cut)
-    # suppressWarnings({
-    #   drim.padj <- getAdjustedPValues(stageRObj, order=FALSE,
-    #                                   onlySignificantGenes=TRUE)
-    # })
-    # # head(drim.padj)
-    #
-    # write.table(as.data.frame(drim.padj), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-    #
-    # # Post-hoc filtering
-    # res.txp.filt <- DRIMSeq::results(d, level="feature")
-    # smallProportionSD <- function(d, filter=0.1) {
-    #   cts <- as.matrix(subset(counts(d), select=-c(gene_id, feature_id)))
-    #   gene.cts <- rowsum(cts, counts(d)$gene_id)
-    #   total.cts <- gene.cts[match(counts(d)$gene_id, rownames(gene.cts)),]
-    #   props <- cts/total.cts
-    #   propSD <- sqrt(rowVars(props))
-    #   propSD < filter
-    # }
-    # filt <- smallProportionSD(d)
-    # res.txp.filt$pvalue[filt] <- 1
-    # res.txp.filt$adj_pvalue[filt] <- 1
-    #
-    # write.table(as.data.frame(res.txp.filt), gzfile(paste("DTU_DRIMSEQ",contrast_name,"results_post-hoc-filtered-on-SD.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-    }, error=function(e){
-        print(warnings)
-        file.create(paste("DTU","DRIMSEQ",contrast_name,"results_proportions.tsv.gz", sep="_"))
-        file.create(paste("DTU","DRIMSEQ",contrast_name,"results_genes.tsv.gz", sep="_"))
-        file.create(paste("DTU","DRIMSEQ",contrast_name,"results_transcripts.tsv.gz", sep="_"))
-        cat("WARNING :",conditionMessage(e), "\n")
-    } )
+    })
 }
 
-save.image(file = "DRIMSEQ_DTU_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU","DRIMSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

@@ -3,6 +3,7 @@ suppressPackageStartupMessages({
     require(BiocParallel)
     require(dplyr)
     require(edgeR)
+    library(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -11,30 +12,32 @@ options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE)
 anname          <- args[1]
 countfile       <- args[2]
-outdir          <- args[3]
-cmp             <- args[4]
-availablecores  <- as.integer(args[5])
+gtf             <- args[3]
+outdir          <- args[4]
+combi           <- args[5]
+cmp             <- args[6]
+availablecores  <- as.integer(args[7])
 print(args)
 
 ## FUNCS
 get_gene_name <- function(id, df){
-  name_list <- df$gene_name[df['gene_id'] == id]
-  if(length(unique(name_list)) == 1){
-    return(name_list[1])
-  }else{
-    message(paste("WARNING: ambigous gene id: ",id))
-    return (paste("ambigous",id,sep="_"))
-  }
+    name_list <- df$gene_name[df['gene_id'] == id]
+    if(length(unique(name_list)) == 1){
+        return(name_list[1])
+    }else{
+        message(paste("WARNING: ambigous gene id: ",id))
+        return (paste("ambigous",id,sep="_"))
+    }
 }
 
 RainbowColor <- function(groups){
-  groupsAsNumbers <- as.numeric(groups)
-  spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-  cl <- c()
-  for(i in groupsAsNumbers){
-    cl <- c(cl,spektrum[i])
-  }
-  return(cl)
+    groupsAsNumbers <- as.numeric(groups)
+    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
+    cl <- c()
+    for(i in groupsAsNumbers){
+        cl <- c(cl,spektrum[i])
+    }
+    return(cl)
 }
 
 
@@ -49,16 +52,21 @@ gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
-sampleData <- as.matrix(read.table(gzfile(anname),row.names=1))
-colnames(sampleData) <- c("condition","type","batch")
+sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
+colnames(sampleData) <- c("group","type","batch")
 sampleData <- as.data.frame(sampleData)
-groups <- factor(sampleData$condition)
+groups <- factor(sampleData$group)
 samples <- rownames(sampleData)
 types <- factor(sampleData$type)
 batches <- factor(sampleData$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
+
+## check combi
+if (combi == "none"){
+    combi <- ''
+}
 
 ## readin counttable
 countData <- read.table(countfile,header = TRUE,row.names=1)
@@ -119,20 +127,19 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-write.table(as.data.frame(tmm), gzfile("EDGER_DEU_All_Conditions_normalized.tsv.gz"), sep="\t", quote=F, row.names=FALSE)
-
-## create file MDS-plot with and without sumarized replicates
-out <- "EDGER_DEU_All_Conditions_MDS.png"
-png(out, width = 400, height = 400)
+## create file MDS-plot with and without summarized replicates
+out <- paste("Figures/DEU","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
+png(out)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
 if (length(levels(groups)) > 2){
     print("Will plot MDS for Count sums")
     DGEsum <- sumTechReps(dge, ID=groups)
-    out <- "EDGER_DE_All_Conditions_sum_MDS.png"
-    png(out, width = 400, height = 400)
+    out <- paste("Figures/DEU","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
+    png(out)
     colors <- RainbowColor(DGEsum$samples$group)
     plotMDS(DGEsum, col=colors)
     dev.off()
@@ -142,7 +149,7 @@ if (length(levels(groups)) > 2){
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- "EDGER_DEU_All_Conditions_BCV.png"
+out <- paste("Figures/DEU","EDGER",combi,"DataSet","figure","AllConditionsBCV.png", sep="_")
 png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
@@ -151,7 +158,7 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- "EDGER_DEU_All_Conditions_QLDisp.png"
+out <- paste("Figures/DEU","EDGER",combi,"DataSet","figure","AllConditionsQLDisp.png", sep="_")
 png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
@@ -159,12 +166,10 @@ dev.off()
 comparison_objs <- list()
 
 ## Analyze according to comparison groups
-for(contrast in comparisons[[1]]){
+for(compare in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
-
-    BPPARAM = MulticoreParam(workers=availablecores)
+    contrast_name <- strsplit(compare,":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(compare,":")[[1]][2], "-vs-")
 
     print(paste("Comparing ",contrast_name, sep=""))
     tryCatch({
@@ -192,29 +197,20 @@ for(contrast in comparisons[[1]]){
         comparison_objs <- append(comparison_objs, qlf)
 
         # create results table
-        write.table(as.data.frame(qlf), gzfile(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DEU","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-        # # create file MD-plot
-        # out <- paste("EDGER_DEU_",contrast_name,"_MD.png",sep="")
-        # png(out, width = 400, height = 400)
-        # plotMD(qlf, main=contrast_name)
-        # dev.off()
+        ## plot lFC vs CPM
+        out <- paste("Figures/DEU","EDGER",combi,contrast_name,"figure","MD.png",sep="_")
+        png(out)
+        plotMD(qlf, main=contrast_name)
+        abline(h=c(-1, 1), col="blue")
+        dev.off()
 
         # cleanup
         rm(qlf, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
-<<<<<<< HEAD
-        save.image(file = paste("EDGER_DEU",contrast_name,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
-
-=======
->>>>>>> DTU
-    }, error=function(e){
-        print(warnings)
-        file.create(paste("DEU","EDGER",contrast_name,"results.tsv.gz", sep="_"))
-        # file.create(paste("EDGER_DEU_",contrast_name,"_MD.png",sep=""))
-        cat("WARNING :",conditionMessage(e), "\n")
-    } )
+    })
 }
 
-save.image(file = "EDGER_DEU_SESSION.gz", version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DEU_EDGER",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

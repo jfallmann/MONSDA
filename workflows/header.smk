@@ -113,7 +113,7 @@ if 'MAPPING' in config:
     if PRE:
         PREFIX = PRE
     if not PREFIX:
-        PREFIX = ''
+        PREFIX = MAPPERENV
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
             INDEX2 = str(os.path.abspath(INDICES[1]))

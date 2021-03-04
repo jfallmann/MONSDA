@@ -15,10 +15,10 @@ if rundedup:
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES, config), combo=combo)
-            output: html = report("QC/Multi/{combo}{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{combo}{condition}/tmp"),
-                    lst = "QC/Multi/{combo}{condition}/qclist.txt"
-            log:    "LOGS/{combo}{condition}_multiqc.log"
+            output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                    lst = "QC/Multi/{combo}/{condition}/qclist.txt"
+            log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -34,10 +34,10 @@ if rundedup:
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.dedupuniqbam.output.bam, file=samplecond(SAMPLES, config), combo=combo)
-            output: html = report("QC/Multi/{combo}{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{combo}{condition}/tmp"),
-                    lst = "QC/Multi/{combo}{condition}/qclist.txt"
-            log:    "LOGS/{combo}{condition}_multiqc.log"
+            output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                    lst = "QC/Multi/{combo}/{condition}/qclist.txt"
+            log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -51,10 +51,10 @@ else:
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
-            output: html = report("QC/Multi/{combo}{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{combo}{condition}/tmp"),
-                    lst = "QC/Multi/{combo}{condition}/qclist.txt"
-            log:    "LOGS/{combo}{condition}_multiqc.log"
+            output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                    lst = "QC/Multi/{combo}/{condition}/qclist.txt"
+            log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -67,10 +67,10 @@ else:
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
-            output: html = report("QC/Multi/{combo}{condition}/multiqc_report.html", category="QC"),
-                    tmp = temp("QC/Multi/{combo}{condition}/tmp"),
-                    lst = "QC/Multi/{combo}{condition}/qclist.txt"
-            log:    "LOGS/{combo}{condition}_multiqc.log"
+            output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                    tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                    lst = "QC/Multi/{combo}/{condition}/qclist.txt"
+            log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "nextsnakes/envs/qc.yaml"
             threads: 1
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"

@@ -1,5 +1,5 @@
 rule themall:
-    input: expand("BED/{combo}{file}_anno_seq_{type}_merged.bed.gz", file=samplecond(SAMPLES, config), type=['sorted','unique'])
+    input: expand("BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz", file=samplecond(SAMPLES, config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
@@ -10,8 +10,8 @@ for file in samplecond(SAMPLES, config):
 
 if all(checklist):
     rule BamToBed:
-        input:  "UCSC/{combo}{file}_mapped_{type}.bed.gz"
-        output: "BED/{combo}{file}_mapped_{type}.bed.gz"
+        input:  "UCSC/{combo}/{file}_mapped_{type}.bed.gz"
+        output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "nextsnakes/envs/base.yaml"
         threads: 1
@@ -19,8 +19,8 @@ if all(checklist):
         shell:  "ln -s {params.abs} {output}"
 elif all(checklist2):
     rule BamToBed:
-        input:  "PEAKS/{combo}{file}_mapped_{type}.bed.gz"
-        output: "BED/{combo}{file}_mapped_{type}.bed.gz"
+        input:  "PEAKS/{combo}/{file}_mapped_{type}.bed.gz"
+        output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "nextsnakes/envs/base.yaml"
         threads: 1
@@ -29,10 +29,10 @@ elif all(checklist2):
 else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "MAPPED/{combo}{file}_mapped_sorted.bam",
-                    "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-            output: "BED/{combo}{file}_mapped_sorted.bed.gz",
-                    "BED/{combo}{file}_mapped_unique.bed.gz"
+            input:  "MAPPED/{combo}/{file}_mapped_sorted.bam",
+                    "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+            output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
+                    "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
@@ -40,10 +40,10 @@ else:
     elif stranded and stranded == 'rf':
         rule BamToBed:
         rule BamToBed:
-            input:  "MAPPED/{combo}{file}_mapped_sorted.bam",
-                    "MAPPED/{combo}{file}_mapped_sorted_unique.bam"
-            output: "BED/{combo}{file}_mapped_sorted.bed.gz",
-                    "BED/{combo}{file}_mapped_unique.bed.gz"
+            input:  "MAPPED/{combo}/{file}_mapped_sorted.bam",
+                    "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+            output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
+                    "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
             conda:  "nextsnakes/envs/bedtools.yaml"
             threads: 1
@@ -51,7 +51,7 @@ else:
 
 rule AnnotateBed:
     input:  rules.BamToBed.output
-    output: "BED/{combo}{file}_anno_{type}.bed.gz"
+    output: "BED/{combo}/{file}_anno_{type}.bed.gz"
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "nextsnakes/envs/perl.yaml"
     threads: 1
@@ -73,9 +73,9 @@ rule UnzipGenome:
 rule AddSequenceToBed:
     input:  bd = rules.AnnotateBed.output,
             fa = rules.UnzipGenome.output
-    output: bed = "BED/{combo}{file}_anno_seq_{type}.bed.gz",
-            bt = temp("BED/{combo}{file}_bed_chr_{type}.tmp"),
-            bs = temp("BED/{combo}{file}_bed_seq_{type}.tmp")
+    output: bed = "BED/{combo}/{file}_anno_seq_{type}.bed.gz",
+            bt = temp("BED/{combo}/{file}_bed_chr_{type}.tmp"),
+            bs = temp("BED/{combo}/{file}_bed_seq_{type}.tmp")
     log:    "LOGS/BED/seq2bed{type}_{file}.log"
     conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1
@@ -84,8 +84,8 @@ rule AddSequenceToBed:
 
 #rule AddSequenceToBed:
 #    input:  rules.AnnotateBed.output
-#    output: "BED/{combo}{file}_anno_seq_{type}.bed.gz",
-#            temp("BED/{combo}{file}_anno_seq_{type}.tmp")
+#    output: "BED/{combo}/{file}_anno_seq_{type}.bed.gz",
+#            temp("BED/{combo}/{file}_anno_seq_{type}.tmp")
 #    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
 #    conda:  "nextsnakes/envs/bedtools.yaml"
 #    threads: 1
@@ -94,7 +94,7 @@ rule AddSequenceToBed:
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
-    output: "BED/{combo}{file}_anno_seq_{type}_merged.bed.gz"
+    output: "BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz"
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "nextsnakes/envs/bedtools.yaml"
     threads: 1

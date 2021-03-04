@@ -1,7 +1,7 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config,'COUNTING')
 
 rule themall:
-    input:  expand("COUNTS/Salmon/{combo}{file}_counts.sf.gz", file=samplecond(SAMPLES, config)),
+    input:  expand("COUNTS/Salmon/{combo}/{file}_counts.sf.gz", file=samplecond(SAMPLES, config)),
 
 rule salmon_index:
     input:  fa = REFERENCE,
@@ -20,12 +20,12 @@ rule salmon_index:
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}{file}_R2_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx
-        output: cnts = report("COUNTS/Salmon/{combo}{file}.sf.gz", category="COUNTING"),
-                ctsdir = report("COUNTS/Salmon/{combo}{file}", category="COUNTING")
-        log:    "LOGS/{combo}{file}/salmonquant.log"
+        output: cnts = report("COUNTS/Salmon/{combo}/{file}.sf.gz", category="COUNTING"),
+                ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
+        log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
@@ -35,11 +35,11 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}{file}_trimmed.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx
-        output: cnts = report("COUNTS/Salmon/{combo}{file}.sf.gz", category="COUNTING"),
-                ctsdir = report("COUNTS/Salmon/{combo}{file}", category="COUNTING")
-        log:    "LOGS/{combo}{file}/salmonquant.log"
+        output: cnts = report("COUNTS/Salmon/{combo}/{file}.sf.gz", category="COUNTING"),
+                ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
+        log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
