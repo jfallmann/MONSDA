@@ -16,6 +16,7 @@ outdir          <- args[4]
 combi           <- args[5]
 cmp             <- args[6]
 availablecores  <- as.integer(args[7])
+print(args)
 
 ## FUNCS
 get_gene_name <- function(id, df){
@@ -125,15 +126,13 @@ png(out)
 colors <- RainbowColor(dge$samples$group)
 plotMDS(dge, col=colors)
 dev.off()
-if (length(levels(groups)) > 2){
-    print("Will plot MDS for Count sums")
-    DGEsum <- sumTechReps(dge, ID=groups)
-    out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
-    png(out)
-    colors <- RainbowColor(DGEsum$samples$group)
-    plotMDS(DGEsum, col=colors)
-    dev.off()
-}
+
+DGEsum <- sumTechReps(dge, ID=groups)
+out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
+png(out)
+colors <- RainbowColor(DGEsum$samples$group)
+plotMDS(DGEsum, col=colors)
+dev.off()
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
