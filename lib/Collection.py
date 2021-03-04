@@ -803,7 +803,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                     combo = str.join(os.sep, [str(envlist[i]), toolenv]) if envlist[i] != ''     else toolenv
 
                     # Add variable for combination string
-                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =      \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo =     scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not     rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
+                    subjobs.append('\ncombo = \''+combo+'\'\n'+'\nscombo =      \''+scombo+'\'\n'+'\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"')
                     subjobs.append('\n\n')
                     subconf.update(sconf)
 
@@ -864,6 +864,10 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
                         continue
 
                     sconf = listofconfigs[0]
+                    if subwork == 'PEAKS':
+                        for c in range(1, len(listofconfigs)):
+                            sconf = merge_dicts(sconf, listofconfigs[c])
+
                     for a in range(0, len(listoftools)):
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
@@ -1458,8 +1462,8 @@ def get_pairing(sample, stype, config, samples, scombo=''):
                         log.debug(logid+'Match found: '+str(v)+' : '+str(x))
                         matching = samplecond([x], config)[0].replace('MAPPED/', '')
                         log.debug(logid+'PAIRINGS: '+sample+': '+str(matching))
-        log.debug(logid+'-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam')
-        return '-c MAPPED/'+str(scombo)+str(matching)+'_mapped_'+str(stype)+'.bam'
+        log.debug(logid+'-c MAPPED'+os.sep+str(scombo)+os.sep+str(matching)+'_mapped_'+str(stype)+'.bam')
+        return '-c MAPPED'+os.sep+str(scombo)+os.sep+str(matching)+'_mapped_'+str(stype)+'.bam'
     else:
         log.debug(logid+'No matching sample found')
         return ''
