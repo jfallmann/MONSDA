@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, UCSC, PEAKS, ANNOTATE, DE, DEU, DAS, DTU"
+    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, UCSC, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS"
     "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "SAMPLES": {  #which samples to analyze
@@ -449,5 +449,26 @@
                 }
             }
         }
-    }
+    },
+    "CIRCS" : {
+        "TOOLS" :
+        {
+            "ciri2" : "PATH_TO_CIRI2.pl"
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ENV" : "ciri2",
+                    "BIN" : "ciri2",
+                    "ciri2":{
+                        "OPTIONS":
+                        [
+                            {  # Additional options if needed
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
 }
