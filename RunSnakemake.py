@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed Feb  3 14:40:25 2021 (+0100)
+# Last-Updated: Thu Mar  4 19:48:39 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 1252
+#     Update #: 1253
 # URL:
 # Doc URL:
 # Keywords:
@@ -110,7 +110,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
         if unlock:
             log.info(logid+'Unlocking directory')
-            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk')), c=configfile)
+            jobtorun = 'snakemake --unlock -j {t} -s {s} --configfile {c}'.format(t=threads, s=os.path.abspath(os.path.join('nextsnakes', 'workflows', 'unlock.smk')), c=configfile)
             log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
@@ -301,7 +301,7 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
 
-            if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):                
+            if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
                 # SUMMARY RUN
                 jobs = make_summary(config, subdir, loglevel)
                 jobstorun = list()
