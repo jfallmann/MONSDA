@@ -45,7 +45,6 @@ rule run_edger:
             anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
     output: session = rules.themall.input.session,
             allM    = rules.themall.input.allM,
-            allsM   = rules.themall.input.allsM,
             allBCV  = rules.themall.input.allBCV,
             allQLD  = rules.themall.input.allQLD,
             resG    = rules.themall.input.resG,
@@ -74,7 +73,6 @@ rule run_edger:
 
 rule create_summary_snippet:
     input:  rules.run_edger.output.allM,
-            rules.run_edger.output.allsM,
             rules.run_edger.output.allBCV,
             rules.run_edger.output.allQLD,
             rules.run_edger.output.resG,

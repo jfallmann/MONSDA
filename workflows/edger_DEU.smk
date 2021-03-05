@@ -6,6 +6,7 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  session = expand("DEU/{combo}/DEU_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
+            allM    = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
             allBCV  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
             allQLD  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
             MDplot  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
@@ -46,15 +47,12 @@ rule run_edger:
     input:  tbl = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
             anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
     output: session = rules.themall.input.session,
-            allM    = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
-            allBCV  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
-            allQLD  = expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
-            MDplot =  expand("DEU/{combo}/Figures/DEU_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
-            allN    = expand("DEU/{combo}/Tables/DEU_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
-            res =   expand("DEU/{combo}/Tables/DEU_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo)
-            # dift = expand("DEU/{combo}/EDGER_DEU_{comparison}_exons_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["logFC-sorted","pValue-sorted"]),
-            # sigdift = expand("DEU/{combo}/Sig_EDGER_DEU_{comparison}_exons_{sort}.tsv.gz", combo=combo, comparison=compstr, sort=["pValue-sorted"]),
-            # plot = expand("DEU/{combo}/EDGER_DEU_{comparison}_MD.png", combo=combo, comparison=compstr),
+            rules.themall.input.allM,
+            rules.themall.input.allBCV,
+            rules.themall.input.allQLD,
+            rules.themall.input.MDplot,
+            rules.themall.input.allN,
+            rules.themall.input.res,
     log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -78,12 +76,12 @@ rule run_edger:
 #     shell: "set +o pipefail; for i in DEU/{combo}/EDGER_DEU*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/SigDOWN_$fn; else touch DEU/{combo}/Sig_$fn DEU/{combo}/SigUP_$fn DEU/{combo}/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:
-    input:  rules.run_edger.output.allM,
-            rules.run_edger.output.allBCV,
-            rules.run_edger.output.allQLD,
-            rules.run_edger.output.allN,
-            rules.run_edger.output.MDplot,
-            rules.run_edger.output.res,
+    input:  rules.themall.input.allM,
+            rules.themall.input.allBCV,
+            rules.themall.input.allQLD,
+            rules.themall.input.MDplot,
+            rules.themall.input.allN,
+            rules.themall.input.res,
             # rules.filter_significant.output.sig,
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u
