@@ -29,16 +29,6 @@ get_gene_name <- function(id, df){
     }
 }
 
-RainbowColor <- function(groups){
-    groupsAsNumbers <- as.numeric(groups)
-    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-    cl <- c()
-    for(i in groupsAsNumbers){
-        cl <- c(cl,spektrum[i])
-    }
-    return(cl)
-}
-
 ### SCRIPT
 print(paste('Run EdgeR DE with ',availablecores,' cores',sep=''))
 
@@ -123,15 +113,7 @@ write.table(as.data.frame(tmm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet"
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
 png(out)
-colors <- RainbowColor(dge$samples$group)
-plotMDS(dge, col=colors)
-dev.off()
-
-DGEsum <- sumTechReps(dge, ID=groups)
-out <- paste("Figures/DE","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
-png(out)
-colors <- RainbowColor(DGEsum$samples$group)
-plotMDS(DGEsum, col=colors)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
 ## estimate Dispersion

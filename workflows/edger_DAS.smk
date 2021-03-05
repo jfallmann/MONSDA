@@ -7,7 +7,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 rule themall:
     input:  session = expand("DAS/{combo}/DAS_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
             allM    = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
-            allsM   = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsSumMDS.png", combo=combo, scombo=scombo),
             allBCV  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
             allQLD  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
             resG    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),

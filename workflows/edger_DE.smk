@@ -7,7 +7,6 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 rule themall:
     input:  session = expand("DE/{combo}/DE_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
             allM    = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
-            allsM   = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_DataSet_figure_AllConditionsSumMDS.png", combo=combo, scombo=scombo),
             allBCV  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
             allQLD  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
