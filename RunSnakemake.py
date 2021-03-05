@@ -303,7 +303,8 @@ def run_snakemake (configfile, debugdag, filegraph, workdir, useconda, procs, sk
 
             if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
                 # SUMMARY RUN
-                jobs = make_summary(config, subdir, loglevel)
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                jobs = make_summary(config, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
                 for job in jobs:
