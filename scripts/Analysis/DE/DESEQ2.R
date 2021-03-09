@@ -4,6 +4,7 @@ suppressPackageStartupMessages({
     require(utils)
     require(BiocParallel)
     require(DESeq2)
+    require(rtracklayer)
 })
 
 options(echo=TRUE)
@@ -12,10 +13,11 @@ options(echo=TRUE)
 args            <- commandArgs(trailingOnly = TRUE)
 anname          <- args[1]
 inname          <- args[2]
-outdir          <- args[3]
-cmp             <- args[4]
-combi           <- args[5]
-availablecores  <- as.integer(args[6])
+gtf             <- args[3]
+outdir          <- args[4]
+cmp             <- args[5]
+combi           <- args[6]
+availablecores  <- as.integer(args[7])
 print(args)
 
 ### FUNCS
@@ -36,6 +38,10 @@ BPPARAM = MulticoreParam(workers=availablecores)
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
+
+# load gtf
+gtf.rtl <- rtracklayer::import(gtf)
+gtf.df <- as.data.frame(gtf.rtl)
 
 ## Combinations of conditions
 comparison <- strsplit(cmp, ",")
@@ -127,10 +133,13 @@ for(contrast in comparison[[1]]){
         resOrdered <- res[order(res$log2FoldChange),]
 
         # # Add gene names  (check how gene_id col is named )
-        # resOrdered$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
+        resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x,gtf.df)})
+        resOrdered$Gene_ID <- rownames(resOrdered)
+        resOrdered <- resOrdered[,c(8,7,1,2,3,4,5,6)]
+        resOrdered <- as.data.frame(apply(resOrdered,2,as.character))
 
         # write the table to a tsv file
-        write.table(data.frame("GeneID"=rownames(resOrdered),as.data.frame(resOrdered)), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+        write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
         # plotMA
         png(paste("Figures/DE","DESEQ2",combi,contrast_name,"figure","MA.png", sep="_"))

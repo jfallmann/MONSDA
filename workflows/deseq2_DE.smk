@@ -14,9 +14,9 @@ rule themall:
             vst  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_VST-and-log2.png", combo=combo, scombo=scombo),
             heat = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap{i}.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
             heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
-            # sig = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            # sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            # sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig   = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_tabel_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
@@ -62,20 +62,21 @@ rule run_deseq2:
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
             outdir = 'DE/'+combo,
             compare = comparison,
-            pcombo = scombo if scombo != '' else 'none'
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.outdir} {params.compare} {params.pcombo} {threads} 2> {log}"
+            pcombo = scombo if scombo != '' else 'none',
+            ref = ANNOTATION
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} 2> {log}"
 
-# rule filter_significant:
-#     input:  tbl = rules.run_deseq2.output.tbl
-#     output: sig = rules.themall.input.sig,
-#             sig_d = rules.themall.input.sig_d,
-#             sig_u = rules.themall.input.sig_u
-#     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
-#     conda:  "nextsnakes/envs/"+DEENV+".yaml"
-#     threads: 1
-#     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
-#             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-#     shell: "set +o pipefail; for i in DE/{combo}/DE_DESEQ2*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigDOWN_$fn; else touch DE/{combo}/Sig_$fn DE/{combo}/SigUP_$fn DE/{combo}/SigDOWN_$fn; fi;done 2> {log}"
+rule filter_significant:
+    input:  tbl = rules.run_deseq2.output.tbl
+    output: sig = rules.themall.input.sig,
+            sig_d = rules.themall.input.sig_d,
+            sig_u = rules.themall.input.sig_u
+    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
+    conda:  "nextsnakes/envs/"+DEENV+".yaml"
+    threads: 1
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/SigDOWN_$fn; else touch DE/{combo}/Sig_$fn DE/{combo}/SigUP_$fn DE/{combo}/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_deseq2.output.pca,
