@@ -175,7 +175,8 @@ for(compare in comparisons[[1]]){
         qlf$table$Gene_ID <- rownames(qlf$table)
 
         # create results table
-        t <- qlf$table[c(6,5,1,2,3,4)]
+        t <- qlf$table[,c(6,5,1,2,3,4)]
+        t <- as.data.frame(apply(t,2,as.character))
         write.table(as.data.frame(t), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create sorted results Tables
