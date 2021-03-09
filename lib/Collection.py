@@ -1008,8 +1008,8 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
     if combinations:
         combname = get_combo_name(combinations)
-       for condition in combname:
-                envlist = combname[condition]['envs']
+        for condition in combname:
+            envlist = combname[condition]['envs']
 
     # Add Header
     sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis','SUMMARY')
