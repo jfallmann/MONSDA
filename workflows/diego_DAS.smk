@@ -11,9 +11,9 @@ rule themall:
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
-    output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
-            cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/DE/{combo}/{file}_featurecounts_diego_unique.log"
+    output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
+            cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/DAS/{combo}/{file}_featurecounts_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,

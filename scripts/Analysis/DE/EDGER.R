@@ -171,15 +171,17 @@ for(compare in comparisons[[1]]){
         comparison_objs <- append(comparison_objs, qlf)
 
         # # Add gene names  (check how gene_id col is named )
-        # qlf$Gene  <- lapply(qlf$ >gene_id< , function(x){get_gene_name(x,gtf.df)})
+        qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x,gtf.df)})
+        qlf$table$Gene_ID <- rownames(qlf$table)
 
         # create results table
-        write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        t <- qlf$table[c(6,5,1,2,3,4)]
+        write.table(as.data.frame(t), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create sorted results Tables
-        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
+        tops <- topTags(qlf, n=nrow(t), sort.by="logFC")
         write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
-        tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
+        tops <- topTags(qlf, n=nrow(t), sort.by="PValue")
         write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsPValueSorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
