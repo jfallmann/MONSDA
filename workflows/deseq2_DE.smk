@@ -59,7 +59,7 @@ rule run_deseq2:
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
-    params: bins   = str.join(os.sep,[BINS, DEBIN]),
+    params: bins = str.join(os.sep, [BINS, DEBIN]),
             outdir = 'DE/'+combo,
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
