@@ -16,7 +16,8 @@ if paired == 'paired':
     rule mapping:
         input:  q1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 q2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                index = rules.generate_index.output.idx
+                index = rules.generate_index.output.idx,
+                uidx = rules.generate_index.output.uidx
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
@@ -29,7 +30,8 @@ if paired == 'paired':
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                index = rules.generate_index.output.idx
+                index = rules.generate_index.output.idx,
+                uidx = rules.generate_index.output.uidx
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"

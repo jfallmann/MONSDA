@@ -22,6 +22,7 @@ if paired == 'paired':
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
+                uidx = rules.generate_index.output.uidx,
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
@@ -40,6 +41,7 @@ else:
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
+                uidx = rules.generate_index.output.uidx,
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
