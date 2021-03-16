@@ -48,7 +48,9 @@ def check_workflow(files):
     works = set()
     for file in files:
         log.info(logid+str(file))
-        works.add(file.split("_")[0])
+        w = file.split("_")[0]
+        if w not in ["Sig", "SigDONW", "SigUP"]:
+            works.add(w)
     log.info(logid+str(works))
     if len(works) > 1:
         log.error(logid+"several Workflows found: > "+str(works)+" < check for wrong file naming.")
@@ -66,6 +68,7 @@ def create_file_tree(files):
     tree = NestedDefaultDict()
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
+        setting = setting.replace("Sig_","").replace("SigUP_","").replace("SigDOWN_","")
         WF, TOOL, COMBI, COMP, RES, NAME = setting.split('_')
         EXT = os.path.basename(file).split(".", 1)[1]
         tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
