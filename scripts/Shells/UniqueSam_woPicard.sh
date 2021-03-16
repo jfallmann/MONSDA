@@ -9,15 +9,27 @@ threads=$3
 
 if [[ "$1" == *.gz* ]]
 then
-    samtools view -H <(zcat $in)|grep '@HD' |pigz -p $threads -f > $out
-    samtools view -H <(zcat $in)|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p $threads -f >> $out
-    samtools view -H <(zcat $in)|grep '@RG'|pigz -p $threads -f >> $out
-    samtools view -H <(zcat $in)|grep '@PG'|pigz -p $threads -f >> $out
-    zcat $in|grep -v "^@"| grep -w -P "NH:i:1|tp:A:P" |pigz >> $out
+    samtools view -H <(zcat $in) | grep '@HD' | pigz -p $threads -f > $out
+    samtools view -H <(zcat $in) | grep '@SQ' | sort -t$'\t' -k1,1 -k2,2V | pigz -p $threads -f >> $out
+    samtools view -H <(zcat $in) | grep '@RG' | pigz -p $threads -f >> $out
+    samtools view -H <(zcat $in) | grep '@PG' | pigz -p $threads -f >> $out
 else
-    samtools view -H <(cat $in)|grep '@HD' |pigz -p $threads -f > $out
-    samtools view -H <(cat $in)|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p $threads -f >> $out
-    samtools view -H <(cat $in)|grep '@RG'|pigz -p $threads -f >> $out
-    samtools view -H <(cat $in)|grep '@PG'|pigz -p $threads -f >> $out
-    cat $in|grep -v "^@"| grep -w -P "NH:i:1|tp:A:P" |pigz >> $out
+    samtools view -H <(cat $in)|grep '@HD' | pigz -p $threads -f > $out
+    samtools view -H <(cat $in)|grep '@SQ' | sort -t$'\t' -k1,1 -k2,2V |pigz -p $threads -f >> $out
+    samtools view -H <(cat $in)|grep '@RG' | pigz -p $threads -f >> $out
+    samtools view -H <(cat $in)|grep '@PG' | pigz -p $threads -f >> $out
 fi
+
+if [[ "$1" == *-bwa* ]]
+then
+    if [[ "$1" == *.gz* ]]
+    then
+        zcat $in | grep -v "^@"| grep -v -e '\tXA:Z:' -e '\tSA:Z:' | pigz >> $out
+    else
+        cat $in | grep -v "^@"| grep -v -e '\tXA:Z:' -e '\tSA:Z:' | pigz >> $out
+else
+    if [[ "$1" == *.gz* ]]
+    then
+        zcat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz >> $out
+    else
+        cat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz >> $out
