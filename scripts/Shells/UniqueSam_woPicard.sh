@@ -27,9 +27,12 @@ then
         zcat $in | grep -v "^@"| grep -v -e '\tXA:Z:' -e '\tSA:Z:' | pigz >> $out
     else
         cat $in | grep -v "^@"| grep -v -e '\tXA:Z:' -e '\tSA:Z:' | pigz >> $out
+    fi
 else
     if [[ "$1" == *.gz* ]]
     then
         zcat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz >> $out
     else
         cat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz >> $out
+    fi
+fi
