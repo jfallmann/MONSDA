@@ -82,19 +82,39 @@ if (length(levels(sampleData$type)) > 1){
 
 print(paste('FITTING DESIGN: ',design, sep=""))
 
+# Normalize by spike in if available
+print("Spike-in used, data will be normalized to spike in separately")
+if (spike != ''){
+    ctrlgenes <- readLines(spike)
+    countData <- countData %>% filter(row.names(countData) %!in% ctrlgenes)
+    genes <- rownames(countData)
+    counts_norm <-RUVg(countData, ctrlgenes, k=1)
+
+    dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = pData(counts_norm), design= design)
+    #filter low counts
+    keep_norm <- rowSums(counts(dds_norm)) >= 10
+    dds_norm <- dds_norm[keep_norm,]
+
+    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
+    rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
+    vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
+
+    png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA_norm.png",sep="_"))
+    print(plotPCA(rld_norm, intgroup=c('condition')))
+    dev.off()
+
+    #We also write the normalized counts to file
+    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+
+}
+
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design= design)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
-
-# Normalize by spike in if available
-print("Spike-in used, data will be normalized to spike in separately")
-if (spike != ''){
-    ctrlgenes <- readLines(spike)
-    dds_norm <- estimateSizeFactors(dds, controlGenes=ctrlgenes)
-}
 
 #run for each pair of conditions
 dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
@@ -112,21 +132,6 @@ dev.off()
 write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
-
-if (spike != ''){  # Run DE for spike-in normalized data
-    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
-    rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
-    vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
-
-    png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA_norm.png",sep="_"))
-    print(plotPCA(rld_norm, intgroup=c('condition')))
-    dev.off()
-
-    #We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-
-}
 
 comparison_objs <- list()
 
