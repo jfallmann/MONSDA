@@ -53,7 +53,7 @@ rule run_edger:
             MDplot  = rules.themall.input.MDplot,
             allN    = rules.themall.input.allN,
             res     = rules.themall.input.res,
-            sort    = rules.themall.input.sort,
+            sort    = rules.themall.input.sort
     log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
