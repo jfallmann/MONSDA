@@ -179,12 +179,24 @@ for(contrast in comparisons[[1]]){
         comparison_objs <- append(comparison_objs, sp)
 
         tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
+        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x,gtf.df)})
+        tops$table$Gene_ID <- rownames(tops$table)
+        tops <- tops$table[,c(7,6,3,4,5,2)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsGeneTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
+        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x,gtf.df)})
+        tops$table$Gene_ID <- rownames(tops$table)
+        tops <- tops$table[,c(6,5,2,3,4)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsSimesTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
+        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x,gtf.df)})
+        tops$table$Gene_ID <- rownames(tops$table)
+        tops <- tops$table[,c(8,7,4,5,6,2,3)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsDiffSpliceExonTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create files diffSplicePlots
