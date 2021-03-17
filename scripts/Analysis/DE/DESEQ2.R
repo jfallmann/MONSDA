@@ -7,6 +7,7 @@ suppressPackageStartupMessages({
     require(rtracklayer)
     require(RUVSeq)
     require(dplyr)
+    require(GenomeInfoDb)
 })
 
 options(echo=TRUE)
@@ -14,7 +15,7 @@ options(echo=TRUE)
 ## ARGS
 args            <- commandArgs(trailingOnly = TRUE)
 anname          <- args[1]
-inname          <- args[2]
+countfile          <- args[2]
 gtf             <- args[3]
 outdir          <- args[4]
 cmp             <- args[5]
@@ -56,9 +57,7 @@ if (combi == "none"){
 }
 
 ## readin counttable
-countData <- as.matrix(read.table(gzfile(inname),header=T,row.names=1))
-
-setwd(outdir)
+countData <- as.matrix(read.table(gzfile(countfile),header=T,row.names=1))
 
 #Check if names are consistent
 if (!all(rownames(sampleData) %in% colnames(countData))){
@@ -86,11 +85,18 @@ print(paste('FITTING DESIGN: ',design, sep=""))
 print("Spike-in used, data will be normalized to spike in separately")
 if (spike != ''){
     ctrlgenes <- readLines(spike)
-    countData <- countData %>% filter(row.names(countData) %!in% ctrlgenes)
-    genes <- rownames(countData)
-    counts_norm <-RUVg(countData, ctrlgenes, k=1)
+    }
 
-    dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = pData(counts_norm), design= design)
+setwd(outdir)
+
+if (spike != ''){
+    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
+    countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
+
+    sampleData_norm <- cbind(sampleData, pData(counts_norm))
+    design_norm <- as.formula(paste(deparse(design), colnames(pData(counts_norm))[1], sep=" + "))
+
+    dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design= design_norm)
     #filter low counts
     keep_norm <- rowSums(counts(dds_norm)) >= 10
     dds_norm <- dds_norm[keep_norm,]
