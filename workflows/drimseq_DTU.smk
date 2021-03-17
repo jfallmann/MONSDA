@@ -26,15 +26,13 @@ rule themall:
 
 rule salmon_index:
     input:  fa = REFERENCE
-    output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'][0]))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    output: idx = directory(expand("{refd}/INDICES/{mape}", refd=REFDIR, mape=COUNTENV))
+    log:    expand("LOGS/{sets}/salmon.idx.log", sets=SETS)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'][0].items()),
-            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "{params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} 2>> {log} && ln -fs {params.linkidx} {output.idx}"
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][0].items()),
+    shell:  "{params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.idx} 2>> {log}"
 
 if paired == 'paired':
     rule mapping:
