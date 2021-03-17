@@ -49,7 +49,7 @@ def check_workflow(files):
     for file in files:
         log.info(logid+str(file))
         w = file.split("_")[0]
-        if w not in ["Sig", "SigDONW", "SigUP"]:
+        if w not in ["Sig", "SigDOWN", "SigUP"]:
             works.add(w)
     log.info(logid+str(works))
     if len(works) > 1:

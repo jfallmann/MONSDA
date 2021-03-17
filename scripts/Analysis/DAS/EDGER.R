@@ -118,7 +118,10 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DAS","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+tmm.genes <- tmm
+tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf.df)})
+tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))
+write.table(as.data.frame(tmm.genes), gzfile(paste("Tables/DAS","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- paste("Figures/DAS","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
@@ -179,12 +182,24 @@ for(contrast in comparisons[[1]]){
         comparison_objs <- append(comparison_objs, sp)
 
         tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(7,6,3,4,5,2)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsGeneTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(6,5,2,3,4)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsSimesTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(8,7,4,5,6,2,3)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsDiffSpliceExonTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create files diffSplicePlots
