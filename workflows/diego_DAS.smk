@@ -86,7 +86,7 @@ rule filter_significant:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] == 'yes') ){{print}}' |gzip > DAS/{combo}/Tables/Sig_$fn;else touch DAS/{combo}/Tables/Sig_$fn; fi;done 2> {log}"
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > DAS/{combo}/Tables/Sig_$fn;else touch DAS/{combo}/Tables/Sig_$fn; fi;done 2> {log}"
 
 
 rule convertPDF:
@@ -99,10 +99,10 @@ rule convertPDF:
 
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
-            rules.run_diego.output.csv,
-            rules.run_diego.output.sig,
-            rules.run_diego.output.sig_d,
-            rules.run_diego.output.sig_u
+            rules.themall.input.csv,
+            rules.themall.input.sig,
+            #rules.run_diego.output.sig_d,
+            #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"

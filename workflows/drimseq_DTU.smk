@@ -97,20 +97,20 @@ rule run_DTU:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
 
 rule filter_significant_edger:
-    input:   = rules.themall.input.res_g,
-             = rules.theamll.input.res_t
+    input:  res_g = rules.themall.input.res_g,
+            res_t = rules.themall.input.res_t
     output: sig_g   = rules.themall.input.sig_g,
             sig_dg  = rules.themall.input.sig_dg,
             sig_ug  = rules.themall.input.sig_ug,
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_edgerDAS.log", combo=combo, comparison=compstr, scombo=scombo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseqDTU.log", combo=combo, comparison=compstr, scombo=scombo)
+    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/SigDOWN_$fn;else touch DAS/{combo}/Tables/Sig_$fn DAS/{combo}/Tables/SigUP_$fn DAS/{combo}/Tables/SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/SigDOWN_$fn;else touch DTU/{combo}/Tables/Sig_$fn DTU/{combo}/Tables/SigUP_$fn DTU/{combo}/Tables/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,
