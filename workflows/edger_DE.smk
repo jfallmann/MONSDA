@@ -62,7 +62,7 @@ rule run_edger:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION,
-            depara = lambda wildcards: "{!s}".format(os.path.abspath(val)) for (key, val) in tool_params(wildcards.file, None , config, "DE", DEENV.split('_')[0])['OPTIONS'][1].items()
+            depara = lambda wildcards: list(tool_params(wildcards.file, None , config, "DE", DEENV.split('_')[0])['OPTIONS'][1].values())[0]
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.depara} 2> {log}"
 
 rule filter_significant:
