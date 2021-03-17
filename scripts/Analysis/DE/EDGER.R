@@ -3,6 +3,7 @@ suppressPackageStartupMessages({
     require(dplyr)
     require(edgeR)
     require(rtracklayer)
+    require(RUVSeq)
 })
 
 options(echo=TRUE)
@@ -16,6 +17,8 @@ outdir          <- args[4]
 combi           <- args[5]
 cmp             <- args[6]
 availablecores  <- as.integer(args[7])
+spike           <- args[8]
+
 print(args)
 
 ## FUNCS
@@ -71,6 +74,14 @@ dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genes)
 ## filter low counts
 keep <- filterByExpr(dge)
 dge <- dge[keep, , keep.lib.sizes=FALSE]
+
+# Normalize by spike in if available
+print("Spike-in used, data will be normalized to spike in separately")
+if (spike != ''){
+    ctrlgenes <- readLines(spike)
+    dge_norm <- estimateSizeFactors(dds, controlGenes=ctrlgenes)
+}
+
 
 ## normalize with TMM
 dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)

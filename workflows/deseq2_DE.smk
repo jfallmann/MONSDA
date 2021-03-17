@@ -63,8 +63,9 @@ rule run_deseq2:
             outdir = 'DE/'+combo,
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
-            ref = ANNOTATION
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} 2> {log}"
+            ref = ANNOTATION,
+            depara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, "DE", DEENV.split('_')[0])['OPTIONS'][1].items()),
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.depara} 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.run_deseq2.output.tbl

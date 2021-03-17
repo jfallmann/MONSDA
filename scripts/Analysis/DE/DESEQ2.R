@@ -5,6 +5,8 @@ suppressPackageStartupMessages({
     require(BiocParallel)
     require(DESeq2)
     require(rtracklayer)
+    require(RUVSeq)
+    require(dplyr)
 })
 
 options(echo=TRUE)
@@ -18,6 +20,8 @@ outdir          <- args[4]
 cmp             <- args[5]
 combi           <- args[6]
 availablecores  <- as.integer(args[7])
+spike           <- args[8]
+
 print(args)
 
 ### FUNCS
@@ -85,10 +89,18 @@ dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, desig
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
 
+# Normalize by spike in if available
+print("Spike-in used, data will be normalized to spike in separately")
+if (spike != ''){
+    ctrlgenes <- readLines(spike)
+    dds_norm <- estimateSizeFactors(dds, controlGenes=ctrlgenes)
+}
+
 #run for each pair of conditions
-dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)#, betaPrior=TRUE)
+dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
 
 #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
@@ -99,6 +111,22 @@ dev.off()
 #We also write the normalized counts to file
 write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
+
+
+if (spike != ''){  # Run DE for spike-in normalized data
+    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
+    rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
+    vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
+
+    png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA_norm.png",sep="_"))
+    print(plotPCA(rld_norm, intgroup=c('condition')))
+    dev.off()
+
+    #We also write the normalized counts to file
+    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+
+}
 
 comparison_objs <- list()
 
@@ -146,6 +174,34 @@ for(contrast in comparison[[1]]){
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
+        if (spike != ''){  # DE run for spike-in normalized data
+
+            # initialize empty objects
+            res=""
+            resOrdered=""
+            res <- results(dds_norm,contrast=list(paste('condition',tempa$condition,sep=''),paste('condition',tempb$condition,sep='')),     listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+
+            # add comp object to list for image
+            comparison_objs <- c(comparison_objs, res)
+
+            # sort and output
+            resOrdered <- res[order(res$log2FoldChange),]
+
+            # # Add gene names  (check how gene_id col is named )
+            resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x,gtf.df)})
+            resOrdered$Gene_ID <- rownames(resOrdered)
+            resOrdered <- resOrdered[,c(8,7,1,2,3,4,5,6)]
+            resOrdered <- as.data.frame(apply(resOrdered,2,as.character))
+
+            # write the table to a tsv file
+            write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results_norm.tsv.gz", sep="_")),     sep="\t", row.names=FALSE, quote=F)
+
+            # plotMA
+            png(paste("Figures/DE","DESEQ2",combi,contrast_name,"figure","MA_norm.png", sep="_"))
+            plotMA(res, ylim=c(-3,3))
+            dev.off()
+        }
+
         # cleanup
         rm(res,resOrdered, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
@@ -153,7 +209,8 @@ for(contrast in comparison[[1]]){
     })
 }
 
-#Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
+# Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
+
 par(mai=ifelse(1:4 <= 2, par('mai'), 0))
 px     <- counts(dds)[,1] / sizeFactors(dds)[1]
 ord    <- order(px)
