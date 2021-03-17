@@ -10,14 +10,8 @@ rule themall:
             allBCV  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
             allQLD  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
             resG    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sigG    = expand("DAS/{combo}/Tables/Sig_DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_dG  = expand("DAS/{combo}/Tables/SigDOWN_DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_uG  = expand("DAS/{combo}/Tables/SigUP_DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             list    = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_{comparison}_list_topSpliceSimes.tsv", combo=combo, comparison = compstr, scombo=scombo),
             resS    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_S   = expand("DAS/{combo}/Tables/Sig_DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_dS  = expand("DAS/{combo}/Tables/SigDOWN_DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_uS  = expand("DAS/{combo}/Tables/SigUP_DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             resE    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_E   = expand("DAS/{combo}/Tables/Sig_DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_dE  = expand("DAS/{combo}/Tables/SigDOWN_DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
@@ -70,43 +64,29 @@ rule run_edger:
             ref = ANNOTATION
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log} "
 
-     rule filter_significant_edger:
-          input:  resS = rules.themall.input.resS,
-                  resE = rules.themall.input.resE,
-                  resG = rules.themall.input.resG
-          output: sig_G = rules.themall.input.sig_G,
-                  sig_dG= rules.themall.input.sig_dG,
-                  sig_uG= rules.themall.input.sig_dG,
-                  sig_E= rules.themall.input.sig_dE,
-                  sig_dE= rules.themall.input.sig_dE,
-                  sig_uE= rules.themall.input.sig_dE,
-                  sig_S= rules.themall.input.sig_dS,
-                  sig_dS= rules.themall.input.sig_dS,
-                  sig_uS= rules.themall.input.sig_dS
-          log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_edgerDAS.log", combo=combo, comparison=compstr, scombo=scombo)
-          conda:  "nextsnakes/envs/"+DASENV+".yaml"
-          threads: 1
-          params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pval'),
-                  lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
-          shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/SigDOWN_$fn;else touch DAS/{combo}/Sig_$fn DAS/{combo}/SigUP_$fn DAS/{combo}/SigDOWN_$fn; fi;done 2> {log}"
+rule filter_significant_edger:
+    input:  resS = rules.themall.input.resE
+    output: sig_E= rules.themall.input.sig_E,
+            sig_dE= rules.themall.input.sig_dE,
+            sig_uE= rules.themall.input.sig_uE,
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_edgerDAS.log", combo=combo, comparison=compstr, scombo=scombo)
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    threads: 1
+    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut} ||$F[6] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] >= {params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut}) ){{print}}' |gzip > DAS/{combo}/Tables/SigDOWN_$fn;else touch DAS/{combo}/Tables/Sig_$fn DAS/{combo}/Tables/SigUP_$fn DAS/{combo}/Tables/SigDOWN_$fn; fi;done 2> {log}"
 
 rule create_summary_snippet:
-    input:  rules.run_edger.output.allM,
-            rules.run_edger.output.allBCV,
-            rules.run_edger.output.allQLD,
-            rules.run_edger.output.resG,
-            rules.run_edger.output.resS,
-            rules.run_edger.output.resE,
-            rules.run_edger.output.list,
-            rules.themall.input.sig_G,
-            rules.themall.input.sig_dG,
-            rules.themall.input.sig_uG,
+    input:  rules.themall.input.allM,
+            rules.themall.input.allBCV,
+            rules.themall.input.allQLD,
+            rules.themall.input.resG,
+            rules.themall.input.resS,
+            rules.themall.input.resE,
+            rules.themall.input.list,
             rules.themall.input.sig_E,
             rules.themall.input.sig_dE,
             rules.themall.input.sig_uE,
-            rules.themall.input.sig_S,
-            rules.themall.input.sig_dS,
-            rules.themall.input.sig_uS
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
