@@ -14,6 +14,7 @@ options(echo=TRUE)
 
 ## ARGS
 args            <- commandArgs(trailingOnly = TRUE)
+argsLen <- length(args);
 anname          <- args[1]
 countfile          <- args[2]
 gtf             <- args[3]
@@ -21,7 +22,7 @@ outdir          <- args[4]
 cmp             <- args[5]
 combi           <- args[6]
 availablecores  <- as.integer(args[7])
-spike           <- args[8]
+spike           <- if (argsLen > 7) args[8] else ''
 
 print(args)
 
