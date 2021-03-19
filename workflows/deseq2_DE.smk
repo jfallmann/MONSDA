@@ -56,7 +56,7 @@ rule run_deseq2:
             vst  = rules.themall.input.vst,
             heat = rules.themall.input.heat,
             heats = rules.themall.input.heats
-    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/run_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = str.join(os.sep, [BINS, DEBIN]),
@@ -64,7 +64,7 @@ rule run_deseq2:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION,
-            depara = lambda wildcards: list(tool_params(samplecond(SAMPLES, config)[0], None , config, "DE", DEENV.split('_')[0])['OPTIONS'][1].values())[0] if len(tool_params(samplecond(SAMPLES, config)[0], None , config, "DE", DEENV.split('_')[0])['OPTIONS']) > 1 else '' 
+            depara = lambda wildcards: list(tool_params(samplecond(SAMPLES, config)[0], None , config, "DE", DEENV.split('_')[0])['OPTIONS'][1].values())[0] if len(tool_params(samplecond(SAMPLES, config)[0], None , config, "DE", DEENV.split('_')[0])['OPTIONS']) > 1 else ''
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.depara} 2> {log}"
 
 rule filter_significant:
@@ -72,7 +72,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    expand("LOGS/DE/{combo}_{scombo}_{comparison}/filter_deseq2.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/DE/{combo}/filter_deseq2.log", combo=combo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
@@ -92,7 +92,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DE/{combo}/create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
