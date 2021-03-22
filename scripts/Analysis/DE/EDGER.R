@@ -128,7 +128,7 @@ if (spike != ''){
     tmm_norm$ID <- dge_norm$genes$genes
     tmm_norm <- tmm_norm[c(ncol(tmm_norm),1:ncol(tmm_norm)-1)]
 
-    write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/    DE","EDGER",combi,"DataSet","table","AllConditionsNormalized_norm.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+    write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE","EDGER",combi,"DataSet","table","AllConditionsNormalized_norm.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS_norm.png", sep="_")
@@ -287,7 +287,7 @@ for(compare in comparisons[[1]]){
             res <- as.data.frame(apply(res,2,as.character))
 
             # create results table
-            write.table(as.data.frame(res), gzfile(paste("Tables/    DE","EDGER",combi,contrast_name,"table","results_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+            write.table(as.data.frame(res), gzfile(paste("Tables/DE","EDGER",combi,contrast_name,"table","results_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
             # create sorted results Tables
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
@@ -295,13 +295,13 @@ for(compare in comparisons[[1]]){
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[,c(8,7,2,3,4,5,6)]
             tops <- as.data.frame(apply(tops,2,as.character))
-            write.table(tops, file=paste("Tables/    DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+            write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
             tops$table$Gene  <- lapply(rownames(tops) ,     function(x){get_gene_name(x,gtf.df)})
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[,c(8,7,2,3,4,5,6)]
             tops <- as.data.frame(apply(tops,2,as.character))
-            write.table(tops, file=paste("Tables/    DE","EDGER",combi,contrast_name,"table","resultsPValueSorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+            write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsPValueSorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
             ## plot lFC vs CPM
             out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MD_norm.png", sep="_")
