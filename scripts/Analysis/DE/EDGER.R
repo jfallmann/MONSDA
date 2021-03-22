@@ -97,7 +97,7 @@ if (length(levels(types)) > 1){
     }
 }
 
-print(paste('FITTING DESIGN: ',design, sep=""))
+#print(paste('FITTING DESIGN: ',design, sep=""))
 
 ## check genes and spike-ins
 if (spike != ''){
@@ -247,6 +247,7 @@ for(compare in comparisons[[1]]){
         tops <- tops$table[,c(8,7,2,3,4,5,6)]
         tops <- as.data.frame(apply(tops,2,as.character))
         write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
         tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x,gtf.df)})
         tops$table$Gene_ID <- rownames(tops$table)
@@ -265,7 +266,7 @@ for(compare in comparisons[[1]]){
         if (spike != ''){  # Same for spike-in normalized
             rm(qlf, tops, res)
 
-            contrast <- cbind(integer(dim(design)[2]), colnames(design))
+            contrast <- cbind(integer(dim(design)[2]), colnames(design_norm))
             for(i in A[[1]]){
                 contrast[which(contrast[,2]==i)]<- minus
             }
@@ -281,7 +282,7 @@ for(compare in comparisons[[1]]){
             comparison_objs <- append(comparison_objs, qlf)
 
             # # Add gene names  (check how gene_id col is named )
-            qlf$table$Gene  <- lapply(rownames(qlf$table) ,     function(x){get_gene_name(x,gtf.df)})
+            qlf$table$Gene  <- lapply(rownames(qlf$table), function(x){get_gene_name(x,gtf.df)})
             qlf$table$Gene_ID <- rownames(qlf$table)
             res <- qlf$table[,c(6,5,1,2,3,4)]
             res <- as.data.frame(apply(res,2,as.character))
@@ -291,13 +292,14 @@ for(compare in comparisons[[1]]){
 
             # create sorted results Tables
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-            tops$table$Gene  <- lapply(rownames(tops) ,     function(x){get_gene_name(x,gtf.df)})
+            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x,gtf.df)})
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[,c(8,7,2,3,4,5,6)]
             tops <- as.data.frame(apply(tops,2,as.character))
             write.table(tops, file=paste("Tables/DE","EDGER",combi,contrast_name,"table","resultsLogFCsorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-            tops$table$Gene  <- lapply(rownames(tops) ,     function(x){get_gene_name(x,gtf.df)})
+            tops$table$Gene  <- lapply(rownames(tops),function(x){get_gene_name(x,gtf.df)})
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[,c(8,7,2,3,4,5,6)]
             tops <- as.data.frame(apply(tops,2,as.character))
@@ -313,7 +315,7 @@ for(compare in comparisons[[1]]){
         }
 
         # cleanup
-        rm(qlf, res, tops, BPPARAM)
+        rm(qlf, res, tops)
         print(paste('cleanup done for ', contrast_name, sep=''))
     })
 }
