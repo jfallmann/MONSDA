@@ -32,8 +32,8 @@ get_gene_name <- function(id, df){
     if(length(unique(name_list)) == 1){
         return(name_list[1])
     }else{
-        message(paste("WARNING: ambigous gene id: ",id))
-        return (paste("ambigous",id,sep="_"))
+        message(paste("WARNING: ambigous gene id: ", id))
+        return (paste("ambigous", id, sep="_"))
     }
 }
 
@@ -42,8 +42,8 @@ BPPARAM = MulticoreParam(workers=availablecores)
 
 ### SCRIPT
 ## Annotation
-sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
-colnames(sampleData) <- c("condition","type","batch")
+sampleData <- as.data.frame(read.table(gzfile(anname), row.names=1))
+colnames(sampleData) <- c("condition", "type", "batch")
 
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
@@ -58,7 +58,7 @@ if (combi == "none"){
 }
 
 ## readin counttable
-countData <- as.matrix(read.table(gzfile(countfile),header=T,row.names=1))
+countData <- as.matrix(read.table(gzfile(countfile), header=T, row.names=1))
 
 #Check if names are consistent
 if (!all(rownames(sampleData) %in% colnames(countData))){
@@ -80,7 +80,7 @@ if (length(levels(sampleData$type)) > 1){
     }
 }
 
-print(paste('FITTING DESIGN: ',design, sep=""))
+print(paste('FITTING DESIGN: ', design, sep=""))
 
 # Normalize by spike in if available
 print("Spike-in used, data will be normalized to spike in separately")
@@ -106,13 +106,13 @@ if (spike != ''){
     rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
     vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
 
-    png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA_norm.png",sep="_"))
+    png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA_norm.png", sep="_"))
     print(plotPCA(rld_norm, intgroup=c('condition')))
     dev.off()
 
     #We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
 }
 
@@ -131,29 +131,29 @@ dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
 rld<- rlogTransformation(dds, blind=FALSE)
 vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","PCA.png",sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep="_"))
 print(plotPCA(rld, intgroup=c('condition')))
 dev.off()
 
 #We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE","DESEQ2",combi,"DataSet","table","vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
 
 comparison_objs <- list()
 
 for(contrast in comparison[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast, ":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
 
-    print(paste("Comparing ",contrast_name, sep=""))
+    print(paste("Comparing ", contrast_name, sep=""))
 
     tryCatch({
 
         # determine contrast
-        A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"),use.names=FALSE)
-        B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"),use.names=FALSE)
+        A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names=FALSE)
+        B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names=FALSE)
         tempa <- droplevels(sampleData[sampleData$condition %in% A,])
         tempb <- droplevels(sampleData[sampleData$condition %in% B,])
         plus <- 1/length(A)
@@ -164,7 +164,7 @@ for(contrast in comparison[[1]]){
         # initialize empty objects
         res=""
         resOrdered=""
-        res <- results(dds,contrast=list(paste('condition',tempa$condition,sep=''),paste('condition',tempb$condition,sep='')), listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+        res <- results(dds, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
 
         # add comp object to list for image
         comparison_objs <- c(comparison_objs, res)
@@ -173,16 +173,16 @@ for(contrast in comparison[[1]]){
         resOrdered <- res[order(res$log2FoldChange),]
 
         # # Add gene names  (check how gene_id col is named )
-        resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x,gtf.df)})
+        resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x, gtf.df)})
         resOrdered$Gene_ID <- rownames(resOrdered)
-        resOrdered <- resOrdered[,c(8,7,1,2,3,4,5,6)]
-        resOrdered <- as.data.frame(apply(resOrdered,2,as.character))
+        resOrdered <- resOrdered[, c(8,7,1,2,3,4,5,6)]
+        resOrdered <- as.data.frame(apply(resOrdered,2, as.character))
 
         # write the table to a tsv file
-        write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+        write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
         # plotMA
-        png(paste("Figures/DE","DESEQ2",combi,contrast_name,"figure","MA.png", sep="_"))
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep="_"))
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
@@ -191,7 +191,7 @@ for(contrast in comparison[[1]]){
             # initialize empty objects
             res=""
             resOrdered=""
-            res <- results(dds_norm,contrast=list(paste('condition',tempa$condition,sep=''),paste('condition',tempb$condition,sep='')),     listValues=c(plus,minus), parallel=TRUE, BPPARAM=BPPARAM)
+            res <- results(dds_norm, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
 
             # add comp object to list for image
             comparison_objs <- c(comparison_objs, res)
@@ -200,22 +200,22 @@ for(contrast in comparison[[1]]){
             resOrdered <- res[order(res$log2FoldChange),]
 
             # # Add gene names  (check how gene_id col is named )
-            resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x,gtf.df)})
+            resOrdered$Gene  <- lapply(rownames(resOrdered), function(x){get_gene_name(x, gtf.df)})
             resOrdered$Gene_ID <- rownames(resOrdered)
             resOrdered <- resOrdered[,c(8,7,1,2,3,4,5,6)]
-            resOrdered <- as.data.frame(apply(resOrdered,2,as.character))
+            resOrdered <- as.data.frame(apply(resOrdered, 2, as.character))
 
             # write the table to a tsv file
-            write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE","DESEQ2",combi,contrast_name,"table","results_norm.tsv.gz", sep="_")),     sep="\t", row.names=FALSE, quote=F)
+            write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
             # plotMA
-            png(paste("Figures/DE","DESEQ2",combi,contrast_name,"figure","MA_norm.png", sep="_"))
+            png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep="_"))
             plotMA(res, ylim=c(-3,3))
             dev.off()
         }
 
         # cleanup
-        rm(res,resOrdered, BPPARAM)
+        rm(res, resOrdered, BPPARAM)
         print(paste('cleanup done for ', contrast_name, sep=''))
 
     })
@@ -230,7 +230,7 @@ ord    <- ord[px[ord]<150]
 ord    <- ord[seq(1, length(ord), length=50)]
 last   <- ord[length(ord)]
 vstcol <- c('blue', 'black')
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","VST-and-log2.png", sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "VST-and-log2.png", sep="_"))
 matplot(px[ord], cbind(assay(vsd)[, 1], log2(px))[ord, ], type='l', lty=1, col=vstcol, xlab='n', ylab='f(n)')
 legend('bottomright', legend = c(expression('variance stabilizing transformation'), expression(log[2](n/s[1]))), fill=vstcol)
 dev.off()
@@ -238,19 +238,19 @@ dev.off()
 ##############################
 library('RColorBrewer')
 library('gplots')
-select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:30]
+select <- order(rowMeans(counts(dds, normalized=TRUE)), decreasing=TRUE)[1:30]
 hmcol<- colorRampPalette(brewer.pal(9, 'GnBu'))(100)
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap1.png",sep="_"))
-heatmap.2(counts(dds,normalized=TRUE)[select,], col = hmcol,
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep="_"))
+heatmap.2(counts(dds, normalized=TRUE)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10,6))
 dev.off()
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap2.png",sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep="_"))
 heatmap.2(assay(rld)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10, 6))
 dev.off()
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap3.png",sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep="_"))
 heatmap.2(assay(vsd)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
           dendrogram='none', trace='none', margin=c(10, 6))
@@ -261,13 +261,13 @@ dev.off()
 #Now we calculate sample to sample distances so we can make a dendrogram to look at the clustering of samples.
 distsRL <- dist(t(assay(rld)))
 mat<- as.matrix(distsRL)
-rownames(mat) <- colnames(mat) <- with(colData(dds),condition)
+rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
 #updated in latest vignette (See comment by Michael Love)
 #this line was incorrect
 #heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
 #From the Apr 2015 vignette
 hc <- hclust(distsRL)
-png(paste("Figures/DE","DESEQ2",combi,"DataSet","figure","heatmap-samplebysample.png",sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep="_"))
 heatmap.2(mat, Rowv=as.dendrogram(hc),
           symm=TRUE, trace='none',
           col = rev(hmcol), margin=c(13, 13))
@@ -275,4 +275,4 @@ dev.off()
 
 ##############################
 
-save.image(file = paste("DE","DESEQ2",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DE", "DESEQ2", combi, "SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
