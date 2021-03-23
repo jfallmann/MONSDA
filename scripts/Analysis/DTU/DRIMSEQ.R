@@ -64,7 +64,7 @@ cts.original <- cts
 rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # Transcript-to-gene mapping
-txdb.filename <- file.path("GENOMES/gencode.v35.annotation.sqlite")
+txdb.filename <- file.path(paste(gtf,"sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
 saveDb(txdb, txdb.filename)
 txdb <- loadDb(txdb.filename)
@@ -78,7 +78,7 @@ all(rownames(cts) %in% txdf$TXNAME)
 txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
 all(rownames(cts) == txdf$TXNAME)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=samps)
 
 # Filter before running procedures:
