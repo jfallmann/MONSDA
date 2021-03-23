@@ -21,6 +21,8 @@ if paired == 'paired':
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 index2 = rules.generate_index.output.idx2,
+                uidx1 = rules.generate_index.output.uidx,
+                uidx2= rules.generate_index.output.uidx2,
                 ref = REFERENCE
         output: mapped = report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
@@ -36,6 +38,8 @@ else:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 index2 = rules.generate_index.output.idx2,
+                uidx1 = rules.generate_index.output.uidx,
+                uidx2= rules.generate_index.output.uidx2,
                 ref = REFERENCE
         output: mapped = report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING"),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"

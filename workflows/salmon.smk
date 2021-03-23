@@ -1,29 +1,27 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config,'COUNTING')
 
 rule themall:
-    input:  expand("COUNTS/Salmon/{combo}/{file}_counts.sf.gz", file=samplecond(SAMPLES, config)),
+    input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", file=samplecond(SAMPLES, config)),
 
 rule salmon_index:
-    input:  fa = REFERENCE,
+    input:  fa = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0].items()),
-            anno = lambda wildcards: str.join(os.sep,[config["REFERENCE"], os.path.dirname(transcriptomepath(SAMPLES[0], config)), tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['ANNOTATION']]),
-            transpath = expand("{refd}/{mape}/{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0])),  #lambda wildcards: os.path.abspath("{ref}/{dir}/{map}/{extension}/{trans}{name}_{extension}".format(ref=REFERENCE, dir=wildcards.dir, trans=wildcards.trans, name=wildcards.name, map=COUNTENV, extension=check_tool_params(SAMPLES[0], None , config, 'COUNTING',2))),
-            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
-            tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
-    shell:  "rm -rf {params.tmpidx} && if [[ -f \"{params.transpath}\" ]]; then ln -fs {params.transpath} {output.idx} && echo \"Found Salmon index, continue with quantify\" ; else {params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} 2>> {log} && ln -fs {params.linkidx} {output.idx} ;fi"
+            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
+    shell:  "{params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} 2>> {log} && ln -fs {params.linkidx} {output.idx}"
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                index = rules.generate_index.output.idx
-        output: cnts = report("COUNTS/Salmon/{combo}/{file}.sf.gz", category="COUNTING"),
+        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz",
+                index = rules.salmon_index.output.idx,
+                uix = rules.salmon_index.output.uidx
+        output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
                 ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
@@ -35,10 +33,11 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                index = rules.generate_index.output.idx
-        output: cnts = report("COUNTS/Salmon/{combo}/{file}.sf.gz", category="COUNTING"),
-                ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
+        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz",
+                index = rules.salmon_index.output.idx,
+                uix = rules.salmon_index.output.uidx
+        output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
+                ctsdir = report("COUNTS/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD

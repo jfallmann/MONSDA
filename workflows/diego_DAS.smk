@@ -7,13 +7,16 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 rule themall:
     input:  dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
             csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            sig = expand("DAS/{combo}/Tables/Sig_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_d = expand("DAS/{combo}/Tables/SigDOWN_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_u = expand("DAS/{combo}/Tables/SigUP_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
-    output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
-            cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/DE/{combo}/{file}_featurecounts_diego_unique.log"
+    output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
+            cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/DAS/{combo}/{file}_featurecounts_diego_unique.log"
     conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
@@ -73,6 +76,19 @@ rule run_diego:
             outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr)]
     shell:  "array1=({input.contrast}); array2=({params.outfile}); array3=({log}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} {params.dpara} 2>> ${{array3[$i]}};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond {params.dpara} > ${{array2[$i]}} 2>> ${{array3[$i]}};done"
 
+rule filter_significant:
+    input:  csv = rules.run_diego.output.csv
+    output: sig = rules.themall.input.sig,
+            # sig_d = rules.themall.input.sig_d,
+            # sig_u = rules.themall.input.sig_u
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log", combo=combo, comparison=compstr, scombo=scombo)
+    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    threads: 1
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > DAS/{combo}/Tables/Sig_$fn;else touch DAS/{combo}/Tables/Sig_$fn; fi;done 2> {log}"
+
+
 rule convertPDF:
     input: rules.run_diego.output.dendrogram
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.png", combo=combo, scombo=scombo, comparison=compstr)
@@ -83,7 +99,10 @@ rule convertPDF:
 
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
-            rules.run_diego.output.csv
+            rules.themall.input.csv,
+            rules.themall.input.sig,
+            #rules.run_diego.output.sig_d,
+            #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"

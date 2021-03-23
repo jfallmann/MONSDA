@@ -25,7 +25,7 @@ outdir          <- args[5]
 combi           <- args[6]
 cmp             <- args[7]
 availablecores  <- as.integer(args[8])
-
+print(args)
 
 ## FUNCS
 get_gene_name <- function(id, df){

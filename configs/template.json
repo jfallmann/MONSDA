@@ -319,16 +319,36 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "OPTIONS":
-                    [
-                        {
-                            "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
-                            "-g": "gene_id",
-                            "-f": "",
-                            "--fraction": "",
-                            "-O": ""
-                        }
-                    ]
+                    "deseq": {
+                        "OPTIONS":
+                        [
+                            {
+                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
+                                "-g": "gene_id",
+                                "-f": "",
+                                "--fraction": "",
+                                "-O": ""
+                            },
+                            {
+                                "controlgenes": "spike-in.list"
+                            }
+                        ]
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        [
+                            {
+                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
+                                "-g": "gene_id",
+                                "-f": "",
+                                "--fraction": "",
+                                "-O": ""
+                            },
+                            {
+                                "controlgenes": "spike-in.list"
+                            }
+                        ]
+                    }
                 }
             }
         }

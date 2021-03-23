@@ -105,7 +105,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
             log.info(logid+'UNLOCKING '+str(jobtorun))
             job = runjob(jobtorun)
             log.debug(logid+'JOB CODE '+str(job))
-        
+
         # Get processes to work on
         preprocess, subworkflows, postprocess = get_processes(config)
 
@@ -241,9 +241,10 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
 
-            # SUMMARY RUN if needed
             if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
-                jobs = make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
+                # SUMMARY RUN
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                jobs = make_summary(config, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
                 for job in jobs:

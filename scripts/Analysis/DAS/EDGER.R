@@ -29,15 +29,6 @@ get_gene_name <- function(id, df){
     }
 }
 
-RainbowColor <- function(groups){
-    groupsAsNumbers <- as.numeric(groups)
-    spektrum <- rainbow(max(groupsAsNumbers),alpha=1)
-    cl <- c()
-    for(i in groupsAsNumbers){
-    cl <- c(cl,spektrum[i])
-    }
-    return(cl)
-}
 
 ### SCRIPT
 print(paste('Will run EdgeR DAS with ',availablecores,' cores',sep=''))
@@ -127,23 +118,16 @@ tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
 setwd(outdir)
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DAS","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+tmm.genes <- tmm
+tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf.df)})
+tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))
+write.table(as.data.frame(tmm.genes), gzfile(paste("Tables/DAS","EDGER",combi,"DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without sumarized replicates
 out <- paste("Figures/DAS","EDGER",combi,"DataSet","figure","AllConditionsMDS.png", sep="_")
 png(out)
-colors <- RainbowColor(dge$samples$group)
-plotMDS(dge, col=colors)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
-if (length(levels(groups)) > 2){
-    print("Will plot MDS for Count sums")
-    DGEsum <- sumTechReps(dge, ID=groups)
-    out <- paste("Figures/DAS","EDGER",combi,"DataSet","figure","AllConditionsSumMDS.png", sep="_")
-    png(out)
-    colors <- RainbowColor(DGEsum$samples$group)
-    plotMDS(DGEsum, col=colors)
-    dev.off()
-}
 
 ## estimate Dispersion
 dge <- estimateDisp(dge, design, robust=TRUE)
@@ -198,12 +182,24 @@ for(contrast in comparisons[[1]]){
         comparison_objs <- append(comparison_objs, sp)
 
         tops <- topSpliceDGE(sp, test="gene", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(7,6,3,4,5,2)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsGeneTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="simes", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(6,5,2,3,4)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsSimesTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topSpliceDGE(sp, test="exon", n=length(fit$counts))
+        tops$Gene  <- lapply(strsplit(rownames(tops), split = ":")[[1]][1] , function(x){get_gene_name(x,gtf.df)})
+        tops$Gene_ID <- rownames(tops)
+        tops <- tops[,c(8,7,4,5,6,2,3)]
+        tops <- as.data.frame(apply(tops,2,as.character))
         write.table(as.data.frame(tops), gzfile(paste("Tables/DAS","EDGER",combi,contrast_name,"table","resultsDiffSpliceExonTest.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create files diffSplicePlots

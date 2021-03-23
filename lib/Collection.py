@@ -1077,7 +1077,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
 
 
 @check_run
-def make_summary(config, subdir, loglevel):
+def make_summary(config, subdir, loglevel, combinations=None):
     logid=scriptname+'.Collection_make_summary: '
 
     output = "REPORTS/SUMMARY/summary.Rmd"
@@ -1085,6 +1085,11 @@ def make_summary(config, subdir, loglevel):
     lines = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
+
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            envlist = combname[condition]['envs']
 
     # Add Header
     sum_path = os.path.join('nextsnakes', 'scripts', 'Analysis','SUMMARY')
@@ -1096,14 +1101,15 @@ def make_summary(config, subdir, loglevel):
         lines.append('\n\n')
 
     # Add rMarkdown snippets
-    snippets = glob.glob("REPORTS/SUMMARY/RmdSnippets/*")
-    for snippet in snippets:
-        with open(snippet,'r') as read_file:
-            for line in read_file.readlines():
-                if line.startswith("# "):
-                    if line in lines:
-                        continue
-                lines.append(line)
+    for scombo in envlist:
+        snippets = glob.glob(f"REPORTS/SUMMARY/RmdSnippets/{scombo}/*")
+        for snippet in snippets:
+            with open(snippet,'r') as read_file:
+                for line in read_file.readlines():
+                    if line.startswith("# "):
+                        if line in lines:
+                            continue
+                    lines.append(line)
 
     if os.path.exists(output):
         os.rename(output, output+'.bak')
