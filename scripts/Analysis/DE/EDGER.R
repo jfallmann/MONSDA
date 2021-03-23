@@ -112,6 +112,7 @@ if (spike != ''){
 
     sampleData_norm <- cbind(sampleData, pData(counts_norm))
     design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep=" + ")), data=sampleData_norm)
+    colnames(design_norm) <- c(colnames(design),"W_1")
 
     dge_norm <- DGEList(counts=counts(counts_norm), group=groups, samples=samples, genes=genes)
 
@@ -266,13 +267,19 @@ for(compare in comparisons[[1]]){
         if (spike != ''){  # Same for spike-in normalized
             rm(qlf, tops, res)
 
-            contrast <- cbind(integer(dim(design)[2]), colnames(design_norm))
+            # determine contrast
+            A <- strsplit(contrast_groups[[1]][1], "\\+")
+            B <- strsplit(contrast_groups[[1]][2], "\\+")
+            minus <- 1/length(A[[1]])*(-1)
+            plus <- 1/length(B[[1]])
+
+            contrast <- cbind(integer(dim(design_norm)[2]), colnames(design_norm))
             for(i in A[[1]]){
                 contrast[which(contrast[,2]==i)]<- minus
             }
             for(i in B[[1]]){
                 contrast[which(contrast[,2]==i)]<- plus
-            }
+                }
             contrast <- as.numeric(contrast[,1])
 
             # Testing
