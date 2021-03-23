@@ -103,6 +103,10 @@ table(table(counts(d)$gene_id))
 #   design_full <- model.matrix(~condition, data=DRIMSeq::samples(d))
 #   colnames(design_full)
 
+## name types and levels for design
+bl <- sapply("batch", paste0, levels(batches)[-1])
+tl <- sapply("type", paste0, levels(types)[-1])
+
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(types)) > 1){
     if (length(levels(batches)) > 1){
