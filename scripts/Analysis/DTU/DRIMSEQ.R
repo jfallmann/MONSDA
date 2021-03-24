@@ -1,4 +1,5 @@
 suppressPackageStartupMessages({
+    require(BiocParallel)
     library(tximport)
     library(GenomicFeatures)
     library(DRIMSeq)
@@ -32,6 +33,9 @@ get_gene_name <- function(id, df){
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
+
+
+BPPARAM = MulticoreParam(workers=cores)
 
 # define cutoffs
 # cutoffs <- strsplit(cutts, '-')[[1]]
@@ -130,7 +134,7 @@ setwd(outdir)
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-    contrast <- comparisons[[1]]
+    #contrast <- comparisons[[1]][1]
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
@@ -152,14 +156,12 @@ for(contrast in comparisons[[1]]){
         }
         contrast <- as.numeric(contrast[,1])
 
-        # BPPARAM = MulticoreParam(workers=cores)
-
         # 1 estimate the precision,
         # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
         # 3 test the coefficient associated with the difference between condition 2 and condition 1
         set.seed(1)
         system.time({
-            d <- dmPrecision(d, design=design)
+            d <- dmPrecision(d, design=design, BPPARAM=BPPARAM)
             d <- dmFit(d, design=design)
             d <- dmTest(d, contrast=contrast)
     })
