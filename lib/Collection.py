@@ -621,6 +621,10 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                             else:
                                 subname = toolenv+'_raw.smk'
 
+                        #Picard tools can be extended here
+                        if works[j] == 'DEDUP' and toolenv == 'picard':
+                            subname = toolenv+'_dedup.smk'
+
                         smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
                         with open(smkf,'r') as smk:
                             for line in smk.readlines():
@@ -698,6 +702,10 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                         else:
                             subname = toolenv+'_raw.smk'
 
+                    #Picard tools can be extended here
+                    if subwork == 'DEDUP' and toolenv == 'picard':
+                            subname = toolenv+'_dedup.smk'
+
                     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
@@ -706,21 +714,21 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                         subjobs.append('\n\n')
 
             if 'MAPPING' in works:
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','mapping.smk'))
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'mapping.smk'))
                 with open(smkf,'r') as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda:  "../', line)
                         subjobs.append(line)
                     subjobs.append('\n\n')
                 if 'QC' in subworkflows:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.smk'))
+                    smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'multiqc.smk'))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda:  "../', line)
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.smk'))
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
             with open(smkf,'r') as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
