@@ -1,9 +1,8 @@
-name: deseq
+name: deseq2_DE
 channels:
-  - conda-forge
   - bioconda
+  - conda-forge
   - defaults
-  - r
 dependencies:
   - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
@@ -254,4 +253,3 @@ dependencies:
   - xz=5.2.5
   - zlib=1.2.11
   - zstd=1.4.3
-prefix: /home/fall/anaconda3/envs/deseq
