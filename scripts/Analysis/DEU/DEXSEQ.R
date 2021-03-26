@@ -189,7 +189,7 @@ for(contrast in comparisons[[1]]){
         out <- paste('Tables/DEU','DEXSEQ',combi,contrast_name,'table','results.tsv.gz', sep='_')
         write.table(as.data.frame(dxr1), gzfile(out), sep="\t", row.names=FALSE, quote=F)
 
-        htmlout <- paste('DEXSeq',combi,contrast_name,'.html', sep='_')
+        htmlout <- paste('DEXSeq_',combi,'_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
