@@ -1175,7 +1175,7 @@ def setting_per_sample(sample, runstate, config, setting, subconf = None):
 
     # Define which final setting is returned
     set = subset if subset else setting
-    
+
     return set
 
 
@@ -1326,6 +1326,8 @@ def runstate_from_sample(sample, config):
     logid = scriptname+'.Collection_runstate_from_sample: '
     ret = list()
     for s in sample:
+        if len(s.split(os.sep)) < 2:
+            s = samplecond(s, config)
         if len(getFromDict(config["SETTINGS"], s.split(os.sep))) < 1:
             s = os.path.dirname(s)
             n = s.split(os.sep)[-1]
