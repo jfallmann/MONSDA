@@ -251,7 +251,7 @@ def basecall_samples(config):
 
 
 @check_run
-def get_conditions(samples, config):
+def get_conditions(config):
     logid = scriptname+'.Collection_conditions: '
     ret = list()
     for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):
@@ -410,8 +410,6 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None, 
                     tempconf[subwork]['CUTOFFS'] = config[subwork]['CUTOFFS']  #else '.05'
                 if subwork == 'COUNTING':
                     tempconf['COUNTING']['FEATURES'] = config['COUNTING']['FEATURES']
-                # if subwork == 'DAS':
-                    # tempconf['MAPPING'] = subsetDict(config['MAPPING'], condition)
                 if 'COMPARABLE' in config[subwork]:
                     tempconf[subwork]['COMPARABLE'] = config[subwork]['COMPARABLE']
 
@@ -1156,6 +1154,29 @@ def tool_params(sample, runstate, config, subconf, tool = None):
     mp = subDict(config[subconf], x)[tool] if tool else subDict(config[subconf], x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
+
+@check_run
+def setting_per_sample(sample, runstate, config, setting, subconf = None):
+    logid=scriptname+'.Collection_setting_per_sample: '
+    log.debug(logid+'Samples: '+str(sample))
+    set = None
+    x = sample.split(os.sep)[2:-1]
+    if runstate is None:
+        runstate = runstate_from_sample([sample], config)[0]
+    if runstate not in x:
+        x.append(runstate)
+    subsetting = subDict(config['SETTINGS'], x).get(setting)
+
+    if setting == 'ANNOTATION':  # Special case is annotation
+        subsetting = subsetting.get('GTF') if 'GTF' in ANNO else subsetting.get('GFF')  # by default GTF format will be used
+
+    if subconf:  # check specific setting for workflow part
+        subset = config[subconf].get(setting) if config[subconf].get(setting) else subDict(config[subconf], x).get(setting)
+
+    # Define which final setting is returned
+    set = subset if subset else setting
+    
+    return set
 
 
 @check_run
