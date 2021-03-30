@@ -79,12 +79,12 @@ rule run_diego:
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
     output: sig = rules.themall.input.sig
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    "LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log"
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; i={input.csv}; fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > {output.sig} 2>> {log}; else touch {output.sig}; fi"
+    shell: "set +o pipefail; array1=({input.csv}); array2=({output.sig}); array3=({log}); for i in ${{!array1[@]}}; do i=${{array1[$i]}}; fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > ${{array2[$i]}} 2>>${{array3[$i]}}; else touch ${{array2[$i]}}; fi"
 
 
 rule convertPDF:
