@@ -65,7 +65,7 @@ rule UnzipGenome:
     conda:  "nextsnakes/envs/samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print \"\n\".$F[0]}}else{{chomp; print}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print \"\n\".$F[0]}}else{{chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,
