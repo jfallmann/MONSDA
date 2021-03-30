@@ -181,7 +181,7 @@ rule UnzipGenome:
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,
-            fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', ''))
+            fa = rules.UnzipGenome.output.fa
     output: peak = "PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{combo}/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")

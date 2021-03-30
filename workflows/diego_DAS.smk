@@ -86,7 +86,7 @@ rule filter_significant:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > DAS/{combo}/Tables/Sig_$fn;else touch DAS/{combo}/Tables/Sig_$fn; fi;done 2> {log}"
+    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > {output.sig}; else touch {output.sig}; fi;done 2> {log}"
 
 
 rule convertPDF:
