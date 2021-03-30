@@ -79,7 +79,7 @@ rule run_diego:
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
     output: sig = rules.themall.input.sig
-    log:    "LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log"
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
