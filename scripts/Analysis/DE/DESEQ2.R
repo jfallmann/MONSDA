@@ -22,7 +22,7 @@ outdir          <- args[4]
 cmp             <- args[5]
 combi           <- args[6]
 availablecores  <- as.integer(args[7])
-spike           <- if (argsLen > 7) args[8] else FALSE
+spike           <- if (argsLen > 7) args[8] else ''
 
 print(args)
 
@@ -84,13 +84,13 @@ print(paste('FITTING DESIGN: ', design, sep=""))
 
 # Normalize by spike in if available
 print("Spike-in used, data will be normalized to spike in separately")
-if (spike){
+if (spike != ''){
     ctrlgenes <- readLines(spike)
     }
 
 setwd(outdir)
 
-if (spike){
+if (spike != ''){
     counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
     countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
 
@@ -186,7 +186,7 @@ for(contrast in comparison[[1]]){
         plotMA(res, ylim=c(-3,3))
         dev.off()
 
-        if (spike){  # DE run for spike-in normalized data
+        if (spike != ''){  # DE run for spike-in normalized data
 
             # initialize empty objects
             res=""
