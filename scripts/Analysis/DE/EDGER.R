@@ -20,7 +20,7 @@ outdir          <- args[4]
 cmp             <- args[5]
 combi           <- args[6]
 availablecores  <- as.integer(args[7])
-spike           <- if (argsLen > 7) args[8] else ''
+spike           <- if (argsLen > 7) args[8] else FALSE
 
 print(args)
 
@@ -100,11 +100,11 @@ if (length(levels(types)) > 1){
 #print(paste('FITTING DESIGN: ', design, sep=""))
 
 ## check genes and spike-ins
-if (spike != ''){
+if (spike){
     ctrlgenes <- readLines(spike)
 }
 setwd(outdir)
-if (spike != ''){
+if (spike){
     counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
     genes <- rownames(countData)
 
@@ -264,7 +264,7 @@ for(compare in comparisons[[1]]){
         dev.off()
 
 
-        if (spike != ''){  # Same for spike-in normalized
+        if (spike){  # Same for spike-in normalized
             rm(qlf, tops, res)
 
             # determine contrast
