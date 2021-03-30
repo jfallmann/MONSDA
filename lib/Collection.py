@@ -1602,7 +1602,7 @@ def comparable_as_string(config, subwork):
 @check_run
 def comparable_as_string2(config, subwork):
     logid=scriptname+'.comparable_as_string2: '
-    log.info(logid+'this is the config: '+str(config))
+    log.debug(logid+'this is the config: '+str(config))
     check = config[subwork]['COMPARABLE']
     if check:
         log.debug(logid+'determine comparables in '+subwork)
