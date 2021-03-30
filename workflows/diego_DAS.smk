@@ -78,15 +78,13 @@ rule run_diego:
 
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
-    output: sig = rules.themall.input.sig,
-            # sig_d = rules.themall.input.sig_d,
-            # sig_u = rules.themall.input.sig_u
+    output: sig = rules.themall.input.sig
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > {output.sig}; else touch {output.sig}; fi;done 2> {log}"
+    shell: "set +o pipefail; i={input.csv}; fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > {output.sig} 2>> {log}; else touch {output.sig}; fi"
 
 
 rule convertPDF:
