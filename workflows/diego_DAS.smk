@@ -84,7 +84,7 @@ rule filter_significant:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
-    shell: "set +o pipefail; array1=({input.csv}); array2=({output.sig}); array3=({log}); for i in ${{!array1[@]}}; do i=${{array1[$i]}}; fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > ${{array2[$i]}} 2>>${{array3[$i]}}; else touch ${{array2[$i]}}; fi"
+    shell: "set +o pipefail; array1=({input.csv}); array2=({output.sig}); array3=({log}); for i in ${{!array1[@]}}; do a=${{array1[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > ${{array2[$i]}} 2>>${{array3[$i]}}; else touch ${{array2[$i]}}; fi"
 
 
 rule convertPDF:
