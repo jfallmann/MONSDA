@@ -6,8 +6,8 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
-            csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
-            sig = expand("DAS/{combo}/Tables/Sig_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table_results.csv", combo=combo, scombo=scombo, comparison=compstr),
+            sig = expand("DAS/{combo}/Tables/Sig_DAS_DIEGO_{scombo}_{comparison}_table_results.csv", combo=combo, scombo=scombo, comparison=compstr),
             # sig_d = expand("DAS/{combo}/Tables/SigDOWN_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             # sig_u = expand("DAS/{combo}/Tables/SigUP_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
@@ -98,7 +98,7 @@ rule convertPDF:
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
             rules.themall.input.csv,
-            rules.themall.input.sig,
+            rules.themall.input.sig
             #rules.run_diego.output.sig_d,
             #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
