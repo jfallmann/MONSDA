@@ -96,7 +96,7 @@ rule run_DTU:
             cutts = get_cutoff_as_string(config, 'DTU')
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
 
-rule filter_significant_edger:
+rule filter_significant_drimseq:
     input:  res_g = rules.themall.input.res_g,
             res_t = rules.themall.input.res_t
     output: sig_g   = rules.themall.input.sig_g,
@@ -110,7 +110,7 @@ rule filter_significant_edger:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DTU/{combo}/Tables/SigDOWN_$fn;else touch DTU/{combo}/Tables/Sig_$fn DTU/{combo}/Tables/SigUP_$fn DTU/{combo}/Tables/SigDOWN_$fn; fi;done 2> {log}"
+    shell:  "set +o pipefail; array1=({input.tbl}); array2=({output.sig}); array3=({output.sig_d}); array4=({output.sig_u}); for i in ${{!array1[@]}}; do a=${{array1[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 > array2[$i]; cp array2[$i] array3[$i]; cp array2[$i] array4[$i]; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> array2[$i] && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> array3[$i] && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> array4[$i]; else touch array2[$i] array3[$i] array4[$i]; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,

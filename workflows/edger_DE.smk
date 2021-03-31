@@ -70,12 +70,12 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    expand("LOGS/DE/{combo}/filter_edgerDE.log", combo=combo)
+    log:    "LOGS/DE/filter_edgerDE.log"
     conda:  "nextsnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in DE/{combo}/Tables/DE_EDGER_*_results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Tables/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Tables/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DE/{combo}/Tables/SigDOWN_$fn;else touch DE/{combo}/Tables/Sig_$fn DE/{combo}/Tables/SigUP_$fn DE/{combo}/Tables/SigDOWN_$fn; fi;done 2> {log}"
+    shell:  "set +o pipefail; array1=({input.sort}); array2=({output.sig}); array3=({output.sig_d}); array4=({output.sig_u}); for i in ${{!array1[@]}}; do a=${{array1[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 > array2[$i]; cp array2[$i] array3[$i]; cp array2[$i] array4[$i]; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut} ||$F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> array2[$i] && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> array3[$i] && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut}) ){{print}}' |gzip >> array4[$i]; else touch array2[$i] array3[$i] array4[$i]; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_edger.output.allM,
