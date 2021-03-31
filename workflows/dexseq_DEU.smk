@@ -79,7 +79,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/filter_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    "LOGS/DEU/filter_dexseq.log"
     conda:  "nextsnakes/envs/"+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pvalue'),

@@ -105,7 +105,7 @@ rule filter_significant_drimseq:
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseqDTU.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    "LOGS/DTU/filter_drimseqDTU.log"
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
