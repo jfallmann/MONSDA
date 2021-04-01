@@ -74,7 +74,7 @@ rule run_diego:
             dpara = lambda x: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None , config, "DAS", DASENV.split('_')[0])['OPTIONS'][1].items()),
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr)]
-    shell:  "array1=({input.contrast}); array2=({params.outfile}); array3=({log}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond -e -f ${{array2[$i]}} {params.dpara} 2>> ${{array3[$i]}};done && array1=({input.contrast}); array2=({output.csv}); for i in ${{!array1[@]}}; do basecond=$(head -n 1 ${{array1[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{array1[$i]}} -x $basecond {params.dpara} > ${{array2[$i]}} 2>> ${{array3[$i]}};done"
+    shell:  "arr=({input.contrast}); orr=({params.outfile}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond -e -f ${{orr[$i]}} {params.dpara} 2>> ${{orrt[$i]}};done && arr=({input.contrast}); orr=({output.csv}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond {params.dpara} > ${{orr[$i]}} 2>> ${{orrt[$i]}};done"
 
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
@@ -84,7 +84,7 @@ rule filter_significant:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
-    shell: "set +o pipefail; array1=({input.csv}); array2=({output.sig}); for i in ${{!array1[@]}}; do a=${{array1[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a|head -n1 > ${{array2[$i]}}; cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' >> ${{array2[$i]}} 2>> {log}; else touch ${{array2[$i]}}; fi; done"
+    shell: "set +o pipefail; arr=({input.csv}); orr=({output.sig}); for i in ${{!arr[@]}}; do a=${{arr[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a|head -n1 > ${{orr[$i]}}; cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' >> ${{orr[$i]}} 2>> {log}; else touch ${{orr[$i]}}; fi; done"
 
 
 rule convertPDF:
