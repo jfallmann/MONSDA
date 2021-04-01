@@ -1,4 +1,5 @@
 suppressPackageStartupMessages({
+    require(BiocParallel)
     library(tximport)
     library(GenomicFeatures)
     library(DRIMSeq)
@@ -33,6 +34,9 @@ get_gene_name <- function(id, df){
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
+
+BPPARAM = MulticoreParam(workers=cores)
+
 # define cutoffs
 # cutoffs <- strsplit(cutts, '-')[[1]]
 # pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
@@ -64,7 +68,7 @@ cts.original <- cts
 rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # Transcript-to-gene mapping
-txdb.filename <- file.path("GENOMES/gencode.v35.annotation.sqlite")
+txdb.filename <- file.path(paste(gtf,"sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
 saveDb(txdb, txdb.filename)
 txdb <- loadDb(txdb.filename)
@@ -78,7 +82,7 @@ all(rownames(cts) %in% txdf$TXNAME)
 txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
 all(rownames(cts) == txdf$TXNAME)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=samps)
 
 # Filter before running procedures:
@@ -97,27 +101,30 @@ table(table(counts(d)$gene_id))
 
 # create designmatrix
 #   original code for simple model
-#   design_full <- model.matrix(~condition, data=DRIMSeq::samples(d))
-#   colnames(design_full)
+design <- model.matrix(~groups, data=DRIMSeq::samples(d))
+
+## name types and levels for design
+bl <- sapply("batch", paste0, levels(batches)[-1])
+tl <- sapply("type", paste0, levels(types)[-1])
 
 ## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(types)) > 1){
-    if (length(levels(batches)) > 1){
-        design <- model.matrix(~0+groups+types+batches, data=samps)
-        colnames(design) <- c(levels(groups),tl,bl)
-    } else{
-        design <- model.matrix(~0+groups+types, data=samps)
-        colnames(design) <- c(levels(groups),tl)
-    }
-} else{
-    if (length(levels(batches)) > 1){
-        design <- model.matrix(~0+groups+batches, data=samps)
-        colnames(design) <- c(levels(groups),bl)
-    } else{
-        design <- model.matrix(~0+groups, data=samps)
-        colnames(design) <- levels(groups)
-    }
-}
+#if (length(levels(types)) > 1){
+#    if (length(levels(batches)) > 1){
+#        design <- model.matrix(~0+groups+types+batches, data=samps)
+#        colnames(design) <- c(levels(groups),tl,bl)
+#    } else{
+#        design <- model.matrix(~0+groups+types, data=samps)
+#        colnames(design) <- c(levels(groups),tl)
+#    }
+#} else{
+#    if (length(levels(batches)) > 1){
+#        design <- model.matrix(~0+groups+batches, data=samps)
+#        colnames(design) <- c(levels(groups),bl)
+#    } else{
+#        design <- model.matrix(~0+groups, data=samps)
+#        colnames(design) <- levels(groups)
+#    }
+#}
 
 comparison_objs <- list()
 setwd(outdir)
@@ -126,7 +133,7 @@ setwd(outdir)
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
 
-    contrast <- comparisons[[1]]
+    #contrast <- comparisons[[1]][1]
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
@@ -148,14 +155,12 @@ for(contrast in comparisons[[1]]){
         }
         contrast <- as.numeric(contrast[,1])
 
-        # BPPARAM = MulticoreParam(workers=cores)
-
         # 1 estimate the precision,
         # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
         # 3 test the coefficient associated with the difference between condition 2 and condition 1
         set.seed(1)
         system.time({
-            d <- dmPrecision(d, design=design)
+            d <- dmPrecision(d, design=design, BPPARAM=BPPARAM)
             d <- dmFit(d, design=design)
             d <- dmTest(d, contrast=contrast)
     })

@@ -131,7 +131,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                     continue  # We only want download/basecall here
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(SAMPLES, config)
+                conditions = get_conditions(config)
                 log.debug(logid+'PRECONDITIONS: '+str(conditions))
 
                 subwork = proc
@@ -159,7 +159,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES, config)
+        conditions = get_conditions(config)
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:

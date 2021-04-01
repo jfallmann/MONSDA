@@ -43,6 +43,8 @@ get_gene_name <- function(id, df){
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
+BPPARAM = MulticoreParam(workers=availablecores)
+
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname),row.names=1))
 colnames(sampleData) <- c("condition","type","batch")
@@ -150,8 +152,6 @@ for(contrast in comparisons[[1]]){
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
 
-    BPPARAM = MulticoreParam(workers=availablecores)
-
     print(paste("Comparing ",contrast_name, sep=""))
 
     # initialize empty objects
@@ -182,14 +182,14 @@ for(contrast in comparisons[[1]]){
 
         dxr2 <- dxr1
 
-        png(paste("Figures/DTU","DEXSEQ",combi,contrast_name,"figure","plotMA.png",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name,"figure","plotMA.png",sep="_"))
         print(plotMA( dxr1, cex=0.8))
         dev.off()
 
         out <- paste('Tables/DEU','DEXSEQ',combi,contrast_name,'table','results.tsv.gz', sep='_')
         write.table(as.data.frame(dxr1), gzfile(out), sep="\t", row.names=FALSE, quote=F)
 
-        htmlout <- paste('DEXSeq',combi,contrast_name,'.html', sep='')
+        htmlout <- paste('DEXSeq_',combi,'_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
@@ -212,7 +212,7 @@ for(contrast in comparisons[[1]]){
 
             counter <- counter+1
         }
-        write.table(figures, paste("Figures/DTU","DEXSEQ",combi,contrast_name,"list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
+        write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_name,"list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
         # cleanup
         rm(dxdpair, dxr1)

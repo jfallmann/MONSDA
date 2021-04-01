@@ -46,7 +46,7 @@ rule prepare_count_table:
 rule run_edger:
     input:  tbl = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
             anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
-    output: session = rules.themall.input.session,
+    output: rules.themall.input.session,
             rules.themall.input.allM,
             rules.themall.input.allBCV,
             rules.themall.input.allQLD,

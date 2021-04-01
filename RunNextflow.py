@@ -172,7 +172,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
             preprocess.remove('RAW')
             SAMPLES = download_samples(config)
             log.info(logid+'PRESAMPLES: '+str(SAMPLES))
-            conditions = get_conditions(SAMPLES, config)
+            conditions = get_conditions(config)
             log.info(logid+'PRECONDITIONS: '+str(conditions))
             for condition in conditions:
                 subconf = NestedDefaultDict()
@@ -235,7 +235,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES, config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES, config)]))]
+        conditions = get_conditions(config) #[x.split(os.sep) for x in list(set([os.path.dirname(x) for x in samplecond(SAMPLES, config)]))]
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:

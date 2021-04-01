@@ -6,10 +6,10 @@ compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
     input:  dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
-            csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
-            sig = expand("DAS/{combo}/Tables/Sig_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
-            # sig_d = expand("DAS/{combo}/Tables/SigDOWN_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
-            # sig_u = expand("DAS/{combo}/Tables/SigUP_DAS_DIEGO_{scombo}_{comparison}_table_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            csv = expand("DAS/{combo}/Tables/DAS_DIEGO_{scombo}_{comparison}_table_results.csv", combo=combo, scombo=scombo, comparison=compstr),
+            sig = expand("DAS/{combo}/Tables/Sig_DAS_DIEGO_{scombo}_{comparison}_table_results.csv", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_d = expand("DAS/{combo}/Tables/SigDOWN_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_u = expand("DAS/{combo}/Tables/SigUP_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
@@ -78,15 +78,13 @@ rule run_diego:
 
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
-    output: sig = rules.themall.input.sig,
-            # sig_d = rules.themall.input.sig_d,
-            # sig_u = rules.themall.input.sig_u
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/filter_diegoDAS.log", combo=combo, comparison=compstr, scombo=scombo)
+    output: sig = rules.themall.input.sig
+    log:    "LOGS/DAS/filter_diegoDAS.log"
     conda:  "nextsnakes/envs/"+DASENV+".yaml"
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then cat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' > DAS/{combo}/Tables/Sig_$fn;else touch DAS/{combo}/Tables/Sig_$fn; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
+    shell: "set +o pipefail; array1=({input.csv}); array2=({output.sig}); for i in ${{!array1[@]}}; do a=${{array1[$i]}}; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a|head -n1 > ${{array2[$i]}}; cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' >> ${{array2[$i]}} 2>> {log}; else touch ${{array2[$i]}}; fi; done"
 
 
 rule convertPDF:
@@ -100,7 +98,7 @@ rule convertPDF:
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
             rules.themall.input.csv,
-            rules.themall.input.sig,
+            rules.themall.input.sig
             #rules.run_diego.output.sig_d,
             #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
