@@ -265,7 +265,7 @@ for(contrast in comparisons[[1]]){
         })
     }
     colnames(figures) <- c("geneID","geneName","file")
-    write.table(figures, paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"list","sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
+    write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
     # cleanup
     rm(res,res.txp,proportions)
@@ -274,4 +274,4 @@ for(contrast in comparisons[[1]]){
     })
 }
 
-save.image(file = paste("DTU","DRIMSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU", "DRIMSEQ", combi, "SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
