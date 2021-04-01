@@ -66,7 +66,7 @@ rule run_edger:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.depara} 2> {log}"
 
 rule filter_significant:
-    input:  sort = rules.run_edger.output.sort
+    input:  tbl = rules.run_edger.output.sort
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
