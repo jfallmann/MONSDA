@@ -12,7 +12,7 @@ rule themall:
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
             allN    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
             res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["LogFCsorted","PValueSorted"]),
+            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["LogFCsorted"]),
             sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
