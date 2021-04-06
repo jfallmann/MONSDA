@@ -247,14 +247,14 @@ for(compare in comparisons[[1]]){
         tops$table$Gene_ID <- rownames(tops$table)
         tops <- tops$table[, c(8,7,2,3,4,5,6)]
         tops <- as.data.frame(apply(tops,2, as.character))
-        write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+        write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
         tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf.df)})
         tops$table$Gene_ID <- rownames(tops$table)
         tops <- tops$table[, c(8,7,2,3,4,5,6)]
         tops <- as.data.frame(apply(tops,2, as.character))
-        write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
+        write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MD.png", sep="_")
