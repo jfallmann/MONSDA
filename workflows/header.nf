@@ -9,13 +9,12 @@ nextflow.preview.dsl=2
 
 //Params from CL
 REFERENCE = "${workflow.workDir}/../"+params.REFERENCE
-REFDIR = params.REFDIR
+REFDIR = "${workflow.workDir}/../"+params.REFDIR
 GENOME = params.GENOME
 INDEX = params.INDEX
 PREFIX = params.PREFIX
 BINS = "${workflow.workDir}/../"+params.BINS
 THREADS = params.MAXTHREAD
-SOURCE = params.SOURCE
 PAIRED = params.PAIRED
 DEDUP = params.DEDUP
 STRANDED = params.STRANDED
@@ -24,7 +23,7 @@ CONDITION = params.CONDITION
 SCONDITION = params.SCONDITION
 SETS = params.SETS
 
-ANNO = params.ANNO
+ANNO = params.ANNOTATION
 SAMPLES = params.SAMPLES.split(',')
 LONGSAMPLES = params.LONGSAMPLES.split(',')
 

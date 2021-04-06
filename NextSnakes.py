@@ -327,7 +327,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                     continue
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(SAMPLES, config)
+                conditions = get_conditions(config)
                 log.debug(logid+'PRECONDITIONS: '+str(conditions))
 
                 subwork = proc
@@ -339,7 +339,10 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                     jobstorun = list()
                     for job in jobs:
                         smko, confo = job
-                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+                        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json']))))
+                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
+
+                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition)))
 
                     for job in jobstorun:
                         with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -355,7 +358,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(SAMPLES, config)
+        conditions = get_conditions(config)
         log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:

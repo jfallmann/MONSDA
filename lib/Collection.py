@@ -18,8 +18,6 @@
 #
 
 # Commentary:
-# TODO for arbitrary depth:
-# runstate_from_sample, sampleslong, samplecond,
 #
 #
 #
@@ -45,7 +43,7 @@
 #
 
 # Code:
-#import os, sys, inspect
+# import os, sys, inspect
 # # realpath() will make your script run, even if you symlink it :)
 # cmd_folder = os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) ))
 # if cmd_folder not in sys.path:
@@ -1755,16 +1753,52 @@ def nf_check_version(v):
         return shutil.which('nextflow')
 
 @check_run
-def nf_fetch_params(configfile):
+def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     logid=scriptname+'.nf_fetch_params: '
 
     config = load_configfile(configfile)
-
     retconf = collections.defaultdict()
-    retconf["REFERENCE"] = config["REFERENCE"]
-    retconf["BINS"] = config["BINS"]
-    retconf["MAXTHREAD"] = int(config["MAXTHREADS"])
+
+
+    BINS = config["BINS"]
+    MAXTHREAD = int(config["MAXTHREADS"])
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+
+    if len(SAMPLES) < 1:
+        log.error(logid+'No samples found, please check config file')
+        sys.exit(logid+'ERROR: No samples found, please check config file')
+
+    SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
+    SETS = os.sep.join(SETUP)
+    SETTINGS = subDict(config['SETTINGS'], SETUP)
+
+
+    # Parse SETTINGS
+    SEQUENCING = SETTINGS.get('SEQUENCING')
+    REFERENCE = SETTINGS.get('REFERENCE')
+    REFDIR = str(os.path.dirname(REFERENCE))
+    INDEX = SETTINGS.get('INDEX')
+    PREFIX = SETTINGS.get('PREFIX')
+    ANNO = SETTINGS.get('ANNOTATION')
+    IP = SETTINGS.get('IP')
+    rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
+    if rundedup:
+        log.debug('DEDUPLICATION ENABLED')
+
+    log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
+
+    paired = checkpaired([SAMPLES[0]], config)
+    if paired == 'paired':
+        log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
+
+    stranded = checkstranded([SAMPLES[0]], config)
+    if stranded != '':
+        log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+
+
+    # save in return dict
+    retconf["BINS"] = BINS
+    retconf["MAXTHREAD"] = MAXTHREAD
     retconf["SAMPLES"] = str.join(',', SAMPLES)
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
@@ -1772,45 +1806,117 @@ def nf_fetch_params(configfile):
 
     sample = SAMPLES[0]
     lsample = LONGSAMPLES[0]
-    retconf["GENOME"] = genome(sample, config)
-    retconf["SOURCE"] = source_from_sample(lsample, config)
-    retconf["NAME"] = namefromfile(sample, config)
-    paired = checkpaired([sample], config)
     retconf["PAIRED"] = paired
-    stranded = checkstranded([sample], config)
     retconf["STRANDED"] = stranded
 
-    if 'paired' in paired:
-        log.info('RUNNING NEXTFLOW IN PAIRED READ MODE')
-    if stranded != '':
-        log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
-    if 'PEAKS' in config:
-        retconf["IP"] = check_IP(SAMPLES, config)
-        retconf["PEAKCONF"] = tool_params(sample, None, config,'PEAKS')['OPTIONS'][0]
-        peakconf = retconf["PEAKCONF"]
-        if 'ANNOTATION' in tool_params(sample, None, config,'PEAKS'):
-            retconf["ANNOPEAK"] = tool_params(sample, None, config,'PEAKS')['ANNOTATION']
+    # MAPPING Variables
+    if 'MAPPING' in config:
+        MAPCONF = subDict(config['MAPPING'], SETUP)
+        log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
+        REF = MAPCONF.get('REFERENCE')
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+        MANNO = MAPCONF.get('ANNOTATION')
+        if MANNO:
+            ANNOTATION = MANNO
         else:
-            retconf["ANNOPEAK"] = None
-        try:
-            all([x in peakconf for x in ['MINPEAKRATIO', 'PEAKDISTANCE', 'PEAKWIDTH', 'PEAKCUTOFF', 'MINPEAKHEIGHT', 'USRLIMIT']])
-        except Exception as err:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            tbe = tb.TracebackException(
-                exc_type, exc_value, exc_tb,
-            )
-            log.error('Not all required peak finding options defined in config!\n'+''.join(tbe.format()))
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format     will be used
+        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
+        IDX = MAPCONF.get('INDEX')
+        if IDX:
+            INDEX = IDX
+        if not INDEX:
+            INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
+        UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV,     unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
+        INDICES = INDEX.split(',') if INDEX else list(UIDX)
+        INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else     str(os.path.abspath(INDICES[0]))+'_idx'
+        PRE = MAPCONF.get('PREFIX')
+        if PRE:
+            PREFIX = PRE
+        if not PREFIX:
+            PREFIX = MAPPERENV
+        if len(INDICES) > 1:
+            if str(os.path.abspath(INDICES[1])) not in UIDX:
+                INDEX2 = str(os.path.abspath(INDICES[1]))
+            else:
+                INDEX2 = str(os.path.abspath(INDICES[1]))+'_idx'
+        else:
+            INDEX2 = ''
 
-        retconf["MINPEAKRATIO"] = peakconf['MINPEAKRATIO']
-        retconf["PEAKDISTANCE"] = peakconf['PEAKDISTANCE']
-        retconf["PEAKWIDTH"] = peakconf['PEAKWIDTH']
-        retconf["PEAKCUTOFF"] = peakconf['PEAKCUTOFF']
-        retconf["MINPEAKHEIGHT"] = peakconf['MINPEAKHEIGHT']
-        retconf["USRLIMIT"] = peakconf['USRLIMIT']
 
-        if 'PREPROCESS' in peakconf:
-            retconf["PREPROCESS"] = ' '.join("{!s} {!s}".format(key, val) for (key, val) in peakconf['PREPROCESS'].items())
+    # Peak Calling Variables
+    if 'PEAKS' in config:
+        PEAKCONF = subDict(config['PEAKS'], SETUP)
+        REF = PEAKCONF.get('REFERENCE')
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+        ANNOPEAK = PEAKCONF.get('ANNOTATION')
+        if ANNOPEAK:
+            ANNOTATION = ANNOPEAK
+        else:
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+        if not IP:
+            IP = check_ip(SAMPLES, config)
+        log.info(logid+'Running Peak finding for '+IP+' protocol')
+
+
+    # UCSC/COUNTING Variables
+    for x in ['UCSC', 'COUNTING']:
+        if x in config:
+            XCONF = subDict(config[x], SETUP)
+            log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+            REF = XCONF.get('REFERENCE')
+            XANNO = XCONF.get('ANNOTATION')
+            if XANNO:
+                ANNOTATION = XANNO
+            else:
+                ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+            if REF:
+                REFERENCE = REF
+                REFDIR = str(os.path.dirname(REFERENCE))
+
+
+    # DE/DEU/DAS/DTU Variables
+    for x in ['DE', 'DEU', 'DAS', 'DTU']:
+        if x in config:
+            XCONF = subDict(config[x], SETUP)
+            log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
+            REF = XCONF.get('REFERENCE')
+            XANNO = XCONF.get('ANNOTATION')
+            if XANNO:
+                ANNOTATION = XANNO
+            else:
+                ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+            if REF:
+                REFERENCE = REF
+                REFDIR = str(os.path.dirname(REFERENCE))
+
+
+    # CIRCS Variables
+    if 'CIRCS' in config:
+        CIRCCONF = subDict(config['CIRCS'], SETUP)
+        log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
+        REF = CIRCCONF.get('REFERENCE')
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+        CANNO = CIRCCONF.get('ANNOTATION')
+        if CANNO:
+            ANNOTATION = CANNO
+        else:
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format     will be used
+
+
+    retconf["REFERENCE"] = REFERENCE
+    retconf["REFDIR"] = REFDIR
+    retconf["INDEX"] = INDEX
+    retconf["PREFIX"] = PREFIX
+    retconf["ANNO"] = ANNO
+    retconf["ANNOTATION"] = ANNOTATION
+    retconf["IP"] = IP
 
     return retconf
 
@@ -1881,7 +1987,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
 @check_run
 def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel):
-    logid = scriptname+'.Collection_make_pre: '
+    logid = scriptname+'.Collection_nf_make_pre: '
     log.debug(logid+'PREPROCESSING: '+str(subwork))
 
     subjobs = list()
@@ -1964,7 +2070,7 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel):
         with open(confo, 'a') as confout:
             json.dump(subconf, confout)
 
-        jobs.append([smko, confo])
+        jobs.append([nfo, confo])
 
         params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json']))))
         toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
