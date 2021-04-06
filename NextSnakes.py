@@ -89,7 +89,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         if useconda:
             argslist.append("--use-conda")
         else:
-            log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. Tou can also preinstall all conda environments appending the --use-conda and the --create-envs-only arguments.')
+            log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument.')
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
@@ -376,7 +376,8 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                     jobstorun = list()
                     for job in jobs:
                         smko, confo = job
-                        jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition)))
+
 
                     for job in jobstorun:
                         with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -400,7 +401,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
             jobstorun = list()
             for job in jobs:
                 smko, confo = job
-                jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+                jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -418,6 +419,10 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
         '''
 
         if postprocess:
+            log.error('At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!')
+            sys.exit()
+
+            ## Once postprocessing is enabled, here comes a framework that should work
             summary_tools_set = set()
             summary_tools_dict = dict()
             for subwork in postprocess:
@@ -436,7 +441,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                         for value in summary_tools_dict[subwork]:
                             summary_tools_set.add('-'.join([subwork, value]))
 
-                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest=' '.join(argslist)))
+                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -453,7 +458,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
 
                 for job in jobs:
                     smko, confo = job
-                    jobstorun.append('snakemake -j {t} --use-conda -s {s} --configfile {c} --directory {d} --    printshellcmds --show-failed-logs {rest}'.format(t=threads, s=smko, c=confo, d=workdir, rest='     '.join(argslist)))
+                    jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
