@@ -1782,6 +1782,7 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     PREFIX = SETTINGS.get('PREFIX')
     ANNO = SETTINGS.get('ANNOTATION')
     IP = SETTINGS.get('IP')
+
     rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
     if rundedup:
         log.debug('DEDUPLICATION ENABLED')
@@ -1803,13 +1804,14 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     retconf["SAMPLES"] = str.join(',', SAMPLES)
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
+    retconf["SETS"] = SETS
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
 
     sample = SAMPLES[0]
     lsample = LONGSAMPLES[0]
     retconf["PAIRED"] = paired
     retconf["STRANDED"] = stranded
-
+    retconf["RUNDEDUP"] = rundedup
 
     # MAPPING Variables
     if 'MAPPING' in config:

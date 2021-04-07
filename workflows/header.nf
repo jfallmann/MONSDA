@@ -10,13 +10,12 @@ nextflow.preview.dsl=2
 //Params from CL
 REFERENCE = "${workflow.workDir}/../"+params.REFERENCE
 REFDIR = "${workflow.workDir}/../"+params.REFDIR
-GENOME = params.GENOME
 INDEX = params.INDEX
 PREFIX = params.PREFIX
 BINS = "${workflow.workDir}/../"+params.BINS
 THREADS = params.MAXTHREAD
 PAIRED = params.PAIRED
-DEDUP = params.DEDUP
+RUNDEDUP = params.RUNDEDUP
 STRANDED = params.STRANDED
 IP = params.IP
 CONDITION = params.CONDITION
