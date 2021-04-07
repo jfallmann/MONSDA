@@ -270,7 +270,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         log.error(''.join(tbe.format()))
 
 
-def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, optionalargs=None):
+def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clean=None, optionalargs=None):
     try:
         logid = scriptname+'.run_nextflow: '
         argslist = list()
@@ -302,7 +302,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
         config['MAXTHREADS'] = threads
 
         # Get processes to work on
-        preprocess, subworkflows, postprocess = get_processes(config)
+        preprocess, subworkflows, postprocess = nf_get_processes(config)
 
         '''
         START TO PROCESS
@@ -338,11 +338,10 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
 
                     jobstorun = list()
                     for job in jobs:
-                        smko, confo = job
-                        params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json']))))
-                        toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, toolenv, toolbin)
+                        nfo, confo, tp = job
+                        params = nf_fetch_params(confo)
 
-                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition)))
+                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j}'.format(t=threads, s=nfo, d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=tp ))
 
                     for job in jobstorun:
                         with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -375,8 +374,10 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
 
                     jobstorun = list()
                     for job in jobs:
-                        smko, confo = job
-                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition)))
+                        nfo, confo, tp = job
+                        params = nf_fetch_params(confo)
+
+                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j}'.format(t=threads, s=nfo, d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=tp ))
 
 
                     for job in jobstorun:
@@ -400,8 +401,10 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
 
             jobstorun = list()
             for job in jobs:
-                smko, confo = job
-                jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
+                nfo, confo, tp = job
+                params = nf_fetch_params(confo)
+
+                jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j}'.format(t=threads, s=nfo, d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=tp ))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -423,25 +426,21 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
             sys.exit()
 
             ## Once postprocessing is enabled, here comes a framework that should work
-            summary_tools_set = set()
-            summary_tools_dict = dict()
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
+                log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
                 log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
+
                 jobs = nf_make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
                 for job in jobs:
-                    smko, confo = job
+                    nfo, confo, tp = job
+                    params = nf_fetch_params(confo)
 
-                    if subwork in ['DE', 'DEU', 'DAS', 'DTU']:
-                        summary_tools_dict[subwork] = [k for k in config[subwork]['TOOLS'].keys()]
-                        for value in summary_tools_dict[subwork]:
-                            summary_tools_set.add('-'.join([subwork, value]))
-
-                        jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
+                    jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j}'.format(t=threads, s=nfo, d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=tp ))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -451,14 +450,17 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
 
-            # SUMMARY RUN if needed
-            if any([x in subwork for x in ['DE', 'DEU', 'DAS', 'DTU']]):
-                jobs = nf_make_summary(summary_tools_set, summary_tools_dict, config, conditions, subdir, loglevel, combinations=combinations)
+            if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
+                # SUMMARY RUN
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                jobs = nf_make_summary(config, subdir, loglevel, combinations=combinations)  # Not implemented yet
                 jobstorun = list()
 
                 for job in jobs:
-                    smko, confo = job
-                    jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'pre_'+subwork, toolbin, 'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c='--CONDITION '+str.join(os.sep, condition)))
+                    nfo, confo, tp = job
+                    params = nf_fetch_params(confo)
+
+                    jobstorun.append('nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j}'.format(t=threads, s=nfo, d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=tp ))
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -467,6 +469,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, clean=None, opt
                             log.info(logid+'RUNNING '+str(job))
                             jid = runjob(job)
                             log.debug(logid+'JOB CODE '+str(jid))
+
 
         else:
             log.warning(logid+'No postprocessing steps defined! Nothing to do!')
@@ -566,7 +569,7 @@ if __name__ == '__main__':
         else:
             nf_min_version = "20.10.0.5430"
             if nf_check_version(nf_min_version):
-                run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton , knownargs.loglevel, knownargs.clean, optionalargs[0])
+                run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton , knownargs.loglevel, knownargs.save, knownargs.clean, optionalargs[0])
             else:
                 log.error(logid+'Minimal version of nextflow required is '+str(nf_min_version)+'! Please install or use envs/nextsnakes.yaml to create conda environment accordingly')
     except Exception:
