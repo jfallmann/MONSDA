@@ -1,8 +1,3 @@
-#moutdir = 'QC/MultiQC/'
-
-#wildcard_constraints:
-#    moutdir = moutdir
-
 if rundedup:
     if paired == 'paired':
         rule multiqc:

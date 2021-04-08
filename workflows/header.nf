@@ -19,8 +19,8 @@ RUNDEDUP = params.RUNDEDUP
 STRANDED = params.STRANDED
 IP = params.IP
 CONDITION = params.CONDITION
-SCONDITION = params.SCONDITION
-SETS = params.SETS
+COMBO = params.COMBO
+SCOMBO = params.SCOMBO
 
 ANNO = params.ANNOTATION
 SAMPLES = params.SAMPLES.split(',')

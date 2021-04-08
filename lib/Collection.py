@@ -70,7 +70,6 @@ import json
 import numpy as np
 import heapq
 import itertools
-from itertools import combinations
 from operator import itemgetter
 from natsort import natsorted
 import traceback as tb
@@ -508,7 +507,7 @@ def create_subworkflow(config, subwork, conditions, stage='', combination=None):
     return toollist, configs
 
 @check_run
-def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', subname=None):
+def make_pre(subwork, config, samples, conditions, subdir, loglevel, state='', subname=None, combinations=None):
     logid = scriptname+'.Collection_make_pre: '
     log.debug(logid+'WORK: '+str(subwork))
 
@@ -517,119 +516,159 @@ def make_pre(subwork, config, samples, condition, subdir, loglevel, state='', su
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
-    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-    if listoftools is None:
-        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-        return None
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            worklist = combname[condition]['works']
+            envlist  = combname[condition]['envs']
+            subconf = NestedDefaultDict()
+            add = list()
 
-    for i in range(0, len(listoftools)):
-        toolenv, toolbin = map(str, listoftools[i])
-        subconf = NestedDefaultDict()
-        sconf = listofconfigs[0]
-        sconf[subwork+'ENV'] = toolenv
-        sconf[subwork+'BIN'] = toolbin
-        subconf.update(sconf)
-        subname = toolenv+'.smk'
-        log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    add.append(line)
 
-        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
-        with open(smkf,'r') as smk:
-            for line in smk.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+            for i in range(len(worklist)):
+                log.debug(logid+' SUBLISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
+                works = worklist[i].split('-')
+                envs = envlist[i].split('-')
+                subjobs = list()
 
-        if subwork == 'QC':
-            subname = toolenv+'_raw.smk'
+                # Add variable for combination string
+                subjobs.append('\ncombo = \''+str(envlist[i])+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+                subjobs.append('\n\n')
 
-        # Add rulethemall based on chosen workflows
-        subjobs.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, subname.replace('.smk', ''))))        # RuleThemAll for snakemake depending on chosen workflows
+                # Add rulethemall based on chosen workflows
+                subjobs.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, envlist[i])))
 
-        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
-        with open(smkf, 'r') as smk:
-            for line in smk.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+                for j in range(len(works)):
+                    listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
 
-        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
-        with open(smkf, 'r') as smk:
-            for line in smk.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(works[j]))
+                        return None
 
-        smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
+                    sconf = listofconfigs[0]
+                    for a in range(0, len(listoftools)):
+                        toolenv, toolbin = map(str, listoftools[a])
+                        if toolenv != envs[j] or toolbin is None:
+                            continue
+                        sconf[works[j]+'ENV'] = toolenv
+                        sconf[works[j]+'BIN'] = toolbin
+                        subconf.update(sconf)
+                        subname = toolenv+'.smk'
 
-        if os.path.exists(smko):
-            os.rename(smko, smko+'.bak')
-        with open(smko, 'a') as smkout:
-            smkout.write(''.join(subjobs))
-            smkout.write('\n\n')
+                        if works[j] == 'QC':
+                            subname = toolenv+'_raw.smk'
 
-        confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
-        if os.path.exists(confo):
-            os.rename(confo, confo+'.bak')
-        with open(confo, 'a') as confout:
-            json.dump(subconf, confout)
+                        smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                        with open(smkf, 'r') as smk:
+                            for line in smk.readlines():
+                                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
 
-        jobs.append([smko, confo])
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+                with open(smkf, 'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-    log.debug(logid+'JOBS: '+str(jobs))
-    return jobs
+                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+works[j], toolenv, 'subsnake.smk'])))
+                if os.path.exists(smko):
+                    os.rename(smko, smko+'.bak')
+                with open(smko, 'w') as smkout:
+                    smkout.write(''.join(add))
+                    smkout.write(''.join(subjobs))
 
-@check_run
-def get_combo(wfs, config, conditions):
-    logid=scriptname+'.Collection_get_combo: '
-    log.debug(logid+str(wfs)+str(conditions))
-    combos = NestedDefaultDict()
+                confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo, confo+'.bak')
+                with open(confo, 'a') as confout:
+                    json.dump(subconf, confout)
 
-    if wfs is None or len(wfs) < 1:
-        return None
+                jobs.append([smko, confo])
 
-    for condition in conditions:
-        ret = list()
-        for subwork in wfs:
+    else:
+        for condition in conditions:
+            subjobs = list()
+            add = list()
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    add.append(line)
+                add.append('\n\n')
+
+            # Add variable for combination string
+            add.append('combo="'+os.sep+'"\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+            add.append('\n\n')
+
             listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
             if listoftools is None:
                 log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
                 return None
 
-            tools = list()
-            for k, v in [toolenvs for toolenvs in listoftools]:
-                tools.append({subwork:k})
-                log.debug(logid+'Preparing '+str(subwork)+' for condition '+str(condition)+' with Tool: '+str(tools))
-            ret.append(tools)
+            sconf = listofconfigs[0]
+            for i in range(0, len(listoftools)):
+                toolenv, toolbin = map(str, listoftools[i])
+                if toolenv is None or toolbin is None:
+                    continue
+                subconf = NestedDefaultDict()
+                sconf[subwork+'ENV'] = toolenv
+                sconf[subwork+'BIN'] = toolbin
+                subconf.update(sconf)
+                subname = toolenv+'.smk'
 
-        combos[condition] = itertools.product(*ret)
+                if subwork == 'QC':
+                    subname = toolenv+'_raw.smk'
 
-    #no debug log here or iterator will be consumed
-    return combos
+                # Add rulethemall based on chosen workflows
+                add.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, subname.replace('.smk', ''))))        # RuleThemAll for snakemake depending on chosen workflows
 
-@check_run
-def get_combo_name(combinations):
-    logid=scriptname+'.Collection_get_combo_name: '
-    combname = NestedDefaultDict()
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                with open(smkf, 'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-    for condition in combinations:
-        combname[condition]['envs'] = list()
-        combname[condition]['works'] = list()
-        combos = combinations[condition]
-        for combi in combos:
-            envs = list()
-            works = list()
-            for step in combi:
-                for work, env in step.items():
-                    envs.append(env)
-                    works.append(work)
-            combname[condition]['envs'].append(str.join('-', envs))
-            combname[condition]['works'].append(str.join('-', works))
+                smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.smk'))
+                with open(smkf, 'r') as smk:
+                    for line in smk.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-    log.debug(logid+'ComboName: '+str(combname))
-    return combname
+                smko = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subsnake.smk'])))
+
+                if os.path.exists(smko):
+                    os.rename(smko, smko+'.bak')
+                with open(smko, 'a') as smkout:
+                    smkout.write(str.join('', add))
+                    smkout.write(''.join(subjobs))
+
+                confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo, confo+'.bak')
+                with open(confo, 'a') as confout:
+                    json.dump(subconf, confout)
+
+                jobs.append([smko, confo])
+
+    log.debug(logid+'JOBS: '+str(jobs))
+    return jobs
+
 
 @check_run
 def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subname=None, combinations=None):
@@ -646,7 +685,6 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
         for condition in combname:
             worklist = combname[condition]['works']
             envlist  = combname[condition]['envs']
-            log.debug(logid+'LISTS: '+str(condition)+'\t'+str(worklist)+'\t'+str(envlist))
             subconf = NestedDefaultDict()
             add = list()
 
@@ -662,11 +700,13 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                 works = worklist[i].split('-')
                 envs = envlist[i].split('-')
                 subjobs = list()
+
                 # Add variable for combination string
                 subjobs.append('\ncombo = \''+str(envlist[i])+'\'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
                 subjobs.append('\n\n')
+
                 # Add rulethemall based on chosen workflows
-                subjobs.append(''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i])))        # RuleThemAll for snakemake depending on chosen workflows
+                subjobs.append(''.join(rulethemall(subworkflows, config, loglevel, condapath, logfix, envlist[i])))
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
@@ -748,23 +788,38 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
 
     else:
         for condition in conditions:
+            subjobs = list()
+            add = list()
+
+            smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'header.smk'))
+            with open(smkf,'r') as smk:
+                for line in smk.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    add.append(line)
+                add.append('\n\n')
+
+            # Add variable for combination string
+            add.append('wildcard_constraints:\n\tcombo = combo,\n \trawfile = \'|\'.join(list(SAMPLES)),\n\tfile = \'|\'.join(list(samplecond(SAMPLES, config))),\n\tread = "R1|R2"\n')
+            add.append('\n\n')
+
             for subwork in subworkflows:
                 log.debug(logid+'PREPARING '+str(subwork)+' '+str(condition))
                 listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
                 if listoftools is None:
                     log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
                     return None
+
                 sconf = listofconfigs[0]
                 for i in range(0, len(listoftools)):
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
                         continue
+                    subconf = NestedDefaultDict()
                     sconf[subwork+'ENV'] = toolenv
                     sconf[subwork+'BIN'] = toolbin
                     subconf.update(sconf)
                     subname = toolenv+'.smk'
-
-                    add = ''.join(rulethemall(subworkflows))        # RuleThemAll for snakemake depending on chosen workflows
 
                     if subwork == 'QC' and 'TRIMMING' in subworkflows and not 'MAPPING' in subworkflows:
                         if 'DEDUP' in subworkflows:
@@ -782,6 +837,9 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                     if subwork == 'DEDUP' and toolenv == 'picard':
                             subname = toolenv+'_dedup.smk'
 
+                    # Add rulethemall based on chosen workflows
+                    add.append(''.join(rulethemall(subwork, config, loglevel, condapath, logfix, subname.replace('.smk', ''))))
+
                     smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
                     with open(smkf,'r') as smk:
                         for line in smk.readlines():
@@ -789,7 +847,7 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
                             subjobs.append(line)
                         subjobs.append('\n\n')
 
-            if 'MAPPING' in works:
+            if 'MAPPING' in subworkflows:
                 smkf = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'mapping.smk'))
                 with open(smkf,'r') as smk:
                     for line in smk.readlines():
@@ -816,10 +874,10 @@ def make_sub(subworkflows, config, samples, conditions, subdir, loglevel, subnam
             if os.path.exists(smko):
                 os.rename(smko, smko+'.bak')
             with open(smko, 'a') as smkout:
-                smkout.write(add)
+                smkout.write(str.join('', add))
                 smkout.write(str.join('', subjobs))
 
-            confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), 'subconfig.json'])))
+            confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'subconfig.json'])))
             if os.path.exists(confo):
                 os.rename(confo, confo+'.bak')
             with open(confo, 'a') as confout:
@@ -1172,7 +1230,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=''):
 
     allmap = 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))' if not 'DEDUP' in subworkflows else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
     allqc  = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allrawqc  = 'rule themall:\n\tinput:\texpand("QC/Multi{combo}{condition}/multiqc_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
     alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_trimmed_raw_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
     alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
     alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_dedup_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
@@ -1232,6 +1290,7 @@ def tool_params(sample, runstate, config, subconf, tool = None):
     mp = subDict(config[subconf], x)[tool] if tool else subDict(config[subconf], x)
     log.debug(logid+'DONE: '+str(mp))
     return mp
+
 
 @check_run
 def setting_per_sample(sample, runstate, config, setting, subconf = None):
@@ -1733,6 +1792,57 @@ def comparable_as_string3(config, subwork):
         return compstr
 
 
+@check_run
+def get_combo(wfs, config, conditions):
+    logid=scriptname+'.Collection_get_combo: '
+    log.debug(logid+str(wfs)+str(conditions))
+    combos = NestedDefaultDict()
+
+    if wfs is None or len(wfs) < 1:
+        return None
+
+    for condition in conditions:
+        ret = list()
+        for subwork in wfs:
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            if listoftools is None:
+                log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                return None
+
+            tools = list()
+            for k, v in [toolenvs for toolenvs in listoftools]:
+                tools.append({subwork:k})
+                log.debug(logid+'Preparing '+str(subwork)+' for condition '+str(condition)+' with Tool: '+str(tools))
+            ret.append(tools)
+
+        combos[condition] = itertools.product(*ret)
+
+    #no debug log here or iterator will be consumed
+    return combos
+
+@check_run
+def get_combo_name(combinations):
+    logid=scriptname+'.Collection_get_combo_name: '
+    combname = NestedDefaultDict()
+
+    for condition in combinations:
+        combname[condition]['envs'] = list()
+        combname[condition]['works'] = list()
+        combos = itertools.combinations[condition]
+        for combi in combos:
+            envs = list()
+            works = list()
+            for step in combi:
+                for work, env in step.items():
+                    envs.append(env)
+                    works.append(work)
+            combname[condition]['envs'].append(str.join('-', envs))
+            combname[condition]['works'].append(str.join('-', works))
+
+    log.debug(logid+'ComboName: '+str(combname))
+    return combname
+
+
 ##############################
 ########Nextflow Subs########
 ##############################
@@ -1754,12 +1864,11 @@ def nf_check_version(v):
 
 
 @check_run
-def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
+def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.smk for nextflow workflows
     logid=scriptname+'.nf_fetch_params: '
 
     config = load_configfile(configfile)
     retconf = collections.defaultdict()
-
 
     BINS = config["BINS"]
     MAXTHREAD = int(config["MAXTHREADS"])
@@ -1773,7 +1882,6 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     SETS = os.sep.join(SETUP)
     SETTINGS = subDict(config['SETTINGS'], SETUP)
 
-
     # Parse SETTINGS
     SEQUENCING = SETTINGS.get('SEQUENCING')
     REFERENCE = SETTINGS.get('REFERENCE')
@@ -1781,6 +1889,7 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     INDEX = SETTINGS.get('INDEX')
     PREFIX = SETTINGS.get('PREFIX')
     ANNO = SETTINGS.get('ANNOTATION')
+    ANNOTATION = ANNO.get('GTF') if ANNO else ''
     IP = SETTINGS.get('IP')
 
     rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
@@ -1804,7 +1913,8 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
     retconf["SAMPLES"] = str.join(',', SAMPLES)
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
-    retconf["SETS"] = SETS
+    retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
+
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
 
     sample = SAMPLES[0]
@@ -1915,7 +2025,7 @@ def nf_fetch_params(configfile):  # replaces header.smk for nextflow workflows
         if CANNO:
             ANNOTATION = CANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format     will be used
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
 
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
@@ -2060,91 +2170,197 @@ def nf_get_processes(config):
 
 
 @check_run
-def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel):
+def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinations=None):
     logid = scriptname+'.Collection_nf_make_pre: '
     log.debug(logid+'PREPROCESSING: '+str(subwork))
 
-    subjobs = list()
     jobs = list()
+    subjobs = list()
     state = 'pre_'
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
-    listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-    if listoftools is None:
-        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-        return None
+    if combinations:
+        combname = get_combo_name(combinations)
+        for condition in combname:
+            worklist = combname[condition]['works']
+            envlist  = combname[condition]['envs']
+            subconf = NestedDefaultDict()
+            add = list()
 
-    for i in range(0, len(listoftools)):
-        toolenv, toolbin = map(str, listoftools[i])
-        flowlist = list()
-        subconf = NestedDefaultDict()
-        sconf = listofconfigs[0]
-        sconf[subwork+'ENV'] = toolenv
-        sconf[subwork+'BIN'] = toolbin
-        subconf.update(sconf)
-        subname = toolenv+'.nf'
-        log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
+            nfi = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+            with open(nfi,'r') as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
 
-        nfi = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
-        with open(nfi,'r') as nf:
-            for line in nf.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+            for i in range(len(worklist)):
+                log.debug(logid+' SUBLISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
+                works = worklist[i].split('-')
+                envs = envlist[i].split('-')
+                flowlist = list()
+                tp = list()
 
-        if subwork == 'QC':
-            subname = toolenv+'_raw.nf'
-            flowlist.append('QC_RAW')
+                # Add variable for combination string
+                subjobs.append('\ncombo = \''+str(envlist[i])+'\'\nrawfile = \'|\'.join(list(SAMPLES)),\nfile = \'|\'.join(list(samplecond(SAMPLES, config))),\nread = "R1|R2"\n')
+                subjobs.append('\n\n')
 
-        nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
-        with open(nfi, 'r') as nf:
-            for line in nf.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+                for j in range(len(works)):
+                    listoftools, listofconfigs = create_subworkflow(config, works[j], [condition])
 
-        if subwork == 'QC':
-            nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'multiqc.nf'))
-            for line in nf.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
-            flowlist.append('MULTIQC')
+                    if listoftools is None:
+                        log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(works[j]))
+                        return None
+
+                    sconf = listofconfigs[0]
+                    for a in range(0, len(listoftools)):
+                        toolenv, toolbin = map(str, listoftools[a])
+                        if toolenv != envs[j] or toolbin is None:
+                            continue
+                        sconf[works[j]+'ENV'] = toolenv
+                        sconf[works[j]+'BIN'] = toolbin
+                        subconf.update(sconf)
+
+                        subname = toolenv+'.nf'
+                        log.debug(logid+str(works[j])+': '+str([toolenv, subname, condition, subconf]))
+
+                        if works[j] == 'QC':
+                            subname = toolenv+'_raw.nf'
+                            flowlist.append('QC_RAW')
+
+                        nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+                        with open(nfi, 'r') as nf:
+                            for line in nf.readlines():
+                                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
+
+                        if works[j] == 'QC':
+                            nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'multiqc.nf'))
+                            with open(nfi, 'r') as nf:
+                                for line in nf.readlines():
+                                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                    line = re.sub(condapath, 'conda:  "../', line)
+                                    subjobs.append(line)
+                                subjobs.append('\n\n')
+                            flowlist.append('MULTIQC')
 
 
-        # workflow merger
-        subjobs.append('\n\n'+'workflow {\n    main:\n')
-        for w in ['RAW', 'QC_RAW']:
-            if w in flowlist:
-                subjobs.append('\n    '+w+'()')
-            subjobs.append('\n}')
+                        # workflow merger
+                        subjobs.append('\n\n'+'workflow {\n    main:\n')
+                        for w in ['SRA', 'QC_RAW']:
+                            if w in flowlist:
+                                subjobs.append('\n    '+w+'()')
+                        subjobs.append('\n}\n')
 
-        nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.nf'))
-        with open(nfi, 'r') as nf:
-            for line in nf.readlines():
-                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                line = re.sub(condapath, 'conda:  "../', line)
-                subjobs.append(line)
-            subjobs.append('\n\n')
+                        nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.nf'))
+                        with open(nfi, 'r') as nf:
+                            for line in nf.readlines():
+                                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                                line = re.sub(condapath, 'conda:  "../', line)
+                                subjobs.append(line)
+                            subjobs.append('\n\n')
 
-        nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
-        if os.path.exists(nfo):
-            os.rename(nfo, nfo+'.bak')
-        with open(nfo, 'a') as nfout:
-            nfout.write(''.join(subjobs))
-            nfout.write('\n\n')
+                        nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+works[j], toolenv, 'subflow.nf'])))
+                        if os.path.exists(nfo):
+                            os.rename(nfo, nfo+'.bak')
+                        with open(nfo, 'a') as nfout:
+                            nfout.write(''.join(subjobs))
+                            nfout.write('\n\n')
 
-        confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
-        if os.path.exists(confo):
-            os.rename(confo, confo+'.bak')
-        with open(confo, 'a') as confout:
-            json.dump(subconf, confout)
+                        confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+works[j], toolenv, 'subconfig.json'])))
+                        if os.path.exists(confo):
+                            os.rename(confo, confo+'.bak')
+                        with open(confo, 'a') as confout:
+                            json.dump(subconf, confout)
 
-        jobs.append([nfo, confo])
+                        tp = nf_tool_params(SAMPLES[0], None, subconf, works[j], toolenv, toolbin, None, condition)
+
+                        jobs.append([nfo, confo, tp])
+
+    else:
+
+        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+        if listoftools is None:
+            log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+            return None
+
+        for i in range(0, len(listoftools)):
+            toolenv, toolbin = map(str, listoftools[i])
+            flowlist = list()
+            tp = list()
+            subconf = NestedDefaultDict()
+            sconf = listofconfigs[0]
+            sconf[subwork+'ENV'] = toolenv
+            sconf[subwork+'BIN'] = toolbin
+            subconf.update(sconf)
+            subname = toolenv+'.nf'
+            log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
+
+            nfi = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+            with open(nfi,'r') as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            if subwork == 'QC':
+                subname = toolenv+'_raw.nf'
+                flowlist.append('QC_RAW')
+
+            nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', subname))
+            with open(nfi, 'r') as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            if subwork == 'QC':
+                nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'multiqc.nf'))
+                with open(nfi, 'r') as nf:
+                    for line in nf.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
+                flowlist.append('MULTIQC')
+
+
+            # workflow merger
+            subjobs.append('\n\n'+'workflow {\n    main:\n')
+            for w in ['RAW', 'QC_RAW']:
+                if w in flowlist:
+                    subjobs.append('\n    '+w+'()')
+            subjobs.append('\n}\n')
+
+            nfi = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'footer.nf'))
+            with open(nfi, 'r') as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                    line = re.sub(condapath, 'conda:  "../', line)
+                    subjobs.append(line)
+                subjobs.append('\n\n')
+
+            nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
+            if os.path.exists(nfo):
+                os.rename(nfo, nfo+'.bak')
+            with open(nfo, 'a') as nfout:
+                nfout.write(''.join(subjobs))
+                nfout.write('\n\n')
+
+            confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+            if os.path.exists(confo):
+                os.rename(confo, confo+'.bak')
+            with open(confo, 'a') as confout:
+                json.dump(subconf, confout)
+
+            tp = nf_tool_params(SAMPLES[0], None, subconf, subwork, toolenv, toolbin, None, condition)
+            jobs.append([nfo, confo, tp])
 
     return jobs
 
@@ -2156,6 +2372,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
     log.info(logid+'STARTING PROCESSING FOR '+str(conditions))
 
     jobs = list()
+    subjobs = list()
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
@@ -2181,7 +2398,6 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                 log.debug(logid+' SUBLISTS: '+str(worklist[i])+'\t'+str(envlist[i]))
                 works = worklist[i].split('-')
                 envs = envlist[i].split('-')
-                subjobs = list()
                 flowlist = list()
                 tp = list()
 
@@ -2485,7 +2701,7 @@ def nf_make_post(postworkflow, config, samples, conditions, subdir, loglevel, su
                     for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:
                         if w in flowlist:
                             smkout.write('\n    '.w)
-                        smkout.write('\n}')
+                    smkout.write('\n}\n')
 
                 smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
@@ -2499,7 +2715,7 @@ def nf_make_post(postworkflow, config, samples, conditions, subdir, loglevel, su
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
+                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json'])), condition, combination))
                 toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, condition)
 
                 jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), subwork, toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition))
@@ -2569,7 +2785,7 @@ def nf_make_post(postworkflow, config, samples, conditions, subdir, loglevel, su
                 with open(confo, 'a') as confout:
                     json.dump(subconf, confout)
 
-                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))))
+                params = nf_fetch_params(os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subconfig.json']))), condition, combination)
                 toolparams = nf_tool_params(subsamples[0], None, subconf, subwork, condition)
 
                 jobtorun = 'nextflow -log /dev/stderr run {s} -w {d} {rest} {p} {j} {c}'.format(t=threads, s=os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), subwork, toolbin,'subflow.nf']))), d=workdir, rest=' '.join(argslist), p=' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items()), j=toolparams, c = '--CONDITION '+str.join(os.sep, condition))
