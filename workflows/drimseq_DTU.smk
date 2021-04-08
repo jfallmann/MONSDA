@@ -42,7 +42,7 @@ if paired == 'paired':
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz",
                 r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz",
                 index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
-        output: ctsdir = directory("COUNTS/{combo}/Salmon/{file}")
+        output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
@@ -55,7 +55,7 @@ else:
     rule mapping:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz",
                 index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
-        output: ctsdir = directory("COUNTS/{combo}/Salmon/{file}")
+        output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
         conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
