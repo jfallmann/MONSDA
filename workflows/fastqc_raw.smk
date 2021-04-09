@@ -13,7 +13,7 @@ if paired == 'paired':
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo)
-        output: html = report("QC/Multi{combo}{condition}/multiqc_raw_report.html", category="QC"),
+        output: html = report("QC/Multi{combo}{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi{combo}{condition}/tmp"),
                 lst = "QC/Multi{combo}{condition}/qclist_raw.txt"
         log:    "LOGS{combo}{condition}_multiqc_raw.log"
@@ -33,7 +33,7 @@ else:
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo)
-        output: html = report("QC/Multi{combo}{condition}/multiqc_raw_report.html", category="QC"),
+        output: html = report("QC/Multi{combo}{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi{combo}{condition}/tmp"),
                 lst = "QC/Multi{combo}{condition}/qclist_raw.txt"
         log:    "LOGS{combo}{condition}_multiqc_raw.log"

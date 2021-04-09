@@ -34,7 +34,7 @@ if paired == 'paired':
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
                 expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo)
-        output: html = report("QC/Multi/{combo}/{condition}/multiqc_trimmed_raw_report.html", category="QC"),
+        output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                 lst = "QC/Multi/{combo}/{condition}/qclist_trimmed_raw.txt"
         log:    "LOGS/{combo}/{condition}_multiqc_trimmed_raw.log"
@@ -64,7 +64,7 @@ else:
     rule multiqc:
         input: expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
                expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo)
-        output: html = report("QC/Multi/{combo}/{condition}/multiqc_trimmed_raw_report.html", category="QC"),
+        output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                 lst = "QC/Multi/{combo}/{condition}/qclist_trimmed_raw.txt"
         log:    "LOGS/{combo}/{condition}_multiqc_trimmed_raw.log"
