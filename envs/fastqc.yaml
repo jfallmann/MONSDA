@@ -1,8 +1,8 @@
 name: qc
 channels:
-  - conda-forge
-  - bioconda
-  - defaults
+- bioconda
+- conda-forge
 dependencies:
-  - fastqc=0.11.8
-  - multiqc=1.8
+- python>=3.8.1,<3.9
+- multiqc=1.10.1
+- fastqc=0.11.9
