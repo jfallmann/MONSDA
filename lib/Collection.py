@@ -1864,7 +1864,7 @@ def nf_check_version(v):
 
 
 @check_run
-def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.smk for nextflow workflows
+def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.smk for nextflow workflows
     logid=scriptname+'.nf_fetch_params: '
 
     config = load_configfile(configfile)
@@ -1887,6 +1887,8 @@ def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.
     REFERENCE = SETTINGS.get('REFERENCE')
     REFDIR = str(os.path.dirname(REFERENCE))
     INDEX = SETTINGS.get('INDEX')
+    INDEX2 = SETTINGS.get('INDEX')
+    UIDX = SETTINGS.get('UIDX')
     PREFIX = SETTINGS.get('PREFIX')
     ANNO = SETTINGS.get('ANNOTATION')
     ANNOTATION = ANNO.get('GTF') if ANNO else ''
@@ -1914,6 +1916,9 @@ def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
+
+    retconf["COMBO"] = combi[0] if combi else ''
+    retconf['SCOMBO'] = combi[1] if combi else ''
 
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
 
@@ -1959,10 +1964,6 @@ def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.
         else:
             INDEX2 = None
 
-        retconf["INDEX"] = INDEX
-        retconf["INDEX2"] = INDEX2
-        retconf["UIDX"] = UIDX
-        retconf["PREFIX"] = PREFIX
 
     # Peak Calling Variables
     if 'PEAKS' in config:
@@ -2027,10 +2028,15 @@ def nf_fetch_params(configfile, condition=None, combo=None):  # replaces header.
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
 
+
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
     retconf["ANNOTATION"] = ANNOTATION
     retconf["IP"] = IP
+    retconf["INDEX"] = INDEX
+    retconf["INDEX2"] = INDEX2 if INDEX2 else ''
+    retconf["UIDX"] = UIDX
+    retconf["PREFIX"] = PREFIX
 
     return retconf
 
@@ -2278,6 +2284,9 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinati
                             json.dump(subconf, confout)
 
                         tp = nf_tool_params(SAMPLES[0], None, subconf, works[j], toolenv, toolbin, None, condition)
+
+                        combi = list(str(envlist[i]), '')
+                        para = nf_fetch_params(subconf, condition, combi)
 
                         jobs.append([nfo, confo, tp])
 

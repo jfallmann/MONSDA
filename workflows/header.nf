@@ -10,7 +10,9 @@ nextflow.preview.dsl=2
 //Params from CL
 REFERENCE = "${workflow.workDir}/../"+params.REFERENCE
 REFDIR = "${workflow.workDir}/../"+params.REFDIR
+UIDX = params.UIDX
 INDEX = params.INDEX
+INDEX2 = params.INDEX2
 PREFIX = params.PREFIX
 BINS = "${workflow.workDir}/../"+params.BINS
 THREADS = params.MAXTHREAD
