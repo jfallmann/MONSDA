@@ -25,11 +25,11 @@ This workflow collection makes heavy use of ``conda`` and especially
 the [bioconda](https://bioconda.github.io) channel.
 
 To create a working environment for this repository please install the
-``nextsnakes.yaml`` environment as found in the ``envs`` directory
+``NextSnakes.yaml`` environment as found in the ``envs`` directory
 like so:
 
 ``
-conda env create -n nextsnakes -f envs/nextsnakes.yaml
+conda env create -n NextSnakes -f envs/NextSnakes.yaml
 ``
 
 The ``envs`` directory holds all the environments needed to run the pipelines in the ``workflows`` directory,

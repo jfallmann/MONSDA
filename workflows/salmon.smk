@@ -8,7 +8,7 @@ rule salmon_index:
     output: idx = INDEX,
             uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0].items()),
@@ -24,7 +24,7 @@ if paired == 'paired':
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
                 ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
@@ -39,7 +39,7 @@ else:
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
                 ctsdir = report("COUNTS/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
                 mapp=COUNTBIN,

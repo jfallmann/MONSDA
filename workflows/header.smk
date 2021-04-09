@@ -12,7 +12,7 @@ from collections import defaultdict
 from itertools import combinations
 import re
 
-cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
+cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
@@ -24,14 +24,14 @@ loglevel="INFO"
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    if any(x in scriptname for x in ['RunSnakemake','Configurator']):
+    if any(x in scriptname for x in ['NextSnakes','Configurator']):
         log = logging.getLogger(scriptname)
     else:
         log = logging.getLogger('snakemake')
         for handler in log.handlers[:]:
             handler.close()
             log.removeHandler(handler)
-    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
+    handler = logging.FileHandler('LOGS/NextSnakes.log', mode='a')
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     handler = logging.StreamHandler()
@@ -41,7 +41,7 @@ try:
     log.setLevel(lvl)
 
 except Exception as err:
-    log = setup_logger(name='RunSnakemake.header', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
+    log = setup_logger(name='NextSnakes.header', log_file='LOGS/NextSnakes.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
     #log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=loglevel)
 
     exc_type, exc_value, exc_tb = sys.exc_info()

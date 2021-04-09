@@ -18,7 +18,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(expand("{refd}/INDICES/{mape}", refd=REFDIR, mape=COUNTENV))
     log:    expand("LOGS/{sets}/salmon.idx.log", sets=SETS)
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][0].items()),
@@ -31,7 +31,7 @@ if paired == 'paired':
                 index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
         output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
@@ -44,7 +44,7 @@ else:
                 index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
         output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
@@ -55,7 +55,7 @@ rule create_annotation_table:
     input:  dir  = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config)),
     output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
     log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: 1
     params: dereps = lambda wildcards, input: get_reps(input.dir, config,'DTU'),
             bins = BINS
@@ -66,7 +66,7 @@ rule run_DTU:
     output: session = expand(rules.themall.input.session, combo=combo, scombo=scombo),
             res = rules.themall.input.res
     log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
-    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
@@ -83,7 +83,7 @@ rule run_DTU:
 #             sig_d = rules.themall.input.sig_d,
 #             sig_u = rules.themall.input.sig_u
 #     log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
-#     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+#     conda:  "NextSnakes/envs/"+DTUENV+".yaml"
 #     threads: 1
 #     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
 #             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
@@ -96,7 +96,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DTU/{combo}create_summary_snippet.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2> {log}"

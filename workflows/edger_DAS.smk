@@ -23,7 +23,7 @@ rule featurecount_unique:
     output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -37,7 +37,7 @@ rule prepare_count_table:
     output:  tbl  = "DAS/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
-    conda:   "nextsnakes/envs/"+DASENV+".yaml"
+    conda:   "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
              bins = BINS
@@ -55,7 +55,7 @@ rule run_edger:
             resS    = rules.themall.input.resS,
             resE    = rules.themall.input.resE
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison = compstr, scombo=scombo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             outdir = 'DAS/'+combo,
@@ -70,7 +70,7 @@ rule filter_significant_edger:
             sig_d= rules.themall.input.sig_d,
             sig_u= rules.themall.input.sig_u,
     log:    "LOGS/DAS/filter_edgerDAS.log"
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -89,7 +89,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_u,
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2> {log}"

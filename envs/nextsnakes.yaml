@@ -1,4 +1,4 @@
-name: nextsnakes
+name: NextSnakes
 channels:
 - conda-forge
 - bioconda

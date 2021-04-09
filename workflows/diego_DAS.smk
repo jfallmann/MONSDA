@@ -17,7 +17,7 @@ rule featurecount_unique:
     output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_diego_unique.log"
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -31,7 +31,7 @@ rule create_samplemaps:
     output: smap = "DAS/{combo}/Tables/samplemap.txt",
             cmap = "DAS/{combo}/Tables/groupings.txt"
     log:    "LOGS/DAS/{combo}/create_samplemaps.log"
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config,'DAS'),
             clist = lambda wildcards, input: get_diego_groups(input.cnd, config,'DAS'),
@@ -44,7 +44,7 @@ rule prepare_junction_usage_matrix:
     output: tbl = "DAS/{combo}/Tables/{scombo}_junction_table_dexdas.txt.gz",
             anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:    "LOGS/DAS/{combo}/prepare_{scombo}_junction_usage_matrix.log"
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.cnd, config,'DAS'),
@@ -54,7 +54,7 @@ rule create_contrast_files:
     input:  anno = expand(rules.prepare_junction_usage_matrix.output.anno, combo=combo, scombo=scombo)
     output: contrast = expand("DAS/{combo}/Tables/{scombo}_{comparison}_contrast.txt", combo=combo, scombo=scombo, comparison=compstr)
     log:    expand("LOGS/DAS/{combo}/create_contrast_files.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: bins = BINS,
             compare=comparison,
@@ -68,7 +68,7 @@ rule run_diego:
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             dpara = lambda x: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None , config, "DAS", DASENV.split('_')[0])['OPTIONS'][1].items()),
@@ -80,7 +80,7 @@ rule filter_significant:
     input:  csv = rules.run_diego.output.csv
     output: sig = rules.themall.input.sig
     log:    "LOGS/DAS/filter_diegoDAS.log"
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -91,7 +91,7 @@ rule convertPDF:
     input: rules.run_diego.output.dendrogram
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.png", combo=combo, scombo=scombo, comparison=compstr)
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/convertPDF.log", combo=combo, comparison=compstr, scombo=scombo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     shell: "for pdfile in {input} ; do convert -verbose -density 500 -resize '800' $pdfile ${{pdfile%pdf}}png; done"
 
@@ -103,7 +103,7 @@ rule create_summary_snippet:
             #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2> {log}"

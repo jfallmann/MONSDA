@@ -93,7 +93,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:
+            if '--profile' in optionalargs and 'NextSnakes/slurm' in optionalargs:
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
@@ -101,7 +101,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
 
         if unlock:
             log.info(logid+'Unlocking directory')
-            snk = os.path.abspath(os.path.join('nextsnakes', 'workflows', 'unlock.smk'))
+            snk = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'unlock.smk'))
             jobtorun = f'snakemake --unlock -j {threads} -s {snk} --configfile {configfile}'
 
             log.info(logid+'UNLOCKING '+str(jobtorun))
@@ -298,7 +298,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
+            if '--profile' in optionalargs and 'NextSnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
@@ -344,8 +344,8 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
 
                     jobstorun = list()
                     for job in jobs:
-                        nfo, confo, tp = job
-                        params = nf_fetch_params(confo, condition)
+                        nfo, confo, tp, params = job
+                        #params = nf_fetch_params(confo, condition)
                         pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                         rest = ' '.join(argslist)
 
@@ -382,8 +382,8 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
 
                     jobstorun = list()
                     for job in jobs:
-                        nfo, confo, tp = job
-                        params = nf_fetch_params(confo, condition)
+                        nfo, confo, tp, params = job
+                        #params = nf_fetch_params(confo, condition)
                         pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                         rest = ' '.join(argslist)
 
@@ -409,8 +409,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
 
             jobstorun = list()
             for job in jobs:
-                nfo, confo, tp = job
-                params = nf_fetch_params(confo, condition)
+                nfo, confo, tp, params = job
                 pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                 rest = ' '.join(argslist)
 
@@ -514,7 +513,7 @@ def runjob(jobtorun):
                         log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
                     else:
                         log.error(logid+'STOPPING: '+str(output))
-                    log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
+                    log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
@@ -522,7 +521,7 @@ def runjob(jobtorun):
             if outerr and outerr != '':
                 if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and not 'Workflow finished' in output and any(x in outerr for x in ['ERROR', 'Error', 'error', 'Exception']):
                     log.error(logid+'STOPPING: '+str(outerr))
-                    log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
+                    log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
@@ -542,7 +541,7 @@ def runjob(jobtorun):
             outerr = str.join('', outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
                 log.error(logid+'ERROR: '+outerr+output)
-                log.info('PLEASE CHECK LOG AT LOGS/RunSnakemake.log')
+                log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
@@ -585,7 +584,7 @@ if __name__ == '__main__':
             if nf_check_version(nf_min_version):
                 run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton , knownargs.loglevel, knownargs.save, knownargs.clean, optionalargs[0])
             else:
-                log.error(logid+'Minimal version of nextflow required is '+str(nf_min_version)+'! Please install or use envs/nextsnakes.yaml to create conda environment accordingly')
+                log.error(logid+'Minimal version of nextflow required is '+str(nf_min_version)+'! Please install or use envs/NextSnakes.yaml to create conda environment accordingly')
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

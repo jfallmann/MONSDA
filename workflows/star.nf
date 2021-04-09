@@ -25,9 +25,9 @@ process collect_tomap{
 }
 
 process star_idx{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
@@ -65,9 +65,9 @@ process star_idx{
 }
 
 process star_mapping{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
@@ -113,7 +113,7 @@ workflow MAPPING{
             element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
         }
         T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
+        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{

@@ -9,7 +9,7 @@ if paired == 'paired':
     rule get_from_sra:
         output: fq = expand("FASTQ/{{rawfile}}_{read}.fastq.gz", read=['R1','R2'])
         log:    "LOGS/RAW/{rawfile}.log"
-        conda:  "nextsnakes/envs/"+RAWENV+".yaml"
+        conda:  "NextSnakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
         params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])
@@ -23,7 +23,7 @@ else:
     rule get_from_sra:
         output: fq = "FASTQ/{rawfile}.fastq.gz"
         log:    "LOGS/RAW/{rawfile}.log"
-        conda:  "nextsnakes/envs/"+RAWENV+".yaml"
+        conda:  "NextSnakes/envs/"+RAWENV+".yaml"
         threads: MAXTHREAD
         params: outdir = lambda w, output: expand("{cond}", cond=os.path.dirname(output.fq)),
                 ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])

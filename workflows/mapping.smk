@@ -4,7 +4,7 @@ rule sortsam:
             tmphead = temp("MAPPED/{combo}/{file}_mapped_header.gz"),
             tmpfile = temp("TMP/{combo}/{file}")
     log:    "LOGS/{combo}/{file}/sortsam.log"
-    conda: "nextsnakes/envs/samtools.yaml"
+    conda: "NextSnakes/envs/samtools.yaml"
     threads: MAXTHREAD
     priority: 100
     params: linkto = lambda wildcards, output: os.path.basename(output.sortedsam)
@@ -15,7 +15,7 @@ rule sam2bam:
     output: bam = report("MAPPED/{combo}/{file}_mapped_sorted.bam", category="2BAM"),
             bamindex = "MAPPED/{combo}/{file}_mapped_sorted.bam.bai"
     log:    "LOGS/{combo}/{file}/sam2bam.log"
-    conda: "nextsnakes/envs/samtools.yaml"
+    conda: "NextSnakes/envs/samtools.yaml"
     threads: MAXTHREAD
     params: bins = BINS
     shell: "zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}"
@@ -25,7 +25,7 @@ rule uniqsam:
             bam = rules.sam2bam.output
     output: uniqsam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
     log: "LOGS/{combo}/{file}/uniqsam.log"
-    conda: "nextsnakes/envs/base.yaml"
+    conda: "NextSnakes/envs/base.yaml"
     threads: MAXTHREAD
     params: bins=BINS
     shell:  "{params.bins}/Shells/UniqueSam_woPicard.sh {input.sortedsam} {output.uniqsam} {threads} 2> {log}"
@@ -36,7 +36,7 @@ rule sam2bamuniq:
     output:  uniqbam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", category="2BAM"),
              uniqbamindex = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
     log:     "LOGS/{combo}/{file}/sam2bamuniq.log"
-    conda:   "nextsnakes/envs/samtools.yaml"
+    conda:   "NextSnakes/envs/samtools.yaml"
     threads: MAXTHREAD
     priority: 50
     params: bins = BINS

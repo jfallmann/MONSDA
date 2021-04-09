@@ -1,6 +1,6 @@
 # snakes
 
-[![Documentation Status](https://readthedocs.org/projects/nextsnakes/badge/?version=latest)](https://nextsnakes.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/NextSnakes/badge/?version=latest)](https://NextSnakes.readthedocs.io/en/latest/?badge=latest)
 
 
 Welcome to NextSnakes, a modular assembler of snakemake and nexflow workflows
@@ -26,31 +26,31 @@ conda env create -n snakemake -f snakes/envs/snakemake.yaml
 
 The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically when needed.
 
-More information can be found in the official [documentation](https://nextsnakes.readthedocs.io/en/latest/?badge=latest)
+More information can be found in the official [documentation](https://NextSnakes.readthedocs.io/en/latest/?badge=latest)
 
 
 ## What is happening
 
-This repository hosts the executable ```RunSnakemake.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file.
-The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```RunSnakemake.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
+This repository hosts the executable ```NextSnakes.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file.
+The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```NextSnakes.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
 
 To successfully run an analysis pipeline, a few steps have to be followed:
   * Clone this repository to you working directory, or symlink it there. *DO NOT CHANGE THE NAME OF THE REPO!!!* This is needed for subworkflow generation.
   * Directory structure: The structure for the directories is dictated by the ICS (IdentifierConditionSetting relationship) in the config file
-  * Config file: This is the central part of the analysis. Depending on this file ```RunSnakemake.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
+  * Config file: This is the central part of the analysis. Depending on this file ```NextSnakes.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
 
 ## Run the pipeline
 Simply run
 
 ```
-python snakes/RunSnakemake.py
+python snakes/NextSnakes.py
 ```
 
 to see the help and available options that will be passed through to ```snakemake```.
 
 To start a simple run call
 ```
-python snakes/RunSnakemake.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json --directory ${PWD}
+python snakes/NextSnakes.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json --directory ${PWD}
 ```
 or add additional arguments for ```snakemake``` as you see fit.
 
@@ -60,7 +60,7 @@ or add additional arguments for ```snakemake``` as you see fit.
 
 You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that comes with this repository, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. To use the preconfigured example that comes with this repository simply adapt the call below to your needs.
 
-```python snakes/RunSnakemake.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile snakes/slurm --cluster-config snakes/cluster/config_slurm.yamlx```
+```python snakes/NextSnakes.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile snakes/slurm --cluster-config snakes/cluster/config_slurm.yamlx```
 
 Further adaptions like grouping of jobs and advanced configs for rule based performance increase will follow.
 

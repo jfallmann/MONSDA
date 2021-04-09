@@ -16,7 +16,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(expand("{refd}/INDICES/{mape}", refd=REFDIR, mape=COUNTENV))
     log:    expand("LOGS/{sets}/salmon.idx.log", sets=SETS)
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             # ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'DTU')['OPTIONS'][0].items()),
@@ -29,7 +29,7 @@ if paired == 'paired':
                 index = rules.salmon_index.output.idx
         output: ctsdir = directory("COUNTS/Salmon/{file}")
         log:    "LOGS/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
@@ -42,7 +42,7 @@ else:
                 index = rules.salmon_index.output.idx
         output: ctsdir = directory("COUNTS/Salmon/{file}")
         log:    "LOGS/{file}/salmonquant.log"
-        conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
@@ -53,7 +53,7 @@ rule create_annotation_table:
     input:   dir  = expand(rules.mapping.output.ctsdir, file=samplecond(SAMPLES, config)),
     output:  anno = expand("{outdir}/Tables/ANNOTATION.gz", outdir=outdir)
     log:     expand("LOGS/{outdir}/create_DTU_table.log", outdir=outdir)
-    conda:   "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:   "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.dir, config,'DTU'),
              bins = BINS
@@ -65,7 +65,7 @@ rule run_DTU:
     output: session = rules.themall.input.session,
             results = rules.themall.input.results
     log:    expand("LOGS/{outdir}run_DTU.log", outdir=outdir)
-    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,

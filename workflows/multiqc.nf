@@ -19,10 +19,10 @@ process collect_qc_raw{
     input:
     path results
     output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
     '''
 }
 
@@ -31,10 +31,10 @@ process collect_qc_trimmed{
     input:
     path results
     output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
     '''
 }
 
@@ -43,21 +43,21 @@ process collect_qc_map{
     input:
     path results
     output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
+    path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
     '''
 }
 
 process multiqc{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/Multi/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/Multi/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -70,7 +70,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s ${workflow.workDir}/../QC/FASTQC/${CONDITION}/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s !${workflow.workDir}/../QC/Multi/!${COMBO}!${CONDITION}/.
     """
 }
 

@@ -5,7 +5,7 @@ rule dedupbam:
     output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_dedup.bam", category="DEDUP"),
             td = temp(directory("TMP/UMIDD/{combo}/{file}"))
     log:    "LOGS/{combo}/{file}/dedupbam.log"
-    conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
+    conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
     threads: 1
     priority: 0               # This should be done after all mapping is done
     params: jpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
@@ -19,7 +19,7 @@ rule dedupuniqbam:
     output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP"),
             td = temp(directory("TMP/UMIDU/{combo}/{file}"))
     log:    "LOGS/{combo}/{file}/dedupuniqbam.log"
-    conda:  "nextsnakes/envs/"+DEDUPENV+".yaml"
+    conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
     threads: 1
     priority: 0               # This should be done after all mapping is done
     params: jpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),

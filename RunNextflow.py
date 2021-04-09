@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# RunNextflow.py ---
+# NextSnakes.py ---
 #
-# Filename: RunNextflow.py
+# Filename: NextSnakes.py
 # Description:
 # Author: Joerg Fallmann
 # Maintainer:
@@ -101,7 +101,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
             argslist.extend(optionalargs)
-            if '--profile' in optionalargs and 'nextsnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
+            if '--profile' in optionalargs and 'NextSnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
                 makeoutdir('LOGS/SLURM')
 
         threads = min(int(config['MAXTHREADS']), procs) if 'MAXTHREADS' in config else procs
@@ -185,7 +185,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                 subconf.update(listofconfigs[0])
                 subsamples = list(set(sampleslong(subconf)))
                 subname = toolenv+'.nf'
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
                 smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), subwork, toolbin,'subflow.nf'])))
                 if os.path.exists(smko):
                     os.rename(smko, smko+'.bak')
@@ -195,7 +195,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                             smkout.write(line)
                     smkout.write('\n\n')
 
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows', subname))
+                smkf = os.path.abspath(os.path.join('NextSnakes','workflows', subname))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
@@ -209,7 +209,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                             smkout.write('\n    '+w+'()')
                         smkout.write('\n}')
 
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
@@ -262,7 +262,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                         subname = toolenv+'.nf'
                         log.debug(logid+'PREPROCESS: '+str([toolenv, subname, condition, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'pre_'+subwork, toolbin,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko, smko+'.bak')
@@ -277,7 +277,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                             subname = toolenv+'_raw.nf'
                             flowlist.append('QC_RAW')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows', subname))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows', subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
@@ -285,7 +285,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                             smkout.write('\n\n')
 
                         if subwork == 'QC':
-                            smkf = os.path.abspath(os.path.join('nextsnakes','workflows','multiqc.nf'))
+                            smkf = os.path.abspath(os.path.join('NextSnakes','workflows','multiqc.nf'))
                             with open(smko, 'a') as smkout:
                                 with open(smkf,'r') as smk:
                                     smkout.write(smk.read())
@@ -301,7 +301,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                                     smkout.write('\n    '+w+'()')
                                 smkout.write('\n}')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -331,7 +331,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
         if subworkflows:
             log.info(logid+'STARTING PROCESSING')
             for condition in conditions:
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
                 smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition),'subflow.nf'])))
                 flowlist = list()
                 if os.path.exists(smko):
@@ -352,7 +352,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                 if 'MAPPING' in subworkflows and 'TRIMMING' not in subworkflows:
                     log.info(logid+'Simulating read trimming as trimming is not part of the workflow!')
                     makeoutdir('TRIMMED_FASTQ')
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows','simulatetrim.nf'))
+                    smkf = os.path.abspath(os.path.join('NextSnakes','workflows','simulatetrim.nf'))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
@@ -396,7 +396,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                     flowlist.append('MULTIQC')
 
                 for subname in subnames:
-                    smkf = os.path.abspath(os.path.join('nextsnakes','workflows', subname))
+                    smkf = os.path.abspath(os.path.join('NextSnakes','workflows', subname))
                     with open(smko, 'a') as smkout:
                         with open(smkf,'r') as smk:
                             #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
@@ -428,7 +428,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                                 smkout.write(' '*4+w+'(dummy)\n')
                     smkout.write('}\n\n')
 
-                smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
                 with open(smko, 'a') as smkout:
                     with open(smkf,'r') as smk:
                         smkout.write(smk.read())
@@ -479,7 +479,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                         subname = toolenv+'.nf'
                         subsamples = list(set(sampleslong(subconf)))
                         log.debug(logid+'POSTPROCESS: '+str([toolenv, subname, condition, subsamples, subconf]))
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), subwork, toolbin,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko, smko+'.bak')
@@ -490,7 +490,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                                     smkout.write(line)
                                 #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
                             smkout.write('\n\n')
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows', subname))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows', subname))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
@@ -505,7 +505,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                                     smkout.write('\n    '.w)
                                 smkout.write('\n}')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -559,7 +559,7 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                         subsamples = sampleslong(subconf)
                         log.debug(logid+'POSTPROCESS: '+str([toolenv, subname, subsamples, subconf]))
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','header.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
                         smko = os.path.abspath(os.path.join(subdir,'_'.join([subwork, toolenv,'subflow.nf'])))
                         if os.path.exists(smko):
                             os.rename(smko, smko+'.bak')
@@ -569,14 +569,14 @@ def run_nextflow (configfile, workdir, procs, skeleton, loglevel, clean=None, op
                                     #line = re.sub(condapath,'conda  \"../', line)
                                     smkout.write(line)
                             smkout.write('\n\n')
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows', subname))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows', subname))
                         with open(os.path.abspath(os.path.join(subdir,'_'.join([subwork, toolenv,'subflow.nf']))), 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 #smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
                                 smkout.write(smk.read())
                             smkout.write('\n')
 
-                        smkf = os.path.abspath(os.path.join('nextsnakes','workflows','footer.nf'))
+                        smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
                         with open(smko, 'a') as smkout:
                             with open(smkf,'r') as smk:
                                 smkout.write(smk.read())
@@ -627,7 +627,7 @@ def runjob(jobtorun):
                         log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
                     else:
                         log.error(logid+'STOPPING: '+str(output))
-                    log.info('PLEASE CHECK LOG AT LOGS/RunNextflow.log')
+                    log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
@@ -635,7 +635,7 @@ def runjob(jobtorun):
             if outerr and outerr != '':
                 if not 'Workflow finished' in outerr and not 'Execution complete' in outerr and any(x in outerr for x in ['ERROR','Error','error','Exception']):
                     log.error(logid+'STOPPING: '+str(outerr))
-                    log.info('PLEASE CHECK LOG AT LOGS/RunNextflow.log')
+                    log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
@@ -655,7 +655,7 @@ def runjob(jobtorun):
             outerr = str.join('', outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
                 log.error(logid+'ERROR: '+outerr+output)
-                log.info('PLEASE CHECK LOG AT LOGS/RunNextflow.log')
+                log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
             job.kill()
             sys.exit('ERROR SIGNAL: '+str(job.returncode))
 
@@ -696,4 +696,4 @@ if __name__ == '__main__':
         )
         log.error(logid+''.join(tbe.format()))
 
-# RunNextflow.py ends here
+# NextSnakes.py ends here

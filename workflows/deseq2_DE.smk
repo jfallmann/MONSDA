@@ -24,7 +24,7 @@ rule featurecount_unique:
     output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -38,7 +38,7 @@ rule prepare_count_table:
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
-    conda:   "nextsnakes/envs/"+DEENV+".yaml"
+    conda:   "NextSnakes/envs/"+DEENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
              bins = BINS
@@ -57,7 +57,7 @@ rule run_deseq2:
             heat = rules.themall.input.heat,
             heats = rules.themall.input.heats
     log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DEENV+".yaml"
+    conda:  "NextSnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = str.join(os.sep, [BINS, DEBIN]),
             outdir = 'DE/'+combo,
@@ -73,7 +73,7 @@ rule filter_significant:
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DE/filter_deseq2.log"
-    conda:  "nextsnakes/envs/"+DEENV+".yaml"
+    conda:  "NextSnakes/envs/"+DEENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
@@ -93,7 +93,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DEENV+".yaml"
+    conda:  "NextSnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2>> {log}"

@@ -1,6 +1,6 @@
 {
   "WORKFLOWS": "",
-  "BINS": "nextsnakes/scripts",
+  "BINS": "NextSnakes/scripts",
   "MAXTHREADS": "20",
   "SETTINGS": {
     "id": {

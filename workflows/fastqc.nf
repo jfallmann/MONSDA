@@ -17,14 +17,14 @@ process collect_fqmap{
 
 //PROCESSES
 process qc_mapped{
-    conda "${workflow.workDir}/../nextsnakes/envs/$QCENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/$filename"
         else null
     }
 

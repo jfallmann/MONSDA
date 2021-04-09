@@ -15,14 +15,14 @@ process collect_fqraw{
 }
 
 process qc_raw{
-    conda "${workflow.workDir}/../nextsnakes/envs/$QCRENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCRENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -53,7 +53,7 @@ workflow QC_RAW{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
         }
         R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
+        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
 
     }else{
         RSAMPLES=SAMPLES.collect{

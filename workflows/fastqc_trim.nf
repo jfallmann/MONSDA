@@ -17,14 +17,14 @@ process collect_fqtrim{
 }
 
 process qc_trimmed{
-    conda "${workflow.workDir}/../nextsnakes/envs/$QCTENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCTENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/FASTQC/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/FASTQC/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -48,18 +48,18 @@ workflow QC_TRIMMING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2_trimmed.fastq.gz"
         }
         T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
+        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)

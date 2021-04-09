@@ -859,7 +859,7 @@ if __name__ == '__main__':
 
         explain("runsnakemake.txt")
         print(f"\nYou created \n\n\t> {configfile}\n")
-        print(f"start RunSnakemake with:\n\n\t> python3 snakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n")
+        print(f"start NextSnakes with:\n\n\t> python3 snakes/NextSnakes.py -c {configfile} --directory ${{PWD}}\n")
         print("\n")
 
 

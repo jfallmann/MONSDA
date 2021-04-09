@@ -5,7 +5,7 @@ rule generate_index:
     output: idx = directory(INDEX),
             uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]), pref=PREFIX)
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
-    conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+    conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
     threads: 1
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
@@ -25,7 +25,7 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN,
@@ -40,7 +40,7 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN,
@@ -58,7 +58,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN,
@@ -75,7 +75,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #                    mapped = "UNMAPPED/{combo}/{file}_mapped.sam",
 #                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
 #            log:    "LOGS/{combo}/{file}/mapping.log"
-#            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+#            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'MAPPING')['OPTIONS'][1].items()),
 #                    mapp=MAPPERBIN
@@ -89,7 +89,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN,
@@ -104,7 +104,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #                    mapped = "UNMAPPED/{combo}/{file}_mapped.sam",
 #                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
 #            log:    "LOGS/{combo}/{file}/mapping.log"
-#            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+#            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'MAPPING')['OPTIONS'][1].items()),
 #                    mapp=MAPPERBIN
@@ -118,7 +118,7 @@ elif bwaalg == 'samse':
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+        conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp = MAPPERBIN,
@@ -135,7 +135,7 @@ elif bwaalg == 'sampe':
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+        conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp = MAPPERBIN,
@@ -151,7 +151,7 @@ elif bwaalg == 'bwasw':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN
@@ -164,7 +164,7 @@ elif bwaalg == 'bwasw':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
-            conda:  "nextsnakes/envs/"+MAPPERENV+".yaml"
+            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                     mapp = MAPPERBIN
