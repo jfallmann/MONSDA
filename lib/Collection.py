@@ -1820,6 +1820,7 @@ def get_combo(wfs, config, conditions):
     #no debug log here or iterator will be consumed
     return combos
 
+
 @check_run
 def get_combo_name(combinations):
     logid=scriptname+'.Collection_get_combo_name: '
@@ -1829,7 +1830,8 @@ def get_combo_name(combinations):
         log.debug(logid+'CONDITION: '+str(condition))
         combname[condition]['envs'] = list()
         combname[condition]['works'] = list()
-        combos = itertools.combinations[condition]
+        combos = combinations[condition]
+
         for combi in combos:
             envs = list()
             works = list()
@@ -1902,11 +1904,11 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
 
     paired = checkpaired([SAMPLES[0]], config)
     if paired == 'paired':
-        log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
+        log.info('RUNNING NEXTFLOW IN PAIRED READ MODE')
 
     stranded = checkstranded([SAMPLES[0]], config)
     if stranded != '':
-        log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+        log.info('RUNNING NEXTFLOW WITH STRANDEDNESS '+str(stranded))
 
 
     # save in return dict
@@ -2066,7 +2068,7 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
     ref = config.get("REFERENCE")
     gdir = config.get("REFDIR")
-    anno = config.get('ANNOTATION') if 'ANNOTATION' in config else config.get('ANNOTATION')
+    anno = config.get('ANNOTATION')
     index = config.get('INDEX')
     index2 = config.get('INDEX2')
     uidx = config.get('UIDX')
@@ -2083,9 +2085,9 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             if anno:
                 apstr += " --"+subwork+"ANNO "+anno+' '
             if index2:
-                apstr += "--"+subwork+"IDX "+index+" --"+subwork+"IDX2 "+index2+" --"+subwork+"REF "+ref
+                apstr += "--"+subwork+"IDX "+index+"--"+subwork+"UIDX "+uidx+" --"+subwork+"IDX2 "+index2+" --"+subwork+"REF "+ref
             elif index:
-                apstr += "--"+subwork+"IDX "+index+" --"+subwork+"REF "+ref
+                apstr += "--"+subwork+"IDX "+index+"--"+subwork+"UIDX "+uidx+" --"+subwork+"REF "+ref
 
             if apstr != '':
                 tp.append(apstr)
@@ -2108,9 +2110,9 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             if anno:
                 apstr += " --"+subwork+"ANNO "+anno+' '
             if index2:
-                apstr += "--"+subwork+"IDX "+index+" --"+subwork+"IDX2 "+index2+" --"+subwork+"REF "+ref
+                apstr += "--"+subwork+"IDX "+index+"--"+subwork+"UIDX "+uidx+" --"+subwork+"IDX2 "+index2+" --"+subwork+"REF "+ref
             elif index:
-                apstr += "--"+subwork+"IDX "+index+" --"+subwork+"REF "+ref
+                apstr += "--"+subwork+"IDX "+index+"--"+subwork+"UIDX "+uidx+" --"+subwork+"REF "+ref
 
             if apstr != '':
                 tp.append(apstr)
@@ -2185,7 +2187,7 @@ def nf_get_processes(config):
 
 
 @check_run
-def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinations=None):
+def nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=None):
     logid = scriptname+'.Collection_nf_make_pre: '
     log.debug(logid+'PREPROCESSING: '+str(subwork))
 
@@ -2197,13 +2199,14 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinati
 
     if combinations:
         combname = get_combo_name(combinations)
+
         for condition in combname:
             worklist = combname[condition]['works']
             envlist  = combname[condition]['envs']
             subconf = NestedDefaultDict()
             add = list()
 
-            nfi = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
+            nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'header.nf'))
             with open(nfi,'r') as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
@@ -2232,8 +2235,10 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinati
                     sconf = listofconfigs[0]
                     for a in range(0, len(listoftools)):
                         toolenv, toolbin = map(str, listoftools[a])
+
                         if toolenv != envs[j] or toolbin is None:
                             continue
+
                         sconf[works[j]+'ENV'] = toolenv
                         sconf[works[j]+'BIN'] = toolbin
                         subconf.update(sconf)
@@ -2301,47 +2306,38 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinati
                         jobs.append([nfo, confo, tp, para])
 
     else:
+        for condition in conditions:
+            listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
+            if listoftools is None:
+                log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
+                return None
 
-        listoftools, listofconfigs = create_subworkflow(config, subwork, [condition])
-        if listoftools is None:
-            log.warning(logid+'No entry fits condition '+str(condition)+' for processing step '+str(subwork))
-            return None
+            sconf = listofconfigs[0]
+            for i in range(0, len(listoftools)):
+                toolenv, toolbin = map(str, listoftools[i])
+                flowlist = list()
+                tp = list()
+                subconf = NestedDefaultDict()
+                sconf[subwork+'ENV'] = toolenv
+                sconf[subwork+'BIN'] = toolbin
+                subconf.update(sconf)
+                subname = toolenv+'.nf'
+                log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
 
-        sconf = listofconfigs[0]
-        for i in range(0, len(listoftools)):
-            toolenv, toolbin = map(str, listoftools[i])
-            flowlist = list()
-            tp = list()
-            subconf = NestedDefaultDict()
-            sconf[subwork+'ENV'] = toolenv
-            sconf[subwork+'BIN'] = toolbin
-            subconf.update(sconf)
-            subname = toolenv+'.nf'
-            log.debug(logid+str(subwork)+': '+str([toolenv, subname, condition, subconf]))
+                nfi = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
+                with open(nfi,'r') as nf:
+                    for line in nf.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-            nfi = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
-            with open(nfi,'r') as nf:
-                for line in nf.readlines():
-                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                    line = re.sub(condapath, 'conda:  "../', line)
-                    subjobs.append(line)
-                subjobs.append('\n\n')
+                if subwork == 'QC':
+                    subname = toolenv+'_raw.nf'
+                    flowlist.append('QC_RAW')
+                    flowlist.append('MULTIQC')
 
-            if subwork == 'QC':
-                subname = toolenv+'_raw.nf'
-                flowlist.append('QC_RAW')
-                flowlist.append('MULTIQC')
-
-            nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', subname))
-            with open(nfi, 'r') as nf:
-                for line in nf.readlines():
-                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                    line = re.sub(condapath, 'conda:  "../', line)
-                    subjobs.append(line)
-                subjobs.append('\n\n')
-
-            if subwork == 'QC':
-                nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'multiqc.nf'))
+                nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', subname))
                 with open(nfi, 'r') as nf:
                     for line in nf.readlines():
                         line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
@@ -2349,40 +2345,49 @@ def nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinati
                         subjobs.append(line)
                     subjobs.append('\n\n')
 
-            # workflow merger
-            subjobs.append('\n\n'+'workflow {\n')
-            for w in ['MULTIQC']:
-                if w in flowlist:
-                    if w == 'MULTIQC':
-                        subjobs.append(' '*4+'QC_RAW(dummy)\n')
-                        subjobs.append(' '*4+w+'(QC_RAW.out.qc.collect())\n')
-            subjobs.append('\n}\n')
+                if subwork == 'QC':
+                    nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'multiqc.nf'))
+                    with open(nfi, 'r') as nf:
+                        for line in nf.readlines():
+                            line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                            line = re.sub(condapath, 'conda:  "../', line)
+                            subjobs.append(line)
+                        subjobs.append('\n\n')
 
-            nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-            with open(nfi, 'r') as nf:
-                for line in nf.readlines():
-                    line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                    line = re.sub(condapath, 'conda:  "../', line)
-                    subjobs.append(line)
-                subjobs.append('\n\n')
+                # workflow merger
+                subjobs.append('\n\n'+'workflow {\n')
+                for w in ['MULTIQC']:
+                    if w in flowlist:
+                        if w == 'MULTIQC':
+                            subjobs.append(' '*4+'QC_RAW(dummy)\n')
+                            subjobs.append(' '*4+w+'(QC_RAW.out.qc.collect())\n')
+                subjobs.append('\n}\n')
 
-            nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
-            if os.path.exists(nfo):
-                os.rename(nfo, nfo+'.bak')
-            with open(nfo, 'a') as nfout:
-                nfout.write(''.join(subjobs))
-                nfout.write('\n\n')
+                nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                with open(nfi, 'r') as nf:
+                    for line in nf.readlines():
+                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        line = re.sub(condapath, 'conda:  "../', line)
+                        subjobs.append(line)
+                    subjobs.append('\n\n')
 
-            confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
-            if os.path.exists(confo):
-                os.rename(confo, confo+'.bak')
-            with open(confo, 'a') as confout:
-                json.dump(subconf, confout)
+                nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
+                if os.path.exists(nfo):
+                    os.rename(nfo, nfo+'.bak')
+                with open(nfo, 'a') as nfout:
+                    nfout.write(''.join(subjobs))
+                    nfout.write('\n\n')
 
-            tp = nf_tool_params(SAMPLES[0], None, subconf, subwork, toolenv, toolbin, None, condition)
-            para = nf_fetch_params(confo, condition)
+                confo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), state+subwork, toolenv, 'subconfig.json'])))
+                if os.path.exists(confo):
+                    os.rename(confo, confo+'.bak')
+                with open(confo, 'a') as confout:
+                    json.dump(subconf, confout)
 
-            jobs.append([nfo, confo, tp, para])
+                tp = nf_tool_params(SAMPLES[0], None, subconf, subwork, toolenv, toolbin, None, condition)
+                para = nf_fetch_params(confo, condition)
+
+                jobs.append([nfo, confo, tp, para])
 
     return jobs
 
@@ -2400,15 +2405,14 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
 
     if combinations:
         combname = get_combo_name(combinations)
+
         for condition in combname:
             worklist = combname[condition]['works']
             envlist  = combname[condition]['envs']
-
-            log.debug(logid+'LISTS: '+str(condition)+'\t'+str(worklist)+'\t'+str(envlist))
             subconf = NestedDefaultDict()
             add = list()
 
-            nfi = os.path.abspath(os.path.join('NextSnakes','workflows','header.nf'))
+            nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'header.nf'))
             with open(nfi,'r') as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
@@ -2425,7 +2429,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
 
 
                 # Add variable for combination string
-                subjobs.append('\ncombo = \''+str(envlist[i])+'\'\nrawfile = \'|\'.join(list(SAMPLES)),\nfile = \'|\'.join(list(samplecond(SAMPLES, config))),\nread = "R1|R2"\n')
+                subjobs.append('\ncombo = \''+str(envlist[i])+'\'')
                 subjobs.append('\n\n')
 
                 for j in range(len(works)):
@@ -2441,6 +2445,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
 
                         if toolenv != envs[j] or toolbin is None:
                             continue
+
                         sconf[works[j]+'ENV'] = toolenv
                         sconf[works[j]+'BIN'] = toolbin
                         subconf.update(sconf)
@@ -2457,7 +2462,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                                 flowlist.append('TRIMMING')
                                 flowlist.append('QC_TRIMMING')
 
-                        if works[j] == 'QC' and 'TRIMMING' not in works and 'MAPPING' not in works:
+                        elif works[j] == 'QC' and 'TRIMMING' not in works and 'MAPPING' not in works:
                             if 'DEDUP' in subworkflows:
                                 subname = toolenv+'_dedup.nf'
                                 flowlist.append('DEDUP')
@@ -2466,6 +2471,9 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                                 subname = toolenv+'_raw.nf'
                                 flowlist.append('QC_RAW')
 
+                        elif works[j] == 'MAPPING' and 'TRIMMING' not in works:
+                            subname = 'simulatetrim.nf'
+                            flowlist.append('TRIMMING')
 
                         #Picard tools can be extended here
                         if works[j] == 'DEDUP' and toolenv == 'picard':
@@ -2481,13 +2489,19 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                         tp.append(nf_tool_params(SAMPLES[0], None, subconf, works[j], toolenv, toolbin, None, condition))
 
                 if 'MAPPING' in works:
+                    if not 'QC' in works:
+                        log.info(logid+'Mapping without QC!')
+                    if not 'TRIMMING' in works:
+                        log.info(logid+'Simulated read trimming only!')
                     flowlist.append('MAPPING')
+
                     nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'mapping.nf'))
                     with open(nfi,'r') as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda:  "../', line)
                             subjobs.append(line)
                         subjobs.append('\n\n')
+
                 if 'QC' in subworkflows:
                     flowlist.append('MULTIQC')
                     nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'multiqc.nf'))
@@ -2500,27 +2514,28 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                 #workflow merger
                 log.debug('FLOWLIST: '+str(flowlist))
                 paired = checkpaired([SAMPLES[0]], config)
-                with open(nfo, 'a') as nfout:
-                    nfout.write('\n\n'+'workflow {\n')
-                    for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:  # So far DEDUP is missing
-                        if w in flowlist:
-                            if w ==  'QC_TRIMMING':
-                                nfout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
-                            elif w == 'MAPPING':
-                                nfout.write(' '*4+w+'(TRIMMING.out.trimmed)\n')
-                                nfout.write(' '*4+'POSTMAPPING(MAPPING.out.mapped)\n')
-                            elif w == 'QC_MAPPING':
-                                nfout.write(' '*4+w+'(POSTMAPPING.out.postmapuni)\n')
-                            elif w ==  'MULTIQC':
-                                if 'MAPPING' in flowlist:
-                                    nfout.write(' '*4+w+'(QC_MAPPING.out.qc)\n')
-                                elif 'TRIMMING' in flowlist:
-                                    nfout.write(' '*4+w+'(QC_TRIMMING.out.qc)\n')
-                                else:
-                                    nfout.write(' '*4+w+'(QC_RAW.out.qc)\n')
+
+                subjobs.append('\n\n'+'workflow {\n')
+                for w in ['QC_RAW','TRIMMING','QC_TRIMMING','MAPPING','QC_MAPPING','MULTIQC']:  # So far DEDUP is missing
+                    if w in flowlist:
+                        if w ==  'QC_TRIMMING':
+                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed)\n')
+                        elif w == 'MAPPING':
+                            subjobs.append(' '*4+'TRIMMING'+'(dummy)\n')
+                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed)\n')
+                            subjobs.append(' '*4+'POSTMAPPING(MAPPING.out.mapped)\n')
+                        elif w == 'QC_MAPPING':
+                            subjobs.append(' '*4+w+'(POSTMAPPING.out.postmapuni)\n')
+                        elif w ==  'MULTIQC':
+                            if 'MAPPING' in flowlist:
+                                subjobs.append(' '*4+w+'(QC_MAPPING.out.qc)\n')
+                            elif 'TRIMMING' in flowlist:
+                                subjobs.append(' '*4+w+'(QC_TRIMMING.out.qc)\n')
                             else:
-                                nfout.write(' '*4+w+'(dummy)\n')
-                    nfout.write('}\n\n')
+                                subjobs.append(' '*4+w+'(QC_RAW.out.qc)\n')
+                        else:
+                            subjobs.append(' '*4+w+'(dummy)\n')
+                subjobs.append('}\n\n')
 
                 # Append footer and write out subflow and subconf per condition
                 nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
@@ -2544,8 +2559,8 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                     json.dump(subconf, confout)
 
                 tpl = ' '.join(tp)
-                combi = list(str(envlist[i]), '')
-                para = nf_fetch_params(subconf, condition, combi)
+                combi = list((str(envlist[i]), ''))
+                para = nf_fetch_params(confo, condition, combi)
 
                 jobs.append([nfo, confo, tpl, para])
 

@@ -111,7 +111,6 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         # Get processes to work on
         preprocess, subworkflows, postprocess = get_processes(config)
         conditions = get_conditions(config)
-        combinations = get_combo(subworkflows, config, conditions)
 
         '''
         START TO PREPROCESS
@@ -135,8 +134,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                     continue  # We only want download/basecall here
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(config)
-                log.debug(logid+'PRECONDITIONS: '+str(conditions))
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
 
                 subwork = proc
 
@@ -162,8 +160,6 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
 
         SAMPLES = get_samples(config)
         log.info(logid+'SAMPLES: '+str(SAMPLES))
-        conditions = get_conditions(config)
-        log.info(logid+'CONDITIONS: '+str(conditions))
 
         if preprocess:
             log.info(logid+'STARTING PREPROCESSING')
@@ -171,12 +167,15 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                 makeoutdir('QC')
 
                 for subwork in preprocess:
+                    combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
                     jobs = make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations)
 
                     jobstorun = list()
+
                     for job in jobs:
                         smko, confo = job
                         rest=' '.join(argslist)
+
                         jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
 
                     for job in jobstorun:
@@ -195,12 +194,15 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         '''
 
         if subworkflows:
+            combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
             jobs = make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
             jobstorun = list()
+
             for job in jobs:
                 smko, confo = job
                 rest=' '.join(argslist)
+
                 jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
 
 
@@ -226,6 +228,7 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                 log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
                 log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
+
                 jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
                 jobstorun = list()
 
@@ -307,13 +310,11 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
         # Get processes to work on
         preprocess, subworkflows, postprocess = nf_get_processes(config)
         conditions = get_conditions(config)
-        combinations = get_combo(subworkflows, config, conditions)
 
         '''
         START TO PROCESS
         IF WE NEED TO DOWNLOAD FILES WE DO THIS NOW
         '''
-
 
         if preprocess:
             for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
@@ -333,31 +334,27 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     continue
 
                 log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
-                conditions = get_conditions(config)
-                log.debug(logid+'PRECONDITIONS: '+str(conditions))
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
 
                 subwork = proc
 
-                for condition in conditions:
-                    log.info("CONDITION: "+str(condition)+' COMBINATIONS: '+str(combinations))
-                    jobs = nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinations=combinations)
+                jobs = nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations)
 
-                    jobstorun = list()
-                    for job in jobs:
-                        nfo, confo, tp, params = job
-                        #params = nf_fetch_params(confo, condition)
-                        pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
-                        rest = ' '.join(argslist)
+                jobstorun = list()
+                for job in jobs:
+                    nfo, confo, tp, params = job
+                    pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
+                    rest = ' '.join(argslist)
 
-                        jobstorun.append(f'nextflow -log /dev/stderr run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(f'nextflow -log /dev/stderr run {nfo} -w {workdir} {rest} {pars} {tp}')
 
-                    for job in jobstorun:
-                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                            j.write(job+os.linesep)
-                        if not save:
-                            log.info(logid+'RUNNING '+str(job))
-                            jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                for job in jobstorun:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
+                        j.write(job+os.linesep)
+                    if not save:
+                        log.info(logid+'RUNNING '+str(job))
+                        jid = runjob(job)
+                        log.debug(logid+'JOB CODE '+str(jid))
 
         '''
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
@@ -373,29 +370,27 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
 
-            for condition in conditions:
-                log.debug(logid+'Working on condition: '+str(condition))
 
-                for subwork in preprocess:
-                    log.debug(logid+'PREPROCESS: '+str(subwork)+' CONDITION: '+str(condition)+' COMBINATIONS: '+str(combinations))
-                    jobs = nf_make_pre(subwork, config, SAMPLES, condition, subdir, loglevel, combinations=combinations)
+            for subwork in preprocess:
+                combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
+                jobs = nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
-                    jobstorun = list()
-                    for job in jobs:
-                        nfo, confo, tp, params = job
-                        #params = nf_fetch_params(confo, condition)
-                        pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
-                        rest = ' '.join(argslist)
+                jobstorun = list()
 
-                        jobstorun.append(f'nextflow -log /dev/stderr run {nfo} -w {workdir} {rest} {pars} {tp}')
+                for job in jobs:
+                    nfo, confo, tp, params = job
+                    pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
+                    rest = ' '.join(argslist)
 
-                    for job in jobstorun:
-                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                            j.write(job+os.linesep)
-                        if not save:
-                            log.info(logid+'RUNNING '+str(job))
-                            jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                    jobstorun.append(f'nextflow -log /dev/stderr run {nfo} -w {workdir} {rest} {pars} {tp}')
+
+                for job in jobstorun:
+                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
+                        j.write(job+os.linesep)
+                    if not save:
+                        log.info(logid+'RUNNING '+str(job))
+                        jid = runjob(job)
+                        log.debug(logid+'JOB CODE '+str(jid))
 
         else:
             log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
@@ -405,9 +400,11 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
         '''
 
         if subworkflows:
+            combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
             jobs = nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
 
             jobstorun = list()
+
             for job in jobs:
                 nfo, confo, tp, params = job
                 pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
@@ -446,8 +443,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                 jobstorun = list()
 
                 for job in jobs:
-                    nfo, confo, tp = job
-                    params = nf_fetch_params(confo, condition)
+                    nfo, confo, tp, params = job
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
@@ -468,8 +464,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                 jobstorun = list()
 
                 for job in jobs:
-                    nfo, confo, tp = job
-                    params = nf_fetch_params(confo, condition)
+                    nfo, confo, tp, params = job
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 

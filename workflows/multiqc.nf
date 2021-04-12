@@ -22,7 +22,7 @@ process collect_qc_raw{
     path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/${COMBO}${CONDITION}/qclist.txt;done
     '''
 }
 
@@ -34,7 +34,7 @@ process collect_qc_trimmed{
     path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/${COMBO}${CONDITION}/qclist.txt;done
     '''
 }
 
@@ -46,7 +46,7 @@ process collect_qc_map{
     path "QC/$COMBO$CONDITION/qclist.txt", emit: collect_fastqc
     shell:
     '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/!{$COMBO}!{$CONDITION}/qclist.txt;done
+    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/${COMBO}${CONDITION}/qclist.txt;done
     '''
 }
 
@@ -70,7 +70,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s !${workflow.workDir}/../QC/Multi/!${COMBO}!${CONDITION}/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s ${workflow.workDir}/../QC/Multi/${COMBO}${CONDITION}/.
     """
 }
 

@@ -2,8 +2,8 @@ MAPENV=params.MAPPINGENV ?: null
 MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
-MAPREF=params.MAPPINGREF ?: null
-MAPGEN=params.MAPPINGGEN ?: null
+MAPUIDX=params.MAPPINGUIDX ?: null
+MAPGEN=params.MAPPINGREF ?: null
 MAPANNO=params.MAPPINGANNO ?: null
 
 IDXPARAMS = params.star_params_0 ?: ''
@@ -123,7 +123,7 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    checkidx = file(MAPIDX)
+    checkidx = file(MAPUIDX)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
