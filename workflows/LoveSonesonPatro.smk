@@ -31,7 +31,7 @@ if paired == 'paired':
         log:    "LOGS/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU')['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else ''
         shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} 2>> {log}"
@@ -44,7 +44,7 @@ else:
         log:    "LOGS/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU')['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU')['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else ''
         shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} 2>> {log} "
@@ -57,7 +57,7 @@ rule create_annotation_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.dir, config,'DTU'),
              bins = BINS
-             # tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None , config, "DTU")['OPTIONS'][1].items())
+             # tpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None, config, "DTU")['OPTIONS'][1].items())
     shell: "python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
 rule run_DTU:

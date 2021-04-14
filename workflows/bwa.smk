@@ -68,7 +68,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #        rule mapping:
 #            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
 #                    r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-#                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file, config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None , config, 'MAPPING', 2)),
+#                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file, config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None, config, 'MAPPING', 2)),
 #                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file, config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
 #            output: sai1 = report("MAPPED/{combo}/{file}_mapped.R1.sai", category="MAPPING"),
 #                    sai2 = report("MAPPED/{combo}/{file}_mapped.R2.sai", category="MAPPING"),
@@ -77,7 +77,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #            log:    "LOGS/{combo}/{file}/mapping.log"
 #            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
-#            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'MAPPING')['OPTIONS'][1].items()),
+#            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING')['OPTIONS'][1].items()),
 #                    mapp=MAPPERBIN
 #            shell:  "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} > {output.sai1} 2>> {log} && {params.mapp} {params.mpara} -t {threads} {input.ref} {input.r2} > {output.sai2} 2>> {log} && touch {output.unmapped} && touch {output.mapped}"
 
@@ -98,7 +98,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
 #            input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-#                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file, config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None , config, 'MAPPING', 2)),
+#                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file, config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None, config, 'MAPPING', 2)),
 #                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file, config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
 #            output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
 #                    mapped = "UNMAPPED/{combo}/{file}_mapped.sam",
@@ -106,7 +106,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #            log:    "LOGS/{combo}/{file}/mapping.log"
 #            conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
-#            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'MAPPING')['OPTIONS'][1].items()),
+#            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING')['OPTIONS'][1].items()),
 #                    mapp=MAPPERBIN
 #            shell:  "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} 2>> {log} && touch {output.unmapped} && touch {output.mapped}"
 

@@ -1,9 +1,9 @@
-MAPENV=params.MAPPINGENV ?: null
+MAPREFMAPREFMAPENV=params.MAPPINGENV ?: null
 MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
 MAPUIDX=params.MAPPINGUIDX ?: null
-MAPGEN=params.MAPPINGREF ?: null
+MAPREF=params.MAPPINGREF ?: null
 MAPANNO=params.MAPPINGANNO ?: null
 
 IDXPARAMS = params.star_params_0 ?: ''
@@ -31,9 +31,9 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename =~ /SA/)                         "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        if (filename =~ /SA/)                         "$MAPREF"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename == "Genome")                "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".txt") > 0)        "$MAPREF"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".tab") > 0)        "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf("Log.out") >0)      "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".idx") > 0)        "$MAPIDX"

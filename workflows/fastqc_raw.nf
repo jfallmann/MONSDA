@@ -1,5 +1,6 @@
-QCRENV=params.QCENV ?: null
-QCRBIN=params.QCBIN ?: null
+QCENV=params.QCENV ?: null
+QCBIN=params.QCBIN ?: null
+QCPARAMS = params.fastqc_params_0 ?: ''
 
 process collect_fqraw{
     input:
@@ -15,7 +16,7 @@ process collect_fqraw{
 }
 
 process qc_raw{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCRENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

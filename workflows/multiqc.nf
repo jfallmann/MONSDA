@@ -1,5 +1,6 @@
-TOOLENV=params.QCENV ?: null
-TOOLBIN=params.QCBIN ?: null
+QCENV=params.QCENV ?: null
+QCBIN=params.QCBIN ?: null
+QCPARAMS = params.fastqc_params_1 ?: ''
 
 process collect_multi{
     input:
@@ -51,7 +52,7 @@ process collect_qc_map{
 }
 
 process multiqc{
-    conda "${workflow.workDir}/../NextSnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
     publishDir "${workflow.workDir}/../" , mode: 'copy',

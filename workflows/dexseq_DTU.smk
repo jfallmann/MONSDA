@@ -33,7 +33,7 @@ if paired == 'paired':
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else ''
         shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} 2>> {log}"
@@ -46,7 +46,7 @@ else:
         log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None , config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else ''
         shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} 2>> {log} "
