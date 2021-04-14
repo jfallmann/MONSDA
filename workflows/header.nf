@@ -5,7 +5,7 @@
 
 //Version Check
 nextflowVersion = '>=20.01.0.5264'
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 //Params from CL
 REFERENCE = "${workflow.workDir}/../"+params.REFERENCE

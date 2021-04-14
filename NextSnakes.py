@@ -296,6 +296,8 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
         workdir = os.path.abspath(str.join(os.sep, [workdir, 'NextFlowWork']))
         subdir = 'SubFlows'
         create_skeleton(subdir, skeleton)
+        if not os.path.exists(os.path.abspath(subdir+os.sep+'bin')):
+            os.symlink(os.path.abspath(config['BINS']), os.path.abspath(subdir+os.sep+'bin'))
 
         argslist = list()
         if optionalargs and len(optionalargs) > 0:

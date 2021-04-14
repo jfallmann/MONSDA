@@ -1,13 +1,19 @@
-MAPREFMAPREFMAPENV=params.MAPPINGENV ?: null
+MAPENV=params.MAPPINGENV ?: null
 MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
 MAPUIDX=params.MAPPINGUIDX ?: null
 MAPREF=params.MAPPINGREF ?: null
+MAPREFDIR=params.MAPPINGREFDIR ?: null
 MAPANNO=params.MAPPINGANNO ?: null
+
+MAPIDX.replace('.idx','')
+MAPUIDX.replace('.idx','')
 
 IDXPARAMS = params.star_params_0 ?: ''
 MAPPARAMS = params.star_params_1 ?: ''
+
+
 
 //MAPPING PROCESSES
 
@@ -31,11 +37,11 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename =~ /SA/)                         "$MAPREF"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename == "Genome")                "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPREF"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "$MAPGEN"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        if (filename =~ /SA/)                         "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename == "Genome")                "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".txt") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf(".tab") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf("Log.out") >0)      "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
@@ -59,7 +65,7 @@ process star_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch tmp.idx
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && ln -s $MAPUIDX $MAPIDX
     """
 
 }
@@ -71,10 +77,10 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
-        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$CONDITION/"+"${filename.replaceAll(/trimmed.Aligned.out/,"mapped")}"
-        else if (filename.indexOf(".out") >0)        "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".tab") >0)        "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed.Aligned.out/,"mapped")}"
+        else if (filename.indexOf(".out") >0)        "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -95,7 +101,7 @@ process star_mapping{
     of = fn+'.Aligned.out.sam'
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPGEN --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
     """
 }
 

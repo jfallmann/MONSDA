@@ -1943,20 +1943,20 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
         MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
+        PRE = MAPCONF.get('PREFIX')
+        if PRE:
+            PREFIX = PRE
+        if not PREFIX:
+            PREFIX = MAPPERENV
         IDX = MAPCONF.get('INDEX')
         if IDX:
             INDEX = IDX
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
         unikey = get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0])
-        UIDX = f"{REFDIR}/INDICES/{MAPPERENV}/{unikey}.idx"
+        UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         INDICES = INDEX.split(',') if INDEX else list(UIDX)
         INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else     str(os.path.abspath(INDICES[0]))+'_idx'
-        PRE = MAPCONF.get('PREFIX')
-        if PRE:
-            PREFIX = PRE
-        if not PREFIX:
-            PREFIX = MAPPERENV
         if len(INDICES) > 1:
             if str(os.path.abspath(INDICES[1])) not in UIDX:
                 INDEX2 = str(os.path.abspath(INDICES[1]))
@@ -2060,7 +2060,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
 @check_run
 def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflows=None, condition=None):
     logid=scriptname+'.nf_tool_params: '
-    log.debug(logid+'Samples: '+str(sample)+' '+str.join(",", map(str, [runstate, config, subwork, toolenv, toolbin, workflows, condition])))
+    log.info(logid+'Samples: '+str(sample)+', '+str.join(",", map(str, [runstate, config, subwork, toolenv, toolbin, workflows, condition])))
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -2206,6 +2206,7 @@ def nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinat
                         if toolenv != envs[j] or toolbin is None:
                             continue
 
+                        subsamples = get_samples(sconf)
                         sconf[works[j]+'ENV'] = toolenv
                         sconf[works[j]+'BIN'] = toolbin
                         subconf.merge(sconf)
@@ -2268,7 +2269,7 @@ def nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinat
                         with open(confo, 'a') as confout:
                             json.dump(subconf, confout)
 
-                        tp = nf_tool_params(SAMPLES[0], None, subconf, works[j], toolenv, toolbin, None, condition)
+                        tp = nf_tool_params(subsamples[0], None, subconf, works[j], toolenv, toolbin, None, condition)
 
                         tpl = ' '.join(tp)
                         combi = list((str(envlist[i]), ''))
@@ -2416,11 +2417,12 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                         if toolenv != envs[j] or toolbin is None:
                             continue
 
+                        subsamples = get_samples(sconf)
                         sconf[works[j]+'ENV'] = toolenv
                         sconf[works[j]+'BIN'] = toolbin
                         subconf.merge(sconf)
 
-                        subconf[works[j]]= add_to_innermost_key_by_list(subconf[works[j]], subDict(config[works[j]], condition)[toolenv], condition)
+                        subconf[works[j]] = add_to_innermost_key_by_list(subconf[works[j]], subDict(config[works[j]], condition)[toolenv], condition)
 
                         subname = toolenv+'.nf'
                         log.debug(logid+str(works[j])+': '+str([toolenv, subname, condition, subconf]))
@@ -2474,7 +2476,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                                 subjobs.append(line)
                             subjobs.append('\n\n')
 
-                        tp.append(nf_tool_params(SAMPLES[0], None, sconf, works[j], toolenv, toolbin, None, condition))
+                        tp.append(nf_tool_params(subsamples[0], None, sconf, works[j], toolenv, toolbin, None, condition))
 
                 if 'MAPPING' in works:
                     if 'QC' not in works:
@@ -2519,21 +2521,21 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                             if 'QC_RAW' not in flowlist:
                                 subjobs.append(' '*4+'TRIMMING'+'()\n')
                             else:
-                                subjobs.append(' '*4+'TRIMMING'+'(QC_RAW.out.qc)\n')
+                                subjobs.append(' '*4+'TRIMMING'+'(QC_RAW.out.qc.collect())\n')
                         elif w ==  'QC_TRIMMING':
-                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed)\n')
+                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed.collect())\n')
                         elif w == 'MAPPING':
-                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed)\n')
-                            subjobs.append(' '*4+'POSTMAPPING(MAPPING.out.mapped)\n')
+                            subjobs.append(' '*4+w+'(TRIMMING.out.trimmed.collect())\n')
+                            subjobs.append(' '*4+'POSTMAPPING(MAPPING.out.mapped.collect())\n')
                         elif w == 'QC_MAPPING':
-                            subjobs.append(' '*4+w+'(POSTMAPPING.out.postmapuni)\n')
+                            subjobs.append(' '*4+w+'(POSTMAPPING.out.postmapuni.collect())\n')
                         elif w ==  'MULTIQC':
                             if 'MAPPING' in flowlist:
-                                subjobs.append(' '*4+w+'(QC_MAPPING.out.qc)\n')
+                                subjobs.append(' '*4+w+'(QC_MAPPING.out.qc.collect())\n')
                             elif 'TRIMMING' in flowlist:
-                                subjobs.append(' '*4+w+'(QC_TRIMMING.out.qc)\n')
+                                subjobs.append(' '*4+w+'(QC_TRIMMING.out.qc.collect())\n')
                             else:
-                                subjobs.append(' '*4+w+'(QC_RAW.out.qc)\n')
+                                subjobs.append(' '*4+w+'(QC_RAW.out.qc.collect())\n')
                         else:
                             subjobs.append(' '*4+w+'(dummy)\n')
                 subjobs.append('}\n\n')
@@ -2558,6 +2560,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                     os.rename(confo, confo+'.bak')
                 with open(confo, 'w') as confout:
                     json.dump(subconf, confout)
+
 
                 tpl = ' '.join(tp)
                 combi = list((str(envlist[i]), ''))
