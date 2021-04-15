@@ -85,15 +85,14 @@ rule run_DTU:
             fig_P   = rules.themall.input.fig_P,
             fig_PV  = rules.themall.input.fig_PV,
             fig_files = rules.themall.input.fig_files
-    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
+    log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
     conda:  "nextsnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             outdir = 'DTU/'+combo,
-            ref = ANNOTATION,
-            cutts = get_cutoff_as_string(config, 'DTU')
+            ref = ANNOTATION
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
 
 rule filter_significant_drimseq:
@@ -110,7 +109,7 @@ rule filter_significant_drimseq:
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
-    shell:  "set +o pipefail; arr=({input.tbl}); orr=({output.sig_g}); orrt=({output.sig_dg}); orrr=({output.sig_ug}); orrf=({output.sig_t}); orrs=({output.sig_dt}); orrr=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
+    shell:  "set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orru[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orru[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orrt[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrtu[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtu[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,
