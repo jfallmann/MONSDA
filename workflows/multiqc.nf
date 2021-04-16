@@ -71,7 +71,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s ${workflow.workDir}/../QC/Multi/${COMBO}${CONDITION}/.
+    cat {output.tmp} |sort -u > {output.lst}; export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s .
     """
 }
 

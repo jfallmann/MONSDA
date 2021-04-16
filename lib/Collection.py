@@ -1918,7 +1918,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
-        retconf["COMBO"] = combi[0]
+        retconf["COMBO"] = combi[0] if combi[0] != '' else os.sep
         retconf['SCOMBO'] = combi[1] if combi[1] else ''
 
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
@@ -1955,6 +1955,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
             INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
         unikey = get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0])
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
+        UIDXNAME = f"{MAPPERENV}_{unikey}"
         INDICES = INDEX.split(',') if INDEX else list(UIDX)
         INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else     str(os.path.abspath(INDICES[0]))+'_idx'
         if len(INDICES) > 1:
@@ -1971,6 +1972,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
         retconf["MAPPINGIDX"] = INDEX
         retconf["MAPPINGIDX2"] = INDEX2
         retconf["MAPPINGUIDX"] = UIDX
+        retconf["MAPPINGUIDXNAME"] = UIDXNAME
         retconf["MAPPINGPREFIX"] = PREFIX
 
     # Peak Calling Variables
@@ -2248,13 +2250,13 @@ def nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinat
                                     subjobs.append(' '*4+w+'(QC_RAW.out.qc.collect()\n')
                         subjobs.append('\n}\n')
 
-                        nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-                        with open(nfi, 'r') as nf:
-                            for line in nf.readlines():
-                                line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                                line = re.sub(condapath, 'conda:  "../', line)
-                                subjobs.append(line)
-                            subjobs.append('\n\n')
+                        #nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                        #with open(nfi, 'r') as nf:
+                        #    for line in nf.readlines():
+                        #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                        #        line = re.sub(condapath, 'conda:  "../', line)
+                        #        subjobs.append(line)
+                        #    subjobs.append('\n\n')
 
                         nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+works[j], toolenv, 'subflow.nf'])))
                         if os.path.exists(nfo):
@@ -2338,13 +2340,13 @@ def nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinat
                             subjobs.append(' '*4+w+'(QC_RAW.out.qc.collect())\n')
                 subjobs.append('\n}\n')
 
-                nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-                with open(nfi, 'r') as nf:
-                    for line in nf.readlines():
-                        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                        line = re.sub(condapath, 'conda:  "../', line)
-                        subjobs.append(line)
-                    subjobs.append('\n\n')
+                #nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                #with open(nfi, 'r') as nf:
+                #    for line in nf.readlines():
+                #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
+                #        line = re.sub(condapath, 'conda:  "../', line)
+                #        subjobs.append(line)
+                #    subjobs.append('\n\n')
 
                 nfo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), state+subwork, toolenv, 'subflow.nf'])))
                 if os.path.exists(nfo):
@@ -2541,12 +2543,12 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                 subjobs.append('}\n\n')
 
                 # Append footer and write out subflow and subconf per condition
-                nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-                with open(nfi,'r') as nf:
-                    for line in nf.readlines():
-                        line = re.sub(condapath,'conda:  "../', line)
-                        subjobs.append(line)
-                    subjobs.append('\n\n')
+                #nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                #with open(nfi,'r') as nf:
+                #    for line in nf.readlines():
+                #        line = re.sub(condapath,'conda:  "../', line)
+                #        subjobs.append(line)
+                #    subjobs.append('\n\n')
 
                 nfo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), envlist[i], 'subflow.nf'])))
                 if os.path.exists(nfo):
@@ -2710,13 +2712,13 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                         subjobs.append(' '*4+w+'(dummy)\n')
             subjobs.append('}\n\n')
 
-            # Append footer and write out subflow and subconf per condition
-            nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-            with open(nfi,'r') as nf:
-                for line in nf.readlines():
-                    line = re.sub(condapath,'conda:  "../', line)
-                    subjobs.append(line)
-                subjobs.append('\n\n')
+            # SKIP as nextflow exits too soon otherwise: Append footer and write out subflow and subconf per condition
+            #nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+            #with open(nfi,'r') as nf:
+            #    for line in nf.readlines():
+            #        line = re.sub(condapath,'conda:  "../', line)
+            #        subjobs.append(line)
+            #    subjobs.append('\n\n')
 
             nfo = os.path.abspath(os.path.join(subdir, '_'.join(['_'.join(condition), 'subflow.nf'])))
             if os.path.exists(nfo):
@@ -2791,10 +2793,10 @@ def nf_make_post(postworkflow, config, samples, conditions, subdir, loglevel, su
                             smkout.write('\n    '.w)
                     smkout.write('\n}\n')
 
-                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
-                with open(smko, 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(smk.read())
+                #smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
+                #with open(smko, 'a') as smkout:
+                #    with open(smkf,'r') as smk:
+                #        smkout.write(smk.read())
 
                 confo = os.path.abspath(os.path.join(subdir,'_'.join(['_'.join(condition), subwork, toolbin,'subconfig.json'])))
                 if os.path.exists(confo):
@@ -2862,10 +2864,10 @@ def nf_make_post(postworkflow, config, samples, conditions, subdir, loglevel, su
                         smkout.write(smk.read())
                     smkout.write('\n')
 
-                smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
-                with open(smko, 'a') as smkout:
-                    with open(smkf,'r') as smk:
-                        smkout.write(smk.read())
+                #smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
+                #with open(smko, 'a') as smkout:
+                #    with open(smkf,'r') as smk:
+                #        smkout.write(smk.read())
 
                 confo = os.path.abspath(os.path.join(subdir,'_'.join([subwork, toolenv,'subconfig.json'])))
                 if os.path.exists(confo):

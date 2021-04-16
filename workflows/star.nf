@@ -3,16 +3,16 @@ MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
 MAPUIDX=params.MAPPINGUIDX ?: null
+MAPUIDXNAME=params.MAPPINGUIDXNAME ?: null
 MAPREF=params.MAPPINGREF ?: null
 MAPREFDIR=params.MAPPINGREFDIR ?: null
 MAPANNO=params.MAPPINGANNO ?: null
+MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
-MAPIDX.replace('.idx','')
 MAPUIDX.replace('.idx','')
 
 IDXPARAMS = params.star_params_0 ?: ''
 MAPPARAMS = params.star_params_1 ?: ''
-
 
 
 //MAPPING PROCESSES
@@ -35,7 +35,7 @@ process star_idx{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename =~ /SA/)                         "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename == "Genome")                "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
@@ -65,7 +65,7 @@ process star_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch tmp.idx
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx
     """
 
 }
@@ -77,8 +77,8 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
-        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed.Aligned.out/,"mapped")}"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/"\${PREFIX}"/,".").replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/"\${PREFIX}"/,".").replaceAll(/trimmed.Aligned.out"/,"mapped")}"
         else if (filename.indexOf(".out") >0)        "MAPPED/$COMBO$CONDITION/$filename"
         else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/$filename"
         else null
@@ -97,11 +97,11 @@ process star_mapping{
 
     script:
     fn = file(reads[0]).getSimpleName()
-    pf = fn+"."
-    of = fn+'.Aligned.out.sam'
+    pf = fn+MAPPREFIX
+    of = fn+MAPPREFIX+'Aligned.out.sam'
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir ${workflow.workDir}/../$MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
     """
 }
 

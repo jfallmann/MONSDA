@@ -183,7 +183,7 @@ process qc_mapped{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f sam_mapped $map $uni
+    fastqc --quiet -t $THREADS --noextract -f bam_mapped $map $uni
     """
 }
 
@@ -193,11 +193,11 @@ workflow QC_MAPPING{
     main:
     //SAMPLE CHANNELS
     M1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped_sorted.bam"
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
     }
     M1SAMPLES.sort()
     U1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped_sorted_unique.bam"
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
     }
     U1SAMPLES.sort()
 
