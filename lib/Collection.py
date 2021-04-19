@@ -1918,7 +1918,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
-        retconf["COMBO"] = combi[0] if combi[0] != '' else os.sep
+        retconf["COMBO"] = combi[0]+os.sep if combi[0] != '' else ''
         retconf['SCOMBO'] = combi[1] if combi[1] else ''
 
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
