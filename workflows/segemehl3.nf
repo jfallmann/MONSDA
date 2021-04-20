@@ -11,8 +11,8 @@ MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.star_params_0 ?: ''
-MAPPARAMS = params.star_params_1 ?: ''
+IDXPARAMS = params.segemehl3_params_0 ?: ''
+MAPPARAMS = params.segemehl3_params_1 ?: ''
 
 
 //MAPPING PROCESSES
@@ -30,15 +30,15 @@ process collect_tomap{
     """
 }
 
-process sege_idx{
+process segemehl3_idx{
     conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "sege.idx")                   "$MAPUIDX"
-        else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
+        if (filename == "$MAPUIDXNAME")                   "$MAPUIDX"
+        else if (filename.indexOf(".idx") > 0)            "$MAPIDX"
         else null
     }
 
@@ -53,12 +53,12 @@ process sege_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME && ln -s $MAPUIDXNAME segemehl3.idx
     """
 
 }
 
-process sege_mapping{
+process segemehl3_mapping{
     conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -79,7 +79,7 @@ process sege_mapping{
 
     output:
     path "*.sam.gz", emit: maps
-    path "*Log.out", emit: maplog
+    path "*Log.out", emit: logs
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
@@ -132,16 +132,17 @@ workflow MAPPING{
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        sege_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        segemehl3_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        sege_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        sege_mapping(collect_tomap.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
+        segemehl3_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        segemehl3_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped  = sege_mapping.out.maps
+    mapped  = segemehl3_mapping.out.maps
+    logs = segemehl3_mapping.out.logs
 }

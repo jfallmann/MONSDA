@@ -11,8 +11,8 @@ MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.star_params_0 ?: ''
-MAPPARAMS = params.star_params_1 ?: ''
+IDXPARAMS = params.hisat2_params_0 ?: ''
+MAPPARAMS = params.hisat2_params_1 ?: ''
 
 //MAPPING PROCESSES
 
@@ -29,7 +29,7 @@ process collect_tomap{
     """
 }
 
-process hisat_idx{
+process hisat2_idx{
     conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -59,7 +59,7 @@ process hisat_idx{
 
 }
 
-process hisat_mapping{
+process hisat2_mapping{
     conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -138,17 +138,17 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
         collect_tomap(collection.collect())
-        hisat_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
+        hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        hisat_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        hisat_mapping(collect_tomap.out.done, hisat_idx.out.idx, trimmed_samples_ch)
+        hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped = hisat_mapping.out.maps
-    logs = star_mapping.out.logs
+    mapped = hisat2_mapping.out.maps
+    logs = hisat2_mapping.out.logs
 }
