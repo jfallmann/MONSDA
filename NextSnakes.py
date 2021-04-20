@@ -348,7 +348,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log /dev/stdout -q run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(f'nextflow -log {workdir}/run.log -q run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -384,7 +384,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log /dev/stdout -q run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(f'nextflow -log {workdir}/run.log -q run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -412,7 +412,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                 pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                 rest = ' '.join(argslist)
 
-                jobstorun.append(f'nextflow -log /dev/stdout -q run {nfo} -w {workdir} {rest} {pars} {tp}')
+                jobstorun.append(f'nextflow -log {workdir}/run.log -q run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -449,7 +449,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log /dev/stdout -q run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(f'nextflow -log {workdir}/run.log -q run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
@@ -470,7 +470,7 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log /dev/stdout -q run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(f'nextflow -log {workdir}/run.log -q run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
                     with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
