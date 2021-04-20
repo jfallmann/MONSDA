@@ -2,11 +2,18 @@ MAPENV=params.MAPPINGENV ?: null
 MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
+MAPUIDX=params.MAPPINGUIDX ?: null
+MAPUIDXNAME=params.MAPPINGUIDXNAME ?: null
 MAPREF=params.MAPPINGREF ?: null
-MAPGEN=params.MAPPINGGEN ?: null
+MAPREFDIR=params.MAPPINGREFDIR ?: null
+MAPANNO=params.MAPPINGANNO ?: null
+MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
-IDXPARAMS = params.segemehl3_params_0 ?: ''
-MAPPARAMS = params.segemehl3_params_1 ?: ''
+MAPUIDX.replace('.idx','')
+
+IDXPARAMS = params.star_params_0 ?: ''
+MAPPARAMS = params.star_params_1 ?: ''
+
 
 //MAPPING PROCESSES
 
@@ -28,14 +35,15 @@ process sege_idx{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".idx") > 0)        "$MAPIDX"
+        if (filename == "sege.idx")                   "$MAPUIDX"
+        else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
 
     input:
-    //val collect
+    val collect
     path reads
     path genome
 
@@ -45,7 +53,7 @@ process sege_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x tmp.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx
     """
 
 }
@@ -57,9 +65,9 @@ process sege_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
+        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -101,18 +109,18 @@ workflow MAPPING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
         }
         T2SAMPLES.sort()
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)

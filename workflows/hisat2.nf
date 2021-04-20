@@ -2,11 +2,17 @@ MAPENV=params.MAPPINGENV ?: null
 MAPBIN=params.MAPPINGBIN ?: null
 
 MAPIDX=params.MAPPINGIDX ?: null
+MAPUIDX=params.MAPPINGUIDX ?: null
+MAPUIDXNAME=params.MAPPINGUIDXNAME ?: null
 MAPREF=params.MAPPINGREF ?: null
-MAPGEN=params.MAPPINGGEN ?: null
+MAPREFDIR=params.MAPPINGREFDIR ?: null
+MAPANNO=params.MAPPINGANNO ?: null
+MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
-IDXPARAMS = params.hisat2_params_0 ?: ''
-MAPPARAMS = params.hisat2_params_1 ?: ''
+MAPUIDX.replace('.idx','')
+
+IDXPARAMS = params.star_params_0 ?: ''
+MAPPARAMS = params.star_params_1 ?: ''
 
 //MAPPING PROCESSES
 
@@ -26,11 +32,11 @@ process collect_tomap{
 process hisat_idx{
     conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".ht2") > 0)        "$MAPGEN"+"${filename.replaceFirst(/tmp\.idx/, '')}"
+        if (filename.indexOf(".ht2") > 0)        "$MAPUIDX"+"/"+"${filename.replaceFirst(/tmp\.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
         else null
     }
@@ -48,7 +54,7 @@ process hisat_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx && touch tmp.idx
+    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME hisat2.idx
     """
 
 }
