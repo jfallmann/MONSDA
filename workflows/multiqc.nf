@@ -5,20 +5,23 @@ QCPARAMS = params.fastqc_params_1 ?: ''
 process collect_multi{
     input:
     path check
+    val checker
 
     output:
-    path "collect.txt"
+    path "collect.txt", emit: done
 
     script:
     """
-    echo "STARTING MULTIQC" >> collect.txt
+    echo "$check Collection successful!" > collect.txt
     """
 }
+
 
 process multiqc{
     conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
+
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf("zip") > 0)          "QC/Multi/$COMBO$CONDITION/$filename"
@@ -27,8 +30,12 @@ process multiqc{
     }
 
     input:
+    path others
     path samples
-    val collect
+    path tsamples
+    path msamples
+    path usamples
+    path logs
 
     output:
     path "*.{zip,html}", emit: multiqc_results
@@ -40,59 +47,46 @@ process multiqc{
 }
 
 workflow MULTIQC{
-    take: collection
+    take:
+    otherqcs
+    maplogs
 
     main:
+
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
-        }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
-
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        samples_ch.join(Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES)))
-
-    }else{
-        RSAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-        }
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
-
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        samples_ch.join(Channel.fromPath(T1SAMPLES))
+    RSAMPLES=LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_fastqc.zip"
     }
+    RSAMPLES.sort()
+    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
+
+    TSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_trimmed_fastqc.zip"
+    }
+    TSAMPLES.sort()
+    tsamples_ch = Channel.fromPath(TSAMPLES, followLinks: true)
 
     MSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_mapped_sorted_fastqc.zip"
     }
     MSAMPLES.sort()
+
     USAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_mapped_sorted_unique_fastqc.zip"
     }
     USAMPLES.sort()
 
-    samples_ch.join(Channel.fromPath(MSAMPLES))
-    samples_ch.join(Channel.fromPath(USAMPLES))
+    MAPLOG = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+".log"
+    }
+    MAPLOG.sort()
 
-    collect_multi(collection.collect())
-    multiqc(samples_ch.collect(), collect_multi.out)
+    msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
+    usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
+    logs_ch = Channel.fromPath(MAPLOG, followLinks: true)
+
+    collect_multi(otherqcs.collect(), maplogs.collect())
+    multiqc(collect_multi.out.done.collect(), samples_ch, tsamples_ch, msamples_ch, usamples_ch, logs_ch)
 
     emit:
     mqcres = multiqc.out.multiqc_results

@@ -2062,7 +2062,7 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
 @check_run
 def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflows=None, condition=None):
     logid=scriptname+'.nf_tool_params: '
-    log.info(logid+'Samples: '+str(sample)+', '+str.join(",", map(str, [runstate, config, subwork, toolenv, toolbin, workflows, condition])))
+    log.debug(logid+'Samples: '+str(sample)+', '+str.join(",", map(str, [runstate, config, subwork, toolenv, toolbin, workflows, condition])))
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -2533,7 +2533,7 @@ def nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, sub
                             subjobs.append(' '*4+w+'(POSTMAPPING.out.postmapuni.collect())\n')
                         elif w ==  'MULTIQC':
                             if 'MAPPING' in flowlist:
-                                subjobs.append(' '*4+w+'(QC_MAPPING.out.qc.collect())\n')
+                                subjobs.append(' '*4+w+'(QC_MAPPING.out.qc.collect(), MAPPING.out.log.collect())\n')
                             elif 'TRIMMING' in flowlist:
                                 subjobs.append(' '*4+w+'(QC_TRIMMING.out.qc.collect())\n')
                             else:

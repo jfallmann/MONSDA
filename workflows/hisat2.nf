@@ -62,7 +62,7 @@ process hisat_mapping{
     saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".log") >0)               "MAPPED/$COMBO$CONDITION/"+"${filename}.log"
         else null
     }
 
@@ -74,7 +74,7 @@ process hisat_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(reads[0]).getSimpleName()
@@ -144,4 +144,5 @@ workflow MAPPING{
 
     emit:
     mapped = hisat_mapping.out.maps
+    logs = star_mapping.out.logs
 }

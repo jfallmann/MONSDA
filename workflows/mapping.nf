@@ -134,7 +134,7 @@ workflow POSTMAPPING{
     main:
     //SAMPLE CHANNELS
     M1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped.sam.gz"
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped.sam.gz"
     }
     M1SAMPLES.sort()
     mapped_samples_ch = Channel.fromPath(M1SAMPLES)

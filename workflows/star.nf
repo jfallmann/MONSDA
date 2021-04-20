@@ -77,10 +77,10 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/"\${PREFIX}"/,".").replaceAll(/Unmapped.out.*.gz/,"fastq.gz")}"
-        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/"\${PREFIX}"/,".").replaceAll(/trimmed.Aligned.out"/,"mapped")}"
-        else if (filename.indexOf(".out") >0)        "MAPPED/$COMBO$CONDITION/$filename"
-        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/$filename"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed.Unmapped.out.gz\E/,"")}.fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Qtrimmed.Aligned.out.sam.gz\E/,"")}mapped.sam.gz"
+        else if (filename.indexOf(".out") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed\E/,"").replaceAll(/\Q.out\E/,"")}.log"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed\E/,"")}"
         else null
     }
 
@@ -91,17 +91,16 @@ process star_mapping{
 
     output:
     path "*.sam.gz", emit: maps
-    path "*.out", emit: log
+    path "*.out", emit: logs
     path "*.tab", emit: sjtab
     path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+MAPPREFIX
-    of = fn+MAPPREFIX+'Aligned.out.sam'
+    fn = file(reads[0]).getSimpleName()+'.'
+    of = fn+'Aligned.out.sam'
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir ${workflow.workDir}/../$MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $pf --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out*
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir ${workflow.workDir}/../$MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
     """
 }
 
@@ -147,4 +146,5 @@ workflow MAPPING{
 
     emit:
     mapped  = star_mapping.out.maps
+    logs = star_mapping.out.logs
 }
