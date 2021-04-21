@@ -81,10 +81,14 @@ process hisat2_mapping{
     path "*.log", emit: logs
 
     script:
+    if (' ' in MAPBIN){
+        mapbin = MAPBIN.split(' ')[1]
+    } else {
+        mapbin = MAPBIN
+    }
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+".unmapped.fastq.gz"
-    index = MAPIDX
 
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
@@ -98,11 +102,11 @@ process hisat2_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }
 }
@@ -142,7 +146,7 @@ workflow MAPPING{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
         hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.idx, trimmed_samples_ch)
+        hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.htidx, trimmed_samples_ch)
     }
 
 

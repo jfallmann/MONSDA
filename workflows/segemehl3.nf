@@ -46,6 +46,7 @@ process segemehl3_idx{
 
     output:
     path "*.idx", emit: idx
+    path "$MAPUIDXNAME", emit: uidx
 
     script:
     gen =  genome.getName()
