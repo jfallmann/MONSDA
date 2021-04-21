@@ -164,113 +164,114 @@ for(contrast in comparisons[[1]]){
             d <- dmPrecision(d, design=design, BPPARAM=BPPARAM)
             d <- dmFit(d, design=design)
             d <- dmTest(d, contrast=contrast)
-    })
-
-    # add comp object to list for image
-    comparison_objs <- c(comparison_objs, d)
-
-    # calculate LFC from proportions table
-    proportions <- DRIMSeq::proportions(d)
-    samples_of_group_A <- subset(samples(d), condition==A)$sample_id
-    samples_of_group_B <- subset(samples(d), condition==B)$sample_id
-    proportions[paste(A[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_A)])
-    proportions[paste(B[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_B)])
-    proportions["lfc"] <- log2(proportions[paste(A[[1]],"mean",sep='_')]) - log2(proportions[paste(B[[1]],"mean",sep='_')])
-    props_transcripts<-proportions[c("feature_id","lfc")]
-    props_genes <- aggregate(proportions, list(proportions$gene_id), mean)[c("Group.1","lfc")]
-    colnames(props_genes) <- c("gene_id", "lfc")
-
-    # generate a single p-value per gene and transcript
-    res <- DRIMSeq::results(d)
-    res.txp <- DRIMSeq::results(d, level="feature")
-
-    # filter out NA's
-    no.na <- function(x) ifelse(is.na(x), 1, x)
-    res$pvalue <- no.na(res$pvalue)
-    res.txp$pvalue <- no.na(res.txp$pvalue)
-    res$adj_pvalue <- no.na(res$adj_pvalue)
-    res.txp$adj_pvalue <- no.na(res.txp$adj_pvalue)
-
-    res <- merge(props_genes, res)
-    res.txp <- merge(props_transcripts,res.txp )
-    res <- res[,c(1,6,2,3,4,5)]
-    res.txp <- res.txp[,c(1,7,2,3,4,5,6)]
-
-    proportions$Gene  <- lapply(proportions$gene_id, function(x){get_gene_name(x,gtf.df)})
-    res$Gene          <- lapply(res$gene_id, function(x){get_gene_name(x,gtf.df)})
-    res.txp$Gene      <- lapply(res.txp$gene_id, function(x){get_gene_name(x,gtf.df)})
-
-    res <- res[order(res$adj_pvalue),]
-    res.txp <- res.txp[order(res$adj_pvalue),]
-    proportions <- proportions[order(proportions$lfc),]
-
-    proportions.print <- as.data.frame(apply(proportions,2,as.character))
-    res.print         <- as.data.frame(apply(res,2,as.character))
-    res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
-
-    # CREATE RESULTS TABLES
-    # setwd(file.path(outdir,"Tables"))
-    write.table(as.data.frame(proportions.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-    write.table(as.data.frame(res.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-    write.table(as.data.frame(res.txp.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-    write.table(as.data.frame(genewise_precision(d)), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genewise-precision.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-    # setwd(file.path(outdir, "Figures"))
-
-    ## Plot feature per gene histogram
-    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
-    print(plotData(d))
-    dev.off()
-
-    ## Plot precision
-    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","Precision.png",sep="_"))
-    print(plotPrecision(d))
-    dev.off()
-
-    ## Plot gene-level p-values
-    png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","PValues.png",sep="_"))
-    print(plotPValues(d))
-    dev.off()
-
-    # plot proportions
-    figures <- data.frame()
-    sigs <- which(res$adj_pvalue < 0.05)
-
-    limit   <- 10
-    counter <- 1
-    message("create proportions plots")
-    for(gene in sigs){
-        if(counter>limit){break}
-        if(is.na(gene)){next}
-        suppressMessages({
-            name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
-            png(name1)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
-            dev.off()
-
-            name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
-            png(name2)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
-            dev.off()
-
-            name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
-            png(name3)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
-            dev.off()
-
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
-
-        counter <- counter+1
         })
-    }
-    colnames(figures) <- c("geneID","geneName","file")
-    write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
-    # cleanup
-    rm(res,res.txp,proportions)
-    print(paste('cleanup done for ', contrast_name, sep=''))
+        # add comp object to list for image
+        comparison_objs <- c(comparison_objs, d)
+
+        # calculate LFC from proportions table
+        proportions <- DRIMSeq::proportions(d)
+        colnames(proportions)[-(1:2)] <- as.character(samples(d)$sample_id)
+        samples_of_group_A <- subset(samples(d), condition==A)$sample_id
+        samples_of_group_B <- subset(samples(d), condition==B)$sample_id
+        proportions[paste(A[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_A)])
+        proportions[paste(B[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_B)])
+        proportions["lfc"] <- log2(proportions[paste(A[[1]],"mean",sep='_')]) - log2(proportions[paste(B[[1]],"mean",sep='_')])
+        props_transcripts<-proportions[c("feature_id","lfc")]
+        props_genes <- aggregate(proportions, list(proportions$gene_id), mean)[c("Group.1","lfc")]
+        colnames(props_genes) <- c("gene_id", "lfc")
+
+        # generate a single p-value per gene and transcript
+        res <- DRIMSeq::results(d)
+        res.txp <- DRIMSeq::results(d, level="feature")
+
+        # filter out NA's
+        no.na <- function(x) ifelse(is.na(x), 1, x)
+        res$pvalue <- no.na(res$pvalue)
+        res.txp$pvalue <- no.na(res.txp$pvalue)
+        res$adj_pvalue <- no.na(res$adj_pvalue)
+        res.txp$adj_pvalue <- no.na(res.txp$adj_pvalue)
+
+        res <- merge(props_genes, res)
+        res.txp <- merge(props_transcripts,res.txp )
+        res <- res[,c(1,6,2,3,4,5)]
+        res.txp <- res.txp[,c(1,7,2,3,4,5,6)]
+
+        proportions$Gene  <- lapply(proportions$gene_id, function(x){get_gene_name(x,gtf.df)})
+        res$Gene          <- lapply(res$gene_id, function(x){get_gene_name(x,gtf.df)})
+        res.txp$Gene      <- lapply(res.txp$gene_id, function(x){get_gene_name(x,gtf.df)})
+
+        res <- res[order(res$adj_pvalue),]
+        res.txp <- res.txp[order(res$adj_pvalue),]
+        proportions <- proportions[order(proportions$lfc),]
+
+        proportions.print <- as.data.frame(apply(proportions,2,as.character))
+        res.print         <- as.data.frame(apply(res,2,as.character))
+        res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
+
+        # CREATE RESULTS TABLES
+        # setwd(file.path(outdir,"Tables"))
+        write.table(as.data.frame(proportions.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(res.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(res.txp.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(genewise_precision(d)), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genewise-precision.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+        # setwd(file.path(outdir, "Figures"))
+
+        ## Plot feature per gene histogram
+        png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
+        print(plotData(d))
+        dev.off()
+
+        ## Plot precision
+        png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","Precision.png",sep="_"))
+        print(plotPrecision(d))
+        dev.off()
+
+        ## Plot gene-level p-values
+        png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","PValues.png",sep="_"))
+        print(plotPValues(d))
+        dev.off()
+
+        # plot proportions
+        figures <- data.frame()
+        sigs <- which(res$adj_pvalue < 0.05)
+
+        limit   <- 10
+        counter <- 1
+        message("create proportions plots")
+        for(gene in sigs){
+            if(counter>limit){break}
+            if(is.na(gene)){next}
+            suppressMessages({
+                name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
+                png(name1)
+                print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
+                dev.off()
+
+                name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
+                png(name2)
+                print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
+                dev.off()
+
+                name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
+                png(name3)
+                print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
+                dev.off()
+
+                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
+                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
+                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
+
+            counter <- counter+1
+            })
+        }
+        colnames(figures) <- c("geneID","geneName","file")
+        write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
+
+        # cleanup
+        rm(res,res.txp,proportions)
+        print(paste('cleanup done for ', contrast_name, sep=''))
 
     })
 }
