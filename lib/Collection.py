@@ -1918,16 +1918,19 @@ def nf_fetch_params(configfile, condition=None, combi=None):  # replaces header.
     retconf["LONGSAMPLES"] = str.join(',', LONGSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
-        retconf["COMBO"] = combi[0]+os.sep if combi[0] != '' else ''
-        retconf['SCOMBO'] = combi[1] if combi[1] else ''
+        retconf["COMBO"] = combi[0]+os.sep if combi[0] != '' else None
+        retconf['SCOMBO'] = combi[1] if combi[1] else None
 
     log.info(logid+'Nextflow working on SAMPLES: '+str(SAMPLES))
 
     sample = SAMPLES[0]
     lsample = LONGSAMPLES[0]
-    retconf["PAIRED"] = paired
-    retconf["STRANDED"] = stranded
-    retconf["RUNDEDUP"] = rundedup
+    if paired:
+        retconf["PAIRED"] = paired
+    if stranded:
+        retconf["STRANDED"] = stranded
+    if rundedup:
+        retconf["RUNDEDUP"] = rundedup
 
     # MAPPING Variables
     if 'MAPPING' in config:
@@ -2081,10 +2084,12 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
             for idx in range(len(mp)):
                 toolpar = list()
                 for key, val in mp[idx].items():
-                    pars = key if key and key != '' else 'false'
+                    pars = key if key and key != '' else None
                     pars = pars+' '+val if val and val != '' else pars
-                    toolpar.append(pars)
-                tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
+                    if pars:
+                        toolpar.append(pars)
+                if len(toolpar) > 0:
+                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
     else:
         for subwork in workflows:
             sd = subDict(config[subwork], condition)
@@ -2099,10 +2104,12 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
                 for idx in range(len(mp)):
                     toolpar = list()
                     for key, val in mp[idx].items():
-                        pars = key if key and key != '' else 'false'
+                        pars = key if key and key != '' else None
                         pars = pars+' '+val if val and val != '' else pars
-                        toolpar.append(pars)
-                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
+                        if pars:
+                            toolpar.append(pars)
+                    if len(toolpar) > 0:
+                        tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
 
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)

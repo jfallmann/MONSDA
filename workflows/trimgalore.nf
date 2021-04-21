@@ -1,7 +1,7 @@
-TRIMENV=params.TRIMMINGENV ?: null
-TRIMBIN=params.TRIMMINGBIN ?: null
+TRIMENV=get_always('TRIMMINGENV')
+TRIMBIN=get_always('TRIMMINGBIN')
 
-TRIMPARAMS = params.trimgalore_params_0 ?: ''
+TRIMPARAMS = get_always('trimgalore_params_0') ?: ''
 
 //TRIMMING PROCESSES
 

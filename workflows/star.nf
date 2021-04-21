@@ -1,19 +1,16 @@
-MAPENV=params.MAPPINGENV ?: null
-MAPBIN=params.MAPPINGBIN ?: null
-
-MAPIDX=params.MAPPINGIDX ?: null
-MAPUIDX=params.MAPPINGUIDX ?: null
-MAPUIDXNAME=params.MAPPINGUIDXNAME ?: null
-MAPREF=params.MAPPINGREF ?: null
-MAPREFDIR=params.MAPPINGREFDIR ?: null
-MAPANNO=params.MAPPINGANNO ?: null
-MAPPREFIX=params.MAPPINGPREFIX ?: '.'
-
+MAPENV = get_always('MAPPINGENV')
+MAPBIN = get_always('MAPPINGBIN')
+MAPIDX = get_always('MAPPINGIDX')
+MAPUIDX = get_always('MAPPINGUIDX')
+MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
+MAPREF = get_always('MAPPINGREF')
+MAPREFDIR = get_always('MAPPINGREFDIR')
+MAPANNO = get_always('MAPPINGANNO')
+MAPPREFIX = get_always('MAPPINGPREFIX')
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.star_params_0 != '' ?: null
-MAPPARAMS = params.star_params_1 != '' ?: null
-
+IDXPARAMS = get_always('star_params_0') ?: ''
+MAPPARAMS = get_always('star_params_1') ?: ''
 
 //MAPPING PROCESSES
 
