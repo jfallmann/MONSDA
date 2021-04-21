@@ -52,7 +52,7 @@ process hisat2_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME && ln -s $MAPUIDXNAME hisat2.idx
     """
 
 }
@@ -98,11 +98,11 @@ process hisat2_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $idx -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }
 }

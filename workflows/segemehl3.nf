@@ -35,9 +35,8 @@ process segemehl3_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "$MAPUIDXNAME")                   "$MAPUIDX"
-        else if (filename.indexOf(".idx") > 0)            "$MAPIDX"
-        else null
+        if (filename == "segemehl3.idx")                  "$MAPIDX"
+        else                                              "$MAPUIDX"
     }
 
     input:
