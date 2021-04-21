@@ -11,8 +11,8 @@ MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.star_params_0 ?: ''
-MAPPARAMS = params.star_params_1 ?: ''
+IDXPARAMS = params.star_params_0 != '' ?: null
+MAPPARAMS = params.star_params_1 != '' ?: null
 
 
 //MAPPING PROCESSES

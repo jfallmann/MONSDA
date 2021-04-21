@@ -11,8 +11,8 @@ MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.segemehl3_params_0 ?: ''
-MAPPARAMS = params.segemehl3_params_1 ?: ''
+IDXPARAMS = params.segemehl3_params_0 != '' ?: null
+MAPPARAMS = params.segemehl3_params_1 != '' ?: null
 
 
 //MAPPING PROCESSES

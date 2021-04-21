@@ -1,6 +1,6 @@
 QCENV=params.QCENV ?: null
 QCBIN=params.QCBIN ?: null
-QCPARAMS = params.fastqc_params_1 ?: ''
+QCPARAMS = params.fastqc_params_1 ?: null
 
 process collect_multi{
     input:

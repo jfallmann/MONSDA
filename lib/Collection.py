@@ -2079,8 +2079,12 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
         if len(mp) > 0:
             for idx in range(len(mp)):
-                tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key, val) for (key, val) in mp[idx].items())+'\'')
-
+                toolpar = list()
+                for key, val in mp[idx].items():
+                    pars = key if key and key != '' else 'false'
+                    pars = pars+' '+val if val and val != '' else pars
+                    toolpar.append(pars)
+                tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
     else:
         for subwork in workflows:
             sd = subDict(config[subwork], condition)
@@ -2093,7 +2097,12 @@ def nf_tool_params(sample, runstate, config, subwork, toolenv, toolbin, workflow
 
             if len(mp) > 0:
                 for idx in range(len(mp)):
-                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+' '.join("{!s} {!s}".format(key, val) for (key, val) in mp[idx].items())+' \'')
+                    toolpar = list()
+                    for key, val in mp[idx].items():
+                        pars = key if key and key != '' else 'false'
+                        pars = pars+' '+val if val and val != '' else pars
+                        toolpar.append(pars)
+                    tp.append("--"+toolenv+"_params_"+str(idx)+' \''+str.join(' ', toolpar)+'\'')
 
     log.debug(logid+'DONE: '+str(tp))
     return ' '.join(tp)

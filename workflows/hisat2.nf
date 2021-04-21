@@ -11,8 +11,8 @@ MAPPREFIX=params.MAPPINGPREFIX ?: '.'
 
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = params.hisat2_params_0 ?: ''
-MAPPARAMS = params.hisat2_params_1 ?: ''
+IDXPARAMS = params.hisat2_params_0 != '' ?: null
+MAPPARAMS = params.hisat2_params_1 != '' ?: null
 
 //MAPPING PROCESSES
 
