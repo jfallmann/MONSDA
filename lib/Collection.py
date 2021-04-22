@@ -1728,7 +1728,7 @@ def comparable_as_string(config, subwork):
         log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS", config))
         flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
-        combined = list(set(combinations(flattened,2)))
+        combined = list(set(itertools.combinations(flattened,2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}")
@@ -1759,7 +1759,7 @@ def comparable_as_string2(config, subwork):
         log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS", config))
         flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
-        combined = list(set(combinations(flattened,2)))
+        combined = list(set(itertools.combinations(flattened,2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
@@ -1784,7 +1784,7 @@ def comparable_as_string3(config, subwork):
         log.warning(logid+'no comparables found in '+subwork+'. Compare All vs. All.')
         groups_by_condition = list(yield_from_dict("GROUPS", config))
         flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
-        combined = list(set(combinations(flattened,2)))
+        combined = list(set(itertools.combinations(flattened,2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}")
