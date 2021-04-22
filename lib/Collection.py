@@ -921,7 +921,7 @@ def make_post(postworkflow, config, samples, conditions, subdir, loglevel, subna
             for i in range(len(envlist)):
                 envs = envlist[i].split('-')
 
-                listoftools, listofconfigs = create_subworkflow(config, subwork, combname, samples=samples)
+                listoftools, listofconfigs = create_subworkflow(config, subwork, combname)
 
                 if listoftools is None:
                     log.error(logid+'No entry in config fits processing step'+str(subwork))
