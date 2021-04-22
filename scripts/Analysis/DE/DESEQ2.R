@@ -165,7 +165,8 @@ for(contrast in comparison[[1]]){
         res=""
         resOrdered=""
         res <- results(dds, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
-
+        res <- lfcShrink(dds=dds, coef=tail(resultsNames(dds), 1), res=res, type='apeglm')
+        
         # add comp object to list for image
         comparison_objs <- c(comparison_objs, res)
 
@@ -181,7 +182,7 @@ for(contrast in comparison[[1]]){
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
-        # plotMA
+        # plotMA        
         png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep="_"))
         plotMA(res, ylim=c(-3,3))
         dev.off()
@@ -192,7 +193,8 @@ for(contrast in comparison[[1]]){
             res=""
             resOrdered=""
             res <- results(dds_norm, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
-
+            res <- lfcShrink(dds=dds_norm, coef=tail(resultsNames(dds_norm), 1), res=res, type='apeglm')
+            
             # add comp object to list for image
             comparison_objs <- c(comparison_objs, res)
 
