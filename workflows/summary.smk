@@ -15,4 +15,4 @@ rule make_rmd:
     conda:  "nextsnakes/envs/summary.yaml"
     params: outdir = outdir,
             currentpath = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"..")
-    shell:  "Rscript --vanilla -e \"rmarkdown::render('{input}',params=list(root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.html')\" 2> {log}"
+    shell:  "Rscript -e \"rmarkdown::render('{input}',params=list(root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.html', quiet=TRUE)\" 2> {log}"
