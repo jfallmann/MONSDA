@@ -44,7 +44,7 @@ BPPARAM = MulticoreParam(workers=cores)
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
-samps$sample_id <- paste(samps$sample_id, samps$condition, sep="_")
+samps$sample_id <- paste("sample",samps$sample_id, samps$condition, sep="_")
 samps$condition <- factor(samps$condition)
 files <- file.path(samps$path, "quant.sf")
 names(files) <- samps$sample_id
@@ -165,13 +165,16 @@ for(contrast in comparisons[[1]]){
             d <- dmFit(d, design=design)
             d <- dmTest(d, contrast=contrast)
         })
+        system.time({
+            d <- dmFit(d, design=design)
+            d <- dmTest(d, contrast=contrast)
+        })
 
         # add comp object to list for image
         comparison_objs <- c(comparison_objs, d)
 
         # calculate LFC from proportions table
         proportions <- DRIMSeq::proportions(d)
-        colnames(proportions)[-(1:2)] <- as.character(samples(d)$sample_id)
         samples_of_group_A <- subset(samples(d), condition==A)$sample_id
         samples_of_group_B <- subset(samples(d), condition==B)$sample_id
         proportions[paste(A[[1]],"mean",sep='_')] <- rowMeans(proportions[as.vector(samples_of_group_A)])
@@ -243,28 +246,26 @@ for(contrast in comparisons[[1]]){
         for(gene in sigs){
             if(counter>limit){break}
             if(is.na(gene)){next}
-            suppressMessages({
-                name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
-                png(name1)
-                print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
-                dev.off()
+            name1 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","plotProportions","props.png",sep="_")
+            png(name1)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
+            dev.off()
 
-                name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
-                png(name2)
-                print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
-                dev.off()
+            name2 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","lineplot.png",sep="_")
+            png(name2)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
+            dev.off()
 
-                name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
-                png(name3)
-                print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
-                dev.off()
+            name3 <- paste("Figures/DTU","DRIMSEQ",combi,contrast_name,res$Gene[gene],"figure","ribbonplot.png",sep="_")
+            png(name3)
+            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
+            dev.off()
 
-                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
-                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
-                figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name1, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name2, sep="/")))
+            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir,name3, sep="/")))
 
             counter <- counter+1
-            })
         }
         colnames(figures) <- c("geneID","geneName","file")
         write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGenesFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
