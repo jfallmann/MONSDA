@@ -209,9 +209,7 @@ for(contrast in comparisons[[1]]){
 
         proportions.print <- as.data.frame(apply(proportions,2,as.character))
         for(c in 3:(length(colnames(proportions.print))-4)){
-            tryCatch({
-                colnames(proportions.print)[c] <- samps$original_sample_id[samps$sample_id == colnames(proportions.print)[c]]
-            })
+            colnames(proportions.print)[c] <- samps$original_sample_id[samps$sample_id == colnames(proportions.print)[c]]
         }
         res.print         <- as.data.frame(apply(res,2,as.character))
         res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
