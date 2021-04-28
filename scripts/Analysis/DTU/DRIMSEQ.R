@@ -44,7 +44,9 @@ BPPARAM = MulticoreParam(workers=cores)
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
+samps$original_sample_id <- samps$sample_id
 samps$sample_id <- paste("sample",samps$sample_id, samps$condition, sep="_")
+samps$sample_id <- make.names(samps$sample_id)
 samps$condition <- factor(samps$condition)
 files <- file.path(samps$path, "quant.sf")
 names(files) <- samps$sample_id
@@ -104,6 +106,9 @@ table(table(counts(d)$gene_id))
 design <- model.matrix(~0+groups, data=samps)
 colnames(design) <- levels(groups)
 
+## make dataset smaller for testing
+# d <- d[1:250,]
+
 ## name types and levels for design
 # bl <- sapply("batch", paste0, levels(batches)[-1])
 # tl <- sapply("type", paste0, levels(types)[-1])
@@ -160,15 +165,9 @@ for(contrast in comparisons[[1]]){
         # 2 fit regression coefficients and perform null hypothesis testing on the coefficient of interest,
         # 3 test the coefficient associated with the difference between condition 2 and condition 1
         set.seed(1)
-        system.time({
-            d <- dmPrecision(d, design=design, BPPARAM=BPPARAM)
-            d <- dmFit(d, design=design)
-            d <- dmTest(d, contrast=contrast)
-        })
-        system.time({
-            d <- dmFit(d, design=design)
-            d <- dmTest(d, contrast=contrast)
-        })
+        d <- dmPrecision(d, design=design, BPPARAM=BPPARAM)
+        d <- dmFit(d, design=design)
+        d <- dmTest(d, contrast=contrast)
 
         # add comp object to list for image
         comparison_objs <- c(comparison_objs, d)
@@ -209,6 +208,11 @@ for(contrast in comparisons[[1]]){
         proportions <- proportions[order(proportions$lfc),]
 
         proportions.print <- as.data.frame(apply(proportions,2,as.character))
+        for(c in 3:(length(colnames(proportions.print))-4)){
+            tryCatch({
+                colnames(proportions.print)[c] <- samps$original_sample_id[samps$sample_id == colnames(proportions.print)[c]]
+            })
+        }
         res.print         <- as.data.frame(apply(res,2,as.character))
         res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
 
