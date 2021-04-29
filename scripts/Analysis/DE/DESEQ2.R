@@ -164,7 +164,7 @@ for(contrast in comparison[[1]]){
         # initialize empty objects
         res=""
         resOrdered=""
-        res <- results(dds, contrast=list(paste('condition', tempb$condition, sep=''), paste('condition', tempa$condition, sep='')), listValues=c(minus, plus), parallel=TRUE, BPPARAM=BPPARAM)
+        res <- results(dds, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
         res <- lfcShrink(dds=dds, coef=tail(resultsNames(dds), 1), res=res, type='apeglm')
 
         # add comp object to list for image
