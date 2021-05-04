@@ -17,8 +17,9 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 
-from Collection import *
 from Logger import *
+from Params import *
+
 
 loglevel="INFO"
 

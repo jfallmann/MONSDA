@@ -53,7 +53,7 @@ log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logforma
 log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 
 # import Collection
-from lib.Collection import *
+from lib.Workflows import *
 
 
 # CODE
