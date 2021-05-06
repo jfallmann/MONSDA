@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
     require(RUVSeq)
     require(dplyr)
     require(GenomeInfoDb)
+    require(apeglm)
 })
 
 options(echo=TRUE)
@@ -44,6 +45,9 @@ BPPARAM = MulticoreParam(workers=availablecores)
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname), row.names=1))
 colnames(sampleData) <- c("condition", "type", "batch")
+sampleData$batch <- as.factor(sampleData$batch)
+sampleData$type <- as.factor(sampleData$type)
+sampleData$condition <- as.factor(sampleData$condition)
 
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
@@ -60,6 +64,8 @@ if (combi == "none"){
 ## readin counttable
 countData <- as.matrix(read.table(gzfile(countfile), header=T, row.names=1))
 
+setwd(outdir)
+
 #Check if names are consistent
 if (!all(rownames(sampleData) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
@@ -68,18 +74,17 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(sampleData$type)) > 1){
     if (length(levels(sampleData$batch)) > 1){
-        design = ~0 + type + batch + condition
+        design <- ~ type + batch + condition
     } else{
-        design = ~0 + type + condition
+        design <- ~ type + condition
     }
 } else{
     if (length(levels(sampleData$batch)) > 1){
-        design = ~0 + batch + condition
+        design <- ~ batch + condition
     } else{
-        design = ~0 + condition
+        design <- ~ condition
     }
 }
-
 print(paste('FITTING DESIGN: ', design, sep=""))
 
 # Normalize by spike in if available
@@ -87,8 +92,6 @@ print("Spike-in used, data will be normalized to spike in separately")
 if (spike != ''){
     ctrlgenes <- readLines(spike)
     }
-
-setwd(outdir)
 
 if (spike != ''){
     counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
@@ -102,7 +105,7 @@ if (spike != ''){
     keep_norm <- rowSums(counts(dds_norm)) >= 10
     dds_norm <- dds_norm[keep_norm,]
 
-    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
+    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
     rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
     vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
 
@@ -113,18 +116,18 @@ if (spike != ''){
     #We also write the normalized counts to file
     write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
     write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-
 }
 
 #Create DESeqDataSet
-dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design= design)
+dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
 
 #filter low counts
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep,]
 
 #run for each pair of conditions
-dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM)  #, betaPrior=TRUE)
+dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
+resultsNames(dds)
 
 #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
 
@@ -139,39 +142,31 @@ dev.off()
 write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
 write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
-
 comparison_objs <- list()
 
 for(contrast in comparison[[1]]){
 
     contrast_name <- strsplit(contrast, ":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
-
     print(paste("Comparing ", contrast_name, sep=""))
 
+    # determine contrast
+    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names=FALSE)
+    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names=FALSE)
+
     tryCatch({
-
-        # determine contrast
-        A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names=FALSE)
-        B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names=FALSE)
-        tempa <- droplevels(sampleData[sampleData$condition %in% A,])
-        tempb <- droplevels(sampleData[sampleData$condition %in% B,])
-        plus <- 1/length(A)
-        minus <- 1/length(B)*-1
-
-        BPPARAM = MulticoreParam(workers=availablecores)
 
         # initialize empty objects
         res=""
         resOrdered=""
-        res <- results(dds, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
-        res <- lfcShrink(dds=dds, coef=tail(resultsNames(dds), 1), res=res, type='apeglm')
+        res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
+        res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A,"vs",B,sep="_"), res=res, type='apeglm')
 
         # add comp object to list for image
-        comparison_objs <- c(comparison_objs, res)
+        comparison_objs[[contrast_name]] <- res
 
         # sort and output
-        resOrdered <- res[order(res$log2FoldChange),]
+        resOrdered <- res_shrink[order(res$log2FoldChange),]
 
         # # Add gene names  (check how gene_id col is named )
         resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x, gtf.df)})
@@ -181,10 +176,11 @@ for(contrast in comparison[[1]]){
 
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+        write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
         # plotMA
         png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep="_"))
-        plotMA(res, ylim=c(-3,3))
+        DESeq2::plotMA(res_shrink)
         dev.off()
 
         if (spike != ''){  # DE run for spike-in normalized data
@@ -192,14 +188,15 @@ for(contrast in comparison[[1]]){
             # initialize empty objects
             res=""
             resOrdered=""
-            res <- results(dds_norm, contrast=list(paste('condition', tempa$condition, sep=''), paste('condition', tempb$condition, sep='')), listValues=c(plus, minus), parallel=TRUE, BPPARAM=BPPARAM)
-            res <- lfcShrink(dds=dds_norm, coef=tail(resultsNames(dds_norm), 1), res=res, type='apeglm')
+            res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
+            res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A,"vs",B,sep="_"), res=res, type='apeglm')
 
             # add comp object to list for image
-            comparison_objs <- c(comparison_objs, res)
+            listname <- paste(contrast_name,"_norm",sep="")
+            comparison_objs[[listname]] <- res
 
             # sort and output
-            resOrdered <- res[order(res$log2FoldChange),]
+            resOrdered <- res_shrink[order(res$log2FoldChange),]
 
             # # Add gene names  (check how gene_id col is named )
             resOrdered$Gene  <- lapply(rownames(resOrdered), function(x){get_gene_name(x, gtf.df)})
@@ -209,17 +206,17 @@ for(contrast in comparison[[1]]){
 
             # write the table to a tsv file
             write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+            write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
             # plotMA
             png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep="_"))
-            plotMA(res, ylim=c(-3,3))
+            DESeq2::plotMA(res)
             dev.off()
         }
 
         # cleanup
-        rm(res, resOrdered, BPPARAM)
+        rm(res, resOrdered)
         print(paste('cleanup done for ', contrast_name, sep=''))
-
     })
 }
 
