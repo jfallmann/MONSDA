@@ -47,12 +47,11 @@ gtf.df <- as.data.frame(gtf.rtl)
 
 ## Annotation
 sampleData <- as.data.frame(read.table(gzfile(anname), row.names=1))
-colnames(sampleData) <- c("group", "type", "batch")
-sampleData <- as.data.frame(sampleData)
-groups <- factor(sampleData$group)
+colnames(sampleData) <- c("condition", "type", "batch")
+sampleData$condition <- as.factor(sampleData$condition)
+sampleData$batch <- as.factor(sampleData$batch)
+sampleData$type <- as.factor(sampleData$type)
 samples <- rownames(sampleData)
-types <- factor(sampleData$type)
-batches <- factor(sampleData$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -71,33 +70,33 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 }
 
 ## name types and levels for design
-bl <- sapply("batch", paste0, levels(batches)[-1])
-tl <- sapply("type", paste0, levels(types)[-1])
+bl <- sapply("batch", paste0, levels(sampleData$batch)[-1])
+tl <- sapply("type", paste0, levels(sampleData$type)[-1])
 
 ## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(types)) > 1){
-    if (length(levels(batches)) > 1){
-        des <- ~0+groups+types+batches
+if (length(levels(sampleData$type)) > 1){
+    if (length(levels(sampleData$batch)) > 1){
+        des <- ~0+type+batch+condition
         design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(levels(groups), tl, bl)
+        colnames(design) <- c(tl, bl, levels(sampleData$condition))
     } else{
-        des <- ~0+groups+types
+        des <- ~0+type+condition
         design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(levels(groups), tl)
+        colnames(design) <- c(tl, levels(condition))
     }
 } else{
-    if (length(levels(batches)) > 1){
-        des <- ~0+groups+batches
+    if (length(levels(sampleData$batch)) > 1){
+        des <- ~0+batch+condition
         design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(levels(groups), bl)
+        colnames(design) <- c(bl, levels(sampleData$condition))
     } else{
-        des <- ~0+groups
+        des <- ~0+condition
         design <- model.matrix(des, data=sampleData)
-        colnames(design) <- levels(groups)
+        colnames(design) <- levels(sampleData$condition)
     }
 }
 
-#print(paste('FITTING DESIGN: ', design, sep=""))
+print(paste('FITTING DESIGN: ', design, sep=""))
 
 ## check genes and spike-ins
 if (spike != ''){
@@ -107,14 +106,13 @@ setwd(outdir)
 if (spike != ''){
     counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
     genes <- rownames(countData)
-
     countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
 
     sampleData_norm <- cbind(sampleData, pData(counts_norm))
     design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep=" + ")), data=sampleData_norm)
     colnames(design_norm) <- c(colnames(design),"W_1")
 
-    dge_norm <- DGEList(counts=counts(counts_norm), group=groups, samples=samples, genes=genes)
+    dge_norm <- DGEList(counts=counts(counts_norm), group=sampleData$condition, samples=samples, genes=genes)
 
     ## filter low counts
     keep <- filterByExpr(dge_norm)
@@ -159,7 +157,7 @@ if (spike != ''){
 
 # Same without spike-in normalization
 genes <- rownames(countData)
-dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genes)
+dge <- DGEList(counts=countData, group=sampleData$condition, samples=samples, genes=genes)
 
 ## filter low counts
 keep <- filterByExpr(dge)
@@ -167,7 +165,6 @@ dge <- dge[keep, , keep.lib.sizes=FALSE]
 
 ## normalize with TMM
 dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
-
 
 ## create file normalized table
 tmm <- as.data.frame(cpm(dge))
@@ -230,7 +227,7 @@ for(compare in comparisons[[1]]){
         qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
 
         # add comp object to list for image
-        comparison_objs <- append(comparison_objs, qlf)
+        comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
         qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x, gtf.df)})
@@ -245,14 +242,14 @@ for(compare in comparisons[[1]]){
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
         tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf.df)})
         tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(8,7,2,3,4,5,6)]
+        tops <- tops$table[, c(7,6,2,3,4,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
         tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf.df)})
         tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(8,7,2,3,4,5,6)]
+        tops <- tops$table[, c(7,6,2,3,4,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
@@ -262,7 +259,6 @@ for(compare in comparisons[[1]]){
         plotMD(qlf, main=contrast_name)
         abline(h=c(-1, 1), col="blue")
         dev.off()
-
 
         if (spike != ''){  # Same for spike-in normalized
             rm(qlf, tops, res)
@@ -301,14 +297,14 @@ for(compare in comparisons[[1]]){
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
             tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf.df)})
             tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(8,7,2,3,4,5,6)]
+            tops <- tops$table[, c(7,6,2,3,4,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
             tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf.df)})
             tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(8,7,2,3,4,5,6)]
+            tops <- tops$table[, c(7,6,2,3,4,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
@@ -318,7 +314,6 @@ for(compare in comparisons[[1]]){
             plotMD(qlf, main=contrast_name)
             abline(h=c(-1, 1), col="blue")
             dev.off()
-
         }
 
         # cleanup

@@ -74,15 +74,15 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 ## Create design-table considering different types (paired, unpaired) and batches
 if (length(levels(sampleData$type)) > 1){
     if (length(levels(sampleData$batch)) > 1){
-        design <- ~ type + batch + condition
+        design <- ~0 + type + batch + condition
     } else{
-        design <- ~ type + condition
+        design <- ~0 + type + condition
     }
 } else{
     if (length(levels(sampleData$batch)) > 1){
-        design <- ~ batch + condition
+        design <- ~0 + batch + condition
     } else{
-        design <- ~ condition
+        design <- ~0 + condition
     }
 }
 print(paste('FITTING DESIGN: ', design, sep=""))
