@@ -34,26 +34,19 @@ get_gene_name <- function(id, df){
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
-
 BPPARAM = MulticoreParam(workers=cores)
 
-# define cutoffs
-# cutoffs <- strsplit(cutts, '-')[[1]]
-# pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
-# lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
-
 # Importing counts
-samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
-samps$original_sample_id <- samps$sample_id
-samps$sample_id <- paste("sample",samps$sample_id, samps$condition, sep="_")
-samps$sample_id <- make.names(samps$sample_id)
-samps$condition <- factor(samps$condition)
-files <- file.path(samps$path, "quant.sf")
-names(files) <- samps$sample_id
+sampleData <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
+sampleData$original_sample_id <- sampleData$sample_id
+sampleData$sample_id <- paste("sample",sampleData$sample_id, sampleData$condition, sep="_")
+sampleData$sample_id <- make.names(sampleData$sample_id)
+sampleData$condition <- as.factor(sampleData$condition)
+sampleData$type <- as.factor(sampleData$type)
+sampleData$batch <- as.factor(sampleData$batch)
 
-groups <- factor(samps$condition)
-types <- factor(samps$type)
-batches <- factor(samps$batch)
+files <- file.path(sampleData$path, "quant.sf")
+names(files) <- sampleData$sample_id
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -85,14 +78,14 @@ txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
 all(rownames(cts) == txdf$TXNAME)
 
 counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
-d <- dmDSdata(counts=counts, samples=samps)
+d <- dmDSdata(counts=counts, samples=sampleData)
 
 # Filter before running procedures:
 #   (1) it has a count of at least 10 in at least n.small samples
 #   (2) it has a relative abundance proportion of at least 0.1 in at least n.small samples
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
-n <- nrow(samps)
-n.small <- n/length(levels(samps$condition))  # its not really the smallest group, needs to be improved
+n <- nrow(sampleData)
+n.small <- n/length(levels(sampleData$condition))  # its not really the smallest group, needs to be improved
 d <- dmFilter(d,
                 min_samps_feature_expr=n.small, min_feature_expr=10,
                 min_samps_feature_prop=n.small, min_feature_prop=0.1,
@@ -101,36 +94,36 @@ d <- dmFilter(d,
 # shows how many of the remaining genes have N isoforms
 table(table(counts(d)$gene_id))
 
-# create designmatrix
-#   original code for simple model
-design <- model.matrix(~0+groups, data=samps)
-colnames(design) <- levels(groups)
+# # create designmatrix
+# #   original code for simple model
+# design <- model.matrix(~0+sampleData$condition, data=sampleData)
+# colnames(design) <- levels(sampleData$condition)
 
 ## make dataset smaller for testing
 # d <- d[1:250,]
 
-## name types and levels for design
-# bl <- sapply("batch", paste0, levels(batches)[-1])
-# tl <- sapply("type", paste0, levels(types)[-1])
+# name types and levels for design
+bl <- sapply("batch", paste0, levels(sampleData$batch)[-1])
+tl <- sapply("type", paste0, levels(sampleData$type)[-1])
 
-## Create design-table considering different types (paired, unpaired) and batches
-#if (length(levels(types)) > 1){
-#    if (length(levels(batches)) > 1){
-#        design <- model.matrix(~0+groups+types+batches, data=samps)
-#        colnames(design) <- c(levels(groups),tl,bl)
-#    } else{
-#        design <- model.matrix(~0+groups+types, data=samps)
-#        colnames(design) <- c(levels(groups),tl)
-#    }
-#} else{
-#    if (length(levels(batches)) > 1){
-#        design <- model.matrix(~0+groups+batches, data=samps)
-#        colnames(design) <- c(levels(groups),bl)
-#    } else{
-#        design <- model.matrix(~0+groups, data=samps)
-#        colnames(design) <- levels(groups)
-#    }
-#}
+# Create design-table considering different types (paired, unpaired) and batches
+if (length(levels(sampleData$type)) > 1){
+   if (length(levels(sampleData$batch)) > 1){
+       design <- model.matrix(~0+type+batch+condition, data=sampleData)
+       colnames(design) <- c(tl,bl,levels(sampleData$condition))
+   } else{
+       design <- model.matrix(~0+type+condition, data=sampleData)
+       colnames(design) <- c(tl,levels(sampleData$condition))
+   }
+} else{
+   if (length(levels(sampleData$batch)) > 1){
+       design <- model.matrix(~0+batch+condition, data=sampleData)
+       colnames(design) <- c(bl,levels(sampleData$condition))
+   } else{
+       design <- model.matrix(~0+condition, data=sampleData)
+       colnames(design) <- levels(sampleData$condition)
+   }
+}
 
 comparison_objs <- list()
 setwd(outdir)
@@ -170,7 +163,7 @@ for(contrast in comparisons[[1]]){
         d <- dmTest(d, contrast=contrast)
 
         # add comp object to list for image
-        comparison_objs <- c(comparison_objs, d)
+        comparison_objs[[contrast_name]] <- d
 
         # calculate LFC from proportions table
         proportions <- DRIMSeq::proportions(d)
@@ -209,7 +202,7 @@ for(contrast in comparisons[[1]]){
 
         proportions.print <- as.data.frame(apply(proportions,2,as.character))
         for(c in 3:(length(colnames(proportions.print))-4)){
-            colnames(proportions.print)[c] <- samps$original_sample_id[samps$sample_id == colnames(proportions.print)[c]]
+            colnames(proportions.print)[c] <- sampleData$original_sample_id[sampleData$sample_id == colnames(proportions.print)[c]]
         }
         res.print         <- as.data.frame(apply(res,2,as.character))
         res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
