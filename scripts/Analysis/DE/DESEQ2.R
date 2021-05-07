@@ -34,7 +34,7 @@ get_gene_name <- function(id, df){
         return(name_list[1])
     }else{
         message(paste("WARNING: ambigous gene id: ", id))
-        return (paste("ambigous", id, sep="_"))
+        return (paste(unique(name_list), sep="|"))
     }
 }
 
@@ -52,6 +52,7 @@ sampleData_all$condition <- as.factor(sampleData_all$condition)
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
+gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Combinations of conditions
 comparison <- strsplit(cmp, ",")
@@ -183,10 +184,10 @@ for(contrast in comparison[[1]]){
         resOrdered <- res_shrink[order(res_shrink$log2FoldChange),]
 
         # # Add gene names  (check how gene_id col is named )
-        resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x, gtf.df)})
+        resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x, gtf_gene)})
         resOrdered$Gene_ID <- rownames(resOrdered)
-        resOrdered <- resOrdered[, c(8,7,1,2,3,4,5,6)]
-        resOrdered <- as.data.frame(apply(resOrdered,2, as.character))
+        resOrdered <- resOrdered[, c(7,1,2,3,4,5,6)]
+        resOrdered <- as.data.frame(apply(resOrdered, 2, as.character))
 
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
@@ -213,9 +214,9 @@ for(contrast in comparison[[1]]){
             resOrdered <- res_shrink[order(res_shrink$log2FoldChange),]
 
             # # Add gene names  (check how gene_id col is named )
-            resOrdered$Gene  <- lapply(rownames(resOrdered), function(x){get_gene_name(x, gtf.df)})
+            resOrdered$Gene  <- lapply(rownames(resOrdered), function(x){get_gene_name(x, gtf_gene)})
             resOrdered$Gene_ID <- rownames(resOrdered)
-            resOrdered <- resOrdered[,c(8,7,1,2,3,4,5,6)]
+            resOrdered <- resOrdered[,c(7,1,2,3,4,5,6)]
             resOrdered <- as.data.frame(apply(resOrdered, 2, as.character))
 
             # write the table to a tsv file
