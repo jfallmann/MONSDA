@@ -11,6 +11,7 @@ dependencies:
   - binutils_linux-64=2.31.1
   - bioconductor-annotate=1.68.0
   - bioconductor-annotationdbi=1.52.0
+  - bioconductor-apeglm=1.12.0
   - bioconductor-aroma.light=3.20.0
   - bioconductor-biobase=2.50.0
   - bioconductor-biocfilecache=1.14.0
