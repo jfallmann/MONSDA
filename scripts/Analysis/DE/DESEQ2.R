@@ -102,7 +102,7 @@ for(contrast in comparison[[1]]){
             design <- ~ condition
         }
     }
-    print(paste('FITTING DESIGN: ', design, sep=""))
+    print(design)
 
     # Normalize by spike in if available
     if (spike != ''){
@@ -238,20 +238,8 @@ for(contrast in comparison[[1]]){
 #### Now plot and print over-all comparisons
 
 ## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(sampleData_all$type)) > 1){
-    if (length(levels(sampleData_all$batch)) > 1){
-        design <- ~ type + batch + condition
-    } else{
-        design <- ~ type + condition
-    }
-} else{
-    if (length(levels(sampleData_all$batch)) > 1){
-        design <- ~ batch + condition
-    } else{
-        design <- ~ condition
-    }
-}
-print(paste('FITTING DESIGN: ', design, sep=""))
+design <- ~0 + condition
+print(design)
 
 #Create DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
