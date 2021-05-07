@@ -93,5 +93,6 @@ rule create_summary_snippet:
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "NextSnakes/envs/"+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
-    params: bins = BINS
-    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {input} --output {output} --loglevel DEBUG 2> {log}"
+    params: bins = BINS,
+            abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --loglevel DEBUG 2>> {log}"
