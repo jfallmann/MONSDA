@@ -129,13 +129,13 @@ for(contrast in comparison[[1]]){
         rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
         vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
 
-        png(paste("Figures/DE", "DESEQ2", combi, "DataSet_base", A, "figure", "PCA_norm.png", sep="_"))
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep="_"))
         print(plotPCA(rld_norm, intgroup=c('condition')))
         dev.off()
 
         #We also write the normalized counts to file
-        write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-        write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+        write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+        write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
     }
 
     #Create DESeqDataSet
@@ -160,13 +160,13 @@ for(contrast in comparison[[1]]){
     rld<- rlogTransformation(dds, blind=FALSE)
     vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
 
-    png(paste("Figures/DE", "DESEQ2", combi, "DataSet_base", A, "figure", "PCA.png", sep="_"))
+    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep="_"))
     print(plotPCA(rld, intgroup=c('condition')))
     dev.off()
 
     #We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
-    write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
     tryCatch({
 
