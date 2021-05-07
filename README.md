@@ -1,5 +1,7 @@
 # snakes
 
+[![Join the chat at https://gitter.im/NextSnakes/community](https://badges.gitter.im/NextSnakes/community.svg)](https://gitter.im/NextSnakes/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Collection of snakemake workflows for NGS analysis from mapping to featurecount and track generation
 Contains sumodule so clone with ```git clone --recursive``` or if already cloned pull submodules with
 ```
