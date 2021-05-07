@@ -180,7 +180,7 @@ for(contrast in comparison[[1]]){
         comparison_objs[[contrast_name]] <- res
 
         # sort and output
-        resOrdered <- res_shrink[order(res$log2FoldChange),]
+        resOrdered <- res_shrink[order(res_shrink$log2FoldChange),]
 
         # # Add gene names  (check how gene_id col is named )
         resOrdered$Gene  <- lapply(rownames(resOrdered) , function(x){get_gene_name(x, gtf.df)})
@@ -210,7 +210,7 @@ for(contrast in comparison[[1]]){
             comparison_objs[[listname]] <- res
 
             # sort and output
-            resOrdered <- res_shrink[order(res$log2FoldChange),]
+            resOrdered <- res_shrink[order(res_shrink$log2FoldChange),]
 
             # # Add gene names  (check how gene_id col is named )
             resOrdered$Gene  <- lapply(rownames(resOrdered), function(x){get_gene_name(x, gtf.df)})
