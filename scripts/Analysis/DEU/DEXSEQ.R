@@ -174,7 +174,7 @@ for(contrast in comparisons[[1]]){
         plotDispEsts(dxdpair)
         dev.off()
 
-        dxdpair = testForDEU( dxdpair, reducedModel = reduced, fullModel = full, BPPARAM=BPPARAM )
+        dxdpair = testForDEU( dxdpair, reducedModel=reduced, fullModel=full, BPPARAM=BPPARAM )
 
         dxdpair = estimateExonFoldChanges( dxdpair, fitExpToVar="condition", BPPARAM=BPPARAM)
 

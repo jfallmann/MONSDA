@@ -43,11 +43,11 @@ BPPARAM = MulticoreParam(workers=availablecores)
 
 ### SCRIPT
 ## Annotation
-sampleData <- as.data.frame(read.table(gzfile(anname), row.names=1))
-colnames(sampleData) <- c("condition", "type", "batch")
-sampleData$batch <- as.factor(sampleData$batch)
-sampleData$type <- as.factor(sampleData$type)
-sampleData$condition <- as.factor(sampleData$condition)
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names=1))
+colnames(sampleData_all) <- c("condition", "type", "batch")
+sampleData_all$batch <- as.factor(sampleData_all$batch)
+sampleData_all$type <- as.factor(sampleData_all$type)
+sampleData_all$condition <- as.factor(sampleData_all$condition)
 
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
@@ -62,85 +62,14 @@ if (combi == "none"){
 }
 
 ## readin counttable
-countData <- as.matrix(read.table(gzfile(countfile), header=T, row.names=1))
+countData_all <- as.matrix(read.table(gzfile(countfile), header=T, row.names=1))
 
 setwd(outdir)
 
 #Check if names are consistent
-if (!all(rownames(sampleData) %in% colnames(countData))){
+if (!all(rownames(sampleData_all) %in% colnames(countData_all))){
     stop("Count file does not correspond to the annotation file")
 }
-
-## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(sampleData$type)) > 1){
-    if (length(levels(sampleData$batch)) > 1){
-        design <- ~0 + type + batch + condition
-    } else{
-        design <- ~0 + type + condition
-    }
-} else{
-    if (length(levels(sampleData$batch)) > 1){
-        design <- ~0 + batch + condition
-    } else{
-        design <- ~0 + condition
-    }
-}
-print(paste('FITTING DESIGN: ', design, sep=""))
-
-# Normalize by spike in if available
-print("Spike-in used, data will be normalized to spike in separately")
-if (spike != ''){
-    ctrlgenes <- readLines(spike)
-    }
-
-if (spike != ''){
-    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
-    countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
-
-    sampleData_norm <- cbind(sampleData, pData(counts_norm))
-    design_norm <- as.formula(paste(deparse(design), colnames(pData(counts_norm))[1], sep=" + "))
-
-    dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design= design_norm)
-    #filter low counts
-    keep_norm <- rowSums(counts(dds_norm)) >= 10
-    dds_norm <- dds_norm[keep_norm,]
-
-    dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
-    rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
-    vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
-
-    png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA_norm.png", sep="_"))
-    print(plotPCA(rld_norm, intgroup=c('condition')))
-    dev.off()
-
-    #We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-    write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
-}
-
-#Create DESeqDataSet
-dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
-
-#filter low counts
-keep <- rowSums(counts(dds)) >= 10
-dds <- dds[keep,]
-
-#run for each pair of conditions
-dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
-resultsNames(dds)
-
-#Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
-
-rld<- rlogTransformation(dds, blind=FALSE)
-vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
-
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep="_"))
-print(plotPCA(rld, intgroup=c('condition')))
-dev.off()
-
-#We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
 comparison_objs <- list()
 
@@ -153,6 +82,91 @@ for(contrast in comparison[[1]]){
     # determine contrast
     A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names=FALSE)
     B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names=FALSE)
+
+    #subset Datasets for pairwise comparison
+    countData <- cbind(countData_all[ , grepl( paste(B, '_', sep='') , colnames( countData_all ) )], countData_all[ ,grepl( paste(A, '_', sep='') , colnames( countData_all ) )])
+    sampleData <- rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition))
+
+    ## Create design-table considering different types (paired, unpaired) and batches
+    if (length(levels(sampleData$type)) > 1){
+        if (length(levels(sampleData$batch)) > 1){
+            design <- ~ type + batch + condition
+        } else{
+            design <- ~ type + condition
+        }
+    } else{
+        if (length(levels(sampleData$batch)) > 1){
+            design <- ~ batch + condition
+        } else{
+            design <- ~ condition
+        }
+    }
+    print(paste('FITTING DESIGN: ', design, sep=""))
+
+    # Normalize by spike in if available
+    if (spike != ''){
+        print("Spike-in used, data will be normalized to spike in separately")
+        ctrlgenes <- readLines(spike)
+        counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
+        countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
+
+        sampleData_norm <- cbind(sampleData, pData(counts_norm))
+        design_norm <- as.formula(paste(deparse(design), colnames(pData(counts_norm))[1], sep=" + "))
+
+        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design= design_norm)
+
+        #filter low counts
+        keep_norm <- rowSums(counts(dds_norm)) >= 10
+        dds_norm <- dds_norm[keep_norm,]
+
+        #drop unused samples
+        dds_norms$condition <- droplevels(dds_norm$condition)
+
+        #relevel to base condition A
+        dds_norm$condition <- relevel(dds$condition, ref = B)
+
+        dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
+        rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
+        vsd_norm <-varianceStabilizingTransformation(dds_norm, blind=FALSE)
+
+        png(paste("Figures/DE", "DESEQ2", combi, "DataSet_base", A, "figure", "PCA_norm.png", sep="_"))
+        print(plotPCA(rld_norm, intgroup=c('condition')))
+        dev.off()
+
+        #We also write the normalized counts to file
+        write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "rld_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+        write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "vsd_norm.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    }
+
+    #Create DESeqDataSet
+    dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
+
+    #filter low counts
+    keep <- rowSums(counts(dds)) >= 10
+    dds <- dds[keep,]
+
+    #drop unused samples
+    dds$condition <- droplevels(dds$condition)
+
+    #relevel to base condition A
+    dds$condition <- relevel(dds$condition, ref = B)
+
+    #run for each pair of conditions
+    dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
+    print(resultsNames(dds))
+
+    #Now we want to transform the raw discretely distributed counts so that we can do clustering. (Note: when you expect a large treatment effect you should actually set blind=FALSE (see https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+
+    rld<- rlogTransformation(dds, blind=FALSE)
+    vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
+
+    png(paste("Figures/DE", "DESEQ2", combi, "DataSet_base", A, "figure", "PCA.png", sep="_"))
+    print(plotPCA(rld, intgroup=c('condition')))
+    dev.off()
+
+    #We also write the normalized counts to file
+    write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+    write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet_base", A, "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
 
     tryCatch({
 
@@ -220,6 +234,46 @@ for(contrast in comparison[[1]]){
     })
 }
 
+#### Now plot and print over-all comparisons
+
+## Create design-table considering different types (paired, unpaired) and batches
+if (length(levels(sampleData_all$type)) > 1){
+    if (length(levels(sampleData_all$batch)) > 1){
+        design <- ~ type + batch + condition
+    } else{
+        design <- ~ type + condition
+    }
+} else{
+    if (length(levels(sampleData_all$batch)) > 1){
+        design <- ~ batch + condition
+    } else{
+        design <- ~ condition
+    }
+}
+print(paste('FITTING DESIGN: ', design, sep=""))
+
+#Create DESeqDataSet
+dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
+
+#filter low counts
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
+
+#run for each pair of conditions
+dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
+
+rld<- rlogTransformation(dds, blind=FALSE)
+vsd<-varianceStabilizingTransformation(dds, blind=FALSE)
+
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep="_"))
+print(plotPCA(rld, intgroup=c('condition')))
+dev.off()
+
+#We also write the normalized counts to file
+write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep="_")), sep="\t", col.names=NA)
+write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep="_")), sep="\t", col.names=NA)
+
+
 # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
 
 par(mai=ifelse(1:4 <= 2, par('mai'), 0))
@@ -239,20 +293,20 @@ library('RColorBrewer')
 library('gplots')
 select <- order(rowMeans(counts(dds, normalized=TRUE)), decreasing=TRUE)[1:30]
 hmcol<- colorRampPalette(brewer.pal(9, 'GnBu'))(100)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep="_"), width=800, height=750)
 heatmap.2(counts(dds, normalized=TRUE)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
-          dendrogram='none', trace='none', margin=c(10,6))
+          dendrogram='none', trace='none', margin=c(12,8))
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep="_"), width=800, height=750)
 heatmap.2(assay(rld)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
-          dendrogram='none', trace='none', margin=c(10, 6))
+          dendrogram='none', trace='none', margin=c(12, 8))
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep="_"), width=800, height=750)
 heatmap.2(assay(vsd)[select,], col = hmcol,
           Rowv = FALSE, Colv = FALSE, scale='none',
-          dendrogram='none', trace='none', margin=c(10, 6))
+          dendrogram='none', trace='none', margin=c(12, 8))
 dev.off()
 
 #The above shows heatmaps for 30 most highly expressed genes (not necessarily the biggest fold change). The data is of raw counts (left), regularized log transformation (center) and from variance stabilizing transformation (right) and you can clearly see the effect of the transformation has by shrinking the variance so that we don’t get the squish effect shown in the left hand graph.
@@ -266,7 +320,7 @@ rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
 #heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
 #From the Apr 2015 vignette
 hc <- hclust(distsRL)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep="_"))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep="_"), width=800, height=800)
 heatmap.2(mat, Rowv=as.dendrogram(hc),
           symm=TRUE, trace='none',
           col = rev(hmcol), margin=c(13, 13))
