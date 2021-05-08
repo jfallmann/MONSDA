@@ -60,14 +60,15 @@ if (combi == "none"){
 ## readin counttable
 countData_all <- read.table(countfile, header = TRUE, row.names=1)
 
-setwd(outdir)
-
 #Check if names are consistent
 if (!all(rownames(sampleData_all) %in% colnames(countData_all))){
     stop("Count file does not correspond to the annotation file")
 }
 
 comparison_objs <- list()
+
+WD <- getwd()
+setwd(outdir)
 
 ## Analyze according to comparison groups
 for(compare in comparisons[[1]]){
