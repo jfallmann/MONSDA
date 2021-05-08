@@ -170,7 +170,7 @@ for(contrast in comparisons[[1]]){
         dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
-        png(paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "figure","DispEsts.png",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name, "figure","DispEsts.png",sep="_"))
         plotDispEsts(dxdpair)
         dev.off()
 
@@ -182,7 +182,7 @@ for(contrast in comparisons[[1]]){
 
         dxr2 <- dxr1
 
-        png(paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "figure","plotMA.png",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name, "figure","plotMA.png",sep="_"))
         print(plotMA( dxr1, cex=0.8))
         dev.off()
 
@@ -212,7 +212,7 @@ for(contrast in comparisons[[1]]){
 
             counter <- counter+1
         }
-        write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
+        write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_name, "list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
         # cleanup
         rm(dxdpair, dxr1)

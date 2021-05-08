@@ -208,7 +208,7 @@ for(contrast in comparison[[1]]){
             res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
 
             # add comp object to list for image
-            listname <- paste(contrast_namA, "_norm",sep="")
+            listname <- paste(contrast_name, "_norm",sep="")
             comparison_objs[[listname]] <- res
 
             # sort and output
