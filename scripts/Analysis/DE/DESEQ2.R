@@ -65,8 +65,6 @@ if (combi == "none"){
 ## readin counttable
 countData_all <- as.matrix(read.table(gzfile(countfile), header=T, row.names=1))
 
-setwd(outdir)
-
 #Check if names are consistent
 if (!all(rownames(sampleData_all) %in% colnames(countData_all))){
     stop("Count file does not correspond to the annotation file")
@@ -108,6 +106,9 @@ for(contrast in comparison[[1]]){
     if (spike != ''){
         print("Spike-in used, data will be normalized to spike in separately")
         ctrlgenes <- readLines(spike)
+    }
+    setwd(outdir)
+    if (spike != ''){
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
 
@@ -175,7 +176,7 @@ for(contrast in comparison[[1]]){
         res=""
         resOrdered=""
         res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
-        res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A,"vs",B,sep="_"), res=res, type='apeglm')
+        res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- res
@@ -204,10 +205,10 @@ for(contrast in comparison[[1]]){
             res=""
             resOrdered=""
             res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
-            res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A,"vs",B,sep="_"), res=res, type='apeglm')
+            res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
 
             # add comp object to list for image
-            listname <- paste(contrast_name,"_norm",sep="")
+            listname <- paste(contrast_namA, "_norm",sep="")
             comparison_objs[[listname]] <- res
 
             # sort and output

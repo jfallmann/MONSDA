@@ -90,7 +90,7 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData, design = desi
     id <- as.character(dcounts[,1])
     n <- id
     split(n,id) <- lapply(split(n ,id), seq_along )
-    rownames(dcounts) <- sprintf("%s%s%03.f",id,":E",as.numeric(n))
+    rownames(dcounts) <- sprintf("%s%s%03.f",id, ":E",as.numeric(n))
     dcounts <- dcounts[,2:ncol(dcounts)]
 
     dcounts <- dcounts[substr(rownames(dcounts), 1, 1) != "_", ] #remove _ from beginnning of gene name
@@ -149,8 +149,8 @@ print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
 for(contrast in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrast,":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrasd, ":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrasd, ":")[[1]][2], "-vs-")
 
     print(paste("Comparing ",contrast_name, sep=""))
 
@@ -170,7 +170,7 @@ for(contrast in comparisons[[1]]){
         dxdpair = estimateSizeFactors( dxdpair )
         dxdpair = estimateDispersions( dxdpair, BPPARAM=BPPARAM )
 
-        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name,"figure","DispEsts.png",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "figure","DispEsts.png",sep="_"))
         plotDispEsts(dxdpair)
         dev.off()
 
@@ -182,7 +182,7 @@ for(contrast in comparisons[[1]]){
 
         dxr2 <- dxr1
 
-        png(paste("Figures/DEU","DEXSEQ",combi,contrast_name,"figure","plotMA.png",sep="_"))
+        png(paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "figure","plotMA.png",sep="_"))
         print(plotMA( dxr1, cex=0.8))
         dev.off()
 
@@ -203,7 +203,7 @@ for(contrast in comparisons[[1]]){
         message("create transcripts plots")
         for(gene in sigs){
             if(counter>limit){break}
-            name1 <- paste("Figures/DEU","DEXSEQ",combi,contrast_name,counter,"figure","transcripts.png",sep="_")
+            name1 <- paste("Figures/DEU","DEXSEQ",combi,contrast_name,counted, "figure","transcripts.png",sep="_")
             png(name1, height = 1000, width = 1000)
             print(plotDEXSeq( dxr1, dxr1$groupID[gene],legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 ))
             dev.off()
@@ -212,7 +212,7 @@ for(contrast in comparisons[[1]]){
 
             counter <- counter+1
         }
-        write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_name,"list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
+        write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_namd, "list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
         # cleanup
         rm(dxdpair, dxr1)
@@ -220,4 +220,4 @@ for(contrast in comparisons[[1]]){
     })
 }
 
-save.image(file = paste("DEU_DEXSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DEU_DEXSEQ",combd, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

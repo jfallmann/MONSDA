@@ -24,16 +24,17 @@ spike           <- if (argsLen > 7) args[8] else ''
 
 print(args)
 
-## FUNCS
+### FUNCS
 get_gene_name <- function(id, df){
     name_list <- df$gene_name[df['gene_id'] == id]
     if(length(unique(name_list)) == 1){
         return(name_list[1])
     }else{
         message(paste("WARNING: ambigous gene id: ", id))
-        return (paste("ambigous", id, sep="_"))
+        return (paste(unique(name_list), sep="|"))
     }
 }
+
 
 ### SCRIPT
 print(paste('Run EdgeR DE with ', availablecores, ' cores', sep=''))
@@ -44,14 +45,15 @@ BPPARAM = MulticoreParam(workers=availablecores)
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
+gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Annotation
-sampleData <- as.data.frame(read.table(gzfile(anname), row.names=1))
-colnames(sampleData) <- c("condition", "type", "batch")
-sampleData$condition <- as.factor(sampleData$condition)
-sampleData$batch <- as.factor(sampleData$batch)
-sampleData$type <- as.factor(sampleData$type)
-samples <- rownames(sampleData)
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names=1))
+colnames(sampleData_all) <- c("condition", "type", "batch")
+sampleData_all$condition <- as.factor(sampleData_all$condition)
+sampleData_all$batch <- as.factor(sampleData_all$batch)
+sampleData_all$type <- as.factor(sampleData_all$type)
+samples <- rownames(sampleData_all)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -62,141 +64,12 @@ if (combi == "none"){
 }
 
 ## readin counttable
-countData <- read.table(countfile, header = TRUE, row.names=1)
+countData_all <- read.table(countfile, header = TRUE, row.names=1)
 
 # Check if names are consistent
 if (!all(rownames(sampleData) %in% colnames(countData))){
     stop("Count file does not correspond to the annotation file")
 }
-
-## name types and levels for design
-bl <- sapply("batch", paste0, levels(sampleData$batch)[-1])
-tl <- sapply("type", paste0, levels(sampleData$type)[-1])
-
-## Create design-table considering different types (paired, unpaired) and batches
-if (length(levels(sampleData$type)) > 1){
-    if (length(levels(sampleData$batch)) > 1){
-        des <- ~0+type+batch+condition
-        design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(tl, bl, levels(sampleData$condition))
-    } else{
-        des <- ~0+type+condition
-        design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(tl, levels(condition))
-    }
-} else{
-    if (length(levels(sampleData$batch)) > 1){
-        des <- ~0+batch+condition
-        design <- model.matrix(des, data=sampleData)
-        colnames(design) <- c(bl, levels(sampleData$condition))
-    } else{
-        des <- ~0+condition
-        design <- model.matrix(des, data=sampleData)
-        colnames(design) <- levels(sampleData$condition)
-    }
-}
-
-print(paste('FITTING DESIGN: ', design, sep=""))
-
-## check genes and spike-ins
-if (spike != ''){
-    ctrlgenes <- readLines(spike)
-}
-setwd(outdir)
-if (spike != ''){
-    counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
-    genes <- rownames(countData)
-    countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-
-    sampleData_norm <- cbind(sampleData, pData(counts_norm))
-    design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep=" + ")), data=sampleData_norm)
-    colnames(design_norm) <- c(colnames(design),"W_1")
-
-    dge_norm <- DGEList(counts=counts(counts_norm), group=sampleData$condition, samples=samples, genes=genes)
-
-    ## filter low counts
-    keep <- filterByExpr(dge_norm)
-    dge_norm <- dge_norm[keep, , keep.lib.sizes=FALSE]
-
-    ## normalize with TMM
-    dge_norm <- calcNormFactors(dge_norm, method = "TMM", BPPARAM=BPPARAM)
-
-    ## create file normalized table
-    tmm_norm <- as.data.frame(cpm(dge_norm))
-    colnames(tmm_norm) <- t(dge_norm$samples$samples)
-    tmm_norm$ID <- dge_norm$genes$genes
-    tmm_norm <- tmm_norm[c(ncol(tmm_norm),1:ncol(tmm_norm)-1)]
-
-    write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-    ## create file MDS-plot with and without summarized replicates
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS_norm.png", sep="_")
-    png(out)
-    plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1)
-    dev.off()
-
-    ## estimate Dispersion
-    dge_norm <- estimateDisp(dge_norm, design_norm, robust=TRUE)
-
-    ## create file BCV-plot - visualizing estimated dispersions
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV_norm.png", sep="_")
-    png(out)
-    plotBCV(dge_norm)
-    dev.off()
-
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit_norm <- glmQLFit(dge_norm, design_norm, robust=TRUE)
-
-    ## create file quasi-likelihood-dispersion-plot
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp_norm.png", sep="_")
-    png(out)
-    plotQLDisp(fit_norm)
-    dev.off()
-
- }
-
-# Same without spike-in normalization
-genes <- rownames(countData)
-dge <- DGEList(counts=countData, group=sampleData$condition, samples=samples, genes=genes)
-
-## filter low counts
-keep <- filterByExpr(dge)
-dge <- dge[keep, , keep.lib.sizes=FALSE]
-
-## normalize with TMM
-dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
-
-## create file normalized table
-tmm <- as.data.frame(cpm(dge))
-colnames(tmm) <- t(dge$samples$samples)
-tmm$ID <- dge$genes$genes
-tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
-
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-## create file MDS-plot with and without summarized replicates
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep="_")
-png(out)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
-dev.off()
-
-## estimate Dispersion
-dge <- estimateDisp(dge, design, robust=TRUE)
-
-## create file BCV-plot - visualizing estimated dispersions
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep="_")
-png(out)
-plotBCV(dge)
-dev.off()
-
-## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-fit <- glmQLFit(dge, design, robust=TRUE)
-
-## create file quasi-likelihood-dispersion-plot
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep="_")
-png(out)
-plotQLDisp(fit)
-dev.off()
 
 comparison_objs <- list()
 
@@ -207,6 +80,145 @@ for(compare in comparisons[[1]]){
     contrast_groups <- strsplit(strsplit(compare, ":")[[1]][2], "-vs-")
 
     print(paste("Comparing ", contrast_name, sep=""))
+
+    # determine contrast
+    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names=FALSE)
+    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names=FALSE)
+
+    #subset Datasets for pairwise comparison
+    countData <- cbind(countData_all[ , grepl( paste(B, '_', sep='') , colnames( countData_all ) )], countData_all[ ,grepl(paste(A, '_', sep='') , colnames( countData_all )) ])
+    sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
+
+    samples <- rownames(sampleData)
+    ## name types and levels for design
+    bl <- sapply("batch", paste0, levels(sampleData$batch)[1:length(levels(sampleData$batch))-1])
+    tl <- sapply("type", paste0, levels(sampleData$type)[1:length(levels(sampleData$type))-1])
+
+    ## Create design-table considering different types (paired, unpaired) and batches
+    if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1){
+        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
+            des <- ~type+batch+condition
+            design <- model.matrix(des, data=sampleData)
+            colnames(design) <- c(levels(sampleData$condition), tl, bl)
+        } else{
+            des <- ~type+condition
+            design <- model.matrix(des, data=sampleData)
+            colnames(design) <- c(levels(condition), tl)
+        }
+    } else{
+        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
+            des <- ~batch+condition
+            design <- model.matrix(des, data=sampleData)
+            colnames(design) <- c(levels(sampleData$condition), bl)
+        } else{
+            des <- ~condition
+            design <- model.matrix(des, data=sampleData)
+            colnames(design) <- levels(sampleData$condition)
+        }
+    }
+    print(design)
+
+    ## check genes and spike-ins
+    if (spike != ''){
+        print("Spike-in used, data will be normalized to spike in separately")
+        ctrlgenes <- readLines(spike)
+    }
+    setwd(outdir)
+    if (spike != ''){
+        counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
+        genes <- rownames(countData)
+        countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
+
+        sampleData_norm <- cbind(sampleData, pData(counts_norm))
+        design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep=" + ")), data=sampleData_norm)
+        colnames(design_norm) <- c(colnames(design),"W_1")
+
+        dge_norm <- DGEList(counts=counts(counts_norm), group=sampleData$condition, samples=samples, genes=genes)
+
+        ## filter low counts
+        keep <- filterByExpr(dge_norm)
+        dge_norm <- dge_norm[keep, , keep.lib.sizes=FALSE]
+
+        ## normalize with TMM
+        dge_norm <- calcNormFactors(dge_norm, method = "TMM", BPPARAM=BPPARAM)
+
+        ## create file normalized table
+        tmm_norm <- as.data.frame(cpm(dge_norm))
+        colnames(tmm_norm) <- t(dge_norm$samples$samples)
+        tmm_norm$ID <- dge_norm$genes$genes
+        tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm)-1)]
+
+        write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+        ## create file MDS-plot with and without summarized replicates
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS_norm.png", sep="_")
+        png(out)
+        plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1)
+        dev.off()
+
+        ## estimate Dispersion
+        dge_norm <- estimateDisp(dge_norm, design_norm, robust=TRUE)
+
+        ## create file BCV-plot - visualizing estimated dispersions
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV_norm.png", sep="_")
+        png(out)
+        plotBCV(dge_norm)
+        dev.off()
+
+        ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+        fit_norm <- glmQLFit(dge_norm, design_norm, robust=TRUE)
+
+        ## create file quasi-likelihood-dispersion-plot
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp_norm.png", sep="_")
+        png(out)
+        plotQLDisp(fit_norm)
+        dev.off()
+
+    }
+
+    # Same without spike-in normalization
+    genes <- rownames(countData)
+    dge <- DGEList(counts=countData, group=sampleData$condition, samples=samples, genes=genes)
+
+    ## filter low counts
+    keep <- filterByExpr(dge)
+    dge <- dge[keep, , keep.lib.sizes=FALSE]
+
+    ## normalize with TMM
+    dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
+
+    ## create file normalized table
+    tmm <- as.data.frame(cpm(dge))
+    colnames(tmm) <- t(dge$samples$samples)
+    tmm$ID <- dge$genes$genes
+    tmm <- tmm[c(ncol(tmm), 1:ncol(tmm)-1)]
+
+    write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+    ## create file MDS-plot with and without summarized replicates
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep="_")
+    png(out)
+    plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+    dev.off()
+
+    ## estimate Dispersion
+    dge <- estimateDisp(dge, design, robust=TRUE)
+
+    ## create file BCV-plot - visualizing estimated dispersions
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep="_")
+    png(out)
+    plotBCV(dge)
+    dev.off()
+
+    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+    fit <- glmQLFit(dge, design, robust=TRUE)
+
+    ## create file quasi-likelihood-dispersion-plot
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep="_")
+    png(out)
+    plotQLDisp(fit)
+    dev.off()
+
     tryCatch({
 
         # determine contrast
@@ -230,27 +242,27 @@ for(compare in comparisons[[1]]){
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
-        qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x, gtf.df)})
+        qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x, gtf_gene)})
         qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(6,5,1,2,3,4)]
-        res <- as.data.frame(apply(res,2, as.character))
+        res <- qlf$table[, c(), 1,), 1,), 1)]
+        res <- as.data.frame(apply(re), 1, as.character))
 
         # create results table
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         # create sorted results Tables
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf.df)})
+        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf_gene)})
         tops$table$Gene_ID <- rownames(tops$table)
         tops <- tops$table[, c(7,6,2,3,4,5,8)]
-        tops <- as.data.frame(apply(tops,2, as.character))
+        tops <- as.data.frame(apply(top), 1, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf.df)})
+        tops$table$Gene  <- lapply(rownames(tops) , function(x){get_gene_name(x, gtf_gene)})
         tops$table$Gene_ID <- rownames(tops$table)
         tops <- tops$table[, c(7,6,2,3,4,5,8)]
-        tops <- as.data.frame(apply(tops,2, as.character))
+        tops <- as.data.frame(apply(top), 1, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
@@ -285,27 +297,27 @@ for(compare in comparisons[[1]]){
             comparison_objs <- append(comparison_objs, qlf)
 
             # # Add gene names  (check how gene_id col is named )
-            qlf$table$Gene  <- lapply(rownames(qlf$table), function(x){get_gene_name(x, gtf.df)})
+            qlf$table$Gene  <- lapply(rownames(qlf$table), function(x){get_gene_name(x, gtf_gene)})
             qlf$table$Gene_ID <- rownames(qlf$table)
-            res <- qlf$table[, c(6,5,1,2,3,4)]
-            res <- as.data.frame(apply(res,2, as.character))
+            res <- qlf$table[, c(), 1,), 1,), 1)]
+            res <- as.data.frame(apply(re), 1, as.character))
 
             # create results table
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "results_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
             # create sorted results Tables
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf.df)})
+            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[, c(7,6,2,3,4,5,8)]
-            tops <- as.data.frame(apply(tops,2, as.character))
+            tops <- as.data.frame(apply(top), 1, as.character))
             write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf.df)})
+            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
             tops$table$Gene_ID <- rownames(tops$table)
             tops <- tops$table[, c(7,6,2,3,4,5,8)]
-            tops <- as.data.frame(apply(tops,2, as.character))
+            tops <- as.data.frame(apply(top), 1, as.character))
             write.table(tops, file=paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep="_"), sep="\t", quote=F, row.names=FALSE)
 
             ## plot lFC vs CPM
@@ -321,5 +333,58 @@ for(compare in comparisons[[1]]){
         print(paste('cleanup done for ', contrast_name, sep=''))
     })
 }
+
+# Same for all samples without design specific normalization
+## name types and levels for design
+
+## Create design-table considering different types (paired, unpaired) and batches
+des <- ~condition
+design <- model.matrix(des, data=sampleData_all)
+colnames(design) <- levels(sampleData_all$condition)
+print(design)
+
+genes <- rownames(countData_all)
+samples <- rownames(sampleData_all)
+
+dge <- DGEList(counts=countData_all, group=sampleData_all$condition, samples=samples, genes=genes)
+
+## filter low counts
+keep <- filterByExpr(dge)
+dge <- dge[keep, , keep.lib.sizes=FALSE]
+
+## normalize with TMM
+dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
+
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm), 1:ncol(tmm)-1)]
+
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+
+## create file MDS-plot with and without summarized replicates
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep="_")
+png(out)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+dev.off()
+
+## estimate Dispersion
+dge <- estimateDisp(dge, design, robust=TRUE)
+
+## create file BCV-plot - visualizing estimated dispersions
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep="_")
+png(out)
+plotBCV(dge)
+dev.off()
+
+## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+fit <- glmQLFit(dge, design, robust=TRUE)
+
+## create file quasi-likelihood-dispersion-plot
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep="_")
+png(out)
+plotQLDisp(fit)
+dev.off()
 
 save.image(file = paste("DE_EDGER", combi, "SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
