@@ -72,6 +72,9 @@ if (!all(rownames(sampleData_all) %in% colnames(countData_all))){
 
 comparison_objs <- list()
 
+WD <- getwd()
+setwd(outdir)
+
 for(contrast in comparison[[1]]){
 
     contrast_name <- strsplit(contrast, ":")[[1]][1]
@@ -105,10 +108,10 @@ for(contrast in comparison[[1]]){
     # Normalize by spike in if available
     if (spike != ''){
         print("Spike-in used, data will be normalized to spike in separately")
+        setwd(WD)
         ctrlgenes <- readLines(spike)
-    }
-    setwd(outdir)
-    if (spike != ''){
+        setwd(outdir)
+
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes)  # removing spike-ins for standard analysis
 
@@ -176,7 +179,7 @@ for(contrast in comparison[[1]]){
         res=""
         resOrdered=""
         res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
-        res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
+        res_shrink <- lfcShrink(dds=dds, coef=paste("condition", A, "vs", B, sep="_"), res=res, type='apeglm')
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- res
@@ -192,6 +195,7 @@ for(contrast in comparison[[1]]){
 
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
         # plotMA

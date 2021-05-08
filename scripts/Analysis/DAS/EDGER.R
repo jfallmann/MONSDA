@@ -67,6 +67,7 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 
 
 comparison_objs <- list()
+setwd(outdir)
 
 ## Analyze according to comparison groups
 for(compare in comparisons[[1]]){
@@ -139,7 +140,6 @@ for(compare in comparisons[[1]]){
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
-    setwd(outdir)
     tmm.genes <- tmm
     tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf.df)})
     tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))
@@ -266,7 +266,6 @@ for(compare in comparisons[[1]]){
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
-    setwd(outdir)
     tmm.genes <- tmm
     tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf_gene)})
     tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))

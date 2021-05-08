@@ -73,6 +73,9 @@ if (!all(rownames(sampleData) %in% colnames(countData))){
 
 comparison_objs <- list()
 
+WD <- getwd()
+setwd(outdir)
+
 ## Analyze according to comparison groups
 for(compare in comparisons[[1]]){
 
@@ -121,10 +124,9 @@ for(compare in comparisons[[1]]){
     ## check genes and spike-ins
     if (spike != ''){
         print("Spike-in used, data will be normalized to spike in separately")
+        setwd(WD)
         ctrlgenes <- readLines(spike)
-    }
-    setwd(outdir)
-    if (spike != ''){
+        setwd(outdir)        
         counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
         genes <- rownames(countData)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis

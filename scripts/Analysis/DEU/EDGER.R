@@ -141,7 +141,6 @@ for(compare in comparisons[[1]]){
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
-    setwd(outdir)
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER",combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
     ## create file MDS-plot with and without summarized replicates
@@ -241,7 +240,6 @@ colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
-setwd(outdir)
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER",combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without summarized replicates
