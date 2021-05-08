@@ -79,7 +79,8 @@ def integrate_table(file):
     chunk = f"""
 ```{{r, table:{file}, include = TRUE, echo = FALSE, message = TRUE, warning = FALSE}}
 library(DT)
-table <- read.table(gzfile(paste(params$root,'{file}',sep='/')), header = TRUE)
+#table <- read.table(gzfile(paste(params$root,'{file}',sep='/')), header = TRUE)
+table <- read.table(gzfile('{file}'), header = TRUE)
 DT::datatable(table)
 ```
 
@@ -93,7 +94,8 @@ def integrate_figures(files):
     counter = 1
     for file in files:
         f = file.replace("\n","")
-        listlines.append(f"fig.{counter} <- paste(params$root,'{f}', sep='/')")
+        #listlines.append(f"fig.{counter} <- paste(params$root,'{f}', sep='/')")
+        listlines.append(f"fig.{counter} <- '{f}'")
         img.append(f'path.expand(fig.{counter})')
         counter += 1
     listlines.append(f"knitr::include_graphics(c({','.join(img)}))")
