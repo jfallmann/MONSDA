@@ -126,7 +126,7 @@ for(compare in comparisons[[1]]){
         print("Spike-in used, data will be normalized to spike in separately")
         setwd(WD)
         ctrlgenes <- readLines(spike)
-        setwd(outdir)        
+        setwd(outdir)
         counts_norm <-RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k=1)
         genes <- rownames(countData)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
@@ -340,7 +340,7 @@ for(compare in comparisons[[1]]){
 ## name types and levels for design
 
 ## Create design-table considering different types (paired, unpaired) and batches
-des <- ~condition
+des <- ~0+condition
 design <- model.matrix(des, data=sampleData_all)
 colnames(design) <- levels(sampleData_all$condition)
 print(design)

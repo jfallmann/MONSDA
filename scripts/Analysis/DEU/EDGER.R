@@ -209,7 +209,7 @@ for(compare in comparisons[[1]]){
 }
 
 ## Create design-table considering different types (paired, unpaired) and batches
-des <- ~condition
+des <- ~0+condition
 design <- model.matrix(des, data=sampleData_all)
 colnames(design) <- levels(sampleData_all$condition)
 print(design)

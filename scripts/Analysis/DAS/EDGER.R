@@ -240,60 +240,65 @@ for(compare in comparisons[[1]]){
     })
 }
 
-    ## get genes names out
-    genes <- rownames(countData)
+## Create design-table considering different types (paired, unpaired) and batches
+des <- ~0+condition
+design <- model.matrix(des, data=sampleData_all)
+colnames(design) <- levels(sampleData_all$condition)
+print(design)
+## get genes names out
+genes <- rownames(countData)
 
-    ## get genes and exon names out
-    splitted <- strsplit(rownames(countData), ":")
-    exons <- sapply(splitted, "[[", 2)
-    genesrle <- sapply(splitted, "[[", 1)
+## get genes and exon names out
+splitted <- strsplit(rownames(countData), ":")
+exons <- sapply(splitted, "[[", 2)
+genesrle <- sapply(splitted, "[[", 1)
 
-    dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genesrle)
+dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genesrle)
 
-    ## Addd exons to dge
-    dge$genes$exons <- exons
+## Addd exons to dge
+dge$genes$exons <- exons
 
-    ## filter low counts
-    keep <- filterByExpr(dge)
-    dge <- dge[keep, , keep.lib.sizes=FALSE]
+## filter low counts
+keep <- filterByExpr(dge)
+dge <- dge[keep, , keep.lib.sizes=FALSE]
 
-    ## normalize with TMM
-    dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
+## normalize with TMM
+dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
 
-    ## create file normalized table
-    tmm <- as.data.frame(cpm(dge))
-    colnames(tmm) <- t(dge$samples$samples)
-    tmm$ID <- dge$genes$genes
-    tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 
-    tmm.genes <- tmm
-    tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf_gene)})
-    tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))
-    write.table(as.data.frame(tmm.genes), gzfile(paste("Tables/DAS","EDGER",combi, "DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+tmm.genes <- tmm
+tmm.genes$Gene <- lapply(tmm.genes$ID, function(x){get_gene_name(x,gtf_gene)})
+tmm.genes <- as.data.frame(apply(tmm.genes,2,as.character))
+write.table(as.data.frame(tmm.genes), gzfile(paste("Tables/DAS","EDGER",combi, "DataSet","table","AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
-    ## create file MDS-plot with and without sumarized replicates
-    out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsMDS.png", sep="_")
-    png(out)
-    plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
-    dev.off()
+## create file MDS-plot with and without sumarized replicates
+out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsMDS.png", sep="_")
+png(out)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+dev.off()
 
-    ## estimate Dispersion
-    dge <- estimateDisp(dge, design, robust=TRUE)
+## estimate Dispersion
+dge <- estimateDisp(dge, design, robust=TRUE)
 
-    ## create file BCV-plot - visualizing estimated dispersions
-    out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsBCV.png", sep="_")
-    png(out)
-    plotBCV(dge)
-    dev.off()
+## create file BCV-plot - visualizing estimated dispersions
+out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsBCV.png", sep="_")
+png(out)
+plotBCV(dge)
+dev.off()
 
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit <- glmQLFit(dge, design, robust=TRUE)
+## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+fit <- glmQLFit(dge, design, robust=TRUE)
 
-    ## create file quasi-likelihood-dispersion-plot
-    out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsQLDisp.png", sep="_")
-    png(out)
-    plotQLDisp(fit)
-    dev.off()
+## create file quasi-likelihood-dispersion-plot
+out <- paste("Figures/DAS","EDGER",combi, "DataSet","figure","AllConditionsQLDisp.png", sep="_")
+png(out)
+plotQLDisp(fit)
+dev.off()
 
 
 save.image(file = paste("DAS_EDGER",combi, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
