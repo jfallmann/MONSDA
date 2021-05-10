@@ -123,7 +123,7 @@ for(compare in comparisons[[1]]){
     exons <- sapply(splitted, "[[", 2)
     genesrle <- sapply(splitted, "[[", 1)
 
-    dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genesrle)
+    dge <- DGEList(counts=countData, group=sampleData$condition, samples=samples, genes=genesrle)
 
     ## Addd exons to dge
     dge$genes$exons <- exons
@@ -254,7 +254,7 @@ splitted <- strsplit(rownames(countData), ":")
 exons <- sapply(splitted, "[[", 2)
 genesrle <- sapply(splitted, "[[", 1)
 
-dge <- DGEList(counts=countData, group=groups, samples=samples, genes=genesrle)
+dge <- DGEList(counts=countData, group=sampleData_all$condition, samples=samples, genes=genesrle)
 
 ## Addd exons to dge
 dge$genes$exons <- exons
