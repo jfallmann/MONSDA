@@ -125,7 +125,7 @@ for(contrast in comparison[[1]]){
         dds_norm <- dds_norm[keep_norm,]
 
         #drop unused samples
-        dds_norms$condition <- droplevels(dds_norm$condition)
+        dds_norm$condition <- droplevels(dds_norm$condition)
 
         #relevel to base condition A
         dds_norm$condition <- relevel(dds_norm$condition, ref = B)
