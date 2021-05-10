@@ -12,6 +12,7 @@ rule themall:
             # sig_u = expand("DAS/{combo}/Tables/SigUP_DAS_DIEGO_{scombo}_{comparison}_table.csv", combo=combo, scombo=scombo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
+
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
     output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
@@ -26,6 +27,7 @@ rule featurecount_unique:
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
+
 rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output: smap = "DAS/{combo}/Tables/samplemap.txt",
@@ -37,6 +39,7 @@ rule create_samplemaps:
             clist = lambda wildcards, input: get_diego_groups(input.cnd, config,'DAS'),
             bins = BINS
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
+
 
 rule prepare_junction_usage_matrix:
     input:  smap = rules.create_samplemaps.output.smap,
@@ -50,6 +53,7 @@ rule prepare_junction_usage_matrix:
             dereps = lambda wildcards, input: get_reps(input.cnd, config,'DAS'),
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
+
 rule create_contrast_files:
     input:  anno = expand(rules.prepare_junction_usage_matrix.output.anno, combo=combo, scombo=scombo)
     output: contrast = expand("DAS/{combo}/Tables/{scombo}_{comparison}_contrast.txt", combo=combo, scombo=scombo, comparison=compstr)
@@ -61,6 +65,7 @@ rule create_contrast_files:
             outdir = 'DAS/'+combo+'/Tables',
             pcombo = scombo if scombo != '' else 'none'
     shell:  "python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -b {params.pcombo} -c {params.compare} -o {params.outdir} 2> {log}"
+
 
 rule run_diego:
     input:  tbl = expand(rules.prepare_junction_usage_matrix.output.tbl, combo=combo, scombo=scombo),
@@ -74,7 +79,8 @@ rule run_diego:
             dpara = lambda x: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(samplecond(SAMPLES, config)[0], None, config, "DAS", DASENV.split('_')[0])['OPTIONS'][1].items()),
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr)]
-    shell:  "set +euo pipefail; arr=({input.contrast}); orr=({params.outfile}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond -e -f ${{orr[$i]}} &>> ${{orrt[$i]}};done && arr=({input.contrast}); orr=({output.csv}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond {params.dpara} 1> ${{orr[$i]}} 2>> ${{orrt[$i]}};done"
+    shell:  "set +euo pipefail; arr=({input.contrast}); orr=({params.outfile}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond -e -f ${{orr[$i]}} &> ${{orrt[$i]}};done && arr=({input.contrast}); orr=({output.csv}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond {params.dpara} 1> ${{orr[$i]}} 2>> ${{orrt[$i]}};done"
+
 
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
@@ -94,6 +100,7 @@ rule convertPDF:
     conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: MAXTHREAD
     shell: "for pdfile in {input} ; do convert -verbose -density 500 -resize '800' $pdfile ${{pdfile%pdf}}png; done"
+
 
 rule create_summary_snippet:
     input:  rules.convertPDF.output.dendrogram,
