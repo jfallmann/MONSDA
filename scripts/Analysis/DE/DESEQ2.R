@@ -118,7 +118,7 @@ for(contrast in comparison[[1]]){
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- as.formula(paste(deparse(design), colnames(pData(counts_norm))[1], sep=" + "))
 
-        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design= design_norm)
+        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design= design)
 
         #filter low counts
         keep_norm <- rowSums(counts(dds_norm)) >= 10
@@ -128,7 +128,7 @@ for(contrast in comparison[[1]]){
         dds_norms$condition <- droplevels(dds_norm$condition)
 
         #relevel to base condition A
-        dds_norm$condition <- relevel(dds$condition, ref = B)
+        dds_norm$condition <- relevel(dds_norm$condition, ref = B)
 
         dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
         rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
@@ -208,8 +208,8 @@ for(contrast in comparison[[1]]){
             # initialize empty objects
             res=""
             resOrdered=""
-            res <- results(dds, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
-            res_shrink <- lfcShrink(dds=dds, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
+            res <- results(dds_norm, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
+            res_shrink <- lfcShrink(dds=dds_norm, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
 
             # add comp object to list for image
             listname <- paste(contrast_name, "_norm",sep="")
