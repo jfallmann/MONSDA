@@ -1,9 +1,11 @@
-TOOLENV=params.QCENV ?: null
-TOOLBIN=params.QCBIN ?: null
+QCENV=get_always('QCENV')
+QCBIN=get_always('QCBIN')
+QCPARAMS = get_always('fastqc_params_1') ?: ''
 
 process collect_multi{
     input:
     path check
+    val checker
 
     output:
     path "collect.txt", emit: done
@@ -14,72 +16,77 @@ process collect_multi{
     """
 }
 
-//collecting list of processed file for multiqc, not implemented yet
-process collect_qc_raw{
-    input:
-    path results
-    output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
-    shell:
-    '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
-    '''
-}
-
-//collecting list of processed file for multiqc, not implemented yet
-process collect_qc_trimmed{
-    input:
-    path results
-    output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
-    shell:
-    '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
-    '''
-}
-
-//collecting list of processed file for multiqc, not implemented yet
-process collect_qc_map{
-    input:
-    path results
-    output:
-    path "QC/Multi/$CONDITION/qclist.txt", emit: collect_fastqc
-    shell:
-    '''
-    for i in !{results};do echo $(dirname ${i}) >> tmp;done; cat tmp |sort -u >> QC/Multi/!{$CONDITION}/qclist.txt;done
-    '''
-}
 
 process multiqc{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
+
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/Multi/$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/Multi/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/$COMBO$CONDITION/$filename"
         else null
     }
 
     input:
-    val collect
-    path dummy
+    path others
+    path samples
+    path tsamples
+    path msamples
+    path usamples
+    path logs
 
     output:
     path "*.{zip,html}", emit: multiqc_results
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z ${workflow.workDir}/../QC/FASTQC/${CONDITION}/.
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s .
     """
 }
 
 workflow MULTIQC{
-    take: collection
+    take:
+    otherqcs
+    maplogs
 
     main:
-    collect_multi(collection.collect())
-    multiqc(collect_multi.out.done, collection.collect())
+
+    //SAMPLE CHANNELS
+    RSAMPLES=LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_fastqc.zip"
+    }
+    RSAMPLES.sort()
+    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
+
+    TSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_trimmed_fastqc.zip"
+    }
+    TSAMPLES.sort()
+    tsamples_ch = Channel.fromPath(TSAMPLES, followLinks: true)
+
+    MSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_mapped_sorted_fastqc.zip"
+    }
+    MSAMPLES.sort()
+
+    USAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_mapped_sorted_unique_fastqc.zip"
+    }
+    USAMPLES.sort()
+
+    MAPLOG = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+".log"
+    }
+    MAPLOG.sort()
+
+    msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
+    usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
+    logs_ch = Channel.fromPath(MAPLOG, followLinks: true)
+
+    collect_multi(otherqcs.collect(), maplogs.collect())
+    multiqc(collect_multi.out.done.collect(), samples_ch, tsamples_ch, msamples_ch, usamples_ch, logs_ch)
 
     emit:
     mqcres = multiqc.out.multiqc_results

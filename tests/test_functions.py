@@ -93,11 +93,11 @@ print(logid+'ANNO: '+str.join(os.sep,[config["REFERENCE"],os.path.dirname(genome
 
 MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
 print(logid+'ENV/BIN: '+str([MAPPERENV,MAPPERBIN]))
-print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None ,config, 'MAPPING',2)))
+print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None,config, 'MAPPING',2)))
 
 print(logid+'ref: '+"{ref}/{dir}/{gen}{name}".format(ref=REFERENCE, dir = source_from_sample(SAMPLES[0],config), gen =genome(file, config), name=namefromfile(file, config)))
 
-print(logid+'idx: '+"{ref}/{dir}/{gen}{name}/{map}_{extension}".format(ref=REFERENCE, dir=source_from_sample(file,config), gen=genome(file, config), name=namefromfile(file, config), map=MAPPERENV, extension=check_tool_params(file, None ,config, 'MAPPING',2)))
+print(logid+'idx: '+"{ref}/{dir}/{gen}{name}/{map}_{extension}".format(ref=REFERENCE, dir=source_from_sample(file,config), gen=genome(file, config), name=namefromfile(file, config), map=MAPPERENV, extension=check_tool_params(file, None,config, 'MAPPING',2)))
 
 test = {'a':{'a1':{'a11':{'a111'},'a12':{'a121'}},'a2':{'a22'}},'b':{'b1':{'b2':{'b3'}}}}
 

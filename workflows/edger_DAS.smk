@@ -1,69 +1,96 @@
 DASBIN, DASENV = env_bin_from_config3(config,'DAS')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
-outdir = "DAS/EDGER/"
 comparison = comparable_as_string2(config,'DAS')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
-    input:  all = expand("{outdir}EDGER_DAS_All_Conditions_MDS.png", outdir=outdir),
-            allsum = expand("{outdir}EDGER_DAS_All_Conditions_sum_MDS.png", outdir=outdir),
-            tbl = expand("{outdir}EDGER_DAS_All_Conditions_normalized.tsv.gz", outdir=outdir),
-            bcv = expand("{outdir}EDGER_DAS_All_Conditions_BCV.png", outdir=outdir),
-            qld = expand("{outdir}EDGER_DAS_All_Conditions_QLDisp.png", outdir=outdir),
-            dift = expand("{outdir}EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            sigdift = expand("{outdir}Sig_EDGER_DAS_{comparison}_diffSplice_{test}.tsv.gz", outdir=outdir, comparison=compstr, test=["geneTest","simesTest","exonTest"]),
-            tops = expand("{outdir}EDGER_DAS_{comparison}_topSplice_simes_{n}.png", outdir=outdir, comparison=compstr, n=[str(i) for i in range(1,11)]),
-            session = expand("{outdir}EDGER_DAS_SESSION.gz", outdir=outdir)
+    input:  session = expand("DAS/{combo}/DAS_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
+            allM    = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsMDS.png", combo=combo, scombo=scombo),
+            allBCV  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsBCV.png", combo=combo, scombo=scombo),
+            allQLD  = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_DataSet_figure_AllConditionsQLDisp.png", combo=combo, scombo=scombo),
+            resG    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsGeneTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            list    = expand("DAS/{combo}/Figures/DAS_EDGER_{scombo}_{comparison}_list_topSpliceSimes.tsv", combo=combo, comparison = compstr, scombo=scombo),
+            resS    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsSimesTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            resE    = expand("DAS/{combo}/Tables/DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig   = expand("DAS/{combo}/Tables/Sig_DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_d  = expand("DAS/{combo}/Tables/SigDOWN_DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_u  = expand("DAS/{combo}/Tables/SigUP_DAS_EDGER_{scombo}_{comparison}_table_resultsDiffSpliceExonTest.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
-    input:  reads = "MAPPED/{file}_mapped_sorted_unique.bam"
-    output: tmp   = temp(expand("{outdir}Featurecounts_DAS_edger/{{file}}_tmp.counts", outdir=outdir)),
-            cts   = "DAS/Featurecounts_DAS/{file}_mapped_sorted_unique.counts"
-    log:    "LOGS/{file}/featurecount_DAS_edger_unique.log"
-    conda:  "nextsnakes/envs/"+COUNTENV+".yaml"
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
+    output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
+            cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
+    log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
-            anno  = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, "DAS")['OPTIONS'][0].items()),
+            anno = ANNOTATION,
+            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DAS", DASENV.split('_')[0])['OPTIONS'][0].items()),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule prepare_count_table:
-    input:   cnd  = expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES,config))
-    output:  tbl  = expand("{outdir}Tables/COUNTS.gz",outdir=outdir),
-             anno = expand("{outdir}Tables/ANNOTATION.gz",outdir=outdir)
-    log:     expand("LOGS/{outdir}prepare_count_table.log",outdir=outdir)
-    conda:   "nextsnakes/envs/"+DASENV+".yaml"
+    input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
+    output:  tbl  = "DAS/{combo}/Tables/{scombo}_COUNTS.gz",
+             anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
+    log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
+    conda:   "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
-    params:  dereps = lambda wildcards, input: get_reps(input.cnd,config,'DAS'),
-             bins = BINS,
+    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
+             bins = BINS
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
 
-rule run_edgerDAS:
-    input:  tbl = rules.prepare_count_table.output.tbl,
-            anno = rules.prepare_count_table.output.anno,
-    output: all = rules.themall.input.all,
-            sum = rules.themall.input.allsum,
-            tbl = rules.themall.input.tbl,
-            bcv = rules.themall.input.bcv,
-            qld = rules.themall.input.qld,
-            dift = rules.themall.input.dift,
-            tops = rules.themall.input.tops,
-            session = rules.themall.input.session
-    log:    expand("LOGS/{outdir}run_edger.log",outdir=outdir)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+rule run_edger:
+    input:  tbl  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
+            anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
+    output: session = rules.themall.input.session,
+            allM    = rules.themall.input.allM,
+            allBCV  = rules.themall.input.allBCV,
+            allQLD  = rules.themall.input.allQLD,
+            resG    = rules.themall.input.resG,
+            list    = rules.themall.input.list,
+            resS    = rules.themall.input.resS,
+            resE    = rules.themall.input.resE
+    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison = compstr, scombo=scombo)
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
-    params: bins   = str.join(os.sep,[BINS,DASBIN]),
-            outdir = outdir,
-            compare = comparison
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.outdir} {params.compare} {threads} 2> {log} "
+    params: bins   = str.join(os.sep,[BINS, DASBIN]),
+            outdir = 'DAS/'+combo,
+            compare = comparison,
+            pcombo = scombo if scombo != '' else 'none',
+            ref = ANNOTATION
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log} "
 
-rule filter_significant_edgerDAS:
-    input:  dift = rules.run_edgerDAS.output.dift
-    output: sigdift  = rules.themall.input.sigdift
-    log:    expand("LOGS/{outdir}filter_edgerDAS.log",outdir=outdir)
-    conda:  "nextsnakes/envs/"+DASENV+".yaml"
+rule filter_significant_edger:
+    input:  sort = rules.themall.input.resE
+    output: sig= rules.themall.input.sig,
+            sig_d= rules.themall.input.sig_d,
+            sig_u= rules.themall.input.sig_u,
+    log:    "LOGS/DAS/filter_edgerDAS.log"
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: 1
-    shell: "for i in {outdir}EDGER_DAS*_diffSplice_*.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5 ||$F[2] >= 1.5) ){{print}}' |gzip > {outdir}Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] >= 1.5) ){{print}}' |gzip > {outdir}SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < 0.05 && ($F[2] <= -1.5) ){{print}}' |gzip > {outdir}SigDOWN_$fn;else touch {outdir}Sig_$fn {outdir}SigUP_$fn {outdir}SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
+    shell: "set +o pipefail; arr=({input.sort}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut} ||$F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
+
+rule create_summary_snippet:
+    input:  rules.themall.input.allM,
+            rules.themall.input.allBCV,
+            rules.themall.input.allQLD,
+            rules.themall.input.resG,
+            rules.themall.input.resS,
+            rules.themall.input.resE,
+            rules.themall.input.list,
+            rules.themall.input.sig,
+            rules.themall.input.sig_d,
+            rules.themall.input.sig_u,
+    output: rules.themall.input.Rmd
+    log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
+    conda:  "NextSnakes/envs/"+DASENV+".yaml"
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    params: bins = BINS,
+            abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --loglevel DEBUG 2>> {log}"

@@ -1,0 +1,490 @@
+{
+  "WORKFLOWS": "",
+  "BINS": "NextSnakes/scripts",
+  "MAXTHREADS": "20",
+  "SETTINGS": {
+    "id": {
+      "condition": {
+        "SAMPLES": [
+          "rep_1",
+          "rep_2"
+        ],
+        "GROUPS": [
+          "WT",
+          "WT"
+        ],
+        "TYPES": [
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1"
+        ],
+        "SEQUENCING": "paired",
+        "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",
+        "INDEX": "GENOMES/Dm6/INDICES/star",
+        "PREFIX": "idx",
+        "ANNOTATION": {
+          "GTF": "GENOMES/Dm6/dm6.gtf.gz",
+          "GFF": "GENOMES/Dm6/dm6.gff3.gz"
+        }
+      }
+    }
+  },
+  "SRA": {
+    "TOOLS": {
+      "sra": "sra"
+    },
+    "id": {
+      "condition": {
+        "sra": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "BASECALL": {
+    "TOOLS": {
+      "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
+    },
+    "id": {
+      "condition": {
+        "guppy": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "QC": {
+    "TOOLS": {
+      "fastqc": "fastqc"
+    },
+    "id": {
+      "condition": {
+        "fastqc": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "TRIMMING": {
+    "TOOLS": {
+      "trimgalore": "trim_galore",
+      "cutadapt": "cutadapt"
+    },
+    "id": {
+      "condition": {
+        "trimgalore": {
+          "OPTIONS": [
+            {
+              "-q": "15",
+              "--length": "8",
+              "-e": "0.15"
+            }
+          ]
+        },
+        "cutadept": {
+          "OPTIONS": [
+            {
+              "-q": "15",
+              "--length": "8",
+              "-e": "0.15"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DEDUP": {
+    "TOOLS": {
+      "umitools": "umi_tools"
+    },
+    "id": {
+      "condition": {
+        "umitools": {
+          "OPTIONS": [
+            {
+              "--extract-method": "string",
+              "--bc-pattern": "AGANNNNACGT"
+            },
+            {
+              "--extract-umi-method": "read_id"
+            },
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "MAPPING": {
+    "TOOLS": {
+      "star": "STAR",
+      "segemehl3": "segemehl.x",
+      "hisat2": "hisat2",
+      "bwa": "bwa mem",
+      "minimap": "minimap2"
+    },
+    "id": {
+      "condition": {
+        "star": {
+          "OPTIONS": [
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--genomeSAindexNbases": "13"
+            },
+            {
+              "--sjdbGTFfeatureExon": "exon",
+              "--sjdbGTFtagExonParentTranscript": "Parent",
+              "--outSAMprimaryFlag AllBestScore": ""
+            }
+          ]
+        },
+        "segemehl3": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        },
+        "hisat2": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        },
+        "bwa": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        },
+        "minimap": {
+          "OPTIONS": [
+            {},
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "COUNTING": {
+    "TOOLS": {
+      "countreads": "featureCounts"
+    },
+    "FEATURES": {
+      "exon": "Parent",
+      "gene": "ID"
+    },
+    "id": {
+      "condition": {
+        "countreads": {
+          "OPTIONS": [
+            {
+              "-f": "",
+              "--fraction": "",
+              "-p": "",
+              "-O": "",
+              "-M": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ANNOTATE": {
+    "TOOLS": {
+      "annotatebed": "annotate"
+    },
+    "id": {
+      "condition": {
+        "annotatebed": {
+          "ANNOFEATURE": "gene", # why not put in options as dict?
+          "OPTIONS": [
+            {
+              "-w": "ON"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "UCSC": {
+    "TOOLS": {
+      "ucsc": "ucsc"
+    },
+    "id": {
+      "condition": {
+        "ucsc": {
+          "OPTIONS": [
+            {
+              "-n": "DM6_unpaired_Mapping",
+              "-s": "dm6_st",
+              "-l": "UCSC_DM6_unpaired_Mapping",
+              "-b": "UCSC_dm6_star"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "PEAKS": {
+    "TOOLS": {
+      "macs": "macs2",
+      "peaks": "peaks",
+      "piranha": "Piranha"
+    },
+    "id": {
+      "condition": {
+        "macs": {
+          "CLIP": "iCLIP",  # dont know if all tools can handle CLIP key
+          "OPTIONS": [
+            {},
+            {
+              "-b": "10"
+            }
+          ]
+        },
+        "peaks": {
+          "CLIP": "iCLIP",
+          "OPTIONS": [
+            {},
+            {
+              "-b": "10"
+            }
+          ]
+        },
+        "piranha": {
+          "CLIP": "iCLIP",
+          "OPTIONS": [
+            {},
+            {
+              "-b": "10"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DE": {
+    "TOOLS": {
+      "deseq2": "Analysis/DE/DESEQ2.R",
+      "edger": "Analysis/DE/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO"
+        ]
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05", # dont we need an p-adjusted value?
+      "lfc": "1.5"
+    },
+    "id": {
+      "condition": {
+        "deseq2": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "--cutoff": "10"
+            }
+          ]
+        },
+        "edger": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "--cutoff": "10"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DEU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DEU/DEXSEQ.R",
+      "edger": "Analysis/DEU/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO"
+        ]
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "id": {
+      "condition": {
+        "dexseq": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "--cutoff": "10"
+            }
+          ]
+        },
+        "edger": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "--cutoff": "10"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DAS": {
+    "TOOLS": {
+      "diego": "Analysis/DAS/DIEGO.py",
+      "edger": "Analysis/DAS/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO"
+        ]
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "id": {
+      "condition": {
+        "diego": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "-c": "10",
+              "-d": "3",
+              "-q": "0.01",
+              "-z": "1.0",
+              "-r": ""
+            }
+          ]
+        },
+        "edger": {
+          "OPTIONS": [
+            {
+              "-t": "exon",
+              "-g": "gene_id",
+              "-f": "",
+              "--fraction": "",
+              "-O": ""
+            },
+            {
+              "--cutoff": "10"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DTU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DTU/DEXSEQ.R",
+      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [
+          "WT"
+        ],
+        [
+          "KO"
+        ]
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "id": {
+      "condition": {
+        "drimseq": {
+          "OPTIONS": [
+            {
+              "--gencode": ""
+            },
+            {
+              "-l": "A",
+              "--gcBias": ""
+            },
+            "std"
+          ]
+        },
+        "dexseq": {
+          "OPTIONS": [
+            {
+              "--gencode": ""
+            },
+            {
+              "-l": "A",
+              "--gcBias": ""
+            },
+            "std"
+          ]
+        }
+      }
+    }
+  }
+}

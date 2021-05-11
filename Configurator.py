@@ -8,9 +8,9 @@
 # Created: Mon Feb 10 08:09:48 2020 (+0100)
 # Version:
 # Package-Requires: ()
-# Last-Updated: Wed May 27 12:02:20 2020 (+0200)
+# Last-Updated: Wed Jan 20 22:30:58 2021 (+0100)
 #           By: Joerg Fallmann
-#     Update #: 564
+#     Update #: 565
 # URL:
 # Doc URL:
 # Keywords:
@@ -61,10 +61,10 @@ def parseargs():
     parser.add_argument("-t", "--template", type=str, default='snakes/configs/template.json', help='Template config to build from, per default the one that comes with this repository, change only when you know what you do')
     parser.add_argument("-w", "--workflows", type=str, default='', help='Which workflow steps to conduct, choices are any of or combinations of [\'RAW\',\'MAPPING\',\'TRIMMING\',\'QC\',\'COUNTING\',\'UCSC\',\'PEAKS\',\'ANNOTATE\',\'DE\',\'DEU\',\'DAS\']')
     parser.add_argument("-r", "--refdir", type=str, default='REFERENCES', help='Path to directory with reference genome')
-    parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend,X321F5:01012020:testsequencing or just a single colon separated ICS')
-    parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr,unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
+    parser.add_argument("-i", "--ics", type=str, default='id:condition:setting', help='Comma separated list of colon separated IdentifierConditionSetting relationship. For each id to work on you can define one or multiple conditions and settings that will be used for the analysis, e.g. hg38:WT:singleend,01012020:KO:pairedend, X321F5:01012020:testsequencing or just a single colon separated ICS')
+    parser.add_argument("-s", "--sequencing", type=str, default='unpaired', help='Comma separated list of collon separated sequencing types. For each id to work on you can define the sequencing type for the analysis, e.g. paired:fr, unpaired if the samples if the first ID are paired end sequenced and stranded in fr orientation and the reads for the second ID are single-ended. The schema is always sequencing_type(:stradedness[optional])')
     parser.add_argument("-m", "--genomemap", type=str, default='id:hg38', help='Comma separated list of colon separated mapping of sample-IDs to genome-IDs, e.g. sample_human:HG38,01012020:Dm6')
-    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38,Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
+    parser.add_argument("-g", "--genomes", type=str, default='hg38:hg38', help='Comma separated list of colon separated mapping of genome-IDs to genome FASTA.gz filename, e.g. HG38:hg38, Dm6:dm6 means ID hg38 maps to a file hg38.fa.gz and ID 01012020 maps to a file dm6.fa.gz')
     parser.add_argument("-x", "--genomeext", type=str, default=None, help='Comma separated list of colon separated mapping of genome-IDs to extension in FASTA.gz file, e.g. hg38:_extended,01012020:_bisulfit. This is not required if there is no extension which is often the case.')
     parser.add_argument("-f", "--annotation", type=str, default='', help='Name of annotation gff3.gz to use in rules. Be aware, some rules may need different annotation, consider this a placeholder!')
     parser.add_argument("-b", "--binaries", type=str, default='snakes/scripts', help='Path to script for execution')
@@ -99,7 +99,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
     # CLEANUP
     oldcnf = os.path.abspath(configfile)
     for oldfile in glob.glob(oldcnf):
-        shutil.copy2(oldfile,oldfile+'.bak')
+        shutil.copy2(oldfile, oldfile+'.bak')
         log.warning(logid+'Found old config file'+oldfile+' created backup of old config '+oldfile+'.bak')
 
     config = load_configfile(os.path.abspath(template))
@@ -142,7 +142,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
             oldconf = load_configfile(os.path.abspath(os.path.join(configfile)))
             iteration = -1
             icstemp = ''
-            for k,v in list_all_keys_of_dict(oldconf['SAMPLES']):
+            for k, v in list_all_keys_of_dict(oldconf['SAMPLES']):
                 iteration+=1
                 if k == 'last':
                     icslist.append(icstemp[:-1])
@@ -176,14 +176,14 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
         newconf['MAXTHREADS'] = str(procs)
         newconf['GENOME'] = NestedDefaultDict()
 
-        for k,v in gens.items():
+        for k, v in gens.items():
             newconf['GENOME'][str(k)] = str(v)
 
         for key in ['NAME','SOURCE','SEQUENCING','SAMPLES']:
-            for id,condition,setting in [x.split(':') for x in icslist]:
+            for id, condition, setting in [x.split(':') for x in icslist]:
                 if key == 'NAME':
                     if genomeext:
-                        for k,v in genext.items():
+                        for k, v in genext.items():
                             if str(v) is None or str(v) == 'None':
                                 v = ''
                             newconf[key][id][condition][setting] = str(v)
@@ -191,7 +191,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
                         newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                 elif key == 'SOURCE':
                     if genomemap:
-                        for k,v in genmap.items():
+                        for k, v in genmap.items():
                             if v in newconf['GENOME']:
                                 newconf[key][id][condition][setting] = str(v)
                     else:
@@ -215,7 +215,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
         #newconf.merge(oldconfig)
 
         if workflows and workflows not in newconf['WORKFLOWS']:
-            newconf['WORKFLOWS'] = str.join(',',list(set(str.join(',',[oldconf['WORKFLOWS'],workflows]).split(','))))
+            newconf['WORKFLOWS'] = str.join(',', list(set(str.join(',',[oldconf['WORKFLOWS'], workflows]).split(','))))
         if refdir and refdir != oldconf['REFERENCE']:
             newconf['REFERENCE'] = refdir
         else:
@@ -234,7 +234,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
         if genomes and any([x not in newconf['GENOME'] for x in list(gens.keys())]) or any([[x not in newconf['GENOME'][y] for x in gens[y]] for y in gens.keys()]):
             newconf['GENOME'] = NestedDefaultDict()
             newconf['GENOME'].merge(oldconf['GENOME'])
-            for k,v in gens.items():
+            for k, v in gens.items():
                 newconf['GENOME'][str(k)] = str(v)
         else:
             newconf['GENOME'] = str(oldconf['GENOME'])
@@ -242,17 +242,17 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
         log.debug(logid+'GENOMEMAPCONF: '+str(newconf['GENOME']))
 
         for key in ['NAME','SOURCE','SAMPLES','SEQUENCING']:
-            for id,condition,setting in [x.split(':') for x in icslist]:
+            for id, condition, setting in [x.split(':') for x in icslist]:
                 if key == 'NAME' or key == 'SOURCE':
                     try:
-                        checkkey=getFromDict(oldconf[key],[id,condition,setting])
+                        checkkey=getFromDict(oldconf[key],[id, condition, setting])
                     except:
                         checkkey=list()
                     if len(checkkey) > 0:
                         if key == 'NAME':
                             if genomeext:
-                                for k,v in genext.items():
-                                    if id in [x for x in find_key_for_value(k,genmap)]:
+                                for k, v in genext.items():
+                                    if id in [x for x in find_key_for_value(k, genmap)]:
                                         if str(v) != oldconf[key][id][condition][setting]:
                                             newconf[key][id][condition][setting] = str(v)
                                         else:
@@ -261,7 +261,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
                                 newconf[key][id][condition][setting] = config[key]['id']['condition']['setting']
                         elif key == 'SOURCE':
                             if genomemap:
-                                for k,v in genmap.items():
+                                for k, v in genmap.items():
                                     if v in newconf['GENOME']:
                                         if str(v) != str(oldconf[key][id][condition][setting]):
                                             newconf[key][id][condition][setting] = str(v)
@@ -298,7 +298,7 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
     for key in todos:
         log.debug(logid+'OLD: '+str(key)+'\t'+str(config[key]))
 
-        for id,condition,setting in [x.split(':') for x in icslist]:
+        for id, condition, setting in [x.split(':') for x in icslist]:
             if id not in newconf[key]:
                 newconf[key][id] = NestedDefaultDict()
                 log.debug(logid+'ID: '+str(newconf[key]))
@@ -318,19 +318,19 @@ def create_json_config(configfile, append, template, workflows, ics, refdir, bin
                 newconf[key][id][condition][setting].update(config[key]['id']['condition']['setting'])
 
         if key=='DE' or key=="DEU" or key=='DAS':
-            set_relations(newconf,key)
+            set_relations(newconf, key)
 
-    print_json(newconf,configfile,annotation)
+    print_json(newconf, configfile, annotation)
 
 @check_run
-def print_json(paramdict,ofn,annotation=''):
+def print_json(paramdict, ofn, annotation=''):
     with open(ofn,'w') as jsonout:
         if annotation != '' and 'gff.gz' in annotation or 'gff3.gz' in annotation:
-            print(re.sub('genome_or_other.gff3.gz',annotation,json.dumps(paramdict,indent=4)),file=jsonout)
+            print(re.sub('genome_or_other.gff3.gz', annotation, json.dumps(paramdict, indent=4)), file=jsonout)
         else:
-            print(json.dumps(paramdict,indent=4),file=jsonout)
+            print(json.dumps(paramdict, indent=4), file=jsonout)
 
-def set_relations(config,key):
+def set_relations(config, key):
     for id in config['SAMPLES'].keys():
         for condition in config['SAMPLES'][id].keys():
             for setting in config['SAMPLES'][id][condition].keys():
@@ -339,7 +339,7 @@ def set_relations(config,key):
                     ics = f"{id}:{condition}:{setting}"
                     type = config["SEQUENCING"][id][condition][setting]
                     for sample in config["SAMPLES"][id][condition][setting]:
-                        relations.append((sample,ics,type))
+                        relations.append((sample, ics, type))
                     config[key][id][condition][setting]['RELATIONS']=relations
 
 ####################

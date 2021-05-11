@@ -1,0 +1,23 @@
+---
+title: "NEXTSNAKES SUMMARY REPORT"
+date: "`r Sys.Date()`"
+author: "`r Sys.getenv('LOGNAME')`"
+output:
+  rmdformats::readthedown:
+    code_folding: show
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+pkgdown:
+  as_is: true
+params:
+  root: ''
+  outdir: ''
+---
+
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = params$root)
+```

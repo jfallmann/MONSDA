@@ -1,96 +1,103 @@
-QCBIN, QCENV = env_bin_from_config2(SAMPLES,config,'QC')
+QCBIN, QCENV = env_bin_from_config3(config, 'QC')
 
 if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input:  r1 = expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=list(SAMPLES), read=['R1','R2'])
-        output: o1 = report(expand("QC/FASTQC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']), category="QC")
-        log:    expand("LOGS/{rawfile}/fastqc_{read}_raw.log", rawfile=list(SAMPLES), read=['R1','R2'])
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
+        input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
+        log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
-
-    rule qc_trimmed:
-        input:  r1 = expand("TRIMMED_FASTQ/{file}_{read}_trimmed.fastq.gz", file=samplecond(SAMPLES,config), read=["R1", "R2"])
-        output: o1 = report(expand("QC/FASTQC/{file}_{read}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config), read=['R1','R2']), category="QC")
-        log:    expand("LOGS/{file}/fastqc_trimmed.log", file=samplecond(SAMPLES,config))
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
-
-    rule qc_mapped:
-        input:  r1 = "MAPPED/{file}_mapped_sorted.sam.gz"
-        output: o1 = report("QC/FASTQC/{file}_mapped_sorted_fastqc.zip", category="QC")
-        log:    "LOGS/{file}/fastqc_mapped.log"
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
-
-    rule qc_uniquemapped:
-        input:  r1 = "MAPPED/{file}_mapped_sorted_unique.bam",
-                r2 = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
-        output: o1 = report("QC/FASTQC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
-        log:    "LOGS/{file}/fastqc_uniquemapped.log"
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = expand("DEDUP_FASTQ/{file}_{read}_dedup.fastq.gz", file=samplecond(SAMPLES,config), read=["R1", "R2"])
-        output: o1 = report(expand("QC/FASTQC/{file}_{read}_dedup_fastqc.zip", file=samplecond(SAMPLES,config), read=['R1','R2']), category="QC")
-        log:    expand("LOGS/{file}/fastqc_dedup.log", file=samplecond(SAMPLES,config))
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
+        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz"
+        output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{file}_{read}_fastqc_dedup.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2> {log};done"
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+
+    rule qc_trimmed:
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
+        output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{file}_{read}_fastqc_trimmed.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
+        threads: MAXTHREAD
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
 else:
     rule qc_raw:
-        input:  r1 = expand("FASTQ/{rawfile}.fastq.gz", rawfile=list(SAMPLES))
-        output: o1 = report(expand("QC/FASTQC/{rawfile}_fastqc.zip", rawfile=list(SAMPLES)), category="QC")
-        log:    expand("LOGS/{rawfile}/fastqc_raw.log", rawfile=list(SAMPLES))
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
+        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{rawfile}_fastqc_raw.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
-
-    rule qc_trimmed:
-        input:  r1 = expand("TRIMMED_FASTQ/{file}_trimmed.fastq.gz", file=samplecond(SAMPLES,config))
-        output: o1 = report(expand("QC/FASTQC/{file}_trimmed_fastqc.zip", file=samplecond(SAMPLES,config)), category="QC")
-        log:    expand("LOGS/{file}/fastqc_trimmed.log", file=samplecond(SAMPLES,config))
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
-
-    rule qc_mapped:
-        input:   r1 = "MAPPED/{file}_mapped_sorted.sam.gz"
-        output:  o1 = report("QC/FASTQC/{file}_mapped_sorted_fastqc.zip", category="QC")
-        log:     "LOGS/{file}/fastqc_mapped.log"
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
-
-    rule qc_uniquemapped:
-        input:  r1 = "MAPPED/{file}_mapped_sorted_unique.bam",
-                r2 = "MAPPED/{file}_mapped_sorted_unique.bam.bai"
-        output: o1 = report("QC/FASTQC/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
-        log:    "LOGS/{file}/fastqc_uniquemapped.log"
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
-        threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(wildcards.file, None ,config, 'QC')['OPTIONS'][0].items())
-        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = expand("DEDUP_FASTQ/{file}_dedup.fastq.gz", file=samplecond(SAMPLES,config))
-        output: o1 = report(expand("QC/FASTQC/{file}_dedup_fastqc.zip", file=samplecond(SAMPLES,config)), category="QC")
-        log:    expand("LOGS/{file}/fastqc_dedup.log", file=samplecond(SAMPLES,config))
-        conda:  "nextsnakes/envs/"+QCENV+".yaml"
+        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{file}_fastqc_dedup.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
         threads: MAXTHREAD
-        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key,val) for (key,val) in tool_params(SAMPLES[0], None ,config, 'QC')['OPTIONS'][0].items())
-        shell:  "arr=({input.r1}); orr=({output.o1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do OUT=$(dirname ${{orr[$i]}}); fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq  ${{arr[$i]}} 2>> {log};done"
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+
+    rule qc_trimmed:
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
+        output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{file}_fastqc_trimmed.log"
+        conda:  "NextSnakes/envs/"+QCENV+".yaml"
+        threads: MAXTHREAD
+        priority: 10
+        params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][0].items())
+        shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
+
+rule qc_mapped:
+    input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"
+    output:  o1 = report("QC/{combo}/{file}_mapped_sorted_fastqc.zip", category="QC")
+    log:     "LOGS/{combo}/{file}_fastqc_mapped.log"
+    conda:  "NextSnakes/envs/"+QCENV+".yaml"
+    threads: MAXTHREAD
+    params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'QC', QCENV)['OPTIONS'][0].items())
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
+
+rule qc_uniquemapped:
+    input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
+            r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
+    output: o1 = report("QC/FASTQC/{combo}/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
+    log:    "LOGS/{combo}/{file}_fastqc_uniquemapped.log"
+    conda:  "NextSnakes/envs/"+QCENV+".yaml"
+    threads: MAXTHREAD
+    params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'QC', QCENV)['OPTIONS'][0].items())
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+
+rule qc_dedupmapped:
+    input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam",
+            r2 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam.bai"
+    output: o1 = report("QC/{combo}/{file}_mapped_sorted_dedup_fastqc.zip", category="QC")
+    log:    "LOGS/{combo}/{file}_fastqc_dedupmapped.log"
+    conda:  "NextSnakes/envs/"+QCENV+".yaml"
+    threads: MAXTHREAD
+    params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'QC', QCENV)['OPTIONS'][0].items())
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
+
+rule qc_uniquededup:
+    input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam",
+            r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam.bai"
+    output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_dedup_fastqc.zip", category="QC")
+    log:    "LOGS/{combo}/{file}_fastqc_uniquededup.log"
+    conda:  "NextSnakes/envs/"+QCENV+".yaml"
+    threads: MAXTHREAD
+    params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'QC', QCENV)['OPTIONS'][0].items())
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"

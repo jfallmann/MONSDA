@@ -1,24 +1,34 @@
 #!/usr/bin/env nextflow
 
 //includes
-//include {} from '../nextsnakes/lib/Collection.groovy'
+//include {} from '../NextSnakes/lib/Collection.groovy'
 
 //Version Check
 nextflowVersion = '>=20.01.0.5264'
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
+
+//define unset Params
+def get_always(parameter){
+    if (!params.containsKey(parameter)){
+        params.put(parameter, null)
+    }
+    return params[parameter]
+}
 
 //Params from CL
-REFERENCE = "${workflow.workDir}/../"+params.REFERENCE
-GENOME = params.GENOME
-NAME = params.NAME
-BINS = "${workflow.workDir}/../"+params.BINS
-THREADS = params.MAXTHREAD
-SOURCE = params.SOURCE
-PAIRED = params.PAIRED
-STRANDED = params.STRANDED
-CONDITION = params.CONDITION
-SAMPLES = params.SAMPLES.split(',')
-LONGSAMPLES = params.LONGSAMPLES.split(',')
+REFERENCE = "${workflow.workDir}/../"+get_always('REFERENCE')
+REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
+BINS = "${workflow.workDir}/../"+get_always('BINS')
+THREADS = get_always('MAXTHREAD')
+PAIRED = get_always('PAIRED') ?: null
+RUNDEDUP = get_always('RUNDEDUP') ?: null
+STRANDED = get_always('STRANDED') ?: null
+IP = get_always('IP') ?: null
+CONDITION = get_always('CONDITION') ?: null
+COMBO = get_always('COMBO') ?: '/'
+SCOMBO = get_always('SCOMBO') ?: '/'
+SAMPLES = get_always('SAMPLES').split(',') ?: null
+LONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
 
 //dummy
-dummy = Channel.fromPath("${workflow.workDir}/../LOGS/RunNextflow.log")
+dummy = Channel.fromPath("${workflow.workDir}/../LOGS/NextSnakes.log")

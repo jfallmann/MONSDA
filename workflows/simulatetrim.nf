@@ -19,9 +19,9 @@ if (PAIRED == 'paired'){
 }
 
 process simtrim{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TOOLENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$TOOLENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
@@ -58,7 +58,7 @@ workflow TRIMMING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
         }
         R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
+        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }else{
         RSAMPLES=SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"

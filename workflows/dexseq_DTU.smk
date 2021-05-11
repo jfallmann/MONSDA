@@ -1,66 +1,103 @@
+logid = 'dexseq_DTU.smk '
 DTUBIN, DTUENV = env_bin_from_config3(config,'DTU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config2(SAMPLES,config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['salmon','salmon'] #env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
-outdir = "DTU/DEXSEQ"
 comparison = comparable_as_string2(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
+log.info(logid+"COMPARISON: "+str(comparison))
 
 rule themall:
-    input:
-
+    input:  session = expand("DTU/{combo}/DTU_DEXSEQ_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
+            res     = expand("DTU/{combo}/Tables/DTU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
+            # sig     = expand("DTU/{combo}/Tables/Sig_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_d   = expand("DTU/{combo}/Tables/SigDOWN_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
+            # sig_u   = expand("DTU/{combo}/Tables/SigUP_DTU_DEXSEQ_{scombo}_{comparison}_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
+            Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule salmon_index:
-    input: "assembly/transcriptome.fasta"
-    output:
-        directory("salmon/transcriptome_index")
-    log:
-        "logs/salmon/transcriptome_index.log"
-    threads: 2
-    params:
-        # optional parameters
-        extra=""
-    wrapper:
-        "master/bio/salmon/index"
+    input:  fa = REFERENCE
+    output: idx = directory(expand("{refd}/INDICES/{mape}", refd=REFDIR, mape=COUNTENV))
+    log:    expand("LOGS/{sets}/salmon.idx.log", sets=SETS)
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    threads: MAXTHREAD
+    params: mapp = COUNTBIN,
+            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][0].items()),
+    shell:  "{params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.idx} 2>> {log}"
 
 if paired == 'paired':
-    rule salmon_quant_reads:
-        input:
-            # If you have multiple fastq files for a single sample (e.g. technical replicates)
-            # use a list for r1 and r2.
-            r1 = "reads/{sample}_1.fq.gz",
-            r2 = "reads/{sample}_2.fq.gz",
-            index = "salmon/transcriptome_index"
-        output:
-            quant = 'salmon/{sample}/quant.sf',
-            lib = 'salmon/{sample}/lib_format_counts.json'
-        log:
-            'logs/salmon/{sample}.log'
-        params:
-            # optional parameters
-            libtype ="A",
-            #zip_ext = bz2 # req'd for bz2 files ('bz2'); optional for gz files('gz')
-            extra=""
-        threads: 2
-        wrapper:
-            "master/bio/salmon/quant"
+    rule mapping:
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz",
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz",
+                index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
+        output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
+        log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+        threads: MAXTHREAD
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
+                mapp=COUNTBIN,
+                stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else ''
+        shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} 2>> {log}"
+
 else:
-        rule salmon_quant_reads:
-            input:
-                # If you have multiple fastq files for a single sample (e.g. technical replicates)
-                # use a list for r1 and r2.
-                r1 = "reads/{sample}_1.fq.gz",
-                r2 = "reads/{sample}_2.fq.gz",
-                index = "salmon/transcriptome_index"
-            output:
-                quant = 'salmon/{sample}/quant.sf',
-                lib = 'salmon/{sample}/lib_format_counts.json'
-            log:
-                'logs/salmon/{sample}.log'
-            params:
-                # optional parameters
-                libtype ="A",
-                #zip_ext = bz2 # req'd for bz2 files ('bz2'); optional for gz files('gz')
-                extra=""
-            threads: 2
-            wrapper:
-                "master/bio/salmon/quant"
+    rule mapping:
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz",
+                index = expand(rules.salmon_index.output.idx, refd=REFDIR, mape=COUNTENV)
+        output: ctsdir = directory("DTU/{combo}/Salmon/{file}")
+        log:    "LOGS/DTU/{combo}/{file}/salmonquant.log"
+        conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+        threads: MAXTHREAD
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV.split("_")[0])['OPTIONS'][1].items()),
+                mapp=COUNTBIN,
+                stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else ''
+        shell: "{params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} 2>> {log} "
+
+rule create_annotation_table:
+    input:  dir  = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config)),
+    output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
+    log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
+    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    threads: 1
+    params: dereps = lambda wildcards, input: get_reps(input.dir, config,'DTU'),
+            bins = BINS
+    shell:  "python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}"
+
+rule run_DTU:
+    input:  anno = expand(rules.create_annotation_table.output.anno, combo=combo, scombo=scombo)
+    output: session = expand(rules.themall.input.session, combo=combo, scombo=scombo),
+            res = rules.themall.input.res
+    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    params: bins   = str.join(os.sep,[BINS, DTUBIN]),
+            compare = comparison,
+            pcombo = scombo if scombo != '' else 'none',
+            outdir = 'DTU/'+combo,
+            ref = ANNOTATION
+            # pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
+            # lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
+
+# rule filter_significant:
+#     input:  res = rules.run_DTU.output.res
+#     output: sig   = rules.themall.input.sig,
+#             sig_d = rules.themall.input.sig_d,
+#             sig_u = rules.themall.input.sig_u
+#     log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
+#     conda:  "NextSnakes/envs/"+DTUENV+".yaml"
+#     threads: 1
+#     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
+#             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
+#     shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn; else touch DTU/{combo}/Sig_$fn DTU/{combo}/SigUP_$fn DTU/{combo}/SigDOWN_$fn; fi; done 2> {log}"
+
+rule create_summary_snippet:
+    input:  rules.run_DTU.output.res,
+            # rules.filter_significant.output.sig,
+            # rules.filter_significant.output.sig_d,
+            # rules.filter_significant.output.sig_u,
+    output: rules.themall.input.Rmd
+    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log", combo=combo)
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    params: bins = BINS,
+            abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --loglevel DEBUG 2>> {log}"

@@ -1,12 +1,17 @@
-MAPENV=params.MAPPINGENV ?: null
-MAPBIN=params.MAPPINGBIN ?: null
+MAPENV = get_always('MAPPINGENV')
+MAPBIN = get_always('MAPPINGBIN')
+MAPIDX = get_always('MAPPINGIDX')
+MAPUIDX = get_always('MAPPINGUIDX')
+MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
+MAPREF = get_always('MAPPINGREF')
+MAPREFDIR = get_always('MAPPINGREFDIR')
+MAPANNO = get_always('MAPPINGANNO')
+MAPPREFIX = get_always('MAPPINGPREFIX')
+MAPUIDX.replace('.idx','')
 
-MAPIDX=params.MAPPINGIDX ?: null
-MAPREF=params.MAPPINGREF ?: null
-MAPGEN=params.MAPPINGGEN ?: null
+IDXPARAMS = get_always('segemehl3_params_0') ?: ''
+MAPPARAMS = get_always('segemehl3_params_1') ?: ''
 
-IDXPARAMS = params.segemehl3_params_0 ?: ''
-MAPPARAMS = params.segemehl3_params_1 ?: ''
 
 //MAPPING PROCESSES
 
@@ -23,43 +28,44 @@ process collect_tomap{
     """
 }
 
-process sege_idx{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+process segemehl3_idx{
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".idx") > 0)        "$MAPIDX"
-        else null
+        if (filename == "segemehl3.idx")                  "$MAPIDX"
+        else                                              "$MAPUIDX"
     }
 
     input:
-    //val collect
+    val collect
     path reads
     path genome
 
     output:
     path "*.idx", emit: idx
+    path "$MAPUIDXNAME", emit: uidx
 
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x tmp.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME && ln -s $MAPUIDXNAME segemehl3.idx
     """
 
 }
 
-process sege_mapping{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+process segemehl3_mapping{
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
+        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -71,7 +77,7 @@ process sege_mapping{
 
     output:
     path "*.sam.gz", emit: maps
-    path "*Log.out", emit: maplog
+    path "*Log.out", emit: logs
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
@@ -101,18 +107,18 @@ workflow MAPPING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
         }
         T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
+        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
@@ -124,16 +130,17 @@ workflow MAPPING{
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        sege_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        segemehl3_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        sege_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        sege_mapping(collect_tomap.out.done, genomefile, sege_idx.out.idx, trimmed_samples_ch)
+        segemehl3_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        segemehl3_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped  = sege_mapping.out.maps
+    mapped  = segemehl3_mapping.out.maps
+    logs = segemehl3_mapping.out.logs
 }

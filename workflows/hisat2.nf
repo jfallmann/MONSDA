@@ -1,12 +1,16 @@
-MAPENV=params.MAPPINGENV ?: null
-MAPBIN=params.MAPPINGBIN ?: null
+MAPENV = get_always('MAPPINGENV')
+MAPBIN = get_always('MAPPINGBIN')
+MAPIDX = get_always('MAPPINGIDX')
+MAPUIDX = get_always('MAPPINGUIDX')
+MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
+MAPREF = get_always('MAPPINGREF')
+MAPREFDIR = get_always('MAPPINGREFDIR')
+MAPANNO = get_always('MAPPINGANNO')
+MAPPREFIX = get_always('MAPPINGPREFIX')
+MAPUIDX.replace('.idx','')
 
-MAPIDX=params.MAPPINGIDX ?: null
-MAPREF=params.MAPPINGREF ?: null
-MAPGEN=params.MAPPINGGEN ?: null
-
-IDXPARAMS = params.hisat2_params_0 ?: ''
-MAPPARAMS = params.hisat2_params_1 ?: ''
+IDXPARAMS = get_always('hisat2_params_0') ?: ''
+MAPPARAMS = get_always('hisat2_params_1') ?: ''
 
 //MAPPING PROCESSES
 
@@ -23,14 +27,14 @@ process collect_tomap{
     """
 }
 
-process hisat_idx{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+process hisat2_idx{
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".ht2") > 0)        "$MAPGEN"+"${filename.replaceFirst(/tmp\.idx/, '')}"
+        if (filename.indexOf(".ht2") > 0)        "$MAPUIDX"+"/"+"${filename.replaceFirst(/tmp\.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
         else null
     }
@@ -48,21 +52,21 @@ process hisat_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa tmp.idx && touch tmp.idx
+    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME && ln -s $MAPUIDXNAME hisat2.idx
     """
 
 }
 
-process hisat_mapping{
-    conda "${workflow.workDir}/../nextsnakes/envs/$MAPENV"+".yaml"
+process hisat2_mapping{
+    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
+        else if (filename.indexOf(".log") >0)               "MAPPED/$COMBO$CONDITION/"+"${filename}.log"
         else null
     }
 
@@ -74,13 +78,17 @@ process hisat_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
+    if (' ' in MAPBIN){
+        mapbin = MAPBIN.split(' ')[1]
+    } else {
+        mapbin = MAPBIN
+    }
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
     uf = fn+".unmapped.fastq.gz"
-    index = MAPIDX
 
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
@@ -94,11 +102,11 @@ process hisat_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x $index -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }
 }
@@ -110,18 +118,18 @@ workflow MAPPING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R1_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_R2_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
         }
         T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).merge(Channel.fromPath(T2SAMPLES))
+        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
         }
         T1SAMPLES.sort()
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
@@ -132,16 +140,17 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPIDX)
         collect_tomap(collection.collect())
-        hisat_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
+        hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        hisat_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        hisat_mapping(collect_tomap.out.done, hisat_idx.out.idx, trimmed_samples_ch)
+        hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.htidx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped = hisat_mapping.out.maps
+    mapped = hisat2_mapping.out.maps
+    logs = hisat2_mapping.out.logs
 }

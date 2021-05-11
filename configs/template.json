@@ -1,6 +1,6 @@
 {
-    "WORKFLOWS": "", #which workflows do you want to run
-    "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
+    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, UCSC, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS"
+    "BINS": "NextSnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
@@ -13,86 +13,156 @@
         "id": {
             "condition": {
                 "setting": {
-                    "SEQUENCING": "unpaired",  #or paired and stranded info comma separated
+                    "SAMPLES": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2/_R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2/_R1/_R2 extension, this will be appended automatically
+                    "SEQUENCING": "single",  #or paired and stranded info comma separated
                     "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",  #default Referene Genome fa.gz file
                     "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings
                     "PREFIX": "idx",  #if needed, prefix for mapping software can be set here
                     "ANNOTATION": {
                         "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
                         "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
-                    }
-                },
+                    },
+                    "IP": "iCLIP" # OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol
+                }
+            }
+        }
+    },
 #SRA options
     "SRA": {
+        "TOOLS" : # which tools to run, format is Conda-environment name : binary to call, will be overwritten by ENV/BIN in ICS
+        {
+            "sra" : "sra"
+        },
         "id": { #key for source and genome
                 "condition": { # sample id
                                "setting": {
-                                   "ENV" : "sra",  # name of conda env for raw file download
-                                   "OPTIONS":
-                                   [  #SRA options here if any, paired is not required, will be resolved by rules
-                                      {}
-                                   ]
+                                   "ENV" : "sra",  # OPTIONAL if no tool is defined, name of conda env for raw file download
+                                   "BIN" : "sra", # OPTIONAL PATH to executable, usually just the name of the executable
+                                   "sra": { # for which tool environment these settings work
+                                       "OPTIONS":
+                                       [  #SRA options here if any, paired is not required, will be resolved by rules
+                                          {}
+                                       ]
+                                   }
+                               }
+                             }
+              }
+    },
+#BASECALL options
+    "BASECALL": {
+        "TOOLS" : # which tools to run, format is Conda-environment name : binary to call
+        {
+            "guppy" : "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
+        },
+        "id": { #key for source and genome
+                "condition": { # sample id
+                               "setting": {
+                                   "ENV" : "guppy",  # name of conda env for raw file download
+                                   "BIN" : "~/.local/bin/guppy-cpu/bin/guppy_basecaller", #PATH to guppy executable
+                                   "guppy":{
+                                       "OPTIONS":
+                                       [  #Guppy options here if any, paired is not required, will be resolved by rules
+                                          {}
+                                       ]
+                                   }
                                }
                              }
               }
     },
 #QC options
     "QC": {
+        "TOOLS" :
+        {
+            "fastqc" : "fastqc"
+        },
         "id": { #key for source and genome
                 "condition": { # sample id
                                "setting": {
                                    "ENV" : "fastqc",  # name of conda env for QC
                                    "BIN" : "fastqc", # binary for QC
-                                   "OPTIONS":
-                                   [  #QC options here if any, paired is not required, will be resolved by rules
-                                      {}
-                                   ]
+                                   "fastqc":{
+                                       "OPTIONS":
+                                       [  #QC options here if any, paired is not required, will be resolved by rules
+                                          {}
+                                       ]
+                                   }
                                }
                              }
               }
     },
 #Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
+                  "TOOLS" :
+                  {
+                      "trimgalore": "trim_galore",
+                      "cutadapt": "cutadapt"
+                  },
                   "id": {
                       "condition": {
                           "setting": { # See above
                                        "ENV": "trimgalore", # name of conda env for trimming
                                        "BIN": "trim_galore", # name of binary for trimming
-                                       "OPTIONS":
-                                       [
-                                           {  # trimming options here, --paired is not required, will be resolved by rules
-                                              "-q": "15",
-                                              "--length": "8", #READ_MINLEN discard reads shorter than that
-                                              "-e": "0.15"
-                                           }
-                                       ]
+                                       "trimgalore":{
+                                           "OPTIONS":
+                                           [
+                                               {  # trimming options here, --paired is not required, will be resolved by rules
+                                                  "-q": "15",
+                                                  "--length": "8", #READ_MINLEN discard reads shorter than that
+                                                  "-e": "0.15"
+                                               }
+                                           ]
+                                       },
+                                       "cutadapt":{
+                                           "OPTIONS":
+                                           [
+                                               {  # trimming options here, --paired is not required, will be resolved by rules
+                                                  "-q": "15",
+                                                  "--length": "8", #READ_MINLEN discard reads shorter than that
+                                                  "-e": "0.15"
+                                               }
+                                           ]
+                                       }
                                      }
                       }
                   }
                 },
 #Deduplication options
     "DEDUP": { #options for deduplication for each sample/condition
-                  "id": {
-                      "condition": {
-                          "setting": { # See above
-                                       "ENV": "umitools", # name of conda env for dedup
-                                       "BIN": "umi_tools", # name of binary for dedup
-                                       "OPTIONS":
-                                       [
-                                           {  # dedup whitelist options,
-                                              "--extract-method": "string",
-                                              "--bc-pattern": "AGANNNNACGT"
-                                           },
-                                           {  # dedup extract options
-                                              "--extract-umi-method": "read_id"
-                                           }
-                                       ]
-                                     }
-                      }
-                  }
-                },
+               "TOOLS": {
+                   "umitools": "umi_tools"
+               },
+               "id": {
+                   "condition": {
+                       "setting": { # See above
+                                    "ENV": "umitools", # name of conda env for dedup
+                                    "BIN": "umi_tools", # name of binary for dedup
+                                    "umitools":{
+                                        "OPTIONS":
+                                        [
+                                            {  # umitools whitelist options,
+                                               "--extract-method": "string",
+                                               "--bc-pattern": "AGANNNNACGT"
+                                            },
+                                            {  # umitools extract options
+                                               "--extract-umi-method": "read_id"
+                                            },
+                                            {  # umitools dedup options
+                                            }
+                                        ]
+                                    }
+                                  }
+                   }
+               }
+             },
 #MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
+                 "TOOLS": {
+                     "star": "STAR",
+                     "segemehl3": "segemehl.x",
+                     "hisat2": "hisat2",
+                     "bwa": "bwa mem",
+                     "minimap": "minimap2"
+                 },
                  "id": {
                      "condition": {
                          "setting": {
@@ -100,25 +170,30 @@
                              "BIN": "STAR",  #how the mapper binary is called
                              "REFERENCE": "$PATHTO/genome.fa.gz",  #Path to the gzipped Genome FASTA file, overwrites SETTINGS
                              "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
-                             "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                             [
-                                 {  #indexing options
-                                    "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
-                                    "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
-                                    "--genomeSAindexNbases": "13" #indexing options
-                                 },
-                                 {  #mapping options
-                                    "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
-                                    "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
-                                    "--outSAMprimaryFlag AllBestScore": ""
-                                 }
-                             ]
+                             "star":{
+                                 "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                 [
+                                     {  #indexing options
+                                        "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                        "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
+                                        "--genomeSAindexNbases": "13" #indexing options
+                                     },
+                                     {  #mapping options
+                                        "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
+                                        "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
+                                        "--outSAMprimaryFlag AllBestScore": ""
+                                     }
+                                 ]
+                             }
                          }
                      }
                  }
                },
 #Count options
     "COUNTING": { #options for counting for each sample/condition
+                  "TOOLS": {
+                      "countreads": "featureCounts"
+                  },
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE), depends on whether gtf or gff is used as annotation, gff default is gene -> ID and exon -> Parent, gtf default for gene and exon is gene_id
                                 "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3/gtf file
                                 "gene": "ID" #same here
@@ -130,16 +205,18 @@
                                         "BIN": "featureCounts",
                                         "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
                                         "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
-                                        "OPTIONS":
-                                        [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
-                                           {
-                                               "-f": "",
-                                               "--fraction": "",
-                                               "-p": "",
-                                               "-O": "",
-                                               "-M": ""
-                                           }
-                                        ]
+                                        "countreads":{
+                                            "OPTIONS":
+                                            [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
+                                               {
+                                                   "-f": "",
+                                                   "--fraction": "",
+                                                   "-p": "",
+                                                   "-O": "",
+                                                   "-M": ""
+                                               }
+                                            ]
+                                        }
                                      }
                       }
                   }
@@ -154,12 +231,14 @@
                              "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
                              "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                              "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will annoate exons only, comma separated list for multiple features
-                             "OPTIONS":
-                             [
-                                 {
-                                     "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or removing this line
-                                 }
-                             ]
+                             "annotatebed":{
+                                 "OPTIONS":
+                                 [
+                                     {
+                                         "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or removing this line
+                                     }
+                                 ]
+                             }
                            }
             }
         }
@@ -170,35 +249,49 @@
             "condition": {
                 "setting": {  # See above
                               "ENV" : "ucsc",
-                              "OPTIONS":
-                              [
-                                  {
-                                      "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
-                                      "-s" : "dm6_st", #short name for hub, replace space with _
-                                      "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
-                                      "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                                  }
-                              ]
+                              "ucsc":{
+                                  "OPTIONS":
+                                  [
+                                      {
+                                          "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
+                                          "-s" : "dm6_st", #short name for hub, replace space with _
+                                          "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
+                                          "-b" : "UCSC_dm6_star" #short name for track, replace space with _
+                                      }
+                                  ]
+                              }
                            }
             }
         }
     },
 #Peak finding options, uses PAR-iCLIP Peak finder scripts adopted from https://dx.doi.org/10.15252/msb.20156628 use at own risk or replace with your own scripts, will need tweaking of workflow!
     "PEAKS" : {
+        "TOOLS" :
+        {
+            "macs" : "macs2",
+            "peaks" : "peaks",
+            "piranha" : "Piranha"
+        },
+        "COMPARABLE" :
+        {
+            "Condition": "Control"
+        },
         "id": {
             "condition": {
                 "setting": {  # See above
                               "ENV" : "piranha",
-                              "BIN" : "Piranha"
-                              "CLIP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
-                              "OPTIONS":
-                              [
-                                  {  # Preprocessor options
-                                  },
-                                  {  # Options for peak finder
-                                     "-b":"10"
-                                  }
-                              ]
+                              "BIN" : "Piranha",
+                              "IP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
+                              "piranha":{
+                                  "OPTIONS":
+                                  [
+                                      {  # Preprocessor options
+                                      },
+                                      {  # Options for peak finder
+                                         "-b":"10"
+                                      }
+                                  ]
+                              }
                            }
             }
         }
@@ -215,6 +308,9 @@
             "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
+            "EXCLUDE": [
+                "Sample1" # If a replicate need to be excluded from analysis, e.g. because of low mapping quality
+            ],
             "condition": {
                 "setting": {
                     "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
@@ -223,16 +319,36 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "OPTIONS":
-                    [
-                        {
-                            "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
-                            "-g": "gene_id",
-                            "-f": "",
-                            "--fraction": "",
-                            "-O": ""
-                        }
-                    ]
+                    "deseq": {
+                        "OPTIONS":
+                        [
+                            {
+                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
+                                "-g": "gene_id",
+                                "-f": "",
+                                "--fraction": "",
+                                "-O": ""
+                            },
+                            {
+                                "controlgenes": "spike-in.list"
+                            }
+                        ]
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        [
+                            {
+                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
+                                "-g": "gene_id",
+                                "-f": "",
+                                "--fraction": "",
+                                "-O": ""
+                            },
+                            {
+                                "controlgenes": "spike-in.list"
+                            }
+                        ]
+                    }
                 }
             }
         }
@@ -249,6 +365,9 @@
             "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
+            "EXCLUDE": [
+                "Sample1" # If a replicate need to be excluded from analysis, e.g. because of low mapping quality
+            ],
             "condition": {
                 "setting": {
                     "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
@@ -283,6 +402,9 @@
             "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
+            "EXCLUDE": [
+                "Sample1" # If a replicate need to be excluded from analysis, e.g. because of low mapping quality
+            ],
             "condition": {
                 "setting": {
                     "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
@@ -316,13 +438,16 @@
         "TOOLS" :
         {
             "dexseq"  : "Analysis/DTU/DEXSEQ.R",
-            "drimseq"  : "Analysis/DTU/DRIMSEQ.py"
+            "drimseq"  : "Analysis/DTU/DRIMSEQ.R"
         },
         "COMPARABLE" :
         {
             "contrast_WTvsKO": [["WT"],["KO1","KO2"]]
         },
         "id": {
+            "EXCLUDE": [
+                "Sample1" # If a replicate need to be excluded from analysis, e.g. because of low mapping quality
+            ],
             "condition": {
                 "setting": {
                     "REFERENCE": "Genomes/genome/genome.fa.gz", #Relative Path to the gzipped Genome FASTA file
@@ -344,5 +469,26 @@
                 }
             }
         }
-    }
+    },
+    "CIRCS" : {
+        "TOOLS" :
+        {
+            "ciri2" : "PATH_TO_CIRI2.pl"
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ENV" : "ciri2",
+                    "BIN" : "ciri2",
+                    "ciri2":{
+                        "OPTIONS":
+                        [
+                            {  # Additional options if needed
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
 }

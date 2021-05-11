@@ -10,37 +10,39 @@ import tempfile
 import traceback as tb
 from collections import defaultdict
 from itertools import combinations
+import re
 
-cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../nextsnakes/lib"),os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"nextsnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
+cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 
-from Collection import *
 from Logger import *
+from Params import *
+
 
 loglevel="INFO"
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    if any(x in scriptname for x in ['RunSnakemake','Configurator']):
+    if any(x in scriptname for x in ['NextSnakes','Configurator']):
         log = logging.getLogger(scriptname)
     else:
         log = logging.getLogger('snakemake')
         for handler in log.handlers[:]:
             handler.close()
             log.removeHandler(handler)
-    handler = logging.FileHandler('LOGS/RunSnakemake.log', mode='a')
-    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    handler = logging.FileHandler('LOGS/NextSnakes.log', mode='a')
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',datefmt='%m-%d %H:%M'))
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     lvl = loglevel
     log.setLevel(lvl)
 
 except Exception as err:
-    log = setup_logger(name='RunSnakemake.header', log_file='LOGS/RunSnakemake.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
+    log = setup_logger(name='NextSnakes.header', log_file='LOGS/NextSnakes.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
     #log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=loglevel)
 
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -51,7 +53,8 @@ except Exception as err:
 
 logid = 'header.smk: '
 
-#Parse SUBCONFIG
+
+# Parse SUBCONFIG
 BINS = config["BINS"]
 MAXTHREAD = int(config["MAXTHREADS"])
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
@@ -60,9 +63,10 @@ if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
     sys.exit(logid+'ERROR: No samples found, please check config file')
 
-SETUP = keysets_from_dict(config["SAMPLES"])[0]
+SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
 SETS = os.sep.join(SETUP)
 SETTINGS = subDict(config['SETTINGS'], SETUP)
+
 
 # Parse SETTINGS
 SEQUENCING = SETTINGS.get('SEQUENCING')
@@ -71,9 +75,10 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
-rundedup = True if (config['SETTINGS'].get('RUNDEDUP')) == 'enabled' else False
+IP = SETTINGS.get('IP')
+rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 if rundedup:
-    log.info('DEDUPLICATION ENABLED')
+    log.debug('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -98,18 +103,20 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
-    MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX
-        log.debug(logid+'INDEX: '+str(MAPCONF['INDEX']))
-    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIONS'][0]))
+    if not INDEX:
+        INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
     if PRE:
         PREFIX = PRE
-
+    if not PREFIX:
+        PREFIX = MAPPERENV
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
             INDEX2 = str(os.path.abspath(INDICES[1]))
@@ -118,7 +125,6 @@ if 'MAPPING' in config:
     else:
         INDEX2 = ''
 
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR,INDEX,str(INDEX2)]))
 
 # Peak Calling Variables
 if 'PEAKS' in config:
@@ -132,8 +138,10 @@ if 'PEAKS' in config:
         ANNOTATION = ANNOPEAK
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
-    CLIP = checkclip(SAMPLES, config)
-    log.info(logid+'Running Peak finding for '+CLIP+' protocol')
+    if not IP:
+        IP = check_ip(SAMPLES, config)
+    log.info(logid+'Running Peak finding for '+IP+' protocol')
+
 
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:
@@ -149,7 +157,7 @@ for x in ['UCSC', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
+
 
 # DE/DEU/DAS/DTU Variables
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
@@ -165,4 +173,23 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-    log.debug(logid+'REF: '+'\t'.join([REFERENCE,REFDIR]))
+
+
+# CIRCS Variables
+if 'CIRCS' in config:
+    CIRCCONF = subDict(config['CIRCS'], SETUP)
+    log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
+    REF = CIRCCONF.get('REFERENCE')
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    CANNO = CIRCCONF.get('ANNOTATION')
+    if CANNO:
+        ANNOTATION = CANNO
+    else:
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
+
+
+combo = ''
+
+####HEADER ENDS HERE####

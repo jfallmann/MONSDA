@@ -45,32 +45,19 @@
 
 # Code:
 import logging
-import multiprocessing
-import os, sys, inspect
+import os
+import sys
 import traceback as tb
 
-def check_run(func):
-    def func_wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
 
-        except Exception as err:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            tbe = tb.TracebackException(
-                exc_type, exc_value, exc_tb,
-            )
-            log.error(''.join(tbe.format()))
-    return func_wrapper
-
-#@check_run
 def makelogdir(logdir):
     if not os.path.isabs(logdir):
-        logdir =  os.path.abspath(logdir)
+        logdir = os.path.abspath(logdir)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     return logdir
 
-#@check_run
+
 def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING', delay=False):
     """Function setup as many loggers as you want"""
 
@@ -78,24 +65,25 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     if log_file != 'stdout' and log_file != 'stderr':
         makelogdir(os.path.dirname(log_file))
         if not os.path.isfile(os.path.abspath(log_file)):
-            open(os.path.abspath(log_file),'a').close()
+            open(os.path.abspath(log_file), 'a').close()
         handler = logging.FileHandler(os.path.abspath(log_file), mode=filemode, delay=delay)
     else:
         handler = logging.StreamHandler()
 
-    handler.setFormatter(logging.Formatter(fmt=logformat,datefmt=datefmt))
+    handler.setFormatter(logging.Formatter(fmt=logformat, datefmt=datefmt))
 
     logger.setLevel(level)
     logger.addHandler(handler)
 
     return logger
 
+
 if __name__ == '__main__':
     try:
         # set up logging to file
-        logging=setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='WARNING')
+        log = setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='WARNING')
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type, exc_value, exc_tb,

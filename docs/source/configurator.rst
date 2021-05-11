@@ -11,7 +11,7 @@ simple ``config.json`` based on the template in the configs
 directory and append workflows as needed step by step, or create the
 full configuration at once.  Usually a user will start an analysis
 running initial Quality Control on raw files. Although
-``RunSnakemake.py`` will run QC (when enabled) also for trimming and
+``NextSnakes.py`` will run QC (when enabled) also for trimming and
 mapping steps, this will be used as first step explaining
 ``Configurator.py``.
 
@@ -32,7 +32,7 @@ refer to the help output of the tool for more information.
 
 After 'QC', the user wants to start trimming and mapping and also add
 new ICSs so we append to the just created config to make
-``RunSnakemake.py`` aware of that.
+``NextSnakes.py`` aware of that.
 
 ``
 ./snakes/Configurator.py -w QC,TRIMMING,MAPPING -i hs:01012020:std,newlab:12012020:specific,otherspecies:24032003:test -c config_basic.json -m hs:hg38,newlab:hg38,otherspecies:dm6 -g hg38:hg38genomefile,dm6:dm6genomefile -x hg38:all_chromosomes

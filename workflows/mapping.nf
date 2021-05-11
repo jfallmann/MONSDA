@@ -14,13 +14,13 @@ process collect_postmap{
 }
 
 process sortsam{
-    conda "${workflow.workDir}/../nextsnakes/envs/samtools.yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".sam.gz") > 0)     "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".sam.gz") > 0)     "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -35,20 +35,20 @@ process sortsam{
     fn = file(map[0]).getSimpleName()
     sorted = fn+'_sorted.sam.gz'
     """
-    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S 25% -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$CONDITION/$map
+    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S 25% -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$COMBO$CONDITION/$map
     """
 }
 
 process sam2bam{
-    conda "${workflow.workDir}/../nextsnakes/envs/samtools.yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".bam") > 0)       "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".bai") > 0)  "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") > 0)  "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".bam") > 0)       "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".log") > 0)  "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -70,14 +70,14 @@ process sam2bam{
 }
 
 process uniqsam{
-    conda "${workflow.workDir}/../nextsnakes/envs/samtools.yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") > 0)       "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".log") > 0)       "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -98,15 +98,15 @@ process uniqsam{
 }
 
 process sam2bamuniq{
-    conda "${workflow.workDir}/../nextsnakes/envs/samtools.yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".bam") > 0)       "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".bai") > 0)  "MAPPED/$CONDITION/$filename"
-        else if (filename.indexOf(".log") > 0)  "MAPPED/$CONDITION/$filename"
+        if (filename.indexOf(".bam") > 0)       "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf(".log") > 0)  "MAPPED/$COMBO$CONDITION/$filename"
         else null
     }
 
@@ -134,7 +134,7 @@ workflow POSTMAPPING{
     main:
     //SAMPLE CHANNELS
     M1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/"+element+"_mapped.sam.gz"
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped.sam.gz"
     }
     M1SAMPLES.sort()
     mapped_samples_ch = Channel.fromPath(M1SAMPLES)

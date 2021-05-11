@@ -15,11 +15,11 @@ defines parameters specific for the job:
 
    "WORKFLOWS": "SRA,QC,MAPPING,TRIMMING,COUNTING,UCSC,DE,DEU,DAS", # Here you define which main workflow steps should be run,
    "REFERENCE": "GENOMES", #where to find the reference genomes
-   "BINS": "nextsnakes/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
+   "BINS": "NextSnakes/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
    "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load
 
 The next part defines where the path to the genome files and its main name plus an extension in case you use
-specific genomes for different runs.  The directory structure that ``RunSnakemake.py|RunNextflow.py`` will
+specific genomes for different runs.  The directory structure that ``NextSnakes.py|NextSnakes.py`` will
 follow is in this example *GENOME\Dm6* and it would look for a genome file named *dm6.fa.gz* without further
 extension.  Here already the split by condition is applied, so you can define different genomes to use for
 different conditions/settings, e.g. when running on standard RNA-Seq and Bisulfite-Seq in parallel or on
@@ -251,4 +251,4 @@ Nextsnakes further supports DE/DEU/DAS-Analysis as postprocessing steps for a de
 
 
 Keep in mind that every workflow/postprocessing step needs a corresponding entry in the config file or
-``RunSnakemake.py|RunNextflow.py`` will throw an error.
+``NextSnakes.py|NextSnakes.py`` will throw an error.

@@ -1,7 +1,7 @@
-TRIMENV=params.TRIMMINGENV ?: null
-TRIMBIN=params.TRIMMINGBIN ?: null
+TRIMENV=get_always('TRIMMINGENV')
+TRIMBIN=get_always('TRIMMINGBIN')
 
-TRIMPARAMS = params.trimgalore_params_0 ?: ''
+TRIMPARAMS = get_always('trimgalore_params_0') ?: ''
 
 //TRIMMING PROCESSES
 
@@ -19,15 +19,15 @@ process collect_totrim{
 }
 
 process trim{
-    conda "${workflow.workDir}/../nextsnakes/envs/$TRIMENV"+".yaml"
+    conda "${workflow.workDir}/../NextSnakes/envs/$TRIMENV"+".yaml"
     cpus THREADS
-    validExitStatus 0,1
+    //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
-        else if (filename.indexOf(".log") >0)              "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}.log"
+        if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        else if (filename.indexOf(".log") >0)              "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
         else null
     }
 
@@ -68,7 +68,7 @@ workflow TRIMMING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
         }
         R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).merge(Channel.fromPath(R2SAMPLES))
+        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }else{
         RSAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
