@@ -196,6 +196,11 @@ for(contrast in comparison[[1]]){
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
+        res$Gene  <- lapply(rownames(res) , function(x){get_gene_name(x, gtf_gene)})
+        res$Gene_ID <- rownames(res)
+        res <- res[, c(7,1,2,3,4,5,6)]
+        res <- as.data.frame(apply(res, 2, as.character))
+
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
         # plotMA
@@ -226,6 +231,12 @@ for(contrast in comparison[[1]]){
 
             # write the table to a tsv file
             write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+
+            res$Gene  <- lapply(rownames(res) , function(x){get_gene_name(x, gtf_gene)})
+            res$Gene_ID <- rownames(res)
+            res <- res[, c(7,1,2,3,4,5,6)]
+            res <- as.data.frame(apply(res, 2, as.character))
+
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
             # plotMA
