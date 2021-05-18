@@ -260,16 +260,12 @@ for(compare in comparisons[[1]]){
 
         # create sorted results Tables
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-        tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-        tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(7,6,2,3,4,5,8)]
+        tops <- tops$table[, c(7,6,4,2,3,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-        tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-        tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(7,6,2,3,4,5,8)]
+        tops <- tops$table[, c(7,6,4,2,3,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
@@ -314,16 +310,12 @@ for(compare in comparisons[[1]]){
 
             # create sorted results Tables
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-            tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(7,6,2,3,4,5,8)]
+            tops <- tops$table[, c(7,6,4,2,3,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-            tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(7,6,2,3,4,5,8)]
+            tops <- tops$table[, c(7,6,4,2,3,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
