@@ -86,6 +86,7 @@ rule create_summary_snippet:
             rules.run_edger.output.allN,
             rules.run_edger.output.res,
             rules.run_edger.output.sort#,
+            rules.run_edger.output.session#,
             #rules.filter_significant.output.sig,
             #rules.filter_significant.output.sig_d,
             #rules.filter_significant.output.sig_u
@@ -95,4 +96,4 @@ rule create_summary_snippet:
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
-    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --loglevel DEBUG 2>> {log}"
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {conda} --loglevel DEBUG 2>> {log}"

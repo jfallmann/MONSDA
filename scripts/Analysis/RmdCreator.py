@@ -14,6 +14,7 @@ def parseargs():
     parser = argparse.ArgumentParser(description='Create Rmd snippets for Summary from downstream analyses results')
     parser.add_argument("--files", dest='files', required=True, type=str, nargs='*', help="Names of input files" )
     parser.add_argument("--output", dest='output', required=True, type=str, help="output Rmd File" )
+    parser.add_argument("--env", dest='env', required=True, type=str, help="used conda environment" )
     parser.add_argument("--loglevel", default='INFO', help="Log verbosity" )
 
     if len(sys.argv)==1:
@@ -69,6 +70,10 @@ def create_file_tree(files):
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
         setting = setting.replace("Sig_","").replace("SigUP_","").replace("SigDOWN_","")
+        if "SESSION" in file:
+            WF, TOOL, COMBI, NAME = setting.split('_')
+            tree[WF][TOOL][COMBI]["DataSet"][NAME] = file
+            continue
         WF, TOOL, COMBI, COMP, RES, NAME = setting.split('_')
         EXT = os.path.basename(file).split(".", 1)[1]
         tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
@@ -118,7 +123,7 @@ def integrate_list(file):
             listlines.append(integrate_figures(list(elements[id][name])))
     return "\n".join(listlines)
 
-def create_Rmd(files, output):
+def create_Rmd(files, output, env):
     logid = scriptname+'.create_Rmd: '
     outdir = os.path.dirname(output)
     makeoutdir(outdir)
@@ -138,10 +143,10 @@ def create_Rmd(files, output):
 
             for comparison in tree[workflow][tool][combi].keys():
                 lines.append(f"#### {comparison}  {{.tabset}} \n\n")
-                lines.append(f"##### FIGURES  {{.tabset}} \n\n")
-                lines.append(f"###### OVERVIEW \n\n")
 
                 if "figure" in tree[workflow][tool][combi][comparison].keys():
+                    lines.append(f"##### FIGURES  {{.tabset}} \n\n")
+                    lines.append(f"###### OVERVIEW \n\n")
                     for name in tree[workflow][tool][combi][comparison]["figure"].keys():
                         lines.append(f"####### {name} \n")
                         lines.append(integrate_figures([tree[workflow][tool][combi][comparison]["figure"][name]]))
@@ -151,14 +156,22 @@ def create_Rmd(files, output):
                         lines.append(f"###### {name} \n")
                         lines.append(integrate_list(tree[workflow][tool][combi][comparison]["list"][name]))
 
-                lines.append(f"##### TABLES  {{.tabset}} \n\n")
-
                 if "table" in tree[workflow][tool][combi][comparison].keys():
-                     for name in tree[workflow][tool][combi][comparison]["table"].keys():
-                         lines.append(f"###### {name} \n")
-                         # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
-                         lines.append(tree[workflow][tool][combi][comparison]["table"][name])
-                         lines.append("\n\n")
+                    lines.append(f"##### TABLES  {{.tabset}} \n\n")
+                    for name in tree[workflow][tool][combi][comparison]["table"].keys():
+                        lines.append(f"###### {name} \n")
+                        # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
+                        lines.append(tree[workflow][tool][combi][comparison]["table"][name])
+                        lines.append("\n\n")
+
+                if "SESSION" in tree[workflow][tool][combi][comparison].keys():
+                    lines.append(f"##### R-SESSION  {{.tabset}} \n\n")
+                    lines.append(f"To access the {tool} R-session, follow these steps")
+                    lines.append(f"1) Create the corresponding conda environment:")
+                    lines.append(f"\n\tconda env create -f {env}\n")
+                    lines.append(f"2) Start R and load the workingdir:")
+                    lines.append(f"\n\tload('{tree[workflow][tool][combi][comparison]["SESSION"][name]}')\n")
+
 
     log.info(logid+"lines: "+str(lines))
 
@@ -187,7 +200,7 @@ if __name__ == '__main__':
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         print(os.getcwd())
-        create_Rmd(args.files, args.output)
+        create_Rmd(args.files, args.output, args.env)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
