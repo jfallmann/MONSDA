@@ -102,21 +102,21 @@ for(compare in comparisons[[1]]){
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~type+batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), tl, bl)
+            #colnames(design) <- c(levels(sampleData$condition), tl, bl)
         } else{
             des <- ~type+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(condition), tl)
+            #colnames(design) <- c(levels(condition), tl)
         }
     } else{
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), bl)
+            #colnames(design) <- c(levels(sampleData$condition), bl)
         } else{
             des <- ~condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- levels(sampleData$condition)
+            #colnames(design) <- levels(sampleData$condition)
         }
     }
     print(design)
@@ -133,13 +133,16 @@ for(compare in comparisons[[1]]){
 
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep=" + ")), data=sampleData_norm)
-        colnames(design_norm) <- c(colnames(design),"W_1")
+        #colnames(design_norm) <- c(colnames(design),"W_1")
 
         dge_norm <- DGEList(counts=counts(counts_norm), group=sampleData$condition, samples=samples, genes=genes)
 
         ## filter low counts
         keep <- filterByExpr(dge_norm)
         dge_norm <- dge_norm[keep, , keep.lib.sizes=FALSE]
+
+        #relevel to base condition B
+        dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
 
         ## normalize with TMM
         dge_norm <- calcNormFactors(dge_norm, method = "TMM", BPPARAM=BPPARAM)
@@ -186,6 +189,9 @@ for(compare in comparisons[[1]]){
     keep <- filterByExpr(dge)
     dge <- dge[keep, , keep.lib.sizes=FALSE]
 
+    #relevel to base condition A
+    dge$samples$group <- relevel(dge$samples$group, ref = B[[1]])
+
     ## normalize with TMM
     dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
 
@@ -223,23 +229,23 @@ for(compare in comparisons[[1]]){
 
     tryCatch({
 
-        # determine contrast
-        A <- strsplit(contrast_groups[[1]][1], "\\+")
-        B <- strsplit(contrast_groups[[1]][2], "\\+")
-        minus <- 1/length(A[[1]])*(-1)
-        plus <- 1/length(B[[1]])
-        contrast <- cbind(integer(dim(design)[2]), colnames(design))
-        for(i in A[[1]]){
-            contrast[which(contrast[,2]==i)]<- minus
-        }
-        for(i in B[[1]]){
-            contrast[which(contrast[,2]==i)]<- plus
-        }
-        contrast <- as.numeric(contrast[,1])
+        # determine contrast, only for complex cases, not needed for our pairwise comparisons now
+        #A <- strsplit(contrast_groups[[1]][1], "\\+")
+        #B <- strsplit(contrast_groups[[1]][2], "\\+")
+        #minus <- 1/length(A[[1]])*(-1)
+        #plus <- 1/length(B[[1]])
+        #contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        #for(i in A[[1]]){
+        #    contrast[which(contrast[,2]==i)]<- minus
+        #}
+        #for(i in B[[1]]){
+        #    contrast[which(contrast[,2]==i)]<- plus
+        #}
+        #contrast <- as.numeric(contrast[,1])
 
-        # Testing
-        qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-
+        ## Testing
+        #qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
+        qlf <- glmQLFTest(fit) ## glm quasi-likelihood-F-Test
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
@@ -254,16 +260,12 @@ for(compare in comparisons[[1]]){
 
         # create sorted results Tables
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-        tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-        tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(7,6,2,3,4,5,8)]
+        tops <- tops$table[, c(7,6,4,2,3,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-        tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-        tops$table$Gene_ID <- rownames(tops$table)
-        tops <- tops$table[, c(7,6,2,3,4,5,8)]
+        tops <- tops$table[, c(7,6,4,2,3,5,8)]
         tops <- as.data.frame(apply(tops,2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
@@ -277,24 +279,23 @@ for(compare in comparisons[[1]]){
         if (spike != ''){  # Same for spike-in normalized
             rm(qlf, tops, res)
 
-            # determine contrast
-            A <- strsplit(contrast_groups[[1]][1], "\\+")
-            B <- strsplit(contrast_groups[[1]][2], "\\+")
-            minus <- 1/length(A[[1]])*(-1)
-            plus <- 1/length(B[[1]])
+            # determine contrast, only for complex cases, not needed for our pairwise comparisons now
+            #A <- strsplit(contrast_groups[[1]][1], "\\+")
+            #B <- strsplit(contrast_groups[[1]][2], "\\+")
+            #minus <- 1/length(A[[1]])*(-1)
+            #plus <- 1/length(B[[1]])
+            #contrast <- cbind(integer(dim(design)[2]), colnames(design))
+            #for(i in A[[1]]){
+            #    contrast[which(contrast[,2]==i)]<- minus
+            #}
+            #for(i in B[[1]]){
+            #    contrast[which(contrast[,2]==i)]<- plus
+            #}
+            #contrast <- as.numeric(contrast[,1])
 
-            contrast <- cbind(integer(dim(design_norm)[2]), colnames(design_norm))
-            for(i in A[[1]]){
-                contrast[which(contrast[,2]==i)]<- minus
-            }
-            for(i in B[[1]]){
-                contrast[which(contrast[,2]==i)]<- plus
-                }
-            contrast <- as.numeric(contrast[,1])
-
-            # Testing
-            qlf <- glmQLFTest(fit_norm, contrast=contrast) ## glm quasi- likelihood-F-Test
-
+            ## Testing
+            #qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
+            qlf <- glmQLFTest(fit) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
@@ -309,16 +310,12 @@ for(compare in comparisons[[1]]){
 
             # create sorted results Tables
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="logFC")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-            tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(7,6,2,3,4,5,8)]
+            tops <- tops$table[, c(7,6,4,2,3,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
             tops <- topTags(qlf, n=nrow(qlf$table), sort.by="PValue")
-            tops$table$Gene  <- lapply(rownames(tops), function(x){get_gene_name(x, gtf_gene)})
-            tops$table$Gene_ID <- rownames(tops$table)
-            tops <- tops$table[, c(7,6,2,3,4,5,8)]
+            tops <- tops$table[, c(7,6,4,2,3,5,8)]
             tops <- as.data.frame(apply(tops,2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 

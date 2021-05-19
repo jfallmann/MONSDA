@@ -93,7 +93,8 @@ rule create_summary_snippet:
             rules.run_dexseq.output.plotMA,
             rules.filter_significant.output.sig,
             rules.filter_significant.output.sig_d,
-            rules.filter_significant.output.sig_u
+            rules.filter_significant.output.sig_u,
+            rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log" ,combo=combo)
     conda:  "NextSnakes/envs/"+DEUENV+".yaml"

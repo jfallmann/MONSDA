@@ -96,21 +96,21 @@ for(compare in comparisons[[1]]){
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~type+batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), tl, bl)
+            # colnames(design) <- c(levels(sampleData$condition), tl, bl)
         } else{
             des <- ~type+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(condition), tl)
+            # colnames(design) <- c(levels(condition), tl)
         }
     } else{
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), bl)
+            # colnames(design) <- c(levels(sampleData$condition), bl)
         } else{
             des <- ~condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- levels(sampleData$condition)
+            # colnames(design) <- levels(sampleData$condition)
         }
     }
     print(design)
@@ -172,22 +172,23 @@ for(compare in comparisons[[1]]){
 
     tryCatch({
 
-        # determine contrast
-        A <- strsplit(contrast_groups[[1]][1], "\\+")
-        B <- strsplit(contrast_groups[[1]][2], "\\+")
-        minus <- 1/length(A[[1]])*(-1)
-        plus <- 1/length(B[[1]])
-        contrast <- cbind(integer(dim(design)[2]), colnames(design))
-        for(i in A[[1]]){
-          contrast[which(contrast[,2]==i)]<- minus
-        }
-        for(i in B[[1]]){
-          contrast[which(contrast[,2]==i)]<- plus
-        }
-        contrast <- as.numeric(contrast[,1])
+        # # determine contrast
+        # A <- strsplit(contrast_groups[[1]][1], "\\+")
+        # B <- strsplit(contrast_groups[[1]][2], "\\+")
+        # minus <- 1/length(A[[1]])*(-1)
+        # plus <- 1/length(B[[1]])
+        # contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        # for(i in A[[1]]){
+        #   contrast[which(contrast[,2]==i)]<- minus
+        # }
+        # for(i in B[[1]]){
+        #   contrast[which(contrast[,2]==i)]<- plus
+        # }
+        # contrast <- as.numeric(contrast[,1])
 
         # create files topSpliced by gene, simes and exon method
-        sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
+        # sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
+        sp <- diffSpliceDGE(fit, geneid="genes", exonid="exons", verbose=FALSE)
 
         # add comp object to list for image
         comparison_objs <- append(comparison_objs, sp)
@@ -235,7 +236,7 @@ for(compare in comparisons[[1]]){
     write.table(figures, paste("Figures/DAS","EDGER",combi,contrast_name, "list","topSpliceSimes.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
     # cleanup
-    rm(contrast,lrt,tops,BPPARAM)
+    rm(lrt,tops,BPPARAM)
     print(paste('cleanup done for ', contrast_name, sep=''))
 
     })

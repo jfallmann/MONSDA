@@ -87,6 +87,7 @@ rule create_summary_snippet:
             rules.themall.input.sig,
             rules.themall.input.sig_d,
             rules.themall.input.sig_u,
+            rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
     conda:  "NextSnakes/envs/"+DASENV+".yaml"
