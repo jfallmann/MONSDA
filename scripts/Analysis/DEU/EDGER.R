@@ -36,6 +36,11 @@ print(paste('Will run EdgeR DEU with ',availablecores,' cores',sep=''))
 ## set thread-usage
 BPPARAM = MulticoreParam(workers=availablecores)
 
+# load gtf
+gtf.rtl <- rtracklayer::import(gtf)
+gtf.df <- as.data.frame(gtf.rtl)
+gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
+
 ## Annotation
 sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names=1))
 colnames(sampleData_all) <- c("condition", "type", "batch")
@@ -43,11 +48,6 @@ sampleData_all$condition <- as.factor(sampleData_all$condition)
 sampleData_all$batch <- as.factor(sampleData_all$batch)
 sampleData_all$type <- as.factor(sampleData_all$type)
 samples <- rownames(sampleData_all)
-
-# load gtf
-gtf.rtl <- rtracklayer::import(gtf)
-gtf.df <- as.data.frame(gtf.rtl)
-gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -97,21 +97,21 @@ for(compare in comparisons[[1]]){
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~type+batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), tl, bl)
+            # colnames(design) <- c(levels(sampleData$condition), tl, bl)
         } else{
             des <- ~type+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(condition), tl)
+            # colnames(design) <- c(levels(condition), tl)
         }
     } else{
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1){
             des <- ~batch+condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- c(levels(sampleData$condition), bl)
+            # colnames(design) <- c(levels(sampleData$condition), bl)
         } else{
             des <- ~condition
             design <- model.matrix(des, data=sampleData)
-            colnames(design) <- levels(sampleData$condition)
+            # colnames(design) <- levels(sampleData$condition)
         }
     }
     print(design)
@@ -170,27 +170,28 @@ for(compare in comparisons[[1]]){
 
     tryCatch({
 
-        # determine contrast
-        A <- strsplit(contrast_groups[[1]][1], "\\+")
-        B <- strsplit(contrast_groups[[1]][2], "\\+")
-        minus <- 1/length(A[[1]])*(-1)
-        plus <- 1/length(B[[1]])
-        contrast <- cbind(integer(dim(design)[2]), colnames(design))
-        for(i in A[[1]]){
-            contrast[which(contrast[,2]==i)]<- minus
-        }
-        for(i in B[[1]]){
-            contrast[which(contrast[,2]==i)]<- plus
-        }
-        contrast <- as.numeric(contrast[,1])
+        # # determine contrast
+        # A <- strsplit(contrast_groups[[1]][1], "\\+")
+        # B <- strsplit(contrast_groups[[1]][2], "\\+")
+        # minus <- 1/length(A[[1]])*(-1)
+        # plus <- 1/length(B[[1]])
+        # contrast <- cbind(integer(dim(design)[2]), colnames(design))
+        # for(i in A[[1]]){
+        #     contrast[which(contrast[,2]==i)]<- minus
+        # }
+        # for(i in B[[1]]){
+        #     contrast[which(contrast[,2]==i)]<- plus
+        # }
+        # contrast <- as.numeric(contrast[,1])
 
         # quasi-likelihood F-Test
-        qlf <- glmQLFTest(fit, contrast = contrast)
+        # qlf <- glmQLFTest(fit, contrast = contrast)
+        qlf <- glmQLFTest(fit)
         is.de <- decideTests(qlf, p.value=0.05)
         summary(is.de)
 
         # add comp object to list for image
-        comparison_objs <- append(comparison_objs, qlf)
+        comparison_objs[[contrast_name]] <- qlf
 
         # create results table
         write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DEU","EDGER",combi,contrast_name, "table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)

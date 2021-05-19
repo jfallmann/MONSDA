@@ -85,11 +85,11 @@ rule create_summary_snippet:
             rules.run_edger.output.MDplot,
             rules.run_edger.output.allN,
             rules.run_edger.output.res,
-            rules.run_edger.output.sort#,
-            rules.run_edger.output.session#,
-            #rules.filter_significant.output.sig,
-            #rules.filter_significant.output.sig_d,
-            #rules.filter_significant.output.sig_u
+            rules.run_edger.output.sort,
+            rules.run_edger.output.session,
+            rules.filter_significant.output.sig,
+            rules.filter_significant.output.sig_d,
+            rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "NextSnakes/envs/"+DEENV+".yaml"

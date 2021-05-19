@@ -91,6 +91,7 @@ rule run_DTU:
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res,
+            rules.themall.input.session
             # rules.filter_significant.output.sig,
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u,

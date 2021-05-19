@@ -87,7 +87,8 @@ rule create_summary_snippet:
             rules.run_deseq2.output.plot,
             rules.run_deseq2.output.vst,
             rules.run_deseq2.output.heat,
-            rules.run_deseq2.output.heats
+            rules.run_deseq2.output.heats,
+            rules.themall.input.session
             # rules.filter_significant.output.sig,
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u

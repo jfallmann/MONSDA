@@ -124,7 +124,8 @@ rule create_summary_snippet:
             rules.themall.input.sig_ug,
             rules.themall.input.sig_t,
             rules.themall.input.sig_dt,
-            rules.themall.input.sig_ut
+            rules.themall.input.sig_ut,
+            rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "NextSnakes/envs/"+DTUENV+".yaml"
