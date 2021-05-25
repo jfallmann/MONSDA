@@ -53,7 +53,7 @@ rule run_edger:
             rules.themall.input.MDplot,
             rules.themall.input.allN,
             rules.themall.input.res,
-    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  "NextSnakes/envs/"+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),

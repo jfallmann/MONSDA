@@ -54,7 +54,7 @@ rule run_edger:
             list    = rules.themall.input.list,
             resS    = rules.themall.input.resS,
             resE    = rules.themall.input.resE
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_edger.log", combo=combo, comparison = compstr, scombo=scombo)
+    log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  "NextSnakes/envs/"+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
