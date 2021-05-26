@@ -86,7 +86,7 @@ rule run_DTU:
             fig_PV  = rules.themall.input.fig_PV,
             fig_files = rules.themall.input.fig_files
     log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
-    conda:  "nextsnakes/envs/"+DTUENV+".yaml"
+    conda:  "NextSnakes/envs/"+DTUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,

@@ -186,7 +186,7 @@ def create_Rmd(files, output, env):
                     lines.append(f"\n<br />\n")
                     lines.append(f"To access the {tool} R-session, follow these steps\n\n")
                     lines.append(f"1) Create the corresponding conda environment and activate it:  \n")
-                    lines.append(f"```\nconda env create -f {env}.yaml\n```  \n")
+                    lines.append(f"```\nconda env create -f NextSnakes/envs/{env}.yaml\n```  \n")
                     lines.append(f"2) Start R and load the workspace:  \n")
                     lines.append(f"```\nload('{tree[workflow][tool][combi][comparison]['SESSION']}')\n```\n")
 
