@@ -37,17 +37,11 @@ def makeoutdir(outdir):
 
 def pretty(d, indent=0):
     for key, value in d.items():
-        try:
-            print('\t' * indent + str(key))
-        except:
-            print("not printable")
+        log.debug('\t' * indent + str(key))
         if isinstance(value, dict):
            pretty(value, indent+1)
         else:
-           try:
-               print('\t' * (indent+1) + str(value))
-           except:
-               print("not printable")
+           log.debug('\t' * (indent+1) + str(value))
 
 
 # Analyses
@@ -63,11 +57,11 @@ def check_workflow(files):
     files = [os.path.basename(file) for file in files]
     works = set()
     for file in files:
-        log.info(logid+str(file))
+        log.debug(logid+str(file))
         w = file.split("_")[0]
         if w not in ["Sig", "SigDOWN", "SigUP"]:
             works.add(w)
-    log.info(logid+str(works))
+    log.debug(logid+str(works))
     if len(works) > 1:
         log.error(logid+"several Workflows found: > "+str(works)+" < check for wrong file naming.")
         sys.exit(1)
@@ -92,7 +86,7 @@ def create_file_tree(files):
         WF, TOOL, COMBI, COMP, RES, NAME = setting.split('_')
         EXT = os.path.basename(file).split(".", 1)[1]
         tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
-    log.info(pretty(tree))
+    log.debug(logid+"FILE-TREE: "+str(pretty(tree)))
     return tree
 
 def integrate_table(file):
@@ -110,7 +104,7 @@ DT::datatable(table)
 def integrate_figures(files):
     listlines = list()
     img = list()
-    listlines.append(f"```{{r, echo=FALSE, out.width='{100/len(files)}%', out.height='{100/len(files)}%',fig.cap='caption',fig.show='hold',fig.align='center'}}")
+    listlines.append(f"```{{r, echo=FALSE, out.width='{100/len(files)}%', out.height='{100/len(files)}%',fig.cap='',fig.show='hold',fig.align='center'}}")
     counter = 1
     for file in files:
         f = file.replace("\n","")
@@ -120,6 +114,7 @@ def integrate_figures(files):
         counter += 1
     listlines.append(f"knitr::include_graphics(c({','.join(img)}))")
     listlines.append("```\n\n")
+    listlines.append(f"\n***\n")
     return "\n".join(listlines)
 
 def integrate_list(file):
@@ -133,7 +128,7 @@ def integrate_list(file):
             file = line.split("\t")[2]
             elements[id][name][file]
     for id in elements.keys():
-        listlines.append(f"{id} : {list(elements[id].keys())[0]} \n")
+        listlines.append(f"**{id} : {list(elements[id].keys())[0]}** \n")
         for name in elements[id].keys():
             listlines.append(integrate_figures(list(elements[id][name])))
     return "\n".join(listlines)
@@ -164,12 +159,13 @@ def create_Rmd(files, output, env):
                     lines.append(f"###### OVERVIEW \n\n")
                     for name in tree[workflow][tool][combi][comparison]["figure"].keys():
                         lines.append(f"\n<br />\n")
-                        lines.append(f"\n####### {name} \n")
+                        lines.append(f"\n**{name}** \n")
+                        lines.append(f"\n```\n{tree[workflow][tool][combi][comparison]['figure'][name]}\n```\n")
                         lines.append(integrate_figures([tree[workflow][tool][combi][comparison]["figure"][name]]))
 
                 if "list" in tree[workflow][tool][combi][comparison].keys():
                     for name in tree[workflow][tool][combi][comparison]["list"].keys():
-                        lines.append(f"\n###### {name} \n")
+                        lines.append(f"\n##### {name} \n")
                         lines.append(f"\n<br />\n")
                         lines.append(integrate_list(tree[workflow][tool][combi][comparison]["list"][name]))
 
@@ -177,7 +173,7 @@ def create_Rmd(files, output, env):
                     lines.append(f"##### TABLES  \n")
                     for name in tree[workflow][tool][combi][comparison]["table"].keys():
                         lines.append(f"\n<br />\n")
-                        lines.append(f"\n{name}  \n")
+                        lines.append(f"\n**{name}**  \n")
                         # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
                         lines.append(f"\n```\n{tree[workflow][tool][combi][comparison]['table'][name]}\n```\n")
 
@@ -186,7 +182,7 @@ def create_Rmd(files, output, env):
                     lines.append(f"\n<br />\n")
                     lines.append(f"To access the {tool} R-session, follow these steps\n\n")
                     lines.append(f"1) Create the corresponding conda environment and activate it:  \n")
-                    lines.append(f"```\nconda env create -f {env}.yaml\n```  \n")
+                    lines.append(f"```\nconda env create -f NextSnakes/envs/{env}.yaml\n```  \n")
                     lines.append(f"2) Start R and load the workspace:  \n")
                     lines.append(f"```\nload('{tree[workflow][tool][combi][comparison]['SESSION']}')\n```\n")
 
@@ -217,7 +213,6 @@ if __name__ == '__main__':
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         log.debug(logid+str(log.handlers))
-        print(os.getcwd())
 
         create_Rmd(args.files, args.output, args.env)
 
