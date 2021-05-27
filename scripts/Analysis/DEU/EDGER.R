@@ -193,8 +193,14 @@ for(compare in comparisons[[1]]){
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
+        # # Add gene names  (check how gene_id col is named )
+        qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x, gtf_gene)})
+        qlf$table$Gene_ID <- rownames(qlf$table)
+        res <- qlf$table[, c(6,5,1,2,3,4)]
+        res <- as.data.frame(apply(res,2, as.character))
+
         # create results table
-        write.table(as.data.frame(qlf$table), gzfile(paste("Tables/DEU","EDGER",combi,contrast_name, "table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
+        write.table(as.data.frame(res), gzfile(paste("Tables/DEU","EDGER",combi,contrast_name, "table","results.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         ## plot lFC vs CPM
         out <- paste("Figures/DEU","EDGER",combi,contrast_name, "figure","MD.png",sep="_")

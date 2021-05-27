@@ -64,16 +64,17 @@ rule run_edger:
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
 
 rule filter_significant:
-    input:  rules.themall.input.res
+    input:  tbl = rules.themall.input.res
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
     log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/filter_edgerDEU.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  "NextSnakes/envs/"+DEUENV+".yaml"
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pval'),
-            lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc')
-    shell: "set +o pipefail; for i in DEU/{combo}/EDGER_DEU*results.tsv.gz;do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]];then zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/Sig_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/SigUP_$fn && zcat $i| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[5]);if ($F[5] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip > DEU/{combo}/SigDOWN_$fn; else touch DEU/{combo}/Sig_$fn DEU/{combo}/SigUP_$fn DEU/{combo}/SigDOWN_$fn; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
+    shell:  "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
+
 
 rule create_summary_snippet:
     input:  rules.themall.input.allM,
