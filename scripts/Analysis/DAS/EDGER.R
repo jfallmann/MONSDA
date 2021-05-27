@@ -248,14 +248,15 @@ design <- model.matrix(des, data=sampleData_all)
 colnames(design) <- levels(sampleData_all$condition)
 print(design)
 ## get genes names out
-genes <- rownames(countData)
+genes <- rownames(countData_all)
+samples <- rownames(sampleData_all)
 
 ## get genes and exon names out
 splitted <- strsplit(rownames(countData), ":")
 exons <- sapply(splitted, "[[", 2)
 genesrle <- sapply(splitted, "[[", 1)
 
-dge <- DGEList(counts=countData, group=sampleData_all$condition, samples=samples, genes=genesrle)
+dge <- DGEList(counts=countData_all, group=sampleData_all$condition, samples=samples, genes=genesrle)
 
 ## Addd exons to dge
 dge$genes$exons <- exons
