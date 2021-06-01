@@ -151,15 +151,14 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
             longlabel = bw.split('.bw',2)[0]
 
             if '\t' in  bw:
-                bw,sample = content.split('\t',2)
+                bw, sample = content.split('\t',2)
 
             if header:
                 if not splitbw and '.re' in longlabel:
-
                     content = '\n'.join(['track '+sample+'_re',
                                          'bigDataUrl {1}/'+bw,
-                                         'shortLabel {2}'+'_re',
-                                         'longLabel {3}'+'_re',
+                                         'shortLabel {2}',
+                                         'longLabel {3}',
                                          'type bigWig',
                                          'negateValues on #uncomment of this is wanted',
                                          'parent {4}',
@@ -186,8 +185,8 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
 
                     content = '\n'.join(['track '+sample+'_fw',
                                          'bigDataUrl {1}/'+bw,
-                                         'shortLabel {2}'+'_fw',
-                                         'longLabel {3}'+'_fw',
+                                         'shortLabel {2}',
+                                         'longLabel {3}',
                                          'type bigWig',
                                          '#negateValues on #uncomment of this is wanted',
                                          'parent {4}',
@@ -196,16 +195,16 @@ def main(header, track, shortlabel, longlabel, filenames, name, url, genome, hub
                 if not splitbw and '.re' in longlabel:
                     content = '\n'.join(['track '+sample+'_re'+str(idx),
                                          'bigDataUrl {1}/'+bw,
-                                         'shortLabel {2}'+'_re'+str(idx),
-                                         'longLabel {3}'+'_re'+str(idx),
+                                         'shortLabel {2}'+str(idx),
+                                         'longLabel {3}'+str(idx),
                                          'type bigWig',
                                          'negateValues on #uncomment of this is wanted',
                                          'color {5}']).format(bw, url, shortlabel, longlabel, name, colorre)
                 else:
                     content = '\n'.join(['track '+sample+'_fw'+str(idx),
                                          'bigDataUrl {1}/'+bw,
-                                         'shortLabel {2}'+'_fw'+str(idx),
-                                         'longLabel {3}'+'_fw'+str(idx),
+                                         'shortLabel {2}'+str(idx),
+                                         'longLabel {3}'+str(idx),
                                          'type bigWig',
                                          '#negateValues on #uncomment of this is wanted',
                                          'color {5}']).format(bw, url, shortlabel, longlabel, name, colorfw)
