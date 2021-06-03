@@ -145,7 +145,7 @@ for(compare in comparisons[[1]]){
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER",combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
     ## create file MDS-plot with and without summarized replicates
-    out <- paste("Figures/DEU", "EDGER",combi, contrast_name, "DataSet", "figure", "MDS.png", sep="_")
+    out <- paste("Figures/DEU", "EDGER",combi,contrast_name, "DataSet", "figure", "MDS.png", sep="_")
     png(out)
     plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
     dev.off()
@@ -154,7 +154,7 @@ for(compare in comparisons[[1]]){
     dge <- estimateDisp(dge, design, robust=TRUE)
 
     ## create file BCV-plot - visualizing estimated dispersions
-    out <- paste("Figures/DEU","EDGER",combi, contrast_name, "DataSet", "figure", "BCV.png", sep="_")
+    out <- paste("Figures/DEU","EDGER",combi, contrast_name,"DataSet", "figure", "BCV.png", sep="_")
     png(out, width = 400, height = 400)
     plotBCV(dge)
     dev.off()
@@ -163,7 +163,7 @@ for(compare in comparisons[[1]]){
     fit <- glmQLFit(dge, design, robust=TRUE)
 
     ## create file quasi-likelihood-dispersion-plot
-    out <- paste("Figures/DEU","EDGER",combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep="_")
+    out <- paste("Figures/DEU","EDGER",combi,contrast_name, "DataSet", "figure", "QLDisp.png", sep="_")
     png(out, width = 400, height = 400)
     plotQLDisp(fit)
     dev.off()
@@ -194,9 +194,10 @@ for(compare in comparisons[[1]]){
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
-        qlf$table$Gene  <- lapply(rownames(qlf$table) , function(x){get_gene_name(x, gtf_gene)})
-        qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(6,5,1,2,3,4)]
+        qlf$table$Gene  <- lapply(qlf$genes$genes, function(x){get_gene_name(x, gtf_gene)})
+        qlf$table$Gene_ID <- qlf$genes$genes
+        qlf$table$ExonPos <- qlf$genes$exons
+        res <- qlf$table[, c(6,5,7,1,2,3,4)]
         res <- as.data.frame(apply(res,2, as.character))
 
         # create results table
@@ -251,7 +252,7 @@ tmm <- tmm[c(ncol(tmm),1:ncol(tmm)-1)]
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER",combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 
 ## create file MDS-plot with and without summarized replicates
-out <- paste("Figures/DEU", "EDGER",combi, contrast_name, "DataSet", "figure", "AllConditionsMDS.png", sep="_")
+out <- paste("Figures/DEU", "EDGER",combi, "DataSet", "figure", "AllConditionsMDS.png", sep="_")
 png(out)
 plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
@@ -260,7 +261,7 @@ dev.off()
 dge <- estimateDisp(dge, design, robust=TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
-out <- paste("Figures/DEU","EDGER",combi, contrast_name, "DataSet", "figure", "AllConditionsBCV.png", sep="_")
+out <- paste("Figures/DEU","EDGER",combi, "DataSet", "figure", "AllConditionsBCV.png", sep="_")
 png(out, width = 400, height = 400)
 plotBCV(dge)
 dev.off()
@@ -269,10 +270,10 @@ dev.off()
 fit <- glmQLFit(dge, design, robust=TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
-out <- paste("Figures/DEU","EDGER",combi, contrast_name, "DataSet", "figure", "AllConditionsQLDisp.png", sep="_")
+out <- paste("Figures/DEU","EDGER",combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep="_")
 png(out, width = 400, height = 400)
 plotQLDisp(fit)
 dev.off()
 
 
-save.image(file = paste("DEU_EDGER",combe, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DEU_EDGER",combi, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

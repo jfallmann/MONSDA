@@ -144,13 +144,15 @@ DEXSeqDataSetFromFeatureCounts <- function (countfile, sampleData, design = desi
 
 dxd = DEXSeqDataSetFromFeatureCounts(countfile, sampleData, design = full, flattenedfile = flatanno)
 
+comparison_objs = list()
+
 setwd(outdir)
 print(paste('Will run DEXSeq with ',availablecores,' cores',sep=''))
 
 for(contrast in comparisons[[1]]){
 
-    contrast_name <- strsplit(contrasd, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrasd, ":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast, ":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
 
     print(paste("Comparing ",contrast_name, sep=""))
 
@@ -180,7 +182,7 @@ for(contrast in comparisons[[1]]){
 
         dxr1 = DEXSeqResults( dxdpair )
 
-        dxr2 <- dxr1
+        comparison_objs[[contrast_name]] = dxr1
 
         png(paste("Figures/DEU","DEXSEQ",combi,contrast_name, "figure","plotMA.png",sep="_"))
         print(plotMA( dxr1, cex=0.8))
@@ -193,7 +195,7 @@ for(contrast in comparisons[[1]]){
         pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
         DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
 
-        figures <- data.frame("dxr1ID" = character(), "groupID" = character(), "file"=character(),stringsAsFactors=FALSE)
+        figures <- data.frame("geneID" = character(), "dxr1ID" = character(), "file"=character(),stringsAsFactors=FALSE)
         sigs <- as.data.frame(which(dxr1$padj < 0.01))
         colnames(sigs) <- c("id")
         sigs$padj <- dxr1$padj[sigs$id]
@@ -203,11 +205,11 @@ for(contrast in comparisons[[1]]){
         message("create transcripts plots")
         for(gene in sigs){
             if(counter>limit){break}
-            name1 <- paste("Figures/DEU","DEXSEQ",combi,contrast_name,counted, "figure","transcripts.png",sep="_")
+            name1 <- paste("Figures/DEU","DEXSEQ",combi,contrast_name,counter, "figure","transcripts.png",sep="_")
             png(name1, height = 1000, width = 1000)
             print(plotDEXSeq( dxr1, dxr1$groupID[gene],legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 ))
             dev.off()
-            figures[counter, ] <- c(as.character(gene), dxr1$groupID[gene], paste(outdir,name1, sep="/"))
+            figures[counter, ] <- c(dxr1$groupID[gene], as.character(gene), paste(outdir,name1, sep="/"))
             # figures <- rbind(figures, c(as.character(gene), dxr1$groupID[gene], paste(outdir,name1, sep="/")))
 
             counter <- counter+1
@@ -220,4 +222,4 @@ for(contrast in comparisons[[1]]){
     })
 }
 
-save.image(file = paste("DEU_DEXSEQ",combd, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DEU_DEXSEQ",combi, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

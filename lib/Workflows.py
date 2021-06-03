@@ -899,9 +899,9 @@ def make_summary(config, subdir, loglevel, combinations=None):
             with open(snippet,'r') as read_file:
                 for line in read_file.readlines():
                     if line.startswith("# "):
-                        if line in lines:
-                            continue
-                    lines.append(line)
+                        lines = [[l] for l in '@$@'.join(lines).split(line)]
+                    lines[0].append(line)
+            lines = ''.join(sum(lines,[])).split('@$@')
 
     if os.path.exists(output):
         os.rename(output, output+'.bak')

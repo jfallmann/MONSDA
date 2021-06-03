@@ -69,8 +69,8 @@ rownames(cts) <- sub("\\|.*", "", rownames(cts))
 # Transcript-to-gene mapping
 txdb.filename <- file.path("GENOMES/gencode.v35.annotation.sqlite")
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
-saveDb(txdb, txdb.filename)
-txdb <- loadDb(txdb.filename)
+# saveDb(txdb, txdb.filename)
+# txdb <- loadDb(txdb.filename)
 txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]

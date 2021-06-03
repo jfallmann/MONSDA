@@ -14,7 +14,7 @@ rule themall:
             sig     = expand("DEU/{combo}/Tables/Sig_DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_d   = expand("DEU/{combo}/Tables/SigDOWN_DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u   = expand("DEU/{combo}/Tables/SigUP_DEU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/SUM_DEU_{scombo}_DEXSEQ.Rmd", scombo=scombo)
+            Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{scombo}/dexseq_DEU.Rmd", scombo=scombo)
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION

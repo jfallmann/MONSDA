@@ -101,15 +101,17 @@ DT::datatable(table)
 """
     return chunk
 
-def integrate_figures(files):
+def integrate_figures(files,islist=False):
     listlines = list()
     img = list()
     listlines.append(f"```{{r, echo=FALSE, out.width='{100/len(files)}%', out.height='{100/len(files)}%',fig.cap='',fig.show='hold',fig.align='center'}}")
     counter = 1
     for file in files:
         f = file.replace("\n","")
-        #listlines.append(f"fig.{counter} <- paste(params$root,'{f}', sep='/')")
-        listlines.append(f"fig.{counter} <- '{f}'")
+        if islist == True:
+            listlines.append(f"fig.{counter} <- paste(params$root,'{f}', sep='/')")
+        else:
+            listlines.append(f"fig.{counter} <- '{f}'")
         img.append(f'path.expand(fig.{counter})')
         counter += 1
     listlines.append(f"knitr::include_graphics(c({','.join(img)}))")
@@ -130,7 +132,7 @@ def integrate_list(file):
     for id in elements.keys():
         listlines.append(f"**{id} : {list(elements[id].keys())[0]}** \n")
         for name in elements[id].keys():
-            listlines.append(integrate_figures(list(elements[id][name])))
+            listlines.append(integrate_figures(list(elements[id][name]),islist=True))
     return "\n".join(listlines)
 
 def create_Rmd(files, output, env):
