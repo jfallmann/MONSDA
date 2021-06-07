@@ -118,7 +118,7 @@ def remove_clip(bam, fasta, out, cluster=None):
 
                 if cluster:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
                     t, n, chrom, coord = chrom.split(':')
-                    start, end = coord.split('(')[0].split('-')
+                    start, end = map(int, coord.split('(')[0].split('-'))
 
                 cigar = read.cigarstring
                 if '*' in cigar:
