@@ -112,6 +112,7 @@ def remove_clip(bam, fasta, out, cluster=None):
     with pysam.Samfile(out, "wb", template=samfile) as outfile:
 
         for read in samfile.fetch():
+            newread = pysam.AlignedSegment()
             if not read.is_unmapped:
                 chrom = read.reference_name
                 start, end = (0, 0)
@@ -124,14 +125,14 @@ def remove_clip(bam, fasta, out, cluster=None):
                 if '*' in cigar:
                     continue
 
-                read.query_alignment_start = read.query_alignment_start + start
-                read.query_alignment_end = read.query_alignment_end + start
-                read.query_qualities = read.query_alignment_qualities
-                read.query_sequence = read.query_alignment_sequence
-                read.query_length = read.query_alignment_length
-                read.reference_start = read.query_alignment_start
-                read.reference_end = read.query_alignment_end
-                read.reference_name = chrom
+                newread.query_alignment_start = read.query_alignment_start + start
+                newread.query_alignment_end = read.query_alignment_end + start
+                newread.query_qualities = read.query_alignment_qualities
+                newread.query_sequence = read.query_alignment_sequence
+                newread.query_length = read.query_alignment_length
+                newread.reference_start = read.query_alignment_start
+                newread.reference_end = read.query_alignment_end
+                newread.reference_name = chrom
 
                 pos = alignmentstart+1
                 char = 0
@@ -155,9 +156,9 @@ def remove_clip(bam, fasta, out, cluster=None):
                         inseq = True
                         newcigar.append((op, length))
 
-                read.cigar = newcigar
+                newread.cigar = newcigar
 
-            out.write(read)
+            out.write(newread)
 
     close_bam(samfile)
 
