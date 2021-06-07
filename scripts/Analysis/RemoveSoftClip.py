@@ -92,7 +92,7 @@ def process(fasta, bams, outdir, cluster=None):
     samfile = parse_bam(bam)
 
     try:
-    samfile.check_index()
+        samfile.check_index()
     except:
         print('No index for file: '+bam+'. Please create!')
 
