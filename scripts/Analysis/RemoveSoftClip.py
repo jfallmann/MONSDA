@@ -131,6 +131,7 @@ def remove_clip(bam, fasta, out, cluster=None):
                 read.query_length = read.query_alignment_length
                 read.reference_start = read.query_alignment_start
                 read.reference_end = read.query_alignment_end
+                read.reference_name = chrom
 
                 pos = alignmentstart+1
                 char = 0
