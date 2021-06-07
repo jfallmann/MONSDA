@@ -125,12 +125,10 @@ def remove_clip(bam, fasta, out, cluster=None):
                 if '*' in cigar:
                     continue
 
-                newread.query_alignment_start = read.query_alignment_start + start
-                newread.query_alignment_end = read.query_alignment_end + start
                 newread.query_qualities = read.query_alignment_qualities
                 newread.query_sequence = read.query_alignment_sequence
                 newread.query_length = read.query_alignment_length
-                newread.reference_start = read.query_alignment_start
+                newread.reference_start = read.query_alignment_start + start
                 newread.reference_end = read.query_alignment_end
                 newread.reference_name = chrom
 
