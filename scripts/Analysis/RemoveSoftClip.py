@@ -165,7 +165,7 @@ def remove_clip(bam, fasta, out, cluster=None):
             except:
                 log.info('Alignment quality not available '+str(read.query_qualities))
 
-            read.reference_start = read.query_alignment_start + start
+            read.reference_start = read.reference_start + read.query_alignment_start + start
             read.cigar = newcigar
             read.reference_name = chrom
             read.next_reference_name = mate_chrom
