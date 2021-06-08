@@ -45,29 +45,6 @@ for file in samplecond(SAMPLES, config):
     for type in checktype:
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
-
-#### REMOVE SOFTCLIP HERE
-
-
-if not all(checklist):
-    if not stranded or stranded == 'fr':
-        rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
-            threads: 1
-            conda:  "NextSnakes/envs/bedtools.yaml"
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
-
-    elif stranded and stranded == 'rf':
-        rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
-            threads: 1
-            conda:  "NextSnakes/envs/bedtools.yaml"
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
-
 rule index_fa:
     input:  REFERENCE
     output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
@@ -77,6 +54,16 @@ rule index_fa:
     params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
 
+rule UnzipGenome:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/{combo}/indexfa.log", combo=combo)
+    conda:  "NextSnakes/envs/samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
+
 rule get_chromsize_genomic:
     input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
     output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
@@ -85,6 +72,38 @@ rule get_chromsize_genomic:
     threads: 1
     params: bins = BINS
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
+
+rule remove_softclip:
+    input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
+            ref = REFERENCE,
+            refi = rules.index_fa.output
+    output: "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
+    log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
+    conda:  "NextSnakes/envs/scribo.yaml"
+    threads: 1
+    params: bins = BINS
+    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o {output}"
+
+if not all(checklist):
+    if not stranded or stranded == 'fr':
+        rule BamToBed:
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            conda:  "NextSnakes/envs/bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
+
+
+    elif stranded and stranded == 'rf':
+        rule BamToBed:
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            conda:  "NextSnakes/envs/bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
+
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
@@ -164,17 +183,6 @@ rule FindPeaks:
     params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
             peak = PEAKBIN
     shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}) 2> {log}|tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
-
-rule UnzipGenome:
-    input:  ref = REFERENCE,
-    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/{combo}/indexfa.log", combo=combo)
-    conda:  "NextSnakes/envs/samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log}"
-
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,

@@ -74,13 +74,14 @@ def parseargs():
     parser = argparse.ArgumentParser(description='Read BAM file read by read and remove softclips')
     parser.add_argument("-f", "--fasta", type=str, help='Reference genome FASTA, needs to be indexed')
     parser.add_argument("-b", "--bams", type=str, help='Mapped reads BAM(s) comma separated, need to besorted and indexed')
-    parser.add_argument("-o", "--outdir", type=str, default='.', help='Output directory')
+    parser.add_argument("-o", "--out", type=str, default=None, help='Output file name')
     parser.add_argument("-c", "--cluster", default=False, action='store_true', help="Parses cluster information from chromosome tag")
 
     return parser.parse_args()
 
-def process(fasta, bams, outdir, cluster=None):
+def process(fasta, bams, outname, cluster=None):
 
+    outdir = os.path.dirname(outname)
     if outdir:
         print('Checking or creating outdir ' + str(outdir))
     if not os.path.isabs(outdir):
@@ -92,20 +93,20 @@ def process(fasta, bams, outdir, cluster=None):
 
     for bam in bams.split(','):
         fn = os.path.basename(bam)
-        out = os.path.join(outdir, fn+'_nosoftclip.bam')
+        out = os.path.join(outdir, fn+'_nosoftclip.bam') if not outname else outname
 
-    if (os.path.isfile(out)):
-        print('File '+ out +' exists, will be deleted')
-        os.remove(out)
+        if (os.path.isfile(out)):
+            print('File '+ out +' exists, will be deleted')
+            os.remove(out)
 
-    samfile = parse_bam(bam)
+        samfile = parse_bam(bam)
 
-    try:
-        samfile.check_index()
-    except:
-        print('No index for file: '+bam+'. Please create!')
+        try:
+            samfile.check_index()
+        except:
+            print('No index for file: '+bam+'. Please create!')
 
-    remove_clip(bam, fasta, out, cluster)
+        remove_clip(bam, fasta, out, cluster)
 
 
 def remove_clip(bam, fasta, out, cluster=None):
@@ -203,7 +204,7 @@ def check_idx(file):
 
 if __name__ == '__main__':
     args=parseargs()
-    process(args.fasta, args.bams, args.outdir, args.cluster)
+    process(args.fasta, args.bams, args.out, args.cluster)
 
 #
 # RemoveSoftClip.py ends here
