@@ -77,13 +77,15 @@ rule remove_softclip:
     input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
             ref = REFERENCE,
             refi = rules.index_fa.output
-    output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
-            bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
+    output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
+            bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai",
+            bat = temp("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip_nosort.bam")
     log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
     conda:  "NextSnakes/envs/scribo.yaml"
     threads: 1
     params: bins = BINS
-    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o {output.bam} 2> {log} && samtools index {output.bam} 2>> {log}"
+    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o {output.bat} 2> {log} && samtools sort -T TMP/SORTBAM -o {output.bam} --threads {threads} {output.bat} 2>> {log} && samtools index {output.bam} 2>> {log}"
+
 
 if not all(checklist):
     if not stranded or stranded == 'fr':
