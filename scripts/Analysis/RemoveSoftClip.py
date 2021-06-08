@@ -56,17 +56,26 @@ import sys
 import pysam
 from pyfaidx import Fasta
 import traceback
+import logging
 #Container
 import collections
 
 ### MAIN
+
+log = logging.getLogger('RemoveSoftClip')
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+log.setLevel(logging.DEBUG)
+log.addHandler(handler)
+
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Read BAM file read by read and remove softclips')
     parser.add_argument("-f", "--fasta", type=str, help='Reference genome FASTA, needs to be indexed')
     parser.add_argument("-b", "--bams", type=str, help='Mapped reads BAM(s) comma separated, need to besorted and indexed')
     parser.add_argument("-o", "--outdir", type=str, default='.', help='Output directory')
-    parser.add_argument("-c", "--cluster", type=str, default=None, help="Parses cluster information from chromosome tag")
+    parser.add_argument("-c", "--cluster", default=False, action='store_true', help="Parses cluster information from chromosome tag")
 
     return parser.parse_args()
 
@@ -102,61 +111,64 @@ def process(fasta, bams, outdir, cluster=None):
 def remove_clip(bam, fasta, out, cluster=None):
 
     samfile = parse_bam(bam)
-    #header = samfile.header.as_dict()
+    header = samfile.header
 
     #if cluster:  # SQ tags need to be edited
     #    for k, v in header['SQ'].items():
     #        s, t, n, chrom, coord = k.split(':')
     #        k = chrom
 
-    with pysam.Samfile(out, "wb", template=samfile) as outfile:
+    with pysam.Samfile(out, "wb", template=samfile) as bamout:
 
         for read in samfile.fetch():
-            newread = pysam.AlignedSegment()
-            if not read.is_unmapped:
-                chrom = read.reference_name
-                start, end = (0, 0)
+            #newread = pysam.AlignedSegment(header)
+            #if not read.is_unmapped:
+            chrom = read.reference_name
+            mate_chrom = read.next_reference_name
+            start, end = (0, 0)
 
-                if cluster:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
-                    t, n, chrom, coord = chrom.split(':')
-                    start, end = map(int, coord.split('(')[0].split('-'))
+            if cluster and ':' in chrom:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
+                t, n, chrom, coord = chrom.split(':')
+                start, end = map(int, coord.split('(')[0].split('-'))
+                start = start - 1
+                t, n, mate_chrom, mcoord = mate_chrom.split(':') if ':' in mate_chrom else (None, None, mate_chrom, None)
 
-                cigar = read.cigarstring
-                if '*' in cigar:
-                    continue
+            cigar = read.cigarstring
+            if '*' in cigar:
+                continue
 
-                newread.query_qualities = read.query_alignment_qualities
-                newread.query_sequence = read.query_alignment_sequence
-                newread.query_length = read.query_alignment_length
-                newread.reference_start = read.query_alignment_start + start
-                newread.reference_end = read.query_alignment_end
-                newread.reference_name = chrom
+            newcigar = []
+            clip_5 = 0
+            clip_3 = 0
 
-                pos = alignmentstart+1
-                char = 0
-
-                newcigar = []
-                clip_5 = 0
-                clip_3 = 0
-
-                changed = False
-                inseq = False
-                for op, length in read.cigar:
-                    if op == 5:  # H
-                        changed = True
-                    elif op == 4:  # S
-                        changed = True
-                        if not inseq:
-                            clip_5 = length
-                        else:
-                            clip_3 = length
+            changed = False
+            inseq = False
+            for op, length in read.cigar:
+                if op == 5:  # H
+                    changed = True
+                elif op == 4:  # S
+                    changed = True
+                    if not inseq:
+                        clip_5 = length
                     else:
-                        inseq = True
-                        newcigar.append((op, length))
+                        clip_3 = length
+                else:
+                    inseq = True
+                    newcigar.append((op, length))
 
-                newread.cigar = newcigar
+            qual = read.query_qualities[read.query_alignment_start:read.query_alignment_end]
+            read.query_sequence = read.query_alignment_sequence
+            try:
+                read.query_qualities = qual
+            except:
+                log.info('Alignment quality not available '+str(read.query_qualities))
 
-            out.write(newread)
+            read.reference_start = read.query_alignment_start + start
+            read.cigar = newcigar
+            read.reference_name = chrom
+            read.next_reference_name = mate_chrom
+
+            bamout.write(read)
 
     close_bam(samfile)
 
