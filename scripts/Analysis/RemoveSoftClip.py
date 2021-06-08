@@ -81,13 +81,13 @@ def parseargs():
 
 def process(fasta, bams, outname, cluster=None):
 
-    outdir = os.path.dirname(outname)
+    outdir = os.path.dirname(outname) if outname else None
     if outdir:
         print('Checking or creating outdir ' + str(outdir))
-    if not os.path.isabs(outdir):
-        outdir =  os.path.abspath(outdir)
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
+        if not os.path.isabs(outdir):
+            outdir =  os.path.abspath(outdir)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
     else:
         outdir = os.path.abspath(os.getcwd())
 
