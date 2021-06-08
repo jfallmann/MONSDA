@@ -131,7 +131,8 @@ def remove_clip(bam, fasta, out, cluster=None):
                 t, n, chrom, coord = chrom.split(':')
                 start, end = map(int, coord.split('(')[0].split('-'))
                 start = start - 1
-                t, n, mate_chrom, mcoord = mate_chrom.split(':') if ':' in mate_chrom else (None, None, mate_chrom, None)
+                if mate_chrom:
+                    t, n, mate_chrom, mcoord = mate_chrom.split(':') if ':' in mate_chrom else (None, None, mate_chrom, None)
 
             cigar = read.cigarstring
             if '*' in cigar:
