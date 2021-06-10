@@ -83,7 +83,7 @@ rule remove_softclip:
     conda:  "NextSnakes/envs/scribo.yaml"
     threads: 1
     params: bins = BINS
-    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T TMP/SORTBAM -o {output.bam} --threads {threads} - 2>> {log} && samtools index {output.bam} 2>> {log}"
+    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T TMP/SORTBAM -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log}"
 
 
 if not all(checklist):
