@@ -127,8 +127,8 @@ for(contrast in comparison[[1]]){
         #drop unused samples
         dds_norm$condition <- droplevels(dds_norm$condition)
 
-        #relevel to base condition A
-        dds_norm$condition <- relevel(dds_norm$condition, ref = B)
+        #relevel to base condition B
+        dds_norm$condition <- relevel(dds_norm$condition, ref = B[[1]])
 
         dds_norm <- DESeq(dds_norm, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
         rld_norm <- rlogTransformation(dds_norm, blind=FALSE)
@@ -153,8 +153,8 @@ for(contrast in comparison[[1]]){
     #drop unused samples
     dds$condition <- droplevels(dds$condition)
 
-    #relevel to base condition A
-    dds$condition <- relevel(dds$condition, ref = B)
+    #relevel to base condition B
+    dds$condition <- relevel(dds$condition, ref = B[[1]])
 
     #run for each pair of conditions
     dds <- DESeq(dds, parallel=TRUE, BPPARAM=BPPARAM, betaPrior=FALSE)
@@ -196,6 +196,9 @@ for(contrast in comparison[[1]]){
         # write the table to a tsv file
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
 
+        # sort and output
+        res <- res[order(res$log2FoldChange),]
+
         res$Gene  <- lapply(rownames(res) , function(x){get_gene_name(x, gtf_gene)})
         res$Gene_ID <- rownames(res)
         res <- res[, c(7,6,1,2,3,4,5)]
@@ -214,7 +217,7 @@ for(contrast in comparison[[1]]){
             res=""
             resOrdered=""
             res <- results(dds_norm, contrast=c('condition', A, B), parallel=TRUE, BPPARAM=BPPARAM)
-            res_shrink <- lfcShrink(dds=dds_norm, coef=paste("condition",A, "vs",B,sep="_"), res=res, type='apeglm')
+            res_shrink <- lfcShrink(dds=dds_norm, coef=paste("condition", A, "vs",B,sep="_"), res=res, type='apeglm')
 
             # add comp object to list for image
             listname <- paste(contrast_name, "_norm",sep="")
@@ -231,6 +234,10 @@ for(contrast in comparison[[1]]){
 
             # write the table to a tsv file
             write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm.tsv.gz", sep="_")), sep="\t", row.names=FALSE, quote=F)
+
+
+            # sort and output
+            res <- res[order(res$log2FoldChange),]
 
             res$Gene  <- lapply(rownames(res) , function(x){get_gene_name(x, gtf_gene)})
             res$Gene_ID <- rownames(res)

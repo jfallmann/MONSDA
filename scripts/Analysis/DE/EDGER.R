@@ -56,7 +56,7 @@ sampleData_all$type <- as.factor(sampleData_all$type)
 samples <- rownames(sampleData_all)
 
 ## Combinations of conditions
-comparisons <- strsplit(cmp, ",")
+comparison <- strsplit(cmp, ",")
 
 ## check combi
 if (combi == "none"){
@@ -77,10 +77,10 @@ WD <- getwd()
 setwd(outdir)
 
 ## Analyze according to comparison groups
-for(compare in comparisons[[1]]){
+for(contrast in comparison[[1]]){
 
-    contrast_name <- strsplit(compare, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(compare, ":")[[1]][2], "-vs-")
+    contrast_name <- strsplit(contrast, ":")[[1]][1]
+    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
 
     print(paste("Comparing ", contrast_name, sep=""))
 
@@ -189,7 +189,7 @@ for(compare in comparisons[[1]]){
     keep <- filterByExpr(dge)
     dge <- dge[keep, , keep.lib.sizes=FALSE]
 
-    #relevel to base condition A
+    #relevel to base condition B
     dge$samples$group <- relevel(dge$samples$group, ref = B[[1]])
 
     ## normalize with TMM
@@ -245,7 +245,8 @@ for(compare in comparisons[[1]]){
 
         ## Testing
         #qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-        qlf <- glmQLFTest(fit) ## glm quasi-likelihood-F-Test
+        AvsB <- makeContrasts(c(-1, 1), levels=design)
+        qlf <- glmQLFTest(fit, contrast=AvsB) ## glm quasi-likelihood-F-Test
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
@@ -295,7 +296,8 @@ for(compare in comparisons[[1]]){
 
             ## Testing
             #qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            qlf <- glmQLFTest(fit) ## glm quasi-likelihood-F-Test
+            AvsB <- makeContrasts(c(-1, 1), levels=design) #we releveled our data to have B as base, contrast needs to get that information
+            qlf <- glmQLFTest(fit, contrast=AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
