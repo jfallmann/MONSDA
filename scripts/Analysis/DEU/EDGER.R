@@ -85,7 +85,7 @@ for(compare in comparisons[[1]]){
     #subset Datasets for pairwise comparison
     countData <- cbind(countData_all[ , grepl( paste(B, '_', sep='') , colnames( countData_all ) )], countData_all[ ,grepl(paste(A, '_', sep='') , colnames( countData_all )) ])
     sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
-
+    sampleData$condition <- relevel(sampleData$condition, ref=B)
     samples <- rownames(sampleData)
 
     ## name types and levels for design
@@ -131,6 +131,9 @@ for(compare in comparisons[[1]]){
     ## filter low counts
     keep <- filterByExpr(dge)
     dge <- dge[keep, , keep.lib.sizes=FALSE]
+
+    #relevel to base condition B
+    dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
 
     ## normalize with TMM
     dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
