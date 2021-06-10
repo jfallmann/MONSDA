@@ -75,7 +75,7 @@ rule get_chromsize_genomic:
 
 rule remove_softclip:
     input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
-            ref = REFERENCE,
+            fa = REFERENCE,
             refi = rules.index_fa.output
     output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
             bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
