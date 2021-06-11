@@ -2310,6 +2310,7 @@ sub bed_to_coverage{
 		}
         elsif (defined $peak && ($peak eq "score") ){
             for (my $i=$cstart;$i<$cend;$i++){
+                next if ($i > ($sizes->{$chrom}));
 				if ($strand eq "+" or $strand eq "1" or $strand eq "u" or $strand eq "=" or $strand eq "."){
 					$covplus{"$chrom"}{"$i"}+=$score if (defined $score);
 					$annop{"$chrom"}{"$i"} = $annotation if ($annotation);

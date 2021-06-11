@@ -208,6 +208,9 @@ while(<$Bed>){
                     $end-=$finalsize;
                 }
             }
+            if ($start > $end){
+                $start = $end -1
+            }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
         }
         elsif ( $start-$left <= 0 ){
@@ -224,6 +227,9 @@ while(<$Bed>){
                     $start+=$finalsize;
                     $end-=$finalsize;
                 }
+            }
+            if ($start > $end){
+                $start = $end -1
             }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
         }
