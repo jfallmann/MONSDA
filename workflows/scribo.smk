@@ -82,8 +82,9 @@ rule remove_softclip:
     log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
     conda:  "NextSnakes/envs/scribo.yaml"
     threads: 1
-    params: bins = BINS
-    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T TMP/SORTBAM -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log}"
+    params: bins = BINS,
+            tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
+    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T TMP/{params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
 
 
 if not all(checklist):
