@@ -1,4 +1,4 @@
-name: pysam
+name: scribo 
 channels:
   - conda-forge
   - bioconda
@@ -34,6 +34,7 @@ dependencies:
   - openssl=1.1.1k
   - pip=20.1.1
   - piranha=1.2.1
+  - pysam=0.16.0.1
   - python=2.7.18
   - python_abi=2.7
   - readline=8.0
@@ -44,4 +45,3 @@ dependencies:
   - wheel=0.36.2
   - xz=5.2.5
   - zlib=1.2.11
-prefix: /home/fall/anaconda3/envs/pysam
