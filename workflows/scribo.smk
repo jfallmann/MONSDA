@@ -116,7 +116,7 @@ rule extendbed:
     conda:  "NextSnakes/envs/perl.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -u 0 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
 
 rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
@@ -126,7 +126,7 @@ rule rev_extendbed:
     conda:  "NextSnakes/envs/perl.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
+    shell:  "{params.bins}/Universal/ExtendBed.pl -d 0 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
 
 if IP == 'iCLIP':
      rule BedToBedg:
