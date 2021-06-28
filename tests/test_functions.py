@@ -54,13 +54,8 @@ import argparse
 import subprocess
 import re
 
-cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../snakes/lib"),os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"snakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
-for x in cmd_subfolder:
-    if x not in sys.path:
-        sys.path.insert(0, x)
-
-from Collection import *
-from Logger import *
+from NextSnakes.Collection import *
+from NextSnakes.Logger import *
 
 print(sys.argv)
 

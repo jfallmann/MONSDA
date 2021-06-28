@@ -39,7 +39,7 @@ import subprocess
 
 scriptname = os.path.basename(__file__).replace('.py', '')
 
-from lib.Logger import *
+from NextSnakes.Logger import *
 # Logging
 import datetime
 makelogdir('LOGS')
@@ -53,7 +53,7 @@ log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logforma
 log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 
 # import Collection
-from lib.Workflows import *
+from NextSnakes.Workflows import *
 
 
 # CODE

@@ -43,8 +43,8 @@ import logging
 
 min_version("5.8.2")
 
-from lib.Collection import *
-from lib.Logger import *
+from NextSnakes.Collection import *
+from NextSnakes.Logger import *
 scriptname=os.path.basename(__file__)
 
 def parseargs():
