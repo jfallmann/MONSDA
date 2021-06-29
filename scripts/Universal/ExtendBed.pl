@@ -64,7 +64,7 @@ unless ( -f $b ) {
     pod2usage(-verbose => 0);
 }
 
-unless ( $e || $l || $r || $u || $d){
+unless ( $e >= 0 && $l >= 0 && $r >= 0 && $u >= 0 && $d >= 0){
     warn "No number of flanking nucleotides chosen, output would be input! Please provide them via the -l, -r, -e, -u or -d shortoption\n";
     pod2usage(-verbose => 0);
 }
