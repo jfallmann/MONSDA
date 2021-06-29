@@ -37,13 +37,13 @@ pod2usage(-verbose => 0) unless GetOptions(
     "genome|g=s"   => \$g,
     "bedfile|b=s"  => \$b,
     "outfile|o=s"  => \$o,
-    "left|l=s"     => \$l,
-    "right|r=s"    => \$r,
-    "extend|e=s"   => \$e,
-    "up|u=s"       => \$u,
-    "down|d=s"     => \$d,
+    "left|l=i"     => \$l,
+    "right|r=i"    => \$r,
+    "extend|e=i"   => \$e,
+    "up|u=i"       => \$u,
+    "down|d=i"     => \$d,
     "trim|t=s"     => \my $trim,
-    "min|f=s"      => \$m,
+    "min|f=i"      => \$m,
     "original|k=s" => \$keep,
     "bedtwelve|i=s"=> \$introns,
     "help|h"       => sub{pod2usage(-verbose => 1)},
@@ -64,7 +64,7 @@ unless ( -f $b ) {
     pod2usage(-verbose => 0);
 }
 
-unless ( $e >= 0 || $l >= 0 || $r >= 0 || $u >= 0 || $d >= 0){
+unless ( ($e && $e >= 0) || ($l && $l >= 0) || ($r && $r >= 0) || ($u && $u >= 0) || ($d && $d >= 0)){
     warn "No number of flanking nucleotides chosen, output would be input! Please provide them via the -l, -r, -e, -u or -d shortoption\n";
     pod2usage(-verbose => 0);
 }
@@ -75,10 +75,10 @@ if ($e){
 	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
 }
 
-$l=-1 unless ($l || $l >= 0);
-$r=-1 unless ($r || $r >= 0);
-$d=-1 unless ($d || $d >= 0);
-$u=-1 unless ($u || $u >= 0);
+$l=-1 unless ($l && $l >= 0);
+$r=-1 unless ($r && $r >= 0);
+$d=-1 unless ($d && $d >= 0);
+$u=-1 unless ($u && $u >= 0);
 
 print STDERR "Extending left $l, right $r, downstream $d and upstream $u\n";
 
