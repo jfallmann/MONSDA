@@ -2244,6 +2244,12 @@ sub bed_to_coverage{
 			if ($name =~ /\:/){
 				@pro = split(/\|/,$name) ;
 			}
+            elsif($name eq 'X'){ #Special case for piranha
+                $peakwidth = $cend-$cstart;
+                for (1..$peakwidth){
+                    push @pro, $_.":".nearest(1,$score/$peakwidth);
+                }
+            }
 			else{
 				@pro = split(/\|/,$rest[0]) if ($rest[0] =~ /\:/);
 			}
