@@ -209,7 +209,7 @@ while(<$Bed>){
                 }
             }
             if ($start >= $end){
-                if ($start + 1 > $sizes->{$chrom}){
+                if ($end - 1 > 0){
                     $start = $end -1;
                 }
                 else{
@@ -234,7 +234,7 @@ while(<$Bed>){
                 }
             }
             if ($start >= $end){
-                if ($start + 1 > $sizes->{$chrom}){
+                if ($end - 1 > 0){
                     $start = $end -1;
                 }
                 else{
