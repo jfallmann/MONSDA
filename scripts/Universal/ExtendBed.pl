@@ -64,7 +64,7 @@ unless ( -f $b ) {
     pod2usage(-verbose => 0);
 }
 
-unless ( $e >= 0 && $l >= 0 && $r >= 0 && $u >= 0 && $d >= 0){
+unless ( $e >= 0 || $l >= 0 || $r >= 0 || $u >= 0 || $d >= 0){
     warn "No number of flanking nucleotides chosen, output would be input! Please provide them via the -l, -r, -e, -u or -d shortoption\n";
     pod2usage(-verbose => 0);
 }
@@ -75,10 +75,10 @@ if ($e){
 	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
 }
 
-$l=0 unless $l;
-$r=0 unless $r;
-$d=0 unless $d;
-$u=0 unless $u;
+$l=-1 unless $l;
+$r=-1 unless $r;
+$d=-1 unless $d;
+$u=-1 unless $u;
 
 my $sizes;
 if (-f $g){
@@ -158,11 +158,13 @@ while(<$Bed>){
             if ($d >= 0){
                 $start = $tend;
                 $r = $d;
+                $l = 0;
             }
             if ($u >= 0){
                 $end = $tstart;
                 $end += 1 if $tstart == 0;
                 $l = $u;
+                $r = 0;
             }
             $right=$r;
             $left=$l;
@@ -171,11 +173,13 @@ while(<$Bed>){
             if ($u >= 0){
                 $start = $tend;
                 $l = $u;
+                $d = 0;
             }
             if ($d >= 0){
                 $end = $tstart;
                 $end += 1 if $tstart == 0;
                 $r = $d;
+                $l = 0;
             }
             $right=$l;
             $left=$r;
@@ -210,7 +214,7 @@ while(<$Bed>){
             }
             if ($start >= $end){
                 if ($end - 1 > 0){
-                    $start = $end -1;
+                    $start = $end - 1;
                 }
                 else{
                     $end = $start + 1
