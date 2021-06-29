@@ -2247,7 +2247,7 @@ sub bed_to_coverage{
             elsif($name eq 'X'){ #Special case for piranha
                 my $peakwidth = $cend-$cstart;
                 for (1..$peakwidth){
-                    push @pro, $_.":".nearest(1,$score/$peakwidth);
+                    push @pro, "1:".nearest(1,$score/$peakwidth);
                 }
             }
 			else{
