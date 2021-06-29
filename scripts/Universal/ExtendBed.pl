@@ -27,13 +27,14 @@ use Collection;
 ###############
 
 my $VERBOSE = 0;
-my ( $g, $b, $o, $l, $r, $e, $u, $d, $m, $keep, $introns );
+my ( $g, $b, $o, $l, $r, $e, $u, $d, $m, $trim, $keep, $introns );
 
 $l=-inf;
 $r=-inf;
 $d=-inf;
 $u=-inf;
 $e=-inf;
+$trim=-inf;
 
 ###############
 ###Command Line Options
@@ -48,7 +49,7 @@ pod2usage(-verbose => 0) unless GetOptions(
     "extend|e=i"   => \$e,
     "up|u=i"       => \$u,
     "down|d=i"     => \$d,
-    "trim|t=s"     => \my $trim,
+    "trim|t=i"     => \$trim,
     "min|f=i"      => \$m,
     "original|k=s" => \$keep,
     "bedtwelve|i=s"=> \$introns,
