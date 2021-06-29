@@ -75,10 +75,10 @@ if ($e){
 	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
 }
 
-$l=-1 unless $l;
-$r=-1 unless $r;
-$d=-1 unless $d;
-$u=-1 unless $u;
+$l=-1 unless $l && $l >= 0;
+$r=-1 unless $r && $r >= 0;
+$d=-1 unless $d && $d >= 0;
+$u=-1 unless $u && $u >= 0;
 
 my $sizes;
 if (-f $g){
