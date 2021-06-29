@@ -126,7 +126,7 @@ if (-f $o){
 
 open (my $Out, ">:gzip",$o) or die "$!";
 
-open (my $Bed, "<:gzip(autopop)",$b) or die "$!";
+open (my $Bed, "<:gzip(autopop)", $b) or die "$!";
 my @featurelist; ## This will become a FeatureChain
 while(<$Bed>){
     chomp $_;
@@ -134,9 +134,9 @@ while(<$Bed>){
     $chrom =~ s/^chr//g;
     my $right  = 0;
     my $left   = 0;
-    my $width  = nearest(1,($end-$start)/2);
+    my $width  = nearest(1, ($end-$start)/2);
     if ($keep){
-        my $original = join("\t",$start,$end);
+        my $original = join("\t", $start, $end);
         push @rest, $original;
     }
     $width = 0 if ($d >= 0 || $u >= 0 || !$e || $l >= 0 || $r >= 0);
@@ -144,7 +144,7 @@ while(<$Bed>){
 
     if (defined $m && (($end - $start) >= $m) ){
         if (@rest){
-            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\t",join("\t",@rest),"\n";
+            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\t", join("\t", @rest), "\n";
         }
         else{
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand\n";
@@ -178,15 +178,15 @@ while(<$Bed>){
         elsif ($strand eq "-"){
             if ($u >= 0){
                 $start = $tend;
-                if ($d == 0){
+                if ($u == 0){
                     $start-=1;
                 }
                 $l = $u;
-                $d = 0;
+                $r = 0;
             }
             if ($d >= 0){
                 $end = $tstart;
-                if ($u == 0){
+                if ($d == 0){
                     $end += 1;
                 }
                 $end += 1 if $end == 0;
