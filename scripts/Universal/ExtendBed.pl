@@ -29,6 +29,11 @@ use Collection;
 my $VERBOSE = 0;
 my ( $g, $b, $o, $l, $r, $e, $u, $d, $m, $keep, $introns );
 
+$l=-inf;
+$r=-inf;
+$d=-inf;
+$u=-inf;
+
 ###############
 ###Command Line Options
 ###############
@@ -64,7 +69,7 @@ unless ( -f $b ) {
     pod2usage(-verbose => 0);
 }
 
-unless ( ($e && $e >= 0) || ($l && $l >= 0) || ($r && $r >= 0) || ($u && $u >= 0) || ($d && $d >= 0)){
+unless ( $e > -inf || $l > -inf || $r > -inf || $u > -inf || $d > -inf){
     warn "No number of flanking nucleotides chosen, output would be input! Please provide them via the -l, -r, -e, -u or -d shortoption\n";
     pod2usage(-verbose => 0);
 }
@@ -74,11 +79,6 @@ if ($e){
     $r=nearest(1,$e/2);
 	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
 }
-
-$l=-1 unless ($l && $l >= 0);
-$r=-1 unless ($r && $r >= 0);
-$d=-1 unless ($d && $d >= 0);
-$u=-1 unless ($u && $u >= 0);
 
 print STDERR "Extending left $l, right $r, downstream $d and upstream $u\n";
 
@@ -96,22 +96,22 @@ else{
 }
 
 my $filextension;
-if ($d){
+if ($d > -inf){
     $filextension .= "_".$d."_fromEnd";
 }
-if ($u){
+if ($u > -inf){
     $filextension .= "_".$u."_fromStart";
 }
-if ($l){
+if ($l > -inf){
     $filextension .= "_".$l."_upstream";
 }
-if ($r){
+if ($r > -inf){
     $filextension .= "_".$r."_downstream";
 }
-if ($e){
+if ($e > -inf){
     $filextension = "_".$e."_equal";
 }
-if ($trim){
+if ($trim > -inf){
     $filextension = "_".$e."_trimmedto";
 }
 
@@ -141,7 +141,7 @@ while(<$Bed>){
         my $original = join("\t", $start, $end);
         push @rest, $original;
     }
-    $width = 0 if ($d >= 0 || $u >= 0 || !$e || $l >= 0 || $r >= 0);
+    $width = 0 if ($d  > -inf || $u  > -inf || !$e || $l  > -inf || $r  > -inf);
     $end+=1 if (($end-$start)%2) && $width > 0;
 
     if (defined $m && (($end - $start) >= $m) ){
