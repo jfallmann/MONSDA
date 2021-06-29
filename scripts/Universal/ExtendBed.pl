@@ -80,17 +80,19 @@ $r=-1 unless ($r || $r >= 0);
 $d=-1 unless ($d || $d >= 0);
 $u=-1 unless ($u || $u >= 0);
 
+print STDERR "Extending left $l, right $r, downstream $d and upstream $u\n";
+
 my $sizes;
 if (-f $g){
-    open (my $Genome, "<:gzip(autopop)",$g);
+    open (my $Genome, "<:gzip(autopop)", $g);
     while (<$Genome>){
         chomp $_;
-        my ($chr,$size)=split (/\t/,$_);
+        my ($chr, $size)=split (/\t/, $_);
         $sizes->{$chr}=$size;
     }
 }
 else{
-    $sizes=Collection::fetch_chrom_sizes($g,$g.".chrom.sizes");
+    $sizes=Collection::fetch_chrom_sizes($g, $g.".chrom.sizes");
 }
 
 my $filextension;
@@ -113,9 +115,9 @@ if ($trim){
     $filextension = "_".$e."_trimmedto";
 }
 
-my($filename, $dirs, $suffix) = fileparse($b,'.bed');
+my($filename, $dirs, $suffix) = fileparse($b, '.bed');
 if ($b =~ '.bed.gz$'){
-    ($filename, $dirs, $suffix) = fileparse($b,'.bed.gz');
+    ($filename, $dirs, $suffix) = fileparse($b, '.bed.gz');
 }
 
 $o = $filename.$filextension.$suffix unless ($o);
@@ -209,59 +211,35 @@ while(<$Bed>){
             $left-=$width;
         }
 
-        if ( $start-$left >= 0 ){
-            if ($end+$right >= $sizes->{$chrom}){
-                $end = $sizes->{$chrom};
-            }
-            else{
-                $end += $right;
-            }
-            $start -= $left;
-            if ($trim){
-                if (($end-$start) > ($e+1)){
-                    my $finalsize = nearest(1,(($end-$start)-$e)/2);
-                    $start+=$finalsize;
-                    $end-=$finalsize;
-                }
-            }
-            if ($start >= $end){
-                if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
-                    $end = $start + 1
-                }
-                elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
-                    $start = $end - 1;
-                }
-            }
-            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
-        }
-        elsif ( $start-$left <= 0 ){
-            $start = 0;
-            if ($end+$right >= $sizes->{$chrom}){
-                $end = $sizes->{$chrom};
-            }
-            else{
-                $end += $right;
-            }
-            if ($trim){
-                if (($end-$start) > ($e+1)){
-                    my $finalsize = nearest(1,(($end-$start)-$e)/2);
-                    $start+=$finalsize;
-                    $end-=$finalsize;
-                }
-            }
-            if ($start >= $end){
-                if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
-                    $end = $start + 1
-                }
-                elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
-                    $start = $end - 1;
-                }
-            }
-            print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
+        if ($end+$right >= $sizes->{$chrom}){
+            $end = $sizes->{$chrom};
         }
         else{
-            die "Something wrong here!\n";
+            $end += $right;
         }
+        if ( $start-$left >= 0 ){
+            $start -= $left;
+        }
+        else{
+            $start = 0;
+        }
+        if ($trim){
+            if (($end-$start) > ($e+1)){
+                my $finalsize = nearest(1,(($end-$start)-$e)/2);
+                $start+=$finalsize;
+                $end-=$finalsize;
+            }
+        }
+        if ($start >= $end){
+            if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
+                $end = $start + 1
+            }
+            elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
+                $start = $end - 1;
+            }
+        }
+        print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
+
         if (@rest){
             if ($introns){
                 my @blocks = split(',',$rest[5]);
