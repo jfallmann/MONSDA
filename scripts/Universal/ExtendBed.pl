@@ -139,7 +139,7 @@ while(<$Bed>){
         my $original = join("\t",$start,$end);
         push @rest, $original;
     }
-    $width = 0 if ($d > 0 || $u > 0 || !$e || $l > 0 || $r > 0);
+    $width = 0 if ($d >= 0 || $u >= 0 || !$e || $l >= 0 || $r >= 0);
     $end+=1 if (($end-$start)%2) && $width > 0;
 
     if (defined $m && (($end - $start) >= $m) ){
@@ -155,11 +155,11 @@ while(<$Bed>){
         my $tstart = $start;
         my $tend = $end;
         if ($strand eq "+" || $strand eq '.' || $strand eq 'u'){
-            if ($d > 0){
+            if ($d >= 0){
                 $start = $tend;
                 $r = $d;
             }
-            if ($u > 0){
+            if ($u >= 0){
                 $end = $tstart;
                 $end += 1 if $tstart == 0;
                 $l = $u;
@@ -168,11 +168,11 @@ while(<$Bed>){
             $left=$l;
         }
         elsif ($strand eq "-"){
-            if ($u > 0){
+            if ($u >= 0){
                 $start = $tend;
                 $l = $u;
             }
-            if ($d > 0){
+            if ($d >= 0){
                 $end = $tstart;
                 $end += 1 if $tstart == 0;
                 $r = $d;
@@ -208,8 +208,13 @@ while(<$Bed>){
                     $end-=$finalsize;
                 }
             }
-            if ($start > $end){
-                $start = $end -1
+            if ($start >= $end){
+                if ($start + 1 > $sizes->{$chrom}){
+                    $start = $end -1;
+                }
+                else{
+                    $end = $start + 1
+                }
             }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
         }
@@ -228,8 +233,13 @@ while(<$Bed>){
                     $end-=$finalsize;
                 }
             }
-            if ($start > $end){
-                $start = $end -1
+            if ($start >= $end){
+                if ($start + 1 > $sizes->{$chrom}){
+                    $start = $end -1;
+                }
+                else{
+                    $end = $start + 1
+                }
             }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
         }
