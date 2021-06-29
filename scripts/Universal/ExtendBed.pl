@@ -33,6 +33,7 @@ $l=-inf;
 $r=-inf;
 $d=-inf;
 $u=-inf;
+$e=-inf;
 
 ###############
 ###Command Line Options
@@ -74,7 +75,7 @@ unless ( $e > -inf || $l > -inf || $r > -inf || $u > -inf || $d > -inf){
     pod2usage(-verbose => 0);
 }
 
-if ($e){
+if ($e > -inf){
     $l=nearest(1,$e/2);
     $r=nearest(1,$e/2);
 	print STDERR "Extending both sides equally if possible, upstream $l and downstream $r for setting $e\n";
@@ -141,7 +142,7 @@ while(<$Bed>){
         my $original = join("\t", $start, $end);
         push @rest, $original;
     }
-    $width = 0 if ($d  > -inf || $u  > -inf || !$e || $l  > -inf || $r  > -inf);
+    $width = 0 if ($d  > -inf || $u  > -inf || $e > -inf || $l  > -inf || $r  > -inf);
     $end+=1 if (($end-$start)%2) && $width > 0;
 
     if (defined $m && (($end - $start) >= $m) ){
@@ -223,7 +224,7 @@ while(<$Bed>){
         else{
             $start = 0;
         }
-        if ($trim){
+        if ($trim > -inf){
             if (($end-$start) > ($e+1)){
                 my $finalsize = nearest(1,(($end-$start)-$e)/2);
                 $start+=$finalsize;
