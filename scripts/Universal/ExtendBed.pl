@@ -157,12 +157,18 @@ while(<$Bed>){
         if ($strand eq "+" || $strand eq '.' || $strand eq 'u'){
             if ($d >= 0){
                 $start = $tend;
+                if ($d == 0){
+                    $start-=1;
+                }
                 $r = $d;
                 $l = 0;
             }
             if ($u >= 0){
                 $end = $tstart;
-                $end += 1 if $tstart == 0;
+                if ($u == 0){
+                    $end += 1;
+                }
+                $end += 1 if $end == 0;
                 $l = $u;
                 $r = 0;
             }
@@ -172,12 +178,18 @@ while(<$Bed>){
         elsif ($strand eq "-"){
             if ($u >= 0){
                 $start = $tend;
+                if ($d == 0){
+                    $start-=1;
+                }
                 $l = $u;
                 $d = 0;
             }
             if ($d >= 0){
                 $end = $tstart;
-                $end += 1 if $tstart == 0;
+                if ($u == 0){
+                    $end += 1;
+                }
+                $end += 1 if $end == 0;
                 $r = $d;
                 $l = 0;
             }
@@ -197,7 +209,7 @@ while(<$Bed>){
             $left-=$width;
         }
 
-        if ( $start-$left >= 1 ){
+        if ( $start-$left >= 0 ){
             if ($end+$right >= $sizes->{$chrom}){
                 $end = $sizes->{$chrom};
             }
@@ -213,11 +225,11 @@ while(<$Bed>){
                 }
             }
             if ($start >= $end){
-                if ($end - 1 > 0){
-                    $start = $end - 1;
-                }
-                else{
+                if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
                     $end = $start + 1
+                }
+                elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
+                    $start = $end - 1;
                 }
             }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
@@ -238,11 +250,11 @@ while(<$Bed>){
                 }
             }
             if ($start >= $end){
-                if ($end - 1 > 0){
-                    $start = $end -1;
-                }
-                else{
+                if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
                     $end = $start + 1
+                }
+                elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
+                    $start = $end - 1;
                 }
             }
             print $Out "$chrom\t$start\t$end\t$id\t$score\t$strand";
