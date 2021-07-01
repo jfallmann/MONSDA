@@ -462,8 +462,11 @@ def get_reps(samples, config, analysis):
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
         idx = partconf['SAMPLES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config))
-        ret['conds'].append(partconf['GROUPS'][idx])
-        ret['batches'].append(partconf['BATCHES'][idx])
+        ret['conds'].append(partconf['GROUPS'][idx])        
+        if 'BATCHES' in partconf and len(partconf['BATCHES']) >= idx:
+                ret['batches'].append(str(partconf['BATCHES'][idx]).replace(',','_'))
+        else:
+            ret['batches'].append('1')
         if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
                 ret['types'].append(str(partconf['TYPES'][idx]).replace(',','_'))
         else:
