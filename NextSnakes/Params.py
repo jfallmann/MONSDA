@@ -462,7 +462,7 @@ def get_reps(samples, config, analysis):
         wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
         idx = partconf['SAMPLES'].index(wcfile)
         ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config))
-        ret['conds'].append(partconf['GROUPS'][idx])        
+        ret['conds'].append(partconf['GROUPS'][idx])
         if 'BATCHES' in partconf and len(partconf['BATCHES']) >= idx:
                 ret['batches'].append(str(partconf['BATCHES'][idx]).replace(',','_'))
         else:
@@ -675,6 +675,7 @@ def checkpaired(sample, config):
         p = subDict(config['SETTINGS'], check)
         if p:
             paired = p.get('SEQUENCING')
+            paired = paired.split(',')[0] if ',' in paired else paired
         else:
             return None
         # Per sample paired, not implemented yet
