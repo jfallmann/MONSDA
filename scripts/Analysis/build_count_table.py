@@ -10,6 +10,7 @@ cmd_subfolder = os.path.join(
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
+from Logger import *
 
 scriptname = os.path.basename(__file__)
 
