@@ -57,7 +57,7 @@ import collections
 import traceback as tb
 import inspect
 ####load own modules
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"../../lib")
+cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"../../NextSnakes")
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 #sys.path=[str(os.getenv('HOME')+"/Work/Scripts/Python/lib")] + sys.path
