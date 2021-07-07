@@ -7,13 +7,21 @@ import argparse
 import re
 import gzip
 
+
 def parseargs():
     parser = argparse.ArgumentParser(description='Converting ENSEMBL gff3 to DEXSeq ready gff3')
     parser.add_argument("-g", "--gff", required=True, help='gff3 input file in ENSEMBL format')
     parser.add_argument("-o", "--outgff", required=True, help='Output gff3 to write to')
-    parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING','ERROR','INFO','DEBUG'], help="Set log level")
+    parser.add_argument(
+        "-v",
+        "--loglevel",
+        type=str,
+        default='INFO',
+        choices=['WARNING', 'ERROR', 'INFO', 'DEBUG'],
+        help="Set log level",
+    )
 
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -22,12 +30,12 @@ def parseargs():
 
 def reformat(gff=None, outgff=None):
     try:
-        print(gff,outgff)
+        print(gff, outgff)
         if os.path.isfile(os.path.abspath(gff)):
             if '.gz' in gff:
-                f = gzip.open(gff,'rt')
+                f = gzip.open(gff, 'rt')
             else:
-                f = open(gff,'r')
+                f = open(gff, 'r')
         else:
             f = gff
 
@@ -43,7 +51,7 @@ def reformat(gff=None, outgff=None):
                 anno = entries[-1]
                 ids = anno.split(';')
                 if entries[2] != 'exon' and 'Parent' in anno:
-                    trans, parent = None,None
+                    trans, parent = None, None
                     for id in ids:
                         if 'transcript:' in id:
                             trans = id.split(':')[-1]
@@ -51,29 +59,32 @@ def reformat(gff=None, outgff=None):
                             parent = id.split(':')[-1]
 
                     if trans and parent:
-                        mapping[trans]=parent
+                        mapping[trans] = parent
                     out.append(line)
 
                 elif entries[2] == 'exon':
                     parenttrans = ids[0].split(':')[-1]
-                    line += ';ParentGene='+mapping[parenttrans]
+                    line += ';ParentGene=' + mapping[parenttrans]
                     out.append(line)
 
                 else:
                     out.append(line)
 
         if '.gz' in outgff:
-            with gzip.open(outgff,'wb') as output:
-                output.write(bytes(str.join('\n',out),encoding='UTF-8'))
+            with gzip.open(outgff, 'wb') as output:
+                output.write(bytes(str.join('\n', out), encoding='UTF-8'))
         else:
-            with open(outgff,'w') as output:
-                output.write(str.join('\n',out))
+            with open(outgff, 'w') as output:
+                output.write(str.join('\n', out))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
+
 
 ####################
 ####    MAIN    ####
@@ -82,11 +93,13 @@ def reformat(gff=None, outgff=None):
 if __name__ == '__main__':
 
     try:
-        args=parseargs()
-        knownargs=args[0]
+        args = parseargs()
+        knownargs = args[0]
         reformat(knownargs.gff, knownargs.outgff)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
