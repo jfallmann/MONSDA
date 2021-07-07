@@ -40,17 +40,33 @@ import subprocess
 scriptname = os.path.basename(__file__).replace('.py', '')
 
 from NextSnakes.Logger import *
+
 # Logging
 import datetime
-makelogdir('LOGS')
-if not os.path.isfile(os.path.abspath('LOGS/'+scriptname+'.log')):
-    open('LOGS/'+scriptname+'.log', 'a').close()
-else:
-    ts = str(datetime.datetime.fromtimestamp(os.path.getmtime(os.path.abspath('LOGS/'+scriptname+'.log'))).strftime("%Y%m%d_%H_%M_%S"))
-    shutil.copy2('LOGS/'+scriptname+'.log', 'LOGS/'+scriptname+'_'+ts+'.log')
 
-log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
-log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
+makelogdir('LOGS')
+if not os.path.isfile(os.path.abspath('LOGS/' + scriptname + '.log')):
+    open('LOGS/' + scriptname + '.log', 'a').close()
+else:
+    ts = str(
+        datetime.datetime.fromtimestamp(
+            os.path.getmtime(os.path.abspath('LOGS/' + scriptname + '.log'))
+        ).strftime("%Y%m%d_%H_%M_%S")
+    )
+    shutil.copy2('LOGS/' + scriptname + '.log', 'LOGS/' + scriptname + '_' + ts + '.log')
+
+log = setup_logger(
+    name=scriptname,
+    log_file='LOGS/' + scriptname + '.log',
+    logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s',
+    datefmt='%m-%d %H:%M',
+)
+log = setup_logger(
+    name=scriptname,
+    log_file='stderr',
+    logformat='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%m-%d %H:%M',
+)
 
 # import Collection
 from NextSnakes.Workflows import *
@@ -58,18 +74,46 @@ from NextSnakes.Workflows import *
 
 # CODE
 def parseargs():
-    parser = argparse.ArgumentParser(description='Wrapper around snakemake to run config based jobs automatically')
+    parser = argparse.ArgumentParser(
+        description='Wrapper around snakemake to run config based jobs automatically'
+    )
     parser.add_argument("-c", "--configfile", type=str, help='Configuration json to read')
     parser.add_argument("-d", "--directory", type=str, default='', help='Directory to work in')
     parser.add_argument("-u", "--use-conda", action="store_true", default=True, help='Should conda be used')
-    parser.add_argument("-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing')
-    parser.add_argument("-j", "--procs", type=int, default=1, help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!')
-    parser.add_argument("--save", type=str, default=None, help='Do not run jobs from wrapper, create named text file containing jobs and arguments for manual running instead')
-    parser.add_argument("-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed')
+    parser.add_argument(
+        "-l", "--unlock", action="store_true", help='If directory is locked you can unlock before processing'
+    )
+    parser.add_argument(
+        "-j",
+        "--procs",
+        type=int,
+        default=1,
+        help='Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!',
+    )
+    parser.add_argument(
+        "--save",
+        type=str,
+        default=None,
+        help='Do not run jobs from wrapper, create named text file containing jobs and arguments for manual running instead',
+    )
+    parser.add_argument(
+        "-s", "--skeleton", action="store_true", help='Just create the minimal directory hierarchy as needed'
+    )
     parser.add_argument("--snakemake", action="store_true", default=True, help='Wrap around snakemake')
     parser.add_argument("--nextflow", action="store_true", default=False, help='Wrap around nextflow')
-    parser.add_argument("--clean", action="store_true", help='Cleanup workdir (nextflow), append -n to see list of files to clean or -f to actually remove those files')
-    parser.add_argument("-v", "--loglevel", type=str, default='INFO', choices=['WARNING', 'ERROR', 'INFO', 'DEBUG'], help="Set log level")
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help='Cleanup workdir (nextflow), append -n to see list of files to clean or -f to actually remove those files',
+    )
+    parser.add_argument(
+        "-v",
+        "--loglevel",
+        type=str,
+        default='INFO',
+        choices=['WARNING', 'ERROR', 'INFO', 'DEBUG'],
+        help="Set log level",
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -78,9 +122,11 @@ def parseargs():
     return parser.parse_known_args()
 
 
-def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None):
+def run_snakemake(
+    configfile, workdir, useconda, procs, skeleton, loglevel, save=None, unlock=None, optionalargs=None
+):
     try:
-        logid = scriptname+'.run_snakemake: '
+        logid = scriptname + '.run_snakemake: '
         config = load_configfile(configfile)
         subdir = 'SubSnakes'
         create_skeleton(subdir, skeleton)
@@ -89,9 +135,12 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         if useconda:
             argslist.append("--use-conda")
         else:
-            log.warning(logid+'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument.')
+            log.warning(
+                logid
+                + 'You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument.'
+            )
         if optionalargs and len(optionalargs) > 0:
-            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            log.debug(logid + 'OPTIONALARGS: ' + str(optionalargs))
             argslist.extend(optionalargs)
             if '--profile' in optionalargs and 'NextSnakes/slurm' in optionalargs:
                 makeoutdir('LOGS/SLURM')
@@ -100,13 +149,13 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         config['MAXTHREADS'] = threads
 
         if unlock:
-            log.info(logid+'Unlocking directory')
+            log.info(logid + 'Unlocking directory')
             snk = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'unlock.smk'))
             jobtorun = f'snakemake --unlock -j {threads} -s {snk} --configfile {configfile}'
 
-            log.info(logid+'UNLOCKING '+str(jobtorun))
+            log.info(logid + 'UNLOCKING ' + str(jobtorun))
             job = runjob(jobtorun)
-            log.debug(logid+'JOB CODE '+str(job))
+            log.debug(logid + 'JOB CODE ' + str(job))
 
         # Get processes to work on
         preprocess, subworkflows, postprocess = get_processes(config)
@@ -118,9 +167,14 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
         '''
         if preprocess:
             for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
-                log.info(logid+'Preprocess '+str(proc))
+                log.info(logid + 'Preprocess ' + str(proc))
                 if proc not in config:
-                    log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
+                    log.error(
+                        logid
+                        + 'No configuration with key '
+                        + proc
+                        + ' for file download found. Nothing to do!'
+                    )
                 makeoutdir('FASTQ')
                 makeoutdir('TMP')
 
@@ -133,61 +187,76 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
                 else:
                     continue  # We only want download/basecall here
 
-                log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
+                log.debug(logid + 'PRESAMPLES: ' + str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
 
                 subwork = proc
 
-                jobs = make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations)
+                jobs = make_pre(
+                    subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations
+                )
 
                 jobstorun = list()
                 for job in jobs:
                     smko, confo = job
-                    rest=' '.join(argslist)
-                    jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
+                    rest = ' '.join(argslist)
+                    jobstorun.append(
+                        f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                     if not save:
-                        log.info(logid+'RUNNING '+str(job))
+                        log.info(logid + 'RUNNING ' + str(job))
                         jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                        log.debug(logid + 'JOB CODE ' + str(jid))
 
         '''
         ONCE FILES ARE DOWNLOADED WE CAN START OTHER PREPROCESSING STEPS
         '''
 
         SAMPLES = get_samples(config)
-        log.info(logid+'SAMPLES: '+str(SAMPLES))
+        log.info(logid + 'SAMPLES: ' + str(SAMPLES))
 
         if preprocess:
-            log.info(logid+'STARTING PREPROCESSING')
+            log.info(logid + 'STARTING PREPROCESSING')
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
 
                 for subwork in preprocess:
                     combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-                    jobs = make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations)
+                    jobs = make_pre(
+                        subwork,
+                        config,
+                        SAMPLES,
+                        conditions,
+                        subdir,
+                        loglevel,
+                        'Pre',
+                        combinations=combinations,
+                    )
 
                     jobstorun = list()
 
                     for job in jobs:
                         smko, confo = job
-                        rest=' '.join(argslist)
+                        rest = ' '.join(argslist)
 
-                        jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
+                        jobstorun.append(
+                            f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}'
+                        )
 
                     for job in jobstorun:
-                        with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                            j.write(job+os.linesep)
+                        with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                            j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
+            log.warning(logid + 'No preprocessing workflows defined! Continuing with workflows!')
 
         '''
         END OF PREPROCESSING, START OF PROCESSING
@@ -195,27 +264,30 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
 
         if subworkflows:
             combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-            jobs = make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+            jobs = make_sub(
+                subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations
+            )
 
             jobstorun = list()
 
             for job in jobs:
                 smko, confo = job
-                rest=' '.join(argslist)
+                rest = ' '.join(argslist)
 
-                jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
-
+                jobstorun.append(
+                    f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}'
+                )
 
             for job in jobstorun:
-                with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                    j.write(job+os.linesep)
+                with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                    j.write(job + os.linesep)
                     if not save:
-                        log.info(logid+'RUNNING '+str(job))
+                        log.info(logid + 'RUNNING ' + str(job))
                         jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                        log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
+            log.warning(logid + 'No Workflows defined! Nothing to do, continuing with postprocessing!')
 
         '''
         END OF PROCESSING, START OF POSTPROCESSING
@@ -225,25 +297,29 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
+                log.info(logid + 'POSTPROCESSING SAMPLES: ' + str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-                log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
+                log.debug(logid + 'POSTPROCESSING WITH COMBOS: ' + str(combinations))
 
-                jobs = make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+                jobs = make_post(
+                    subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations
+                )
                 jobstorun = list()
 
                 for job in jobs:
                     smko, confo = job
-                    rest=' '.join(argslist)
-                    jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
+                    rest = ' '.join(argslist)
+                    jobstorun.append(
+                        f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
             if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
                 # SUMMARY RUN
@@ -253,55 +329,59 @@ def run_snakemake(configfile, workdir, useconda, procs, skeleton, loglevel, save
 
                 for job in jobs:
                     smko, confo = job
-                    rest=' '.join(argslist)
-                    jobstorun.append(f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}')
+                    rest = ' '.join(argslist)
+                    jobstorun.append(
+                        f'snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No postprocessing steps defined! Nothing to do!')
+            log.warning(logid + 'No postprocessing steps defined! Nothing to do!')
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
         log.error(''.join(tbe.format()))
 
 
 def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clean=None, optionalargs=None):
     try:
-        logid = scriptname+'.run_nextflow: '
+        logid = scriptname + '.run_nextflow: '
         argslist = list()
         if optionalargs and len(optionalargs) > 0:
-            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            log.debug(logid + 'OPTIONALARGS: ' + str(optionalargs))
             argslist.extend(optionalargs)
 
         if clean:
-            log.info(logid+'Cleaning working directory')
+            log.info(logid + 'Cleaning working directory')
             a = ' '.join(argslist)
             jobtorun = f'nextflow clean {a}'
-            log.info(logid+'CLEANUP '+str(jobtorun))
+            log.info(logid + 'CLEANUP ' + str(jobtorun))
             job = runjob(jobtorun)
-            log.debug(logid+'JOB CODE '+str(job))
+            log.debug(logid + 'JOB CODE ' + str(job))
             sys.exit()
 
         config = load_configfile(configfile)
         workdir = os.path.abspath(str.join(os.sep, [workdir, 'NextFlowWork']))
         subdir = 'SubFlows'
         create_skeleton(subdir, skeleton)
-        if not os.path.exists(os.path.abspath(subdir+os.sep+'bin')):
-            os.symlink(os.path.abspath(config['BINS']), os.path.abspath(subdir+os.sep+'bin'))
+        if not os.path.exists(os.path.abspath(subdir + os.sep + 'bin')):
+            os.symlink(os.path.abspath(config['BINS']), os.path.abspath(subdir + os.sep + 'bin'))
 
         argslist = list()
         if optionalargs and len(optionalargs) > 0:
-            log.debug(logid+'OPTIONALARGS: '+str(optionalargs))
+            log.debug(logid + 'OPTIONALARGS: ' + str(optionalargs))
             argslist.extend(optionalargs)
             if '--profile' in optionalargs and 'NextSnakes/slurm' in optionalargs:  # NEEDS REFIT FOR NEXTFLOW
                 makeoutdir('LOGS/SLURM')
@@ -320,9 +400,14 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
 
         if preprocess:
             for proc in [x for x in preprocess if config.get(x) and x in ['SRA', 'BASECALL']]:
-                log.info(logid+'Preprocess '+str(proc))
+                log.info(logid + 'Preprocess ' + str(proc))
                 if proc not in config:
-                    log.error(logid+'No configuration with key '+proc+' for file download found. Nothing to do!')
+                    log.error(
+                        logid
+                        + 'No configuration with key '
+                        + proc
+                        + ' for file download found. Nothing to do!'
+                    )
                 makeoutdir('FASTQ')
                 makeoutdir('TMP')
 
@@ -335,12 +420,14 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                 else:
                     continue
 
-                log.debug(logid+'PRESAMPLES: '+str(SAMPLES))
+                log.debug(logid + 'PRESAMPLES: ' + str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
 
                 subwork = proc
 
-                jobs = nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations)
+                jobs = nf_make_pre(
+                    subwork, config, SAMPLES, conditions, subdir, loglevel, 'Pre', combinations=combinations
+                )
 
                 jobstorun = list()
                 for job in jobs:
@@ -348,34 +435,37 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(
+                        f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                     if not save:
-                        log.info(logid+'RUNNING '+str(job))
+                        log.info(logid + 'RUNNING ' + str(job))
                         jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                        log.debug(logid + 'JOB CODE ' + str(jid))
 
         '''
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
         '''
 
         SAMPLES = get_samples(config)
-        log.info(logid+'SAMPLES: '+str(SAMPLES))
+        log.info(logid + 'SAMPLES: ' + str(SAMPLES))
         conditions = get_conditions(config)
-        log.info(logid+'CONDITIONS: '+str(conditions))
+        log.info(logid + 'CONDITIONS: ' + str(conditions))
 
         if preprocess:
-            log.info(logid+'STARTING PREPROCESSING')
+            log.info(logid + 'STARTING PREPROCESSING')
             if 'QC' in preprocess and 'QC' in config:
                 makeoutdir('QC')
 
-
             for subwork in preprocess:
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-                jobs = nf_make_pre(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+                jobs = nf_make_pre(
+                    subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations
+                )
 
                 jobstorun = list()
 
@@ -384,18 +474,20 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(
+                        f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                     if not save:
-                        log.info(logid+'RUNNING '+str(job))
+                        log.info(logid + 'RUNNING ' + str(job))
                         jid = runjob(job)
-                        log.debug(logid+'JOB CODE '+str(jid))
+                        log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No preprocessing workflows defined! Continuing with workflows!')
+            log.warning(logid + 'No preprocessing workflows defined! Continuing with workflows!')
 
         '''
         END OF PREPROCESSING, START OF PROCESSING
@@ -403,7 +495,9 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
 
         if subworkflows:
             combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-            jobs = nf_make_sub(subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+            jobs = nf_make_sub(
+                subworkflows, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations
+            )
 
             jobstorun = list()
 
@@ -415,33 +509,37 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                 jobstorun.append(f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}')
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No Workflows defined! Nothing to do, continuing with postprocessing!')
+            log.warning(logid + 'No Workflows defined! Nothing to do, continuing with postprocessing!')
 
         '''
         END OF PROCESSING, START OF POSTPROCESSING
         '''
 
         if postprocess:
-            log.error('At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!')
+            log.error(
+                'At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!'
+            )
             sys.exit()
 
             ## Once postprocessing is enabled, here comes a framework that should work
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                log.info(logid+'POSTPROCESSING SAMPLES: '+str(SAMPLES))
+                log.info(logid + 'POSTPROCESSING SAMPLES: ' + str(SAMPLES))
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-                log.debug(logid+'POSTPROCESSING WITH COMBOS: '+str(combinations))
+                log.debug(logid + 'POSTPROCESSING WITH COMBOS: ' + str(combinations))
 
-                jobs = nf_make_post(subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations)
+                jobs = nf_make_post(
+                    subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=combinations
+                )
                 jobstorun = list()
 
                 for job in jobs:
@@ -449,20 +547,24 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(
+                        f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
             if any([x in postprocess for x in ['DE', 'DEU', 'DAS', 'DTU']]):
                 # SUMMARY RUN
                 combinations = get_combo(subworkflows, config, conditions) if subworkflows else None
-                jobs = nf_make_summary(config, subdir, loglevel, combinations=combinations)  # Not implemented yet
+                jobs = nf_make_summary(
+                    config, subdir, loglevel, combinations=combinations
+                )  # Not implemented yet
                 jobstorun = list()
 
                 for job in jobs:
@@ -470,33 +572,44 @@ def run_nextflow(configfile, workdir, procs, skeleton, loglevel, save=None, clea
                     pars = ' '.join("--{!s} {!s}".format(key, val) for (key, val) in params.items())
                     rest = ' '.join(argslist)
 
-                    jobstorun.append(f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}')
+                    jobstorun.append(
+                        f'nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}'
+                    )
 
                 for job in jobstorun:
-                    with open('JOBS'+os.sep+scriptname+'.commands', 'a') as j:
-                        j.write(job+os.linesep)
+                    with open('JOBS' + os.sep + scriptname + '.commands', 'a') as j:
+                        j.write(job + os.linesep)
                         if not save:
-                            log.info(logid+'RUNNING '+str(job))
+                            log.info(logid + 'RUNNING ' + str(job))
                             jid = runjob(job)
-                            log.debug(logid+'JOB CODE '+str(jid))
-
+                            log.debug(logid + 'JOB CODE ' + str(jid))
 
         else:
-            log.warning(logid+'No postprocessing steps defined! Nothing to do!')
+            log.warning(logid + 'No postprocessing steps defined! Nothing to do!')
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
         log.error(''.join(tbe.format()))
 
 
 def runjob(jobtorun):
     try:
-        logid = scriptname+'.runjob: '
-        #return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
-        job = subprocess.Popen(jobtorun, shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, close_fds=True)
+        logid = scriptname + '.runjob: '
+        # return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
+        job = subprocess.Popen(
+            jobtorun,
+            shell=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,
+            close_fds=True,
+        )
 
         while True:
             output, outerr = job.communicate()
@@ -505,24 +618,33 @@ def runjob(jobtorun):
             if output == '' and outerr == '' and job.poll() is not None:
                 break
             if output and output != '':
-                if any(x in output for x in ['ERROR', 'Error', 'error', 'Exception']) and not 'Workflow finished' in output or 'Workflow finished' in outerr :
+                if (
+                    any(x in output for x in ['ERROR', 'Error', 'error', 'Exception'])
+                    and not 'Workflow finished' in output
+                    or 'Workflow finished' in outerr
+                ):
                     if outerr:
-                        log.error(logid+'STOPPING: '+str(output)+'\n'+str(outerr))
+                        log.error(logid + 'STOPPING: ' + str(output) + '\n' + str(outerr))
                     else:
-                        log.error(logid+'STOPPING: '+str(output))
+                        log.error(logid + 'STOPPING: ' + str(output))
                     log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
-                    log.info(logid+str(output))
+                    log.info(logid + str(output))
             if outerr and outerr != '':
-                if not 'Workflow finished' in outerr and not 'Nothing to be done' in outerr and not 'Workflow finished' in output and any(x in outerr for x in ['ERROR', 'Error', 'error', 'Exception']):
-                    log.error(logid+'STOPPING: '+str(outerr))
+                if (
+                    not 'Workflow finished' in outerr
+                    and not 'Nothing to be done' in outerr
+                    and not 'Workflow finished' in output
+                    and any(x in outerr for x in ['ERROR', 'Error', 'error', 'Exception'])
+                ):
+                    log.error(logid + 'STOPPING: ' + str(outerr))
                     log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
                     job.kill()
                     sys.exit()
                 else:
-                    log.info(logid+str(outerr))
+                    log.info(logid + str(outerr))
             if job.poll() is not None:
                 break
 
@@ -530,25 +652,28 @@ def runjob(jobtorun):
             output, outerr = job.communicate()
             output = str.join('', output).rstrip()
             if output and output != '':
-                log.info(logid+'JOB FINISHED: '+output)
+                log.info(logid + 'JOB FINISHED: ' + output)
             return job.poll()
         else:
             output, outerr = job.communicate()
             output = str.join('', output).rstrip()
             outerr = str.join('', outerr).rstrip()
             if outerr and outerr != '' or output and output != '':
-                log.error(logid+'ERROR: '+outerr+output)
+                log.error(logid + 'ERROR: ' + outerr + output)
                 log.info('PLEASE CHECK LOG AT LOGS/NextSnakes.log')
             job.kill()
-            sys.exit('ERROR SIGNAL: '+str(job.returncode))
+            sys.exit('ERROR SIGNAL: ' + str(job.returncode))
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
         log.error(''.join(tbe.format()))
         sys.exit()
+
 
 ####################
 ####    MAIN    ####
@@ -557,7 +682,7 @@ def runjob(jobtorun):
 
 if __name__ == '__main__':
 
-    logid = scriptname+'.main: '
+    logid = scriptname + '.main: '
     try:
         args = parseargs()
         knownargs = args[0]
@@ -565,28 +690,54 @@ if __name__ == '__main__':
 
         log.setLevel(knownargs.loglevel)
 
-        MIN_PYTHON = (3,7)
+        MIN_PYTHON = (3, 7)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
-        log.info(logid+'Running '+scriptname+' on '+str(knownargs.procs)+' cores')
-        log.debug(logid+str(log.handlers))
+        log.info(logid + 'Running ' + scriptname + ' on ' + str(knownargs.procs) + ' cores')
+        log.debug(logid + str(log.handlers))
 
         if not knownargs.nextflow:
             min_version("5.32.0")
-            run_snakemake(knownargs.configfile, knownargs.directory, knownargs.use_conda, knownargs.procs, knownargs.skeleton, knownargs.loglevel, knownargs.save, knownargs.unlock, optionalargs[0])
+            run_snakemake(
+                knownargs.configfile,
+                knownargs.directory,
+                knownargs.use_conda,
+                knownargs.procs,
+                knownargs.skeleton,
+                knownargs.loglevel,
+                knownargs.save,
+                knownargs.unlock,
+                optionalargs[0],
+            )
 
         else:
             nf_min_version = "20.10.0.5430"
             if nf_check_version(nf_min_version):
-                run_nextflow(knownargs.configfile, knownargs.directory, knownargs.procs, knownargs.skeleton , knownargs.loglevel, knownargs.save, knownargs.clean, optionalargs[0])
+                run_nextflow(
+                    knownargs.configfile,
+                    knownargs.directory,
+                    knownargs.procs,
+                    knownargs.skeleton,
+                    knownargs.loglevel,
+                    knownargs.save,
+                    knownargs.clean,
+                    optionalargs[0],
+                )
             else:
-                log.error(logid+'Minimal version of nextflow required is '+str(nf_min_version)+'! Please install or use envs/NextSnakes.yaml to create conda environment accordingly')
+                log.error(
+                    logid
+                    + 'Minimal version of nextflow required is '
+                    + str(nf_min_version)
+                    + '! Please install or use envs/NextSnakes.yaml to create conda environment accordingly'
+                )
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
-        log.error(logid+''.join(tbe.format()))
+        log.error(logid + ''.join(tbe.format()))
 
 # NextSnakes.py ends here

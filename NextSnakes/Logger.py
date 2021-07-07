@@ -81,12 +81,20 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
 if __name__ == '__main__':
     try:
         # set up logging to file
-        log = setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='WARNING')
+        log = setup_logger(
+            name='',
+            log_file='stderr',
+            logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+            datefmt='%m-%d %H:%M',
+            level='WARNING',
+        )
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
         logging.error(''.join(tbe.format()))
 
