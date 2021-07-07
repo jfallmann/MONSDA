@@ -47,7 +47,7 @@
 
 ### IMPORTS
 import argparse
-import pprint # pp = pprint.PrettyPrinter(indent=4) #pp.pprint(stuff)
+import pprint  # pp = pprint.PrettyPrinter(indent=4) #pp.pprint(stuff)
 from io import StringIO
 import os
 import gzip
@@ -55,52 +55,73 @@ import re
 import sys
 import pysam
 from pyfaidx import Fasta
-#import importlib
+
+# import importlib
 from multiprocessing import Pool, Manager
 import traceback as tb
-#import pickle
-#Container
+
+# import pickle
+# Container
 import collections
 import inspect
+
 ####load own modules
-cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"../../NextSnakes")
+cmd_subfolder = os.path.join(
+    os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))),
+    "../../NextSnakes",
+)
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
-#sys.path=[str(os.getenv('HOME')+"/Work/Scripts/Python/lib")] + sys.path
+# sys.path=[str(os.getenv('HOME')+"/Work/Scripts/Python/lib")] + sys.path
+from Logger import *
 from Collection import *
+
 ####Biopython stuff
-#from Bio import SeqIO
-#from Bio.Seq import Seq
+# from Bio import SeqIO
+# from Bio.Seq import Seq
 ####numpy and matplolib and pyplot
-#import numpy as np
-#import matplotlib
-#import matplotlib.pyplot as plt
+# import numpy as np
+# import matplotlib
+# import matplotlib.pyplot as plt
 
 ### MAIN
 def parseargs():
     parser = argparse.ArgumentParser(description='Read BAM file read by read and collect mapping statistics')
     parser.add_argument("-f", "--fasta", type=str, default=None, help='Fasta with cluster info')
-    parser.add_argument("-b", "--bams", type=str, help='Mapped reads BAM(s) comma separated, need to besorted and indexed')
-    parser.add_argument("-l", "--lookup", type=str, default=None, help='Search for given ID in chrom tag of reads, e.g. Cluster, chr1, etc.')
+    parser.add_argument(
+        "-b", "--bams", type=str, help='Mapped reads BAM(s) comma separated, need to besorted and indexed'
+    )
+    parser.add_argument(
+        "-l",
+        "--lookup",
+        type=str,
+        default=None,
+        help='Search for given ID in chrom tag of reads, e.g. Cluster, chr1, etc.',
+    )
     parser.add_argument("-t", "--offset", type=int, default=0, help='Offset for search around read end')
     parser.add_argument("-o", "--outdir", type=str, default='.', help='Output directory')
-    parser.add_argument("-z", "--procs", type=int, default=1, help='Number of parallel processed to run this job with')
-    parser.add_argument("-v", "--verbosity", type=int, default=0, choices=[0, 1], help="increase output verbosity")
+    parser.add_argument(
+        "-z", "--procs", type=int, default=1, help='Number of parallel processed to run this job with'
+    )
+    parser.add_argument(
+        "-v", "--verbosity", type=int, default=0, choices=[0, 1], help="increase output verbosity"
+    )
 
     return parser.parse_args()
+
 
 def collectends(bams, outdir, procs, verbosity, offset, fasta=None, lookup=None):
     try:
         if outdir:
             print('Checking or creating outdir ' + str(outdir))
             if not os.path.isabs(outdir):
-                outdir =  os.path.abspath(outdir)
+                outdir = os.path.abspath(outdir)
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
         else:
             outdir = os.path.abspath(os.getcwd())
 
-    ###Multithreading
+        ###Multithreading
         num_processes = procs or 1
         pool = Pool(processes=num_processes, maxtasksperchild=1)
         collector = collections.OrderedDict()
@@ -116,8 +137,8 @@ def collectends(bams, outdir, procs, verbosity, offset, fasta=None, lookup=None)
             collector[fn]['out'] = out
             collector[fn]['res'] = collections.OrderedDict()
 
-            if (os.path.isfile(out)):
-                print('File '+ out +' exists, will be deleted')
+            if os.path.isfile(out):
+                print('File ' + out + ' exists, will be deleted')
                 os.remove(out)
 
             write_header(out, translater)
@@ -128,7 +149,7 @@ def collectends(bams, outdir, procs, verbosity, offset, fasta=None, lookup=None)
                     ####Check if index files available
                     samfile.check_index()
                 except:
-                    print('No index for file: '+bam+'. Please create!')
+                    print('No index for file: ' + bam + '. Please create!')
                     sys.exit()
 
                 header = None
@@ -136,7 +157,11 @@ def collectends(bams, outdir, procs, verbosity, offset, fasta=None, lookup=None)
                     if 'SQ' in samfile.header:
                         header = samfile.header['SQ']
                 except:
-                    print('Could not read header of file ' + bam + '. Multithreading only per file not per chromosome.')
+                    print(
+                        'Could not read header of file '
+                        + bam
+                        + '. Multithreading only per file not per chromosome.'
+                    )
 
                 if header:
                     for i, chrom in enumerate(h['SN'] for h in header):
@@ -164,10 +189,13 @@ def collectends(bams, outdir, procs, verbosity, offset, fasta=None, lookup=None)
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def collect(bam, offset, chrom=None):
     # READS HAVE TO MAP TO END OF CLUSTER
@@ -181,12 +209,14 @@ def collect(bam, offset, chrom=None):
         if chrom and chrom is not 'None':
             print('Parsing Chromosome parallel ' + str(chrom))
             for read in samfile.fetch(chrom):
-#                if not read.is_unmapped:                        # This currently doesn't work with segemehl!
+                #                if not read.is_unmapped:                        # This currently doesn't work with segemehl!
                 seq = read.query_alignment_sequence.upper()  # read without softclip
-                rawseq = read.query_sequence.upper()         # read with softclip
+                rawseq = read.query_sequence.upper()  # read with softclip
                 refseq = read.get_reference_sequence().upper()  # reference part of alignment
 
-                if read.reference_end in range(refs[chrom]-offset, refs[chrom]-offset+6+1):# Should make sure we are at the read end but also allow softclips
+                if read.reference_end in range(
+                    refs[chrom] - offset, refs[chrom] - offset + 6 + 1
+                ):  # Should make sure we are at the read end but also allow softclips
                     tags = dict(read.get_tags())
                     alignmentend = str(seq[-6:])
                     rawend = str(rawseq[-6:])
@@ -198,29 +228,31 @@ def collect(bam, offset, chrom=None):
                         stats[chrom]['raw'] = collections.OrderedDict()
                         stats[chrom]['ref'] = collections.OrderedDict()
 
-                    if alignmentend in stats[chrom]['seq']:  #Collect ends and count them
-                        stats[chrom]['seq'][alignmentend] += 1/tags['NH']
+                    if alignmentend in stats[chrom]['seq']:  # Collect ends and count them
+                        stats[chrom]['seq'][alignmentend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['seq'][alignmentend] = 1/tags['NH']
-                    if rawend in stats[chrom]['raw']:  #Collect ends and count them
-                        stats[chrom]['raw'][rawend] += 1/tags['NH']
+                        stats[chrom]['seq'][alignmentend] = 1 / tags['NH']
+                    if rawend in stats[chrom]['raw']:  # Collect ends and count them
+                        stats[chrom]['raw'][rawend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['raw'][rawend] = 1/tags['NH']
-                    if refend in stats[chrom]['ref']:  #Collect ends and count them
-                        stats[chrom]['ref'][refend] += 1/tags['NH']
+                        stats[chrom]['raw'][rawend] = 1 / tags['NH']
+                    if refend in stats[chrom]['ref']:  # Collect ends and count them
+                        stats[chrom]['ref'][refend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['ref'][refend] = 1/tags['NH']
+                        stats[chrom]['ref'][refend] = 1 / tags['NH']
 
         else:
             for read in samfile.fetch():
-#                if not read.is_unmapped:  # This currently doesn's work with segemehl!
+                #                if not read.is_unmapped:  # This currently doesn's work with segemehl!
                 chrom = read.reference_name
                 seq = read.query_alignment_sequence.upper()
                 rawseq = read.query_sequence.upper()
                 refseq = read.get_reference_sequence().upper()  # reference part of alignment
 
-                if read.reference_end in range(refs[chrom]-offset, refs[chrom]-offset+6+1):# Should make sure we are at the read end but also allow softclips
-#                    if refs[chrom]-offset == read.reference_end:
+                if read.reference_end in range(
+                    refs[chrom] - offset, refs[chrom] - offset + 6 + 1
+                ):  # Should make sure we are at the read end but also allow softclips
+                    #                    if refs[chrom]-offset == read.reference_end:
                     tags = dict(read.get_tags())
                     alignmentend = str(seq[-6:])
                     rawend = str(rawseq[-6:])
@@ -232,18 +264,18 @@ def collect(bam, offset, chrom=None):
                         stats[chrom]['raw'] = collections.OrderedDict()
                         stats[chrom]['ref'] = collections.OrderedDict()
 
-                    if alignmentend in stats[chrom]['seq']:  #Collect ends and count them
-                        stats[chrom]['seq'][alignmentend] += 1/tags['NH']
+                    if alignmentend in stats[chrom]['seq']:  # Collect ends and count them
+                        stats[chrom]['seq'][alignmentend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['seq'][alignmentend] = 1/tags['NH']
-                    if rawend in stats[chrom]['raw']:  #Collect ends and count them
-                        stats[chrom]['raw'][rawend] += 1/tags['NH']
+                        stats[chrom]['seq'][alignmentend] = 1 / tags['NH']
+                    if rawend in stats[chrom]['raw']:  # Collect ends and count them
+                        stats[chrom]['raw'][rawend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['raw'][rawend] = 1/tags['NH']
-                    if refend in stats[chrom]['ref']:  #Collect ends and count them
-                        stats[chrom]['ref'][refend] += 1/tags['NH']
+                        stats[chrom]['raw'][rawend] = 1 / tags['NH']
+                    if refend in stats[chrom]['ref']:  # Collect ends and count them
+                        stats[chrom]['ref'][refend] += 1 / tags['NH']
                     else:
-                        stats[chrom]['ref'][refend] = 1/tags['NH']
+                        stats[chrom]['ref'][refend] = 1 / tags['NH']
 
         close_bam(samfile)
 
@@ -252,10 +284,13 @@ def collect(bam, offset, chrom=None):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def fillre(col):
     try:
@@ -265,10 +300,13 @@ def fillre(col):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def collect_collector(bam, chrom=None):
 
@@ -284,11 +322,11 @@ def collect_collector(bam, chrom=None):
                     alignmentend = str(seq[-6:])
                     if not rc.checkchrom(chrom):
                         rc.add(chrom)
-                    if rc.checkend([chrom, alignmentend]):  #Collect ends and count them
-                        rc.addval([chrom, alignmentend], 1/tags['NH'])
+                    if rc.checkend([chrom, alignmentend]):  # Collect ends and count them
+                        rc.addval([chrom, alignmentend], 1 / tags['NH'])
                     else:
-                        rc.add([chrom, alignmentend], 1/tags['NH'])
-#                        rc.addend(chrom, alignmentend, 1/tags['NH'])
+                        rc.add([chrom, alignmentend], 1 / tags['NH'])
+        #                        rc.addend(chrom, alignmentend, 1/tags['NH'])
 
         else:
             for read in samfile.fetch():
@@ -299,20 +337,23 @@ def collect_collector(bam, chrom=None):
                     alignmentend = seq[-6:]
                     if not rc.checkchrom(chrom):
                         rc.add(chrom)
-                    if rc.checkend([chrom, alignmentend]):  #Collect ends and count them
-                        rc.addval([chrom, alignmentend], 1/tags['NH'])
+                    if rc.checkend([chrom, alignmentend]):  # Collect ends and count them
+                        rc.addval([chrom, alignmentend], 1 / tags['NH'])
                     else:
-                        rc.add([chrom, alignmentend], 1/tags['NH'])
-#           close_bam(samfile)
+                        rc.add([chrom, alignmentend], 1 / tags['NH'])
+        #           close_bam(samfile)
         return rc
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def parse_bam(bam):
     try:
@@ -320,21 +361,24 @@ def parse_bam(bam):
             return pysam.AlignmentFile(bam, "rb")
         elif '.sam' in bam:
             if '.gz' in bam[-4:]:
-                return pysam.AlignmentFile(gzip.open(bam,'rt'), "r")
+                return pysam.AlignmentFile(gzip.open(bam, 'rt'), "r")
             else:
                 return pysam.AlignmentFile(bam, "r")
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def parse_cigar(cigarstring, length, start):
 
     pattern = re.compile('([0-9]*)([DMINSHP=XB])')
-    stop=start
+    stop = start
 
     for n, c in pattern.findall(cigar):
         if n:
@@ -343,7 +387,7 @@ def parse_cigar(cigarstring, length, start):
             n = 1
 
         if c == 'M' or c == 'X' or c == '=':
-            stop+=n
+            stop += n
         if c is 'D':
             stop += n
             length += n
@@ -352,10 +396,11 @@ def parse_cigar(cigarstring, length, start):
 
         if c in ['I']:
             char += n
-        if c in ['H','P','B','S']: # No idea what PB mean
+        if c in ['H', 'P', 'B', 'S']:  # No idea what PB mean
             continue
 
     return
+
 
 def read_head(bam):
     try:
@@ -366,10 +411,13 @@ def read_head(bam):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def write_bam(bam, template):
     try:
@@ -377,32 +425,43 @@ def write_bam(bam, template):
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def close_bam(samfile):
     samfile.close()
 
+
 def check_idx(file):
     try:
-        if (os.path.isfile(file+'.idx')) or (os.path.isfile(str.join('.',split('.',file)[0:-1],'fai'))) or (os.path.isfile(str.join('.',split('.',file)[0:-1],'faidx'))):
+        if (
+            (os.path.isfile(file + '.idx'))
+            or (os.path.isfile(str.join('.', split('.', file)[0:-1], 'fai')))
+            or (os.path.isfile(str.join('.', split('.', file)[0:-1], 'faidx')))
+        ):
             return True
         else:
             return False
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def get_stats(chrom, alignmentend, statistics):
     try:
-#   with open('bla','a') as h:
-#       print('Fetching Stats', file=h)
+        #   with open('bla','a') as h:
+        #       print('Fetching Stats', file=h)
 
         if chrom not in statistics['ends']:
             statistics['ends'][chrom] = collections.OrderedDict()
@@ -419,23 +478,26 @@ def get_stats(chrom, alignmentend, statistics):
                         statistics['reads'][chrom][pos] = collections.OrderedDict()
                     if seq[char] not in statistics['reads'][chrom][pos]:
                         statistics['reads'][chrom][pos][seq[char]] = 0
-                    statistics['reads'][chrom][pos][seq[char]]+=1
-                    char+=1
-                    pos+=1
+                    statistics['reads'][chrom][pos][seq[char]] += 1
+                    char += 1
+                    pos += 1
             if c in ['D', 'N']:
                 pos += n
             if c in ['I']:
                 char += n
-            if c in ['H','P','B','S']: # No idea what PB mean
+            if c in ['H', 'P', 'B', 'S']:  # No idea what PB mean
                 continue
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def get_ref(fa, statistics):
     try:
@@ -447,46 +509,55 @@ def get_ref(fa, statistics):
             for pos in statistics['reads'][chrom]:
                 if pos not in statistics['ref'][chrom]:
                     statistics['ref'][chrom][pos] = collections.OrderedDict()
-                nuc  = faseq[chrom][pos-1].seq.upper()
-                statistics['ref'][chrom][pos]= nuc
+                nuc = faseq[chrom][pos - 1].seq.upper()
+                statistics['ref'][chrom][pos] = nuc
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
 
 
 def write_header(out, fastadict=None):
     try:
         if fastadict:
-            head = str.join('\t', ['Chromosome', 'Seq', 'End', 'Count', 'ChromRelRefFreq', 'TotalRelRefFreq', 'tRNAs'])
+            head = str.join(
+                '\t', ['Chromosome', 'Seq', 'End', 'Count', 'ChromRelRefFreq', 'TotalRelRefFreq', 'tRNAs']
+            )
         else:
             head = str.join('\t', ['Chromosome', 'Seq', 'End', 'Count', 'ChromRelRefFreq', 'TotalRelRefFreq'])
 
-        with gzip.open(out,'wb') as o:
-            o.write(bytes(head+'\n',encoding='UTF-8'))
+        with gzip.open(out, 'wb') as o:
+            o.write(bytes(head + '\n', encoding='UTF-8'))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
+
 
 def write_empty(out):
     try:
-        with gzip.open(out,'ab') as o:
-            o.write(bytes('0\n',encoding='UTF-8'))
+        with gzip.open(out, 'ab') as o:
+            o.write(bytes('0\n', encoding='UTF-8'))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
 
 
@@ -498,7 +569,7 @@ def write_stats(stat, fastadict=None):
         readnum = {}
         if stat is not None:
             out = stat.pop('out', None)  # get key and remove from dict
-            statistics = stat.pop('res', None) # get key and remove from dict
+            statistics = stat.pop('res', None)  # get key and remove from dict
 
             for chrom in statistics:
                 if chrom not in allends:
@@ -519,7 +590,7 @@ def write_stats(stat, fastadict=None):
                         totalcount[chrom][rtype] += statistics[chrom][rtype][end]
                         readnum[rtype] += statistics[chrom][rtype][end]
                         allends[chrom][rtype][end] = statistics[chrom][rtype][end]
-                        for x in range(-5,0,1):
+                        for x in range(-5, 0, 1):
                             newend = end[x:]
                             if newend in allends[chrom][rtype]:
                                 allends[chrom][rtype][newend] += statistics[chrom][rtype][end]
@@ -535,36 +606,62 @@ def write_stats(stat, fastadict=None):
                             if fastadict:
                                 info = ''
                                 for id in fastadict:
-                                    if (id.upper() == chrom.upper()) or any([x.upper() in chrom.upper().split('.')[-1] for x in fastadict[id]]):
+                                    if (id.upper() == chrom.upper()) or any(
+                                        [x.upper() in chrom.upper().split('.')[-1] for x in fastadict[id]]
+                                    ):
                                         info = fastadict[id]
-                                tosave = str.join('\t',[str(chrom), rtype, end, str(allends[chrom][rtype][end]), str(allends[chrom][rtype][end]/totalcount[chrom][rtype]), str(allends[chrom][rtype][end]/readnum[rtype]), str(','.join(info))])
+                                tosave = str.join(
+                                    '\t',
+                                    [
+                                        str(chrom),
+                                        rtype,
+                                        end,
+                                        str(allends[chrom][rtype][end]),
+                                        str(allends[chrom][rtype][end] / totalcount[chrom][rtype]),
+                                        str(allends[chrom][rtype][end] / readnum[rtype]),
+                                        str(','.join(info)),
+                                    ],
+                                )
                             else:
-                                tosave = str.join('\t',[str(chrom), rtype, end, str(allends[chrom][rtype][end]), str(allends[chrom][rtype][end]/totalcount[chrom][rtype]), str(allends[chrom][rtype][end]/readnum[rtype])])
-                            if tosave and len(tosave)>1:
+                                tosave = str.join(
+                                    '\t',
+                                    [
+                                        str(chrom),
+                                        rtype,
+                                        end,
+                                        str(allends[chrom][rtype][end]),
+                                        str(allends[chrom][rtype][end] / totalcount[chrom][rtype]),
+                                        str(allends[chrom][rtype][end] / readnum[rtype]),
+                                    ],
+                                )
+                            if tosave and len(tosave) > 1:
                                 outstr.append(tosave)
 
-
-            with gzip.open(out,'ab') as o:
-                o.write(bytes('\n'.join(outstr),encoding='UTF-8'))
+            with gzip.open(out, 'ab') as o:
+                o.write(bytes('\n'.join(outstr), encoding='UTF-8'))
 
         else:
-            with gzip.open(out,'wb') as o:
-                o.write(bytes('',encoding='UTF-8'))
+            with gzip.open(out, 'wb') as o:
+                o.write(bytes('', encoding='UTF-8'))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
-            )
-        with open('error','a') as h:
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        with open('error', 'a') as h:
             print(''.join(tbe.format()), file=h)
 
+
 def printlog(msg):
-        with open('log','a') as l:
-            print(str(msg), file=l)
+    with open('log', 'a') as l:
+        print(str(msg), file=l)
+
 
 if __name__ == '__main__':
-    args=parseargs()
+    args = parseargs()
     collectends(args.bams, args.outdir, args.procs, args.verbosity, args.offset, args.fasta, args.lookup)
 
 #
