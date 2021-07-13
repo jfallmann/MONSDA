@@ -1,0 +1,485 @@
+{
+  "WORKFLOWS": "",
+  "BINS": "nextsnakes/scripts",
+  "MAXTHREADS": "",
+  "SETTINGS": {
+    "comment": {
+      "GROUPS": "set groups",
+      "TYPES": "set types",
+      "BATCHES": "set batches",
+      "SEQUENCING": "paired or single",
+      "REFERENCE": "set path to reference",
+      "INDEX": "set index",
+      "PREFIX": "set prefix",
+      "GTF": "set path to gtf",
+      "GFF": "set path to gff"
+    },
+    "SAMPLES": [],
+    "GROUPS": [],
+    "TYPES": [],
+    "BATCHES": [],
+    "SEQUENCING": "",
+    "REFERENCE": "",
+    "INDEX": "",
+    "PREFIX": "",
+    "ANNOTATION": {
+      "GTF": "",
+      "GFF": ""
+    }
+  },
+  "SRA": {
+    "TOOLS": {
+      "sra": "sra"
+    },
+    "sra": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    }
+  },
+  "BASECALL": {
+    "TOOLS": {
+      "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
+    },
+    "guppy": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    }
+  },
+  "QC": {
+    "TOOLS": {
+      "fastqc": "fastqc"
+    },
+    "fastqc": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    }
+  },
+  "TRIMMING": {
+    "TOOLS": {
+      "trimgalore": "trim_galore",
+      "cutadapt": "cutadapt"
+    },
+    "trimgalore": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {
+          "-q": "15",
+          "--length": "8",
+          "-e": "0.15"
+        }
+      ]
+    },
+    "cutadapt": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {
+          "-q": "15",
+          "--length": "8",
+          "-e": "0.15"
+        }
+      ]
+    }
+  },
+  "DEDUP": {
+    "TOOLS": {
+      "umitools": "umi_tools"
+    },
+    "umitools": {
+      "comment": [
+        "??? options",
+        "??? options"
+      ],
+      "OPTIONS": [
+        {
+          "--extract-method": "string",
+          "--bc-pattern": "AGANNNNACGT"
+        },
+        {
+          "--extract-umi-method": "read_id"
+        }
+      ]
+    }
+  },
+  "MAPPING": {
+    "TOOLS": {
+      "star": "STAR",
+      "segemehl3": "segemehl.x",
+      "hisat2": "hisat2",
+      "bwa": "bwa mem",
+      "minimap": "minimap2"
+    },
+    "star": {
+      "comment": [
+        "make settings for index ('url')",
+        "make settings for mapping"
+      ],
+      "OPTIONS": [
+        {
+          "--sjdbGTFfeatureExon": "exon",
+          "--sjdbGTFtagExonParentTranscript": "Parent",
+          "--genomeSAindexNbases": "13"
+        },
+        {
+          "--sjdbGTFfeatureExon": "exon",
+          "--sjdbGTFtagExonParentTranscript": "Parent",
+          "--outSAMprimaryFlag AllBestScore": ""
+        }
+      ]
+    },
+    "segemehl3": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    },
+    "hisat2": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    },
+    "bwa": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    },
+    "minimap": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {}
+      ]
+    }
+  },
+  "COUNTING": {
+    "TOOLS": {
+      "countreads": "featureCounts"
+    },
+    "FEATURES": {
+      "exon": "Parent",
+      "gene": "ID"
+    },
+    "countreads": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {
+          "-f": "",
+          "--fraction": "",
+          "-p": "",
+          "-O": "",
+          "-M": ""
+        }
+      ]
+    }
+  },
+  "ANNOTATE": {
+    "TOOLS": {
+      "annotatebed": "annotate"
+    },
+    "annotatebed": {
+      "comment": [
+        "??? options"
+      ],
+      "ANNOFEATURE": "gene",
+      "OPTIONS": [
+        {
+          "-w": "ON"
+        }
+      ]
+    }
+  },
+  "UCSC": {
+    "TOOLS": {
+      "ucsc": "ucsc"
+    },
+    "ucsc": {
+      "comment": [
+        "??? options"
+      ],
+      "OPTIONS": [
+        {
+          "-n": "DM6_unpaired_Mapping",
+          "-s": "dm6_st",
+          "-l": "UCSC_DM6_unpaired_Mapping",
+          "-b": "UCSC_dm6_star"
+        }
+      ]
+    }
+  },
+  "PEAKS": {
+    "TOOLS": {
+      "macs": "macs2",
+      "peaks": "peaks",
+      "piranha": "Piranha"
+    },
+    "macs": {
+      "comment": [
+        "??? options"
+      ],
+      "CLIP": "iCLIP",
+      "OPTIONS": [
+        {
+          "-b": "10"
+        }
+      ]
+    },
+    "peaks": {
+      "comment": [
+        "??? options"
+      ],
+      "CLIP": "iCLIP",
+      "OPTIONS": [
+        {
+          "-b": "10"
+        }
+      ]
+    },
+    "piranha": {
+      "comment": [
+        "??? options"
+      ],
+      "CLIP": "iCLIP",
+      "OPTIONS": [
+        {
+          "-b": "10"
+        }
+      ]
+    }
+  },
+  "DE": {
+    "TOOLS": {
+      "deseq2": "Analysis/DE/DESEQ2.R",
+      "edger": "Analysis/DE/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [],
+        []
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "deseq2": {
+      "comment": [
+        "Set featureCounts options",
+        "Set Cutoff ???"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "--cutoff": "10"
+        }
+      ]
+    },
+    "edger": {
+      "comment": [
+        "Set featureCounts options",
+        "Set Cutoff ???"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "--cutoff": "10"
+        }
+      ]
+    }
+  },
+  "DEU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DEU/DEXSEQ.R",
+      "edger": "Analysis/DEU/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [],
+        []
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "dexseq": {
+      "comment": [
+        "Set featureCounts options",
+        "Set Cutoff ???"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "--cutoff": "10"
+        }
+      ]
+    },
+    "edger": {
+      "comment": [
+        "Set featureCounts options",
+        "Set Cutoff ???"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "--cutoff": "10"
+        }
+      ]
+    }
+  },
+  "DAS": {
+    "TOOLS": {
+      "diego": "Analysis/DAS/DIEGO.py",
+      "edger": "Analysis/DAS/EDGER.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [],
+        []
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "diego": {
+      "comment": [
+        "set featureCounts options",
+        "set Diego options"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "-c": "10",
+          "-d": "3",
+          "-q": "0.01",
+          "-z": "1.0",
+          "-r": ""
+        }
+      ]
+    },
+    "edger": {
+      "comment": [
+        "Set featureCounts options",
+        "Set Cutoff ???"
+      ],
+      "OPTIONS": [
+        {
+          "-t": "exon",
+          "-g": "gene_id",
+          "-f": "",
+          "--fraction": "",
+          "-O": ""
+        },
+        {
+          "--cutoff": "10"
+        }
+      ]
+    }
+  },
+  "DTU": {
+    "TOOLS": {
+      "dexseq": "Analysis/DTU/DEXSEQ.R",
+      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+    },
+    "COMPARABLE": {
+      "WTvsKO": [
+        [],
+        []
+      ]
+    },
+    "EXCLUDE": [],
+    "CUTOFFS": {
+      "pvalue": "0.05",
+      "lfc": "1.5"
+    },
+    "drimseq": {
+      "comment": [
+        "set Salmon INDEXing options",
+        "set Salmon MAPPING options"
+      ],
+      "OPTIONS": [
+        {
+          "--gencode": ""
+        },
+        {
+          "-l": "A",
+          "--gcBias": ""
+        }
+      ]
+    },
+    "dexseq": {
+      "comment": [
+        "set Salmon INDEXing options",
+        "set Salmon MAPPING options"
+      ],
+      "OPTIONS": [
+        {
+          "--gencode": ""
+        },
+        {
+          "-l": "A",
+          "--gcBias": ""
+        }
+      ]
+    }
+  }
+}
