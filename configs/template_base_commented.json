@@ -1,6 +1,6 @@
 {
   "WORKFLOWS": "",
-  "BINS": "nextsnakes/scripts",
+  "BINS": "NextSnakes/scripts",
   "MAXTHREADS": "",
   "SETTINGS": {
     "comment": {
