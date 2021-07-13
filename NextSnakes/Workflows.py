@@ -80,17 +80,13 @@ import inspect
 import subprocess
 import collections
 from collections import defaultdict, OrderedDict
+from pkg_resources import parse_version
 import six
 import logging
 import hashlib
 from snakemake import load_configfile
 import functools
 import datetime
-
-# cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
-# for x in cmd_subfolder:
-#    if x not in sys.path:
-#        sys.path.insert(0, x)
 
 from NextSnakes.Utils import *
 from NextSnakes.Params import *
@@ -1226,8 +1222,8 @@ def nf_check_version(v):
     if shutil.which('nextflow'):
         jobtorun = ['nextflow', '-v']
         out = subprocess.run(jobtorun, stdout=subprocess.PIPE)
-        check = out.stdout.decode('utf-8')
-        if v in check:
+        check = out.stdout.decode('utf-8').split(' ')[-1]
+        if parse_version(v) < parse_version(check):
             log.debug(logid + check)
             return True
     else:
