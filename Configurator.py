@@ -15,17 +15,21 @@ import operator
 import datetime
 
 parser = argparse.ArgumentParser(
-    description='Helper to create or manipulate initial config file used for workflow processing with NextSnakes'
+    description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
 )
 parser.add_argument(
-    "-q", "--quickmode", action='store_true', default=False, help='choose quickmode to hide explanatory text'
+    "-q",
+    "--quickmode",
+    action="store_true",
+    default=False,
+    help="choose quickmode to hide explanatory text",
 )
 parser.add_argument(
     "-t",
     "--test",
-    action='store_true',
+    action="store_true",
     default=False,
-    help='runnign in test-mode for showing interim results to copy',
+    help="runnign in test-mode for showing interim results to copy",
 )
 args = parser.parse_args()
 
@@ -52,7 +56,7 @@ class PROJECT:
 
 class GUIDE:
     def __init__(self):
-        self.mode = ''
+        self.mode = ""
         self.answer = ""
         self.toclear = 0
         self.testing = False
@@ -60,8 +64,8 @@ class GUIDE:
     def clear(self, number=None):
         if not number:
             number = self.toclear
-        CURSOR_UP_ONE = '\x1b[1A'
-        ERASE_LINE = '\x1b[2K'
+        CURSOR_UP_ONE = "\x1b[1A"
+        ERASE_LINE = "\x1b[2K"
         for i in range(number):
             print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
         self.toclear = 0
@@ -72,83 +76,83 @@ class GUIDE:
                 prYellow(f"   {k}  >  {v}")
                 guide.toclear += 1
         if question:
-            print('\n' + question)
+            print("\n" + question)
             guide.toclear += 1
         self.proof_input(proof, spec)
 
     def proof_input(self, proof=None, spec=None):
         allowed_characters = [
-            'a',
-            'b',
-            'c',
-            'd',
-            'e',
-            'f',
-            'g',
-            'h',
-            'i',
-            'j',
-            'k',
-            'l',
-            'm',
-            'n',
-            'o',
-            'p',
-            'q',
-            'r',
-            's',
-            't',
-            'u',
-            'v',
-            'w',
-            'x',
-            'y',
-            'z',
-            'A',
-            'B',
-            'C',
-            'D',
-            'E',
-            'F',
-            'G',
-            'H',
-            'I',
-            'J',
-            'K',
-            'L',
-            'M',
-            'N',
-            'O',
-            'P',
-            'Q',
-            'R',
-            'S',
-            'T',
-            'U',
-            'V',
-            'W',
-            'X',
-            'Y',
-            'Z',
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-            '7',
-            '8',
-            '9',
-            '0',
-            '(',
-            ')',
-            '_',
-            '-',
-            ',',
-            '.',
-            ':',
-            '/',
-            ' ',
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g",
+            "h",
+            "i",
+            "j",
+            "k",
+            "l",
+            "m",
+            "n",
+            "o",
+            "p",
+            "q",
+            "r",
+            "s",
+            "t",
+            "u",
+            "v",
+            "w",
+            "x",
+            "y",
+            "z",
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "O",
+            "P",
+            "Q",
+            "R",
+            "S",
+            "T",
+            "U",
+            "V",
+            "W",
+            "X",
+            "Y",
+            "Z",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "0",
+            "(",
+            ")",
+            "_",
+            "-",
+            ",",
+            ".",
+            ":",
+            "/",
+            " ",
         ]
         while True:
             if spec:
@@ -168,7 +172,7 @@ class GUIDE:
                 break
             elif proof == "only_numbers":
                 try:
-                    [float(x) for x in a.split(',')]
+                    [float(x) for x in a.split(",")]
                     self.answer = a
                     break
                 except:
@@ -179,7 +183,7 @@ class GUIDE:
                 if not a:
                     self.answer = a
                     break
-                ending = proof.replace("end_exist_", "") + '$'
+                ending = proof.replace("end_exist_", "") + "$"
                 if not re.findall(ending, a):
                     self.clear(2)
                     prRed(f"Nope, file has to end with '{ending.replace('$','')}'")
@@ -232,13 +236,13 @@ def prLightGray(skk):
     print("\033[97m{}\033[00m".format(skk))
 
 
-def print_dict(dict, indent=6, col=None, gap=''):
-    if col == 'Cyan':
-        for line in json.dumps(dict, indent=indent).split('\n'):
+def print_dict(dict, indent=6, col=None, gap=""):
+    if col == "Cyan":
+        for line in json.dumps(dict, indent=indent).split("\n"):
             guide.toclear += 1
             prCyan(gap + line)
     else:
-        for line in json.dumps(dict, indent=indent).split('\n'):
+        for line in json.dumps(dict, indent=indent).split("\n"):
             guide.toclear += 1
             print(gap + line)
 
@@ -291,7 +295,7 @@ def get_conditions_from_dict(root, keylist=[]):
             k,
         )
         if not v:
-            yield ':'.join(keylist)
+            yield ":".join(keylist)
         else:
             yield from get_conditions_from_dict(v, keylist)
         keylist.pop()
@@ -325,38 +329,31 @@ def decouple(d):
     return json.loads(string)
 
 
-def complete(text, state):
-    return (glob.glob(text + '*') + [None])[state]
-
-
-def rlinput(prompt, prefill=''):
-    readline.set_startup_hook(lambda: readline.insert_text(prefill))
-    try:
-        return input(prompt)
-    finally:
-        readline.set_startup_hook()
-
-
 def print_dict_pointer(dict, path, copy, indent=6):
     text = json.dumps(dict, indent=indent)
-    route = ['step'] + path.copy()
+    route = ["step"] + path.copy()
     out = f"\n{'='*60}\n\n"
     stepper = 1
-    for line in text.split('\n'):
-        level = int(((len(line) - len(line.lstrip(' '))) - indent) / indent)
+    for line in text.split("\n"):
+        level = int(((len(line) - len(line.lstrip(" "))) - indent) / indent)
         key = (
-            line.replace('"', '').replace('{', '').replace('}', '').replace(':', '').replace(',', '').strip()
+            line.replace('"', "")
+            .replace("{", "")
+            .replace("}", "")
+            .replace(":", "")
+            .replace(",", "")
+            .strip()
         )
         if level + 1 >= len(route):
-            out += line + '\n'
+            out += line + "\n"
         elif not key:
-            out += line + '\n'
-        elif route[level + 1] == key and route[level] == 'step':
-            route[stepper] = 'step'
+            out += line + "\n"
+        elif route[level + 1] == key and route[level] == "step":
+            route[stepper] = "step"
             stepper += 1
             if len(route) == level + 2:
-                if route[level - 1] == 'step':
-                    if copy and copy != ['']:
+                if route[level - 1] == "step":
+                    if copy and copy != [""]:
                         out += f"{line}    <-\n"
                         option = f"enter ID's on condition level comma separated \n\nor copy {copy} with 'cp'"
                         guide.toclear += 2
@@ -367,9 +364,9 @@ def print_dict_pointer(dict, path, copy, indent=6):
                     out += f"{line}    <-\n"
                     option = "enter ID's on conditions comma separated "
             else:
-                out += line + '\n'
+                out += line + "\n"
         else:
-            out += line + '\n'
+            out += line + "\n"
     out += f"\n{'='*60}\n\n"
     return out, option
 
@@ -387,26 +384,26 @@ def rec_tree_builder(subtree, leafes, path=[], tree=None):
     for k, v in subtree.items():
         path.append(k)
         text, opt = print_dict_pointer(tree, path, copy)
-        for line in text.split('\n'):
-            if '<-' in line:
+        for line in text.split("\n"):
+            if "<-" in line:
                 prYellow("  " + line)
             else:
                 prRed("  " + line)
-        guide.toclear += len(text.split('\n')) + 2
+        guide.toclear += len(text.split("\n")) + 2
         guide.display(question=opt)
         guide.clear()
-        if guide.answer != '':
-            guide.answer = guide.answer.rstrip(',')
-            leafes = [x for x in guide.answer.split(',')]
-        elif guide.answer == '' and isinstance(v, dict) and v != {}:
+        if guide.answer != "":
+            guide.answer = guide.answer.rstrip(",")
+            leafes = [x for x in guide.answer.split(",")]
+        elif guide.answer == "" and isinstance(v, dict) and v != {}:
             leafes = list(v.keys())
         else:
-            leafes = ['']
+            leafes = [""]
         if leafes == ["cp"]:
             leafes = copy
         rec_tree_builder(subtree[k], leafes, path, tree)
         copy = leafes
-        leafes = ['']
+        leafes = [""]
     if len(path) > 0:
         path.pop()
     return
@@ -423,28 +420,33 @@ def select_id_to_set(cdict, i, indent=6):
     project.settingsList = []
     d = depth(cdict)
     path = []
-    reminder = ''
+    reminder = ""
     counter = 0
     prRed(f"\n{'='*60}\n")
-    for line in text.split('\n'):
-        level = int(((len(line) - len(line.lstrip(' '))) - indent) / indent)
+    for line in text.split("\n"):
+        level = int(((len(line) - len(line.lstrip(" "))) - indent) / indent)
         key = (
-            line.replace('"', '').replace('{', '').replace('}', '').replace(':', '').replace(',', '').strip()
+            line.replace('"', "")
+            .replace("{", "")
+            .replace("}", "")
+            .replace(":", "")
+            .replace(",", "")
+            .strip()
         )
         if key:
             if len(path) > level:
                 path = path[: -(len(path) - level)]
             path.append(key)
-        if level == i and ':' in line:
+        if level == i and ":" in line:
             if reminder != key:
                 counter += 1
                 reminder = key
                 project.settingsList.append([])
-        elif level < i and '{}' in line:
+        elif level < i and "{}" in line:
             counter += 1
             project.settingsList.append([])
-        if '{}' in line:
-            if ',' in line:
+        if "{}" in line:
+            if "," in line:
                 out = f"{line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <-{' '*((counter+1)%2)*2}  {counter}"
                 if counter % 2:
                     prPurple("  " + out)
@@ -469,11 +471,16 @@ def location(dictionary, setting, indent=6):
     spots = copy.deepcopy(setting)
     d = depth(dictionary)
     text = json.dumps(dictionary, indent=indent)
-    for line in text.split('\n'):
+    for line in text.split("\n"):
         switch = True
-        level = int(((len(line) - len(line.lstrip(' '))) - indent) / indent)
+        level = int(((len(line) - len(line.lstrip(" "))) - indent) / indent)
         key = (
-            line.replace('"', '').replace('{', '').replace('}', '').replace(':', '').replace(',', '').strip()
+            line.replace('"', "")
+            .replace("{", "")
+            .replace("}", "")
+            .replace(":", "")
+            .replace(",", "")
+            .strip()
         )
         if key:
             for path in spots:
@@ -482,10 +489,14 @@ def location(dictionary, setting, indent=6):
                 if path[0] == key:
                     path.pop(0)
                     if not path:
-                        if ',' in line:
-                            prYellow(f"  {line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <-")
+                        if "," in line:
+                            prYellow(
+                                f"  {line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <-"
+                            )
                         else:
-                            prYellow(f"  {line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <-")
+                            prYellow(
+                                f"  {line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <-"
+                            )
                         switch = False
         if switch:
             prRed("  " + line)
@@ -495,18 +506,18 @@ def location(dictionary, setting, indent=6):
 
 
 def optionsDictToString(d):
-    return ','.join(map(' '.join, d.items()))
+    return ",".join(map(" ".join, d.items()))
 
 
 def stringToOptionsDict(s):
     optsDict = {}
-    s = ' '.join(s.split())
-    pairs = s.split(',')
+    s = " ".join(s.split())
+    pairs = s.split(",")
     pairs = [p.strip() for p in pairs]
     for pair in pairs:
-        key = pair.split(' ')[0]
+        key = pair.split(" ")[0]
         try:
-            value = pair.split(' ')[1]
+            value = pair.split(" ")[1]
             optsDict[key] = value
         except:
             optsDict[key] = ""
@@ -528,7 +539,7 @@ def show_settings():
     provars["project.settingsList"] = project.settingsList
     provars["project.workflowsDict"] = project.workflowsDict
     provars["project.commentsDict"] = project.commentsDict
-    print(f'============COPYME:\n')
+    print(f"============COPYME:\n")
     for name, var in provars.items():
         if isinstance(var, str):
             var = f"'{var}'"
@@ -538,10 +549,22 @@ def show_settings():
             print(f"{name} = {var}")
         except:
             print(f"{name} = NestedDefaultDict()")
-    print(f'\n============')
+    print(f"\n============")
 
 
-readline.set_completer_delims(' \t\n;')
+def rlinput(prompt, prefill=""):
+    readline.set_startup_hook(lambda: readline.insert_text(prefill))
+    try:
+        return input(prompt)
+    finally:
+        readline.set_startup_hook()
+
+
+def complete(text, state):
+    return (glob.glob(text + "*") + [None])[state]
+
+
+readline.set_completer_delims(" \t\n;")
 readline.parse_and_bind("tab: menu-complete")
 readline.set_completer(complete)
 
@@ -585,24 +608,24 @@ def intro():
     prGreen(t1)
     print("READ THE DOCS: https://nextsnakes.readthedocs.io/en/latest/index.html")
     print("\n")
-    opts = {'1': 'create new project', '2': 'modify existing config-file'}
+    opts = {"1": "create new project", "2": "modify existing config-file"}
     guide.display(
         question="choose an option",
         options=opts,
         proof=opts.keys(),
     )
     guide.clear()
-    if guide.answer == '1':
-        guide.mode = 'new'
+    if guide.answer == "1":
+        guide.mode = "new"
         return new()
-    if guide.answer == '2':
-        guide.mode = 'modify'
+    if guide.answer == "2":
+        guide.mode = "modify"
         return modify()
 
 
 def new():
-    prGreen('\nCREATE NEW PROJECT')
-    print('\n   Directory:')
+    prGreen("\nCREATE NEW PROJECT")
+    print("\n   Directory:")
     er = 0
     while True:
         if er == 0:
@@ -614,27 +637,27 @@ def new():
         project.path = guide.answer
         if os.path.isdir(project.path):
             guide.clear(4)
-            prCyan(f'  Directory: {project.path}')
+            prCyan(f"  Directory: {project.path}")
             guide.display(
                 question=f"WARNING: The directory you entered already exist. Press enter to choose another dir or type 'ignore' to continue anyway",
-                proof=['', 'ignore'],
+                proof=["", "ignore"],
             )
-            if guide.answer == 'ignore':
+            if guide.answer == "ignore":
                 guide.clear(3)
-                print('\n  Subname: ')
-                guide.display(question=f'enter subname to differ from {project.name}')
+                print("\n  Subname: ")
+                guide.display(question=f"enter subname to differ from {project.name}")
                 project.subname = guide.answer
                 guide.clear(4)
-                prCyan(f'  Subname: {project.subname}')
+                prCyan(f"  Subname: {project.subname}")
                 break
-            if guide.answer == '':
+            if guide.answer == "":
                 guide.clear(5)
-                print('\n  Directory:')
+                print("\n  Directory:")
                 er = 0
                 continue
         if os.path.isdir(os.path.dirname(project.path)):
             guide.clear(4)
-            prCyan(f'  Directory: {project.path}')
+            prCyan(f"  Directory: {project.path}")
             break
         else:
             guide.clear(3)
@@ -644,23 +667,23 @@ def new():
 
 
 def create_condition_tree():
-    print('\n  Condition-Tree:\n')
+    print("\n  Condition-Tree:\n")
     while True:
         rec_tree_builder(project.conditionDict, [project.name])
         print_dict(project.conditionDict, gap="   ")
         guide.display(
             question="press enter to continue or type 'no' to create it again",
-            proof=['', 'no'],
+            proof=["", "no"],
         )
-        if guide.answer == 'no':
+        if guide.answer == "no":
             guide.toclear += 2
             guide.clear()
             project.conditionDict = NestedDefaultDict()
         else:
             guide.toclear += 4
             guide.clear()
-            prCyan('  Condition-Tree:\n')
-            print_dict(project.conditionDict, col='Cyan', gap="         ")
+            prCyan("  Condition-Tree:\n")
+            print_dict(project.conditionDict, col="Cyan", gap="         ")
             project.settingsDict = decouple(project.conditionDict)
             break
     show_settings()
@@ -668,7 +691,7 @@ def create_condition_tree():
 
 
 def add_sample_dirs():
-    print('\n  FASTQ files:')
+    print("\n  FASTQ files:")
     path_to_samples_dict = NestedDefaultDict()
     er = 0
     while True:
@@ -678,7 +701,7 @@ def add_sample_dirs():
             sp = os.getcwd()
         if er == 3:
             ques = "Add another path or press enter to continue"
-            sp = ''
+            sp = ""
         if er == 1:
             ques = f"Sorry, couldn't find '{dir}'. Enter an absolute path where samples are stored"
             sp = dir
@@ -691,51 +714,65 @@ def add_sample_dirs():
             spec=sp,
         )
         dir = guide.answer
-        if guide.answer == '' and len(project.samplesDict) == 0:
+        if guide.answer == "" and len(project.samplesDict) == 0:
             er = 2
             guide.clear(3)
             continue
-        if guide.answer == '' and len(project.samplesDict) != 0:
+        if guide.answer == "" and len(project.samplesDict) != 0:
             guide.clear(3)
             break
         if not os.path.isdir(dir):
             er = 1
             guide.clear(3)
             continue
-        if 'dirpath' not in locals():
+        if "dirpath" not in locals():
             guide.clear(4)
-            prCyan('  FASTQ files:\n')
+            prCyan("  FASTQ files:\n")
         else:
             guide.clear(3)
         print(f"         {dir}\n")
-        opts = {'1': 'single-read', '2': 'paired-end'}
+        opts = {"1": "single-end", "2": "paired-end"}
         # print('\n')
-        guide.display(question='Specify sequencing method', options=opts, proof=opts.keys())
+        guide.display(
+            question="Specify sequencing method", options=opts, proof=opts.keys()
+        )
         seq = opts[guide.answer]
-        print('')
+        print("")
 
-        opts = {'1': 'fr', '2': 'rf'}
-        guide.display(question='Specify strandedness', options=opts, proof=opts.keys())
+        opts = {"1": "unstranded", "2": "rf", "3": "fr"}
+        guide.display(question="Specify strandedness", options=opts, proof=opts.keys())
         stranded = opts[guide.answer]
 
         if os.path.isdir(dir):
             counter = 0
             for dirpath, dirnames, filenames in os.walk(dir):
-                if seq == 'paired-end':
+                if seq == "paired-end":
                     R1 = []
                     R2 = []
                     for filename in [f for f in filenames if f.endswith(".fastq.gz")]:
-                        R1.append(os.path.join(dirpath, filename).replace('_R1', ''))
-                        R2.append(os.path.join(dirpath, filename).replace('_R2', ''))
+                        R1.append(os.path.join(dirpath, filename).replace("_R1", ""))
+                        R2.append(os.path.join(dirpath, filename).replace("_R2", ""))
                     for i in R1:
                         for j in R2:
                             if i == j:
                                 counter += 1
-                                project.samplesDict[i] = [f'paired,{stranded}']
-                if seq == 'single-read':
+                                if not stranded == "unstranded":
+                                    project.samplesDict[i] = [f"paired,{stranded}"]
+                                else:
+                                    project.samplesDict[i] = [f"paired"]
+
+                if seq == "single-end":
                     for filename in [f for f in filenames if f.endswith(".fastq.gz")]:
                         counter += 1
-                        project.samplesDict[os.path.join(dirpath, filename)] = [f'single,{stranded}']
+                        if not stranded == "unstranded":
+                            project.samplesDict[os.path.join(dirpath, filename)] = [
+                                f"single,{stranded}"
+                            ]
+                        else:
+                            project.samplesDict[os.path.join(dirpath, filename)] = [
+                                f"single"
+                            ]
+
             path_to_samples_dict[dir] = f"{counter} {seq} files found"
             guide.clear(13)
             prCyan(f"         {dir}  >  {counter} {seq} files found")
@@ -748,12 +785,14 @@ def add_sample_dirs():
 
 
 def assign_samples():
-    prCyan('\n  Sample Assignment:\n')
-    conditions = [pattern for pattern in get_conditions_from_dict(project.conditionDict)]
+    prCyan("\n  Sample Assignment:\n")
+    conditions = [
+        pattern for pattern in get_conditions_from_dict(project.conditionDict)
+    ]
     samples = NestedDefaultDict()
-    if guide.mode == 'modify':
+    if guide.mode == "modify":
         safety_dict = decouple(project.settingsDict)
-    elif guide.mode == 'new':
+    elif guide.mode == "new":
         safety_dict = decouple(project.conditionDict)
         project.settingsDict = decouple(project.conditionDict)
     else:
@@ -768,29 +807,36 @@ def assign_samples():
                 samples[number] = samp
                 number += 1
         for condition in conditions:
-            if 'SAMPLES' in get_by_path(project.settingsDict, condition.split(':')).keys():
+            if (
+                "SAMPLES"
+                in get_by_path(project.settingsDict, condition.split(":")).keys()
+            ):
                 continue
             if er == 0:
                 ques = f"enter all sample-numbers according to the displayed condition comma separated"
             if er == 1:
                 guide.clear(guide.toclear + 4)
-                ques = f"ERROR: Its not possible to merge single-read and paired-end samples, try again"
+                ques = f"ERROR: Its not possible to merge single-end and paired-end samples, try again"
 
-            cond_as_list = [x for x in condition.split(':')]
+            cond_as_list = [x for x in condition.split(":")]
             location(project.settingsDict, [cond_as_list])
 
-            guide.display(question=ques, options=samples, proof=[str(i) for i in samples.keys()])
+            guide.display(
+                question=ques, options=samples, proof=[str(i) for i in samples.keys()]
+            )
             select = []
             check_seq = set()
-            for num in guide.answer.split(','):
+            for num in guide.answer.split(","):
                 check_seq.add(project.samplesDict[samples[int(num)]][0])
             if len(check_seq) > 1:
                 er = 1
                 break
             else:
                 er = 0
-            for num in guide.answer.split(','):
-                s = os.path.basename(samples[int(num)]).replace('.fastq.gz', '')
+            for num in guide.answer.split(","):
+                s = os.path.basename(samples[int(num)]).replace(
+                    ".fastq.gz", f"_SID{num}"
+                )
                 project.samplesDict[samples[int(num)]].append(condition)
                 select.append(s)
                 samples.pop(int(num))
@@ -803,41 +849,46 @@ def assign_samples():
         if er == 1:
             continue
         print_dict(project.settingsDict, gap="   ")
-        guide.display(question="press enter to continue or type 'no' to assign samples again")
-        if guide.answer == 'no':
+        guide.display(
+            question="press enter to continue or type 'no' to assign samples again"
+        )
+        if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
         else:
             guide.toclear += 2
             guide.clear()
-            print_dict(project.settingsDict, col='Cyan', gap="         ")
+            print_dict(project.settingsDict, col="Cyan", gap="         ")
             break
     show_settings()
     return set_settings()
 
 
 def set_settings():
-    prGreen('\nGENERAL SETTINGS')
-    print('(skip entrys with empty line)')
+    prGreen("\nGENERAL SETTINGS")
+    print("(skip entrys with empty line)")
     guide.toclear = 0
     safety_dict = decouple(project.settingsDict)
-    conditions_list = [pattern.split(':') for pattern in get_conditions_from_dict(project.conditionDict)]
+    conditions_list = [
+        pattern.split(":")
+        for pattern in get_conditions_from_dict(project.conditionDict)
+    ]
     while True:
         for maplist in conditions_list:
-            if 'GROUPS' in get_by_path(project.settingsDict, maplist).keys():
+            if "GROUPS" in get_by_path(project.settingsDict, maplist).keys():
                 continue
             prRed(f"\n   Condition:  >  {' : '.join(maplist)}  <\n")
             for sl in project.samplesDict.values():
                 try:
-                    if sl[1] == ':'.join(maplist):
+                    if sl[1] == ":".join(maplist):
                         seq = sl[0]
                 except:
                     continue
-            setInDict(project.settingsDict, maplist + ['SEQUENCING'], seq)
-            for key in ['REFERENCE', 'INDEX', 'PREFIX', 'GTF', 'GFF']:
+            setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
+            for key in ["REFERENCE", "INDEX", "PREFIX", "GTF", "GFF"]:
                 print(f"   {key}:")
-                if key in ['REFERENCE', 'GTF', 'GFF']:
+                if key in ["REFERENCE", "GTF", "GFF"]:
                     s = os.getcwd()
-                    if key in ['GTF', 'GFF']:
+                    if key in ["GTF", "GFF"]:
                         p = f"end_exist_.{key.lower()}.*.gz"
                     else:
                         p = "end_exist_.gz"
@@ -845,66 +896,81 @@ def set_settings():
                     p = None
                     s = None
                 guide.display(
-                    question=f"comment: {project.commentsDict['SETTINGS']['comment'][key]}", spec=s, proof=p
+                    question=f"comment: {project.commentsDict['SETTINGS']['comment'][key]}",
+                    spec=s,
+                    proof=p,
                 )
                 guide.clear(4)
-                prCyan(f'   {key}: {guide.answer}')
-                if key in ['GTF', 'GFF']:
-                    setInDict(project.settingsDict, maplist + ['ANNOTATION', key], guide.answer)
-                if key in ['SEQUENCING', 'REFERENCE', 'INDEX', 'PREFIX']:
+                prCyan(f"   {key}: {guide.answer}")
+                if key in ["GTF", "GFF"]:
+                    setInDict(
+                        project.settingsDict,
+                        maplist + ["ANNOTATION", key],
+                        guide.answer,
+                    )
+                if key in ["SEQUENCING", "REFERENCE", "INDEX", "PREFIX"]:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
 
-            last_sample = ''
+            last_sample = ""
             for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
 
                 prPurple(f"\n      Sample: {sample}\n")
-                for key in ['GROUPS', 'TYPES', "BATCHES"]:
-                    if last_sample and key == 'GROUPS':
+                for key in ["GROUPS", "TYPES", "BATCHES"]:
+                    if last_sample and key == "GROUPS":
                         ques = f"enter 'cp' to copy entries from sample before"
                     else:
                         ques = f"comment: {project.commentsDict['SETTINGS']['comment'][key]}"
-                    print(f'         {key}:')
+                    print(f"         {key}:")
                     guide.display(question=ques)
-                    if guide.answer == 'cp' and last_sample:
+                    if guide.answer == "cp" and last_sample:
                         guide.clear(4)
-                        for key in ['GROUPS', 'TYPES', "BATCHES"]:
-                            to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
-                            prCyan(f'         {key}: {to_add}')
-                            get_by_path(project.settingsDict, maplist + [key]).append(to_add)
+                        for key in ["GROUPS", "TYPES", "BATCHES"]:
+                            to_add = get_by_path(project.settingsDict, maplist + [key])[
+                                -1
+                            ]
+                            prCyan(f"         {key}: {to_add}")
+                            get_by_path(project.settingsDict, maplist + [key]).append(
+                                to_add
+                            )
                         break
                     else:
                         last_sample = sample
                         guide.clear(4)
-                        prCyan(f'         {key}: {guide.answer}')
+                        prCyan(f"         {key}: {guide.answer}")
                         try:
-                            get_by_path(project.settingsDict, maplist + [key]).append(guide.answer)
+                            get_by_path(project.settingsDict, maplist + [key]).append(
+                                guide.answer
+                            )
                         except:
                             setInDict(project.settingsDict, maplist + [key], [])
-                            get_by_path(project.settingsDict, maplist + [key]).append(guide.answer)
+                            get_by_path(project.settingsDict, maplist + [key]).append(
+                                guide.answer
+                            )
 
         guide.toclear = 0
         print("\n\n   SETTINGS Key:\n")
         print_dict(project.settingsDict, gap="   ")
         guide.display(
-            question="\npress enter to continue or type 'no' to make settings again", proof=['', 'no']
+            question="\npress enter to continue or type 'no' to make settings again",
+            proof=["", "no"],
         )
-        if guide.answer == '':
+        if guide.answer == "":
             guide.toclear += 7
             guide.clear()
             prCyan("\n\n   SETTINGS Key:\n")
-            print_dict(project.settingsDict, col='Cyan', gap="         ")
+            print_dict(project.settingsDict, col="Cyan", gap="         ")
             show_settings()
-            if guide.mode == 'new':
+            if guide.mode == "new":
                 return add_workflows()
-            if guide.mode == 'modify':
+            if guide.mode == "modify":
                 return fillup_workflows()
-        if guide.answer == 'no':
+        if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
             continue
 
 
 def modify():
-    prGreen('\nMODIFY PROJECT')
+    prGreen("\nMODIFY PROJECT")
     er = 0
     while True:
         if er == 0:
@@ -912,7 +978,9 @@ def modify():
         if er == 1:
             ques = "couldn't find the file"
         if er == 2:
-            ques = "can't read the file, check if it's the right file or if it's corrupted"
+            ques = (
+                "can't read the file, check if it's the right file or if it's corrupted"
+            )
         guide.display(question=ques, spec=os.getcwd())
         if not os.path.isfile(guide.answer):
             guide.clear(3)
@@ -921,9 +989,9 @@ def modify():
         try:
             modify_config = load_configfile(guide.answer)
             project.path = os.path.dirname(guide.answer)
-            project.name = list(modify_config['SETTINGS'].keys())[0]
+            project.name = list(modify_config["SETTINGS"].keys())[0]
             project.cores = modify_config["MAXTHREADS"]
-            project.settingsDict = modify_config['SETTINGS']
+            project.settingsDict = modify_config["SETTINGS"]
             project.conditionDict = NestedDefaultDict()
             guide.clear(2)
             prCyan(f"   {guide.answer}")
@@ -936,47 +1004,47 @@ def modify():
                 path = path[1:-1]
                 set_by_path(project.conditionDict, path, {})
 
-        active_workflows = modify_config['WORKFLOWS'].split(',')
+        active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
         for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS"]:
             inactive_workflows.remove(e)
         for wf in inactive_workflows:
             project.workflowsDict[wf] = decouple(modify_config[wf])
-        for e in modify_config['WORKFLOWS'].split(','):
+        for e in modify_config["WORKFLOWS"].split(","):
             inactive_workflows.remove(e)
 
         prRed("\n   Following configuration was found :\n")
         prRed("   Condition-Tree:\n")
-        print_dict(project.conditionDict, gap='      ')
+        print_dict(project.conditionDict, gap="      ")
         prRed("\n   active WORKFLOWS:\n")
         if active_workflows:
-            print('      ' + ', '.join(active_workflows))
+            print("      " + ", ".join(active_workflows))
         else:
-            print('      -')
+            print("      -")
         prRed("\n   inactive WORKFLOWS:\n")
         if inactive_workflows:
-            print('      ' + ', '.join(inactive_workflows))
+            print("      " + ", ".join(inactive_workflows))
         else:
-            print('      -')
+            print("      -")
 
         print("\nWhat do you want to do...\n")
         opts = NestedDefaultDict()
-        opts['1'] = "add workflows"
-        opts['2'] = "remove workflows"
-        opts['3'] = "add conditions"
-        opts['4'] = "remove conditions"
-        opts['5'] = "choose another file"
+        opts["1"] = "add workflows"
+        opts["2"] = "remove workflows"
+        opts["3"] = "add conditions"
+        opts["4"] = "remove conditions"
+        opts["5"] = "choose another file"
         guide.display(question="choose an option", options=opts, proof=opts.keys())
         guide.clear(3)
-        if guide.answer == '1':
+        if guide.answer == "1":
             return add_workflows(inactive_workflows + active_workflows)
-        if guide.answer == '2':
+        if guide.answer == "2":
             return remove_workflows(active_workflows, inactive_workflows)
-        if guide.answer == '3':
+        if guide.answer == "3":
             return add_conditions()
-        if guide.answer == '4':
+        if guide.answer == "4":
             return remove_conditions()
-        if guide.answer == '5':
+        if guide.answer == "5":
             project.settingsDict = NestedDefaultDict()
             project.conditionDict = NestedDefaultDict()
             continue
@@ -991,9 +1059,9 @@ def add_conditions():
         print_dict(new_conditions, gap="   ")
         guide.display(
             question="press enter to apply changes or type 'no' to make changes again",
-            proof=['', 'no'],
+            proof=["", "no"],
         )
-        if guide.answer == 'no':
+        if guide.answer == "no":
             guide.toclear += 3
             guide.clear()
             continue
@@ -1001,12 +1069,15 @@ def add_conditions():
             project.conditionDict = new_conditions
             guide.toclear += 4
             guide.clear()
-            prCyan('   New Condition-Tree:\n')
-            print_dict(project.conditionDict, col='Cyan', gap="         ")
+            prCyan("   New Condition-Tree:\n")
+            print_dict(project.conditionDict, col="Cyan", gap="         ")
             # project.settingsDict = decouple(project.conditionDict)
             break
 
-    conditions = [pattern.split(':') for pattern in get_conditions_from_dict(project.conditionDict)]
+    conditions = [
+        pattern.split(":")
+        for pattern in get_conditions_from_dict(project.conditionDict)
+    ]
     for condition in conditions:
         try:
             get_by_path(project.settingsDict, condition)
@@ -1040,7 +1111,7 @@ def remove_workflows(actives, inactives):
         new_actives = copy.deepcopy(actives)
         new_inactives = copy.deepcopy(inactives)
         for key, value in opts.items():
-            if key in guide.answer.split(','):
+            if key in guide.answer.split(","):
                 new_workflows.pop(value)
                 if value in new_actives:
                     new_actives.remove(value)
@@ -1048,21 +1119,22 @@ def remove_workflows(actives, inactives):
                     new_inactives.remove(value)
         prRed("\n   active WORKFLOWS:\n")
         if new_actives:
-            print('      ' + ', '.join(new_actives))
+            print("      " + ", ".join(new_actives))
         else:
-            print('      -')
+            print("      -")
         prRed("\n   inactive WORKFLOWS:\n")
         if new_inactives:
-            print('      ' + ', '.join(new_inactives))
+            print("      " + ", ".join(new_inactives))
         else:
-            print('      -')
+            print("      -")
         guide.display(
-            question="press enter to apply changes or type 'no' to make changes again", proof=['', 'no']
+            question="press enter to apply changes or type 'no' to make changes again",
+            proof=["", "no"],
         )
-        if guide.answer == '':
+        if guide.answer == "":
             project.workflowsDict = new_workflows
             return finalize()
-        if guide.answer == 'no':
+        if guide.answer == "no":
             continue
 
 
@@ -1085,9 +1157,9 @@ def remove_conditions():
         new_workflows = NestedDefaultDict()
         new_conditions = NestedDefaultDict()
         for key, value in opts.items():
-            if key in guide.answer.split(','):
+            if key in guide.answer.split(","):
                 continue
-            path = value.split(':')
+            path = value.split(":")
             setInDict(new_conditions, path, {})
             toadd = get_by_path(project.settingsDict, path)
             setInDict(new_settings, path, toadd)
@@ -1097,14 +1169,15 @@ def remove_conditions():
         prRed("\nNew condition-Tree:")
         print_dict(new_conditions)
         guide.display(
-            question="press enter to apply changes or type 'no' to make changes again", proof=['', 'no']
+            question="press enter to apply changes or type 'no' to make changes again",
+            proof=["", "no"],
         )
-        if guide.answer == '':
+        if guide.answer == "":
             project.settingsDict = new_settings
             project.workflowsDict = new_workflows
             project.conditionDict = new_conditions
             return finalize()
-        if guide.answer == 'no':
+        if guide.answer == "no":
             continue
 
 
@@ -1127,7 +1200,7 @@ def add_workflows(existing_workflows=None):
         proof=list(str(i) for i in posWorkDict.keys()),
     )
     addedW = []
-    for number in guide.answer.split(','):
+    for number in guide.answer.split(","):
         wf = posWorkDict[int(number)]
         addedW.append(wf)
         project.workflowsDict[wf]
@@ -1147,7 +1220,7 @@ def select_conditioning():
                 proof=["ok", ""],
             )
             guide.toclear += 8
-            if guide.answer == 'ok':
+            if guide.answer == "ok":
                 guide.clear(10)
                 return set_workflows()
             else:
@@ -1155,33 +1228,36 @@ def select_conditioning():
 
 
 def fillup_workflows():
-    conditions = [pattern.split(':') for pattern in get_conditions_from_dict(project.conditionDict)]
+    conditions = [
+        pattern.split(":")
+        for pattern in get_conditions_from_dict(project.conditionDict)
+    ]
     fillupDict = NestedDefaultDict()
     for wf in project.workflowsDict.keys():
-        fillupDict[wf]['on'] = []
-        fillupDict[wf]['off'] = []
+        fillupDict[wf]["on"] = []
+        fillupDict[wf]["off"] = []
         for condition in conditions:
             if not get_by_path(project.workflowsDict, [wf] + condition):
-                fillupDict[wf]['off'].append(condition)
+                fillupDict[wf]["off"].append(condition)
             if get_by_path(project.workflowsDict, [wf] + condition):
-                fillupDict[wf]['on'].append(condition)
+                fillupDict[wf]["on"].append(condition)
 
     for wf in project.workflowsDict.keys():
-        for off_con in fillupDict[wf]['off']:
+        for off_con in fillupDict[wf]["off"]:
             location(project.workflowsDict[wf], [off_con])
-            prGreen(f'FILLUP WORKFLOW-SETTINGS FOR {wf}\n')
+            prGreen(f"FILLUP WORKFLOW-SETTINGS FOR {wf}\n")
             opts = NestedDefaultDict()
             number = 1
-            for on_con in fillupDict[wf]['on']:
+            for on_con in fillupDict[wf]["on"]:
                 opts[str(number)] = f"copy from {':'.join(on_con)}"
                 number += 1
             opts[str(number)] = "make new settings"
             guide.display(question="enter option", options=opts, proof=opts.keys())
-            if opts[guide.answer] == 'make new settings':
+            if opts[guide.answer] == "make new settings":
                 project.settingsList = [[off_con]]
                 set_workflows(wf)
             else:
-                copy_con = opts[guide.answer].split(' ')[-1].split(':')
+                copy_con = opts[guide.answer].split(" ")[-1].split(":")
                 toadd = get_by_path(project.workflowsDict, [wf] + copy_con)
                 setInDict(project.workflowsDict, [wf] + off_con, toadd)
     return finalize()
@@ -1197,52 +1273,63 @@ def set_workflows(wf=None):
             prGreen(f"\nMAKE SETTINGS FOR {workflow}\n")
             opt_dict = NestedDefaultDict()
             tools_to_use = NestedDefaultDict()
-            if 'TOOLS' in project.baseDict[workflow].keys():
+            if "TOOLS" in project.baseDict[workflow].keys():
                 print(f"   Tools:\n")
                 number = 1
-                for k in project.baseDict[workflow]['TOOLS'].keys():
+                for k in project.baseDict[workflow]["TOOLS"].keys():
                     opt_dict[number] = k
                     number += 1
                 guide.display(
-                    question='Select from these available Tools comma separated:',
+                    question="Select from these available Tools comma separated:",
                     options=opt_dict,
                     proof=[str(i) for i in opt_dict.keys()],
                 )
                 guide.clear(len(opt_dict) + 5)
-                for number in guide.answer.split(','):
-                    tools_to_use[opt_dict[int(number)]] = project.baseDict[workflow]["TOOLS"][
-                        opt_dict[int(number)]
-                    ]
+                for number in guide.answer.split(","):
+                    tools_to_use[opt_dict[int(number)]] = project.baseDict[workflow][
+                        "TOOLS"
+                    ][opt_dict[int(number)]]
                 prCyan(f"   Tools: {', '.join(tools_to_use.keys())}")
 
-            if 'CUTOFFS' in project.baseDict[workflow].keys() and not wf:
+            if "CUTOFFS" in project.baseDict[workflow].keys() and not wf:
 
-                prRed(f'\n   Settings for differential Analyses:')
+                prRed(f"\n   Settings for differential Analyses:")
 
-                project.workflowsDict[workflow].update({'CUTOFFS': {}})
-                project.workflowsDict[workflow]["CUTOFFS"].update(project.baseDict[workflow]["CUTOFFS"])
+                project.workflowsDict[workflow].update({"CUTOFFS": {}})
+                project.workflowsDict[workflow]["CUTOFFS"].update(
+                    project.baseDict[workflow]["CUTOFFS"]
+                )
 
-                for key, value in project.baseDict[workflow]['CUTOFFS'].items():
+                for key, value in project.baseDict[workflow]["CUTOFFS"].items():
                     print(f"\n      {key}:\n")
-                    guide.display(question=f'set cutoff', proof="only_numbers", spec=value)
+                    guide.display(
+                        question=f"set cutoff", proof="only_numbers", spec=value
+                    )
                     guide.clear(5)
                     prCyan(f"      {key}: {guide.answer}")
-                    set_by_path(project.workflowsDict, [workflow, "CUTOFFS", key], str(guide.answer))
+                    set_by_path(
+                        project.workflowsDict,
+                        [workflow, "CUTOFFS", key],
+                        str(guide.answer),
+                    )
 
-            if 'COMPARABLE' in project.baseDict[workflow].keys():
-                project.workflowsDict[workflow]['COMPARABLE']
+            if "COMPARABLE" in project.baseDict[workflow].keys():
+                project.workflowsDict[workflow]["COMPARABLE"]
                 prCyan(f"\n      Comparables:\n")
                 while True:
                     guide.display(
-                        question="\nPress enter to add a differential contrast or type 'ok'", proof=['', 'ok']
+                        question="\nPress enter to add a differential contrast or type 'ok'",
+                        proof=["", "ok"],
                     )
-                    if guide.answer == 'ok':
+                    if guide.answer == "ok":
                         guide.clear(3)
                         break
                     groups = set()
                     conditions = get_conditions_from_dict(project.conditionDict)
                     for condition in conditions:
-                        for g in get_by_path(project.settingsDict, condition.split(':') + ["GROUPS"]):
+                        for g in get_by_path(
+                            project.settingsDict, condition.split(":") + ["GROUPS"]
+                        ):
                             groups.add(g)
                     number = 1
                     guide.clear(3)
@@ -1262,24 +1349,32 @@ def set_workflows(wf=None):
                         contrast[i].append(opt_dict[int(guide.answer)])
                     guide.toclear += 3
                     guide.clear()
-                    comp_name = '-VS-'.join(x[0] for x in contrast)
+                    comp_name = "-VS-".join(x[0] for x in contrast)
                     prCyan(f"         {comp_name}")
-                    project.workflowsDict[workflow]['COMPARABLE'][comp_name] = contrast
+                    project.workflowsDict[workflow]["COMPARABLE"][comp_name] = contrast
                 guide.clear(1)
 
             for setting in project.settingsList:
-                prRed(f"\n\n   Set Conditions:  >   {', '.join([':'.join(c) for c in setting])}   <")
+                prRed(
+                    f"\n\n   Set Conditions:  >   {', '.join([':'.join(c) for c in setting])}   <"
+                )
                 for tool, bin in tools_to_use.items():
-                    project.workflowsDict[workflow]['TOOLS'][tool] = bin
+                    project.workflowsDict[workflow]["TOOLS"][tool] = bin
                     for maplist in setting:
-                        setInDict(project.workflowsDict, [workflow] + maplist + [tool, "OPTIONS"], [])
+                        setInDict(
+                            project.workflowsDict,
+                            [workflow] + maplist + [tool, "OPTIONS"],
+                            [],
+                        )
                     prPurple(f"\n      Tool:  {tool}\n")
-                    for i in range(len(project.baseDict[workflow][tool]['OPTIONS'])):
+                    for i in range(len(project.baseDict[workflow][tool]["OPTIONS"])):
                         print(
                             f"      Options {i}:   (enter comma separated flags or values like:  -q 15, --length 8, std )"
                         )
-                        if project.baseDict[workflow][tool]['OPTIONS'][i]:
-                            call = optionsDictToString(project.baseDict[workflow][tool]['OPTIONS'][i])
+                        if project.baseDict[workflow][tool]["OPTIONS"][i]:
+                            call = optionsDictToString(
+                                project.baseDict[workflow][tool]["OPTIONS"][i]
+                            )
                         else:
                             call = " "
                         guide.toclear = 0
@@ -1290,21 +1385,26 @@ def set_workflows(wf=None):
                         optsDict = stringToOptionsDict(guide.answer)
                         for maplist in setting:
                             setInDict(
-                                project.workflowsDict, [workflow] + maplist + [tool, "OPTIONS"], optsDict
+                                project.workflowsDict,
+                                [workflow] + maplist + [tool, "OPTIONS"],
+                                optsDict,
                             )
                         guide.clear(4)
                         prCyan(f"      Options {i}:  {guide.answer.replace(',', '')}")
     show_settings()
-    if guide.mode == "new" or guide.mode == '':
+    if guide.mode == "new" or guide.mode == "":
         return set_cores()
     if guide.mode == "modify":
         return finalize()
 
 
 def set_cores():
-    prGreen('\nSET THREADS\n')
+    prGreen("\nSET THREADS\n")
     print("   MAXTHREADS:")
-    guide.display(question="set the maximum number of cores that can be used", proof='only_numbers')
+    guide.display(
+        question="set the maximum number of cores that can be used",
+        proof="only_numbers",
+    )
     guide.clear(5)
     prCyan(f"\n   MAXTHREADS: {guide.answer}")
     project.cores = str(guide.answer)
@@ -1315,7 +1415,7 @@ def set_cores():
 def finalize():
     final_dict = NestedDefaultDict()
 
-    final_dict["WORKFLOWS"] = ','.join(project.workflowsDict.keys())
+    final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
     final_dict["BINS"] = project.baseDict["BINS"]
     final_dict["MAXTHREADS"] = project.cores
     final_dict["SETTINGS"] = project.settingsDict
@@ -1325,10 +1425,10 @@ def finalize():
         configfile = f"config_{'_'.join([project.name,project.subname])}.json"
     else:
         configfile = f"config_{project.name}.json"
-    print('\n')
-    prGreen('FINAL CONFIGURATION:\n')
+    print("\n")
+    prGreen("FINAL CONFIGURATION:\n")
     print_dict(final_dict)
-    print('\n')
+    print("\n")
 
     if guide.mode == "new":
         space = len(configfile)
@@ -1338,23 +1438,29 @@ def finalize():
         prGreen(f"  {os.path.dirname(project.path)}")
         prGreen(f"  └─{os.path.basename(project.path)}")
         prGreen(f"     ├─NextSnakes{' '*(space-10)}   >  symlink to {os.getcwd()}")
-        prGreen(f"     ├─FASTQ{' '*(space-5)}   >  contains symlinks of your samplefiles")
-        prGreen(f"     ├─GENOMES{' '*(space-7)}   >  contains symlinks of your reference files")
+        prGreen(
+            f"     ├─FASTQ{' '*(space-5)}   >  contains symlinks of your samplefiles"
+        )
+        prGreen(
+            f"     ├─GENOMES{' '*(space-7)}   >  contains symlinks of your reference files"
+        )
         prGreen(f"     └─{configfile}   >  your brand new configuration file")
 
         guide.display(
             question="\npress enter to create your project or type 'abort' before it gets serious",
-            proof=['', 'abort'],
+            proof=["", "abort"],
         )
     if guide.mode == "modify":
         print("Above is your updated configuration of NextSnakes\n")
-        print("The old config-file will be preserved (it will have a timestamp in it's name)\n")
+        print(
+            "The old config-file will be preserved (it will have a timestamp in it's name)\n"
+        )
         guide.display(
             question=f"\npress enter to update {configfile} or type 'abort' before it gets serious",
-            proof=['', 'abort'],
+            proof=["", "abort"],
         )
 
-    if guide.answer == 'abort':
+    if guide.answer == "abort":
         quit()
     else:
         return create_project(final_dict)
@@ -1369,7 +1475,7 @@ def create_project(final_dict):
             os.mkdir(project.path)
         fastq = os.path.join(project.path, "FASTQ")
         gen = os.path.join(project.path, "GENOMES")
-        ns = os.path.join(project.path, 'NextSnakes')
+        ns = os.path.join(project.path, "NextSnakes")
         if not os.path.exists(fastq):
             os.mkdir(fastq)
         if not os.path.exists(gen):
@@ -1382,13 +1488,13 @@ def create_project(final_dict):
             if len(cl) > 1:
                 condition = cl[1]
                 if condition:
-                    cond_as_list = [x for x in condition.split(':')[1:]]
+                    cond_as_list = [x for x in condition.split(":")[1:]]
                     os.chdir(fastq)
                     for dir in cond_as_list:
                         if not os.path.exists(os.path.join(dir)):
                             os.mkdir(os.path.join(dir))
                         os.chdir(os.path.join(dir))
-                    path = '/'.join(cond_as_list)
+                    path = "/".join(cond_as_list)
                     cond_dir = os.path.join(fastq, path)
                     sample_sl = os.path.join(cond_dir, os.path.basename(sample))
                     if not os.path.exists(sample_sl):
@@ -1397,49 +1503,71 @@ def create_project(final_dict):
         # link reference and annotation
         for setting in project.settingsList:
             for condition in setting:
-                ref = get_by_path(project.settingsDict, condition + ['REFERENCE'])
+                ref = get_by_path(project.settingsDict, condition + ["REFERENCE"])
                 if os.path.isfile(ref):
                     if not os.path.exists(os.path.join(gen, os.path.basename(ref))):
-                        os.symlink(os.path.realpath(ref), os.path.join(gen, os.path.basename(ref)))
+                        os.symlink(
+                            os.path.realpath(ref),
+                            os.path.join(gen, os.path.basename(ref)),
+                        )
                     f = os.path.join(gen, os.path.basename(ref))
                     rel = os.path.os.path.relpath(f, start=project.path)
-                    setInDict(project.settingsDict, condition + ['REFERENCE'], rel)
+                    setInDict(project.settingsDict, condition + ["REFERENCE"], rel)
                 else:
                     prRed(
                         f"WARNING: reference path at {condition} is not correct, could not symlink, please do by hand"
                     )
-                    setInDict(project.settingsDict, condition + ['REFERENCE'], "")
+                    setInDict(project.settingsDict, condition + ["REFERENCE"], "")
 
-                gtf = get_by_path(project.settingsDict, condition + ['ANNOTATION', 'GTF'])
+                gtf = get_by_path(
+                    project.settingsDict, condition + ["ANNOTATION", "GTF"]
+                )
                 if os.path.isfile(gtf):
                     if not os.path.exists(os.path.join(gen, os.path.basename(gtf))):
-                        os.symlink(os.path.realpath(gtf), os.path.join(gen, os.path.basename(gtf)))
+                        os.symlink(
+                            os.path.realpath(gtf),
+                            os.path.join(gen, os.path.basename(gtf)),
+                        )
                     f = os.path.join(gen, os.path.basename(gtf))
                     rel = os.path.os.path.relpath(f, start=project.path)
-                    setInDict(project.settingsDict, condition + ['ANNOTATION', 'GTF'], rel)
+                    setInDict(
+                        project.settingsDict, condition + ["ANNOTATION", "GTF"], rel
+                    )
                 else:
                     prRed(
                         f"WARNING: GTF path at {condition} is not correct, could not symlink, please do by hand"
                     )
-                    setInDict(project.settingsDict, condition + ['ANNOTATION', 'GTF'], "")
+                    setInDict(
+                        project.settingsDict, condition + ["ANNOTATION", "GTF"], ""
+                    )
 
-                gff = get_by_path(project.settingsDict, condition + ['ANNOTATION', 'GFF'])
+                gff = get_by_path(
+                    project.settingsDict, condition + ["ANNOTATION", "GFF"]
+                )
                 if os.path.isfile(gff):
                     if not os.path.exists(os.path.join(gen, os.path.basename(gff))):
-                        os.symlink(os.path.realpath(gff), os.path.join(gen, os.path.basename(gff)))
+                        os.symlink(
+                            os.path.realpath(gff),
+                            os.path.join(gen, os.path.basename(gff)),
+                        )
                     f = os.path.join(gen, os.path.basename(gff))
                     rel = os.path.os.path.relpath(f, start=project.path)
-                    setInDict(project.settingsDict, condition + ['ANNOTATION', 'GFF'], rel)
+                    setInDict(
+                        project.settingsDict, condition + ["ANNOTATION", "GFF"], rel
+                    )
                 else:
                     prRed(
                         f"WARNING: GFF path at {condition} is not correct, could not symlink, please do by hand"
                     )
-                    setInDict(project.settingsDict, condition + ['ANNOTATION', 'GFF'], "")
+                    setInDict(
+                        project.settingsDict, condition + ["ANNOTATION", "GFF"], ""
+                    )
 
     if guide.mode == "modify":
         file = os.path.join(project.path, f"config_{project.name}.json")
         bakfile = os.path.join(
-            project.path, f"config_{project.name}_{datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S')}.json"
+            project.path,
+            f"config_{project.name}_{datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S')}.json",
         )
         os.system(f"cp {file} {bakfile}")
 
@@ -1447,26 +1575,27 @@ def create_project(final_dict):
         configfile = f"config_{'_'.join([project.name,project.subname])}.json"
     else:
         configfile = f"config_{project.name}.json"
-    with open(os.path.join(project.path, configfile), 'w') as jsonout:
+    with open(os.path.join(project.path, configfile), "w") as jsonout:
         print(json.dumps(final_dict, indent=4), file=jsonout)
 
     print(f"\nStart RunSnakemake with\n")
     prGreen(f"   cd {project.path}\n")
-    prGreen(f"   python3 NextSnakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n\n")
+    prGreen(
+        f"   python3 NextSnakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n\n"
+    )
 
 
 #############################
 ####    TEST VAR SPACE   ####
 #############################
 
-'''
-guide.mode = 'new'
-project.name = 'allesneu'
-project.path = '/homes/brauerei/robin/Projects/NextSnakes/allesneu'
+guide.mode = "new"
+project.name = "NextSnakesmoin"
+project.path = "/homes/brauerei/robin/Projects/NextSnakesmoin"
 project.cores = 1
 project.baseDict = {
     "WORKFLOWS": "",
-    "BINS": "nextsnakes/scripts",
+    "BINS": "NextSnakes/scripts",
     "MAXTHREADS": "",
     "SETTINGS": {
         "SAMPLES": [],
@@ -1477,80 +1606,27 @@ project.baseDict = {
         "REFERENCE": "",
         "INDEX": "",
         "PREFIX": "",
-        "ANNOTATION": {
-            "GTF": "",
-            "GFF": ""
-        }
+        "ANNOTATION": {"GTF": "", "GFF": ""},
     },
-    "SRA": {
-        "TOOLS": {
-            "sra": "sra"
-        },
-        "sra": {
-            "OPTIONS": [
-                {}
-            ]
-        }
-    },
+    "SRA": {"TOOLS": {"sra": "sra"}, "sra": {"OPTIONS": [{}]}},
     "BASECALL": {
-        "TOOLS": {
-            "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
-        },
-        "guppy": {
-            "OPTIONS": [
-                {}
-            ]
-        }
+        "TOOLS": {"guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"},
+        "guppy": {"OPTIONS": [{}]},
     },
-    "QC": {
-        "TOOLS": {
-            "fastqc": "fastqc"
-        },
-        "fastqc": {
-            "OPTIONS": [
-                {}
-            ]
-        }
-    },
+    "QC": {"TOOLS": {"fastqc": "fastqc"}, "fastqc": {"OPTIONS": [{}, {}]}},
     "TRIMMING": {
-        "TOOLS": {
-            "trimgalore": "trim_galore",
-            "cutadapt": "cutadapt"
-        },
-        "trimgalore": {
-            "OPTIONS": [
-                {
-                    "-q": "15",
-                    "--length": "8",
-                    "-e": "0.15"
-                }
-            ]
-        },
-        "cutadapt": {
-            "OPTIONS": [
-                {
-                    "-q": "15",
-                    "--length": "8",
-                    "-e": "0.15"
-                }
-            ]
-        }
+        "TOOLS": {"trimgalore": "trim_galore", "cutadapt": "cutadapt"},
+        "trimgalore": {"OPTIONS": [{"-q": "15", "--length": "8", "-e": "0.15"}]},
+        "cutadapt": {"OPTIONS": [{"-q": "15", "--length": "8", "-e": "0.15"}]},
     },
     "DEDUP": {
-        "TOOLS": {
-            "umitools": "umi_tools"
-        },
+        "TOOLS": {"umitools": "umi_tools"},
         "umitools": {
             "OPTIONS": [
-                {
-                    "--extract-method": "string",
-                    "--bc-pattern": "AGANNNNACGT"
-                },
-                {
-                    "--extract-umi-method": "read_id"
-                }
+                {"--extract-method": "string", "--bc-pattern": "AGANNNNACGT"},
+                {"--extract-umi-method": "read_id"},
             ]
-        }
+        },
     },
     "MAPPING": {
         "TOOLS": {
@@ -1558,314 +1634,136 @@ project.baseDict = {
             "segemehl3": "segemehl.x",
             "hisat2": "hisat2",
             "bwa": "bwa mem",
-            "minimap": "minimap2"
+            "minimap": "minimap2",
         },
         "star": {
             "OPTIONS": [
                 {
                     "--sjdbGTFfeatureExon": "exon",
                     "--sjdbGTFtagExonParentTranscript": "Parent",
-                    "--genomeSAindexNbases": "13"
+                    "--genomeSAindexNbases": "13",
                 },
                 {
                     "--sjdbGTFfeatureExon": "exon",
                     "--sjdbGTFtagExonParentTranscript": "Parent",
-                    "--outSAMprimaryFlag AllBestScore": ""
-                }
+                    "--outSAMprimaryFlag AllBestScore": "",
+                },
             ]
         },
-        "segemehl3": {
-            "OPTIONS": [
-                {}
-            ]
-        },
-        "hisat2": {
-            "OPTIONS": [
-                {}
-            ]
-        },
-        "bwa": {
-            "OPTIONS": [
-                {}
-            ]
-        },
-        "minimap": {
-            "OPTIONS": [
-                {}
-            ]
-        }
+        "segemehl3": {"OPTIONS": [{}]},
+        "hisat2": {"OPTIONS": [{}]},
+        "bwa": {"OPTIONS": [{}]},
+        "minimap": {"OPTIONS": [{}]},
     },
     "COUNTING": {
-        "TOOLS": {
-            "countreads": "featureCounts"
-        },
-        "FEATURES": {
-            "exon": "Parent",
-            "gene": "ID"
-        },
+        "TOOLS": {"countreads": "featureCounts"},
+        "FEATURES": {"exon": "Parent", "gene": "ID"},
         "countreads": {
-            "OPTIONS": [
-                {
-                    "-f": "",
-                    "--fraction": "",
-                    "-p": "",
-                    "-O": "",
-                    "-M": ""
-                }
-            ]
-        }
+            "OPTIONS": [{"-f": "", "--fraction": "", "-p": "", "-O": "", "-M": ""}]
+        },
     },
     "ANNOTATE": {
-        "TOOLS": {
-            "annotatebed": "annotate"
-        },
-        "annotatebed": {
-            "ANNOFEATURE": "gene",
-            "OPTIONS": [
-                {
-                    "-w": "ON"
-                }
-            ]
-        }
+        "TOOLS": {"annotatebed": "annotate"},
+        "annotatebed": {"ANNOFEATURE": "gene", "OPTIONS": [{"-w": "ON"}]},
     },
     "UCSC": {
-        "TOOLS": {
-            "ucsc": "ucsc"
-        },
+        "TOOLS": {"ucsc": "ucsc"},
         "ucsc": {
             "OPTIONS": [
                 {
                     "-n": "DM6_unpaired_Mapping",
                     "-s": "dm6_st",
                     "-l": "UCSC_DM6_unpaired_Mapping",
-                    "-b": "UCSC_dm6_star"
+                    "-b": "UCSC_dm6_star",
                 }
             ]
-        }
+        },
     },
     "PEAKS": {
-        "TOOLS": {
-            "macs": "macs2",
-            "peaks": "peaks",
-            "piranha": "Piranha"
-        },
-        "macs": {
-            "CLIP": "iCLIP",
-            "OPTIONS": [
-                {
-                    "-b": "10"
-                }
-            ]
-        },
-        "peaks": {
-            "CLIP": "iCLIP",
-            "OPTIONS": [
-                {
-                    "-b": "10"
-                }
-            ]
-        },
-        "piranha": {
-            "CLIP": "iCLIP",
-            "OPTIONS": [
-                {
-                    "-b": "10"
-                }
-            ]
-        }
+        "TOOLS": {"macs": "macs2", "peaks": "peaks", "piranha": "Piranha"},
+        "macs": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
+        "peaks": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
+        "piranha": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
     },
     "DE": {
-        "TOOLS": {
-            "deseq2": "Analysis/DE/DESEQ2.R",
-            "edger": "Analysis/DE/EDGER.R"
-        },
-        "COMPARABLE": {
-            "WTvsKO": [
-                [],
-                []
-            ]
-        },
+        "TOOLS": {"deseq2": "Analysis/DE/DESEQ2.R", "edger": "Analysis/DE/EDGER.R"},
+        "COMPARABLE": {"WTvsKO": [[], []]},
         "EXCLUDE": [],
-        "CUTOFFS": {
-            "pvalue": "0.05",
-            "lfc": "1.5"
-        },
+        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
         "deseq2": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "--cutoff": "10"
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"--cutoff": "10"},
             ]
         },
         "edger": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "--cutoff": "10"
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"--cutoff": "10"},
             ]
-        }
+        },
     },
     "DEU": {
-        "TOOLS": {
-            "dexseq": "Analysis/DEU/DEXSEQ.R",
-            "edger": "Analysis/DEU/EDGER.R"
-        },
-        "COMPARABLE": {
-            "WTvsKO": [
-                [],
-                []
-            ]
-        },
+        "TOOLS": {"dexseq": "Analysis/DEU/DEXSEQ.R", "edger": "Analysis/DEU/EDGER.R"},
+        "COMPARABLE": {"WTvsKO": [[], []]},
         "EXCLUDE": [],
-        "CUTOFFS": {
-            "pvalue": "0.05",
-            "lfc": "1.5"
-        },
+        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
         "dexseq": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "--cutoff": "10"
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"--cutoff": "10"},
             ]
         },
         "edger": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "--cutoff": "10"
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"--cutoff": "10"},
             ]
-        }
+        },
     },
     "DAS": {
-        "TOOLS": {
-            "diego": "Analysis/DAS/DIEGO.py",
-            "edger": "Analysis/DAS/EDGER.R"
-        },
-        "COMPARABLE": {
-            "WTvsKO": [
-                [],
-                []
-            ]
-        },
+        "TOOLS": {"diego": "Analysis/DAS/DIEGO.py", "edger": "Analysis/DAS/EDGER.R"},
+        "COMPARABLE": {"WTvsKO": [[], []]},
         "EXCLUDE": [],
-        "CUTOFFS": {
-            "pvalue": "0.05",
-            "lfc": "1.5"
-        },
+        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
         "diego": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "-c": "10",
-                    "-d": "3",
-                    "-q": "0.01",
-                    "-z": "1.0",
-                    "-r": ""
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"-c": "10", "-d": "3", "-q": "0.01", "-z": "1.0", "-r": ""},
             ]
         },
         "edger": {
             "OPTIONS": [
-                {
-                    "-t": "exon",
-                    "-g": "gene_id",
-                    "-f": "",
-                    "--fraction": "",
-                    "-O": ""
-                },
-                {
-                    "--cutoff": "10"
-                }
+                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
+                {"--cutoff": "10"},
             ]
-        }
+        },
     },
     "DTU": {
         "TOOLS": {
             "dexseq": "Analysis/DTU/DEXSEQ.R",
-            "drimseq": "Analysis/DTU/DRIMSEQ.R"
+            "drimseq": "Analysis/DTU/DRIMSEQ.R",
         },
-        "COMPARABLE": {
-            "WTvsKO": [
-                [],
-                []
-            ]
-        },
+        "COMPARABLE": {"WTvsKO": [[], []]},
         "EXCLUDE": [],
-        "CUTOFFS": {
-            "pvalue": "0.05",
-            "lfc": "1.5"
-        },
-        "drimseq": {
-            "OPTIONS": [
-                {
-                    "--gencode": ""
-                },
-                {
-                    "-l": "A",
-                    "--gcBias": ""
-                }
-            ]
-        },
-        "dexseq": {
-            "OPTIONS": [
-                {
-                    "--gencode": ""
-                },
-                {
-                    "-l": "A",
-                    "--gcBias": ""
-                }
-            ]
-        }
-    }
+        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
+        "drimseq": {"OPTIONS": [{"--gencode": ""}, {"-l": "A", "--gcBias": ""}]},
+        "dexseq": {"OPTIONS": [{"--gencode": ""}, {"-l": "A", "--gcBias": ""}]},
+    },
 }
-project.conditionDict = {
-    "allesneu": {}
-}
+project.conditionDict = {"NextSnakesmoin": {}}
 project.samplesDict = {
     "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/single/hcc1395_tumor_rep1_R2.fastq.gz": [
         "single",
-        "allesneu"
+        "NextSnakesmoin",
     ],
     "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/single/hcc1395_tumor_rep1_R1.fastq.gz": [
-        "single"
+        "single",
+        "NextSnakesmoin",
     ],
     "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep2_R1.fastq.gz": [
-        "single"
+        "single",
+        "NextSnakesmoin",
     ],
     "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep2_R2.fastq.gz": [
         "single"
@@ -1875,12 +1773,62 @@ project.samplesDict = {
     ],
     "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep3_R2.fastq.gz": [
         "single"
-    ]
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/2/hcc1395_tumor_rep2_R1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/2/hcc1395_tumor_rep2_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/1/hcc1395_tumor_rep1_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/1/hcc1395_tumor_rep1_R1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep3.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/b/2/hcc1395_tumor_rep3_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/b/1/hcc1395_tumor_rep3_R1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/1/hcc1395_tumor_rep1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/NextSnakes/AN/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep2_R1.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep2_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
+        "single"
+    ],
+    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep1_R1.fastq.gz": [
+        "single"
+    ],
 }
 project.settingsDict = {
-    "allesneu": {
+    "NextSnakesmoin": {
         "SAMPLES": [
-            "hcc1395_tumor_rep1_R2"
+            "hcc1395_tumor_rep1_R2_1",
+            "hcc1395_tumor_rep1_R1_2",
+            "hcc1395_tumor_rep2_R1_3",
         ]
     }
 }
@@ -1897,174 +1845,56 @@ project.commentsDict = {
             "INDEX": "set index",
             "PREFIX": "set prefix",
             "GTF": "set path to gtf",
-            "GFF": "set path to gff"
+            "GFF": "set path to gff",
         }
     },
-    "SRA": {
-        "sra": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
-    "BASECALL": {
-        "guppy": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
-    "QC": {
-        "fastqc": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
+    "SRA": {"sra": {"comment": ["??? options"]}},
+    "BASECALL": {"guppy": {"comment": ["??? options"]}},
+    "QC": {"fastqc": {"comment": ["??? options"]}},
     "TRIMMING": {
-        "trimgalore": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "cutadapt": {
-            "comment": [
-                "??? options"
-            ]
-        }
+        "trimgalore": {"comment": ["??? options"]},
+        "cutadapt": {"comment": ["??? options"]},
     },
-    "DEDUP": {
-        "umitools": {
-            "comment": [
-                "??? options",
-                "??? options"
-            ]
-        }
-    },
+    "DEDUP": {"umitools": {"comment": ["??? options", "??? options"]}},
     "MAPPING": {
         "star": {
-            "comment": [
-                "make settings for index ('url')",
-                "make settings for mapping"
-            ]
+            "comment": ["make settings for index ('url')", "make settings for mapping"]
         },
-        "segemehl3": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "hisat2": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "bwa": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "minimap": {
-            "comment": [
-                "??? options"
-            ]
-        }
+        "segemehl3": {"comment": ["??? options"]},
+        "hisat2": {"comment": ["??? options"]},
+        "bwa": {"comment": ["??? options"]},
+        "minimap": {"comment": ["??? options"]},
     },
-    "COUNTING": {
-        "countreads": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
-    "ANNOTATE": {
-        "annotatebed": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
-    "UCSC": {
-        "ucsc": {
-            "comment": [
-                "??? options"
-            ]
-        }
-    },
+    "COUNTING": {"countreads": {"comment": ["??? options"]}},
+    "ANNOTATE": {"annotatebed": {"comment": ["??? options"]}},
+    "UCSC": {"ucsc": {"comment": ["??? options"]}},
     "PEAKS": {
-        "macs": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "peaks": {
-            "comment": [
-                "??? options"
-            ]
-        },
-        "piranha": {
-            "comment": [
-                "??? options"
-            ]
-        }
+        "macs": {"comment": ["??? options"]},
+        "peaks": {"comment": ["??? options"]},
+        "piranha": {"comment": ["??? options"]},
     },
     "DE": {
-        "deseq2": {
-            "comment": [
-                "Set featureCounts options",
-                "Set Cutoff ???"
-            ]
-        },
-        "edger": {
-            "comment": [
-                "Set featureCounts options",
-                "Set Cutoff ???"
-            ]
-        }
+        "deseq2": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
+        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
     },
     "DEU": {
-        "dexseq": {
-            "comment": [
-                "Set featureCounts options",
-                "Set Cutoff ???"
-            ]
-        },
-        "edger": {
-            "comment": [
-                "Set featureCounts options",
-                "Set Cutoff ???"
-            ]
-        }
+        "dexseq": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
+        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
     },
     "DAS": {
-        "diego": {
-            "comment": [
-                "set featureCounts options",
-                "set Diego options"
-            ]
-        },
-        "edger": {
-            "comment": [
-                "Set featureCounts options",
-                "Set Cutoff ???"
-            ]
-        }
+        "diego": {"comment": ["set featureCounts options", "set Diego options"]},
+        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
     },
     "DTU": {
         "drimseq": {
-            "comment": [
-                "set Salmon INDEXing options",
-                "set Salmon MAPPING options"
-            ]
+            "comment": ["set Salmon INDEXing options", "set Salmon MAPPING options"]
         },
         "dexseq": {
-            "comment": [
-                "set Salmon INDEXing options",
-                "set Salmon MAPPING options"
-            ]
-        }
-    }
+            "comment": ["set Salmon INDEXing options", "set Salmon MAPPING options"]
+        },
+    },
 }
-'''
+
 
 ####################
 ####    MAIN    ####
@@ -2072,7 +1902,7 @@ project.commentsDict = {
 
 # os.chdir(os.path.realpath(os.path.abspath(__file__)))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     template = load_configfile("configs/template_base_commented.json")
 
@@ -2084,6 +1914,6 @@ if __name__ == '__main__':
     # else:
     #     prRed("\nrunning in explanation mode\n")
 
-    prepare_project(template)
-    # set_settings()
+    # prepare_project(template)
+    set_settings()
     # add_workflows()
