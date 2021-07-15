@@ -52,7 +52,7 @@ log = setup_logger(name=scriptname, log_file='LOGS/'+scriptname+'.log', logforma
 log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 
 #import Collection
-from NextSnakes.Collection import *
+#from NextSnakes.Collection import *
 
 def parseargs():
     parser = argparse.ArgumentParser(description='Helper to create initial config file used for workflow processing')
