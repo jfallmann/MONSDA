@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 NAME = "NextSnakes"
-VERSION = "1.0.6"
+VERSION = "1.0.0"
 DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflows"
 
 setup(
@@ -10,8 +10,14 @@ setup(
     description=DESCRIPTION,
     author="Joerg Fallmann",
     author_email="fall@bioinf.uni-leipzig.de",
-    packages=find_packages(),
-    scripts=["NextSnakes.py", "Configurator.py"],
+    packages=find_packages(include=['NextSnakes', 'NextSnakes.*']),
+    entry_points={
+        "console_scripts": [
+            "NextSnakes = NextSnakes.RunNextSnakes:main",
+            "Configure_NextSnakes = NextSnakes.Configurator:main"
+        ]
+    },
+    #scripts=["NextSnakes/Configurator.py"],
     license='LICENSE',
     url="https://github.com/jfallmann/NextSnakes",
     long_description_content_type="text/markdown",

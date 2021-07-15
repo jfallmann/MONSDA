@@ -342,12 +342,8 @@ def set_relations(config, key):
                         relations.append((sample, ics, type))
                     config[key][id][condition][setting]['RELATIONS']=relations
 
-####################
-####    MAIN    ####
-####################
 
-if __name__ == '__main__':
-
+def main():
     logid = scriptname+'.main: '
     try:
         args=parseargs()
@@ -364,6 +360,22 @@ if __name__ == '__main__':
 
         create_json_config(knownargs.configfile, knownargs.append, knownargs.template, knownargs.workflows, knownargs.ics, knownargs.refdir, knownargs.binaries, knownargs.procs, knownargs.genomemap, knownargs.genomes, knownargs.genomeext, knownargs.sequencing, knownargs.annotation, optionalargs[0])
 
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        log.error(logid+''.join(tbe.format()))
+
+####################
+####    MAIN    ####
+####################
+
+if __name__ == '__main__':
+
+    logid = scriptname+'.main: '
+    try:
+        main()
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

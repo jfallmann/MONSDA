@@ -675,13 +675,7 @@ def runjob(jobtorun):
         sys.exit()
 
 
-####################
-####    MAIN    ####
-####################
-
-
-if __name__ == '__main__':
-
+def main():
     logid = scriptname + '.main: '
     try:
         args = parseargs()
@@ -734,6 +728,27 @@ if __name__ == '__main__':
                     + str(nf_ver)
                     + '! Please install or use envs/NextSnakes.yaml to create conda environment accordingly'
                 )
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        log.error(logid + ''.join(tbe.format()))
+
+
+####################
+####    MAIN    ####
+####################
+
+
+if __name__ == '__main__':
+
+    logid = scriptname + '.main: '
+    try:
+        main()
+
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
