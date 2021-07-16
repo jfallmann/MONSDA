@@ -42,8 +42,8 @@ rule salmon_index:
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz",
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_R1_dedup.fastq.gz", scombo=scombo),
+                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_R2_dedup.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
@@ -58,7 +58,7 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz",
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_dedup.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
