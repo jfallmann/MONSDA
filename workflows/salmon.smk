@@ -1,7 +1,8 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config,'COUNTING')
 
 rule themall:
-    input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", file=samplecond(SAMPLES, config)),
+    input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", combo=combo, file=samplecond(SAMPLES, config)),
+
 
 rule salmon_index:
     input:  fa = REFERENCE
@@ -15,10 +16,11 @@ rule salmon_index:
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell:  "{params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} 2>> {log} && ln -fs {params.linkidx} {output.idx}"
 
+
 if paired == 'paired':
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
+                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
@@ -33,7 +35,7 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz",
+        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz" if not rundedup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
