@@ -146,6 +146,7 @@ if 'PEAKS' in config:
 # UCSC/COUNTING Variables
 for x in ['UCSC', 'COUNTING']:
     if x in config:
+        XBIN, XENV = env_bin_from_config3(config, x)
         XCONF = subDict(config[x], SETUP)
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE')
@@ -157,6 +158,15 @@ for x in ['UCSC', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
+        if XBIN == 'salmon':
+            IDX = XCONF.get('INDEX')
+            if IDX:
+                INDEX = IDX
+            if not INDEX:
+                INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
+                UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
+            INDICES = INDEX.split(',') if INDEX else list(UIDX)
+            INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 
 
 # DE/DEU/DAS/DTU Variables
