@@ -23,7 +23,7 @@ if paired == 'paired':
                 r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_R2_dedup.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
-        output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report("COUNTS/Salmon/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
@@ -38,7 +38,7 @@ else:
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_dedup.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
-        output: cnts = report("COUNTS/{combo}/{file}.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report("COUNTS/{combo}/{file}", category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
