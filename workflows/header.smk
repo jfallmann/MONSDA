@@ -158,13 +158,13 @@ for x in ['UCSC', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-        if XBIN == 'salmon':
+        if XENV == 'salmon':
             IDX = XCONF.get('INDEX')
             if IDX:
                 INDEX = IDX
             if not INDEX:
-                INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
-                UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
+                INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
+                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'][0]))
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
             INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 
