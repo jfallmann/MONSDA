@@ -174,6 +174,8 @@ for x in ['UCSC', 'COUNTING']:
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
     if x in config:
         XCONF = subDict(config[x], SETUP)
+        XBIN, XENV = env_bin_from_config3(config, x)
+        XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
         XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
@@ -189,6 +191,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
 # CIRCS Variables
 if 'CIRCS' in config:
     CIRCCONF = subDict(config['CIRCS'], SETUP)
+    XBIN, XENV = env_bin_from_config3(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE') if CIRCCONF.get('REFERENCE') else CIRCCONF[XENV].get('REFERENCE')
     XANNO = CIRCCONF.get('ANNOTATION') if CIRCCONF.get('ANNOTATION') else CIRCCONF[XENV].get('ANNOTATION')
