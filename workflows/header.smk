@@ -94,8 +94,9 @@ if stranded != '':
 if 'MAPPING' in config:
     MAPCONF = subDict(config['MAPPING'], SETUP)
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    REF = MAPCONF.get('REFERENCE') if MAPCONF.get('REFERENCE') else MAPCONF[XENV].get('REFERENCE')
-    MANNO = MAPCONF.get('ANNOTATION') if MAPCONF.get('ANNOTATION') else MAPCONF[XENV].get('ANNOTATION')
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
+    REF = MAPCONF.get('REFERENCE') if MAPCONF.get('REFERENCE') else MAPCONF[MAPPERENV].get('REFERENCE')
+    MANNO = MAPCONF.get('ANNOTATION') if MAPCONF.get('ANNOTATION') else MAPCONF[MAPPERENV].get('ANNOTATION')
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -103,7 +104,6 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
-    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX
@@ -129,8 +129,9 @@ if 'MAPPING' in config:
 # Peak Calling Variables
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
-    REF = PEAKCONF.get('REFERENCE') if PEAKCONF.get('REFERENCE') else PEAKCONF[XENV].get('REFERENCE')
-    ANNOPEAK = PEAKCONF.get('ANNOTATION') if PEAKCONF.get('ANNOTATION') else PEAKCONF[XENV].get('ANNOTATION')
+    PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
+    REF = PEAKCONF.get('REFERENCE') if PEAKCONF.get('REFERENCE') else PEAKCONF[PEAKENV].get('REFERENCE')
+    ANNOPEAK = PEAKCONF.get('ANNOTATION') if PEAKCONF.get('ANNOTATION') else PEAKCONF[PEAKENV].get('ANNOTATION')
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
