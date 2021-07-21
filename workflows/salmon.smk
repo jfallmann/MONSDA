@@ -6,8 +6,8 @@ rule themall:
 
 rule salmon_index:
     input:  fa = REFERENCE
-    output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0]))
+    output: idx = directory(INDEX),
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
