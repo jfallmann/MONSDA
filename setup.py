@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 from glob import glob
-import os.path
+import os
 
 NAME = "NextSnakes"
 # Set __version__
@@ -9,13 +9,21 @@ exec(open('NextSnakes/__init__.py').read())
 DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflows"
 
 scripts = list()
-for s in glob('scripts/*'):
-    scripts.append(s)#os.path.join(s, os.path.split(s)[1]))
+for s in glob('scripts/**', recursive=True):
+    if any(x in s for x in ['.pl', '.py', '.sh']):
+        scripts.append(os.path.relpath(s))#os.path.join(s, os.path.split(s)[1]))
+workflows = list()
 for d in glob('workflows/*'):
-    scripts.append(d)#os.path.join(d, os.path.split(d)[1]))
+    if not 'torepair' in d:
+        workflows.append(os.path.relpath(d))#os.path.join(d, os.path.split(d)[1]))
+
+envs = list()
+for e in glob('envs/*'):
+    envs.append(os.path.relpath(d))#os.path.join(d, os.path.split(d)[1]))
 
 requires = open("requirements.txt").read().strip().split("\n")
 
+print(scripts, workflows)
 
 setup(
     name=NAME,
@@ -25,7 +33,13 @@ setup(
     author_email="fall@bioinf.uni-leipzig.de",
     packages=find_packages(include=['NextSnakes', 'NextSnakes.*']),
     include_package_data=True,
-    scripts=scripts,
+    #scripts=scripts,
+    data_files=[
+        (os.path.join('share','NextSnakes','workflows'), workflows),
+        (os.path.join('share','NextSnakes','scripts'), scripts),
+        (os.path.join('share','NextSnakes','envs'), envs),
+        ("", ["LICENSE"])
+    ],
     entry_points={
         "console_scripts": [
             "NextSnakes = NextSnakes.RunNextSnakes:main",
@@ -38,7 +52,6 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     zip_safe=False,
-    data_files=[("", ["LICENSE"])],
     license='LICENSE',
     url="https://github.com/jfallmann/NextSnakes",
     long_description_content_type="text/markdown",
