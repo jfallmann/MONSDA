@@ -91,7 +91,6 @@ dependencies:
   - libgcc-devel_linux-64=9.3.0
   - libgcc-ng=9.3.0
   - libgfortran-ng=9.4.0
-  - libgfortran4=7.5.0
   - libgfortran5=9.4.0
   - libglib=2.68.3
   - libgomp=9.3.0
