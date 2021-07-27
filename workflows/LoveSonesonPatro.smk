@@ -32,7 +32,7 @@ if paired == 'paired':
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("COUNTS/{combo}/{file}", category="COUNTING"))
+                ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
@@ -47,7 +47,7 @@ else:
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("COUNTS/{combo}/{file}", category="COUNTING"))
+                ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
