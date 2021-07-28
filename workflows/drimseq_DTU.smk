@@ -30,7 +30,7 @@ rule themall:
 rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0])))
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'][0])))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -51,7 +51,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU'
         shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} ; gzip {output.ctsdir}/quant.sf && ln -s {output.ctsdir}/quant.sf.gz {output.cnts} &>> {log}"
@@ -66,7 +66,7 @@ else:
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'][1].items()),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U'
         shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -s {output.ctsdir}/quant.sf.gz {output.cnts} &>> {log}"
