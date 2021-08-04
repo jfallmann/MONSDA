@@ -2,15 +2,15 @@ COUNTBIN, COUNTENV = env_bin_from_config3(config, 'COUNTING')
 
 if not rundedup:
     rule themall:
-        input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+        input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
 else:
     rule themall:
-        input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+        input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
 
 if paired == 'paired':
@@ -70,7 +70,7 @@ rule count_unique_dedup_mappers:
 rule featurecount:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_tmp.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts"
+            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s.log"
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -79,12 +79,12 @@ rule featurecount:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_tmp_uni.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts"
+            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique.log"
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -93,12 +93,12 @@ rule featurecount_unique:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_dedup:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted_dedup.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_dedup_tmp.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts"
+            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_dedup.log"
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -107,12 +107,12 @@ rule featurecount_dedup:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique_dedup:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique_dedup.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_dedup_tmp_uni.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts"
+            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique_dedup.log"
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -121,7 +121,7 @@ rule featurecount_unique_dedup:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 if rundedup:
     rule summarize_counts:
