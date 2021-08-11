@@ -532,6 +532,8 @@ def tool_params(sample, runstate, config, subconf, tool=None):
     if runstate not in x:
         x.append(runstate)
     log.debug(logid + str([sample, runstate, subconf, x]))
+    if '_' in tool:
+        tool = split('_', tool)[0]
     mp = subDict(config[subconf], x)[tool] if tool else subDict(config[subconf], x)
     log.debug(logid + 'DONE: ' + str(mp))
     return mp
