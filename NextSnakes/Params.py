@@ -899,19 +899,14 @@ def get_pairing(sample, stype, config, samples, scombo=''):
                     if v in x:
                         log.debug(logid + 'Match found: ' + str(v) + ' : ' + str(x))
                         matching = samplecond([x], config)[0].replace('MAPPED/', '')
-                        log.debug(logid + 'PAIRINGS: ' + sample + ': ' + str(matching))
-        log.debug(
-            logid
-            + '-c MAPPED'
-            + os.sep
-            + str(scombo)
-            + os.sep
-            + str(matching)
-            + '_mapped_'
-            + str(stype)
-            + '.bam'
+                        log.info(logid + 'PAIRINGS: ' + sample + ': ' + str(matching))
+
+        retstr = (
+            '-c MAPPED' + os.sep + str(scombo) + os.sep + str(matching) + '_mapped_' + str(stype) + '.bam'
         )
-        return '-c MAPPED' + os.sep + str(scombo) + os.sep + str(matching) + '_mapped_' + str(stype) + '.bam'
+
+        log.debug(logid + retstr)
+        return retstr
     else:
         log.debug(logid + 'No matching sample found')
         return ''
