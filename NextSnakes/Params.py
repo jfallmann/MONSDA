@@ -862,8 +862,10 @@ def checkstranded(sample, config):
 def set_pairings(samples, config):
     logid = scriptname + '.Params_set_pairings: '
     ret = list()
+    cond = samplecond([x], config)
+    pconf = subDict(config['PEAKS'], cond)
     log.debug(logid + 'SAMPLES: ' + str(samples))
-    pairlist = config['PEAKS'].get('COMPARABLE')
+    pairlist = pconf.get('COMPARABLE')
     log.debug(logid + 'PAIRLIST: ' + str(pairlist))
     if pairlist:
         for k, v in pairlist.items():
@@ -879,7 +881,9 @@ def set_pairings(samples, config):
 @check_run
 def get_pairing(sample, stype, config, samples, scombo=''):
     logid = scriptname + '.Params_get_pairings: '
-    pairlist = config['PEAKS'].get('COMPARABLE')
+    cond = samplecond([x], config)
+    pconf = subDict(config['PEAKS'], cond)
+    pairlist = pconf.get('COMPARABLE')
     matching = ''
     log.debug(
         logid
@@ -908,7 +912,7 @@ def get_pairing(sample, stype, config, samples, scombo=''):
         log.debug(logid + retstr)
         return retstr
     else:
-        log.debug(logid + 'No matching sample found')
+        log.warning(logid + 'No matching sample found')
         return ''
 
 
