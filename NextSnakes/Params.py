@@ -862,7 +862,7 @@ def checkstranded(sample, config):
 def set_pairings(samples, config):
     logid = scriptname + '.Params_set_pairings: '
     ret = list()
-    cond = samplecond(samples, config)
+    cond = conditiononly(samples[0], config)
     pconf = subDict(config['PEAKS'], cond)
     log.debug(logid + 'SAMPLES: ' + str(samples))
     pairlist = pconf.get('COMPARABLE')
@@ -881,7 +881,7 @@ def set_pairings(samples, config):
 @check_run
 def get_pairing(sample, stype, config, samples, scombo=''):
     logid = scriptname + '.Params_get_pairings: '
-    cond = samplecond([sample], config)
+    cond = conditiononly(sample, config)
     pconf = subDict(config['PEAKS'], cond)
     pairlist = pconf.get('COMPARABLE')
     matching = ''
