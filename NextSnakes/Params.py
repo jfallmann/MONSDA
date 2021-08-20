@@ -575,6 +575,7 @@ def get_reps(samples, config, analysis):
     log.debug(logid + 'Samples: ' + str(samples))
     ret = defaultdict(list)
     for sample in samples:
+        sample = sample.replace('.gz', '')
         scond = sample.split(os.sep)[4:-1]
         log.debug(logid + 'WORKING ON: ' + str(sample) + ' CONDITION: ' + str(scond))
         partconf = subDict(config['SETTINGS'], scond)
