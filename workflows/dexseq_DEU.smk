@@ -32,6 +32,8 @@ rule featurecount_unique:
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
+            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
     conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
@@ -41,7 +43,7 @@ rule featurecount_unique:
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u |gzip >> {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
