@@ -97,25 +97,31 @@ from NextSnakes.Utils import *
 
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py', '')
-    if any(x in scriptname for x in ['NextSnakes', 'Configurator']):
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    if any(x in scriptname for x in ["NextSnakes", "Configurator"]):
         log = logging.getLogger(scriptname)
     else:
-        log = logging.getLogger('snakemake')
+        log = logging.getLogger("snakemake")
 
-    lvl = log.level if log.level else 'INFO'
+    lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler('LOGS/NextSnakes.log', mode='a')
+    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
     handler.setFormatter(
-        logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
     )
     log.addHandler(handler)
     handler = logging.StreamHandler()
     handler.setFormatter(
-        logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
     )
     log.addHandler(handler)
     log.setLevel(lvl)
@@ -127,26 +133,29 @@ except Exception:
         exc_value,
         exc_tb,
     )
-    print(''.join(tbe.format()), file=sys.stderr)
+    print("".join(tbe.format()), file=sys.stderr)
 
 
 @check_run
 def get_samples(config):
-    logid = scriptname + '.Params_get_samples: '
+    logid = scriptname + ".Params_get_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    log.debug(logid + 'SAMPLES_LONG: ' + str(SAMPLES))
-    check = [os.path.join('FASTQ', str(x).replace('.fastq.gz', '') + '*.fastq.gz') for x in SAMPLES]
+    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
+    check = [
+        os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
+        for x in SAMPLES
+    ]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
-        log.debug(logid + 'SEARCHING: ' + s)
+        log.debug(logid + "SEARCHING: " + s)
         paired = checkpaired([SAMPLES[i]], config)
-        log.debug(logid + 'PAIRED: ' + str(paired))
+        log.debug(logid + "PAIRED: " + str(paired))
         f = glob.glob(s)
-        log.debug(logid + 'SAMPLECHECK: ' + str(f))
+        log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            if 'paired' not in paired:
+            if "paired" not in paired:
                 RETSAMPLES.extend(
                     list(
                         set(
@@ -154,8 +163,8 @@ def get_samples(config):
                                 os.path.join(
                                     os.path.dirname(s),
                                     re.sub(
-                                        r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz',
-                                        '',
+                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
+                                        "",
                                         os.path.basename(s),
                                     ),
                                 )
@@ -164,41 +173,47 @@ def get_samples(config):
                         )
                     )
                 )
-                log.debug(logid + 'PAIREDSAMPLES: ' + str(f))
+                log.debug(logid + "PAIREDSAMPLES: " + str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
+                RETSAMPLES.extend([x.replace(".fastq.gz", "") for x in f])
         else:
-            log.debug(logid + 'SAMPLECHECK: ' + str(f))
-    log.debug(logid + 'SAMPLETEST: ' + str(RETSAMPLES))
+            log.debug(logid + "SAMPLECHECK: " + str(f))
+    log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
-        log.error(logid + 'No samples found, please check config file')
+        log.error(logid + "No samples found, please check config file")
         sys.exit()
 
-    log.debug(logid + 'SAMPLES: ' + str(RETSAMPLES))
+    log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return RETSAMPLES
 
 
 @check_run
 def get_samples_postprocess(config, subwork):
-    logid = scriptname + '.Params_get_samples_postprocess: '
+    logid = scriptname + ".Params_get_samples_postprocess: "
     SAMPLES = [
         os.path.join(x)
         for x in sampleslong(config)
         if len(getFromDict(config[subwork], conditiononly(x, config))) > 0
-        and (not config[subwork].get('EXCLUDE') or os.path.basename(x) not in config[subwork]['EXCLUDE'])
+        and (
+            not config[subwork].get("EXCLUDE")
+            or os.path.basename(x) not in config[subwork]["EXCLUDE"]
+        )
     ]  # only those samples where postprocessing steps are defined for in config, should we make this a per condition check?
-    log.debug(logid + 'SAMPLES_LONG: ' + str(SAMPLES))
-    check = [os.path.join('FASTQ', str(x).replace('.fastq.gz', '') + '*.fastq.gz') for x in SAMPLES]
+    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
+    check = [
+        os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
+        for x in SAMPLES
+    ]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
         paired = checkpaired([SAMPLES[i]], config)
-        log.debug(logid + 'PAIRED: ' + str(paired))
+        log.debug(logid + "PAIRED: " + str(paired))
         f = glob.glob(s)
-        log.debug(logid + 'SAMPLECHECK: ' + str(f))
+        log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            if 'paired' in paired:
+            if "paired" in paired:
                 RETSAMPLES.extend(
                     list(
                         set(
@@ -206,8 +221,8 @@ def get_samples_postprocess(config, subwork):
                                 os.path.join(
                                     os.path.dirname(s),
                                     re.sub(
-                                        r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz',
-                                        '',
+                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
+                                        "",
                                         os.path.basename(s),
                                     ),
                                 )
@@ -216,57 +231,64 @@ def get_samples_postprocess(config, subwork):
                         )
                     )
                 )
-                log.debug(logid + 'PAIREDSAMPLES: ' + str(f))
+                log.debug(logid + "PAIREDSAMPLES: " + str(f))
             else:
-                RETSAMPLES.extend([x.replace('.fastq.gz', '') for x in f])
+                RETSAMPLES.extend([x.replace(".fastq.gz", "") for x in f])
         else:
-            log.debug(logid + 'SAMPLECHECK: ' + str(f))
-    log.debug(logid + 'SAMPLETEST: ' + str(RETSAMPLES))
+            log.debug(logid + "SAMPLECHECK: " + str(f))
+    log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
-        log.error(logid + 'No samples found for ' + str(subwork) + ', please check config file')
+        log.error(
+            logid
+            + "No samples found for "
+            + str(subwork)
+            + ", please check config file"
+        )
         sys.exit()
 
-    log.debug(logid + 'SAMPLES: ' + str(RETSAMPLES))
+    log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return RETSAMPLES
 
 
 @check_run
 def download_samples(config):
-    logid = scriptname + '.Params_download_samples: '
+    logid = scriptname + ".Params_download_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    log.debug(logid + 'DOWNLOAD_SAMPLES_LONG: ' + str(SAMPLES))
+    log.debug(logid + "DOWNLOAD_SAMPLES_LONG: " + str(SAMPLES))
     return SAMPLES
 
 
 @check_run
 def basecall_samples(config):
-    logid = scriptname + '.Params_basecall_samples: '
+    logid = scriptname + ".Params_basecall_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    log.debug(logid + 'SAMPLES_LONG: ' + str(SAMPLES))
-    check = [os.path.join('RAW', str(x).replace('.fast5', '') + '*.fast5') for x in SAMPLES]
+    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
+    check = [
+        os.path.join("RAW", str(x).replace(".fast5", "") + "*.fast5") for x in SAMPLES
+    ]
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
-        log.debug(logid + 'SEARCHING: ' + s)
+        log.debug(logid + "SEARCHING: " + s)
         f = glob.glob(s)
-        log.debug(logid + 'SAMPLECHECK: ' + str(f))
+        log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            RETSAMPLES.extend([x.replace('.fast5', '') for x in f])
-    log.debug(logid + 'SAMPLETEST: ' + str(RETSAMPLES))
+            RETSAMPLES.extend([x.replace(".fast5", "") for x in f])
+    log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
-        log.error(logid + 'No samples found, please check config file')
+        log.error(logid + "No samples found, please check config file")
         sys.exit()
 
-    log.debug(logid + 'SAMPLES: ' + str(RETSAMPLES))
+    log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return RETSAMPLES
 
 
 @check_run
 def get_conditions(config):
-    logid = scriptname + '.Params_conditions: '
+    logid = scriptname + ".Params_conditions: "
     ret = list()
-    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):
+    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):
         ret.append(k)
     log.debug(logid + str(ret))
     return list(set(ret))
@@ -274,15 +296,18 @@ def get_conditions(config):
 
 @check_run
 def get_samples_from_dir(search, config):  # CHECK
-    logid = scriptname + '.Params_get_samples_from_dir: '
-    samples = [x.replace(' ', '') for x in list(set(getFromDict(config['SETTINGS'], search)[0]['SAMPLES']))]
+    logid = scriptname + ".Params_get_samples_from_dir: "
+    samples = [
+        x.replace(" ", "")
+        for x in list(set(getFromDict(config["SETTINGS"], search)[0]["SAMPLES"]))
+    ]
     for x in range(
         len(search), len(search) - 2, -1
     ):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
-        pat = os.sep.join(['FASTQ', os.sep.join(search[0:x]), '*.fastq.gz'])
-        log.debug(logid + 'REGEX: ' + str(pat) + '\t' + 'SAMPLES: ' + str(samples))
+        pat = os.sep.join(["FASTQ", os.sep.join(search[0:x]), "*.fastq.gz"])
+        log.debug(logid + "REGEX: " + str(pat) + "\t" + "SAMPLES: " + str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
-        log.debug(logid + 'check: ' + str(check))
+        log.debug(logid + "check: " + str(check))
         if len(check) > 0:
             ret = list()
             clean = list()
@@ -291,29 +316,41 @@ def get_samples_from_dir(search, config):  # CHECK
             ) in (
                 check
             ):  # If sample fits glob pattern but is not actually in the part of the config we are looking at this needs to be checked as checkpaired returns None otherwise, e.g. Condition1 has Sample abc_R1.fastq and Condition2 has Sample abcd_R1.fastq
-                log.debug(logid + 'check: ' + str(c))
+                log.debug(logid + "check: " + str(c))
                 x = c.split(os.sep)[-1]
                 for s in samples:
-                    log.debug(logid + 'x: ' + str(x))
-                    log.debug(logid + 'sample: ' + str(s))
-                    if s + '_R' in x or s + '.fastq.gz' == x:
-                        log.debug(logid + 'FOUND: ' + s + '_R' + ' or ' + s + '.fastq.gz' + ' in ' + x)
+                    log.debug(logid + "x: " + str(x))
+                    log.debug(logid + "sample: " + str(s))
+                    if s + "_R" in x or s + ".fastq.gz" == x:
+                        log.debug(
+                            logid
+                            + "FOUND: "
+                            + s
+                            + "_R"
+                            + " or "
+                            + s
+                            + ".fastq.gz"
+                            + " in "
+                            + x
+                        )
                         clean.append(c)
                         break
-            log.debug(logid + 'checkclean: ' + str(clean))
-            paired = checkpaired([os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config)
-            if paired is not None and 'paired' in paired:
+            log.debug(logid + "checkclean: " + str(clean))
+            paired = checkpaired(
+                [os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config
+            )
+            if paired is not None and "paired" in paired:
                 log.debug(
                     logid
-                    + 'SEARCHING: '
+                    + "SEARCHING: "
                     + str(
                         [
                             os.sep.join(
                                 [
                                     os.sep.join(os.path.dirname(s).split(os.sep)[1:]),
                                     re.sub(
-                                        r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz',
-                                        '',
+                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
+                                        "",
                                         os.path.basename(s),
                                     ),
                                 ]
@@ -328,10 +365,12 @@ def get_samples_from_dir(search, config):  # CHECK
                             [
                                 os.sep.join(
                                     [
-                                        os.sep.join(os.path.dirname(s).split(os.sep)[1:]),
+                                        os.sep.join(
+                                            os.path.dirname(s).split(os.sep)[1:]
+                                        ),
                                         re.sub(
-                                            r'_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz',
-                                            '',
+                                            r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
+                                            "",
                                             os.path.basename(s),
                                         ),
                                     ]
@@ -341,37 +380,49 @@ def get_samples_from_dir(search, config):  # CHECK
                         )
                     )
                 )
-                log.debug(logid + 'FOUND: ' + str(ret))
-                renamelist = [re.sub(r'_r\d', lambda pat: pat.group(1).upper(), s) for s in ret]
+                log.debug(logid + "FOUND: " + str(ret))
+                renamelist = [
+                    re.sub(r"_r\d", lambda pat: pat.group(1).upper(), s) for s in ret
+                ]
                 for i in range(len(renamelist)):
                     if renamelist[i] != ret[i]:
                         log.warning(
-                            'SAMPLE NAMES CONTAIN LOWER CASE r1/r2 INSTEAD OF R1/R2 FOR PAIRED END SEQUENCING, THEY WILL BE RENAMED'
+                            "SAMPLE NAMES CONTAIN LOWER CASE r1/r2 INSTEAD OF R1/R2 FOR PAIRED END SEQUENCING, THEY WILL BE RENAMED"
                         )
                         os.rename(ret[i], renamelist[i])
             else:
                 log.debug(
                     logid
-                    + 'SEARCHING: '
-                    + str([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean])
+                    + "SEARCHING: "
+                    + str(
+                        [
+                            os.sep.join(s.split(os.sep)[1:]).replace(".fastq.gz", "")
+                            for s in clean
+                        ]
+                    )
                 )
-                ret.extend([os.sep.join(s.split(os.sep)[1:]).replace('.fastq.gz', '') for s in clean])
+                ret.extend(
+                    [
+                        os.sep.join(s.split(os.sep)[1:]).replace(".fastq.gz", "")
+                        for s in clean
+                    ]
+                )
 
-            log.debug(logid + 'RETURN: ' + str(ret))
+            log.debug(logid + "RETURN: " + str(ret))
             return list(set(ret))
-    log.warning(logid + 'NO SAMPLES FOUND')
+    log.warning(logid + "NO SAMPLES FOUND")
     return list()
 
 
 @check_run
 def sampleslong(config):
-    logid = scriptname + '.Params_sampleslong: '
+    logid = scriptname + ".Params_sampleslong: "
     tosearch = list()
     ret = list()
-    for k in keysets_from_dict(config['SETTINGS'], 'SAMPLES'):  # CHECK
+    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):  # CHECK
         tosearch.append(list(k))
-    log.debug(logid + 'keys: ' + str(tosearch))
-    log.debug(logid + 'tosearch: ' + str(tosearch))
+    log.debug(logid + "keys: " + str(tosearch))
+    log.debug(logid + "tosearch: " + str(tosearch))
     for search in tosearch:
         ret.extend(get_samples_from_dir(search, config))
     log.debug(logid + str(ret))
@@ -381,33 +432,33 @@ def sampleslong(config):
 @check_run
 def get_placeholder(config):
     ret = list()
-    if 'PH' in (config):
-        for x in config['PH']:
+    if "PH" in (config):
+        for x in config["PH"]:
             ret.append(str(x))
     else:
-        ret.append('_')
+        ret.append("_")
     return ret
 
 
 @check_run
 def get_cutoff_as_string(config, subwork, cf):
-    logid = scriptname + '.get_cutoff: '
+    logid = scriptname + ".get_cutoff: "
     cutoff = (
-        str(config[subwork]['CUTOFFS'].get(cf))
-        if config[subwork].get('CUTOFFS')
-        else '.05'
-        if cf == 'pval'
-        else '1.5'
+        str(config[subwork]["CUTOFFS"].get(cf))
+        if config[subwork].get("CUTOFFS")
+        else ".05"
+        if cf == "pval"
+        else "1.5"
     )
-    log.info(logid + 'CUTOFFS: ' + str(cf) + ':' + cutoff)
+    log.info(logid + "CUTOFFS: " + str(cf) + ":" + cutoff)
     return cutoff
 
 
 @check_run
 def get_summary_dirs(config):
-    logid = scriptname + '.get_summary_dirs: '
+    logid = scriptname + ".get_summary_dirs: "
     ret = list()
-    for work, tools in config['WORKFLOWS'].items():
+    for work, tools in config["WORKFLOWS"].items():
         for tool in tools:
             ret.append(f"{work}/{tool.upper()}")
     log.debug(logid + str(ret))
@@ -416,11 +467,11 @@ def get_summary_dirs(config):
 
 @check_run
 def get_summary_files(config):
-    logid = scriptname + '.get_summary_files: '
+    logid = scriptname + ".get_summary_files: "
     ret = list()
-    for work, tools in config['WORKFLOWS'].items():
+    for work, tools in config["WORKFLOWS"].items():
         for tool in tools:
-            log.info(logid + 'make summary of ' + str(work) + ' - ' + str(tool))
+            log.info(logid + "make summary of " + str(work) + " - " + str(tool))
             for f in glob.glob(f"{work}/{tool.upper()}/Sig*"):
                 # for f in glob.glob(f"{work}/{tool.upper()}/*"):
                 ret.append(f)
@@ -430,101 +481,126 @@ def get_summary_files(config):
 
 @check_run
 def create_skeleton(runner, skeleton=None):
-    logid = scriptname + '.Params_create_skeleton: '
+    logid = scriptname + ".Params_create_skeleton: "
     if skeleton:
-        for subdir in ['SubSnakes', 'RAW', 'FASTQ', 'LOGS', 'TMP', 'JOB']:
+        for subdir in ["SubSnakes", "RAW", "FASTQ", "LOGS", "TMP", "JOB"]:
             makeoutdir(subdir)
-            sys.exit('Skeleton directories created, please add files and rerun without --skeleton option')
+            sys.exit(
+                "Skeleton directories created, please add files and rerun without --skeleton option"
+            )
     else:
-        for subdir in [runner, 'LOGS', 'TMP', 'JOBS']:
+        for subdir in [runner, "LOGS", "TMP", "JOBS"]:
             makeoutdir(subdir)
-        if os.path.isfile(os.path.abspath('JOBS' + os.sep + scriptname + '.commands')):
+        if os.path.isfile(os.path.abspath("JOBS" + os.sep + scriptname + ".commands")):
             ts = str(
                 datetime.datetime.fromtimestamp(
-                    os.path.getmtime(os.path.abspath('JOBS' + os.sep + scriptname + '.commands'))
+                    os.path.getmtime(
+                        os.path.abspath("JOBS" + os.sep + scriptname + ".commands")
+                    )
                 ).strftime("%Y%m%d_%H_%M_%S")
             )
             shutil.copy2(
-                'JOBS' + os.sep + scriptname + '.commands',
-                'JOBS' + os.sep + scriptname + '_' + ts + '.commands',
+                "JOBS" + os.sep + scriptname + ".commands",
+                "JOBS" + os.sep + scriptname + "_" + ts + ".commands",
             )
 
 
 @check_run
 def get_processes(config):
-    logid = scriptname + '.Params_get_processes: '
+    logid = scriptname + ".Params_get_processes: "
 
     preprocess = subworkflows = postprocess = []
 
     # Define workflow stages
-    pre = ['QC', 'SRA', 'BASECALL']
-    sub = ['TRIMMING', 'MAPPING', 'DEDUP', 'QC']
-    post = ['COUNTING', 'UCSC', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']
+    pre = ["QC", "SRA", "BASECALL"]
+    sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
+    post = ["COUNTING", "UCSC", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
 
-    wfs = [x.replace(' ', '') for x in config['WORKFLOWS'].split(',')]
+    wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
-    if 'WORKFLOWS' in config:
+    if "WORKFLOWS" in config:
         log.debug(
-            logid + 'CONFIG-WORKFLOWS: ' + str(wfs) + '\t' + str(pre) + '\t' + str(sub) + '\t' + str(post)
+            logid
+            + "CONFIG-WORKFLOWS: "
+            + str(wfs)
+            + "\t"
+            + str(pre)
+            + "\t"
+            + str(sub)
+            + "\t"
+            + str(post)
         )
         subworkflows = [str(x) for x in wfs if x in sub]
-        log.debug(logid + 'Sub: ' + str(subworkflows))
-        if len(subworkflows) == 0 or subworkflows[0] == '':
+        log.debug(logid + "Sub: " + str(subworkflows))
+        if len(subworkflows) == 0 or subworkflows[0] == "":
             subworkflows = []
         preprocess = [x for x in wfs if x in pre]
-        if len(preprocess) == 0 or preprocess[0] == '':
+        if len(preprocess) == 0 or preprocess[0] == "":
             preprocess = None
-        log.debug(logid + 'Intermediate-WORKFLOWS: ' + str([preprocess, subworkflows, postprocess]))
+        log.debug(
+            logid
+            + "Intermediate-WORKFLOWS: "
+            + str([preprocess, subworkflows, postprocess])
+        )
 
         if (
             subworkflows
-            and any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP'])
+            and any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
             and preprocess
-            and 'QC' in preprocess
+            and "QC" in preprocess
         ):
-            preprocess.remove('QC')
+            preprocess.remove("QC")
 
         if (
             preprocess
-            and 'QC' in preprocess
-            and not any(w in subworkflows for w in ['TRIMMING', 'MAPPING', 'DEDUP'])
+            and "QC" in preprocess
+            and not any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
         ):
-            subworkflows.remove('QC')
+            subworkflows.remove("QC")
 
         postprocess = [x for x in wfs if x in post]
-        if len(postprocess) == 0 or postprocess[0] == '':
+        if len(postprocess) == 0 or postprocess[0] == "":
             postprocess = []
     else:
-        log.error('NO WORKFLOWS DEFINED, NOTHING TO DO!')
+        log.error("NO WORKFLOWS DEFINED, NOTHING TO DO!")
         sys.exit()
 
     if preprocess:
         try:
-            all([config[x] or x == '' for x in preprocess])
+            all([config[x] or x == "" for x in preprocess])
         except KeyError:
-            log.warning(logid + 'Not all required preprocessing steps have configuration in the config file')
+            log.warning(
+                logid
+                + "Not all required preprocessing steps have configuration in the config file"
+            )
 
     if subworkflows:
         try:
-            all([config[x] or x == 'TRIMMING' or x == '' for x in subworkflows])
+            all([config[x] or x == "TRIMMING" or x == "" for x in subworkflows])
         except KeyError:
-            log.warning(logid + 'Not all required subworkflows have configuration in the config file')
+            log.warning(
+                logid
+                + "Not all required subworkflows have configuration in the config file"
+            )
 
     if postprocess:
         try:
-            all([config[x] or x == '' for x in postprocess])
+            all([config[x] or x == "" for x in postprocess])
         except KeyError:
-            log.warning(logid + 'Not all required postprocessing steps have configuration in the config file')
+            log.warning(
+                logid
+                + "Not all required postprocessing steps have configuration in the config file"
+            )
 
-    log.debug(logid + 'WORKFLOWS: ' + str([preprocess, subworkflows, postprocess]))
+    log.debug(logid + "WORKFLOWS: " + str([preprocess, subworkflows, postprocess]))
 
     return [preprocess, subworkflows, postprocess]
 
 
 @check_run
 def tool_params(sample, runstate, config, subconf, tool=None):
-    logid = scriptname + '.Params_tool_params: '
-    log.debug(logid + 'Samples: ' + str(sample))
+    logid = scriptname + ".Params_tool_params: "
+    log.debug(logid + "Samples: " + str(sample))
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
     if runstate is None:
@@ -532,28 +608,28 @@ def tool_params(sample, runstate, config, subconf, tool=None):
     if runstate not in x:
         x.append(runstate)
     log.debug(logid + str([sample, runstate, subconf, x]))
-    if '_' in tool:
-        tool = tool.split('_')[0]
+    if "_" in tool:
+        tool = tool.split("_")[0]
     mp = subDict(config[subconf], x)[tool] if tool else subDict(config[subconf], x)
-    log.debug(logid + 'DONE: ' + str(mp))
+    log.debug(logid + "DONE: " + str(mp))
     return mp
 
 
 @check_run
 def setting_per_sample(sample, runstate, config, setting, subconf=None):
-    logid = scriptname + '.Params_setting_per_sample: '
-    log.debug(logid + 'Samples: ' + str(sample))
+    logid = scriptname + ".Params_setting_per_sample: "
+    log.debug(logid + "Samples: " + str(sample))
     set = None
     x = sample.split(os.sep)[2:-1]
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
-    subsetting = subDict(config['SETTINGS'], x).get(setting)
+    subsetting = subDict(config["SETTINGS"], x).get(setting)
 
-    if setting == 'ANNOTATION':  # Special case is annotation
+    if setting == "ANNOTATION":  # Special case is annotation
         subsetting = (
-            subsetting.get('GTF') if 'GTF' in ANNO else subsetting.get('GFF')
+            subsetting.get("GTF") if "GTF" in ANNO else subsetting.get("GFF")
         )  # by default GTF format will be used
 
     if subconf:  # check specific setting for workflow part
@@ -571,127 +647,134 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
 
 @check_run
 def get_reps(samples, config, analysis):
-    logid = scriptname + '.Params_get_reps: '
-    log.debug(logid + 'Samples: ' + str(samples))
+    logid = scriptname + ".Params_get_reps: "
+    log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        sample = sample.replace('.gz', '')
         scond = sample.split(os.sep)[4:-1]
-        log.debug(logid + 'WORKING ON: ' + str(sample) + ' CONDITION: ' + str(scond))
-        partconf = subDict(config['SETTINGS'], scond)
-        log.debug(logid + 'CONF: ' + str(partconf))
+        log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
+        partconf = subDict(config["SETTINGS"], scond)
+        log.debug(logid + "CONF: " + str(partconf))
 
-        Ex = config[analysis].get('EXCLUDE')
+        Ex = config[analysis].get("EXCLUDE")
         if Ex and sample.split(os.sep)[-1] in Ex:
             continue
-        ret['reps'].append(sample)
-        wcfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
-        idx = partconf['SAMPLES'].index(wcfile)
-        ret['pairs'].append(checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config))
-        ret['conds'].append(partconf['GROUPS'][idx])
-        if 'BATCHES' in partconf and len(partconf['BATCHES']) >= idx:
-            ret['batches'].append(str(partconf['BATCHES'][idx]).replace(',', '_'))
+        ret["reps"].append(sample)
+        wcfile = sample.split(os.sep)[-1].replace("_mapped_sorted_unique.counts.gz", "")
+        idx = partconf["SAMPLES"].index(wcfile)
+        ret["pairs"].append(
+            checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config)
+        )
+        ret["conds"].append(partconf["GROUPS"][idx])
+        if "BATCHES" in partconf and len(partconf["BATCHES"]) >= idx:
+            ret["batches"].append(str(partconf["BATCHES"][idx]).replace(",", "_"))
         else:
-            ret['batches'].append('1')
-        if 'TYPES' in partconf and len(partconf['TYPES']) >= idx:
-            ret['types'].append(str(partconf['TYPES'][idx]).replace(',', '_'))
+            ret["batches"].append("1")
+        if "TYPES" in partconf and len(partconf["TYPES"]) >= idx:
+            ret["types"].append(str(partconf["TYPES"][idx]).replace(",", "_"))
         else:
-            ret['types'].append('std')
+            ret["types"].append("std")
 
-    rets = '-r ' + str.join(',', ret['reps'])
-    rets += ' -c ' + str.join(',', ret['conds'])
-    rets += ' -t ' + str.join(',', ret['types'])
-    rets += ' -b ' + str.join(',', ret['batches'])
-    rets += ' --paired ' + str.join(',', ret['pairs']) if 'pairs' in ret else ''
+    rets = "-r " + str.join(",", ret["reps"])
+    rets += " -c " + str.join(",", ret["conds"])
+    rets += " -t " + str.join(",", ret["types"])
+    rets += " -b " + str.join(",", ret["batches"])
+    rets += " --paired " + str.join(",", ret["pairs"]) if "pairs" in ret else ""
 
-    log.debug(logid + 'RETURN: ' + str(rets))
+    log.debug(logid + "RETURN: " + str(rets))
     return rets
 
 
 @check_run
 def get_diego_samples(samples, config, analysis):
-    logid = scriptname + '.Params_get_diego_samples: '
-    log.debug(logid + 'Samples: ' + str(samples))
+    logid = scriptname + ".Params_get_diego_samples: "
+    log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
-        log.debug(logid + 'WORKING ON: ' + str(sample) + ' CONDITION: ' + str(scond))
+        log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
         partconf = subDict(config[analysis], scond)
-        log.debug(logid + 'CONF: ' + str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
+        log.debug(logid + "CONF: " + str(partconf))
+        wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
+            "_mapped_sorted_unique.counts.gz", ""
+        )
         ret[wcfile].append(sample)
 
-    log.debug(logid + 'RETURN: ' + str(ret))
+    log.debug(logid + "RETURN: " + str(ret))
 
-    slist = ''
+    slist = ""
     for key, val in ret.items():
-        slist += str(key) + '\t'
-        slist += '\t'.join(val)
+        slist += str(key) + "\t"
+        slist += "\t".join(val)
         slist += os.linesep
 
-        log.debug(logid + 'RETURN: ' + str(slist))
+        log.debug(logid + "RETURN: " + str(slist))
     return slist
 
 
 @check_run
 def get_diego_groups(samples, config, analysis):
-    logid = scriptname + '.Params_get_diego_groups: '
-    log.debug(logid + 'Samples: ' + str(samples))
+    logid = scriptname + ".Params_get_diego_groups: "
+    log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
-        log.debug(logid + 'WORKING ON: ' + str(sample) + ' CONDITION: ' + str(scond))
+        log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
         partconf = subDict(config[analysis], scond)
-        log.debug(logid + 'CONF: ' + str(partconf))
-        wcfile = str.join('-', sample.split(os.sep)[-4:]).replace('_mapped_sorted_unique.counts', '')
-        checkfile = sample.split(os.sep)[-1].replace('_mapped_sorted_unique.counts', '')
-        idx = partconf['REPLICATES'].index(checkfile)
-        cond = partconf['GROUPS'][idx]
+        log.debug(logid + "CONF: " + str(partconf))
+        wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
+            "_mapped_sorted_unique.counts.gz", ""
+        )
+        checkfile = sample.split(os.sep)[-1].replace(
+            "_mapped_sorted_unique.counts.gz", ""
+        )
+        idx = partconf["REPLICATES"].index(checkfile)
+        cond = partconf["GROUPS"][idx]
         ret[cond].append(wcfile)
 
-    slist = ''
+    slist = ""
     for key, val in ret.items():
-        slist += str(key) + '\t'
-        slist += '\t'.join(val)
+        slist += str(key) + "\t"
+        slist += "\t".join(val)
         slist += os.linesep
-    log.debug(logid + 'RETURN: ' + str(slist))
+    log.debug(logid + "RETURN: " + str(slist))
     return slist
 
 
 @check_run
 def env_bin_from_config(samples, config, subconf):
-    logid = scriptname + '.Params_env_bin_from_config: '
+    logid = scriptname + ".Params_env_bin_from_config: "
     s = samples[0].split(os.sep)[:-1]
     mb, me = [None, None]
     for k in getFromDict(config[subconf], s):
-        mb, me = k['BIN'], k['ENV']
+        mb, me = k["BIN"], k["ENV"]
     return mb, me
 
 
 @check_run
 def env_bin_from_config2(samples, config, subconf):
-    logid = scriptname + '.Params_env_bin_from_config2: '
+    logid = scriptname + ".Params_env_bin_from_config2: "
     for s in samples:
-        log.debug(logid + 'S: ' + str(s))
-        log.debug(logid + 'C: ' + str(conditiononly(s, config)))
+        log.debug(logid + "S: " + str(s))
+        log.debug(logid + "C: " + str(conditiononly(s, config)))
         check = conditiononly(s, config)
 
         for k in getFromDict(config[subconf], check):
-            if 'BIN' in k:
-                mb = k['BIN']
+            if "BIN" in k:
+                mb = k["BIN"]
             else:
-                mb = ''
-            if 'ENV' in k:
-                me = k['ENV']
+                mb = ""
+            if "ENV" in k:
+                me = k["ENV"]
             else:
-                me = ''
+                me = ""
         log.debug(logid + str([str(mb), str(me)]))
     return mb, me
 
 
 @check_run
 def env_bin_from_config3(config, subconf):
-    logid = scriptname + '.Params_env_bin_from_config3: '
+    logid = scriptname + ".Params_env_bin_from_config3: "
     envkey = subconf + "ENV"
     binkey = subconf + "BIN"
     me = config[envkey]
@@ -708,7 +791,7 @@ def sample_from_path(path):
 
 @check_run
 def runstate_from_sample(sample, config):
-    logid = scriptname + '.Params_runstate_from_sample: '
+    logid = scriptname + ".Params_runstate_from_sample: "
     ret = list()
     for s in sample:
         if len(s.split(os.sep)) < 2:
@@ -716,24 +799,26 @@ def runstate_from_sample(sample, config):
         if len(getFromDict(config["SETTINGS"], s.split(os.sep))) < 1:
             s = os.path.dirname(s)
             n = s.split(os.sep)[-1]
-        log.debug(logid + 'SAMPLE: ' + s)
+        log.debug(logid + "SAMPLE: " + s)
         c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
-        log.debug(logid + 'SETTINGS: ' + str(c))
+        log.debug(logid + "SETTINGS: " + str(c))
         if dict_inst(c):
-            if not c.get('SAMPLES'):
+            if not c.get("SAMPLES"):
                 for k, v in c.items():
-                    log.debug(logid + 'k: ' + str(k) + ', v: ' + str(v) + ' c: ' + str(c))
-                    if dict_inst(v) and v.get('SAMPLES'):
+                    log.debug(
+                        logid + "k: " + str(k) + ", v: " + str(v) + " c: " + str(c)
+                    )
+                    if dict_inst(v) and v.get("SAMPLES"):
                         if k not in ret:
                             ret.append(k)
             else:
-                log.debug(logid + 'c: ' + str(c))
+                log.debug(logid + "c: " + str(c))
                 ret.extend(s.split(os.sep))
         else:
-            log.debug(logid + 'c: ' + str(c) + ', k: ' + str(s.split(os.sep)[-1]))
+            log.debug(logid + "c: " + str(c) + ", k: " + str(s.split(os.sep)[-1]))
             k = s.split(os.sep)[-1]
             ret.append(k)
-    log.debug(logid + 'RETURN: ' + str(ret))
+    log.debug(logid + "RETURN: " + str(ret))
     return ret
 
 
@@ -741,73 +826,73 @@ def runstate_from_sample(sample, config):
 def samplecond(
     sample, config
 ):  # takes list of sample names (including .fastq.gz) and returns a list with their conditions as directory path without fastq.gz ( ["condition/of/sample", ... ])
-    logid = scriptname + '.Params_samplecond: '
+    logid = scriptname + ".Params_samplecond: "
     ret = list()
     for s in sample:
         log.debug(logid + str(s))
-        s = s.replace('.fastq.gz', '')
+        s = s.replace(".fastq.gz", "")
         check = s.split(os.sep)
         checkdir = check[:-1]
         sname = check[-1]
         tmplist = checkdir
-        log.debug(logid + 'CHECK: ' + str(checkdir))
+        log.debug(logid + "CHECK: " + str(checkdir))
         for r in runstate_from_sample([s], config):
             if r not in tmplist:
                 tmp = check[:-1]
                 tmp.append(r)
-                if sname in getFromDict(config["SETTINGS"], tmp)[0].get('SAMPLES'):
+                if sname in getFromDict(config["SETTINGS"], tmp)[0].get("SAMPLES"):
                     tmplist.append(r)
-        log.debug(logid + 'TMPLIST: ' + str(tmplist))
+        log.debug(logid + "TMPLIST: " + str(tmplist))
         paired = checkpaired([s], config)
-        if 'paired' in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
-            s = re.sub(r'_[r|R|][1|2]\.', '', s)
+        if "paired" in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
+            s = re.sub(r"_[r|R|][1|2]\.", "", s)
         r = os.sep.join(tmplist)
         if r not in s:
             ret.append(os.sep.join([r, os.path.basename(s)]))
         else:
             ret.append(os.sep.join([os.path.dirname(s), os.path.basename(s)]))
-    log.debug(logid + 'RETURN: ' + str(ret))
+    log.debug(logid + "RETURN: " + str(ret))
     return ret
 
 
 @check_run
 def conditiononly(sample, config):
-    logid = scriptname + '.Params_conditiononly: '
+    logid = scriptname + ".Params_conditiononly: "
     ret = list()
     check = sample.split(os.sep)
     checkdir = check[:-1]
     sname = check[-1]
     ret.extend(checkdir)
-    log.debug(logid + 'CHECK: ' + str(checkdir))
+    log.debug(logid + "CHECK: " + str(checkdir))
     for r in runstate_from_sample([sample], config):
-        log.debug(logid + 'runstate ' + str(r))
+        log.debug(logid + "runstate " + str(r))
         if r not in ret:
             tmp = list()
             tmp.extend(
                 ret
             )  # this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
             tmp.append(r)
-            log.debug(logid + 'tmp: ' + str(tmp))
+            log.debug(logid + "tmp: " + str(tmp))
             if len(getFromDict(config["SETTINGS"], tmp)) > 0 and sname in getFromDict(
                 config["SETTINGS"], tmp
-            )[0].get('SAMPLES'):
+            )[0].get("SAMPLES"):
                 ret.append(r)
-    log.debug(logid + 'ret: ' + str(ret))
+    log.debug(logid + "ret: " + str(ret))
     return ret
 
 
 @check_run
 def checkpaired(sample, config):
-    logid = scriptname + '.Params_checkpaired: '
-    paired = ''
+    logid = scriptname + ".Params_checkpaired: "
+    paired = ""
     for s in sample:
-        log.debug(logid + 'SAMPLE: ' + str(s))
+        log.debug(logid + "SAMPLE: " + str(s))
         check = conditiononly(s, config)
-        log.debug(logid + 'CHECK: ' + str(check))
-        p = subDict(config['SETTINGS'], check)
+        log.debug(logid + "CHECK: " + str(check))
+        p = subDict(config["SETTINGS"], check)
         if p:
-            paired = p.get('SEQUENCING')
-            paired = paired.split(',')[0] if ',' in paired else paired
+            paired = p.get("SEQUENCING")
+            paired = paired.split(",")[0] if "," in paired else paired
         else:
             return None
         # Per sample paired, not implemented yet
@@ -815,59 +900,59 @@ def checkpaired(sample, config):
         # samplelist = p.get('SAMPLES')
         # x = samplelist.index(s.split(os.sep)[-1])
         # paired = pairedlist[x]
-    log.debug(logid + 'SEQUENCING: ' + str(paired))
+    log.debug(logid + "SEQUENCING: " + str(paired))
     return paired
 
 
 @check_run
 def checkpaired_rep(sample, config):
-    logid = scriptname + '.Params_checkpaired_rep: '
-    log.debug(logid + 'SAMPLE: ' + str(sample))
+    logid = scriptname + ".Params_checkpaired_rep: "
+    log.debug(logid + "SAMPLE: " + str(sample))
     ret = list()
     for s in sample:
         check = conditiononly(s, config)
-        p = subDict(config['SETTINGS'], check)
-        paired = p.get('SEQUENCING')
+        p = subDict(config["SETTINGS"], check)
+        paired = p.get("SEQUENCING")
         # Per sample paired, not implemented yet
         # pairedlist = p.get('SEQUENCING')
         # samplelist = p.get('SAMPLES')
         # x = samplelist.index(s.split(os.sep)[-1])
         # paired = pairedlist[x]
-        ret.append(str(paired).replace(',', '_'))
-    log.debug(logid + 'PAIRED: ' + str(ret))
-    return str.join(',', ret)
+        ret.append(str(paired).replace(",", "_"))
+    log.debug(logid + "PAIRED: " + str(ret))
+    return str.join(",", ret)
 
 
 @check_run
 def checkstranded(sample, config):
-    logid = scriptname + '.Params_checkstranded: '
+    logid = scriptname + ".Params_checkstranded: "
     ret = list()
-    stranded = ''
+    stranded = ""
     for s in sample:
         check = conditiononly(s, config)
-        log.debug(logid + 'check: ' + str(check))
-        p = subDict(config['SETTINGS'], check)
-        log.debug(logid + 'P: ' + str(p))
-        paired = p.get('SEQUENCING')
+        log.debug(logid + "check: " + str(check))
+        p = subDict(config["SETTINGS"], check)
+        log.debug(logid + "P: " + str(p))
+        paired = p.get("SEQUENCING")
         # Per sample paired, not implemented yet
         # pairedlist = p.get('SEQUENCING')
         # samplelist = p.get('SAMPLES')
         # x = samplelist.index(s.split(os.sep)[-1])
         # paired = pairedlist[x]
-        stranded = paired.split(',')[1] if len(paired.split(',')) > 1 else ''
-    log.debug(logid + 'STRANDEDNESS: ' + str(stranded))
+        stranded = paired.split(",")[1] if len(paired.split(",")) > 1 else ""
+    log.debug(logid + "STRANDEDNESS: " + str(stranded))
     return stranded
 
 
 @check_run
 def set_pairings(samples, config):
-    logid = scriptname + '.Params_set_pairings: '
+    logid = scriptname + ".Params_set_pairings: "
     ret = list()
     cond = conditiononly(samples[0], config)
-    pconf = subDict(config['PEAKS'], cond)
-    log.debug(logid + 'SAMPLES: ' + str(samples))
-    pairlist = pconf.get('COMPARABLE')
-    log.debug(logid + 'PAIRLIST: ' + str(pairlist))
+    pconf = subDict(config["PEAKS"], cond)
+    log.debug(logid + "SAMPLES: " + str(samples))
+    pairlist = pconf.get("COMPARABLE")
+    log.debug(logid + "PAIRLIST: " + str(pairlist))
     if pairlist:
         for k, v in pairlist.items():
             for x in samples:
@@ -875,26 +960,26 @@ def set_pairings(samples, config):
                     ret.extend(samplecond([x], config))
     else:
         return samples
-    log.debug(logid + 'return: ' + str(ret))
+    log.debug(logid + "return: " + str(ret))
     return ret
 
 
 @check_run
-def get_pairing(sample, stype, config, samples, scombo=''):
-    logid = scriptname + '.Params_get_pairings: '
+def get_pairing(sample, stype, config, samples, scombo=""):
+    logid = scriptname + ".Params_get_pairings: "
     cond = conditiononly(sample, config)
-    pconf = subDict(config['PEAKS'], cond)
-    pairlist = pconf.get('COMPARABLE')
-    matching = ''
+    pconf = subDict(config["PEAKS"], cond)
+    pairlist = pconf.get("COMPARABLE")
+    matching = ""
     log.debug(
         logid
-        + 'PAIRLIST: '
+        + "PAIRLIST: "
         + str(pairlist)
-        + ' SAMPLE: '
+        + " SAMPLE: "
         + str(sample)
-        + ' SAMPLES: '
+        + " SAMPLES: "
         + str(samples)
-        + ' Combo: '
+        + " Combo: "
         + str(scombo)
     )
     if pairlist:
@@ -902,32 +987,39 @@ def get_pairing(sample, stype, config, samples, scombo=''):
             if k in sample:
                 for x in samples:
                     if v in x:
-                        log.debug(logid + 'Match found: ' + str(v) + ' : ' + str(x))
-                        matching = samplecond([x], config)[0].replace('MAPPED/', '')
-                        log.info(logid + 'PAIRINGS: ' + sample + ': ' + str(matching))
+                        log.debug(logid + "Match found: " + str(v) + " : " + str(x))
+                        matching = samplecond([x], config)[0].replace("MAPPED/", "")
+                        log.info(logid + "PAIRINGS: " + sample + ": " + str(matching))
 
         retstr = (
-            '-c MAPPED' + os.sep + str(scombo) + os.sep + str(matching) + '_mapped_' + str(stype) + '.bam'
+            "-c MAPPED"
+            + os.sep
+            + str(scombo)
+            + os.sep
+            + str(matching)
+            + "_mapped_"
+            + str(stype)
+            + ".bam"
         )
 
         log.debug(logid + retstr)
         return retstr
     else:
-        log.warning(logid + 'No matching sample found')
-        return ''
+        log.warning(logid + "No matching sample found")
+        return ""
 
 
 @check_run
 def post_checkpaired(sample, config):
-    logid = scriptname + '.Params_checkpaired: '
+    logid = scriptname + ".Params_checkpaired: "
     ret = list()
-    paired = ''
+    paired = ""
     for s in sample:
-        log.debug(logid + 'SAMPLE: ' + str(sample))
+        log.debug(logid + "SAMPLE: " + str(sample))
         check = conditiononly(sample, config)
-        p = subDict(config['SETTINGS'], check)
-        log.debug(logid + 'P: ' + str(p))
-        paired = p.get('SEQUENCING').split(',')[0]
+        p = subDict(config["SETTINGS"], check)
+        log.debug(logid + "P: " + str(p))
+        paired = p.get("SEQUENCING").split(",")[0]
         # check = os.path.dirname(s).split(os.sep)
         # tmplist = check
         # p = getFromDict(config['SEQUENCING'], tmplist)[0]
@@ -939,86 +1031,90 @@ def post_checkpaired(sample, config):
         #        tmplist.append(r)
         #        paired = getFromDict(config['SEQUENCING'], tmplist)[0].split(',')[0]
         #        tmplist = tmplist[:2]
-    log.debug(logid + 'PAIRED: ' + str(paired))
+    log.debug(logid + "PAIRED: " + str(paired))
     return paired
 
 
 @check_run
 def check_IP(sample, config):
-    logid = scriptname + '.Params_check_IP: '
+    logid = scriptname + ".Params_check_IP: "
     ret = list()
-    clip = ''
+    clip = ""
     for s in sample:
-        log.debug(logid + 'SAMPLE: ' + str(s))
+        log.debug(logid + "SAMPLE: " + str(s))
         check = os.path.dirname(s).split(os.sep)
         r = runstate_from_sample([s], config)
-        log.debug(logid + 'RUNSTATE: ' + str(r))
+        log.debug(logid + "RUNSTATE: " + str(r))
         tmplist = check
         if r not in tmplist:
             tmplist.extend(r)
         log.debug(logid + str(tmplist))
-        log.debug(logid + 'TMP: ' + str(tmplist))
-        check = getFromDict(config['PEAKS'], tmplist)[0]
-        log.debug(logid + 'CHECK: ' + str(check))
-        if 'CLIP' in check:
-            clip = check['CLIP']
+        log.debug(logid + "TMP: " + str(tmplist))
+        check = getFromDict(config["PEAKS"], tmplist)[0]
+        log.debug(logid + "CHECK: " + str(check))
+        if "CLIP" in check:
+            clip = check["CLIP"]
         else:
-            log.debug(logid + 'Key CLIP not found in config')
-    log.debug(logid + 'CLIP is: ' + str(clip))
+            log.debug(logid + "Key CLIP not found in config")
+    log.debug(logid + "CLIP is: " + str(clip))
     return str(clip)
 
 
 @check_run
 def check_tool_params(sample, runstate, config, subconf, idx):
     try:
-        par = tool_params(sample, runstate, config, subconf)['OPTIONS'][idx]
-        if par != '':
+        par = tool_params(sample, runstate, config, subconf)["OPTIONS"][idx]
+        if par != "":
             return par
-        elif subconf == 'MAPPING':
-            return 'std'
+        elif subconf == "MAPPING":
+            return "std"
         else:
-            return ''
+            return ""
     except:
-        if subconf == 'MAPPING':
-            return 'std'
+        if subconf == "MAPPING":
+            return "std"
         else:
-            return ''
+            return ""
 
 
 @check_run
 def comparable_as_string(config, subwork):
-    logid = scriptname + '.comparable_as_string: '
-    check = config[subwork].get('COMPARABLE')
+    logid = scriptname + ".comparable_as_string: "
+    check = config[subwork].get("COMPARABLE")
     if check:
-        log.debug(logid + 'determine comparables in ' + subwork)
+        log.debug(logid + "determine comparables in " + subwork)
         complist = []
-        compdict = config[subwork]['COMPARABLE']
+        compdict = config[subwork]["COMPARABLE"]
         for key in compdict:
             for value in compdict[key]:
                 complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
     else:
-        log.warning(logid + 'no comparables found in ' + subwork + '. Compare All vs. All.')
+        log.warning(
+            logid + "no comparables found in " + subwork + ". Compare All vs. All."
+        )
         groups_by_condition = list(yield_from_dict("GROUPS", config))
-        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        flattened = sorted(
+            set(val for sublist in groups_by_condition for val in sublist)
+        )
         combined = list(set(itertools.combinations(flattened, 2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
 
 
 @check_run
 def comparable_as_string2(config, subwork):
-    logid = scriptname + '.comparable_as_string2: '
-    log.debug(logid + 'this is the config: ' + str(config))
-    check = config[subwork]['COMPARABLE']
+    logid = scriptname + ".comparable_as_string2: "
+    log.debug(logid + "this is the config: " + str(config))
+    check = config[subwork]["COMPARABLE"]
     if check:
-        log.debug(logid + 'determine comparables in ' + subwork)
+        log.debug(logid + "determine comparables in " + subwork)
         complist = []
-        compdict = config[subwork]['COMPARABLE']
+        compdict = config[subwork]["COMPARABLE"]
         for contrast in compdict:
             As = ""
             Bs = ""
@@ -1027,54 +1123,62 @@ def comparable_as_string2(config, subwork):
             for condition in compdict[contrast][1]:
                 Bs = (Bs + "+" + condition).strip("+")
             complist.append(f"{contrast}:{As}-vs-{Bs}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
     else:
-        log.warning(logid + 'no comparables found in ' + subwork + '. Compare All vs. All.')
+        log.warning(
+            logid + "no comparables found in " + subwork + ". Compare All vs. All."
+        )
         groups_by_condition = list(yield_from_dict("GROUPS", config))
-        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        flattened = sorted(
+            set(val for sublist in groups_by_condition for val in sublist)
+        )
         combined = list(set(itertools.combinations(flattened, 2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
 
 
 @check_run
 def comparable_as_string3(config, subwork):
-    logid = scriptname + '.comparable_as_string: '
-    check = config[subwork].get('COMPARABLE')
+    logid = scriptname + ".comparable_as_string: "
+    check = config[subwork].get("COMPARABLE")
     if check:
-        log.debug(logid + 'determine comparables in ' + subwork)
+        log.debug(logid + "determine comparables in " + subwork)
         complist = []
-        compdict = config[subwork]['COMPARABLE']
+        compdict = config[subwork]["COMPARABLE"]
         for key in compdict:
             for value in compdict[key]:
                 complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
     else:
-        log.warning(logid + 'no comparables found in ' + subwork + '. Compare All vs. All.')
+        log.warning(
+            logid + "no comparables found in " + subwork + ". Compare All vs. All."
+        )
         groups_by_condition = list(yield_from_dict("GROUPS", config))
-        flattened = sorted(set(val for sublist in groups_by_condition for val in sublist))
+        flattened = sorted(
+            set(val for sublist in groups_by_condition for val in sublist)
+        )
         combined = list(set(itertools.combinations(flattened, 2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}")
-        compstr = ','.join(complist)
+        compstr = ",".join(complist)
         return compstr
 
 
 @check_run
 def get_combo_name(combinations):
-    logid = scriptname + '.Params_get_combo_name: '
+    logid = scriptname + ".Params_get_combo_name: "
     combname = NestedDefaultDict()
 
     for condition in combinations:
-        log.debug(logid + 'CONDITION: ' + str(condition))
-        combname[condition]['envs'] = list()
-        combname[condition]['works'] = list()
+        log.debug(logid + "CONDITION: " + str(condition))
+        combname[condition]["envs"] = list()
+        combname[condition]["works"] = list()
         combos = combinations[condition]
 
         for combi in combos:
@@ -1084,10 +1188,10 @@ def get_combo_name(combinations):
                 for work, env in step.items():
                     envs.append(env)
                     works.append(work)
-            combname[condition]['envs'].append(str.join('-', envs))
-            combname[condition]['works'].append(str.join('-', works))
+            combname[condition]["envs"].append(str.join("-", envs))
+            combname[condition]["works"].append(str.join("-", works))
 
-    log.debug(logid + 'ComboName: ' + str(combname))
+    log.debug(logid + "ComboName: " + str(combname))
     return combname
 
 
