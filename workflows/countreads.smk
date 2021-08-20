@@ -79,7 +79,7 @@ rule featurecount:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique.bam", combo=scombo)
@@ -93,7 +93,7 @@ rule featurecount_unique:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_dedup:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted_dedup.bam", combo=scombo)
@@ -107,7 +107,7 @@ rule featurecount_dedup:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique_dedup:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique_dedup.bam", combo=scombo)
@@ -121,7 +121,7 @@ rule featurecount_unique_dedup:
             cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'][0].items())+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 if rundedup:
     rule summarize_counts:
