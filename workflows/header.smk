@@ -100,10 +100,10 @@ if 'MAPPING' in config:
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
-    if MANNO:
+    if MANNO and MANNO != '':
         ANNOTATION = MANNO
     else:
-        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
     IDX = MAPCONF.get('INDEX')
     if IDX:
         INDEX = IDX
@@ -135,10 +135,10 @@ if 'PEAKS' in config:
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
-    if ANNOPEAK:
+    if ANNOPEAK and ANNOPEAK != '':
         ANNOTATION = ANNOPEAK
     else:
-        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by 
     if not IP:
         IP = check_ip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+IP+' protocol')
@@ -152,10 +152,10 @@ for x in ['UCSC', 'COUNTING']:
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
         XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
-        if XANNO:
+        if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by 
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -179,10 +179,10 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
         XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
-        if XANNO:
+        if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF forma
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -199,10 +199,10 @@ if 'CIRCS' in config:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
     CANNO = CIRCCONF.get('ANNOTATION')
-    if CANNO:
+    if CANNO and CANNO != '':
         ANNOTATION = CANNO
     else:
-        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO else ANNO.get('GFF')  # by default GTF format will be used
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
 
 
 combo = ''
