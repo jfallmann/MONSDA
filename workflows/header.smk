@@ -138,7 +138,7 @@ if 'PEAKS' in config:
     if ANNOPEAK and ANNOPEAK != '':
         ANNOTATION = ANNOPEAK
     else:
-        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by 
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
     if not IP:
         IP = check_ip(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+IP+' protocol')
@@ -155,7 +155,7 @@ for x in ['UCSC', 'COUNTING']:
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by 
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -182,7 +182,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
