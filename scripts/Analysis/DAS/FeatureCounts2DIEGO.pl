@@ -19,7 +19,7 @@ my @files;
 my @names;
 my $count=0;
 
-while(<$IN>) {
+while(<$IN>) { 
 	chomp(my $line = $_);
 	next if ($line =~ /^#/);
     my @F = split("\t",$line);
