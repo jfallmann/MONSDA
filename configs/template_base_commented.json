@@ -62,7 +62,6 @@
         "??? options"
       ],
       "OPTIONS": [
-        {},
         {}
       ]
     }
@@ -104,9 +103,12 @@
     "umitools": {
       "comment": [
         "??? options",
+        "??? options",
         "??? options"
       ],
       "OPTIONS": [
+        {
+        },
         {
           "--extract-method": "string",
           "--bc-pattern": "AGANNNNACGT"

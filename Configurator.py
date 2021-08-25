@@ -72,8 +72,12 @@ class GUIDE:
 
     def display(self, options=None, question=None, proof=None, spec=None):
         if options:
+            space = 0
             for k, v in options.items():
-                prYellow(f"   {k}  >  {v}")
+                if len(str(k)) >= space:
+                    space = len(str(k))
+            for k, v in options.items():
+                prYellow(f"   {k}{' '*(space+2-len(str(k)))}>  {v}")
                 guide.toclear += 1
         if question:
             print("\n" + question)
@@ -731,7 +735,7 @@ def add_sample_dirs():
         else:
             guide.clear(3)
         print(f"         {dir}\n")
-        opts = {"1": "single-end", "2": "paired-end"}
+        opts = {"1": "single", "2": "paired"}
         # print('\n')
         guide.display(
             question="Specify sequencing method", options=opts, proof=opts.keys()
@@ -746,36 +750,28 @@ def add_sample_dirs():
         if os.path.isdir(dir):
             counter = 0
             for dirpath, dirnames, filenames in os.walk(dir):
-                if seq == "paired-end":
-                    R1 = []
-                    R2 = []
-                    for filename in [f for f in filenames if f.endswith(".fastq.gz")]:
-                        R1.append(os.path.join(dirpath, filename).replace("_R1", ""))
-                        R2.append(os.path.join(dirpath, filename).replace("_R2", ""))
-                    for i in R1:
-                        for j in R2:
-                            if i == j:
-                                counter += 1
-                                if not stranded == "unstranded":
-                                    project.samplesDict[i] = [f"paired,{stranded}"]
-                                else:
-                                    project.samplesDict[i] = [f"paired"]
-
-                if seq == "single-end":
-                    for filename in [f for f in filenames if f.endswith(".fastq.gz")]:
-                        counter += 1
-                        if not stranded == "unstranded":
-                            project.samplesDict[os.path.join(dirpath, filename)] = [
-                                f"single,{stranded}"
-                            ]
+                for filename in [f for f in filenames if f.endswith(".fastq.gz")]:
+                    counter += 1
+                    name = filename.replace(".fastq.gz", "")
+                    if seq == "paired":
+                        if "_R1" in filename:
+                            name = name.replace("_R1", "")
+                        elif "_R2" in filename:
+                            name = name.replace("_R2", "")
                         else:
-                            project.samplesDict[os.path.join(dirpath, filename)] = [
-                                f"single"
-                            ]
+                            continue
+                    project.samplesDict[name] = {
+                        "file": filename,
+                        "dir": dirpath,
+                        "seq": seq,
+                        "strand": stranded,
+                        "cond": "",
+                    }
 
             path_to_samples_dict[dir] = f"{counter} {seq} files found"
-            guide.clear(13)
+            guide.clear(14)
             prCyan(f"         {dir}  >  {counter} {seq} files found")
+            # print_dict(project.samplesDict)
             er = 3
             continue
 
@@ -789,7 +785,6 @@ def assign_samples():
     conditions = [
         pattern for pattern in get_conditions_from_dict(project.conditionDict)
     ]
-    samples = NestedDefaultDict()
     if guide.mode == "modify":
         safety_dict = decouple(project.settingsDict)
     elif guide.mode == "new":
@@ -801,10 +796,17 @@ def assign_samples():
     er = 0
     guide.toclear = 0
     while True:
+        opts = NestedDefaultDict()
         number = 1
+        space = 0
+        for k in project.samplesDict.keys():
+            if len(k) >= space:
+                space = len(k)
         if er == 0:
-            for samp in project.samplesDict.keys():
-                samples[number] = samp
+            for k in project.samplesDict.keys():
+                opts[
+                    number
+                ] = f"{k}{' '*(space+2-len(k))} in  {project.samplesDict[k]['dir']}"
                 number += 1
         for condition in conditions:
             if (
@@ -822,28 +824,26 @@ def assign_samples():
             location(project.settingsDict, [cond_as_list])
 
             guide.display(
-                question=ques, options=samples, proof=[str(i) for i in samples.keys()]
+                question=ques, options=opts, proof=[str(i) for i in opts.keys()]
             )
-            select = []
+
             check_seq = set()
             for num in guide.answer.split(","):
-                check_seq.add(project.samplesDict[samples[int(num)]][0])
+                check_seq.add(project.samplesDict[opts[int(num)].split(" ")[0]]["seq"])
             if len(check_seq) > 1:
                 er = 1
                 break
             else:
                 er = 0
+
+            samplesInList = []
             for num in guide.answer.split(","):
-                s = os.path.basename(samples[int(num)]).replace(
-                    ".fastq.gz", f"_SID{num}"
-                )
-                project.samplesDict[samples[int(num)]].append(condition)
-                select.append(s)
-                samples.pop(int(num))
+                project.samplesDict[opts[int(num)].split(" ")[0]]["cond"] = condition
+                samplesInList.append(opts[int(num)].split(" ")[0])
             set_by_path(
                 project.settingsDict,
                 cond_as_list,
-                {"SAMPLES": select},
+                {"SAMPLES": samplesInList},
             )
             guide.clear(guide.toclear + 4)
         if er == 1:
@@ -853,6 +853,7 @@ def assign_samples():
             question="press enter to continue or type 'no' to assign samples again"
         )
         if guide.answer == "no":
+            guide.toclear += 2
             project.settingsDict = decouple(safety_dict)
         else:
             guide.toclear += 2
@@ -877,10 +878,10 @@ def set_settings():
             if "GROUPS" in get_by_path(project.settingsDict, maplist).keys():
                 continue
             prRed(f"\n   Condition:  >  {' : '.join(maplist)}  <\n")
-            for sl in project.samplesDict.values():
+            for k in project.samplesDict.keys():
                 try:
-                    if sl[1] == ":".join(maplist):
-                        seq = sl[0]
+                    if project.samplesDict[k]["cond"] == ":".join(maplist):
+                        seq = project.samplesDict[k]["seq"]
                 except:
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
@@ -1484,21 +1485,20 @@ def create_project(final_dict):
             os.symlink(cwd, ns)
 
         # LINK samples into FASTQ and insert samplenames in dict
-        for sample, cl in project.samplesDict.items():
-            if len(cl) > 1:
-                condition = cl[1]
-                if condition:
-                    cond_as_list = [x for x in condition.split(":")[1:]]
-                    os.chdir(fastq)
-                    for dir in cond_as_list:
-                        if not os.path.exists(os.path.join(dir)):
-                            os.mkdir(os.path.join(dir))
-                        os.chdir(os.path.join(dir))
-                    path = "/".join(cond_as_list)
-                    cond_dir = os.path.join(fastq, path)
-                    sample_sl = os.path.join(cond_dir, os.path.basename(sample))
-                    if not os.path.exists(sample_sl):
-                        os.symlink(os.path.realpath(sample), sample_sl)
+        for k in project.samplesDict.keys():
+            if project.samplesDict[k]["cond"]:
+                condition = project.samplesDict[k]["cond"]
+                cond_as_list = [x for x in condition.split(":")[1:]]
+                os.chdir(fastq)
+                for dir in cond_as_list:
+                    if not os.path.exists(os.path.join(dir)):
+                        os.mkdir(os.path.join(dir))
+                    os.chdir(os.path.join(dir))
+                path = "/".join(cond_as_list)
+                cond_dir = os.path.join(fastq, path)
+                sample_sl = os.path.join(cond_dir, os.path.basename(k))
+                if not os.path.exists(sample_sl):
+                    os.symlink(os.path.realpath(k), sample_sl)
 
         # link reference and annotation
         for setting in project.settingsList:
@@ -1581,7 +1581,7 @@ def create_project(final_dict):
     print(f"\nStart RunSnakemake with\n")
     prGreen(f"   cd {project.path}\n")
     prGreen(
-        f"   python3 NextSnakes/RunSnakemake.py -c {configfile} --directory ${{PWD}}\n\n"
+        f"   python3 NextSnakes/NextSnakes.py -c {configfile} --directory ${{PWD}}\n\n"
     )
 
 
@@ -1589,9 +1589,10 @@ def create_project(final_dict):
 ####    TEST VAR SPACE   ####
 #############################
 
+"""
 guide.mode = "new"
-project.name = "NextSnakesmoin"
-project.path = "/homes/brauerei/robin/Projects/NextSnakesmoin"
+project.name = "NextSnakessad"
+project.path = "/homes/brauerei/robin/Projects/NextSnakessad"
 project.cores = 1
 project.baseDict = {
     "WORKFLOWS": "",
@@ -1613,7 +1614,7 @@ project.baseDict = {
         "TOOLS": {"guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"},
         "guppy": {"OPTIONS": [{}]},
     },
-    "QC": {"TOOLS": {"fastqc": "fastqc"}, "fastqc": {"OPTIONS": [{}, {}]}},
+    "QC": {"TOOLS": {"fastqc": "fastqc"}, "fastqc": {"OPTIONS": [{}]}},
     "TRIMMING": {
         "TOOLS": {"trimgalore": "trim_galore", "cutadapt": "cutadapt"},
         "trimgalore": {"OPTIONS": [{"-q": "15", "--length": "8", "-e": "0.15"}]},
@@ -1751,87 +1752,9 @@ project.baseDict = {
         "dexseq": {"OPTIONS": [{"--gencode": ""}, {"-l": "A", "--gcBias": ""}]},
     },
 }
-project.conditionDict = {"NextSnakesmoin": {}}
-project.samplesDict = {
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/single/hcc1395_tumor_rep1_R2.fastq.gz": [
-        "single",
-        "NextSnakesmoin",
-    ],
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/single/hcc1395_tumor_rep1_R1.fastq.gz": [
-        "single",
-        "NextSnakesmoin",
-    ],
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep2_R1.fastq.gz": [
-        "single",
-        "NextSnakesmoin",
-    ],
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep2_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep3_R1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/GuideTest/FASTQ/GuideTest/Bla/paired/hcc1395_tumor_rep3_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/2/hcc1395_tumor_rep2_R1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/2/hcc1395_tumor_rep2_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/1/hcc1395_tumor_rep1_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/a/1/hcc1395_tumor_rep1_R1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/c/hcc1395_tumor_rep3.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/b/2/hcc1395_tumor_rep3_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/b/1/hcc1395_tumor_rep3_R1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/serious_test_project/FASTQ/1/hcc1395_tumor_rep1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/NextSnakes/AN/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep2_R1.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep2_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep1_R2.fastq.gz": [
-        "single"
-    ],
-    "/homes/brauerei/robin/Projects/NextSnakes/mion/FASTQ/hcc1395_tumor_rep1_R1.fastq.gz": [
-        "single"
-    ],
-}
-project.settingsDict = {
-    "NextSnakesmoin": {
-        "SAMPLES": [
-            "hcc1395_tumor_rep1_R2_1",
-            "hcc1395_tumor_rep1_R1_2",
-            "hcc1395_tumor_rep2_R1_3",
-        ]
-    }
-}
+project.conditionDict = {"NextSnakessad": {}}
+project.samplesDict = {}
+project.settingsDict = {"NextSnakessad": {}}
 project.settingsList = []
 project.workflowsDict = {}
 project.commentsDict = {
@@ -1894,7 +1817,7 @@ project.commentsDict = {
         },
     },
 }
-
+"""
 
 ####################
 ####    MAIN    ####
@@ -1914,6 +1837,8 @@ if __name__ == "__main__":
     # else:
     #     prRed("\nrunning in explanation mode\n")
 
-    # prepare_project(template)
-    set_settings()
+    prepare_project(template)
+    # add_sample_dirs()
+
+    # set_settings()
     # add_workflows()
