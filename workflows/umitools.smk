@@ -2,7 +2,7 @@ DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
 wlparams = ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
 
-type = ['sorted', 'unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']
+type = ['sorted', 'sorted_unique']
 
 #wildcard_constraints:
 #    rawfile = '|'.join(list(SAMPLES)),
@@ -91,8 +91,8 @@ else:
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
 rule dedupbam:
-        input:  bam = expand("MAPPED/{combo}/{file}_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
-        output: bam = report("MAPPED/{combo}/{file}_{type}_dedup.bam", category="DEDUP"),
+        input:  bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
+        output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
