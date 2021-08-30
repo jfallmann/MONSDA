@@ -2,6 +2,8 @@ DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
 wlparams = ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
 
+type = ['sorted', 'unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']
+
 #wildcard_constraints:
 #    rawfile = '|'.join(list(SAMPLES)),
 #    read = "R1|R2",
@@ -51,32 +53,6 @@ if paired == 'paired':
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
-    rule dedupbam:
-        input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam"
-        output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_dedup.bam", category="DEDUP"),
-                td = temp(directory("TMP/UMIDD/{combo}/{file}"))
-        log:    "LOGS/{combo}/{file}/dedupbam.log"
-        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
-        threads: 1
-        priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
-                dedup = DEDUPBIN
-        shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
-
-    rule dedupuniqbam:
-        input:  bam = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
-                check = rules.dedupbam.output.bam
-        output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP"),
-                td = temp(directory("TMP/UMIDU/{combo}/{file}"))
-        log:    "LOGS/{combo}/{file}/dedupuniqbam.log"
-        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
-        threads: 1
-        priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
-                dedup = DEDUPBIN
-        shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
-
-
 else:
     if wlparams:
         rule whitelist:
@@ -114,27 +90,14 @@ else:
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
-        rule dedupbam:
-            input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam"
-            output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_dedup.bam", category="DEDUP"),
-                    td = temp(directory("TMP/UMIDD/{combo}/{file}"))
-            log:    "LOGS/{combo}/{file}/dedupbam.log"
-            conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
-            threads: 1
-            priority: 0               # This should be done after all mapping is done
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
-                    dedup = DEDUPBIN
-            shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
-
-        rule dedupuniqbam:
-            input:  bam = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
-                    check = rules.dedupbam.output.bam
-            output: bam = report("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", category="DEDUP"),
-                    td = temp(directory("TMP/UMIDU/{combo}/{file}"))
-            log:    "LOGS/{combo}/{file}/dedupuniqbam.log"
-            conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
-            threads: 1
-            priority: 0               # This should be done after all mapping is done
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
-                    dedup = DEDUPBIN
-            shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log}"
+rule dedupbam:
+        input:  bam = expand("MAPPED/{combo}/{file}_{type}.bam", type=type)
+        output: bam = report("MAPPED/{combo}/{file}_{type}_dedup.bam", category="DEDUP"),
+                td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
+        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
+        threads: 1
+        priority: 0               # This should be done after all mapping is done
+        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+                dedup = DEDUPBIN
+        shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
