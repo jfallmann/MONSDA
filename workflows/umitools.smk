@@ -91,7 +91,7 @@ else:
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
 rule dedupbam:
-        input:  bam = expand("MAPPED/{combo}/{file}_{type}.bam", type=type)
+        input:  bam = expand("MAPPED/{{combo}}/{{file}}_{type}.bam", type=type)
         output: bam = report("MAPPED/{combo}/{file}_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
