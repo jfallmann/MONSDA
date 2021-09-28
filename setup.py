@@ -19,7 +19,7 @@ for d in glob("workflows/*"):
 
 envs = list()
 for e in glob("envs/*"):
-    envs.append(os.path.relpath(d))  # os.path.join(d, os.path.split(d)[1]))
+    envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
 
 requires = open("requirements.txt").read().strip().split("\n")
 
