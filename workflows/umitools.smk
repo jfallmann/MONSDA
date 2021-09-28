@@ -90,8 +90,9 @@ else:
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
-rule dedupbam:
-        input:  bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
+if paired == 'paired':
+    rule dedupbam:
+        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam" #bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
@@ -101,3 +102,15 @@ rule dedupbam:
         params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
                 dedup = DEDUPBIN
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
+else:
+    rule dedupbam:  
+        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam" #bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
+        output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
+                td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
+        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
+        threads: 1
+        priority: 0               # This should be done after all mapping is done
+        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+                dedup = DEDUPBIN
+        shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
