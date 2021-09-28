@@ -13,7 +13,7 @@ if rundedup:
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
             log:    "LOGS/{combo}/{condition}_multiqc.log"
-            conda:  "NextSnakes/envs/qc.yaml"
+            conda:  "qc.yaml"
             threads: 1
             params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -32,7 +32,7 @@ if rundedup:
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
             log:    "LOGS/{combo}/{condition}_multiqc.log"
-            conda:  "NextSnakes/envs/qc.yaml"
+            conda:  "qc.yaml"
             threads: 1
             params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -50,7 +50,7 @@ else:
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
             log:    "LOGS/{combo}/{condition}_multiqc.log"
-            conda:  "NextSnakes/envs/qc.yaml"
+            conda:  "qc.yaml"
             threads: 1
             params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
@@ -67,7 +67,7 @@ else:
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
             log:    "LOGS/{combo}/{condition}_multiqc.log"
-            conda:  "NextSnakes/envs/qc.yaml"
+            conda:  "qc.yaml"
             threads: 1
             params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"

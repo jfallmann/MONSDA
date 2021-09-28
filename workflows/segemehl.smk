@@ -5,7 +5,7 @@ rule generate_index:
     output: idx = INDEX,
             uidx = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
-    conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
+    conda:  ""+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
@@ -22,7 +22,7 @@ if paired == 'paired':
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
+        conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN
@@ -37,7 +37,7 @@ else:
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  "NextSnakes/envs/"+MAPPERENV+".yaml"
+        conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params:  mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
                 mapp=MAPPERBIN

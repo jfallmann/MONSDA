@@ -675,13 +675,7 @@ def runjob(jobtorun):
         sys.exit()
 
 
-####################
-####    MAIN    ####
-####################
-
-
-if __name__ == '__main__':
-
+def main():
     logid = scriptname + '.main: '
     try:
         args = parseargs()
@@ -712,8 +706,9 @@ if __name__ == '__main__':
             )
 
         else:
-            nf_min_version = "20.10.0.5430"
-            if nf_check_version(nf_min_version):
+            nf_min_version = "20.10"
+            nf_ver = nf_check_version(nf_min_version)
+            if nf_ver:
                 run_nextflow(
                     knownargs.configfile,
                     knownargs.directory,
@@ -729,8 +724,31 @@ if __name__ == '__main__':
                     logid
                     + 'Minimal version of nextflow required is '
                     + str(nf_min_version)
+                    + ' and we only found '
+                    + str(nf_ver)
                     + '! Please install or use envs/NextSnakes.yaml to create conda environment accordingly'
                 )
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = tb.TracebackException(
+            exc_type,
+            exc_value,
+            exc_tb,
+        )
+        log.error(logid + ''.join(tbe.format()))
+
+
+####################
+####    MAIN    ####
+####################
+
+
+if __name__ == '__main__':
+
+    logid = scriptname + '.main: '
+    try:
+        main()
+
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(

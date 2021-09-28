@@ -20,7 +20,7 @@ if paired == 'paired':
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
@@ -34,7 +34,7 @@ if paired == 'paired':
                     o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
@@ -47,7 +47,7 @@ if paired == 'paired':
                     o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
@@ -60,7 +60,7 @@ else:
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
                     dedup = DEDUPBIN
@@ -72,7 +72,7 @@ else:
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
@@ -84,7 +84,7 @@ else:
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
-            conda: "NextSnakes/envs/"+DEDUPENV+".yaml"
+            conda: ""+DEDUPENV+".yaml"
             threads: 1
             params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
                     dedup = DEDUPBIN
@@ -96,7 +96,7 @@ if paired == 'paired':
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
-        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
+        conda:  ""+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
@@ -108,7 +108,7 @@ else:
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
-        conda:  "NextSnakes/envs/"+DEDUPENV+".yaml"
+        conda:  ""+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),

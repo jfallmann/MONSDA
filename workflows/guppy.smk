@@ -12,7 +12,7 @@ rule call_base:
             summary = "FASTQ/{rawfile}_summary.txt",
             telemetry = "FASTQ/{rawfile}_telemetry.js"
     log:    "LOGS/BASECALL/{rawfile}_guppy.log"
-    conda:  "NextSnakes/envs/"+CALLERENV+".yaml"
+    conda:  ""+CALLERENV+".yaml"
     threads: MAXTHREAD
     params: caller = CALLERBIN,
             cpara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'][0].items()),

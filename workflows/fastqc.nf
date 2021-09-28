@@ -17,7 +17,7 @@ process collect_fqraw{
 }
 
 process qc_raw{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
+    conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -88,7 +88,7 @@ process collect_fqtrim{
 }
 
 process qc_trimmed{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
+    conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -162,7 +162,7 @@ process collect_fqmap{
 
 //PROCESSES
 process qc_mapped{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
+    conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

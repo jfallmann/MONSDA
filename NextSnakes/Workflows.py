@@ -80,6 +80,7 @@ import inspect
 import subprocess
 import collections
 from collections import defaultdict, OrderedDict
+from pkg_resources import parse_version
 import six
 import logging
 import hashlib
@@ -87,14 +88,20 @@ from snakemake import load_configfile
 import functools
 import datetime
 
-# cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
-# for x in cmd_subfolder:
-#    if x not in sys.path:
-#        sys.path.insert(0, x)
-
 from NextSnakes.Utils import *
 from NextSnakes.Params import *
 
+try:
+    installpath = os.path.dirname(__file__).replace(
+        os.sep.join(["lib", "python3.9", "site-packages", "NextSnakes"]), "share"
+    )
+except:
+    installpath = os.path.cwd()
+
+workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
+envpath = os.path.join(installpath, "NextSnakes", "envs") + os.sep
+
+log.info("WP: " + workflowpath + "  EP: " + envpath)
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -331,13 +338,11 @@ def make_pre(
             subconf = NestedDefaultDict()
             add = list()
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda:  "' + envpath, line)
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -393,25 +398,21 @@ def make_pre(
                         if works[j] == "QC":
                             subname = toolenv + "_raw.smk"
 
-                        smkf = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", subname)
-                        )
+                        smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "footer.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -459,13 +460,11 @@ def make_pre(
             subjobs = list()
             add = list()
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -518,21 +517,19 @@ def make_pre(
                     )
                 )  # RuleThemAll for snakemake depending on chosen workflows
 
-                smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", subname))
+                smkf = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "footer.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -607,13 +604,11 @@ def make_sub(
             subconf = NestedDefaultDict()
             add = list()
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -695,41 +690,33 @@ def make_sub(
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
 
-                        smkf = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", subname)
-                        )
+                        smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
                 if "MAPPING" in works:
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "mapping.smk")
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "multiqc.smk")
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
                 # Append footer and write out subsnake and subconf per condition
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "footer.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -763,13 +750,11 @@ def make_sub(
             subjobs = list()
             add = list()
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -843,41 +828,33 @@ def make_sub(
                         )
                     )
 
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", subname)
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
             if "MAPPING" in subworkflows:
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "mapping.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "multiqc.smk")
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "footer.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     subjobs.append(line)
                 subjobs.append("\n\n")
 
@@ -935,13 +912,11 @@ def make_post(
             subconf = NestedDefaultDict()
             add = list()
 
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
 
             for i in range(len(envlist)):
@@ -1001,23 +976,19 @@ def make_post(
                     subconf.update(sconf)
 
                     subname = toolenv + ".smk"
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", subname)
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
                     # Append footer and write out subsnake and subconf per condition
-                    smkf = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "footer.smk")
-                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -1080,13 +1051,11 @@ def make_post(
                 subconf = NestedDefaultDict()
                 add = list()
 
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "header.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         add.append(line)
 
                 for i in range(len(envlist)):
@@ -1154,20 +1123,16 @@ def make_post(
                         subconf.update(sconf)
 
                         subname = toolenv + ".smk"
-                        smkf = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", subname)
-                        )
+                        smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
                         # Append footer and write out subsnake and subconf per condition
-                        smkf = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", "footer.smk")
-                        )
+                        smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "../', line)
@@ -1224,13 +1189,11 @@ def make_post(
 
         for condition in conditions:
             subconf = NestedDefaultDict()
-            smkf = os.path.abspath(
-                os.path.join("NextSnakes", "workflows", "header.smk")
-            )
+            smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
 
             listoftools, listofconfigs = create_subworkflow(
@@ -1279,21 +1242,19 @@ def make_post(
                 subconf.update(sconf)
 
                 subname = toolenv + ".smk"
-                smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", subname))
+                smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
                 # Append footer and write out subsnake and subconf per condition
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "footer.smk")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -1344,7 +1305,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
             envlist = combname[condition]["envs"]
 
     # Add Header
-    sum_path = os.path.join("NextSnakes", "scripts", "Analysis", "SUMMARY")
+    sum_path = os.path.join(installpath, "NextSnakes", "scripts", "Analysis", "SUMMARY")
     rmd_header = os.path.abspath(os.path.join(sum_path, "header_summary.Rmd"))
 
     with open(rmd_header, "r") as read_file:
@@ -1372,21 +1333,21 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
     subjobs = list()
 
-    smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", "header.smk"))
+    smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
     with open(smkf, "r") as smk:
         for line in smk.readlines():
             subjobs.append(line)
         subjobs.append("\n\n")
 
-    smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", "summary.smk"))
+    smkf = os.path.abspath(os.path.join(workflowpath, "summary.smk"))
     with open(smkf, "r") as smk:
         for line in smk.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-            line = re.sub(condapath, 'conda:  "../', line)
+            line = re.sub(condapath, 'conda: "' + envpath, line)
             subjobs.append(line)
         subjobs.append("\n\n")
 
-    smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", "footer.smk"))
+    smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
     with open(smkf, "r") as smk:
         for line in smk.readlines():
             subjobs.append(line)
@@ -1419,9 +1380,9 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
     logid = scriptname + ".Workflows_rulethemall: "
 
     allmap = (
-        'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
+        'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", combo=combo, file=samplecond(SAMPLES, config))'
         if not "DEDUP" in subworkflows
-        else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])'
+        else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam", combo=combo, file=samplecond(SAMPLES, config))'
     )
     allqc = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
     allrawqc = 'rule themall:\n\tinput:\texpand("QC/Multi{combo}{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
@@ -1454,11 +1415,9 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
     if "MAPPING" in subworkflows and "TRIMMING" not in subworkflows:
         log.info(logid + "Simulated read trimming only!")
         makeoutdir("TRIMMED_FASTQ")
-        smkf = os.path.abspath(
-            os.path.join("NextSnakes", "workflows", "simulatetrim.smk")
-        )
+        smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
         with open(smkf, "r") as smk:
-            todos.append(re.sub(condapath, 'conda:  "../', smk.read()))
+            todos.append(re.sub(condapath, 'conda: "' + envpath, smk.read()))
         todos.append("\n\n")
 
     if (
@@ -1493,8 +1452,8 @@ def nf_check_version(v):
     if shutil.which("nextflow"):
         jobtorun = ["nextflow", "-v"]
         out = subprocess.run(jobtorun, stdout=subprocess.PIPE)
-        check = out.stdout.decode("utf-8")
-        if v in check:
+        check = out.stdout.decode("utf-8").split(" ")[-1]
+        if parse_version(v) < parse_version(check):
             log.debug(logid + check)
             return True
     else:
@@ -1921,11 +1880,11 @@ def nf_make_pre(
             envlist = combname[condition]["envs"]
             add = list()
 
-            nfi = os.path.abspath(os.path.join("NextSnakes", "workflows", "header.nf"))
+            nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -1986,28 +1945,26 @@ def nf_make_pre(
                             flowlist.append("QC_RAW")
                             flowlist.append("MULTIQC")
 
-                        nfi = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", subname)
-                        )
+                        nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
                         if works[j] == "QC":
                             nfi = os.path.abspath(
-                                os.path.join("NextSnakes", "workflows", "multiqc.nf")
+                                os.path.join(workflowpath, "multiqc.nf")
                             )
                             with open(nfi, "r") as nf:
                                 for line in nf.readlines():
                                     line = re.sub(
                                         logfix, "loglevel='" + loglevel + "'", line
                                     )
-                                    line = re.sub(condapath, 'conda:  "../', line)
+                                    line = re.sub(condapath, 'conda: "' + envpath, line)
                                     subjobs.append(line)
                                 subjobs.append("\n\n")
 
@@ -2026,7 +1983,7 @@ def nf_make_pre(
                         # with open(nfi, 'r') as nf:
                         #    for line in nf.readlines():
                         #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                        #        line = re.sub(condapath, 'conda:  "../', line)
+                        #        line = re.sub(condapath, 'conda: "' + envpath, line)
                         #        subjobs.append(line)
                         #    subjobs.append('\n\n')
 
@@ -2119,13 +2076,11 @@ def nf_make_pre(
                     + str([toolenv, subname, condition, subconf])
                 )
 
-                nfi = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "header.nf")
-                )
+                nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2134,22 +2089,20 @@ def nf_make_pre(
                     flowlist.append("QC_RAW")
                     flowlist.append("MULTIQC")
 
-                nfi = os.path.abspath(os.path.join("NextSnakes", "workflows", subname))
+                nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
                 if subwork == "QC":
-                    nfi = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "multiqc.nf")
-                    )
+                    nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2166,7 +2119,7 @@ def nf_make_pre(
                 # with open(nfi, 'r') as nf:
                 #    for line in nf.readlines():
                 #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                #        line = re.sub(condapath, 'conda:  "../', line)
+                #        line = re.sub(condapath, 'conda: "' + envpath, line)
                 #        subjobs.append(line)
                 #    subjobs.append('\n\n')
 
@@ -2243,11 +2196,11 @@ def nf_make_sub(
             envlist = combname[condition]["envs"]
             add = list()
 
-            nfi = os.path.abspath(os.path.join("NextSnakes", "workflows", "header.nf"))
+            nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "../', line)
+                    line = re.sub(condapath, 'conda: "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -2344,12 +2297,10 @@ def nf_make_sub(
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.nf"
 
-                        nfi = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", subname)
-                        )
+                        nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2373,33 +2324,34 @@ def nf_make_sub(
                         log.info(logid + "Simulated read trimming only!")
                         flowlist.append("TRIMMING")
                         nfi = os.path.abspath(
-                            os.path.join("NextSnakes", "workflows", "simulatetrim.nf")
+                            os.path.join(
+                                installpath,
+                                "NextSnakes",
+                                "workflows",
+                                "simulatetrim.nf",
+                            )
                         )
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
-                                line = re.sub(condapath, 'conda:  "../', line)
+                                line = re.sub(condapath, 'conda: "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
                     flowlist.append("MAPPING")
 
-                    nfi = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "mapping.nf")
-                    )
+                    nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
                 if "QC" in works:
                     flowlist.append("MULTIQC")
-                    nfi = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "multiqc.nf")
-                    )
+                    nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2460,7 +2412,7 @@ def nf_make_sub(
                 subjobs.append("}\n\n")
 
                 # Append footer and write out subflow and subconf per condition
-                # nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
                 # with open(nfi,'r') as nf:
                 #    for line in nf.readlines():
                 #        line = re.sub(condapath,'conda:  "../', line)
@@ -2582,12 +2534,10 @@ def nf_make_sub(
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.nf"
 
-                    nfi = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", subname)
-                    )
+                    nfi = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2610,34 +2560,28 @@ def nf_make_sub(
                 if "TRIMMING" not in works:
                     log.info(logid + "Simulated read trimming only!")
                     flowlist.append("TRIMMING")
-                    nfi = os.path.abspath(
-                        os.path.join("NextSnakes", "workflows", "simulatetrim.nf")
-                    )
+                    nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda:  "../', line)
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
                 flowlist.append("MAPPING")
 
-                nfi = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "mapping.nf")
-                )
+                nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
             if "QC" in works:
                 flowlist.append("MULTIQC")
-                nfi = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "multiqc.nf")
-                )
+                nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
-                        line = re.sub(condapath, 'conda:  "../', line)
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2680,7 +2624,7 @@ def nf_make_sub(
             subjobs.append("}\n\n")
 
             # SKIP as nextflow exits too soon otherwise: Append footer and write out subflow and subconf per condition
-            # nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+            # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
             # with open(nfi,'r') as nf:
             #    for line in nf.readlines():
             #        line = re.sub(condapath,'conda:  "../', line)
@@ -2763,9 +2707,7 @@ def nf_make_post(
                     + str([toolenv, subname, condition, subsamples, subconf])
                 )
 
-                nf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "header.nf")
-                )
+                nf = os.path.abspath(os.path.join(workflowpath, "header.nf"))
                 nfo = os.path.abspath(
                     os.path.join(
                         subdir,
@@ -2779,7 +2721,7 @@ def nf_make_post(
                         for line in nfi.readlines():
                             nfout.write(line)
                     nfout.write("\n\n")
-                nfo = os.path.abspath(os.path.join("NextSnakes", "workflows", subname))
+                nfo = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfo, "a") as nfout:
                     with open(nf, "r") as nfi:
                         smkout.write(smk.read())
@@ -2800,7 +2742,7 @@ def nf_make_post(
                             smkout.write("\n    ".w)
                     smkout.write("\n}\n")
 
-                # smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
+                # smkf = os.path.abspath(os.path.join(installpath, 'NextSnakes','workflows','footer.nf'))
                 # with open(smko, 'a') as smkout:
                 #    with open(smkf,'r') as smk:
                 #        smkout.write(smk.read())
@@ -2904,9 +2846,7 @@ def nf_make_post(
                     + str([toolenv, subname, subsamples, subconf])
                 )
 
-                smkf = os.path.abspath(
-                    os.path.join("NextSnakes", "workflows", "header.nf")
-                )
+                smkf = os.path.abspath(os.path.join(workflowpath, "header.nf"))
                 smko = os.path.abspath(
                     os.path.join(subdir, "_".join([subwork, toolenv, "subflow.nf"]))
                 )
@@ -2918,7 +2858,7 @@ def nf_make_post(
                             # line = re.sub(condapath,'conda  \"../', line)
                             smkout.write(line)
                     smkout.write("\n\n")
-                smkf = os.path.abspath(os.path.join("NextSnakes", "workflows", subname))
+                smkf = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(
                     os.path.abspath(
                         os.path.join(subdir, "_".join([subwork, toolenv, "subflow.nf"]))
@@ -2930,7 +2870,7 @@ def nf_make_post(
                         smkout.write(smk.read())
                     smkout.write("\n")
 
-                # smkf = os.path.abspath(os.path.join('NextSnakes','workflows','footer.nf'))
+                # smkf = os.path.abspath(os.path.join(installpath, 'NextSnakes','workflows','footer.nf'))
                 # with open(smko, 'a') as smkout:
                 #    with open(smkf,'r') as smk:
                 #        smkout.write(smk.read())

@@ -16,7 +16,7 @@ if paired = 'paired':
         output: o1 = "{outdir}{file}_R1_val_1.fq.gz",
                 o2 = "{outdir}{file}_R2_val_2.fq.gz"
         log:    "LOGS/{combo}/{file}_trim.log"
-        conda: "NextSnakes/envs/"+TRIMENV+".yaml"
+        conda: ""+TRIMENV+".yaml"
         threads: MAXTHREAD
         params: odir=lambda wildcards, output:os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)[0].items()),
@@ -28,7 +28,7 @@ if paired = 'paired':
                 o2 = rules.bbduk_trim.output.o2
         output: r1 = "{outdir}{file}_R1_trimmed.fastq.gz",
                 r2 = "{outdir}{file}_R2_trimmed.fastq.gz"
-        conda: "NextSnakes/envs/"+TRIMENV+".yaml"
+        conda: ""+TRIMENV+".yaml"
         threads: 1
         shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"
 else:
@@ -36,7 +36,7 @@ else:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
         output: o1 = "{outdir}{file}_trimmed.fq.gz"
         log:    "LOGS/{combo}/{file}_trim.log"
-        conda: "NextSnakes/envs/"+TRIMENV+".yaml"
+        conda: ""+TRIMENV+".yaml"
         threads: MAXTHREAD
         params: odir=lambda wildcards, output: os.path.dirname(output.o1),
                 tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)[0].items()),
@@ -46,6 +46,6 @@ else:
     rule bbduk_rename:
         input:  o1 = rules.bbduk_trim.output.o1
         output: r1 = "{outdir}{file}_trimmed.fastq.gz"
-        conda: "NextSnakes/envs/"+TRIMENV+".yaml"
+        conda: ""+TRIMENV+".yaml"
         threads: 1
         shell:  "mv {input.o1} {output.r1}"

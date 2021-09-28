@@ -21,7 +21,7 @@ rule prepare_deu_annotation:
     output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
             deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
-    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: bins = BINS,
             countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
@@ -36,7 +36,7 @@ rule featurecount_unique:
             tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
-    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
             cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'][0].items()),
@@ -50,7 +50,7 @@ rule prepare_count_table:
     output:  tbl  = "DEU/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DEU/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
-    conda:   "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:   ""+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DEU'),
              bins = BINS
@@ -67,7 +67,7 @@ rule run_dexseq:
             tbl     = rules.themall.input.tbl,
             session = rules.themall.input.session
     log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
             outdir = 'DEU/'+combo,
@@ -82,7 +82,7 @@ rule filter_significant:
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DEU/filter_dexseq.log"
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc')
@@ -99,7 +99,7 @@ rule create_summary_snippet:
             rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log" ,combo=combo)
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

@@ -25,7 +25,7 @@ rule featurecount_unique:
             tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
-    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -40,7 +40,7 @@ rule prepare_count_table:
     output:  tbl  = "DAS/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
-    conda:   "NextSnakes/envs/"+DASENV+".yaml"
+    conda:   ""+DASENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
              bins = BINS
@@ -58,7 +58,7 @@ rule run_edger:
             resS    = rules.themall.input.resS,
             resE    = rules.themall.input.resE
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
-    conda:  "NextSnakes/envs/"+DASENV+".yaml"
+    conda:  ""+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             outdir = 'DAS/'+combo,
@@ -73,7 +73,7 @@ rule filter_significant_edger:
             sig_d= rules.themall.input.sig_d,
             sig_u= rules.themall.input.sig_u,
     log:    "LOGS/DAS/filter_edgerDAS.log"
-    conda:  "NextSnakes/envs/"+DASENV+".yaml"
+    conda:  ""+DASENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -93,7 +93,7 @@ rule create_summary_snippet:
             rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
-    conda:  "NextSnakes/envs/"+DASENV+".yaml"
+    conda:  ""+DASENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

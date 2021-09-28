@@ -49,7 +49,7 @@ rule FindPeaks:
     input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
-    conda:  "NextSnakes/envs/"+PEAKENV+".yaml"
+    conda:  ""+PEAKENV+".yaml"
     threads: 1
     params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES, scombo),
             ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
@@ -65,7 +65,7 @@ rule UnzipGenome:
             fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
-    conda:  "NextSnakes/envs/samtools.yaml"
+    conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} |sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
@@ -78,7 +78,7 @@ rule AddSequenceToPeak:
             pt = temp("PEAKS/{combo}/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_seq2peaks_{type}.log"
-    conda:  "NextSnakes/envs/bedtools.yaml"
+    conda:  "bedtools.yaml"
     threads: 1
     params: bins=BINS
     shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
@@ -88,7 +88,7 @@ if ANNOPEAK is not None:
         input:  "PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz"
         output: "PEAKS/{combo}/{file}_peak_anno_{type}.bed.gz"
         log:    "LOGS/PEAKS/{combo}/{file}_annotatepeaks_{type}.log"
-        conda:  "NextSnakes/envs/perl.yaml"
+        conda:  "perl.yaml"
         threads: 1
         params: bins=BINS,
                 anno = ANNOTATION
@@ -102,7 +102,7 @@ if ANNOPEAK is not None:
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 trw = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
-        conda:  "NextSnakes/envs/perl.yaml"
+        conda:  "perl.yaml"
         threads: 1
         params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
@@ -116,7 +116,7 @@ else:
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
-        conda:  "NextSnakes/envs/perl.yaml"
+        conda:  "perl.yaml"
         threads: 1
         params: bins=BINS,
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
@@ -129,7 +129,7 @@ rule NormalizeBedg:
     output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.norm.bedg.gz",
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_ucscpeaknormalizebedgraph_{type}.log"
-    conda:  "NextSnakes/envs/perl.yaml"
+    conda:  "perl.yaml"
     threads: 1
     shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re}) | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
@@ -144,7 +144,7 @@ rule PeakToUCSC:
             tfw = temp("UCSC/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("UCSC/PEAKS/{combo}/{file}_{type}re_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
-    conda:  "NextSnakes/envs/ucsc.yaml"
+    conda:  "ucsc.yaml"
     threads: 1
     shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}"
 
@@ -154,7 +154,7 @@ rule GenerateTrack:
     output: "UCSC/PEAKS/{combo}/{file}_peak_{type}.fw.bw.trackdone",
             "UCSC/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
     log:    "LOGS/PEAKS/{combo}/{file}_peaktrack_{type}.log"
-    conda:  "NextSnakes/envs/base.yaml"
+    conda:  "base.yaml"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),

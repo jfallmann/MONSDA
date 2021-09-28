@@ -29,7 +29,7 @@ process collect_tomap{
 }
 
 process segemehl3_idx{
-    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
+    conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -57,7 +57,7 @@ process segemehl3_idx{
 }
 
 process segemehl3_mapping{
-    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
+    conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

@@ -18,7 +18,7 @@ if not all(checklist):
             input:  "MAPPED/{combo}/{file}_mapped_{type}.bam",
             output: "BED/{combo}/{file}_mapped_{type}.bed.gz",
             log:    "LOGS/UCSC/{combo}/{file}_{type}_ucscbamtobed.log"
-            conda:  "NextSnakes/envs/bedtools.yaml"
+            conda:  "bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
@@ -26,7 +26,7 @@ if not all(checklist):
             input:  "MAPPED/{combo}/{file}_mapped_{type}.bam",
             output: "BED/{combo}/{file}_mapped_{type}.bed.gz",
             log:    "LOGS/UCSC/{combo}/{file}_{type}_ucscbamtobed.log"
-            conda:  "NextSnakes/envs/bedtools.yaml"
+            conda:  "bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
@@ -34,7 +34,7 @@ rule index_fa:
     input:  REFERENCE
     output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/UCSC/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''))
-    conda:  "NextSnakes/envs/samtools.yaml"
+    conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
@@ -43,7 +43,7 @@ rule get_chromsize_genomic:
     input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
     output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/UCSC/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''))
-    conda:  "NextSnakes/envs/samtools.yaml"
+    conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
     shell:  "cut -f1,2 {input} > {output} 2> {log}"
@@ -64,7 +64,7 @@ if not all(checklist):
         output: fw = "UCSC/{combo}/{file}_mapped_{type}.fw.bedg.gz",
                 re = "UCSC/{combo}/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/UCSC/{combo}/{file}_{type}_ucscbedtobedgraph.log"
-        conda:  "NextSnakes/envs/bedtools.yaml"
+        conda:  "bedtools.yaml"
         threads: 1
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} | sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
@@ -75,7 +75,7 @@ rule NormalizeBedg:
     output: fw = "UCSC/{combo}/{file}_mapped_{type}.fw.norm.bedg.gz",
             re = "UCSC/{combo}/{file}_mapped_{type}.re.norm.bedg.gz"
     log:    "LOGS/UCSC/{combo}/{file}_{type}_ucscnormalizebedgraph.log"
-    conda:  "NextSnakes/envs/perl.yaml"
+    conda:  "perl.yaml"
     threads: 1
     shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
@@ -88,7 +88,7 @@ rule BedgToUCSC:
             t1 = temp("UCSC/{combo}/{file}_mapped_{type}.fw.tmp"),
             t2 = temp("UCSC/{combo}/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/UCSC/{combo}/{file}_{type}_bedgtoucsc.log"
-    conda:  "NextSnakes/envs/ucsc.yaml"
+    conda:  "ucsc.yaml"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
     params: sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz',''))
@@ -100,7 +100,7 @@ rule GenerateTrack:
     output: "UCSC/{combo}/{file}_mapped_{type}.fw.bw.trackdone",
             "UCSC/{combo}/{file}_mapped_{type}.re.bw.trackdone"
     log:    "LOGS/UCSC/{combo}/{file}_track_{type}.log"
-    conda:  "NextSnakes/envs/base.yaml"
+    conda:  "base.yaml"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),

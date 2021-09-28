@@ -14,7 +14,7 @@ process collect_postmap{
 }
 
 process sortsam{
-    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
+    conda "samtools.yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -40,7 +40,7 @@ process sortsam{
 }
 
 process sam2bam{
-    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
+    conda "samtools.yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -70,7 +70,7 @@ process sam2bam{
 }
 
 process uniqsam{
-    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
+    conda "samtools.yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -98,7 +98,7 @@ process uniqsam{
 }
 
 process sam2bamuniq{
-    conda "${workflow.workDir}/../NextSnakes/envs/samtools.yaml"
+    conda "samtools.yaml"
     cpus THREADS
     //validExitStatus 0,1
 
