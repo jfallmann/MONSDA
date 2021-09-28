@@ -23,7 +23,7 @@ rule featurecount_unique:
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_edger_unique.log"
-    conda:  "NextSnakes/envs/"+COUNTENV+".yaml"
+    conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -37,7 +37,7 @@ rule prepare_count_table:
     output:  tbl  = "DEU/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DEU/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
-    conda:   "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:   ""+DEUENV+".yaml"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DEU'),
              bins = BINS
@@ -54,7 +54,7 @@ rule run_edger:
             rules.themall.input.allN,
             rules.themall.input.res,
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
             outdir = 'DEU/'+combo,
@@ -69,7 +69,7 @@ rule filter_significant:
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DEU/filter_edgerDEU.log"
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc')
@@ -89,7 +89,7 @@ rule create_summary_snippet:
             rules.themall.input.session
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log",combo=combo)
-    conda:  "NextSnakes/envs/"+DEUENV+".yaml"
+    conda:  ""+DEUENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

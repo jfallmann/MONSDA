@@ -19,7 +19,7 @@ process collect_totrim{
 }
 
 process trim{
-    conda "${workflow.workDir}/../NextSnakes/envs/$TRIMENV"+".yaml"
+    conda "$TRIMENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

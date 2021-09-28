@@ -16,7 +16,7 @@ process collect_fqraw{
 }
 
 process qc_raw{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
+    conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

@@ -5,7 +5,9 @@ import traceback as tb
 from collections import defaultdict
 
 cmd_subfolder = os.path.join(
-    os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))),
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
     "../../NextSnakes",
 )
 if cmd_subfolder not in sys.path:
@@ -18,14 +20,23 @@ scriptname = os.path.basename(__file__)
 
 def parseargs():
     parser = argparse.ArgumentParser(
-        description='Create Rmd snippets for Summary from downstream analyses results'
+        description="Create Rmd snippets for Summary from downstream analyses results"
     )
     parser.add_argument(
-        "--files", dest='files', required=True, type=str, nargs='*', help="Names of input files"
+        "--files",
+        dest="files",
+        required=True,
+        type=str,
+        nargs="*",
+        help="Names of input files",
     )
-    parser.add_argument("--output", dest='output', required=True, type=str, help="output Rmd File")
-    parser.add_argument("--env", dest='env', required=True, type=str, help="used conda environment")
-    parser.add_argument("--loglevel", default='INFO', help="Log verbosity")
+    parser.add_argument(
+        "--output", dest="output", required=True, type=str, help="output Rmd File"
+    )
+    parser.add_argument(
+        "--env", dest="env", required=True, type=str, help="used conda environment"
+    )
+    parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -50,11 +61,11 @@ def makeoutdir(outdir):
 
 def pretty(d, indent=0):
     for key, value in d.items():
-        log.debug('\t' * indent + str(key))
+        log.debug("\t" * indent + str(key))
         if isinstance(value, dict):
             pretty(value, indent + 1)
         else:
-            log.debug('\t' * (indent + 1) + str(value))
+            log.debug("\t" * (indent + 1) + str(value))
 
 
 # Analyses
@@ -67,7 +78,7 @@ compile = {
 
 
 def check_workflow(files):
-    logid = scriptname + '.check_workflow: '
+    logid = scriptname + ".check_workflow: "
     files = [os.path.basename(file) for file in files]
     works = set()
     for file in files:
@@ -77,28 +88,35 @@ def check_workflow(files):
             works.add(w)
     log.debug(logid + str(works))
     if len(works) > 1:
-        log.error(logid + "several Workflows found: > " + str(works) + " < check for wrong file naming.")
+        log.error(
+            logid
+            + "several Workflows found: > "
+            + str(works)
+            + " < check for wrong file naming."
+        )
         sys.exit(1)
     try:
         compile[list(works)[0]]
     except:
         log.error(logid + "workflow > " + str(works) + " < not found")
         sys.exit(1)
-    log.debug(logid + 'workflow found: ' + str(works))
+    log.debug(logid + "workflow found: " + str(works))
     return list(works)[0]
 
 
 def create_file_tree(files):
-    logid = scriptname + '.create_file_tree: '
+    logid = scriptname + ".create_file_tree: "
     tree = NestedDefaultDict()
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
-        setting = setting.replace("Sig_", "").replace("SigUP_", "").replace("SigDOWN_", "")
+        setting = (
+            setting.replace("Sig_", "").replace("SigUP_", "").replace("SigDOWN_", "")
+        )
         if "SESSION" in file:
-            WF, TOOL, COMBI, NAME = setting.split('_')
+            WF, TOOL, COMBI, NAME = setting.split("_")
             tree[WF][TOOL][COMBI]["DataSet"][NAME] = file
             continue
-        WF, TOOL, COMBI, COMP, RES, NAME = setting.split('_')
+        WF, TOOL, COMBI, COMP, RES, NAME = setting.split("_")
         EXT = os.path.basename(file).split(".", 1)[1]
         tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
     log.debug(logid + "FILE-TREE: " + str(pretty(tree)))
@@ -131,7 +149,7 @@ def integrate_figures(files, islist=False):
             listlines.append(f"fig.{counter} <- paste(params$root,'{f}', sep='/')")
         else:
             listlines.append(f"fig.{counter} <- '{f}'")
-        img.append(f'path.expand(fig.{counter})')
+        img.append(f"path.expand(fig.{counter})")
         counter += 1
     listlines.append(f"knitr::include_graphics(c({','.join(img)}))")
     listlines.append("```\n\n")
@@ -158,7 +176,7 @@ def integrate_list(file):
 
 
 def create_Rmd(files, output, env):
-    logid = scriptname + '.create_Rmd: '
+    logid = scriptname + ".create_Rmd: "
     outdir = os.path.dirname(output)
     makeoutdir(outdir)
     workflow = check_workflow(files)
@@ -181,21 +199,33 @@ def create_Rmd(files, output, env):
                 if "figure" in tree[workflow][tool][combi][comparison].keys():
                     lines.append(f"##### FIGURES  {{.tabset}} \n\n")
                     lines.append(f"###### OVERVIEW \n\n")
-                    for name in tree[workflow][tool][combi][comparison]["figure"].keys():
+                    for name in tree[workflow][tool][combi][comparison][
+                        "figure"
+                    ].keys():
                         lines.append(f"\n<br />\n")
                         lines.append(f"\n**{name}** \n")
                         lines.append(
                             f"\n```\n{tree[workflow][tool][combi][comparison]['figure'][name]}\n```\n"
                         )
                         lines.append(
-                            integrate_figures([tree[workflow][tool][combi][comparison]["figure"][name]])
+                            integrate_figures(
+                                [
+                                    tree[workflow][tool][combi][comparison]["figure"][
+                                        name
+                                    ]
+                                ]
+                            )
                         )
 
                 if "list" in tree[workflow][tool][combi][comparison].keys():
                     for name in tree[workflow][tool][combi][comparison]["list"].keys():
                         lines.append(f"\n##### {name} \n")
                         lines.append(f"\n<br />\n")
-                        lines.append(integrate_list(tree[workflow][tool][combi][comparison]["list"][name]))
+                        lines.append(
+                            integrate_list(
+                                tree[workflow][tool][combi][comparison]["list"][name]
+                            )
+                        )
 
                 if "table" in tree[workflow][tool][combi][comparison].keys():
                     lines.append(f"##### TABLES  \n")
@@ -210,37 +240,43 @@ def create_Rmd(files, output, env):
                 if "SESSION" in tree[workflow][tool][combi][comparison].keys():
                     lines.append(f"##### R-SESSION  {{.tabset}} \n\n")
                     lines.append(f"\n<br />\n")
-                    lines.append(f"To access the {tool} R-session, follow these steps\n\n")
-                    lines.append(f"1) Create the corresponding conda environment and activate it:  \n")
-                    lines.append(f"```\nconda env create -f NextSnakes/envs/{env}.yaml\n```  \n")
+                    lines.append(
+                        f"To access the {tool} R-session, follow these steps\n\n"
+                    )
+                    lines.append(
+                        f"1) Create the corresponding conda environment and activate it:  \n"
+                    )
+                    lines.append(f"```\nconda env create -f {env}.yaml\n```  \n")
                     lines.append(f"2) Start R and load the workspace:  \n")
-                    lines.append(f"```\nload('{tree[workflow][tool][combi][comparison]['SESSION']}')\n```\n")
+                    lines.append(
+                        f"```\nload('{tree[workflow][tool][combi][comparison]['SESSION']}')\n```\n"
+                    )
 
     log.debug(logid + "lines: " + str(lines))
 
     if os.path.exists(output):
-        os.rename(output, output + '.bak')
-    with open(output, 'a') as writefile:
+        os.rename(output, output + ".bak")
+    with open(output, "a") as writefile:
         for line in lines:
             writefile.write(line)
-        writefile.write('\n\n')
+        writefile.write("\n\n")
 
 
 ####################
 ####    MAIN    ####
 ####################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    logid = scriptname + '.main: '
+    logid = scriptname + ".main: "
     try:
         args = parseargs()
         try:
             log = setup_logger(
                 name=scriptname,
-                log_file='stderr',
-                logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
+                log_file="stderr",
+                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                datefmt="%m-%d %H:%M",
                 level=args.loglevel,
             )
             # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
@@ -258,7 +294,7 @@ if __name__ == '__main__':
             exc_value,
             exc_tb,
         )
-        log.error(logid + ''.join(tbe.format()))
+        log.error(logid + "".join(tbe.format()))
 
 
 # RmdCreator.py ends here

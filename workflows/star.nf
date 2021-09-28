@@ -28,7 +28,7 @@ process collect_tomap{
 }
 
 process star_idx{
-    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
+    conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
@@ -68,7 +68,7 @@ process star_idx{
 }
 
 process star_mapping{
-    conda "${workflow.workDir}/../NextSnakes/envs/$MAPENV"+".yaml"
+    conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

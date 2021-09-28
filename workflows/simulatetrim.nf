@@ -19,7 +19,7 @@ if (PAIRED == 'paired'){
 }
 
 process simtrim{
-    conda "${workflow.workDir}/../NextSnakes/envs/$TOOLENV"+".yaml"
+    conda "$TOOLENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

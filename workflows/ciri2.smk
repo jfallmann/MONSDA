@@ -15,7 +15,7 @@ rule FindCircs:
             tmp = temp(directory("CIRCS/{combo}/CIRI2/TMP")),
             ts = temp("CIRCS/{combo}/CIRI2/{file}_tmp.sam")
     log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
-    conda:  "NextSnakes/envs/"+CENV+".yaml"
+    conda:  ""+CENV+".yaml"
     threads: MAXTHREAD
     params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'][0].items()),
             circ = CBIN,

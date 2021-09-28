@@ -18,7 +18,7 @@ process collect_multi{
 
 
 process multiqc{
-    conda "${workflow.workDir}/../NextSnakes/envs/$QCENV"+".yaml"
+    conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
