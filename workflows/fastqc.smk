@@ -75,7 +75,7 @@ rule qc_mapped:
 rule qc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
-    output: o1 = report("QC/FASTQC/{combo}/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
+    output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_uniquemapped.log"
     conda:  ""+QCENV+".yaml"
     threads: MAXTHREAD
