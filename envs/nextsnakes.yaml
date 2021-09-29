@@ -316,4 +316,3 @@ dependencies:
   - zipp=3.5.0
   - zlib=1.2.11
   - zstd=1.5.0
-prefix: /home/fall/anaconda3/envs/nextsnakes
