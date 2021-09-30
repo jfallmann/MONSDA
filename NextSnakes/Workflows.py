@@ -101,8 +101,6 @@ except:
 workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
 envpath = os.path.join(installpath, "NextSnakes", "envs") + os.sep
 
-log.info("WP: " + workflowpath + "  EP: " + envpath)
-
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
     if any(x in scriptname for x in ["NextSnakes", "Configurator"]):

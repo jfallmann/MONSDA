@@ -2,11 +2,12 @@
 from setuptools import setup, find_packages
 from glob import glob
 import os
+import versioneer
 
 NAME = "NextSnakes"
-# Set __version__
-exec(open("NextSnakes/__init__.py").read())
 DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflows"
+# Set __version__ done by versioneer
+# exec(open("NextSnakes/__init__.py").read())
 
 scripts = list()
 for s in glob("scripts/**", recursive=True):
@@ -27,7 +28,8 @@ print(scripts, workflows)
 
 setup(
     name=NAME,
-    version=__version__,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description=DESCRIPTION,
     author="Joerg Fallmann",
     author_email="fall@bioinf.uni-leipzig.de",
