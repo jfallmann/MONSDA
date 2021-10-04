@@ -45,7 +45,7 @@ setup(
     entry_points={
         "console_scripts": [
             "NextSnakes = NextSnakes.RunNextSnakes:main",
-            "NextSnakes configure = NextSnakes.Configurator:main",
+            "NextSnakes_configure = NextSnakes.Configurator:main",
         ]
     },
     # scripts=["NextSnakes/Configurator.py"],
