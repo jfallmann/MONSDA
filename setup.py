@@ -17,7 +17,6 @@ workflows = list()
 for d in glob("workflows/*"):
     if not "wip" in d:
         workflows.append(os.path.relpath(d))  # os.path.join(d, os.path.split(d)[1]))
-
 envs = list()
 for e in glob("envs/*"):
     envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
