@@ -148,7 +148,7 @@ except Exception:
 def ns_check_version(v, r):
     logid = scriptname + ".nextsnakes_check_version: "
 
-    if parse_version(v) < parse_version(r):
+    if parse_version(str(v)) < parse_version(str(r)):
         return True
     else:
         return shutil.which("NextSnakes")
