@@ -100,6 +100,7 @@ except:
 
 workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
 envpath = os.path.join(installpath, "NextSnakes", "envs") + os.sep
+binpath = os.path.join(installpath, "NextSnakes", "scripts")
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -148,9 +149,10 @@ except Exception:
 def ns_check_version(v, r):
     logid = scriptname + ".nextsnakes_check_version: "
 
-    if parse_version(str(v)) < parse_version(str(r)):
+    if parse_version(str(v)) == parse_version(str(r)):
         return True
     else:
+        log.debug(f"Mismatch in installed version {v} and required version {r}")
         return shutil.which("NextSnakes")
 
 
@@ -245,8 +247,11 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
             tempconf[subwork + "BIN"] = exe
 
         try:
-            for key in ["BINS", "MAXTHREADS"]:
-                tempconf[key] = config[key]
+            tempconf["MAXTHREADS"] = config["MAXTHREADS"]
+            BINS = config.get("BINS")
+            if not BINS:
+                BINS = binpath
+            tempconf["BINS"] = BINS
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
             tbe = tb.TracebackException(

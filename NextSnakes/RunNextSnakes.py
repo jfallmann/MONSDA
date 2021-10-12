@@ -36,7 +36,7 @@ from snakemake.utils import min_version
 import argparse
 import subprocess
 
-scriptname = os.path.basename(__file__).replace(".py", "")
+scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
 from NextSnakes.Logger import *
 from . import _version
@@ -47,21 +47,21 @@ __version__ = _version.get_versions()["version"]
 import datetime
 
 makelogdir("LOGS")
-if not os.path.isfile(os.path.abspath("LOGS/" + scriptname + ".log")):
+if not os.path.isfile(os.path.abspath("LOGS" + os.sep + scriptname + ".log")):
     open("LOGS/" + scriptname + ".log", "a").close()
 else:
     ts = str(
         datetime.datetime.fromtimestamp(
-            os.path.getmtime(os.path.abspath("LOGS/" + scriptname + ".log"))
+            os.path.getmtime(os.path.abspath("LOGS" + os.sep + scriptname + ".log"))
         ).strftime("%Y%m%d_%H_%M_%S")
     )
     shutil.copy2(
-        "LOGS/" + scriptname + ".log", "LOGS/" + scriptname + "_" + ts + ".log"
+        "LOGS" + os.sep + scriptname + ".log", "LOGS" + os.sep + scriptname + "_" + ts + ".log"
     )
 
 log = setup_logger(
     name=scriptname,
-    log_file="LOGS/" + scriptname + ".log",
+    log_file="LOGS" + os.sep + scriptname + ".log",
     logformat="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
     datefmt="%m-%d %H:%M",
 )
@@ -849,14 +849,15 @@ def main():
         optionalargs = args[1:]
 
         if knownargs.version:
-            sys.exit("Running NextSnakes version " + __version__)
+            sys.exit("NextSnakes version " + __version__)
 
         log.setLevel(knownargs.loglevel)
 
         required_version = load_configfile(knownargs.configfile).get("VERSION")
-        try:
-            ns_check_version(__version__, required_version)
-        except:
+        if not required_version:
+            sys.exit("Can not check version needed, please add VERSION key to config file")
+
+        if ns_check_version(__version__, required_version) is not True:
             log.error(
                 "Version required in config file "
                 + str(required_version)
@@ -864,6 +865,15 @@ def main():
                 + str(__version__)
                 + " Please install correct version before continuing!"
             )
+            sys.exit(
+                "Version required in config file "
+                + str(required_version)
+                + " does not match installed version "
+                + str(__version__)
+                + " Please install correct version before continuing!"
+            )
+        else:
+            log.info("Running NextSnakes version " + __version__+ " as configured")
 
         MIN_PYTHON = (3, 7)
         if sys.version_info < MIN_PYTHON:

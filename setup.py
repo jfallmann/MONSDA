@@ -24,8 +24,6 @@ for e in glob("envs/*"):
 
 requires = open("requirements.txt").read().strip().split("\n")
 
-print(scripts, workflows)
-
 setup(
     name=NAME,
     version=versioneer.get_version(),

@@ -55,7 +55,14 @@ logid = 'header.smk: '
 
 
 # Parse SUBCONFIG
-BINS = config["BINS"]
+try:
+    installpath = os.path.dirname(__file__).replace(
+        os.sep.join(["lib", "python3.9", "site-packages", "NextSnakes"]), "share"
+    )
+except:
+    installpath = os.path.cwd()
+
+BINS = config.get("BINS")
 MAXTHREAD = int(config["MAXTHREADS"])
 SAMPLES = [os.path.join(x) for x in sampleslong(config)]
 
