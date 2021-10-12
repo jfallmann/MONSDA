@@ -2,7 +2,7 @@
     "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, UCSC, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS"
     "BINS": "NextSnakes/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
-    "VERSION": "0.0.7"
+    "VERSION": "0.0.7",
     "SAMPLES": {  #which samples to analyze
                   "id": { #key for source and genome
                           "condition": { # sample id
