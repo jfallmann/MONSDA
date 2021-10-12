@@ -2,6 +2,7 @@
   "WORKFLOWS": "",
   "BINS": "NextSnakes/scripts",
   "MAXTHREADS": "",
+  "VERSION": "0.0.7",
   "SETTINGS": {
     "comment": {
       "GROUPS": "set groups",

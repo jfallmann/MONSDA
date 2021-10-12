@@ -88,25 +88,31 @@ import functools
 import datetime
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py', '')
-    if any(x in scriptname for x in ['NextSnakes', 'Configurator']):
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    if any(x in scriptname for x in ["NextSnakes", "Configurator"]):
         log = logging.getLogger(scriptname)
     else:
-        log = logging.getLogger('snakemake')
+        log = logging.getLogger("snakemake")
 
-    lvl = log.level if log.level else 'INFO'
+    lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler('LOGS/NextSnakes.log', mode='a')
+    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
     handler.setFormatter(
-        logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
     )
     log.addHandler(handler)
     handler = logging.StreamHandler()
     handler.setFormatter(
-        logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M')
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
     )
     log.addHandler(handler)
     log.setLevel(lvl)
@@ -118,7 +124,7 @@ except Exception:
         exc_value,
         exc_tb,
     )
-    print(''.join(tbe.format()), file=sys.stderr)
+    print("".join(tbe.format()), file=sys.stderr)
 
 
 #  NestedDefaultDict
@@ -137,7 +143,7 @@ class NestedDefaultDict(defaultdict):
 def check_run(func):
     @functools.wraps(func)
     def func_wrapper(*args, **kwargs):
-        logid = scriptname + '.Collection_func_wrapper: '
+        logid = scriptname + ".Collection_func_wrapper: "
         try:
             return func(*args, **kwargs)
 
@@ -148,7 +154,7 @@ def check_run(func):
                 exc_value,
                 exc_tb,
             )
-            log.error(logid + ''.join(tbe.format()))
+            log.error(logid + "".join(tbe.format()))
 
     return func_wrapper
 
@@ -162,12 +168,23 @@ def rmempty(check):
     return ret
 
 
+@check_run
+def ns_check_version(v, r):
+    logid = scriptname + ".nextsnakes_check_version: "
+
+    if parse_version(v) < parse_version(check):
+        log.debug(logid + check)
+        return True
+    else:
+        return shutil.which("NextSnakes")
+
+
 ##############################
 #########Python Subs##########
 ##############################
 @check_run
 def dict_inst(d):
-    logid = scriptname + '.Collection_dict_inst: '
+    logid = scriptname + ".Collection_dict_inst: "
     if (
         isinstance(d, dict)
         or isinstance(d, OrderedDict)
@@ -179,21 +196,21 @@ def dict_inst(d):
 
 @check_run
 def getFromDict(dataDict, mapList):
-    logid = scriptname + '.Collection_getFromDict: '
-    log.debug(logid + 'MAPLIST: ' + str(mapList) + '\tDict: ' + str(dataDict))
+    logid = scriptname + ".Collection_getFromDict: "
+    log.debug(logid + "MAPLIST: " + str(mapList) + "\tDict: " + str(dataDict))
     ret = dataDict
     for k in mapList:
-        log.debug(logid + 'k: ' + str(k))
+        log.debug(logid + "k: " + str(k))
         if dataDict.get(k):
             dataDict = dataDict[k]
-            log.debug(logid + 'subdict: ' + str(dataDict))
+            log.debug(logid + "subdict: " + str(dataDict))
         else:
             return list([])
     if ret != dataDict:
-        log.debug(logid + 'RET: ' + str(dataDict))
+        log.debug(logid + "RET: " + str(dataDict))
         return list([dataDict])
     else:
-        log.debug(logid + 'RET: ' + str(list([])))
+        log.debug(logid + "RET: " + str(list([])))
         return list([])
 
 
@@ -214,22 +231,22 @@ def yield_from_dict(key, dictionary):
 
 @check_run
 def subDict(dataDict, mapList):
-    logid = scriptname + '.Collection_subDict: '
+    logid = scriptname + ".Collection_subDict: "
     log.debug(logid + str(mapList))
     ret = dataDict
     for k in mapList:
-        log.debug(logid + 'k: ' + str(k))
+        log.debug(logid + "k: " + str(k))
         if k in ret:
             ret = ret[k]
         else:
-            log.debug(logid + 'No k in dict')
+            log.debug(logid + "No k in dict")
             return None
     return ret
 
 
 @check_run
 def subSetDict(dataDict, mapList):
-    logid = scriptname + '.Collection_subDict: '
+    logid = scriptname + ".Collection_subDict: "
     log.debug(logid + str(mapList))
     parse = subDict(dataDict, mapList)
     ret = {}
@@ -269,26 +286,28 @@ def merge_dicts(d, u):
 def keysets_from_dict(
     dictionary, search=None, original=None
 ):  # Only works for equal depth keysets, needs tweaking for other use cases
-    logid = scriptname + '.Collection_keysets_from_dict: '
+    logid = scriptname + ".Collection_keysets_from_dict: "
 
     keylist = list()
     if dict_inst(dictionary):
         for k, v in keys_from_dict(dictionary, search).items():
             keylist.append(v)
-        log.debug(logid + 'kl:' + str(keylist))
+        log.debug(logid + "kl:" + str(keylist))
         combis = list()
         for i in range(1, len(keylist) + 1):
             subkeylist = keylist[0:i]
             combis.extend(list(itertools.product(*subkeylist)))
-        log.debug(logid + 'cs:' + str(combis))
+        log.debug(logid + "cs:" + str(combis))
         ret = list()
         for combi in combis:
             # if len(getFromDict(dictionary, combi)) >= 1:
             check = subDict(dictionary, combi)
-            log.debug(logid + 'checking: ' + str(check))
+            log.debug(logid + "checking: " + str(check))
             if isvalid(check):
-                if (isinstance(check, dict) and check.get("SAMPLES")) or isinstance(check, str):
-                    log.debug(logid + 'found: ' + str(combi))
+                if (isinstance(check, dict) and check.get("SAMPLES")) or isinstance(
+                    check, str
+                ):
+                    log.debug(logid + "found: " + str(combi))
                     ret.append(combi)
         return ret
     else:
@@ -297,27 +316,27 @@ def keysets_from_dict(
 
 @check_run
 def keys_from_dict(dictionary, search=None, save=None, first=True, lvl=0):
-    logid = scriptname + '.Collection_keys_from_dict: '
+    logid = scriptname + ".Collection_keys_from_dict: "
 
     if first:
         first = False
         end = depth(dictionary)
         save = defaultdict(list)
-        log.debug(logid + 'TOTALDEPTH:' + str(end))
+        log.debug(logid + "TOTALDEPTH:" + str(end))
 
     if dict_inst(dictionary):
-        log.debug(logid + 'dictDEPTH: ' + str(depth(dictionary)))
-        log.debug(logid + 'dictLEVEL: ' + str(lvl))
+        log.debug(logid + "dictDEPTH: " + str(depth(dictionary)))
+        log.debug(logid + "dictLEVEL: " + str(lvl))
         for k, v in dictionary.items():
             if not search or (search and k != search):
                 save[lvl].append(k)
-                log.debug(logid + 'TMPSAVE: ' + str(save))
+                log.debug(logid + "TMPSAVE: " + str(save))
                 if dict_inst(v):
                     save = keys_from_dict(v, search, save, first, lvl + 1)
                 else:
                     continue
             else:
-                log.debug(logid + 'Found search: ' + str(save))
+                log.debug(logid + "Found search: " + str(save))
                 return save
         return save
     else:
@@ -333,7 +352,7 @@ def depth(d):
 
 @check_run
 def list_all_keys_of_dict(dictionary):
-    logid = scriptname + '.Collection_list_all_keys_of_dict: '
+    logid = scriptname + ".Collection_list_all_keys_of_dict: "
     for key, value in dictionary.items():
         if type(value) is dict:
             yield key
@@ -371,13 +390,13 @@ def find_all_values_on_key(key, dictionary):
 
 @check_run
 def find_key_for_value(val, dictionary):
-    logid = scriptname + '.Collection_find_key_for_value: '
-    log.debug(logid + 'VAL: ' + str(val) + ' Dict: ' + str(dictionary))
+    logid = scriptname + ".Collection_find_key_for_value: "
+    log.debug(logid + "VAL: " + str(val) + " Dict: " + str(dictionary))
     if dict_inst(dictionary):
         for k, v in dictionary.items():
-            log.debug(logid + 'DICT: ' + str(k) + ' ; ' + str(v))
+            log.debug(logid + "DICT: " + str(k) + " ; " + str(v))
             if dict_inst(v):
-                log.debug(logid + 'item' + str(v))
+                log.debug(logid + "item" + str(v))
                 yield from find_key_for_value(val, v)
             elif v == val or val in v:
                 yield k
@@ -387,9 +406,9 @@ def find_key_for_value(val, dictionary):
 
 @check_run
 def value_extract(key, var):
-    logid = scriptname + '.Collection_value_extract: '
+    logid = scriptname + ".Collection_value_extract: "
     log.debug(logid + str(var))
-    if hasattr(var, 'items'):
+    if hasattr(var, "items"):
         for k, v in var.items():
             if k == key:
                 yield v
@@ -404,7 +423,7 @@ def value_extract(key, var):
 
 @check_run
 def find_innermost_value_from_dict(dictionary):
-    logid = scriptname + '.Collection_find_innermost_value_from_dict: '
+    logid = scriptname + ".Collection_find_innermost_value_from_dict: "
     if dict_inst(dictionary):
         for k, v in dictionary.items():
             if dict_inst(v):
@@ -417,7 +436,7 @@ def find_innermost_value_from_dict(dictionary):
 
 @check_run
 def removekey(d, key):
-    logid = scriptname + '.Collection_removekey: '
+    logid = scriptname + ".Collection_removekey: "
     r = dict(d)
     del r[key]
     return r
@@ -476,7 +495,7 @@ def toarray(file, ulim):
     x = np.loadtxt(
         str(file),
         usecols=(ulim),
-        delimiter='\t',
+        delimiter="\t",
         unpack=True,
         converters={ulim: lambda s: convertcol(s.decode("utf-8"))},
     )
@@ -494,7 +513,7 @@ def convertcol(entry):
 @check_run
 def isvalid(x=None):
     if x:
-        if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
+        if x in ("None", "nan", "none", "NA", "NAN") or x is None or x is np.nan:
             return False
         else:
             return True
@@ -506,7 +525,7 @@ def isvalid(x=None):
 def isinvalid(x=None):
 
     if x:
-        if x in ('None', 'nan', 'none', 'NA', 'NAN') or x is None or x is np.nan:
+        if x in ("None", "nan", "none", "NA", "NAN") or x is None or x is np.nan:
             return True
         else:
             return False
@@ -530,10 +549,10 @@ def parseseq(sequence):
         seq = sequence
 
     elif isinstance(sequence, str) and os.path.isfile(sequence):
-        if '.gz' in sequence:
-            seq = gzip.open(sequence, 'rt')
+        if ".gz" in sequence:
+            seq = gzip.open(sequence, "rt")
         else:
-            seq = open(sequence, 'rt')
+            seq = open(sequence, "rt")
     else:
         header = ">Seq1:default:nochrom:(.)"
         s = sequence
@@ -544,13 +563,13 @@ def parseseq(sequence):
 
 @check_run
 def npprint(a, o=None):  # , format_string ='{0:.2f}'):
-    out = ''
-    it = np.nditer(a, flags=['f_index'])
+    out = ""
+    it = np.nditer(a, flags=["f_index"])
     while not it.finished:
         out += "%d\t%0.7f" % (it.index + 1, it[0]) + "\n"
         it.iternext()
     if o:
-        o.write(bytes(out, encoding='UTF-8'))
+        o.write(bytes(out, encoding="UTF-8"))
     else:
         print(out)
 
@@ -559,48 +578,54 @@ def npprint(a, o=None):  # , format_string ='{0:.2f}'):
 def idfromfa(id):
     goi, chrom, strand = [None, None, None]
     try:
-        goi, chrom = id.split(':')[::2]
-        strand = str(id.split(':')[3].split('(')[1][0])
+        goi, chrom = id.split(":")[::2]
+        strand = str(id.split(":")[3].split("(")[1][0])
     except:
-        print('Fasta header is not in expected format, you will loose information on strand and chromosome')
+        print(
+            "Fasta header is not in expected format, you will loose information on strand and chromosome"
+        )
         goi = id
-        chrom, strand = ['na', 'na']
+        chrom, strand = ["na", "na"]
 
     if goi and chrom and strand:
         return [str(goi), str(chrom), str(strand)]
     else:
-        sys.exit('Could not assign any value from fasta header, please check your fasta files')
+        sys.exit(
+            "Could not assign any value from fasta header, please check your fasta files"
+        )
 
 
 @check_run
 def cluster2trna(seqs):
     translater = collections.OrderedDict()
-    translater['cluster'] = collections.OrderedDict()
-    translater['tRNA'] = collections.OrderedDict()
+    translater["cluster"] = collections.OrderedDict()
+    translater["tRNA"] = collections.OrderedDict()
 
-    for fa in SeqIO.parse(seqs, 'fasta'):
-        head = str(fa.id).upper()  # cluster1:chr19.tRNA5-LysCTT(+) cluster2:NC_007091.3.tRNA25-ArgTCT
-        cluster, info = head.split(':')
-        chrom, trna = (info.split('.')[0], info.split('.')[-1].split('(')[0])
-        strand = 'u'
-        if '(+)' in info or '(-)' in info:
-            strand = re.sub('[()]', '_', info.split('.')[-1]).split('_')[1]
+    for fa in SeqIO.parse(seqs, "fasta"):
+        head = str(
+            fa.id
+        ).upper()  # cluster1:chr19.tRNA5-LysCTT(+) cluster2:NC_007091.3.tRNA25-ArgTCT
+        cluster, info = head.split(":")
+        chrom, trna = (info.split(".")[0], info.split(".")[-1].split("(")[0])
+        strand = "u"
+        if "(+)" in info or "(-)" in info:
+            strand = re.sub("[()]", "_", info.split(".")[-1]).split("_")[1]
 
-        if cluster in translater['cluster']:
-            translater['cluster'][cluster].append(trna)
+        if cluster in translater["cluster"]:
+            translater["cluster"][cluster].append(trna)
         else:
-            translater['cluster'][cluster] = list()
-            translater['cluster'][cluster].append(trna)
-        if chrom in translater['tRNA']:
-            if strand in translater['tRNA'][chrom]:
-                translater['tRNA'][chrom][strand].append(trna)
+            translater["cluster"][cluster] = list()
+            translater["cluster"][cluster].append(trna)
+        if chrom in translater["tRNA"]:
+            if strand in translater["tRNA"][chrom]:
+                translater["tRNA"][chrom][strand].append(trna)
             else:
-                translater['tRNA'][chrom][strand] = list()
-                translater['tRNA'][chrom][strand].append(trna)
+                translater["tRNA"][chrom][strand] = list()
+                translater["tRNA"][chrom][strand].append(trna)
         else:
-            translater['tRNA'][chrom] = collections.OrderedDict()
-            translater['tRNA'][chrom][strand] = list()
-            translater['tRNA'][chrom][strand].append(trna)
+            translater["tRNA"][chrom] = collections.OrderedDict()
+            translater["tRNA"][chrom][strand] = list()
+            translater["tRNA"][chrom][strand].append(trna)
 
     return translater
 
@@ -609,13 +634,13 @@ def cluster2trna(seqs):
 def check_ref(reference):
     if os.path.exists(os.path.abspath(reference)):
         return reference
-    elif os.path.exists(os.path.abspath(reference + '.gz')):
-        return reference + '.gz'
+    elif os.path.exists(os.path.abspath(reference + ".gz")):
+        return reference + ".gz"
 
 
 @check_run
 def multi_replace(repl, text):
-    print('MULTI: ' + str(repl) + str(text))
+    print("MULTI: " + str(repl) + str(text))
     # Create a regular expression  from the dictionary keys
     regex = re.compile("(%s)" % "|".join(map(re.escape, repl.keys())))
 
@@ -634,20 +659,22 @@ def makelogdir(logdir):
 
 @check_run
 def get_dict_hash(d):
-    logid = scriptname + '.get_dict_hash: '
-    log.debug(logid + 'INPUT DICT: ' + str(d))
-    ret = str(hashlib.sha256(bytes(str(sorted(d.items())), 'utf-8')).hexdigest())
-    log.debug(logid + 'HASH: ' + ret)
+    logid = scriptname + ".get_dict_hash: "
+    log.debug(logid + "INPUT DICT: " + str(d))
+    ret = str(hashlib.sha256(bytes(str(sorted(d.items())), "utf-8")).hexdigest())
+    log.debug(logid + "HASH: " + ret)
     return ret
 
 
 @check_run
 def add_to_innermost_key_by_list(addto, toadd, keylist):
-    logid = scriptname + '.add_to_innermost_key_by_list: '
-    log.debug(logid + str(addto) + ', ' + str(toadd))
+    logid = scriptname + ".add_to_innermost_key_by_list: "
+    log.debug(logid + str(addto) + ", " + str(toadd))
 
     tconf = {}
-    for i in range(len(keylist)):  # need to add options as last element to dict of unknown depth
+    for i in range(
+        len(keylist)
+    ):  # need to add options as last element to dict of unknown depth
         tconf[keylist[i]] = {}
         tconf = tconf[keylist[i]]
         if i == len(keylist) - 1:

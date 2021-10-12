@@ -853,6 +853,18 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
+        required_version = load_configfile(knownargs.configfile).get("VERSION")
+        try:
+            ns_check_version(__version__, required_version)
+        except:
+            log.error(
+                "Version required in config file "
+                + str(required_version)
+                + " does not match installed version "
+                + str(__version__)
+                + " Please install correct version before continuing!"
+            )
+
         MIN_PYTHON = (3, 7)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")

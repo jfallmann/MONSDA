@@ -2,6 +2,7 @@
   "WORKFLOWS": "",
   "BINS": "NextSnakes/scripts",
   "MAXTHREADS": "20",
+  "VERSION": "0.0.7",
   "SETTINGS": {
     "id": {
       "condition": {
