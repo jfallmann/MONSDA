@@ -62,13 +62,15 @@ rule AnnotateBed:
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule UnzipGenome:
-    input:  subdict(config['ANNOTATE'], SETTINGS)['REFERENCE'],
-    output: subdict(config['ANNOTATE'], SETTINGS)['REFERENCE'].replace('.fa.gz','_fastafrombed.fa')
-    log:    "LOGS/Peaks/UnzipGenome.log"
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/BED/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "zcat {input} |perl -F\\\\040 -wlane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;print $F[0]}}else{{print}}' > {output} && {params.bins}/Preprocessing/indexfa.sh {output} 2> {log}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} |sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
 
 rule AddSequenceToBed:
     input:  bd = rules.AnnotateBed.output,
