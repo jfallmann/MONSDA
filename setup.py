@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 from glob import glob
+from collections import defaultdict
 import os
 import versioneer
 
@@ -11,28 +12,33 @@ DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflow
 
 def generate_datafiles():
     df = list()
+    dirlist = defaultdict(list)
     scripts = list()
     for s in glob("scripts/**", recursive=True):
         if any(x in s for x in [".pl", ".py", ".sh"]):
             scripts.append(os.path.relpath(s))  # os.path.join(s, os.path.split(s)[1]))
     for s in scripts:
-        df.append((os.path.join("share", "NextSnakes", os.path.dirname(s)), [os.path.basename(s)]))
+        dirlist[str(os.path.join("share", "NextSnakes", os.path.dirname(s)))].append(s)        
 
     workflows = list()
     for d in glob("workflows/*"):
         if not "wip" in d:
             workflows.append(os.path.relpath(d))  # os.path.join(d, os.path.split(d)[1]))
     for w in workflows:
-        df.append((os.path.join("share", "NextSnakes", os.path.dirname(w)), [os.path.basename(w)]))
+        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(w))].append(w)
+        #df.append((os.path.join("share", "NextSnakes", os.path.dirname(w)), [os.path.basename(w)]))
 
     envs = list()
     for e in glob("envs/*"):
         envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
     for e in envs:
-        df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
-
-    df.append(("", ["LICENSE"]))
-    print(df)
+        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(e))].append(e)
+        #df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
+    dirlist[""].append("LICENSE")
+    
+    for k,v in dirlist.items():
+        df.append((k, v))
+        
     return(df)
 
 requires = open("requirements.txt").read().strip().split("\n")
