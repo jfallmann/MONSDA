@@ -10,6 +10,7 @@ DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflow
 # Set __version__ done by versioneer
 # exec(open("NextSnakes/__init__.py").read())
 
+
 def generate_datafiles():
     df = list()
     dirlist = defaultdict(list)
@@ -18,28 +19,31 @@ def generate_datafiles():
         if any(x in s for x in [".pl", ".py", ".sh"]):
             scripts.append(os.path.relpath(s))  # os.path.join(s, os.path.split(s)[1]))
     for s in scripts:
-        dirlist[str(os.path.join("share", "NextSnakes", os.path.dirname(s)))].append(s)        
+        dirlist[str(os.path.join("share", "NextSnakes", os.path.dirname(s)))].append(s)
 
     workflows = list()
     for d in glob("workflows/*"):
         if not "wip" in d:
-            workflows.append(os.path.relpath(d))  # os.path.join(d, os.path.split(d)[1]))
+            workflows.append(
+                os.path.relpath(d)
+            )  # os.path.join(d, os.path.split(d)[1]))
     for w in workflows:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(w))].append(w)
-        #df.append((os.path.join("share", "NextSnakes", os.path.dirname(w)), [os.path.basename(w)]))
+        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(w)), [os.path.basename(w)]))
 
     envs = list()
     for e in glob("envs/*"):
         envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
     for e in envs:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(e))].append(e)
-        #df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
+        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
     dirlist[""].append("LICENSE")
-    
-    for k,v in dirlist.items():
+
+    for k, v in dirlist.items():
         df.append((k, v))
-        
-    return(df)
+
+    return df
+
 
 requires = open("requirements.txt").read().strip().split("\n")
 
