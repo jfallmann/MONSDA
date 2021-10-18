@@ -1726,7 +1726,7 @@ def nf_tool_params(
 
         toolpar = list()
         for key, val in mp.items():
-            pars = val if val and val != "" else pars
+            pars = val if val and val != "" else None
             if pars:
                 tp.append(
                     "--"
@@ -1759,7 +1759,7 @@ def nf_tool_params(
 
             toolpar = list()
             for key, val in mp.items():
-                pars = val if val and val != "" else pars
+                pars = val if val and val != "" else None
                 if pars:
                     tp.append(
                         "--"
