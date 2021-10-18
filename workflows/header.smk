@@ -116,7 +116,7 @@ if 'MAPPING' in config:
         INDEX = IDX
     if not INDEX:
         INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
-    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]))
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', "")))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
@@ -152,7 +152,7 @@ if 'PEAKS' in config:
 
 
 # UCSC/COUNTING Variables
-for x in ['UCSC', 'COUNTING']:
+for x in ['TRACKS', 'COUNTING']:
     if x in config:
         XBIN, XENV = env_bin_from_config3(config, x)
         XCONF = subDict(config[x], SETUP)
@@ -172,7 +172,7 @@ for x in ['UCSC', 'COUNTING']:
                 INDEX = IDX
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'][0]))
+                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'].get('INDEX', "")))
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
             INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 

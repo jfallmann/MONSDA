@@ -3,12 +3,12 @@ MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0]), pref=PREFIX)
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', "")), pref=PREFIX)
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
-            ipara = lambda w: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'][0].items()),
+            ipara = lambda w: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
             anno = ANNOTATION,
             linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0]))),
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
@@ -29,7 +29,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 anno = ANNOTATION,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
@@ -47,7 +47,7 @@ else:
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'][1].items()),
+        params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 anno = ANNOTATION,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)

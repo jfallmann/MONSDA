@@ -1,6 +1,6 @@
 DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
-wlparams = ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()) if tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items() else None
+wlparams = tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST')
 
 type = ['sorted', 'sorted_unique']
 
@@ -22,7 +22,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}"
 
@@ -36,7 +36,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
     else:
@@ -49,7 +49,7 @@ if paired == 'paired':
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
 
@@ -62,7 +62,7 @@ else:
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}"
 
@@ -74,7 +74,7 @@ else:
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
 
@@ -86,7 +86,7 @@ else:
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             threads: 1
-            params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+            params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
             shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
 
@@ -99,7 +99,7 @@ if paired == 'paired':
         conda:  ""+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+        params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
                 dedup = DEDUPBIN
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
 else:
@@ -111,6 +111,6 @@ else:
         conda:  ""+DEDUPENV+".yaml"
         threads: 1
         priority: 0               # This should be done after all mapping is done
-        params: dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][2].items()),
+        params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
                 dedup = DEDUPBIN
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"

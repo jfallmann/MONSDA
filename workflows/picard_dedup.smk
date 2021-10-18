@@ -8,8 +8,8 @@ rule dedupbam:
     conda:  ""+DEDUPENV+".yaml"
     threads: 1
     priority: 0               # This should be done after all mapping is done
-    params: jpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
-            dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+    params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),
+            dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
             dedup = DEDUPBIN
     shell: "mkdir -p {output.td} && java {params.jpara} -jar picard.jar MarkDuplicates {params.dedup} --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"
 
@@ -22,7 +22,7 @@ rule dedupuniqbam:
     conda:  ""+DEDUPENV+".yaml"
     threads: 1
     priority: 0               # This should be done after all mapping is done
-    params: jpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][0].items()),
-            dpara = lambda wildcards: ' '.join("{!s}={!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'][1].items()),
+    params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),
+            dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
             dedup = DEDUPBIN
     shell: "mkdir -p {output.td} && java {params.jpara} -jar picard.jar MarkDuplicates {params.dedup} --REMOVE_DUPLICATES TRUE --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"

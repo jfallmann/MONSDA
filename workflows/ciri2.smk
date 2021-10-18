@@ -17,7 +17,7 @@ rule FindCircs:
     log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
     conda:  ""+CENV+".yaml"
     threads: MAXTHREAD
-    params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'][0].items()),
+    params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'].get('CIRC', ""),
             circ = CBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,

@@ -105,6 +105,6 @@ rule GenerateTrack:
     params: bwdir = lambda wildcards: "UCSC/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
-            options = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'UCSC', 'ucsc')['OPTIONS'][0].items()) if os.sep in wildcards.file else ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(os.sep.join([wildcards.combo[1:], wildcards.file]), None, config, 'UCSC', 'ucsc')['OPTIONS'][0].items()),
+            options = lambda wildcards: tool_params(wildcards.file, None, config, 'TRACKS', 'ucsc')['OPTIONS'].get('UCSC', "") if os.sep in wildcards.file else tool_params(os.sep.join([wildcards.combo[1:], wildcards.file]), None, config, 'TRACKS', 'ucsc')['OPTIONS'].get('UCSC', ""),
             uid = lambda wildcards: "{src}".format(src='UCSC'+os.sep+SETS.replace(os.sep, '_'))
     shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}"

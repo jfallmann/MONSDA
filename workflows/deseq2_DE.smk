@@ -30,7 +30,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'][0].items()),
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
@@ -66,7 +66,7 @@ rule run_deseq2:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION,
-            depara = lambda wildcards: list(tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'][1].values())[0] if len(tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS']) > 1 else ''
+            depara = lambda wildcards: tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "")
     shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.depara} 2> {log}"
 
 rule filter_significant:

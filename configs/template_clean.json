@@ -40,10 +40,10 @@
     "id": {
       "condition": {
         "sra": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS": 
+            {
+              "SRA": ""
+            }
         }
       }
     }
@@ -55,10 +55,10 @@
     "id": {
       "condition": {
         "guppy": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS": 
+            {
+              "BASECALL": ""
+            }
         }
       }
     }
@@ -70,10 +70,11 @@
     "id": {
       "condition": {
         "fastqc": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS": 
+            {
+              "QC": "",
+              "MULTI": ""
+            }
         }
       }
     }
@@ -86,22 +87,16 @@
     "id": {
       "condition": {
         "trimgalore": {
-          "OPTIONS": [
+          "OPTIONS": 
             {
-              "-q": "15",
-              "--length": "8",
-              "-e": "0.15"
+              "TRIM": "-q 15 --length 8 -e 0.15"
             }
-          ]
         },
         "cutadept": {
-          "OPTIONS": [
+          "OPTIONS": 
             {
-              "-q": "15",
-              "--length": "8",
-              "-e": "0.15"
+              "TRIM": "-q 15 --length 8 -e 0.15"
             }
-          ]
         }
       }
     }
@@ -113,21 +108,24 @@
     "id": {
       "condition": {
         "umitools": {
-          "OPTIONS": [
-            {
-              "--extract-method": "string",
-              "--bc-pattern": "AGANNNNACGT"
-            },
-            {
-              "--extract-umi-method": "read_id"
-            },
-            {}
-          ]
+          "OPTIONS":
+          {  
+              "WHITELIST" : "--extract-method string --bc-pattern AGANNNNACGT",
+              "EXTRACT": "--extract-umi-method read_id",
+              "DEDUP": ""
+          }
+        },
+        "picard":{
+            "OPTIONS":
+            {  
+                "JAVA" : "",
+                "DEDUP": ""
+            }
         }
       }
     }
   },
-  "MAPPING": {
+  "MAP": {
     "TOOLS": {
       "star": "STAR",
       "segemehl3": "segemehl.x",
@@ -138,49 +136,52 @@
     "id": {
       "condition": {
         "star": {
-          "OPTIONS": [
-            {
-              "--sjdbGTFfeatureExon": "exon",
-              "--sjdbGTFtagExonParentTranscript": "Parent",
-              "--genomeSAindexNbases": "13"
-            },
-            {
-              "--sjdbGTFfeatureExon": "exon",
-              "--sjdbGTFtagExonParentTranscript": "Parent",
-              "--outSAMprimaryFlag AllBestScore": ""
-            }
-          ]
+          "OPTIONS":  
+          {  
+              "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+              "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore",
+              "EXTENSION" : ""
+          }
         },
         "segemehl3": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
         },
         "hisat2": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
         },
         "bwa": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
         },
         "minimap": {
-          "OPTIONS": [
-            {},
-            {}
-          ]
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
         }
       }
     }
   },
   "COUNTING": {
     "TOOLS": {
-      "countreads": "featureCounts"
+      "countreads": "featureCounts",
+      "salmon": "salmon"
     },
     "FEATURES": {
       "exon": "Parent",
@@ -188,16 +189,20 @@
     },
     "id": {
       "condition": {
-        "countreads": {
-          "OPTIONS": [
+        "countreads":
+        {
+          "OPTIONS":
+          {
+              "COUNT": "-f --fraction -O -M"
+          }
+        },
+        "salmon": {
+          "OPTIONS":
             {
-              "-f": "",
-              "--fraction": "",
-              "-p": "",
-              "-O": "",
-              "-M": ""
+                "INDEX": "-l A --gencode",
+                "QUANT": "--gcBias",
+                "DTU": ""
             }
-          ]
         }
       }
     }
@@ -209,31 +214,23 @@
     "id": {
       "condition": {
         "annotatebed": {
-          "ANNOFEATURE": "gene", # why not put in options as dict?
-          "OPTIONS": [
-            {
-              "-w": "ON"
-            }
-          ]
+          "ANNOFEATURE": "gene",
+          "OPTIONS":
+          {
+              "ANNOTATE": "-w ON"
+          }
         }
       }
     }
   },
-  "UCSC": {
+  "TRACKS": {
     "TOOLS": {
       "ucsc": "ucsc"
     },
     "id": {
       "condition": {
         "ucsc": {
-          "OPTIONS": [
-            {
-              "-n": "DM6_unpaired_Mapping",
-              "-s": "dm6_st",
-              "-l": "UCSC_DM6_unpaired_Mapping",
-              "-b": "UCSC_dm6_star"
-            }
-          ]
+          "UCSC" : "-n hubname -s short_hubname -l long_trackname -b short_trackname"
         }
       }
     }
@@ -244,35 +241,35 @@
       "peaks": "peaks",
       "piranha": "Piranha"
     },
+    "COMPARABLE" :
+    {
+      "Condition": "Control"
+    },
     "id": {
       "condition": {
         "macs": {
-          "CLIP": "iCLIP",  # dont know if all tools can handle CLIP key
-          "OPTIONS": [
-            {},
-            {
-              "-b": "10"
+          "CLIP": "iCLIP",
+          "OPTIONS":
+            {  
+                "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"
             }
-          ]
         },
         "peaks": {
           "CLIP": "iCLIP",
-          "OPTIONS": [
-            {},
-            {
-              "-b": "10"
+          "OPTIONS":
+            {  
+                "PREPROCESS": "",
+                "FINDPEAKS": "-b 10"
             }
-          ]
         },
-        "piranha": {
+        "piranha":{
           "CLIP": "iCLIP",
-          "OPTIONS": [
-            {},
-            {
-              "-b": "10"
+          "OPTIONS":
+            {  
+                "PREPROCESS": "",
+                "FINDPEAKS": "-b 10"
             }
-          ]
-        }
+          }
       }
     }
   },
@@ -293,38 +290,24 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05", # dont we need an p-adjusted value?
+      "pvalue": "0.05",
       "lfc": "1.5"
     },
     "id": {
       "condition": {
         "deseq2": {
-          "OPTIONS": [
-            {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "--cutoff": "10"
-            }
-          ]
-        },
-        "edger": {
-          "OPTIONS": [
-            {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "--cutoff": "10"
-            }
-          ]
+          "OPTIONS":
+          {
+              "COUNT": "-t gene -g gene_id -f --fraction -O",
+              "DE": "controlgenes spike-in.list"
+          }
+      },
+      "edger": {
+          "OPTIONS":
+          {
+              "COUNT": "-t gene -g gene_id -f --fraction -O",
+              "DE": "controlgenes spike-in.list"
+          }
         }
       }
     }
@@ -351,33 +334,21 @@
     },
     "id": {
       "condition": {
-        "dexseq": {
-          "OPTIONS": [
+        "dexseq":
+        {
+            "OPTIONS":
             {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "--cutoff": "10"
+                "COUNT": "-t exon -g gene_id -f --fraction -O",
+                "DEU": ""
             }
-          ]
         },
-        "edger": {
-          "OPTIONS": [
+        "edger":
+        {
+            "OPTIONS":
             {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "--cutoff": "10"
+                "COUNT": "-t exon -g gene_id -f --fraction -O",
+                "DEU": "controlgenes spike-in.list"
             }
-          ]
         }
       }
     }
@@ -404,37 +375,21 @@
     },
     "id": {
       "condition": {
-        "diego": {
-          "OPTIONS": [
-            {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "-c": "10",
-              "-d": "3",
-              "-q": "0.01",
-              "-z": "1.0",
-              "-r": ""
-            }
-          ]
+        "diego":
+        {
+          "OPTIONS":
+          {
+              "COUNT": "-t exon -g gene_id -f --fraction -O",
+              "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"
+          }
         },
-        "edger": {
-          "OPTIONS": [
-            {
-              "-t": "exon",
-              "-g": "gene_id",
-              "-f": "",
-              "--fraction": "",
-              "-O": ""
-            },
-            {
-              "--cutoff": "10"
-            }
-          ]
+        "edger": 
+        {
+          "OPTIONS":
+          {
+            "COUNT": "-t exon -g gene_id -f --fraction -O",
+            "DAS": "controlgenes spike-in.list"
+          }
         }
       }
     }
@@ -461,31 +416,44 @@
     },
     "id": {
       "condition": {
-        "drimseq": {
-          "OPTIONS": [
+        "dexseq":
+        {
+            "OPTIONS":
             {
-              "--gencode": ""
-            },
-            {
-              "-l": "A",
-              "--gcBias": ""
-            },
-            "std"
-          ]
+                "INDEX": "-l A --gencode",
+                "QUANT": "--gcBias",
+                "DTU": ""
+            }
         },
-        "dexseq": {
-          "OPTIONS": [
+        "drimseq": 
+        {
+            "OPTIONS":
             {
-              "--gencode": ""
-            },
-            {
-              "-l": "A",
-              "--gcBias": ""
-            },
-            "std"
-          ]
+                "INDEX": "-l A --gencode",
+                "QUANT": "--gcBias",
+                "DTU": ""
+            }
         }
       }
     }
-  }
+  },
+  "CIRCS" : {
+    "TOOLS" :
+    {
+      "ciri2" : "PATH_TO_CIRI2.pl"
+    },
+    "id": {
+        "condition": {
+            "setting": {
+                "ENV" : "ciri2",
+                "BIN" : "ciri2",
+                "ciri2":{
+                    "OPTIONS":
+                    {  
+                        "CIRC": ""
+                    }
+                }
+            }
+        }
+    }
 }

@@ -41,15 +41,15 @@
                                    "BIN" : "sra", # OPTIONAL PATH to executable, usually just the name of the executable
                                    "sra": { # for which tool environment these settings work
                                        "OPTIONS":
-                                       [  #SRA options here if any, paired is not required, will be resolved by rules
-                                          {}
-                                       ]
+                                       {  
+                                           "SRA": ""  #SRA options here if any, paired is not required, will be resolved by rules
+                                          
+                                       }
                                    }
                                }
                              }
               }
     },
-#BASECALL options
     "BASECALL": {
         "TOOLS" : # which tools to run, format is Conda-environment name : binary to call
         {
@@ -62,15 +62,15 @@
                                    "BIN" : "~/.local/bin/guppy-cpu/bin/guppy_basecaller", #PATH to guppy executable
                                    "guppy":{
                                        "OPTIONS":
-                                       [  #Guppy options here if any, paired is not required, will be resolved by rules
-                                          {}
-                                       ]
+                                         {
+                                             "BASECALL": ""  #Guppy options here if any, paired is not required, will be resolved by rules
+                                         }
+                                       
                                    }
                                }
                              }
               }
     },
-#QC options
     "QC": {
         "TOOLS" :
         {
@@ -83,15 +83,16 @@
                                    "BIN" : "fastqc", # binary for QC
                                    "fastqc":{
                                        "OPTIONS":
-                                       [  #QC options here if any, paired is not required, will be resolved by rules
-                                          {}
-                                       ]
+                                          {
+                                              "QC": "",  #QC options here if any, paired is not required, will be resolved by rules                                         
+                                              "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules                                         
+                                          }
+                                       
                                    }
                                }
                              }
               }
     },
-#Trimming options
     "TRIMMING": { #options for trimming for each sample/condition
                   "TOOLS" :
                   {
@@ -105,32 +106,24 @@
                                        "BIN": "trim_galore", # name of binary for trimming
                                        "trimgalore":{
                                            "OPTIONS":
-                                           [
-                                               {  # trimming options here, --paired is not required, will be resolved by rules
-                                                  "-q": "15",
-                                                  "--length": "8", #READ_MINLEN discard reads shorter than that
-                                                  "-e": "0.15"
-                                               }
-                                           ]
+                                            {  
+                                                "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                                            }
                                        },
                                        "cutadapt":{
                                            "OPTIONS":
-                                           [
-                                               {  # trimming options here, --paired is not required, will be resolved by rules
-                                                  "-q": "15",
-                                                  "--length": "8", #READ_MINLEN discard reads shorter than that
-                                                  "-e": "0.15"
-                                               }
-                                           ]
+                                           {  
+                                                "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                                           }
                                        }
                                      }
                       }
                   }
                 },
-#Deduplication options
     "DEDUP": { #options for deduplication for each sample/condition
                "TOOLS": {
-                   "umitools": "umi_tools"
+                   "umitools": "umi_tools",
+                   "picard": "picard"
                },
                "id": {
                    "condition": {
@@ -139,23 +132,23 @@
                                     "BIN": "umi_tools", # name of binary for dedup
                                     "umitools":{
                                         "OPTIONS":
-                                        [
-                                            {  # umitools whitelist options,
-                                               "--extract-method": "string",
-                                               "--bc-pattern": "AGANNNNACGT"
-                                            },
-                                            {  # umitools extract options
-                                               "--extract-umi-method": "read_id"
-                                            },
-                                            {  # umitools dedup options
-                                            }
-                                        ]
+                                        {  
+                                            "WHITELIST" : "--extract-method string --bc-pattern AGANNNNACGT",# umitools whitelist options
+                                            "EXTRACT": "--extract-umi-method read_id",  # umitools extract options
+                                            "DEDUP": ""  # umitools dedup options
+                                        }
+                                    },
+                                    "picard":{
+                                        "OPTIONS":
+                                        {  
+                                            "JAVA" : "",# options
+                                            "DEDUP": ""  # dedup options
+                                        }
                                     }
                                   }
                    }
                }
              },
-#MAPPING options
     "MAPPING": { #options for mapping for each sample/condition
                  "TOOLS": {
                      "star": "STAR",
@@ -173,19 +166,44 @@
                              "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
                              "star":{
                                  "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                                 [
-                                     {  #indexing options
-                                        "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
-                                        "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
-                                        "--genomeSAindexNbases": "13" #indexing options
-                                     },
-                                     {  #mapping options
-                                        "--sjdbGTFfeatureExon": "exon", #STAR default, add what you need
-                                        "--sjdbGTFtagExonParentTranscript": "Parent", #add this if gff3 is used (default for this repo) and select the parent-child relationship according to your gff3 entries
-                                        "--outSAMprimaryFlag AllBestScore": ""
-                                     }
-                                 ]
-                             }
+                                    {  
+                                        "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
+                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore",  #mapping options
+                                        "EXTENSION" : ""
+                                    }
+                             },
+                             "segemehl3": {
+                                "OPTIONS":  
+                                {  
+                                    "INDEX" : "",
+                                    "MAP": "",
+                                    "EXTENSION" : ""
+                                }
+                              },
+                              "hisat2": {
+                                "OPTIONS":  
+                                {  
+                                    "INDEX" : "",
+                                    "MAP": "",
+                                    "EXTENSION" : ""
+                                }
+                              },
+                              "bwa": {
+                                "OPTIONS":  
+                                {  
+                                    "INDEX" : "",
+                                    "MAP": "",
+                                    "EXTENSION" : ""
+                                }
+                              },
+                              "minimap": {
+                                "OPTIONS":  
+                                {  
+                                    "INDEX" : "",
+                                    "MAP": "",
+                                    "EXTENSION" : ""
+                                }
+                              }                      
                          }
                      }
                  }
@@ -193,7 +211,8 @@
 #Count options
     "COUNTING": { #options for counting for each sample/condition
                   "TOOLS": {
-                      "countreads": "featureCounts"
+                      "countreads": "featureCounts",
+                      "salmon": "salmon"
                   },
                   "FEATURES": { #which features to count (KEY) and which group they belong to (VALUE), depends on whether gtf or gff is used as annotation, gff default is gene -> ID and exon -> Parent, gtf default for gene and exon is gene_id
                                 "exon": "Parent", #see MAPPING, this is used to describe the parent-child relationsship in the annotation gff3/gtf file
@@ -208,22 +227,26 @@
                                         "ANNOTATION": "Genomes/genome/genome_or_other.gtf.gz", #Relative Path to the gzipped annotation file in gtf/gff format
                                         "countreads":{
                                             "OPTIONS":
-                                            [  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
-                                               {
-                                                   "-f": "",
-                                                   "--fraction": "",
-                                                   "-p": "",
-                                                   "-O": "",
-                                                   "-M": ""
-                                               }
-                                            ]
+                                            {
+                                                "COUNT": "-f --fraction -O -M"  # counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input
+                                            }
+                                        },
+                                        "salmon": {
+                                            "OPTIONS":
+                                            {
+                                                "INDEX": "-l A --gencode",  # salmon index options
+                                                "QUANT": "--gcBias",  # salmon quant options 
+                                                "DTU": ""  # Options for Analysis
+                                            }
                                         }
-                                     }
+                                    }
                       }
                   }
                 },
-#Annotation options using the built in AnnotateBed.pl in the scripts directory, use at own risk, output can become very large
-    "ANNOTATE" : {
+    "ANNOTATE" : {  #Annotation options using the built in AnnotateBed.pl in the scripts directory, use at own risk, output can become very large
+        "TOOLS": {
+            "countreads": "featureCounts"
+        },
         "id": {
             "condition": {
                 "setting": { # See above
@@ -234,38 +257,32 @@
                              "ANNOFEATURE": "gene", #You can specify a set of certain features to annotate here, e.g. 'exon' will annoate exons only, comma separated list for multiple features
                              "annotatebed":{
                                  "OPTIONS":
-                                 [
-                                     {
-                                         "-w": "ON" #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or removing this line
-                                     }
-                                 ]
+                                    {
+                                        "ANNOTATE": "-w ON"  #-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ("") as value or removing this line
+                                    }
                              }
                            }
             }
         }
     },
-#UCSC track generation options
-    "UCSC" : {
+    "TRACKS" : {  #UCSC track generation options
+        "TOOLS": {
+            "ucsc": "ucsc"
+        },
         "id": {
             "condition": {
                 "setting": {  # See above
                               "ENV" : "ucsc",
                               "ucsc":{
                                   "OPTIONS":
-                                  [
-                                      {
-                                          "-n" : "DM6_unpaired_Mapping", #name of the hub, replace space with _
-                                          "-s" : "dm6_st", #short name for hub, replace space with _
-                                          "-l" : "UCSC_DM6_unpaired_Mapping", #long name for track, replace space with _
-                                          "-b" : "UCSC_dm6_star" #short name for track, replace space with _
-                                      }
-                                  ]
+                                    {   #Replace space with _ 
+                                        "UCSC" : "-n hubname -s short_hubname -l long_trackname -b short_trackname"
+                                    }
                               }
                            }
             }
         }
     },
-#Peak finding options, uses PAR-iCLIP Peak finder scripts adopted from https://dx.doi.org/10.15252/msb.20156628 use at own risk or replace with your own scripts, will need tweaking of workflow!
     "PEAKS" : {
         "TOOLS" :
         {
@@ -282,16 +299,28 @@
                 "setting": {  # See above
                               "ENV" : "piranha",
                               "BIN" : "Piranha",
-                              "IP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no enrichment)
+                              "IP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no end enrichment)
+                              "macs": {
+                                "CLIP": "iCLIP",
+                                "OPTIONS":
+                                  {  
+                                      "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"
+                                  }
+                              },
+                              "peaks": {
+                                "CLIP": "iCLIP",
+                                "OPTIONS":
+                                  {  
+                                      "PREPROCESS": "",
+                                      "FINDPEAKS": "-b 10"
+                                  }
+                              },
                               "piranha":{
                                   "OPTIONS":
-                                  [
-                                      {  # Preprocessor options
-                                      },
-                                      {  # Options for peak finder
-                                         "-b":"10"
-                                      }
-                                  ]
+                                    {  
+                                        "PREPROCESS": "",  # Preprocessor options
+                                        "FINDPEAKS": "-b 10"# Options for peak finder
+                                    }
                               }
                            }
             }
@@ -320,35 +349,19 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "deseq": {
+                    "deseq2": {
                         "OPTIONS":
-                        [
-                            {
-                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
-                                "-g": "gene_id",
-                                "-f": "",
-                                "--fraction": "",
-                                "-O": ""
-                            },
-                            {
-                                "controlgenes": "spike-in.list"
-                            }
-                        ]
+                        {
+                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": "controlgenes spike-in.list"  # Options for DE Analysis
+                        }
                     },
                     "edger": {
                         "OPTIONS":
-                        [
-                            {
-                                "-t": "gene", #make sure this is the feature you want to count, gene would include introns and exons
-                                "-g": "gene_id",
-                                "-f": "",
-                                "--fraction": "",
-                                "-O": ""
-                            },
-                            {
-                                "controlgenes": "spike-in.list"
-                            }
-                        ]
+                        {
+                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": "controlgenes spike-in.list"  # Options for DE Analysis
+                        }
                     }
                 }
             }
@@ -377,16 +390,22 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "OPTIONS":
-                    [
+                    "dexseq":
+                    {
+                        "OPTIONS":
                         {
-                            "-t": "exon",
-                            "-g": "gene_id",
-                            "-f": "",
-                            "--fraction": "",
-                            "-O": ""
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DE Analysis
                         }
-                    ]
+                    },
+                    "edger":
+                    {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": "controlgenes spike-in.list"  # Options for DE Analysis
+                        }
+                    }
                 }
             }
         }
@@ -414,23 +433,22 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "OPTIONS":
-                    [
-                        { # counting options
-                            "-t": "exon",
-                            "-g": "gene_id",
-                            "-f": "",
-                            "--fraction": "",
-                            "-O": ""
-                        },
-                        { # analysis options for diego
-                            "-c": "10",
-                            "-d": "3",
-                            "-q": "0.01",
-                            "-z": "1.0",
-                            "-r": ""
+                    "diego":
+                    {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
                         }
-                    ]
+                    },
+                    "edger": 
+                    {
+                        "OPTIONS":
+                        {            
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "controlgenes spike-in.list"  # Options for DE Analysis
+                        }
+                    }
                 }
             }
         }
@@ -457,16 +475,24 @@
                     "REPLICATES": ["SAMPLE1_r1","SAMPLE2_r2","SAMPLE2_r3"], #replicates that belong to condition, one entry here for one entry in GROUPS
                     "TYPES": ["standard","standard","standard"], #sequencing type or additional condition to compare to, can be empty
                     "BATCHES": ["1","1","2"], #batch number for sample
-                    "OPTIONS":
-                    [
-                        { # salmon index options
-                            "-l": "A",
-                            "--gencode": ""
-                        },
-                        { # salmon quant options
-                            "--gcBias":""
+                    "dexseq":
+                    {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-l A --gencode",  # salmon index options
+                            "QUANT": "--gcBias",  # salmon quant options 
+                            "DTU": ""  # Options for Analysis
                         }
-                    ]
+                    },
+                    "drimseq": 
+                    {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-l A --gencode",  # salmon index options
+                            "QUANT": "--gcBias",  # salmon quant options 
+                            "DTU": ""  # Options for Analysis
+                        }
+                    }
                 }
             }
         }
@@ -483,13 +509,12 @@
                     "BIN" : "ciri2",
                     "ciri2":{
                         "OPTIONS":
-                        [
-                            {  # Additional options if needed
-                            }
-                        ]
+                        {  
+                            "CIRC": ""  # Additional options if needed
+                        }
                     }
                 }
             }
         }
-    },
+    }
 }

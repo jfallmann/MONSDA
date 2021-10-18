@@ -15,7 +15,7 @@ if rundedup:
             log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "qc.yaml"
             threads: 1
-            params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
+            params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
     else:
@@ -34,7 +34,7 @@ if rundedup:
             log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "qc.yaml"
             threads: 1
-            params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
+            params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
 else:
@@ -52,7 +52,7 @@ else:
             log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "qc.yaml"
             threads: 1
-            params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
+            params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
 
     else:
@@ -69,5 +69,5 @@ else:
             log:    "LOGS/{combo}/{condition}_multiqc.log"
             conda:  "qc.yaml"
             threads: 1
-            params:  qpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'][1].items())
+            params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
             shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"

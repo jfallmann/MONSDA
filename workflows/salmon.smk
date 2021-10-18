@@ -7,12 +7,12 @@ rule themall:
 rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0])))
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('INDEX', ""))))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
-            ipara = lambda wildcards, input: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'][0].items()),
+            ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('INDEX', ""),
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell:  "set +euo pipefail; {params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 
@@ -28,7 +28,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
@@ -44,7 +44,7 @@ else:
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         threads: MAXTHREAD
-        params: cpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'][1].items()),
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))

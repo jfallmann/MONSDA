@@ -148,7 +148,7 @@ rule PreprocessPeaks:
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
-             opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
+             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', ""),
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
@@ -157,7 +157,7 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}/{file}findpeaks_{type}.log"
     conda:  "perl.yaml"
     threads: 1
-    params: opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
+    params: opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             bins = BINS
     shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}"
 

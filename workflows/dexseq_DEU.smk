@@ -39,7 +39,7 @@ rule featurecount_unique:
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: countb  = COUNTBIN,
-            cpara  = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'][0].items()),
+            cpara  = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split("_")[0])['OPTIONS'].get('COUNT', ""),
             paired = lambda x: '-p' if paired == 'paired' else '',
             bins   = BINS,
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''

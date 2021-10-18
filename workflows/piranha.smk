@@ -148,7 +148,7 @@ rule PreprocessPeaks:
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
-             opts = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][0].items()),
+             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', ""),
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
@@ -157,7 +157,7 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}/findpeaks_{type}_{file}.log"
     conda:  ""+PEAKENV+".yaml"
     threads: 1
-    params: ppara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'][1].items()),
+    params: ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN
     shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}) 2> {log}|tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
 

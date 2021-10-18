@@ -56,9 +56,9 @@ rule AnnotateBed:
     conda:  "perl.yaml"
     threads: 1
     params: bins=BINS,
-            anno = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOTATION'],
-            annop = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'ANNOTATE')['OPTIONS'][0].items()),
-            annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['ANNOFEATURE']
+            anno = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE').get('ANNOTATION', ""),
+            annop = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE')['OPTIONS'].get('ANNOTATE', ""),
+            annof = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE').get('ANNOFEATURE', "")
     shell:  "perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}"
 
 rule UnzipGenome:

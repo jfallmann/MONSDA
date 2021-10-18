@@ -19,7 +19,7 @@ if paired == 'paired':
         conda: ""+TRIMENV+".yaml"
         threads: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir=lambda wildcards, output:os.path.dirname(output.o1),
-                tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'][0].items()),
+                tpara = lambda wildcards: tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'].get('TRIM', ""),
                 trim=TRIMBIN
         shell:  "{params.trim} --cores {threads} --paired --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}"
 
@@ -40,7 +40,7 @@ else:
         conda: ""+TRIMENV+".yaml"
         threads: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir = lambda wildcards, output: os.path.dirname(output.o1),
-                tpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'][0].items()),
+                tpara = lambda wildcards: tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'].get('TRIM', ""),
                 trim=TRIMBIN
         shell:  "{params.trim} --cores {threads} --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}"
 

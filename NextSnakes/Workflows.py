@@ -1569,7 +1569,9 @@ def nf_fetch_params(
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         unikey = get_dict_hash(
-            tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"][0]
+            tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"][
+                "INDEX"
+            ]
         )
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
@@ -1620,7 +1622,7 @@ def nf_fetch_params(
         retconf["PEAKIP"] = IP
 
     # UCSC/COUNTING Variables
-    for x in ["UCSC", "COUNTING"]:
+    for x in ["TRACKS", "COUNTING"]:
         if x in config:
             XCONF = subDict(config[x], SETUP)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
@@ -1722,24 +1724,19 @@ def nf_tool_params(
             "--" + subwork + "ENV " + toolenv + " --" + subwork + "BIN " + toolbin + " "
         )
 
-        if len(mp) > 0:
-            for idx in range(len(mp)):
-                toolpar = list()
-                for key, val in mp[idx].items():
-                    pars = key if key and key != "" else None
-                    pars = pars + " " + val if val and val != "" else pars
-                    if pars:
-                        toolpar.append(pars)
-                if len(toolpar) > 0:
-                    tp.append(
-                        "--"
-                        + toolenv
-                        + "_params_"
-                        + str(idx)
-                        + " '"
-                        + str.join(" ", toolpar)
-                        + "'"
-                    )
+        toolpar = list()
+        for key, val in mp.items():
+            pars = pars + " " + val if val and val != "" else pars
+            if pars:
+                tp.append(
+                    "--"
+                    + toolenv
+                    + "_params_"
+                    + str(key)
+                    + " '"
+                    + str.join(" ", pars)
+                    + "'"
+                )
     else:
         for subwork in workflows:
             sd = subDict(config[subwork], condition)
@@ -1760,24 +1757,19 @@ def nf_tool_params(
                 + " "
             )
 
-            if len(mp) > 0:
-                for idx in range(len(mp)):
-                    toolpar = list()
-                    for key, val in mp[idx].items():
-                        pars = key if key and key != "" else None
-                        pars = pars + " " + val if val and val != "" else pars
-                        if pars:
-                            toolpar.append(pars)
-                    if len(toolpar) > 0:
-                        tp.append(
-                            "--"
-                            + toolenv
-                            + "_params_"
-                            + str(idx)
-                            + " '"
-                            + str.join(" ", toolpar)
-                            + "'"
-                        )
+            toolpar = list()
+            for key, val in mp.items():
+                pars = pars + " " + val if val and val != "" else pars
+                if pars:
+                    tp.append(
+                        "--"
+                        + toolenv
+                        + "_params_"
+                        + str(key)
+                        + " '"
+                        + str.join(" ", pars)
+                        + "'"
+                    )
 
     log.debug(logid + "DONE: " + str(tp))
     return " ".join(tp)
