@@ -41,9 +41,9 @@
                                    "BIN" : "sra", # OPTIONAL PATH to executable, usually just the name of the executable
                                    "sra": { # for which tool environment these settings work
                                        "OPTIONS":
-                                       {  
+                                       {
                                            "SRA": ""  #SRA options here if any, paired is not required, will be resolved by rules
-                                          
+
                                        }
                                    }
                                }
@@ -65,7 +65,7 @@
                                          {
                                              "BASECALL": ""  #Guppy options here if any, paired is not required, will be resolved by rules
                                          }
-                                       
+
                                    }
                                }
                              }
@@ -84,10 +84,10 @@
                                    "fastqc":{
                                        "OPTIONS":
                                           {
-                                              "QC": "",  #QC options here if any, paired is not required, will be resolved by rules                                         
-                                              "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules                                         
+                                              "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
+                                              "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
                                           }
-                                       
+
                                    }
                                }
                              }
@@ -106,13 +106,13 @@
                                        "BIN": "trim_galore", # name of binary for trimming
                                        "trimgalore":{
                                            "OPTIONS":
-                                            {  
+                                            {
                                                 "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
                                             }
                                        },
                                        "cutadapt":{
                                            "OPTIONS":
-                                           {  
+                                           {
                                                 "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
                                            }
                                        }
@@ -132,7 +132,7 @@
                                     "BIN": "umi_tools", # name of binary for dedup
                                     "umitools":{
                                         "OPTIONS":
-                                        {  
+                                        {
                                             "WHITELIST" : "--extract-method string --bc-pattern AGANNNNACGT",# umitools whitelist options
                                             "EXTRACT": "--extract-umi-method read_id",  # umitools extract options
                                             "DEDUP": ""  # umitools dedup options
@@ -140,7 +140,7 @@
                                     },
                                     "picard":{
                                         "OPTIONS":
-                                        {  
+                                        {
                                             "JAVA" : "",# options
                                             "DEDUP": ""  # dedup options
                                         }
@@ -166,44 +166,44 @@
                              "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
                              "star":{
                                  "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
-                                    {  
+                                    {
                                         "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
                                         "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore",  #mapping options
                                         "EXTENSION" : ""
                                     }
                              },
                              "segemehl3": {
-                                "OPTIONS":  
-                                {  
+                                "OPTIONS":
+                                {
                                     "INDEX" : "",
                                     "MAP": "",
                                     "EXTENSION" : ""
                                 }
                               },
                               "hisat2": {
-                                "OPTIONS":  
-                                {  
+                                "OPTIONS":
+                                {
                                     "INDEX" : "",
                                     "MAP": "",
                                     "EXTENSION" : ""
                                 }
                               },
                               "bwa": {
-                                "OPTIONS":  
-                                {  
+                                "OPTIONS":
+                                {
                                     "INDEX" : "",
                                     "MAP": "",
                                     "EXTENSION" : ""
                                 }
                               },
                               "minimap": {
-                                "OPTIONS":  
-                                {  
+                                "OPTIONS":
+                                {
                                     "INDEX" : "",
                                     "MAP": "",
                                     "EXTENSION" : ""
                                 }
-                              }                      
+                              }
                          }
                      }
                  }
@@ -235,7 +235,7 @@
                                             "OPTIONS":
                                             {
                                                 "INDEX": "-l A --gencode",  # salmon index options
-                                                "QUANT": "--gcBias",  # salmon quant options 
+                                                "QUANT": "--gcBias",  # salmon quant options
                                                 "DTU": ""  # Options for Analysis
                                             }
                                         }
@@ -275,7 +275,7 @@
                               "ENV" : "ucsc",
                               "ucsc":{
                                   "OPTIONS":
-                                    {   #Replace space with _ 
+                                    {   #Replace space with _
                                         "UCSC" : "-n hubname -s short_hubname -l long_trackname -b short_trackname"
                                     }
                               }
@@ -301,23 +301,22 @@
                               "BIN" : "Piranha",
                               "IP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no end enrichment)
                               "macs": {
-                                "CLIP": "iCLIP",
                                 "OPTIONS":
-                                  {  
+                                  {
                                       "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"
                                   }
                               },
                               "peaks": {
                                 "CLIP": "iCLIP",
                                 "OPTIONS":
-                                  {  
+                                  {
                                       "PREPROCESS": "",
                                       "FINDPEAKS": "-b 10"
                                   }
                               },
                               "piranha":{
                                   "OPTIONS":
-                                    {  
+                                    {
                                         "PREPROCESS": "",  # Preprocessor options
                                         "FINDPEAKS": "-b 10"# Options for peak finder
                                     }
@@ -441,10 +440,10 @@
                             "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
                         }
                     },
-                    "edger": 
+                    "edger":
                     {
                         "OPTIONS":
-                        {            
+                        {
                             "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
                             "DAS": "controlgenes spike-in.list"  # Options for DE Analysis
                         }
@@ -480,16 +479,16 @@
                         "OPTIONS":
                         {
                             "INDEX": "-l A --gencode",  # salmon index options
-                            "QUANT": "--gcBias",  # salmon quant options 
+                            "QUANT": "--gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
-                    "drimseq": 
+                    "drimseq":
                     {
                         "OPTIONS":
                         {
                             "INDEX": "-l A --gencode",  # salmon index options
-                            "QUANT": "--gcBias",  # salmon quant options 
+                            "QUANT": "--gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     }
@@ -509,7 +508,7 @@
                     "BIN" : "ciri2",
                     "ciri2":{
                         "OPTIONS":
-                        {  
+                        {
                             "CIRC": ""  # Additional options if needed
                         }
                     }
