@@ -9,8 +9,8 @@ MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX')
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
-MAPPARAMS = get_always('bwa_params_MAP') ?: ''
+IDXPARAMS = get_always('minimap_params_INDEX') ?: ''
+MAPPARAMS = get_always('minimap_params_MAP') ?: ''
 
 
 //MAPPING PROCESSES
@@ -28,14 +28,14 @@ process collect_tomap{
     """
 }
 
-process bwa_idx{
+process minimap_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "bwa.idx")                  "$MAPIDX"
+        if (filename == "minimap.idx")                  "$MAPIDX"
         else                                        "$MAPUIDX"
     }
 
@@ -51,12 +51,12 @@ process bwa_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -p $MAPUIDXNAME $IDXPARAMS && ln -fs $MAPUIDXNAME bwa.idx
+    $MAPBIN -t $THREADS -d $MAPUIDXNAME $IDXPARAMS $genome && ln -fs $MAPUIDXNAME minimap.idx
     """
 
 }
 
-process bwa_mapping{
+process minimap_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -95,7 +95,7 @@ process bwa_mapping{
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }
 }
@@ -130,17 +130,17 @@ workflow MAPPING{
         idxfile = Channel.fromPath(MAPIDX)
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        bwa_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        minimao_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        bwa_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        minmap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        minimap_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
     }
 
 
     emit:
-    mapped  = bwa_mapping.out.maps
-    logs = bwa_mapping.out.logs
+    mapped  = minimap_mapping.out.maps
+    logs = minimap_mapping.out.logs
 }

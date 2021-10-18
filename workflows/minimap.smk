@@ -18,25 +18,25 @@ if paired == 'paired':
                 q2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 uidx = rules.generate_index.output.uidx
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN
-        shell: "{params.mapp} -t {threads} {params.mpara} {input.index} {input.q1} {input.q2}| tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} -t {threads} {params.mpara} {input.index} {input.q1} {input.q2}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 index = rules.generate_index.output.idx,
                 uidx = rules.generate_index.output.uidx
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN
-        shell: "{params.mapp} -t {threads} {params.mpara} {input.index} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} -t {threads} {params.mpara} {input.index} {input.query} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
