@@ -1726,15 +1726,7 @@ def nf_tool_params(
         for key, val in mp.items():
             pars = val if val and val != "" else None
             if pars:
-                tp.append(
-                    "--"
-                    + toolenv
-                    + "_params_"
-                    + str(key)
-                    + " '"
-                    + str.join(" ", pars)
-                    + "'"
-                )
+                tp.append("--" + toolenv + "_params_" + str(key) + " '" + pars + "'")
     else:
         for subwork in workflows:
             sd = subDict(config[subwork], condition)
@@ -1760,13 +1752,7 @@ def nf_tool_params(
                 pars = val if val and val != "" else None
                 if pars:
                     tp.append(
-                        "--"
-                        + toolenv
-                        + "_params_"
-                        + str(key)
-                        + " '"
-                        + str.join(" ", pars)
-                        + "'"
+                        "--" + toolenv + "_params_" + str(key) + " '" + pars + "'"
                     )
 
     log.debug(logid + "DONE: " + str(tp))
