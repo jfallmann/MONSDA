@@ -37,6 +37,15 @@ def generate_datafiles():
     for e in envs:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(e))].append(e)
         # df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
+
+    confs = list()
+    for c in glob("configs/*"):
+        if any(x in c for x in [".json"]):
+            confs.append(os.path.relpath(c))  # os.path.join(d, os.path.split(d)[1]))
+    for c in confs:
+        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(c))].append(c)
+        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
+
     dirlist[""].append("LICENSE")
 
     for k, v in dirlist.items():
