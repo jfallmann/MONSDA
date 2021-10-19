@@ -136,7 +136,7 @@ workflow MAPPING{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
         bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        bwa_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
     }
 
 
