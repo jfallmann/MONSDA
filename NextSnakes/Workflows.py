@@ -1619,7 +1619,7 @@ def nf_fetch_params(
         retconf["PEAKANNO"] = ANNOTATION
         retconf["PEAKIP"] = IP
 
-    # UCSC/COUNTING Variables
+    # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
         if x in config:
             XCONF = subDict(config[x], SETUP)
@@ -1635,9 +1635,9 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-        retconf["UCSCREF"] = REFERENCE
-        retconf["UCSCREFDIR"] = REFDIR
-        retconf["UCSCANNO"] = ANNOTATION
+        retconf["TRACKSREF"] = REFERENCE
+        retconf["TRACKSREFDIR"] = REFDIR
+        retconf["TRACKSANNO"] = ANNOTATION
 
     # DE/DEU/DAS/DTU Variables
     for x in ["DE", "DEU", "DAS", "DTU"]:
@@ -1768,7 +1768,9 @@ def nf_get_processes(config):
     # Define workflow stages
     pre = ["QC"]  # , 'SRA', 'BASECALL']
     sub = ["TRIMMING", "MAPPING", "QC"]  # , 'DEDUP'
-    post = []  # ['COUNTING', 'UCSC', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']
+    post = (
+        []
+    )  # ['COUNTING', 'TRACKS', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']  # Not implemented yet, TODO
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 

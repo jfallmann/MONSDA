@@ -514,7 +514,7 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "SRA", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "UCSC", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 

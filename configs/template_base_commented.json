@@ -218,7 +218,7 @@
       ]
     }
   },
-  "UCSC": {
+  "TRACKS": {
     "TOOLS": {
       "ucsc": "ucsc"
     },

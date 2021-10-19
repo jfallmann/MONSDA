@@ -5,17 +5,17 @@ checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES, config):
     for type in ['sorted','unique']:
-        checklist.append(os.path.isfile(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('UCSC/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath('TRACKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('TRACKS/'+file+'_mapped_'+type+'.bed.gz')))
         checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
 
 if all(checklist):
     rule BamToBed:
-        input:  "UCSC/{combo}/{file}_mapped_{type}.bed.gz"
+        input:  "TRACKS/{combo}/{file}_mapped_{type}.bed.gz"
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "base.yaml"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('UCSC/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards: os.path.abspath('TRACKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
 elif all(checklist2):
     rule BamToBed:

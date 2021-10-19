@@ -151,7 +151,7 @@ if 'PEAKS' in config:
     log.info(logid+'Running Peak finding for '+IP+' protocol')
 
 
-# UCSC/COUNTING Variables
+# TRACKS/COUNTING Variables
 for x in ['TRACKS', 'COUNTING']:
     if x in config:
         XBIN, XENV = env_bin_from_config3(config, x)

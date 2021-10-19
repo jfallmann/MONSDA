@@ -190,7 +190,7 @@ no options just do not add the *OPTION* key
             }
          }
      },
-    "UCSC" : {
+    "TRACKS" : {
          "Dm6": {
             "untreated": {
                 "std": { # See above

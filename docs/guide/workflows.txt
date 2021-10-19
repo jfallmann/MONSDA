@@ -22,7 +22,7 @@ That is the meaning of the available WORKFLOWS and POSTPROCESSINGs:
  > MAPPING    Mapping (with star mapper)
  > ANNOTATE
  > COUNTING
- > UCSC
+ > TRACKS
  > PEAKS
 
  > DE         Differential Expression analysis

@@ -1667,7 +1667,7 @@ project.baseDict = {
         "TOOLS": {"annotatebed": "annotate"},
         "annotatebed": {"ANNOFEATURE": "gene", "OPTIONS": [{"-w": "ON"}]},
     },
-    "UCSC": {
+    "TRACKS": {
         "TOOLS": {"ucsc": "ucsc"},
         "ucsc": {
             "OPTIONS": [
@@ -1790,7 +1790,7 @@ project.commentsDict = {
     },
     "COUNTING": {"countreads": {"comment": ["??? options"]}},
     "ANNOTATE": {"annotatebed": {"comment": ["??? options"]}},
-    "UCSC": {"ucsc": {"comment": ["??? options"]}},
+    "TRACKS": {"ucsc": {"comment": ["??? options"]}},
     "PEAKS": {
         "macs": {"comment": ["??? options"]},
         "peaks": {"comment": ["??? options"]},
