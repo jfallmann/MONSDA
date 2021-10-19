@@ -1486,6 +1486,9 @@ def nf_fetch_params(
     retconf = collections.defaultdict()
 
     BINS = config["BINS"]
+    if not BINS:
+        BINS = binpath
+
     MAXTHREAD = int(config["MAXTHREADS"])
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
 
