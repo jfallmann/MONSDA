@@ -18,7 +18,7 @@ def get_always(parameter){
 //Params from CL
 REFERENCE = "${workflow.workDir}/../"+get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
-BINS = "${workflow.workDir}/../"+get_always('BINS')
+BINS = get_always('BINS')
 THREADS = get_always('MAXTHREAD')
 PAIRED = get_always('PAIRED') ?: null
 RUNDEDUP = get_always('RUNDEDUP') ?: null
