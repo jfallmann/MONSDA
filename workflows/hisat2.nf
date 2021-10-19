@@ -9,8 +9,8 @@ MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX')
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = get_always('hisat2_params_0') ?: ''
-MAPPARAMS = get_always('hisat2_params_1') ?: ''
+IDXPARAMS = get_always('hisat2_params_INDEX') ?: ''
+MAPPARAMS = get_always('hisat2_params_MAP') ?: ''
 
 //MAPPING PROCESSES
 

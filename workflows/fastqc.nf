@@ -1,6 +1,6 @@
 QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
-QCPARAMS = get_always('fastqc_params_0') ?: ''
+QCPARAMS = get_always('fastqc_params_QC') ?: ''
 
 //QC RAW
 process collect_fqraw{

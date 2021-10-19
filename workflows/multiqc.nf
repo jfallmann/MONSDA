@@ -1,6 +1,6 @@
 QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
-QCPARAMS = get_always('fastqc_params_1') ?: ''
+QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
 process collect_multi{
     input:
