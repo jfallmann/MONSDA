@@ -52,7 +52,7 @@ process hisat2_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME && ln -s $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/ && ln -fs $MAPUIDXNAME hisat2.idx
     """
 
 }
