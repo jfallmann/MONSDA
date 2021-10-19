@@ -1862,7 +1862,7 @@ def nf_make_pre(
 
     jobs = list()
     state = "pre_"
-    condapath = re.compile(r'conda:\s+"')
+    condapath = re.compile(r'conda\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
@@ -1877,7 +1877,7 @@ def nf_make_pre(
             with open(nfi, "r") as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
+                    line = re.sub(condapath, 'conda "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -1944,7 +1944,7 @@ def nf_make_pre(
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
-                                line = re.sub(condapath, 'conda: "' + envpath, line)
+                                line = re.sub(condapath, 'conda "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -1957,7 +1957,7 @@ def nf_make_pre(
                                     line = re.sub(
                                         logfix, "loglevel='" + loglevel + "'", line
                                     )
-                                    line = re.sub(condapath, 'conda: "' + envpath, line)
+                                    line = re.sub(condapath, 'conda "' + envpath, line)
                                     subjobs.append(line)
                                 subjobs.append("\n\n")
 
@@ -2073,7 +2073,7 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        line = re.sub(condapath, 'conda "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2086,7 +2086,7 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        line = re.sub(condapath, 'conda "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2095,7 +2095,7 @@ def nf_make_pre(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            line = re.sub(condapath, 'conda "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2178,7 +2178,7 @@ def nf_make_sub(
     log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
 
     jobs = list()
-    condapath = re.compile(r'conda:\s+"')
+    condapath = re.compile(r'conda\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
@@ -2193,7 +2193,7 @@ def nf_make_sub(
             with open(nfi, "r") as nf:
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
+                    line = re.sub(condapath, 'conda "' + envpath, line)
                     add.append(line)
                 add.append("\n\n")
 
@@ -2293,7 +2293,7 @@ def nf_make_sub(
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
-                                line = re.sub(condapath, 'conda: "' + envpath, line)
+                                line = re.sub(condapath, 'conda "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2326,7 +2326,7 @@ def nf_make_sub(
                         )
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
-                                line = re.sub(condapath, 'conda: "' + envpath, line)
+                                line = re.sub(condapath, 'conda "' + envpath, line)
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2335,7 +2335,7 @@ def nf_make_sub(
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            line = re.sub(condapath, 'conda "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2344,7 +2344,7 @@ def nf_make_sub(
                     nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            line = re.sub(condapath, 'conda "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2408,7 +2408,7 @@ def nf_make_sub(
                 # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
                 # with open(nfi,'r') as nf:
                 #    for line in nf.readlines():
-                #        line = re.sub(condapath,'conda:  "../', line)
+                #        line = re.sub(condapath,'conda  "../', line)
                 #        subjobs.append(line)
                 #    subjobs.append('\n\n')
 
@@ -2530,7 +2530,7 @@ def nf_make_sub(
                     nfi = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            line = re.sub(condapath, 'conda "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2556,7 +2556,7 @@ def nf_make_sub(
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            line = re.sub(condapath, 'conda "' + envpath, line)
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2565,7 +2565,7 @@ def nf_make_sub(
                 nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        line = re.sub(condapath, 'conda "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2574,7 +2574,7 @@ def nf_make_sub(
                 nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        line = re.sub(condapath, 'conda "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2620,7 +2620,7 @@ def nf_make_sub(
             # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
             # with open(nfi,'r') as nf:
             #    for line in nf.readlines():
-            #        line = re.sub(condapath,'conda:  "../', line)
+            #        line = re.sub(condapath,'conda  "../', line)
             #        subjobs.append(line)
             #    subjobs.append('\n\n')
 
