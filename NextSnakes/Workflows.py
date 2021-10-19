@@ -1531,8 +1531,6 @@ def nf_fetch_params(
         retconf["COMBO"] = combi[0] + os.sep if combi[0] != "" else None
         retconf["SCOMBO"] = combi[1] if combi[1] else None
 
-    log.info(logid + "Nextflow working on SAMPLES: " + str(SAMPLES))
-
     sample = SAMPLES[0]
     lsample = LONGSAMPLES[0]
     if paired:
@@ -1859,6 +1857,7 @@ def nf_make_pre(
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
     log.debug(logid + "PREPROCESSING: " + str(subwork))
+    log.info(logid + "PREPROCESSING SAMPLES: " + str(SAMPLES))
 
     jobs = list()
     state = "pre_"
@@ -2176,7 +2175,7 @@ def nf_make_sub(
     logid = scriptname + ".Workflows_nf_make_sub: "
 
     log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
-
+    log.info(logid + "PROCESSING SAMPLES: " + str(SAMPLES))
     jobs = list()
     condapath = re.compile(r'conda\s+"')
     logfix = re.compile(r'loglevel="INFO"')
