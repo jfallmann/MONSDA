@@ -135,8 +135,8 @@ workflow MAPPING{
     else{
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
-        minmap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        minimap_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        minimap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        minimap_mapping(collect_tomap.out.done, genomefile, minimap_idx.out.idx, trimmed_samples_ch)
     }
 
 
