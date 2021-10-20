@@ -1,7 +1,7 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
 
-if not PREFIX:
-    PREFIX = ''
+if not PREFIX or PREFIX is None:
+    PREFIX = MAPPERENV
 
 rule generate_index:
     input:  fa = REFERENCE

@@ -120,9 +120,9 @@ if 'MAPPING' in config:
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     PRE = MAPCONF.get('PREFIX')
-    if PRE:
+    if PRE and PRE is not None:
         PREFIX = PRE
-    if not PREFIX:
+    if not PREFIX or PREFIX is None:
         PREFIX = MAPPERENV
     if len(INDICES) > 1:
         if str(os.path.abspath(INDICES[1])) not in UIDX:
