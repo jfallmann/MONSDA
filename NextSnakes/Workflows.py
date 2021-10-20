@@ -1570,7 +1570,7 @@ def nf_fetch_params(
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         unikey = get_dict_hash(
-            tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"]
+            subdict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"], ["INDEX"])
         )
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"

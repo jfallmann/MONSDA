@@ -238,6 +238,8 @@ def subDict(dataDict, mapList):
         log.debug(logid + "k: " + str(k))
         if k in ret:
             ret = ret[k]
+            if not dict_inst(ret):
+                ret = {k: ret}
         else:
             log.debug(logid + "No k in dict")
             return None
