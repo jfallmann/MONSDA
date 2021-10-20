@@ -242,7 +242,7 @@ def subDict(dataDict, mapList):
                 ret = {k: ret}
         else:
             log.debug(logid + "No k in dict")
-            return None
+            return dict()
     return ret
 
 
