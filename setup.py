@@ -14,6 +14,7 @@ DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflow
 def generate_datafiles():
     df = list()
     dirlist = defaultdict(list)
+
     scripts = list()
     for s in glob("scripts/**", recursive=True):
         if any(x in s for x in [".pl", ".pm", ".py", ".sh"]):
@@ -29,14 +30,12 @@ def generate_datafiles():
             )  # os.path.join(d, os.path.split(d)[1]))
     for w in workflows:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(w))].append(w)
-        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(w)), [os.path.basename(w)]))
 
     envs = list()
     for e in glob("envs/*"):
         envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
     for e in envs:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(e))].append(e)
-        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
 
     confs = list()
     for c in glob("configs/*"):
@@ -44,7 +43,12 @@ def generate_datafiles():
             confs.append(os.path.relpath(c))  # os.path.join(d, os.path.split(d)[1]))
     for c in confs:
         dirlist[os.path.join("share", "NextSnakes", os.path.dirname(c))].append(c)
-        # df.append((os.path.join("share", "NextSnakes", os.path.dirname(e)), [os.path.basename(e)]))
+
+    profiles = list()
+    for p in glob("profile_*/*"):
+        confs.append(os.path.relpath(p))  # os.path.join(d, os.path.split(d)[1]))
+    for p in profiles:
+        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(p))].append(p)
 
     dirlist[""].append("LICENSE")
 
