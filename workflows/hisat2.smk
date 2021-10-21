@@ -26,8 +26,8 @@ if paired == 'paired':
                 uix = rules.generate_index.output.uidx,
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
-                unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
-                unmapped_r2 = "UNMAPPED/{combo}/{file}_unmapped_R2.fastq.gz",
+                unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                 summary = "MAPPED/{combo}/{file}.summary"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
@@ -36,8 +36,8 @@ if paired == 'paired':
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
                 pref = lambda wildcards, input: str.join(os.sep,[input.index, PREFIX]) if PREFIX != '' else input.index,
-                um = lambda wildcards, output: output.unmapped_r1.replace('_unmapped_R1.fastq.gz', '.unmapped.gz')
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {params.um} --new-summary --summary-file {output.summary} 2>> {log} && rename 's/.unmapped.1.gz/_R1.fastq.gz/' {params.um}.1.gz;  rename 's/.unmapped.2.gz/_R2.fastq.gz/' {params.um}.2.gz; touch {output.unmapped_r1} {output.unmapped_r2}"
+                um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz')
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {params.um} --new-summary --summary-file {output.summary} 2>> {log} && touch {params.um}.1.gz {params.um}.2.gz; rename 's/.unmapped.1.gz/_R1_unmapped.fastq.gz/' {params.um}.1.gz; rename 's/.unmapped.2.gz/_R2_unmapped.fastq.gz/' {params.um}.2.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}"
 
 else:
     rule mapping:
