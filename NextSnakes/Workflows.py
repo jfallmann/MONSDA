@@ -1562,7 +1562,7 @@ def nf_fetch_params(
         PRE = MAPCONF.get("PREFIX")
         if PRE:
             PREFIX = PRE
-        if not PREFIX:
+        if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
         IDX = MAPCONF.get("INDEX")
         if IDX:
@@ -1570,7 +1570,10 @@ def nf_fetch_params(
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         unikey = get_dict_hash(
-            subdict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"], ["INDEX"])
+            subDict(
+                tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
+                ["INDEX"],
+            )
         )
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
