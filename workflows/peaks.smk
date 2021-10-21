@@ -64,23 +64,17 @@ if not all(checklist):
             conda:  "bedtools.yaml"
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
-rule index_fa:
-    input:  REFERENCE
-    output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''), combo=combo)
+rule UnzipGenome:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
-
-rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''), combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "cut -f1,2 {input} > {output} 2> {log}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
+        #|sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
@@ -169,17 +163,6 @@ rule FindPeaks:
 #       width=config["PEAKWIDTH},
 #       ratio=config["PEAKCUTOFF}
 #   shell:
-
-rule UnzipGenome:
-    input:  ref = REFERENCE,
-    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} |sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,

@@ -30,23 +30,17 @@ if not all(checklist):
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
-rule index_fa:
-    input:  REFERENCE
-    output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/TRACKS/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''))
+rule UnzipGenome:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+            fasm = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
-
-rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/TRACKS/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''))
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "cut -f1,2 {input} > {output} 2> {log}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas} && cut -f1,2 {output.fai} |sed 's/\\([a-z1-9]\\)\\./\\1\\_/ig' > {output.fasm}"
 
 checklist = list()
 checklist2 = list()
@@ -82,7 +76,8 @@ rule NormalizeBedg:
 ### This step generates bigwig files for bedg which can then be copied to a web-browsable directory and uploaded to TRACKS via the track field
 rule BedgToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
-            re = rules.NormalizeBedg.output.re
+            re = rules.NormalizeBedg.output.re,
+            sizes = rules.UnzipGenome.output.fasm
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bw",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.bw",
             t1 = temp("TRACKS/{combo}/{file}_mapped_{type}.fw.tmp"),
@@ -91,8 +86,7 @@ rule BedgToTRACKS:
     conda:  "ucsc.yaml"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
-    params: sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz',''))
-    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {params.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {params.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {input.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {input.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
     input:  fw = rules.BedgToTRACKS.output.fw,

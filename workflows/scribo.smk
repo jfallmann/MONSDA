@@ -45,39 +45,22 @@ for file in samplecond(SAMPLES, config):
     for type in checktype:
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
-rule index_fa:
-    input:  REFERENCE
-    output: expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/{ref}/indexfa.log", ref=REFERENCE.replace('.fa.gz', ''), combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "for i in {input};do {params.bins}/Preprocessing/indexfa.sh $i 2> {log};done"
-
 rule UnzipGenome:
     input:  ref = REFERENCE,
-    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} |sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
-
-rule get_chromsize_genomic:
-    input:  expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', ''))
-    output: expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/{ref}/chromsize.log", ref=REFERENCE.replace('.fa.gz', ''), combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "cut -f1,2 {input} > {output} 2> {log}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
+        #|sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
 
 rule remove_softclip:
     input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
             fa = REFERENCE,
-            refi = rules.index_fa.output
+            refi = rules.UnzipGenome.output.fai
     output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
             bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
     log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
