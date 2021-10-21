@@ -37,6 +37,7 @@ dependencies:
   - perl-xml-sax-base=1.09
   - perl-xsloader=0.24
   - pigz=2.3.4
+  - rename=1.601
   - sra-tools=2.10.3
   - xz=5.2.4
   - zlib=1.2.11
