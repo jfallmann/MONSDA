@@ -36,8 +36,9 @@ if paired == 'paired':
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
                 pref = lambda wildcards, input: str.join(os.sep,[input.index, PREFIX]) if PREFIX != '' else input.index,
-                um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz')
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {params.um} --new-summary --summary-file {output.summary} 2>> {log} && touch {params.um}.1.gz {params.um}.2.gz; rename 's/.unmapped.1.gz/_R1_unmapped.fastq.gz/' {params.um}.1.gz; rename 's/.unmapped.2.gz/_R2_unmapped.fastq.gz/' {params.um}.2.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}"
+                um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz'),
+                umn = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '')
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {params.um} --new-summary --summary-file {output.summary} 2>> {log} && touch {params.umn}.unmapped.1.gz {params.um}.unmapped.2.gz; rename 's/.unmapped.([1|2]).gz/_R$1_unmapped.fastq.gz/' {params.umn}.unmapped.*.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}"
 
 else:
     rule mapping:
