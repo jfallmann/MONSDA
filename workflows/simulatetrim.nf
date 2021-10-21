@@ -39,7 +39,7 @@ process simtrim{
 
     script:
     """
-    a=basename($read); rename .fastq.gz trimmed.fastq.gz $read ; echo "simulated" > \${a}_trimming_report.txt
+    a=basename($read); rename 's/.fastq.gz/trimmed.fastq.gz/' $read ; echo "simulated" > \${a}_trimming_report.txt
     """
 
 }
