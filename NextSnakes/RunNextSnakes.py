@@ -56,7 +56,8 @@ else:
         ).strftime("%Y%m%d_%H_%M_%S")
     )
     shutil.copy2(
-        "LOGS" + os.sep + scriptname + ".log", "LOGS" + os.sep + scriptname + "_" + ts + ".log"
+        "LOGS" + os.sep + scriptname + ".log",
+        "LOGS" + os.sep + scriptname + "_" + ts + ".log",
     )
 
 log = setup_logger(
@@ -187,8 +188,18 @@ def run_snakemake(
         config["MAXTHREADS"] = threads
 
         if unlock:
+            try:
+                pythonversion = sys.version_info.minor
+                installpath = os.path.dirname(__file__).replace(
+                    os.sep.join(["lib", pythonversion, "site-packages", "NextSnakes"]),
+                    "share",
+                )
+            except:
+                installpath = os.path.cwd()
+
+            workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
             log.info(logid + "Unlocking directory")
-            snk = os.path.abspath(os.path.join("NextSnakes", "workflows", "unlock.smk"))
+            snk = os.path.abspath(os.path.join(workflowpath, "unlock.smk"))
             jobtorun = (
                 f"snakemake --unlock -j {threads} -s {snk} --configfile {configfile}"
             )
@@ -855,7 +866,9 @@ def main():
 
         required_version = load_configfile(knownargs.configfile).get("VERSION")
         if not required_version:
-            sys.exit("Can not check version needed, please add VERSION key to config file")
+            sys.exit(
+                "Can not check version needed, please add VERSION key to config file"
+            )
 
         if ns_check_version(__version__, required_version) is not True:
             log.error(
@@ -873,7 +886,7 @@ def main():
                 + " Please install correct version before continuing!"
             )
         else:
-            log.info("Running NextSnakes version " + __version__+ " as configured")
+            log.info("Running NextSnakes version " + __version__ + " as configured")
 
         MIN_PYTHON = (3, 7)
         if sys.version_info < MIN_PYTHON:

@@ -92,8 +92,9 @@ from NextSnakes.Utils import *
 from NextSnakes.Params import *
 
 try:
+    pythonversion = sys.version_info.minor
     installpath = os.path.dirname(__file__).replace(
-        os.sep.join(["lib", "python3.9", "site-packages", "NextSnakes"]), "share"
+        os.sep.join(["lib", pythonversion, "site-packages", "NextSnakes"]), "share"
     )
 except:
     installpath = os.path.cwd()
