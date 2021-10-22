@@ -189,7 +189,9 @@ def run_snakemake(
 
         if unlock:
             try:
-                pythonversion = sys.version_info.minor
+                pythonversion = (
+                    f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
+                )
                 installpath = os.path.dirname(__file__).replace(
                     os.sep.join(["lib", pythonversion, "site-packages", "NextSnakes"]),
                     "share",
