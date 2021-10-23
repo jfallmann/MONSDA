@@ -97,6 +97,9 @@ else{
     $sizes=Collection::fetch_chrom_sizes($g, $g.".chrom.sizes");
 }
 
+my @ks = keys %$sizes;
+my $tag = $ks[0] =~ /^chr/ ? 1 : 0;
+
 my $filextension;
 if ($d > -inf){
     $filextension .= "_".$d."_fromEnd";
@@ -134,8 +137,8 @@ open (my $Bed, "<:gzip(autopop)", $b) or die "$!";
 my @featurelist; ## This will become a FeatureChain
 while(<$Bed>){
     chomp $_;
-    my ($chrom, $start, $end, $id, $score, $strand, @rest) = split (/\t/, $_);
-    $chrom =~ s/^chr//g;
+    my ($chrom, $start, $end, $id, $score, $strand, @rest) = split (/\t/, $_);    
+    $chrom =~ s/^chr//g if !$tag;
     my $right  = 0;
     my $left   = 0;
     my $width  = nearest(1, ($end-$start)/2);
@@ -158,6 +161,7 @@ while(<$Bed>){
     else{
         my $tstart = $start;
         my $tend = $end;
+        
         if ($strand eq "+" || $strand eq '.' || $strand eq 'u'){
             if ($d >= 0){
                 $start = $tend;
@@ -200,6 +204,7 @@ while(<$Bed>){
             $right=$l;
             $left=$r;
         }
+        
         if (($right-$width) <= 0){
             $right = 0;
         }
@@ -212,7 +217,6 @@ while(<$Bed>){
         else{
             $left-=$width;
         }
-
         if ($end+$right >= $sizes->{$chrom}){
             $end = $sizes->{$chrom};
         }
@@ -233,10 +237,10 @@ while(<$Bed>){
             }
         }
         if ($start >= $end){
-            if (($d >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u') || ($u >= 0 && $strand eq "-")){
+            if (($d >= 0 && ($strand eq "+" || $strand eq '.' || $strand eq 'u')) || ($u >= 0 && $strand eq "-")){
                 $end = $start + 1
             }
-            elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && $strand eq "+" || $strand eq '.' || $strand eq 'u')){
+            elsif (($d >= 0 && $strand eq "-") || ($u >= 0 && ($strand eq "+" || $strand eq '.' || $strand eq 'u'))){
                 $start = $end - 1;
             }
         }
