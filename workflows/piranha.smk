@@ -68,13 +68,23 @@ rule UnzipGenome:
     input:  ref = REFERENCE,
     output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
-            fasm = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas} && cut -f1,2 {output.fai} |sed 's/\\([a-z1-9]\\)\\./\\1\\_/ig' > {output.fasm}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
+
+rule UnzipGenome_no_us:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}_us.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}_us.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    conda:  "samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
@@ -222,7 +232,7 @@ rule NormalizeBedg:
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),

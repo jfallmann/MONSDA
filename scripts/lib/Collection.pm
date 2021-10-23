@@ -943,7 +943,7 @@ sub parse_bedgraph{
 			chomp (my $raw = $_);
 			push my @line , split (/\t/,$raw);
 			(my $chromosome = $line[0]) =~ s/\_/=/g;
-			$chromosome =~ s/\s/./g;
+			$chromosome =~ s/\s/:/g;
 			my $start = $line[1];
 			my $end;
 			$end = $line[2] if ($line[3]);

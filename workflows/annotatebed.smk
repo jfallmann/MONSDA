@@ -63,18 +63,30 @@ rule AnnotateBed:
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
-    output: fa = expand("{ref}_fastafrombed.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}_fastafrombed.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/BED/{combo}/indexfa.log", combo=combo)
+    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} |sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
+
+rule UnzipGenome_no_us:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}_us.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}_us.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    conda:  "samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
+    
 
 rule AddSequenceToBed:
     input:  bd = rules.AnnotateBed.output,
-            fa = rules.UnzipGenome.output
+            fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
     output: bed = "BED/{combo}/{file}_anno_seq_{type}.bed.gz",
             bt = temp("BED/{combo}/{file}_bed_chr_{type}.tmp"),
             bs = temp("BED/{combo}/{file}_bed_seq_{type}.tmp")
@@ -82,17 +94,7 @@ rule AddSequenceToBed:
     conda:  "bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
-
-#rule AddSequenceToBed:
-#    input:  rules.AnnotateBed.output
-#    output: "BED/{combo}/{file}_anno_seq_{type}.bed.gz",
-#            temp("BED/{combo}/{file}_anno_seq_{type}.tmp")
-#    log:    "LOGS/Bed/seq2bed_{type}_{file}.log"
-#    conda:  "bedtools.yaml"
-#    threads: 1
-#    params: fasta = lambda wildcards: "{ref}/{gen}{name}.fa".format(ref=REFERENCE, gen=genomepath(wildcards.file, config), name=namefromfile(wildcards.file, config)),
-#    shell:  "export LC_ALL=C; if [ ! -f \"{params.fasta}\" ] && [ -f \"{params.fasta}.gz\" ];then zcat {params.fasta}.gz > {params.fasta};fi && bedtools getfasta -fi {params.fasta} -bed <(zcat {input[0]}|cut -d$'\t' -f 1-6) -name+ -tab -s -fullHeader -fo {output[1]} && cut -d$'\t' -f2 {output[1]}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input[0]}) -|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output[0]}"
+    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
