@@ -44,6 +44,18 @@ else:
                     expand("PEAKS/{combo}/{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup']),
                     expand("PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
+rule UnzipGenome:
+    input:  ref = REFERENCE,
+    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+            fasm = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    conda:  "samtools.yaml"
+    threads: 1
+    params: bins = BINS
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas} && cut -f1,2 {output.fai} |sed 's/\\([a-z1-9]\\)\\./\\1\\_/ig' > {output.fasm}"
+
 
 rule FindPeaks:
     input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
@@ -58,17 +70,6 @@ rule FindPeaks:
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,
     shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
 
-rule UnzipGenome:
-    input:  ref = REFERENCE,
-    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
-        #|sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,
@@ -95,7 +96,8 @@ if ANNOPEAK is not None:
 
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
-                pa = rules.AnnotatePeak.output
+                pa = rules.AnnotatePeak.output,
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -103,13 +105,13 @@ if ANNOPEAK is not None:
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
         threads: 1
-        params: bins=BINS,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        params: bins=BINS
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
-        input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
+        input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -117,9 +119,8 @@ else:
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
         threads: 1
-        params: bins=BINS,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {params.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        params: bins=BINS
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
@@ -137,7 +138,7 @@ rule NormalizeBedg:
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            fas = expand("{ref}_fastafrombed.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),

@@ -68,13 +68,13 @@ rule UnzipGenome:
     input:  ref = REFERENCE,
     output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
+            fasm = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '')),
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
-        #|sed 's/\\([a-z]\\)\\./\\1\\_/ig' > {output.fas}"
+    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{($F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas} && cut -f1,2 {output.fai} |sed 's/\\([a-z1-9]\\)\\./\\1\\_/ig' > {output.fasm}"
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
@@ -180,31 +180,31 @@ if ANNOPEAK is not None:
 
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
-                pa = rules.AnnotatePeak.output
+                pa = rules.AnnotatePeak.output,
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 trw = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}/peak2bedg_{type}_{file}.log"
+        log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
         threads: 1
-        params: bins = BINS,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        params: bins=BINS
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
-        input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
+        input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}/peak2bedg_{type}_{file}.log"
+        log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
         threads: 1
-        params: bins = BINS,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {params.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+        params: bins=BINS
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
@@ -221,16 +221,17 @@ rule NormalizeBedg:
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to TRACKS via the track field
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
-            re = rules.NormalizeBedg.output.re
+            re = rules.NormalizeBedg.output.re,
+            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
-    log:    "LOGS/PEAKS/{combo}/peak2ucsc_{type}_{file}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    params: sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    shell:  "set +o pipefail; zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {params.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {params.sizes} {output.re} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}"
+
 
 rule GenerateTrack:
     input:  fw = rules.PeakToTRACKS.output.fw,
