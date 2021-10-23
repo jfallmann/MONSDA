@@ -138,7 +138,7 @@ rule NormalizeBedg:
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
