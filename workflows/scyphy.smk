@@ -74,7 +74,7 @@ rule remove_softclip:
     output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
             bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
     log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
-    conda:  "scribo.yaml"
+    conda:  "scyphy.yaml"
     threads: 1
     params: bins = BINS,
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')

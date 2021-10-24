@@ -1,4 +1,4 @@
-name: scribo
+name: scyphy
 channels:
   - conda-forge
   - bioconda
