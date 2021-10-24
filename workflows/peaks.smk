@@ -249,7 +249,7 @@ rule PeakToTRACKS:
     log:    "LOGS/PEAKS/{combo}/{file}peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {params.sizes} {output.re} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}"
 
 rule GenerateTrack:
     input:  fw = rules.PeakToTRACKS.output.fw,
