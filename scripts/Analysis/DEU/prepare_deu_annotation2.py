@@ -1,7 +1,53 @@
 #!/usr/bin/env python
 # Code from:https://github.com/vivekbhr/Subread_to_DEXSeq
 
-import sys, collections, itertools, os.path, optparse, os, gzip, warnings
+import sys
+import collections
+import itertools
+import os.path
+import optparse
+import os
+import gzip
+import warnings
+import traceback as tb
+import logging
+
+try:
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    log = logging.getLogger(scriptname)
+
+    lvl = log.level if log.level else "INFO"
+    for handler in log.handlers[:]:
+        handler.close()
+        log.removeHandler(handler)
+
+    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    log.setLevel(lvl)
+
+except Exception:
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tbe = tb.TracebackException(
+        exc_type,
+        exc_value,
+        exc_tb,
+    )
+    print("".join(tbe.format()), file=sys.stderr)
+
 
 optParser = optparse.OptionParser(
     usage="python %prog [options] <in.gtf> <out.gff>",
@@ -49,7 +95,9 @@ print(opts, args)
 
 if len(args) != 2:
     sys.stderr.write("Script to prepare annotation for DEXSeq.\n\n")
-    sys.stderr.write("Usage: python %s <in.gtf> <out.gff>\n\n" % os.path.basename(sys.argv[0]))
+    sys.stderr.write(
+        "Usage: python %s <in.gtf> <out.gff>\n\n" % os.path.basename(sys.argv[0])
+    )
     sys.stderr.write("This script takes an annotation file in Ensembl GTF format\n")
     sys.stderr.write("and outputs a 'flattened' annotation file suitable for use\n")
     sys.stderr.write("with the count_in_exons.py script.\n")
@@ -58,7 +106,9 @@ if len(args) != 2:
 try:
     import HTSeq
 except ImportError:
-    sys.stderr.write("Could not import HTSeq. Please install the HTSeq Python framework\n")
+    sys.stderr.write(
+        "Could not import HTSeq. Please install the HTSeq Python framework\n"
+    )
     sys.stderr.write("available from http://www-huber.embl.de/users/anders/HTSeq\n")
     sys.exit(1)
 
@@ -74,15 +124,15 @@ try:
     exons = HTSeq.GenomicArrayOfSets("auto", stranded=opts.fcstrand)
 except:
     warnings.warn(
-        'There was an issue setting stranded to True when creating the HTSeq.GenomicArrayOfSets. This is probably due to an error in the annotation allocating one gene ID to both strands. Will retry without strand information, please carefully check your results.'
+        "There was an issue setting stranded to True when creating the HTSeq.GenomicArrayOfSets. This is probably due to an error in the annotation allocating one gene ID to both strands. Will retry without strand information, please carefully check your results."
     )
     exons = HTSeq.GenomicArrayOfSets("auto", stranded=False)
 
 for f in HTSeq.GFF_Reader(gtf_file):
     if f.type != "exon":
         continue
-    f.attr['gene_id'] = f.attr['gene_id'].replace(":", "_")
-    exons[f.iv] += (f.attr['gene_id'], f.attr['transcript_id'])
+    f.attr["gene_id"] = f.attr["gene_id"].replace(":", "_")
+    exons[f.iv] += (f.attr["gene_id"], f.attr["transcript_id"])
 
 
 # Step 2: Form sets of overlapping genes
@@ -136,15 +186,15 @@ for iv, s in exons.steps():
     # form the aggregate ID from all of them
     else:
         assert set(gene_id for gene_id, transcript_id in s) <= gene_sets[gene_id]
-        aggregate_id = '+'.join(gene_sets[gene_id])
+        aggregate_id = "+".join(gene_sets[gene_id])
     # Make the feature and store it in 'aggregates'
     f = HTSeq.GenomicFeature(aggregate_id, "exonic_part", iv)
     f.source = os.path.basename(sys.argv[0])
     #   f.source = "camara"
     f.attr = {}
-    f.attr['gene_id'] = aggregate_id
+    f.attr["gene_id"] = aggregate_id
     transcript_set = set((transcript_id for gene_id, transcript_id in s))
-    f.attr['transcripts'] = '+'.join(transcript_set)
+    f.attr["transcripts"] = "+".join(transcript_set)
     aggregates[aggregate_id].append(f)
 
 
@@ -154,20 +204,27 @@ aggregate_features = []
 for l in aggregates.values():
     for i in range(len(l) - 1):
         if l[i].iv.strand != l[i + 1].iv.strand:
-            raise ValueError("Same name found on two strands: %s, %s" % (str(l[i]), str(l[i + 1])))
+            raise ValueError(
+                "Same name found on two strands: %s, %s" % (str(l[i]), str(l[i + 1]))
+            )
         assert l[i].name == l[i + 1].name, str(l[i + 1]) + " has wrong name"
         assert l[i].iv.end <= l[i + 1].iv.start, str(l[i + 1]) + " starts too early"
         if l[i].iv.chrom != l[i + 1].iv.chrom:
-            raise ValueError("Same name found on two chromosomes: %s, %s" % (str(l[i]), str(l[i + 1])))
+            raise ValueError(
+                "Same name found on two chromosomes: %s, %s"
+                % (str(l[i]), str(l[i + 1]))
+            )
     aggr_feat = HTSeq.GenomicFeature(
         l[0].name,
         "aggregate_gene",
-        HTSeq.GenomicInterval(l[0].iv.chrom, l[0].iv.start, l[-1].iv.end, l[0].iv.strand),
+        HTSeq.GenomicInterval(
+            l[0].iv.chrom, l[0].iv.start, l[-1].iv.end, l[0].iv.strand
+        ),
     )
     aggr_feat.source = os.path.basename(sys.argv[0])
-    aggr_feat.attr = {'gene_id': aggr_feat.name}
+    aggr_feat.attr = {"gene_id": aggr_feat.name}
     for i in range(len(l)):
-        l[i].attr['exonic_part_number'] = "%03d" % (i + 1)
+        l[i].attr["exonic_part_number"] = "%03d" % (i + 1)
     aggregate_features.append(aggr_feat)
 
 
@@ -175,12 +232,12 @@ for l in aggregates.values():
 
 aggregate_features.sort(key=lambda f: (f.iv.chrom, f.iv.start))
 
-if '.gz' in out_file:
+if ".gz" in out_file:
     with gzip.open(out_file, "wb") as fout:
         for aggr_feat in aggregate_features:
-            fout.write(bytes(aggr_feat.get_gff_line(), encoding='UTF8'))
+            fout.write(bytes(aggr_feat.get_gff_line(), encoding="UTF8"))
             for f in aggregates[aggr_feat.name]:
-                fout.write(bytes(f.get_gff_line(), encoding='UTF8'))
+                fout.write(bytes(f.get_gff_line(), encoding="UTF8"))
 
 else:
     with open(out_file, "w") as fout:
@@ -193,17 +250,17 @@ else:
 fcountgtf = opts.fcgtf
 
 if fcountgtf:
-    if '.gz' in fcountgtf:
+    if ".gz" in fcountgtf:
         os.system(
-            'zcat '
+            "zcat "
             + out_file
-            + '|sed s/aggregate_gene/gene/g|sed s/exonic_part/exon/g |cut -d$\';\' -f1|gzip > '
+            + "|sed s/aggregate_gene/gene/g|sed s/exonic_part/exon/g |cut -d$';' -f1|gzip > "
             + fcountgtf
         )
     else:
         os.system(
-            'sed s/aggregate_gene/gene/g '
+            "sed s/aggregate_gene/gene/g "
             + out_file
-            + '|sed s/exonic_part/exon/g |cut -d$\';\' -f1 > '
+            + "|sed s/exonic_part/exon/g |cut -d$';' -f1 > "
             + fcountgtf
         )

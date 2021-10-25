@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-import sys, argparse, os, inspect, gzip, glob, re, logging
+import sys
+import argparse
+import os
+import inspect
+import gzip
+import glob
+import re
+improt logging
 import traceback as tb
 
 cmd_subfolder = os.path.join(
@@ -10,9 +17,44 @@ cmd_subfolder = os.path.join(
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
-from Logger import *
+from lib.Logger import *
 
-scriptname = os.path.basename(__file__)
+try:
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    log = logging.getLogger(scriptname)
+
+    lvl = log.level if log.level else "INFO"
+    for handler in log.handlers[:]:
+        handler.close()
+        log.removeHandler(handler)
+
+    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    log.setLevel(lvl)
+
+except Exception:
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tbe = tb.TracebackException(
+        exc_type,
+        exc_value,
+        exc_tb,
+    )
+    print("".join(tbe.format()), file=sys.stderr)
+
 
 
 def parseargs():

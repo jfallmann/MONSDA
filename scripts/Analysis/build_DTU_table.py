@@ -3,21 +3,48 @@
 import sys, argparse, os, inspect, gzip, glob, re, logging
 import traceback as tb
 
-cmd_subfolder = os.path.join(
-    os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))),
-    "../../NextSnakes",
-)
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
-
-from Logger import *
-
 scriptname = os.path.basename(__file__)
+
+try:
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    log = logging.getLogger(scriptname)
+
+    lvl = log.level if log.level else "INFO"
+    for handler in log.handlers[:]:
+        handler.close()
+        log.removeHandler(handler)
+
+    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+            datefmt="%m-%d %H:%M",
+        )
+    )
+    log.addHandler(handler)
+    log.setLevel(lvl)
+
+except Exception:
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    tbe = tb.TracebackException(
+        exc_type,
+        exc_value,
+        exc_tb,
+    )
+    print("".join(tbe.format()), file=sys.stderr)
 
 
 def parseargs():
     parser = argparse.ArgumentParser(
-        description='Wrapper around snakemake to run config based jobs automatically'
+        description="Wrapper around snakemake to run config based jobs automatically"
     )
     parser.add_argument(
         "-n",
@@ -31,12 +58,22 @@ def parseargs():
         action="store_true",
         help="if wanted the order of conditions can be given as comma separated list",
     )
-    parser.add_argument("-c", "--conditions", required=True, type=str, help="Conditions to compare")
-    parser.add_argument("-t", "--types", required=False, type=str, help="Sequencing types to compare")
     parser.add_argument(
-        "-r", "--replicates", required=True, type=str, help="Replicates belonging to conditions"
+        "-c", "--conditions", required=True, type=str, help="Conditions to compare"
     )
-    parser.add_argument("-b", "--batches", required=False, type=str, help="Sample batches to compare")
+    parser.add_argument(
+        "-t", "--types", required=False, type=str, help="Sequencing types to compare"
+    )
+    parser.add_argument(
+        "-r",
+        "--replicates",
+        required=True,
+        type=str,
+        help="Replicates belonging to conditions",
+    )
+    parser.add_argument(
+        "-b", "--batches", required=False, type=str, help="Sample batches to compare"
+    )
     parser.add_argument(
         "-p",
         "--paired",
@@ -47,16 +84,21 @@ def parseargs():
     )
     parser.add_argument(
         "--table",
-        dest='table',
+        dest="table",
         required=False,
         type=str,
-        default='Table',
+        default="Table",
         help="Name of Table directory to write to",
     )
     parser.add_argument(
-        "--anno", dest='anno', required=True, type=str, default='Anno.gz', help="Name of anno to write to"
+        "--anno",
+        dest="anno",
+        required=True,
+        type=str,
+        default="Anno.gz",
+        help="Name of anno to write to",
     )
-    parser.add_argument("--loglevel", default='INFO', help="Log verbosity")
+    parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -79,10 +121,20 @@ class Sample_list(object):
         self.replicate_batches = list()
 
 
-def prepare_table(conditions, replicates, types, batches, paired, table, anno, sample_name=None, order=None):
+def prepare_table(
+    conditions,
+    replicates,
+    types,
+    batches,
+    paired,
+    table,
+    anno,
+    sample_name=None,
+    order=None,
+):
     try:
         # slist,
-        logid = scriptname + '.prepare_table: '
+        logid = scriptname + ".prepare_table: "
         my_groups = {}
         list_size = 0
 
@@ -93,26 +145,39 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
         #    os.rename(oldfile,oldfile+'.bak')
         #    log.warning(logid+'Found old table file'+oldfile+', was moved to '+oldfile+'.bak')
         for oldfile in glob.glob(oldanno):
-            os.rename(oldfile, oldfile + '.bak')
-            log.warning(logid + 'Found old anno file' + oldfile + ', was moved to ' + oldfile + '.bak')
+            os.rename(oldfile, oldfile + ".bak")
+            log.warning(
+                logid
+                + "Found old anno file"
+                + oldfile
+                + ", was moved to "
+                + oldfile
+                + ".bak"
+            )
 
-        replist = str(replicates).strip().split(',')
-        condlist = str(conditions).strip().split(',')
-        typelist = str(types).strip().split(',') if types is not None else None
-        batchlist = str(batches).strip().split(',') if batches is not None else None
-        pairedlist = str(paired).strip().split(',') if paired is not None else None
+        replist = str(replicates).strip().split(",")
+        condlist = str(conditions).strip().split(",")
+        typelist = str(types).strip().split(",") if types is not None else None
+        batchlist = str(batches).strip().split(",") if batches is not None else None
+        pairedlist = str(paired).strip().split(",") if paired is not None else None
 
-        log.debug(logid + 'REPS: ' + str(replist) + '\tLEN: ' + str(len(replist)))
-        log.debug(logid + 'CONDS: ' + str(condlist) + '\tLEN: ' + str(len(condlist)))
+        log.debug(logid + "REPS: " + str(replist) + "\tLEN: " + str(len(replist)))
+        log.debug(logid + "CONDS: " + str(condlist) + "\tLEN: " + str(len(condlist)))
 
         if types is not None:
-            log.debug(logid + 'TYPES: ' + str(typelist) + '\tLEN: ' + str(len(typelist)))
+            log.debug(
+                logid + "TYPES: " + str(typelist) + "\tLEN: " + str(len(typelist))
+            )
 
         if batches is not None:
-            log.debug(logid + 'BATCHES: ' + str(batchlist) + '\tLEN: ' + str(len(batchlist)))
+            log.debug(
+                logid + "BATCHES: " + str(batchlist) + "\tLEN: " + str(len(batchlist))
+            )
 
         if paired is not None:
-            log.debug(logid + 'PAIRED: ' + str(pairedlist) + '\tLEN: ' + str(len(pairedlist)))
+            log.debug(
+                logid + "PAIRED: " + str(pairedlist) + "\tLEN: " + str(len(pairedlist))
+            )
 
         for i in range(len(replist)):
             rep = None
@@ -126,9 +191,9 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
             bat = str(batchlist[i]) if batches is not None else None
 
             if not rep or not cond:
-                log.warning(logid + 'No rep/cond found for sample ' + str(replist[i]))
+                log.warning(logid + "No rep/cond found for sample " + str(replist[i]))
 
-            log.debug(logid + 'rep/cond: ' + str([rep, cond]))
+            log.debug(logid + "rep/cond: " + str([rep, cond]))
 
             list_size += 1
 
@@ -149,7 +214,7 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
                 if bat is not None:
                     my_groups[cond].replicate_batches.append(bat)
 
-        log.debug(logid + 'MyGroups: ' + str(my_groups.keys()))
+        log.debug(logid + "MyGroups: " + str(my_groups.keys()))
 
         myMatrix = []
         myMatrix.append([])
@@ -161,35 +226,45 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
 
         conds = []
         if order:
-            conds = order.split(',')
+            conds = order.split(",")
         else:
             conds = [x for x in my_groups.keys()]
 
-        log.debug(logid + 'CONDS: ' + str(conds))
+        log.debug(logid + "CONDS: " + str(conds))
         typeanno = list()
         batchanno = list()
         for gruppies in conds:
             condition_index = -1
             rep_nr = 0
             for replicates in my_groups[gruppies].replicate_paths:
-                log.info(logid + 'Processing: ' + str(replicates))
+                log.info(logid + "Processing: " + str(replicates))
                 condition_index += 1
                 sample_counter += 1
                 rep_nr += 1
 
-                myMatrix[0].append(str(my_groups[gruppies].replicate_names[condition_index]))
+                myMatrix[0].append(
+                    str(my_groups[gruppies].replicate_names[condition_index])
+                )
                 myMatrix[1].append(str(my_groups[gruppies].group_name))
-                myMatrix[2].append(str(my_groups[gruppies].replicate_paths[condition_index]))
-                myMatrix[3].append(str(my_groups[gruppies].replicate_types[condition_index]))
-                myMatrix[4].append(str(my_groups[gruppies].replicate_batches[condition_index]))
+                myMatrix[2].append(
+                    str(my_groups[gruppies].replicate_paths[condition_index])
+                )
+                myMatrix[3].append(
+                    str(my_groups[gruppies].replicate_types[condition_index])
+                )
+                myMatrix[4].append(
+                    str(my_groups[gruppies].replicate_batches[condition_index])
+                )
 
-        with gzip.open(anno, 'wb') as annofile:
-            annofile.write(bytes(f'sample_id\tcondition\tpath\ttype\tbatch\n', encoding='UTF-8'))
+        with gzip.open(anno, "wb") as annofile:
+            annofile.write(
+                bytes(f"sample_id\tcondition\tpath\ttype\tbatch\n", encoding="UTF-8")
+            )
             for i in range(len(myMatrix[0])):
                 annofile.write(
                     bytes(
-                        f'{myMatrix[0][i]}\t{myMatrix[1][i]}\t{myMatrix[2][i]}\t{myMatrix[3][i]}\t{myMatrix[4][i]}\n',
-                        encoding='UTF-8',
+                        f"{myMatrix[0][i]}\t{myMatrix[1][i]}\t{myMatrix[2][i]}\t{myMatrix[3][i]}\t{myMatrix[4][i]}\n",
+                        encoding="UTF-8",
                     )
                 )
 
@@ -200,7 +275,7 @@ def prepare_table(conditions, replicates, types, batches, paired, table, anno, s
             exc_value,
             exc_tb,
         )
-        log.error(logid + ''.join(tbe.format()))
+        log.error(logid + "".join(tbe.format()))
 
 
 def make_sample_list(group_name):
@@ -212,18 +287,18 @@ def make_sample_list(group_name):
 ####    MAIN    ####
 ####################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    logid = scriptname + '.main: '
+    logid = scriptname + ".main: "
     try:
         args = parseargs()
-        makelogdir('LOGS')
+        makelogdir("LOGS")
         try:
             log = setup_logger(
                 name=scriptname,
-                log_file='stderr',
-                logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
+                log_file="stderr",
+                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                datefmt="%m-%d %H:%M",
                 level=args.loglevel,
             )
             # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
@@ -248,7 +323,7 @@ if __name__ == '__main__':
             exc_value,
             exc_tb,
         )
-        log.error(logid + ''.join(tbe.format()))
+        log.error(logid + "".join(tbe.format()))
 
 #
 # build_salmon_table.py ends here
