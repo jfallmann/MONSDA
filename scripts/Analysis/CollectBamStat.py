@@ -68,15 +68,16 @@ import collections
 import logging
 
 ####load own modules
-# sys.path=[str(os.getenv('HOME')+"/Work/Scripts/Python")] + sys.path
-# from Collection import *
-####Biopython stuff
-# from Bio import SeqIO
-# from Bio.Seq import Seq
-####numpy and matplolib and pyplot
-# import numpy as np
-# import matplotlib
-# import matplotlib.pyplot as plt
+cmd_subfolder = os.path.join(
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
+    "../../../NextSnakes",
+)
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from lib.Logger import *
 
 ### MAIN
 

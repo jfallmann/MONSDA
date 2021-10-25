@@ -10,6 +10,17 @@ import re
 import logging
 import traceback as tb
 
+cmd_subfolder = os.path.join(
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
+    "../../../NextSnakes",
+)
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from lib.Logger import *
+
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
     log = logging.getLogger(scriptname)

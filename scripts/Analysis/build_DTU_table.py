@@ -1,9 +1,25 @@
 #! /usr/bin/env python3
 
-import sys, argparse, os, inspect, gzip, glob, re, logging
+import sys
+import argparse
+import os
+import inspect
+import gzip
+import glob
+import re
+import logging
 import traceback as tb
 
-scriptname = os.path.basename(__file__)
+cmd_subfolder = os.path.join(
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
+    "../../../NextSnakes",
+)
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from lib.Logger import *
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -301,7 +317,6 @@ if __name__ == "__main__":
                 datefmt="%m-%d %H:%M",
                 level=args.loglevel,
             )
-            # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 

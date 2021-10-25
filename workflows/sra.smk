@@ -1,15 +1,15 @@
 SAMPLES = download_samples(config)
-RAWBIN, RAWENV = env_bin_from_config3(config,'RAW')
+SRABIN, SRAENV = env_bin_from_config3(config,'SRA')
 
 if paired == 'paired':
     log.info('Downloading paired fastq files from SRA')
     rule themall:
-        input: expand("FASTQ/{rawfile}_{read}.fastq.gz", rawfile=SAMPLES, read=['R1','R2'])
+        input: expand("FASTQ/{srafile}_{read}.fastq.gz", srafile=SAMPLES, read=['R1','R2'])
 
     rule get_from_sra:
-        output: fq = expand("FASTQ/{{rawfile}}_{read}.fastq.gz", read=['R1','R2'])
-        log:    "LOGS/RAW/{rawfile}.log"
-        conda:  ""+RAWENV+".yaml"
+        output: fq = expand("FASTQ/{{srafile}}_{read}.fastq.gz", read=['R1','R2'])
+        log:    "LOGS/SRA/{srawile}.log"
+        conda:  ""+SRAENV+".yaml"
         threads: MAXTHREAD
         params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])
@@ -18,12 +18,12 @@ if paired == 'paired':
 else:
     log.info('Downloading single-end fastq files from SRA')
     rule themall:
-        input: expand("FASTQ/{rawfile}.fastq.gz", rawfile=SAMPLES)
+        input: expand("FASTQ/{srafile}.fastq.gz", srafile=SAMPLES)
 
     rule get_from_sra:
-        output: fq = "FASTQ/{rawfile}.fastq.gz"
-        log:    "LOGS/RAW/{rawfile}.log"
-        conda:  ""+RAWENV+".yaml"
+        output: fq = "FASTQ/{srafile}.fastq.gz"
+        log:    "LOGS/SRA/{srafile}.log"
+        conda:  ""+SRAENV+".yaml"
         threads: MAXTHREAD
         params: outdir = lambda w, output: expand("{cond}", cond=os.path.dirname(output.fq)),
                 ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES])

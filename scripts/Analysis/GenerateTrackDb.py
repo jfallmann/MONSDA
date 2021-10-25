@@ -58,6 +58,17 @@ import random
 import traceback as tb
 import logging
 
+cmd_subfolder = os.path.join(
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
+    "../../../NextSnakes",
+)
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
+from lib.Logger import *
+
 ###############
 ###Variables
 ###############
