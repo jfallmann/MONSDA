@@ -39,12 +39,6 @@ else:
                     expand("PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
 
-checklist = list()
-for file in samplecond(SAMPLES, config):
-    checktype = ['sorted', 'unique'] if not rundedup else ['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup']
-    for type in checktype:
-        checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
-
 rule UnzipGenome:
     input:  ref = REFERENCE,
     output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
@@ -84,9 +78,9 @@ rule remove_softclip:
 if not all(checklist):
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo)
+            output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
@@ -94,29 +88,29 @@ if not all(checklist):
 
     elif stranded and stranded == 'rf':
         rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo))
+            output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
+            log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
 
 rule extendbed:
-    input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
+    input:  pks = "BED/{combo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    output: ext = "BED/{scombo}/{file}_mapped_extended_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}extendbed_{type}.log"
+    output: ext = "BED/{combo}/{file}_mapped_extended_{type}.bed.gz"
+    log:    "LOGS/PEAKS/{combo}/{file}extendbed_{type}.log"
     conda:  "perl.yaml"
     threads: 1
     params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 0 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
 
 rule rev_extendbed:
-    input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
+    input:  pks = "BED/{combo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}extendbed_{type}.log"
+    output: ext = "BED/{combo}/{file}_mapped_revtrimmed_{type}.bed.gz"
+    log:    "LOGS/PEAKS/{combo}/{file}extendbed_{type}.log"
     conda:  "perl.yaml"
     threads: 1
     params: bins = BINS
@@ -124,7 +118,7 @@ rule rev_extendbed:
 
 if IP == 'iCLIP':
      rule BedToBedg:
-        input:  bed = expand("BED/{combo}/{{file}}_mapped_extended_{{type}}.bed.gz", combo=scombo),
+        input:  bed = "BED/{combo}/{{file}}_mapped_extended_{{type}}.bed.gz",
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
@@ -137,7 +131,7 @@ if IP == 'iCLIP':
 
 elif IP == 'revCLIP':
     rule BedToBedg:
-        input:  bed = expand("BED/{combo}/{{file}}_mapped_revtrimmed_{{type}}.bed.gz", combo=scombo),
+        input:  bed = "BED/{combo}/{{file}}_mapped_revtrimmed_{{type}}.bed.gz",
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
@@ -150,7 +144,7 @@ elif IP == 'revCLIP':
 
 else:
     rule BedToBedg:
-        input:  bed = expand("BED/{combo}/{{file}}_mapped_{{type}}.bed.gz", combo=scombo),
+        input:  bed = "BED/{combo}/{{file}}_mapped_{{type}}.bed.gz",
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
