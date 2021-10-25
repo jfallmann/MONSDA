@@ -299,7 +299,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
     ]
     log.debug(logid + f"Samples: {samples}, Search: {search}, Check: {nocheck}")
     if nocheck is not None:
-        samples = [os.sep.join(["FASTQ", os.sep.join(search[0:]), s]) for s in samples]
+        samples = [os.sep.join([os.sep.join(search[0:]), s]) for s in samples]
         return list(set(samples))
     for x in range(
         len(search), len(search) - 2, -1

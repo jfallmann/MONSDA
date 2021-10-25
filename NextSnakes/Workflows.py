@@ -212,6 +212,9 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
     configs = list()
     tempconf = NestedDefaultDict()
     for condition in conditions:
+        # if subwork == "SRA":
+        #    if len(getFromDict(config[subwork], condition)) < 1:
+        #        return None, None
         try:
             env = str(subDict(config[subwork], condition)[stage + "ENV"])
         except:
@@ -238,12 +241,10 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
             exe = ""
 
         tempconf = NestedDefaultDict()
-        tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)["SAMPLES"]
         if env != "" and exe != "":
             toollist.append([env, exe])
             tempconf[subwork + "ENV"] = env
             tempconf[subwork + "BIN"] = exe
-
         try:
             tempconf["MAXTHREADS"] = config["MAXTHREADS"]
             BINS = config.get("BINS")
@@ -284,13 +285,16 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
                         configs.append(None)
                 else:
                     tempconf[key] = subSetDict(config[key], condition)
+                    tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
+                        "SAMPLES"
+                    ]
                     if key == "SETTINGS":
                         if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
                             tempconf["RUNDEDUP"] = "enabled"
 
-            if (
-                "TOOLS" in config[subwork] and env == "" and exe == ""
-            ):  # env and exe overrule TOOLS
+            if ("TOOLS" in config[subwork] and env == "" and exe == "") and len(
+                getFromDict(config[subwork], condition)
+            ) >= 1:  # env and exe overrule TOOLS
                 tempconf[subwork]["TOOLS"] = config[subwork]["TOOLS"]
                 for k, v in config[subwork]["TOOLS"].items():
                     toollist.append([k, v])
@@ -316,7 +320,9 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
             )
             log.error("".join(tbe.format()))
 
-        configs.append(tempconf)
+        configs.append(tempconf) if tempconf.get("SETTINGS", False) else configs.append(
+            None
+        )
 
     log.debug(logid + str([toollist, configs]))
 
@@ -503,8 +509,11 @@ def make_pre(
                 return None
 
             sconf = listofconfigs[0]
+            if sconf is None:
+                continue
             for i in range(0, len(listoftools)):
                 toolenv, toolbin = map(str, listoftools[i])
+                log.debug(logid + f"Env:{toolenv}, Bin:{toolbin}")
                 if toolenv is None or toolbin is None:
                     continue
                 subconf = NestedDefaultDict()
