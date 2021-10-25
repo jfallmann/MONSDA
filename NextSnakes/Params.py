@@ -249,7 +249,7 @@ def get_samples_postprocess(config, subwork):
 @check_run
 def download_samples(config):
     logid = scriptname + ".Params_download_samples: "
-    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    SAMPLES = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
     log.debug(logid + "DOWNLOAD_SAMPLES_LONG: " + str(SAMPLES))
     return SAMPLES
 
@@ -291,12 +291,16 @@ def get_conditions(config):
 
 
 @check_run
-def get_samples_from_dir(search, config):  # CHECK
+def get_samples_from_dir(search, config, nocheck=None):  # CHECK
     logid = scriptname + ".Params_get_samples_from_dir: "
     samples = [
         x.replace(" ", "")
         for x in list(set(getFromDict(config["SETTINGS"], search)[0]["SAMPLES"]))
     ]
+    log.debug(logid + f"Samples: {samples}, Search: {search}, Check: {nocheck}")
+    if nocheck is not None:
+        samples = [os.sep.join(["FASTQ", os.sep.join(search[0:]), s]) for s in samples]
+        return list(set(samples))
     for x in range(
         len(search), len(search) - 2, -1
     ):  # For arbitrary depth of ics we append subdirectories until samples are found, maximum of one setting additional to file path is allowed
@@ -411,16 +415,16 @@ def get_samples_from_dir(search, config):  # CHECK
 
 
 @check_run
-def sampleslong(config):
+def sampleslong(config, nocheck=None):
     logid = scriptname + ".Params_sampleslong: "
+    log.debug(logid + f"Check: {nocheck}")
     tosearch = list()
     ret = list()
-    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):  # CHECK
+    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):
         tosearch.append(list(k))
-    log.debug(logid + "keys: " + str(tosearch))
     log.debug(logid + "tosearch: " + str(tosearch))
     for search in tosearch:
-        ret.extend(get_samples_from_dir(search, config))
+        ret.extend(get_samples_from_dir(search, config, nocheck))
     log.debug(logid + str(ret))
     return ret
 

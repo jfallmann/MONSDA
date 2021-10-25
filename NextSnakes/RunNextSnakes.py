@@ -244,7 +244,7 @@ def run_snakemake(
 
                 log.debug(logid + "PRESAMPLES: " + str(SAMPLES))
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    get_combo(preprocess, config, conditions)
                     if subworkflows
                     else None
                 )
