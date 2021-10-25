@@ -21,15 +21,6 @@ outdir      <- args[5]
 cmp         <- args[6]
 availablecores <- as.integer(args[7])
 
-
-#anname      <- "Tables/ANNOTATION.gz"
-#countfile   <- "Tables/AD_3_1.sf.gz,Tables/AD_3_2.sf.gz,Tables/AD_3_3.sf.gz,Tables/AD_5_6_1.sf.gz,Tables/AD_5_6_2.sf.gz,Tables/AD_5_6_3.sf.gz,Tables/AD_total_1.sf.gz,Tables/AD_total_2.sf.gz,Tables/AD_total_3.sf.gz,Tables/AD_white_1.sf.gz,Tables/AD_white_2.sf.gz,Tables/AD_white_3.sf.gz,Tables/CTRL_3_1.sf.gz,Tables/CTRL_3_2.sf.gz,Tables/CTRL_3_3.sf.gz,Tables/CTRL_5_6_1.sf.gz,Tables/CTRL_5_6_2.sf.gz,Tables/CTRL_5_6_3.sf.gz,Tables/CTRL_total_1.sf.gz,Tables/CTRL_total_2.sf.gz,Tables/CTRL_total_3.sf.gz,Tables/CTRL_white_1.sf.gz,Tables/CTRL_white_2.sf.gz,Tables/CTRL_white_3.sf.gz"
-#annotation  <- "Alzheimer_transcripts.gtf.gz"
-#fasta       <- "Alzheimer_transcripts_new.fa.gz"
-#outdir      <- "IsoformSwitchR/"
-#cmp         <- "CTRL_3vsCTRL_5_6:CTRL_3-vs-CTRL_5_6,AD_3vsAD_white:AD_3-vs-AD_white,AD_3vsCTRL_5_6:AD_3-vs-CTRL_5_6,CTRL_totalvsCTRL_white:CTRL_total-vs-CTRL_white,AD_3vsAD_total:AD_3-vs-AD_total,AD_whitevsCTRL_5_6:AD_white-vs-CTRL_5_6,AD_totalvsCTRL_total:AD_total-vs-CTRL_total,AD_3vsCTRL_3:AD_3-vs-CTRL_3,AD_totalvsCTRL_white:AD_total-vs-CTRL_white,AD_whitevsCTRL_3:AD_white-vs-CTRL_3,AD_totalvsAD_white:AD_total-vs-AD_white,AD_5_6vsCTRL_white:AD_5_6-vs-CTRL_white,AD_5_6vsCTRL_total:AD_5_6-vs-CTRL_total,AD_totalvsCTRL_5_6:AD_total-vs-CTRL_5_6,CTRL_3vsCTRL_white:CTRL_3-vs-CTRL_white,AD_totalvsCTRL_3:AD_total-vs-CTRL_3,CTRL_3vsCTRL_total:CTRL_3-vs-CTRL_total,AD_5_6vsAD_white:AD_5_6-vs-AD_white,CTRL_5_6vsCTRL_white:CTRL_5_6-vs-CTRL_white,AD_3vsAD_5_6:AD_3-vs-AD_5_6,CTRL_5_6vsCTRL_total:CTRL_5_6-vs-CTRL_total,AD_3vsCTRL_total:AD_3-vs-CTRL_total,AD_5_6vsAD_total:AD_5_6-vs-AD_total,AD_3vsCTRL_white:AD_3-vs-CTRL_white,AD_5_6vsCTRL_5_6:AD_5_6-vs-CTRL_5_6,AD_whitevsCTRL_total:AD_white-vs-CTRL_total,AD_whitevsCTRL_white:AD_white-vs-CTRL_white,AD_5_6vsCTRL_3:AD_5_6-vs-CTRL_3"
-#availablecores <- as.integer("4")
-
 BPPARAM = MulticoreParam(workers=availablecores)
 
 ### MAIN ###

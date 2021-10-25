@@ -299,14 +299,14 @@
           "OPTIONS":
           {
               "COUNT": "-t gene -g gene_id -f --fraction -O",
-              "DE": "controlgenes spike-in.list"
+              "DE": "controlgenes=spike-in.list"
           }
       },
       "edger": {
           "OPTIONS":
           {
               "COUNT": "-t gene -g gene_id -f --fraction -O",
-              "DE": "controlgenes spike-in.list"
+              "DE": "controlgenes=spike-in.list"
           }
         }
       }
@@ -347,7 +347,7 @@
             "OPTIONS":
             {
                 "COUNT": "-t exon -g gene_id -f --fraction -O",
-                "DEU": "controlgenes spike-in.list"
+                "DEU": ""
             }
         }
       }
@@ -388,7 +388,7 @@
           "OPTIONS":
           {
             "COUNT": "-t exon -g gene_id -f --fraction -O",
-            "DAS": "controlgenes spike-in.list"
+            "DAS": ""
           }
         }
       }

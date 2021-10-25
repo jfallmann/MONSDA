@@ -352,14 +352,14 @@
                         "OPTIONS":
                         {
                             "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
-                            "DE": "controlgenes spike-in.list"  # Options for DE Analysis
+                            "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
                             "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
-                            "DE": "controlgenes spike-in.list"  # Options for DE Analysis
+                            "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
                         }
                     }
                 }
@@ -402,7 +402,7 @@
                         "OPTIONS":
                         {
                             "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
-                            "DEU": "controlgenes spike-in.list"  # Options for DE Analysis
+                            "DEU": ""  # Options for DE Analysis
                         }
                     }
                 }
@@ -445,7 +445,7 @@
                         "OPTIONS":
                         {
                             "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
-                            "DAS": "controlgenes spike-in.list"  # Options for DE Analysis
+                            "DAS": ""  # Options for DE Analysis
                         }
                     }
                 }
