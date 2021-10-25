@@ -95,13 +95,9 @@ import datetime
 
 from NextSnakes.Utils import *
 
-
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
-    if any(x in scriptname for x in ["NextSnakes", "Configurator"]):
-        log = logging.getLogger(scriptname)
-    else:
-        log = logging.getLogger("snakemake")
+    log = logging.getLogger(scriptname)
 
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
