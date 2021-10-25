@@ -17,7 +17,7 @@ def generate_datafiles():
 
     scripts = list()
     for s in glob("scripts/**", recursive=True):
-        if any(x in s for x in [".pl", ".pm", ".py", ".sh"]):
+        if any(x in s for x in [".pl", ".pm", ".py", ".sh", ".R"]):
             scripts.append(os.path.relpath(s))  # os.path.join(s, os.path.split(s)[1]))
     for s in scripts:
         dirlist[str(os.path.join("share", "NextSnakes", os.path.dirname(s)))].append(s)
