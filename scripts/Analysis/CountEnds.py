@@ -66,17 +66,6 @@ import traceback as tb
 import collections
 import inspect
 
-from lib.Logger import *
-from lib.Collection import *
-
-####Biopython stuff
-# from Bio import SeqIO
-# from Bio.Seq import Seq
-####numpy and matplolib and pyplot
-# import numpy as np
-# import matplotlib
-# import matplotlib.pyplot as plt
-
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
     log = logging.getLogger(scriptname)
