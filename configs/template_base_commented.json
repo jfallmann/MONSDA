@@ -1,19 +1,26 @@
 {
+  "comment":{
+    "WORKFLOWS": "which workflows do you want to run: MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS",
+    "BINS": "where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository",
+    "MAXTHREADS": "maximum number of cores to use, make sure this fits your needs",
+    "VERSION": "version number of pip installation"
+  },
   "WORKFLOWS": "",
   "BINS": "NextSnakes/scripts",
   "MAXTHREADS": "",
-  "VERSION": "0.0.7",
+  "VERSION": "",
   "SETTINGS": {
     "comment": {
-      "GROUPS": "set groups",
-      "TYPES": "set types",
-      "BATCHES": "set batches",
-      "SEQUENCING": "paired or single",
-      "REFERENCE": "set path to reference",
-      "INDEX": "set index",
-      "PREFIX": "set prefix",
-      "GTF": "set path to gtf",
-      "GFF": "set path to gff"
+      "GROUPS": "???",
+      "TYPES": "???",
+      "BATCHES": "???",
+      "SEQUENCING": "single or paired and stranded info comma separated",
+      "REFERENCE": "set path to reference, default Referene Genome fa.gz file",
+      "INDEX": "set path to index, default index to use for mapping with this settings",
+      "PREFIX": "if needed, prefix for mapping software can be set here",
+      "GTF": "set path to gtf, default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
+      "GFF": "set path to gff, default annotation in GFF format",
+      "IP": "OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol"
     },
     "SAMPLES": [],
     "GROUPS": [],
@@ -26,45 +33,54 @@
     "ANNOTATION": {
       "GTF": "",
       "GFF": ""
-    }
+    },
+    "IP": ""
   },
   "SRA": {
     "TOOLS": {
       "sra": "sra"
     },
+    "ENV" : "",
+    "BIN" : "",
     "sra": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "SRA":"SRA options here if any, paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "SRA": ""
+        }
     }
   },
   "BASECALL": {
     "TOOLS": {
       "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
     },
+    "ENV" : "",
+    "BIN" : "",
     "guppy": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "BASECALL": "Guppy options here if any, paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "BASECALL": ""
+      }
     }
   },
   "QC": {
     "TOOLS": {
       "fastqc": "fastqc"
     },
+    "ENV" : "",
+    "BIN" : "",
     "fastqc": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "QC": "QC options here if any, paired is not required, will be resolved by rules",
+        "MULTI": "MultiQC options here if any, paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "QC": "",
+        "MULTI": ""
+      }
     }
   },
   "TRIMMING": {
@@ -72,52 +88,54 @@
       "trimgalore": "trim_galore",
       "cutadapt": "cutadapt"
     },
+    "ENV" : "",
+    "BIN" : "",
     "trimgalore": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {
-          "-q": "15",
-          "--length": "8",
-          "-e": "0.15"
-        }
-      ]
+      "comment": {
+        "TRIM": "trimming options here, --paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "TRIM": "-q 15 --length 8 -e 0.15"
+      }
     },
     "cutadapt": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {
-          "-q": "15",
-          "--length": "8",
-          "-e": "0.15"
-        }
-      ]
+      "comment": {
+        "TRIM": "trimming options here, --paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "TRIM": "-q 15 --length 8 -e 0.15"
+      }
     }
   },
   "DEDUP": {
     "TOOLS": {
       "umitools": "umi_tools"
     },
+    "ENV" : "",
+    "BIN" : "",
     "umitools": {
-      "comment": [
-        "??? options",
-        "??? options",
-        "??? options"
-      ],
-      "OPTIONS": [
+      "comment": {
+          "WHITELIST" : "umitools whitelist options",
+          "EXTRACT": "umitools extract options",
+          "DEDUP": "umitools dedup options"
+      },
+      "OPTIONS": {
+          "WHITELIST" : "--extract-method string --bc-pattern AGANNNNACGT",
+          "EXTRACT": "--extract-umi-method read_id",
+          "DEDUP": ""
+      }
+    },
+    "picard":{
+      "comment":
         {
+            "JAVA" : "options",
+            "DEDUP": "dedup options"
         },
+        "OPTIONS":
         {
-          "--extract-method": "string",
-          "--bc-pattern": "AGANNNNACGT"
-        },
-        {
-          "--extract-umi-method": "read_id"
+            "JAVA" : "",
+            "DEDUP": ""
         }
-      ]
     }
   },
   "MAPPING": {
@@ -128,112 +146,131 @@
       "bwa": "bwa mem",
       "minimap": "minimap2"
     },
+    "ENV" : "",
+    "BIN" : "",
     "star": {
-      "comment": [
-        "make settings for index ('url')",
-        "make settings for mapping"
-      ],
-      "OPTIONS": [
-        {
-          "--sjdbGTFfeatureExon": "exon",
-          "--sjdbGTFtagExonParentTranscript": "Parent",
-          "--genomeSAindexNbases": "13"
-        },
-        {
-          "--sjdbGTFfeatureExon": "exon",
-          "--sjdbGTFtagExonParentTranscript": "Parent",
-          "--outSAMprimaryFlag AllBestScore": ""
-        }
-      ]
+      "comment": {
+          "INDEX" : "indexing options",
+          "MAP": "mapping options",
+          "EXTENSION" : "???"
+      },
+      "OPTIONS": {
+          "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+          "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore",
+          "EXTENSION" : ""
+      }
     },
     "segemehl3": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "INDEX" : "indexing options",
+        "MAP": "mapping options",
+        "EXTENSION" : "???"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
     },
     "hisat2": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "INDEX" : "indexing options",
+        "MAP": "mapping options",
+        "EXTENSION" : "???"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
     },
     "bwa": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "INDEX" : "indexing options",
+        "MAP": "mapping options",
+        "EXTENSION" : "???"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
     },
     "minimap": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
-        {}
-      ]
+      "comment": {
+        "INDEX" : "indexing options",
+        "MAP": "mapping options",
+        "EXTENSION" : "???"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
     }
   },
   "COUNTING": {
     "TOOLS": {
       "countreads": "featureCounts"
     },
+    "ENV" : "",
+    "BIN" : "",
     "FEATURES": {
       "exon": "Parent",
       "gene": "ID"
     },
     "countreads": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
+      "comment": {
+          "COUNT": "counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input"
+      },
+      "OPTIONS": {
+          "COUNT": "-f --fraction -O -M"
+      }
+    },
+    "salmon": {
+      "comment": {
+          "INDEX": "salmon index options",
+          "QUANT": "salmon quant options",
+          "DTU": "Ptions for Analysis"
+      },
+      "OPTIONS":
         {
-          "-f": "",
-          "--fraction": "",
-          "-p": "",
-          "-O": "",
-          "-M": ""
+            "INDEX": "-l A --gencode",
+            "QUANT": "--gcBias",
+            "DTU": ""
         }
-      ]
     }
   },
   "ANNOTATE": {
     "TOOLS": {
       "annotatebed": "annotate"
     },
+    "ENV" : "",
+    "BIN" : "",
     "annotatebed": {
-      "comment": [
-        "??? options"
-      ],
       "ANNOFEATURE": "gene",
-      "OPTIONS": [
-        {
-          "-w": "ON"
-        }
-      ]
+      "comment": {
+          "ANNOTATE": "-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ('') as value or removing this line"
+      },
+      "OPTIONS": {
+          "ANNOTATE": "-w ON"
+      }
     }
   },
   "TRACKS": {
     "TOOLS": {
       "ucsc": "ucsc"
     },
+    "ENV" : "",
+    "BIN" : "",
     "ucsc": {
-      "comment": [
-        "??? options"
-      ],
-      "OPTIONS": [
+      "comment": {
+        "TRACKS":"???"
+      },
+      "OPTIONS":
         {
-          "-n": "DM6_unpaired_Mapping",
-          "-s": "dm6_st",
-          "-l": "UCSC_DM6_unpaired_Mapping",
-          "-b": "UCSC_dm6_star"
+          "TRACKS" : "-n hubname -s short_hubname -l long_trackname -b short_trackname"
         }
-      ]
     }
   },
   "PEAKS": {
@@ -242,147 +279,138 @@
       "peaks": "peaks",
       "piranha": "Piranha"
     },
+    "ENV" : "",
+    "BIN" : "",
+    "COMPARABLE" :
+    {
+        "Condition": "Control"
+    },
+    "ENV" : "",
+    "BIN" : "",
+    "IP": "",
     "macs": {
-      "comment": [
-        "??? options"
-      ],
-      "CLIP": "iCLIP",
-      "OPTIONS": [
-        {
-          "-b": "10"
-        }
-      ]
+      "CLIP": "",
+      "comment": {
+          "FINDPEAKS": "???"
+      },
+      "OPTIONS": {
+          "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"
+      }
     },
     "peaks": {
-      "comment": [
-        "??? options"
-      ],
-      "CLIP": "iCLIP",
-      "OPTIONS": [
-        {
-          "-b": "10"
-        }
-      ]
+      "CLIP": "",
+      "comment": {
+          "PREPROCESS": "Preprocessor options",
+          "FINDPEAKS": "Options for peak finder"
+      },
+      "OPTIONS": {
+          "PREPROCESS": "",
+          "FINDPEAKS": "-b 10"
+      }
     },
     "piranha": {
-      "comment": [
-        "??? options"
-      ],
-      "CLIP": "iCLIP",
-      "OPTIONS": [
-        {
-          "-b": "10"
-        }
-      ]
+      "CLIP": "",
+      "comment": {
+          "PREPROCESS": "Preprocessor options",
+          "FINDPEAKS": "Options for peak finder"
+      },
+      "OPTIONS": {
+          "PREPROCESS": "",
+          "FINDPEAKS": "-b 10"
+      }
     }
   },
   "DE": {
+    "comment":{
+      "EXCLUDE": "If a replicate need to be excluded from analysis, e.g. because of low mapping quality"
+    },
+    "EXCLUDE": [],
     "TOOLS": {
       "deseq2": "Analysis/DE/DESEQ2.R",
       "edger": "Analysis/DE/EDGER.R"
     },
+    "ENV" : "",
+    "BIN" : "",
     "COMPARABLE": {
       "WTvsKO": [
         [],
         []
       ]
     },
-    "EXCLUDE": [],
     "CUTOFFS": {
       "pvalue": "0.05",
       "lfc": "1.5"
     },
     "deseq2": {
-      "comment": [
-        "Set featureCounts options",
-        "Set Cutoff ???"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "--cutoff": "10"
-        }
-      ]
+      "comment": {
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DE": "Options for DE Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t gene -g gene_id -f --fraction -O",
+          "DE": "controlgenes=spike-in.list"
+      }
     },
     "edger": {
-      "comment": [
-        "Set featureCounts options",
-        "Set Cutoff ???"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "--cutoff": "10"
-        }
-      ]
+      "comment": {
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DE": "Options for DE Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t gene -g gene_id -f --fraction -O",
+          "DE": "controlgenes=spike-in.list"
+      }
     }
   },
   "DEU": {
+    "comment":{
+      "EXCLUDE": "If a replicate need to be excluded from analysis, e.g. because of low mapping quality"
+    },
+    "EXCLUDE": [],
     "TOOLS": {
       "dexseq": "Analysis/DEU/DEXSEQ.R",
       "edger": "Analysis/DEU/EDGER.R"
     },
+    "ENV" : "",
+    "BIN" : "",
     "COMPARABLE": {
       "WTvsKO": [
         [],
         []
       ]
     },
-    "EXCLUDE": [],
     "CUTOFFS": {
       "pvalue": "0.05",
       "lfc": "1.5"
     },
     "dexseq": {
-      "comment": [
-        "Set featureCounts options",
-        "Set Cutoff ???"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "--cutoff": "10"
-        }
-      ]
+      "comment": {
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DEU": "Options for DE Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "DEU": ""
+      }
     },
     "edger": {
-      "comment": [
-        "Set featureCounts options",
-        "Set Cutoff ???"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "--cutoff": "10"
-        }
-      ]
+      "comment": {
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DEU": "Options for DE Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "DEU": ""
+      }
     }
   },
   "DAS": {
+    "comment":{
+      "EXCLUDE": "If a replicate need to be excluded from analysis, e.g. because of low mapping quality"
+    },
+    "ENV" : "",
+    "BIN" : "",
+    "EXCLUDE": [],
     "TOOLS": {
       "diego": "Analysis/DAS/DIEGO.py",
       "edger": "Analysis/DAS/EDGER.R"
@@ -393,97 +421,75 @@
         []
       ]
     },
-    "EXCLUDE": [],
     "CUTOFFS": {
       "pvalue": "0.05",
       "lfc": "1.5"
     },
     "diego": {
-      "comment": [
-        "set featureCounts options",
-        "set Diego options"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "-c": "10",
-          "-d": "3",
-          "-q": "0.01",
-          "-z": "1.0",
-          "-r": ""
-        }
-      ]
+      "comment":{
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DAS": "Options for Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"
+      }
     },
     "edger": {
-      "comment": [
-        "Set featureCounts options",
-        "Set Cutoff ???"
-      ],
-      "OPTIONS": [
-        {
-          "-t": "exon",
-          "-g": "gene_id",
-          "-f": "",
-          "--fraction": "",
-          "-O": ""
-        },
-        {
-          "--cutoff": "10"
-        }
-      ]
+      "comment": {
+          "COUNT": "Options for read counting, independent of COUNTS workflows",
+          "DAS": "Options for DE Analysis"
+      },
+      "OPTIONS": {
+          "COUNT": "-t exon -g gene_id -f --fraction -O",
+          "DAS": ""
+      }
     }
   },
   "DTU": {
+    "comment":{
+      "EXCLUDE": "If a replicate need to be excluded from analysis, e.g. because of low mapping quality"
+    },
+    "EXCLUDE": [],
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
       "drimseq": "Analysis/DTU/DRIMSEQ.R"
     },
+    "ENV" : "",
+    "BIN" : "",
     "COMPARABLE": {
       "WTvsKO": [
         [],
         []
       ]
     },
-    "EXCLUDE": [],
     "CUTOFFS": {
       "pvalue": "0.05",
       "lfc": "1.5"
     },
     "drimseq": {
-      "comment": [
-        "set Salmon INDEXing options",
-        "set Salmon MAPPING options"
-      ],
-      "OPTIONS": [
-        {
-          "--gencode": ""
-        },
-        {
-          "-l": "A",
-          "--gcBias": ""
-        }
-      ]
+      "comment": {
+          "INDEX": "salmon index options",
+          "QUANT": "salmon quant options",
+          "DTU": "Options for Analysis"
+      },
+      "OPTIONS": {
+          "INDEX": "-l A --gencode",
+          "QUANT": "--gcBias",
+          "DTU": ""
+      }
     },
     "dexseq": {
-      "comment": [
-        "set Salmon INDEXing options",
-        "set Salmon MAPPING options"
-      ],
-      "OPTIONS": [
-        {
-          "--gencode": ""
-        },
-        {
-          "-l": "A",
-          "--gcBias": ""
-        }
-      ]
+      "comment": {
+          "INDEX": "salmon index options",
+          "QUANT": "salmon quant options",
+          "DTU": "Options for Analysis"
+      },
+      "OPTIONS": {
+          "INDEX": "-l A --gencode",
+          "QUANT": "--gcBias",
+          "DTU": ""
+      }
     }
   }
 }

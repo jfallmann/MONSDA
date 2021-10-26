@@ -13,6 +13,7 @@ from NextSnakes.Logger import *
 from functools import reduce
 import operator
 import datetime
+from _version import get_versions
 
 parser = argparse.ArgumentParser(
     description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
@@ -32,6 +33,8 @@ parser.add_argument(
     help="runnign in test-mode for showing interim results to copy",
 )
 args = parser.parse_args()
+
+__version__ = get_versions()["version"]
 
 
 class NestedDefaultDict(defaultdict):
@@ -157,6 +160,7 @@ class GUIDE:
             ":",
             "/",
             " ",
+            "=",
         ]
         while True:
             if spec:
@@ -509,25 +513,6 @@ def location(dictionary, setting, indent=6):
     guide.toclear += 4
 
 
-def optionsDictToString(d):
-    return ",".join(map(" ".join, d.items()))
-
-
-def stringToOptionsDict(s):
-    optsDict = {}
-    s = " ".join(s.split())
-    pairs = s.split(",")
-    pairs = [p.strip() for p in pairs]
-    for pair in pairs:
-        key = pair.split(" ")[0]
-        try:
-            value = pair.split(" ")[1]
-            optsDict[key] = value
-        except:
-            optsDict[key] = ""
-    return optsDict
-
-
 def show_settings():
     if guide.testing == False:
         return
@@ -610,6 +595,7 @@ def intro():
 
                 """
     prGreen(t1)
+    print(__version__)
     print("READ THE DOCS: https://nextsnakes.readthedocs.io/en/latest/index.html")
     print("\n")
     opts = {"1": "create new project", "2": "modify existing config-file"}
@@ -897,7 +883,7 @@ def set_settings():
                     p = None
                     s = None
                 guide.display(
-                    question=f"comment: {project.commentsDict['SETTINGS']['comment'][key]}",
+                    question=f"{project.commentsDict['SETTINGS']['comment'][key]}",
                     spec=s,
                     proof=p,
                 )
@@ -920,7 +906,7 @@ def set_settings():
                     if last_sample and key == "GROUPS":
                         ques = f"enter 'cp' to copy entries from sample before"
                     else:
-                        ques = f"comment: {project.commentsDict['SETTINGS']['comment'][key]}"
+                        ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
                     print(f"         {key}:")
                     guide.display(question=ques)
                     if guide.answer == "cp" and last_sample:
@@ -1007,7 +993,7 @@ def modify():
 
         active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
-        for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS"]:
+        for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]:
             inactive_workflows.remove(e)
         for wf in inactive_workflows:
             project.workflowsDict[wf] = decouple(modify_config[wf])
@@ -1185,7 +1171,7 @@ def remove_conditions():
 def add_workflows(existing_workflows=None):
     prGreen("\nADD WORKFLOWS\n")
     possible_workflows = list(project.baseDict.keys())
-    for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS"]:
+    for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]:
         possible_workflows.remove(e)
     if existing_workflows:
         for e in existing_workflows:
@@ -1368,22 +1354,15 @@ def set_workflows(wf=None):
                             [],
                         )
                     prPurple(f"\n      Tool:  {tool}\n")
-                    for i in range(len(project.baseDict[workflow][tool]["OPTIONS"])):
-                        print(
-                            f"      Options {i}:   (enter comma separated flags or values like:  -q 15, --length 8, std )"
-                        )
-                        if project.baseDict[workflow][tool]["OPTIONS"][i]:
-                            call = optionsDictToString(
-                                project.baseDict[workflow][tool]["OPTIONS"][i]
-                            )
-                        else:
-                            call = " "
+                    for option in project.baseDict[workflow][tool]["OPTIONS"]:
+                        print(f"      Option: '{option}'")
+                        call = project.baseDict[workflow][tool]["OPTIONS"][option]
                         guide.toclear = 0
                         guide.display(
-                            question=f"comment: {project.commentsDict[workflow][tool]['comment'][i]}",
+                            question=f"{project.commentsDict[workflow][tool]['comment'][option]}",
                             spec=call,
                         )
-                        optsDict = stringToOptionsDict(guide.answer)
+                        optsDict = guide.answer
                         for maplist in setting:
                             setInDict(
                                 project.workflowsDict,
@@ -1391,7 +1370,7 @@ def set_workflows(wf=None):
                                 optsDict,
                             )
                         guide.clear(4)
-                        prCyan(f"      Options {i}:  {guide.answer.replace(',', '')}")
+                        prCyan(f"      {option}:  {guide.answer}")
     show_settings()
     if guide.mode == "new" or guide.mode == "":
         return set_cores()
@@ -1419,6 +1398,7 @@ def finalize():
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
     final_dict["BINS"] = project.baseDict["BINS"]
     final_dict["MAXTHREADS"] = project.cores
+    final_dict["VERSION"] = __version__
     final_dict["SETTINGS"] = project.settingsDict
     final_dict.update(project.workflowsDict)
 
@@ -1827,7 +1807,7 @@ project.commentsDict = {
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == "__main__":
 
-    template = load_configfile("configs/template_base_commented.json")
+    template = load_configfile("../configs/template_base_commented.json")
 
     if args.test:
         guide.testing = True
