@@ -13,7 +13,7 @@ from NextSnakes.Logger import *
 from functools import reduce
 import operator
 import datetime
-from _version import get_versions
+import _version
 
 parser = argparse.ArgumentParser(
     description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
@@ -34,7 +34,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-__version__ = get_versions()["version"]
+# __version__ = get_versions()["version"]
+__version__ = _version.get_versions()
 
 
 class NestedDefaultDict(defaultdict):
