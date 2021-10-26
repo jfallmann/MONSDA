@@ -34,9 +34,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# __version__ = get_versions()["version"]
-__version__ = _version.get_versions()
-
 
 class NestedDefaultDict(defaultdict):
     def __init__(self, *args, **kwargs):
@@ -89,87 +86,14 @@ class GUIDE:
         self.proof_input(proof, spec)
 
     def proof_input(self, proof=None, spec=None):
-        allowed_characters = [
-            "a",
-            "b",
-            "c",
-            "d",
-            "e",
-            "f",
-            "g",
-            "h",
-            "i",
-            "j",
-            "k",
-            "l",
-            "m",
-            "n",
-            "o",
-            "p",
-            "q",
-            "r",
-            "s",
-            "t",
-            "u",
-            "v",
-            "w",
-            "x",
-            "y",
-            "z",
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-            "V",
-            "W",
-            "X",
-            "Y",
-            "Z",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "0",
-            "(",
-            ")",
-            "_",
-            "-",
-            ",",
-            ".",
-            ":",
-            "/",
-            " ",
-            "=",
-        ]
+        unallowed_characters = ["{", "}"]
         while True:
             if spec:
                 a = rlinput(">>> ", spec)
             else:
                 a = input(">>> ").strip().replace(" ", "")
 
-            if any(x not in allowed_characters for x in a):
+            if any(x in unallowed_characters for x in a):
                 safe = self.toclear
                 self.clear(2)
                 self.toclear = safe
@@ -599,53 +523,61 @@ def intro():
     print(__version__)
     print("READ THE DOCS: https://nextsnakes.readthedocs.io/en/latest/index.html")
     print("\n")
-    opts = {"1": "create new project", "2": "modify existing config-file"}
+    opts = {
+        "1": "create new project",
+        "2": "modify existing config-file",
+        "3": "add config to existing project",
+    }
     guide.display(
         question="choose an option",
         options=opts,
         proof=opts.keys(),
     )
-    guide.clear()
+    guide.clear(3)
     if guide.answer == "1":
         guide.mode = "new"
         return new()
     if guide.answer == "2":
         guide.mode = "modify"
         return modify()
+    if guide.answer == "3":
+        guide.mode = "new"
+        return new(existing=True)
 
 
-def new():
-    prGreen("\nCREATE NEW PROJECT")
+def new(existing=False):
+    if existing:
+        prGreen("\nCREATE NEW CONFIG")
+    else:
+        prGreen("\nCREATE NEW PROJECT")
     print("\n   Directory:")
     er = 0
     while True:
         if er == 0:
-            ques = "Enter the absolute path where your project-folder should be created"
+            if existing:
+                ques = "Enter the absolute of your project-folder"
+            else:
+                ques = "Enter the absolute path where your project-folder should be created"
         if er == 1:
             ques = "couldn't find this directory"
+        if er == 2:
+            ques = "WARNING: The directory you entered already exist."
         guide.display(question=ques, spec=os.getcwd())
         project.name = os.path.basename(guide.answer)
         project.path = guide.answer
-        if os.path.isdir(project.path):
+        if os.path.isdir(project.path) and not existing:
+            guide.clear(3)
+            er = 2
+            continue
+        if os.path.isdir(project.path) and existing:
             guide.clear(4)
             prCyan(f"  Directory: {project.path}")
-            guide.display(
-                question=f"WARNING: The directory you entered already exist. Press enter to choose another dir or type 'ignore' to continue anyway",
-                proof=["", "ignore"],
-            )
-            if guide.answer == "ignore":
-                guide.clear(3)
-                print("\n  Subname: ")
-                guide.display(question=f"enter subname to differ from {project.name}")
-                project.subname = guide.answer
-                guide.clear(4)
-                prCyan(f"  Subname: {project.subname}")
-                break
-            if guide.answer == "":
-                guide.clear(5)
-                print("\n  Directory:")
-                er = 0
-                continue
+            print("\n  Subname: ")
+            guide.display(question=f"enter subname to differ from {project.name}")
+            project.subname = guide.answer
+            guide.clear(4)
+            prCyan(f"  Subname: {project.subname}")
+            break
         if os.path.isdir(os.path.dirname(project.path)):
             guide.clear(4)
             prCyan(f"  Directory: {project.path}")
@@ -653,6 +585,35 @@ def new():
         else:
             guide.clear(3)
             er = 1
+    show_settings()
+    return add_workflows()
+
+
+def add_workflows(existing_workflows=None):
+    prGreen("\nADD WORKFLOWS\n")
+    possible_workflows = list(project.baseDict.keys())
+    for e in none_workflow_keys:
+        possible_workflows.remove(e)
+    if existing_workflows:
+        for e in existing_workflows:
+            possible_workflows.remove(e)
+    posWorkDict = NestedDefaultDict()
+    counter = 1
+    for w in possible_workflows:
+        posWorkDict[counter] = w
+        counter += 1
+    guide.display(
+        question="choose WORKFLOWS comma separated",
+        options=posWorkDict,
+        proof=list(str(i) for i in posWorkDict.keys()),
+    )
+    addedW = []
+    for number in guide.answer.split(","):
+        wf = posWorkDict[int(number)]
+        addedW.append(wf)
+        project.workflowsDict[wf]
+    guide.clear(3)
+    prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
     show_settings()
     return create_condition_tree()
 
@@ -872,7 +833,14 @@ def set_settings():
                 except:
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
-            for key in ["REFERENCE", "INDEX", "PREFIX", "GTF", "GFF"]:
+            settings_to_make = ["REFERENCE", "GTF", "GFF"]
+            if list(set(project.workflowsDict.keys()) & set(IP_workflows)):
+                settings_to_make = settings_to_make + ["IP"]
+            if list(set(project.workflowsDict.keys()) & set(comparable_workflows)):
+                settings_to_make = settings_to_make + ["GROUPS", "TYPES", "BATCHES"]
+            if list(set(project.workflowsDict.keys()) & set(index_prefix_workflows)):
+                settings_to_make = settings_to_make + ["INDEX", "PREFIX"]
+            for key in settings_to_make:
                 print(f"   {key}:")
                 if key in ["REFERENCE", "GTF", "GFF"]:
                     s = os.getcwd()
@@ -896,45 +864,8 @@ def set_settings():
                         maplist + ["ANNOTATION", key],
                         guide.answer,
                     )
-                if key in ["SEQUENCING", "REFERENCE", "INDEX", "PREFIX"]:
+                else:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
-
-            last_sample = ""
-            for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
-
-                prPurple(f"\n      Sample: {sample}\n")
-                for key in ["GROUPS", "TYPES", "BATCHES"]:
-                    if last_sample and key == "GROUPS":
-                        ques = f"enter 'cp' to copy entries from sample before"
-                    else:
-                        ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
-                    print(f"         {key}:")
-                    guide.display(question=ques)
-                    if guide.answer == "cp" and last_sample:
-                        guide.clear(4)
-                        for key in ["GROUPS", "TYPES", "BATCHES"]:
-                            to_add = get_by_path(project.settingsDict, maplist + [key])[
-                                -1
-                            ]
-                            prCyan(f"         {key}: {to_add}")
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                to_add
-                            )
-                        break
-                    else:
-                        last_sample = sample
-                        guide.clear(4)
-                        prCyan(f"         {key}: {guide.answer}")
-                        try:
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                guide.answer
-                            )
-                        except:
-                            setInDict(project.settingsDict, maplist + [key], [])
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                guide.answer
-                            )
-
         guide.toclear = 0
         print("\n\n   SETTINGS Key:\n")
         print_dict(project.settingsDict, gap="   ")
@@ -949,12 +880,46 @@ def set_settings():
             print_dict(project.settingsDict, col="Cyan", gap="         ")
             show_settings()
             if guide.mode == "new":
-                return add_workflows()
+                return select_conditioning()
             if guide.mode == "modify":
                 return fillup_workflows()
         if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
             continue
+
+
+def set_comparison_settings():
+    last_sample = ""
+    for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
+
+        prPurple(f"\n      Sample: {sample}\n")
+        for key in ["GROUPS", "TYPES", "BATCHES"]:
+            if last_sample and key == "GROUPS":
+                ques = f"enter 'cp' to copy entries from sample before"
+            else:
+                ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
+            print(f"         {key}:")
+            guide.display(question=ques)
+            if guide.answer == "cp" and last_sample:
+                guide.clear(4)
+                for key in ["GROUPS", "TYPES", "BATCHES"]:
+                    to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
+                    prCyan(f"         {key}: {to_add}")
+                    get_by_path(project.settingsDict, maplist + [key]).append(to_add)
+                break
+            else:
+                last_sample = sample
+                guide.clear(4)
+                prCyan(f"         {key}: {guide.answer}")
+                try:
+                    get_by_path(project.settingsDict, maplist + [key]).append(
+                        guide.answer
+                    )
+                except:
+                    setInDict(project.settingsDict, maplist + [key], [])
+                    get_by_path(project.settingsDict, maplist + [key]).append(
+                        guide.answer
+                    )
 
 
 def modify():
@@ -994,7 +959,7 @@ def modify():
 
         active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
-        for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]:
+        for e in none_workflow_keys:
             inactive_workflows.remove(e)
         for wf in inactive_workflows:
             project.workflowsDict[wf] = decouple(modify_config[wf])
@@ -1167,35 +1132,6 @@ def remove_conditions():
             return finalize()
         if guide.answer == "no":
             continue
-
-
-def add_workflows(existing_workflows=None):
-    prGreen("\nADD WORKFLOWS\n")
-    possible_workflows = list(project.baseDict.keys())
-    for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]:
-        possible_workflows.remove(e)
-    if existing_workflows:
-        for e in existing_workflows:
-            possible_workflows.remove(e)
-    posWorkDict = NestedDefaultDict()
-    counter = 1
-    for w in possible_workflows:
-        posWorkDict[counter] = w
-        counter += 1
-    guide.display(
-        question="choose WORKFLOWS comma separated",
-        options=posWorkDict,
-        proof=list(str(i) for i in posWorkDict.keys()),
-    )
-    addedW = []
-    for number in guide.answer.split(","):
-        wf = posWorkDict[int(number)]
-        addedW.append(wf)
-        project.workflowsDict[wf]
-    guide.clear(3)
-    prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
-    show_settings()
-    return select_conditioning()
 
 
 def select_conditioning():
@@ -1477,9 +1413,12 @@ def create_project(final_dict):
                     os.chdir(os.path.join(dir))
                 path = "/".join(cond_as_list)
                 cond_dir = os.path.join(fastq, path)
-                sample_sl = os.path.join(cond_dir, os.path.basename(k))
-                if not os.path.exists(sample_sl):
-                    os.symlink(os.path.realpath(k), sample_sl)
+                dst = os.path.join(cond_dir, project.samplesDict[k]["file"])
+                src = os.path.join(
+                    project.samplesDict[k]["dir"], project.samplesDict[k]["file"]
+                )
+                if not os.path.exists(dst):
+                    os.symlink(src, dst)
 
         # link reference and annotation
         for setting in project.settingsList:
@@ -1809,6 +1748,11 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == "__main__":
 
     template = load_configfile("../configs/template_base_commented.json")
+    __version__ = _version.get_versions()["version"]
+    none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+    comparable_workflows = ["DE", "DEU", "DAS", "DTU", "PEAKS"]
+    IP_workflows = ["PEAKS"]
+    index_prefix_workflows = ["MAPPING"]
 
     if args.test:
         guide.testing = True
