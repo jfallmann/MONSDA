@@ -220,7 +220,7 @@ def run_snakemake(
         """
         if preprocess:
             for proc in [
-                x for x in preprocess if config.get(x) and x in ["SRA", "BASECALL"]
+                x for x in preprocess if config.get(x) and x in ["FETCH", "BASECALL"]
             ]:
                 log.info(logid + "Preprocess " + str(proc))
                 if proc not in config:
@@ -233,7 +233,7 @@ def run_snakemake(
                 makeoutdir("FASTQ")
                 makeoutdir("TMP")
 
-                if proc == "SRA":
+                if proc == "FETCH":
                     SAMPLES = download_samples(config)
                     preprocess.remove(proc)
                 elif proc == "BASECALL":
@@ -507,7 +507,7 @@ def run_nextflow(
 
         if preprocess:
             for proc in [
-                x for x in preprocess if config.get(x) and x in ["SRA", "BASECALL"]
+                x for x in preprocess if config.get(x) and x in ["FETCH", "BASECALL"]
             ]:
                 log.info(logid + "Preprocess " + str(proc))
                 if proc not in config:
@@ -520,7 +520,7 @@ def run_nextflow(
                 makeoutdir("FASTQ")
                 makeoutdir("TMP")
 
-                if proc == "SRA":
+                if proc == "FETCH":
                     SAMPLES = download_samples(config)
                     preprocess.remove(proc)
                 elif proc == "BASECALL":

@@ -512,7 +512,7 @@ def get_processes(config):
     preprocess = subworkflows = postprocess = []
 
     # Define workflow stages
-    pre = ["QC", "SRA", "BASECALL"]
+    pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
     post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
 

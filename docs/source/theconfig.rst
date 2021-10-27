@@ -13,7 +13,7 @@ defines parameters specific for the job:
 
 ::
 
-   "WORKFLOWS": "SRA,QC,MAPPING,TRIMMING,COUNTING,UCSC,DE,DEU,DAS", # Here you define which main workflow steps should be run,
+   "WORKFLOWS": "FETCH,QC,MAPPING,TRIMMING,DEDUP,COUNTING,UCSC,DE,DEU,DAS", # Here you define which main workflow steps should be run,
    "REFERENCE": "GENOMES", #where to find the reference genomes
    "BINS": "NextSnakes/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
    "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load

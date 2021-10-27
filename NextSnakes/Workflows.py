@@ -212,7 +212,7 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
     configs = list()
     tempconf = NestedDefaultDict()
     for condition in conditions:
-        # if subwork == "SRA":
+        # if subwork == "FETCH":
         #    if len(getFromDict(config[subwork], condition)) < 1:
         #        return None, None
         try:
@@ -1777,7 +1777,7 @@ def nf_get_processes(config):
     preprocess = subworkflows = postprocess = []
 
     # Define workflow stages
-    pre = ["QC", 'SRA']  # , 'BASECALL']
+    pre = ["QC", "FETCH"]  # , 'BASECALL']
     sub = ["TRIMMING", "MAPPING", "QC"]  # , 'DEDUP'
     post = (
         []

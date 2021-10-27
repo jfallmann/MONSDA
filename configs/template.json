@@ -28,8 +28,8 @@
             }
         }
     },
-#SRA options
-    "SRA": {
+#FETCH options
+    "FETCH": {
         "TOOLS" : # which tools to run, format is Conda-environment name : binary to call, will be overwritten by ENV/BIN in ICS
         {
             "sra" : "sra"
@@ -42,7 +42,7 @@
                                    "sra": { # for which tool environment these settings work
                                        "OPTIONS":
                                        {
-                                           "SRA": ""  #SRA options here if any, paired is not required, will be resolved by rules
+                                           "DOWNLOAD": ""  #FETCH options here if any, paired is not required, will be resolved by rules
 
                                        }
                                    }

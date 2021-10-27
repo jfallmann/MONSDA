@@ -33,7 +33,7 @@
       }
     }
   },
-  "SRA": {
+  "FETCH": {
     "TOOLS": {
       "sra": "sra"
     },
@@ -42,7 +42,7 @@
         "sra": {
           "OPTIONS": 
             {
-              "SRA": ""
+              "DOWNLOAD": ""
             }
         }
       }
