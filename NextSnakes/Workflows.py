@@ -2514,7 +2514,8 @@ def nf_make_sub(
                 subjobs.append("\n\n" + "workflow {\n")
                 for w in [
                     "QC_RAW",
-                    "PREDEDUP" "TRIMMING",
+                    "PREDEDUP",
+                    "TRIMMING",
                     "QC_TRIMMING",
                     "MAPPING",
                     "QC_MAPPING",

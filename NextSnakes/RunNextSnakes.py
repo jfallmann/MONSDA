@@ -521,17 +521,21 @@ def run_nextflow(
                 makeoutdir("TMP")
 
                 if proc == "FETCH":
-                    try:
-                        SAMPLES = get_samples(config)
+                    if check_samples(config) is True:
                         preprocess.remove(proc)
-                        continue
-                    except:
+                        SAMPLES = None
+                    else:
                         SAMPLES = download_samples(config)
                         preprocess.remove(proc)
                 elif proc == "BASECALL":
                     SAMPLES = basecall_samples(config)
                     preprocess.remove(proc)
                 else:
+                    continue
+                if SAMPLES is None:
+                    log.info(
+                        logid + f"All SAMPLES already available, skipping FETCH process"
+                    )
                     continue
 
                 log.debug(logid + "PRESAMPLES: " + str(SAMPLES))
