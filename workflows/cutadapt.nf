@@ -60,23 +60,41 @@ workflow TRIMMING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        if RUNDEDUP{
+            R1SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1_dedup.fastq.gz"
+            }
+            R1SAMPLES.sort()
+            R2SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2_dedup.fastq.gz"
+            }
+            R2SAMPLES.sort()            
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+        else{   
+            R1SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+            }
+            R1SAMPLES.sort()
+            R2SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+            }
+            R2SAMPLES.sort()            
         }
-        R2SAMPLES.sort()
         samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }else{
-        RSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+        if RUNDEDUP{
+            RSAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_dedup.fastq.gz"
+            }
         }
+        else{
+            RSAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            }
+        }                 
         RSAMPLES.sort()
         samples_ch = Channel.fromPath(RSAMPLES)
     }
-
     collect_totrim(collection.collect())
     trim(collect_totrim.out.done, samples_ch)
 

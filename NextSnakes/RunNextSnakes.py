@@ -521,8 +521,13 @@ def run_nextflow(
                 makeoutdir("TMP")
 
                 if proc == "FETCH":
-                    SAMPLES = download_samples(config)
-                    preprocess.remove(proc)
+                    try:
+                        SAMPLES = get_samples(config)
+                        preprocess.remove(proc)
+                        continue
+                    except:
+                        SAMPLES = download_samples(config)
+                        preprocess.remove(proc)
                 elif proc == "BASECALL":
                     SAMPLES = basecall_samples(config)
                     preprocess.remove(proc)

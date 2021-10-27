@@ -41,12 +41,12 @@ process fetchsra{
     script:
     if (PAIRED == 'paired'){        
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p $THREADS *.fastq
+        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p $THREADS *.fastq
+        fasterq-dump -e $THREADS $FETCHPARAMS $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
 }

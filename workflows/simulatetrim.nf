@@ -1,23 +1,6 @@
 T1SAMPLES = null
 T2SAMPLES = null
 
-if (PAIRED == 'paired'){
-    T1 = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
-    }
-    T2 = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-    }
-    T1SAMPLES = T1 + T2
-    T1SAMPLES.sort()
-
-}else{
-    T1SAMPLES=SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-    }
-    T1SAMPLES.sort()
-}
-
 process simtrim{
     conda "$TOOLENV"+".yaml"
     cpus THREADS
@@ -50,19 +33,38 @@ workflow TRIMMING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        if RUNDEDUP{
+            R1SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_R1_dedup.fastq.gz"
+            }
+            R1SAMPLES.sort()
+            R2SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_R2_dedup.fastq.gz"
+            }
+            R2SAMPLES.sort()            
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+        else{   
+            R1SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+            }
+            R1SAMPLES.sort()
+            R2SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
+            }
+            R2SAMPLES.sort()            
         }
-        R2SAMPLES.sort()
         samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }else{
-        RSAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+        if RUNDEDUP{
+            RSAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_dedup.fastq.gz"
+            }
         }
+        else{
+            RSAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            }
+        }                 
         RSAMPLES.sort()
         samples_ch = Channel.fromPath(RSAMPLES)
     }

@@ -42,7 +42,7 @@ process multiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s .
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s 
     """
 }
 
@@ -59,6 +59,15 @@ workflow MULTIQC{
     }
     RSAMPLES.sort()
     samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
+
+    if RUNDEDUP{
+        DSAMPLES=LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_dedup_fastqc.zip"
+        }
+        DSAMPLES.sort()
+        dsamples_ch = Channel.fromPath(DSAMPLES, followLinks: true)
+        samples_ch.merge(dsamples_ch)
+    }
 
     TSAMPLES = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_trimmed_fastqc.zip"

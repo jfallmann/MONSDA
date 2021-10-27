@@ -1,7 +1,7 @@
 DEDUPENV=get_always('DEDUPENV')
 DEDUPBIN=get_always('DEDUPBIN')
-DEDUPPARAMS = get_always('picard_params_DEDUP') ?: ''
-JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
+
+DEDUPPARAMS = get_always('umitools_params_DEDUP') ?: ''
 
 process collect_dedup{
     input:
@@ -25,7 +25,7 @@ process dedup{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam",
+        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
         else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
         else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/dedupbam.log"
         else null
@@ -36,19 +36,50 @@ process dedup{
         
     output:
     path "*.bam", emit: bam
+    path "*.bai", emit: bai
     path "*.log", emit: log
 
     script:
+    if paired{
+        out=samples.getSimpleName()+"_dedup.bam"
+        """
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --paired --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
+        """
+    }
+    else{
+        out=samples.getSimpleName()+"_dedup.fastq.gz"
+        """
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
+        """
+    }
     """
-    mkdir -p tmp && java $JAVAPARAMS -jar picard.jar MarkDuplicates $DEDUPPARAMS --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR=tmp INPUT=$samples OUTPUT=$samples"_dedup.bam" &> dedup.log && samtools index $out &>> dedup.log
+    
     """
 }
 
 workflow DEDUPBAM{
-    take:
-    maplogs
+    take: collection
 
     main:
+    //SAMPLE CHANNELS
+    if (PAIRED == 'paired'){
+        T1SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R1.fastq.gz"
+        }
+        T1SAMPLES.sort()
+        T2SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R2.fastq.gz"
+        }
+        T2SAMPLES.sort()
+        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+
+    }else{
+        T1SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+".fastq.gz"
+        }
+        T1SAMPLES.sort()
+        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
+    }
 
     //SAMPLE CHANNELS
     MSAMPLES = LONGSAMPLES.collect{
