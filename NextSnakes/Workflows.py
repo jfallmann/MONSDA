@@ -1628,6 +1628,8 @@ def nf_fetch_params(
     retconf["SAMPLES"] = str.join(",", SAMPLES)
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(",", LONGSAMPLES)
+    SHORTSAMPLES = [os.path.basename(x) for x in SAMPLES]
+    retconf["SHORTSAMPLES"] = str.join(",", SHORTSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
         retconf["COMBO"] = combi[0] + os.sep if combi[0] != "" else None

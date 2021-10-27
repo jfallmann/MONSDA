@@ -41,12 +41,12 @@ process fetchsra{
     script:
     if (PAIRED == 'paired'){        
         """
-        fasterq-dump -e {threads} $FETCHPARAMS --split-files $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p {threads} *.fastq
+        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p {threads} *.fastq
         """
     }
     else{
         """
-        fasterq-dump -e {threads} $FETCHPARAMS $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p {threads} *.fastq
+        fasterq-dump -e $THREADS $FETCHPARAMS $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && pigz -p {threads} *.fastq
         """
     }
 }
@@ -56,7 +56,7 @@ workflow FETCH{
 
     main:
     //SAMPLE CHANNELS
-    samples_ch = Channel.of(SAMPLES)
+    samples_ch = Channel.of(SHORTSAMPLES)
 
     collect_tofetch(collection.collect())
     fetchsra(collect_tofetch.out.done, samples_ch)
