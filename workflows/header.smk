@@ -147,7 +147,7 @@ if 'PEAKS' in config:
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
     if not IP:
-        IP = check_ip(SAMPLES, config)
+        IP = check_IP(SAMPLES, config)
     log.info(logid+'Running Peak finding for '+IP+' protocol')
 
 

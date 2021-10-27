@@ -205,6 +205,98 @@ def get_combo(wfs, config, conditions):
 
 
 @check_run
+def get_processes(config):
+    logid = scriptname + ".Params_get_processes: "
+
+    preprocess = subworkflows = postprocess = []
+
+    # Define workflow stages
+    pre = ["QC", "FETCH", "BASECALL"]
+    sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
+
+    wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
+
+    if "WORKFLOWS" in config:
+        log.debug(
+            logid
+            + "CONFIG-WORKFLOWS: "
+            + str(wfs)
+            + "\t"
+            + str(pre)
+            + "\t"
+            + str(sub)
+            + "\t"
+            + str(post)
+        )
+        subworkflows = [str(x) for x in wfs if x in sub]
+        log.debug(logid + "Sub: " + str(subworkflows))
+        if len(subworkflows) == 0 or subworkflows[0] == "":
+            subworkflows = []
+        preprocess = [x for x in wfs if x in pre]
+        if len(preprocess) == 0 or preprocess[0] == "":
+            preprocess = None
+        log.debug(
+            logid
+            + "Intermediate-WORKFLOWS: "
+            + str([preprocess, subworkflows, postprocess])
+        )
+
+        if (
+            subworkflows
+            and any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
+            and preprocess
+            and "QC" in preprocess
+        ):
+            preprocess.remove("QC")
+
+        if (
+            preprocess
+            and "QC" in preprocess
+            and not any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
+        ):
+            subworkflows.remove("QC")
+
+        postprocess = [x for x in wfs if x in post]
+        if len(postprocess) == 0 or postprocess[0] == "":
+            postprocess = []
+    else:
+        log.error("NO WORKFLOWS DEFINED, NOTHING TO DO!")
+        sys.exit()
+
+    if preprocess:
+        try:
+            all([config[x] or x == "" for x in preprocess])
+        except KeyError:
+            log.warning(
+                logid
+                + "Not all required preprocessing steps have configuration in the config file"
+            )
+
+    if subworkflows:
+        try:
+            all([config[x] or x == "TRIMMING" or x == "" for x in subworkflows])
+        except KeyError:
+            log.warning(
+                logid
+                + "Not all required subworkflows have configuration in the config file"
+            )
+
+    if postprocess:
+        try:
+            all([config[x] or x == "" for x in postprocess])
+        except KeyError:
+            log.warning(
+                logid
+                + "Not all required postprocessing steps have configuration in the config file"
+            )
+
+    log.debug(logid + "WORKFLOWS: " + str([preprocess, subworkflows, postprocess]))
+
+    return [preprocess, subworkflows, postprocess]
+
+
+@check_run
 def create_subworkflow(config, subwork, conditions, stage="", combination=None):
     logid = scriptname + ".Workflows_create_subworkflow: "
     log.debug(logid + str([config, subwork, conditions, stage]))
@@ -212,9 +304,6 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
     configs = list()
     tempconf = NestedDefaultDict()
     for condition in conditions:
-        # if subwork == "FETCH":
-        #    if len(getFromDict(config[subwork], condition)) < 1:
-        #        return None, None
         try:
             env = str(subDict(config[subwork], condition)[stage + "ENV"])
         except:
@@ -1497,8 +1586,11 @@ def nf_fetch_params(
         BINS = binpath
 
     MAXTHREAD = int(config["MAXTHREADS"])
-    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-
+    SAMPLES = (
+        [os.path.join(x) for x in sampleslong(config)]
+        if not config.get("FETCH", False)
+        else [os.path.join(x) for x in download_samples(config)]
+    )
     if len(SAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
         sys.exit(logid + "ERROR: No samples found, please check config file")
@@ -1622,7 +1714,7 @@ def nf_fetch_params(
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF forma
         if not IP:
-            IP = check_ip(SAMPLES, config)
+            IP = check_IP(SAMPLES, config)
         log.info(logid + "Running Peak finding for " + IP + " protocol")
 
         retconf["PEAKREF"] = REFERENCE
@@ -1866,11 +1958,19 @@ def nf_get_processes(config):
 
 @check_run
 def nf_make_pre(
-    subwork, config, SAMPLES, conditions, subdir, loglevel, combinations=None
+    subwork,
+    config,
+    samples,
+    conditions,
+    subdir,
+    loglevel,
+    state="",
+    subname=None,
+    combinations=None,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
     log.debug(logid + "PREPROCESSING: " + str(subwork))
-    log.info(logid + "PREPROCESSING SAMPLES: " + str(SAMPLES))
+    log.info(logid + "PREPROCESSING SAMPLES: " + str(samples))
 
     jobs = list()
     state = "pre_"
@@ -2048,6 +2148,12 @@ def nf_make_pre(
 
     else:
         for condition in conditions:
+            flowlist = list()
+            subjobs = list()
+            subconf = NestedDefaultDict()
+            tp = list()
+
+            log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
             listoftools, listofconfigs = create_subworkflow(
                 config, subwork, [condition]
             )
@@ -2062,16 +2168,21 @@ def nf_make_pre(
                 return None
 
             sconf = listofconfigs[0]
+            subsamples = get_samples(sconf)
+
             for i in range(0, len(listoftools)):
                 toolenv, toolbin = map(str, listoftools[i])
-                flowlist = list()
-                tp = list()
-                subconf = NestedDefaultDict()
-                subjobs = list()
-
+                if toolenv is None or toolbin is None:
+                    continue
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
-                subconf.update(sconf)
+                subconf.merge(sconf)
+
+                subconf[subwork] = add_to_innermost_key_by_list(
+                    subconf[subwork],
+                    subDict(config[subwork], condition)[toolenv],
+                    condition,
+                )
 
                 subname = toolenv + ".nf"
                 log.debug(
@@ -2081,95 +2192,75 @@ def nf_make_pre(
                     + str([toolenv, subname, condition, subconf])
                 )
 
-                nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-                with open(nfi, "r") as nf:
-                    for line in nf.readlines():
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
-
                 if subwork == "QC":
                     subname = toolenv + "_raw.nf"
                     flowlist.append("QC_RAW")
-                    flowlist.append("MULTIQC")
+                elif subwork == "FETCH":
+                    subname = toolenv + ".nf"
+                    flowlist.append("FETCH")
+                elif subwork == "BASECALL":
+                    sys.exit("BASECALLING NOT YET IMPLEMENTED FOR NEXTFLOW")
+                    subname = toolenv + ".nf"
+                    flowlist.append("BASECALL")
 
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
-                if subwork == "QC":
-                    nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
-                    with open(nfi, "r") as nf:
-                        for line in nf.readlines():
-                            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
-
-                # workflow merger
-                subjobs.append("\n\n" + "workflow {\n")
-                for w in ["MULTIQC"]:
-                    if w in flowlist:
-                        if w == "MULTIQC":
-                            subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
-                            subjobs.append(" " * 4 + w + "(QC_RAW.out.qc.collect())\n")
-                subjobs.append("\n}\n")
-
-                # nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
-                # with open(nfi, 'r') as nf:
-                #    for line in nf.readlines():
-                #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
-                #        line = re.sub(condapath, 'conda: "' + envpath, line)
-                #        subjobs.append(line)
-                #    subjobs.append('\n\n')
-
-                nfo = os.path.abspath(
-                    os.path.join(
-                        subdir,
-                        "_".join(
-                            [
-                                "_".join(condition),
-                                state + subwork,
-                                toolenv,
-                                "subflow.nf",
-                            ]
-                        ),
+                tp.append(
+                    nf_tool_params(
+                        subsamples,
+                        None,
+                        sconf,
+                        subwork,
+                        toolenv,
+                        toolbin,
+                        None,
+                        condition,
                     )
                 )
-                if os.path.exists(nfo):
-                    os.rename(nfo, nfo + ".bak")
-                with open(nfo, "a") as nfout:
-                    nfout.write("".join(subjobs))
-                    nfout.write("\n\n")
+            if subwork == "QC":
+                flowlist.append("MULTIQC")
+                nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
+                with open(nfi, "r") as nf:
+                    for line in nf.readlines():
+                        line = re.sub(condapath, 'conda "' + envpath, line)
+                        subjobs.append(line)
+                    subjobs.append("\n\n")
 
-                confo = os.path.abspath(
-                    os.path.join(
-                        subdir,
-                        "_".join(
-                            [
-                                "_".join(condition),
-                                state + subwork,
-                                toolenv,
-                                "subconfig.json",
-                            ]
-                        ),
-                    )
-                )
-                if os.path.exists(confo):
-                    os.rename(confo, confo + ".bak")
-                with open(confo, "a") as confout:
-                    json.dump(subconf, confout)
+            # workflow merger
+            log.debug("FLOWLIST: " + str(flowlist))
 
-                tpl = " ".join(tp)
-                combi = list((str(envlist[i]), ""))
-                para = nf_fetch_params(confo, condition, combi)
+            subjobs.append("\n\n" + "workflow {\n")
+            for w in ["QC_RAW", "FETCH", "BASECALL"]:
+                if w in flowlist:
+                    subjobs.append(" " * 4 + w + "(dummy)\n")
+            subjobs.append("}\n\n")
 
-                jobs.append([nfo, confo, tpl, para])
+            nfo = os.path.abspath(
+                os.path.join(subdir, "_".join(["_".join(condition), "subflow.nf"]))
+            )
+            if os.path.exists(nfo):
+                os.rename(nfo, nfo + ".bak")
+            with open(nfo, "w") as nfout:
+                nfout.write("".join(subjobs))
+
+            confo = os.path.abspath(
+                os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
+            )
+            if os.path.exists(confo):
+                os.rename(confo, confo + ".bak")
+            with open(confo, "w") as confout:
+                json.dump(subconf, confout)
+
+            tpl = " ".join(tp)
+            combi = None
+            para = nf_fetch_params(confo, condition, combi)
+
+            jobs.append([nfo, confo, tpl, para])
 
     return jobs
 
@@ -2178,7 +2269,7 @@ def nf_make_pre(
 def nf_make_sub(
     subworkflows,
     config,
-    SAMPLES,
+    samples,
     conditions,
     subdir,
     loglevel,
@@ -2188,7 +2279,7 @@ def nf_make_sub(
     logid = scriptname + ".Workflows_nf_make_sub: "
 
     log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
-    log.info(logid + "PROCESSING SAMPLES: " + str(SAMPLES))
+    log.info(logid + "PROCESSING SAMPLES: " + str(samples))
     jobs = list()
     condapath = re.compile(r'conda\s+"')
     logfix = re.compile(r'loglevel="INFO"')
@@ -2499,13 +2590,13 @@ def nf_make_sub(
                     )
 
                     if subwork == "QC":
-                        if "TRIMMING" in works:
-                            if "DEDUP" in works:
+                        if "TRIMMING" in subworkflows:
+                            if "DEDUP" in subworkflows:
                                 subname = toolenv + "_dedup_trim.nf"
                                 flowlist.append("QC_RAW")
                                 flowlist.append("DEDUP_TRIM")
                                 flowlist.append("QC_DEDUP_TRIM")
-                                if "MAPPING" in works:
+                                if "MAPPING" in subworkflows:
                                     subname = toolenv + "_dedup_trim_map.nf"
                                     flowlist.append("QC_MAP")
                             else:
@@ -2513,7 +2604,7 @@ def nf_make_sub(
                                 flowlist.append("QC_RAW")
                                 flowlist.append("TRIMMING")
                                 flowlist.append("QC_TRIMMING")
-                                if "MAPPING" in works:
+                                if "MAPPING" in subworkflows:
                                     subname = toolenv + "_trim_map.nf"
                                     flowlist.append("QC_MAP")
                         else:
@@ -2522,13 +2613,13 @@ def nf_make_sub(
                                 flowlist.append("QC_RAW")
                                 flowlist.append("DEDUP")
                                 flowlist.append("QC_DEDUP")
-                                if "MAPPING" in works:
+                                if "MAPPING" in subworkflows:
                                     subname = toolenv + "_dedup_map.nf"
                                     flowlist.append("QC_MAP")
                             else:
                                 subname = toolenv + "_raw.nf"
                                 flowlist.append("QC_RAW")
-                                if "MAPPING" in works:
+                                if "MAPPING" in subworkflows:
                                     subname = toolenv + ".nf"
                                     flowlist.append("QC_MAP")
 
@@ -2548,7 +2639,7 @@ def nf_make_sub(
 
                     tp.append(
                         nf_tool_params(
-                            SAMPLES[0],
+                            samples[0],
                             None,
                             sconf,
                             subwork,
@@ -2559,10 +2650,10 @@ def nf_make_sub(
                         )
                     )
 
-            if "MAPPING" in works:
-                if "QC" not in works:
+            if "MAPPING" in subworkflows:
+                if "QC" not in subworkflows:
                     log.info(logid + "Mapping without QC!")
-                if "TRIMMING" not in works:
+                if "TRIMMING" not in subworkflows:
                     log.info(logid + "Simulated read trimming only!")
                     flowlist.append("TRIMMING")
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
@@ -2581,7 +2672,7 @@ def nf_make_sub(
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
-            if "QC" in works:
+            if "QC" in subworkflows:
                 flowlist.append("MULTIQC")
                 nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                 with open(nfi, "r") as nf:
@@ -2642,7 +2733,6 @@ def nf_make_sub(
             if os.path.exists(nfo):
                 os.rename(nfo, nfo + ".bak")
             with open(nfo, "w") as nfout:
-                nfout.write("".join(add))
                 nfout.write("".join(subjobs))
 
             confo = os.path.abspath(
@@ -2654,7 +2744,8 @@ def nf_make_sub(
                 json.dump(subconf, confout)
 
             tpl = " ".join(tp)
-            combi = list((str(envlist[i]), ""))
+            # combi = list((str(envlist[i]), ""))
+            combi = None
             para = nf_fetch_params(confo, condition, combi)
 
             jobs.append([nfo, confo, tpl, para])
@@ -2676,7 +2767,7 @@ def nf_make_post(
     logid = scriptname + ".Workflows_nf_make_sub: "
 
     if "PEAKS" in config and "PEAKS" in postprocess:
-        CLIP = checkclip(SAMPLES, config)
+        CLIP = checkclip(samples, config)
         log.info(logid + "Running Peak finding for " + CLIP + " protocol")
 
     for condition in conditions:
