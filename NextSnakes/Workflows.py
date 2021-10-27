@@ -2247,7 +2247,12 @@ def nf_make_pre(
             subjobs.append("}\n\n")
 
             nfo = os.path.abspath(
-                os.path.join(subdir, "_".join(["_".join(condition), "subflow.nf"]))
+                os.path.join(
+                    subdir,
+                    "_".join(
+                        ["_".join(condition), state + subwork, toolenv, "subflow.nf"]
+                    ),
+                )
             )
             if os.path.exists(nfo):
                 os.rename(nfo, nfo + ".bak")
@@ -2255,7 +2260,17 @@ def nf_make_pre(
                 nfout.write("".join(subjobs))
 
             confo = os.path.abspath(
-                os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
+                os.path.join(
+                    subdir,
+                    "_".join(
+                        [
+                            "_".join(condition),
+                            state + subwork,
+                            toolenv,
+                            "subconfig.json",
+                        ]
+                    ),
+                )
             )
             if os.path.exists(confo):
                 os.rename(confo, confo + ".bak")

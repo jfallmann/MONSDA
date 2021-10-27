@@ -1,0 +1,524 @@
+{
+    "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS",
+    "VERSION": "0.0.19",
+    "BINS": "",
+    "MAXTHREADS": "18",
+    "SETTINGS": {
+        "Dm6": {
+            "single": {
+                "test": {
+                    "SAMPLES": [
+                        "SRR16204370"
+                    ],
+                    "GROUPS": [
+                        "IP"
+                    ],
+                    "TYPES": [
+                        "test1_single"
+                    ],
+                    "BATCHES": [
+                        "1", "2"
+                    ],
+                    "SEQUENCING": "single",
+                    "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",
+                    "PREFIX": "idx",
+                    "ANNOTATION": {
+                        "GFF": "GENOMES/Dm6/dm6.gff3.gz",
+                        "GTF": "GENOMES/Dm6/dm6_chromfix.gtf.gz"
+                    },
+                    "IP": "iCLIP"
+                }
+            },
+            "paired": {
+                "SAMPLES": [
+                    "SRR8645646.1"
+                ],
+                "GROUPS": [
+                    "TWO"
+                ],
+                "TYPES": [
+                    "test_paired"
+                ],
+                "BATCHES": [
+                    "3"
+                ],
+                "SEQUENCING": "paired",
+                "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",
+                "PREFIX": "idx",
+                "ANNOTATION": {
+                    "GFF": "GENOMES/Dm6/dm6.gff3.gz",
+                    "GTF": "GENOMES/Dm6/dm6_chromfix.gtf.gz"
+                },
+                "IP": "iCLIP"
+            }
+        }
+    },
+    "FETCH": {
+        "TOOLS" :
+        {
+            "sra" : "fasterq-dump"
+        },
+        "Dm6": {
+            "single": {
+                "test": {
+                    "sra": {
+                        "OPTIONS":
+                        {
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "sra": {
+                    "OPTIONS":
+                    {
+                        "DOWNLOAD": ""
+                    }
+                }
+            }
+        }
+    },
+    "QC": {
+        "TOOLS" :
+        {
+            "fastqc" : "fastqc"
+        },
+        "Dm6": {
+            "paired": {
+                "fastqc": {
+                    "OPTIONS":
+                    {
+                        "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
+                        "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                    }
+                }
+            },
+            "single": {
+                "test": {
+                    "fastqc": {
+                        "OPTIONS":
+                        {
+                            "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "TRIMMING": {
+        "TOOLS" :
+        {
+            "trimgalore": "trim_galore",
+            "cutadapt": "cutadapt"
+        },
+        "Dm6": {
+            "paired": {
+                "trimgalore":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                    }
+                },
+                "cutadapt":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                    }
+                }
+            },
+            "single": {
+                "test": {
+                    "trimgalore":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        }
+                    },
+                    "cutadapt":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "DEDUP": {
+        "TOOLS": {
+            "umitools": "umi_tools"
+        },
+        "Dm6": {
+            "paired":{
+                "umitools":{
+                    "OPTIONS":
+                    {
+                        "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                        "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                    }
+                }
+            },
+            "single":{
+                "test": {
+                    "umitools": {
+                        "OPTIONS":
+                        {
+                            "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                            "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR",
+            "segemehl3": "segemehl.x",
+            "hisat2": "hisat2",
+            "bwa": "bwa mem",
+            "minimap": "minimap2"
+        },
+        "Dm6": {
+            "single": {
+                "test": {
+                    "star": {
+                        "OPTIONS": {
+                            "INDEX": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                            "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                        }
+                    },
+                    "segemehl3": {
+                        "OPTIONS": {
+                            "INDEX": "",
+                            "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                        }
+                    },
+                    "hisat2": {
+                        "OPTIONS":
+                        {
+                          "INDEX": ""
+                        }
+                    },
+                    "bwa": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-a bwtsw",
+                            "MAP": ""
+                        }
+                    },
+                    "minimap": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-k 15",
+                            "MAP": "-ax sr -ub -Y -L --MD"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "star": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                    }
+                },
+                "segemehl3": {
+                    "OPTIONS": {
+                        "INDEX":  "",
+                        "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                    }
+                },
+                "hisat2": {
+                    "OPTIONS":
+                    {
+                      "INDEX": ""
+                    }
+                },
+                "bwa": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-a bwtsw",
+                        "MAP": ""
+                    }
+                },
+                "minimap": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-k 15",
+                        "MAP": "-ax sr -ub -Y -L --MD"
+                    }
+                }
+            }
+        }
+    },
+    "COUNTING": {
+        "FEATURES": {
+            "exon": "gene_id",
+            "gene": "gene_id"
+        },
+        "TOOLS": {
+            "countreads": "featureCounts"
+        },
+        "Dm6": {
+            "single": {
+                "test": {
+                    "countreads": {
+                        "OPTIONS":
+                        {
+                            "COUNT" : "-f --fraction -O -M"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "countreads": {
+                    "OPTIONS":
+                    {
+                        "COUNT" : "-f --fraction -O -M"
+                    }
+                }
+            }
+        }
+    },
+    "TRACKS": {
+        "TOOLS": {
+            "ucsc": "ucsc"
+        },
+        "Dm6": {
+            "single": {
+                "test": {
+                    "ucsc": {
+                        "OPTIONS":
+                        {
+                            "UCSC": "-n DM6_single_Mapping -s dm6_st -l UCSC_DM6_single_Mapping -b UCSC_dm6_star1"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "ucsc": {
+                    "OPTIONS":
+                    {
+                        "UCSC": "-n DM6_paired_Mapping -s dm6_p -l UCSC_DM6_paired_Mapping -b UCSC_dm6_pstar1"
+                    }
+                }
+            }
+        }
+    },
+#DE Analysis
+    "DE": {
+        "TOOLS" :
+        {
+            "deseq2" : "Analysis/DE/DESEQ2.R",
+            "edger" : "Analysis/DE/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+            "Test_unpaired_R1"
+        ],
+        "Dm6": {
+            "single": {
+                "test": {
+                    "deseq2": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
+                        }
+                    },
+                }
+            },
+            "paired": {
+                "deseq2": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t gene -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DE": "controlgenes=spike-in.list"  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#DEU Analysis options
+    "DEU": {
+        "TOOLS" :
+        {
+            "dexseq" : "Analysis/DEU/DEXSeq.R",
+            "edger" : "Analysis/DEU/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+            "Test_unpaired_R1"
+        ],
+        "Dm6": {
+            "single": {
+                "test": {
+                    "dexseq": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DE Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DE Analysis
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "dexseq": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DEU": ""  # Options for DE Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DEU": ""  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#DAS Analysis options
+    "DAS": {
+        "TOOLS" :
+        {
+            "diego" : "diego.py",
+            "edger" : "Analysis/DAS/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+            "Test_unpaired_R1"
+        ],
+        "Dm6": {
+            "single": {
+                "test": {
+                    "diego": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "controlgenes spike-in.list"  # Options for DE Analysis
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "diego": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-t exon -g gene_id -f --fraction -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": "controlgenes spike-in.list"  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#PEAKS Analysis options
+    "PEAKS": {
+        "TOOLS" :
+        {
+            "macs" : "macs2",
+            "peaks" : "peaks",
+            "scyphy" : "Piranha"
+        },
+        "COMPARABLE" :
+        {
+            "Test_unpaired_R1": "Test_unpaired_R2",
+            "Test_unpaired_R2": "Test_unpaired_R1",
+            "GSM_paired": "GSM_paired"
+        },
+        "Dm6": {
+            "single": {
+                "test": {
+                    "macs": {
+                        "OPTIONS":
+                        {
+                            "FINDPEAKS": "--nomodel"
+                        }
+                    },
+                    "peaks":{
+                        "OPTIONS":
+                        {
+                            "PREPROCESS": "",
+                            "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                        }
+                    },
+                    "scyphy":{
+                        "OPTIONS":
+                        {
+                            "PREPROCESS": "",
+                            "FINDPEAKS": "-b 100"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "macs": {
+                    "OPTIONS":
+                    {
+                        "FINDPEAKS": "--nomodel"
+                    }
+                },
+                "peaks":{
+                    "OPTIONS":
+                    {
+                        "PREPROCESS": "",
+                        "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                    }
+                },
+                "scyphy":{
+                    "OPTIONS":
+                    {
+                        "PREPROCESS": "",
+                        "FINDPEAKS": "-b 100"
+                    }
+                }
+            }
+        }
+    }
+}
