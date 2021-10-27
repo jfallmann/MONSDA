@@ -1,4 +1,4 @@
-if rundedup:
+if rundedup and not "picard" in [DEDUPBIN, DEDUPENV for env_bin_from_config3(config, 'DEDUP')]:
     if paired == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),

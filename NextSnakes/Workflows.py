@@ -906,7 +906,9 @@ def make_sub(
                         and "TRIMMING" in subworkflows
                         and not "MAPPING" in subworkflows
                     ):
-                        if "DEDUP" in subworkflows:
+                        if "DEDUP" in subworkflows and not "picard" in any(
+                            [x for x in listoftools]
+                        ):
                             subname = toolenv + "_dedup_trim.smk"
                         else:
                             subname = toolenv + "_trim.smk"
@@ -916,7 +918,9 @@ def make_sub(
                         and not "TRIMMING" in subworkflows
                         and not "MAPPING" in subworkflows
                     ):
-                        if "DEDUP" in subworkflows:
+                        if "DEDUP" in subworkflows and not "picard" in any(
+                            [x for x in listoftools]
+                        ):
                             subname = toolenv + "_dedup.smk"
                         else:
                             subname = toolenv + "_raw.smk"
@@ -1590,6 +1594,8 @@ def nf_fetch_params(
         [os.path.join(x) for x in sampleslong(config)]
         if not config.get("FETCH", False)
         else [os.path.join(x) for x in download_samples(config)]
+        if not config.get("BASECALL", False)
+        else [os.path.join(x) for x in basecall_samples(config)]
     )
     if len(SAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
@@ -1872,7 +1878,7 @@ def nf_get_processes(config):
 
     # Define workflow stages
     pre = ["QC", "FETCH"]  # , 'BASECALL']
-    sub = ["TRIMMING", "MAPPING", "QC"]  # , 'DEDUP'
+    sub = ["TRIMMING", "MAPPING", "QC", "DEDUP"]
     post = (
         []
     )  # ['COUNTING', 'TRACKS', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']  # Not implemented yet, TODO

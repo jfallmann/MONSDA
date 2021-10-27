@@ -64,7 +64,8 @@ except:
 
 BINS = config.get("BINS")
 MAXTHREAD = int(config["MAXTHREADS"])
-SAMPLES = [os.path.join(x) for x in sampleslong(config)] if not config.get('FETCH', False) else [os.path.join(x) for x in download_samples(config)]
+SAMPLES = [os.path.join(x) for x in sampleslong(config)] if not config.get('FETCH', False) else ([os.path.join(x) for x in download_samples(config)] if not config.get("BASECALL", False)
+        else [os.path.join(x) for x in basecall_samples(config)])
 
 if len(SAMPLES) < 1:
     log.error(logid+'No samples found, please check config file')
