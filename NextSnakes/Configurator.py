@@ -13,16 +13,10 @@ from NextSnakes.Logger import *
 from functools import reduce
 import operator
 import datetime
+import _version
 
 parser = argparse.ArgumentParser(
     description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
-)
-parser.add_argument(
-    "-q",
-    "--quickmode",
-    action="store_true",
-    default=False,
-    help="choose quickmode to hide explanatory text",
 )
 parser.add_argument(
     "-t",
@@ -80,91 +74,19 @@ class GUIDE:
                 prYellow(f"   {k}{' '*(space+2-len(str(k)))}>  {v}")
                 guide.toclear += 1
         if question:
-            print("\n" + question)
+            print("\n" + bold_color.BOLD + question + bold_color.END)
             guide.toclear += 1
         self.proof_input(proof, spec)
 
     def proof_input(self, proof=None, spec=None):
-        allowed_characters = [
-            "a",
-            "b",
-            "c",
-            "d",
-            "e",
-            "f",
-            "g",
-            "h",
-            "i",
-            "j",
-            "k",
-            "l",
-            "m",
-            "n",
-            "o",
-            "p",
-            "q",
-            "r",
-            "s",
-            "t",
-            "u",
-            "v",
-            "w",
-            "x",
-            "y",
-            "z",
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-            "V",
-            "W",
-            "X",
-            "Y",
-            "Z",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "0",
-            "(",
-            ")",
-            "_",
-            "-",
-            ",",
-            ".",
-            ":",
-            "/",
-            " ",
-        ]
+        unallowed_characters = ["{", "}"]
         while True:
             if spec:
                 a = rlinput(">>> ", spec)
             else:
-                a = input(">>> ").strip().replace(" ", "")
+                a = input(">>> ").strip()
 
-            if any(x not in allowed_characters for x in a):
+            if any(x in unallowed_characters for x in a):
                 safe = self.toclear
                 self.clear(2)
                 self.toclear = safe
@@ -209,6 +131,19 @@ class GUIDE:
                 else:
                     self.answer = a
                 break
+
+
+class bold_color:
+    PURPLE = "\033[95m"
+    CYAN = "\033[96m"
+    DARKCYAN = "\033[36m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    END = "\033[0m"
 
 
 ## PRINTERS
@@ -509,25 +444,6 @@ def location(dictionary, setting, indent=6):
     guide.toclear += 4
 
 
-def optionsDictToString(d):
-    return ",".join(map(" ".join, d.items()))
-
-
-def stringToOptionsDict(s):
-    optsDict = {}
-    s = " ".join(s.split())
-    pairs = s.split(",")
-    pairs = [p.strip() for p in pairs]
-    for pair in pairs:
-        key = pair.split(" ")[0]
-        try:
-            value = pair.split(" ")[1]
-            optsDict[key] = value
-        except:
-            optsDict[key] = ""
-    return optsDict
-
-
 def show_settings():
     if guide.testing == False:
         return
@@ -597,83 +513,117 @@ def prepare_project(template):
 
 
 def intro():
-    t1 = r"""
-              _  _  ___ __  __ _____  ___  _  _    _    _  __ ___  ___
-             | \| || __|\ \/ /|_   _|/ __|| \| |  /_\  | |/ /| __|/ __|
-             | .` || _|  >  <   | |  \__ \| .` | / _ \ | ' < | _| \__ \
-             |_|\_||___|/_/\_\  |_|  |___/|_|\_|/_/ \_\|_|\_\|___||___/
-
-          ___  ___   _  _  ___  ___  ___  _   _  ___    _  _____  ___   ___
-         / __|/ _ \ | \| || __||_ _|/ __|| | | || _ \  /_\|_   _|/ _ \ | _ \
-        | (__| (_) || .` || _|  | || (_ || |_| ||   / / _ \ | | | (_) ||   /
-         \___|\___/ |_|\_||_|  |___|\___| \___/ |_|_\/_/ \_\|_|  \___/ |_|_\
-
-                """
-    prGreen(t1)
-    print("READ THE DOCS: https://nextsnakes.readthedocs.io/en/latest/index.html")
-    print("\n")
-    opts = {"1": "create new project", "2": "modify existing config-file"}
+    print("NSW: " + __version__)
+    print("RTD: https://nextsnakes.readthedocs.io/en/latest/index.html\n")
+    print(
+        bold_color.BOLD
+        + "N E X T S N A K E S   C O N F I G U R A T O R"
+        + bold_color.END
+        + "\n"
+    )
+    opts = {
+        "1": "create new project",
+        "2": "modify existing config-file",
+        "3": "add config-file to existing project",
+    }
     guide.display(
         question="choose an option",
         options=opts,
         proof=opts.keys(),
     )
-    guide.clear()
+    guide.clear(3)
     if guide.answer == "1":
         guide.mode = "new"
         return new()
     if guide.answer == "2":
         guide.mode = "modify"
         return modify()
+    if guide.answer == "3":
+        guide.mode = "new"
+        return new(existing=True)
 
 
-def new():
-    prGreen("\nCREATE NEW PROJECT")
+def new(existing=False):
+    if existing:
+        prGreen("\nCREATE NEW CONFIG")
+    else:
+        prGreen("\nCREATE NEW PROJECT")
     print("\n   Directory:")
     er = 0
     while True:
         if er == 0:
-            ques = "Enter the absolute path where your project-folder should be created"
+            if existing:
+                ques = "Enter the absolute of your project-folder"
+            else:
+                ques = "Enter the absolute path where your project-folder should be created"
         if er == 1:
             ques = "couldn't find this directory"
+        if er == 2:
+            ques = "WARNING: The directory you entered already exist."
         guide.display(question=ques, spec=os.getcwd())
         project.name = os.path.basename(guide.answer)
         project.path = guide.answer
-        if os.path.isdir(project.path):
+        if os.path.isdir(project.path) and not existing:
+            guide.clear(3)
+            er = 2
+            continue
+        if os.path.isdir(project.path) and existing:
             guide.clear(4)
             prCyan(f"  Directory: {project.path}")
-            guide.display(
-                question=f"WARNING: The directory you entered already exist. Press enter to choose another dir or type 'ignore' to continue anyway",
-                proof=["", "ignore"],
-            )
-            if guide.answer == "ignore":
-                guide.clear(3)
-                print("\n  Subname: ")
-                guide.display(question=f"enter subname to differ from {project.name}")
-                project.subname = guide.answer
-                guide.clear(4)
-                prCyan(f"  Subname: {project.subname}")
-                break
-            if guide.answer == "":
-                guide.clear(5)
-                print("\n  Directory:")
-                er = 0
-                continue
+            print("\n  Subname: ")
+            guide.display(question=f"enter subname to differ from {project.name}")
+            project.subname = guide.answer
+            guide.clear(4)
+            prCyan(f"  Subname: {project.subname}")
+            break
         if os.path.isdir(os.path.dirname(project.path)):
             guide.clear(4)
-            prCyan(f"  Directory: {project.path}")
+            prCyan(f"   Directory: {project.path}")
             break
         else:
             guide.clear(3)
             er = 1
     show_settings()
-    return create_condition_tree()
+    return add_workflows()
+
+
+def add_workflows(existing_workflows=None):
+    prGreen("\nADD WORKFLOWS\n")
+    possible_workflows = list(project.baseDict.keys())
+    for e in none_workflow_keys:
+        possible_workflows.remove(e)
+    if existing_workflows:
+        for e in existing_workflows:
+            possible_workflows.remove(e)
+    posWorkDict = NestedDefaultDict()
+    counter = 1
+    for w in possible_workflows:
+        posWorkDict[counter] = w
+        counter += 1
+    guide.display(
+        question="choose WORKFLOWS comma separated",
+        options=posWorkDict,
+        proof=list(str(i) for i in posWorkDict.keys()),
+    )
+    addedW = []
+    for number in guide.answer.split(","):
+        wf = posWorkDict[int(number)]
+        addedW.append(wf)
+        project.workflowsDict[wf]
+    guide.clear(3)
+    prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
+    show_settings()
+    if guide.mode == "modify":
+        return select_conditioning()
+    if guide.mode == "new":
+        return create_condition_tree()
 
 
 def create_condition_tree():
-    print("\n  Condition-Tree:\n")
+    prGreen("\nCREATE CONDITION-TREE:")
     while True:
         rec_tree_builder(project.conditionDict, [project.name])
+        print("")
         print_dict(project.conditionDict, gap="   ")
         guide.display(
             question="press enter to continue or type 'no' to create it again",
@@ -684,9 +634,9 @@ def create_condition_tree():
             guide.clear()
             project.conditionDict = NestedDefaultDict()
         else:
-            guide.toclear += 4
+            guide.toclear += 2
             guide.clear()
-            prCyan("  Condition-Tree:\n")
+            # prCyan("   Condition-Tree:\n")
             print_dict(project.conditionDict, col="Cyan", gap="         ")
             project.settingsDict = decouple(project.conditionDict)
             break
@@ -808,7 +758,15 @@ def assign_samples():
                     number
                 ] = f"{k}{' '*(space+2-len(k))} in  {project.samplesDict[k]['dir']}"
                 number += 1
+        # samplesInList = []
         for condition in conditions:
+            # for s in samplesInList:
+            #     toDelete = []
+            #     for k, v in opts.items():
+            #         if s in v:
+            #             toDelete.append(k)
+            # for d in toDelete:
+            #     del opts[d]
             if (
                 "SAMPLES"
                 in get_by_path(project.settingsDict, condition.split(":")).keys()
@@ -835,7 +793,6 @@ def assign_samples():
                 break
             else:
                 er = 0
-
             samplesInList = []
             for num in guide.answer.split(","):
                 project.samplesDict[opts[int(num)].split(" ")[0]]["cond"] = condition
@@ -866,7 +823,7 @@ def assign_samples():
 
 def set_settings():
     prGreen("\nGENERAL SETTINGS")
-    print("(skip entrys with empty line)")
+    print("(blank entry possible)")
     guide.toclear = 0
     safety_dict = decouple(project.settingsDict)
     conditions_list = [
@@ -874,10 +831,12 @@ def set_settings():
         for pattern in get_conditions_from_dict(project.conditionDict)
     ]
     while True:
+        previous_maplist = []
         for maplist in conditions_list:
-            if "GROUPS" in get_by_path(project.settingsDict, maplist).keys():
+            if "SEQUENCING" in get_by_path(project.settingsDict, maplist).keys():
                 continue
-            prRed(f"\n   Condition:  >  {' : '.join(maplist)}  <\n")
+            prRed(f"\n   Condition:   {' : '.join(maplist)} \n")
+            seq = ""
             for k in project.samplesDict.keys():
                 try:
                     if project.samplesDict[k]["cond"] == ":".join(maplist):
@@ -885,23 +844,48 @@ def set_settings():
                 except:
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
-            for key in ["REFERENCE", "INDEX", "PREFIX", "GTF", "GFF"]:
+            settings_to_make = ["REFERENCE", "GTF", "GFF"]
+            if list(set(project.workflowsDict.keys()) & set(IP_workflows)):
+                settings_to_make = settings_to_make + ["IP"]
+            if list(
+                set(project.workflowsDict.keys())
+                & set(comparable_workflows + ["PEAKS"])
+            ):
+                settings_to_make = settings_to_make + ["GROUPS", "TYPES", "BATCHES"]
+            if list(set(project.workflowsDict.keys()) & set(index_prefix_workflows)):
+                settings_to_make = settings_to_make + ["INDEX", "PREFIX"]
+            last_answer = os.getcwd()
+            for key in settings_to_make:
                 print(f"   {key}:")
-                if key in ["REFERENCE", "GTF", "GFF"]:
-                    s = os.getcwd()
+                if key in ["REFERENCE", "GTF", "GFF", "IP"]:
+                    if previous_maplist:
+                        if key in ["GTF", "GFF"]:
+                            s = get_by_path(
+                                project.settingsDict,
+                                previous_maplist + ["ANNOTATION", key],
+                            )
+                        else:
+                            s = get_by_path(
+                                project.settingsDict, previous_maplist + [key]
+                            )
+                    else:
+                        s = last_answer
                     if key in ["GTF", "GFF"]:
                         p = f"end_exist_.{key.lower()}.*.gz"
+                    elif kez == "IP":
+                        p = None
                     else:
                         p = "end_exist_.gz"
                 else:
                     p = None
                     s = None
                 guide.display(
-                    question=f"comment: {project.commentsDict['SETTINGS']['comment'][key]}",
+                    question=f"{project.commentsDict['SETTINGS']['comment'][key]}",
                     spec=s,
                     proof=p,
                 )
                 guide.clear(4)
+                last_answer = guide.answer
                 prCyan(f"   {key}: {guide.answer}")
                 if key in ["GTF", "GFF"]:
                     setInDict(
@@ -909,45 +893,9 @@ def set_settings():
                         maplist + ["ANNOTATION", key],
                         guide.answer,
                     )
-                if key in ["SEQUENCING", "REFERENCE", "INDEX", "PREFIX"]:
+                else:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
-
-            last_sample = ""
-            for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
-
-                prPurple(f"\n      Sample: {sample}\n")
-                for key in ["GROUPS", "TYPES", "BATCHES"]:
-                    if last_sample and key == "GROUPS":
-                        ques = f"enter 'cp' to copy entries from sample before"
-                    else:
-                        ques = f"comment: {project.commentsDict['SETTINGS']['comment'][key]}"
-                    print(f"         {key}:")
-                    guide.display(question=ques)
-                    if guide.answer == "cp" and last_sample:
-                        guide.clear(4)
-                        for key in ["GROUPS", "TYPES", "BATCHES"]:
-                            to_add = get_by_path(project.settingsDict, maplist + [key])[
-                                -1
-                            ]
-                            prCyan(f"         {key}: {to_add}")
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                to_add
-                            )
-                        break
-                    else:
-                        last_sample = sample
-                        guide.clear(4)
-                        prCyan(f"         {key}: {guide.answer}")
-                        try:
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                guide.answer
-                            )
-                        except:
-                            setInDict(project.settingsDict, maplist + [key], [])
-                            get_by_path(project.settingsDict, maplist + [key]).append(
-                                guide.answer
-                            )
-
+            previous_maplist = maplist
         guide.toclear = 0
         print("\n\n   SETTINGS Key:\n")
         print_dict(project.settingsDict, gap="   ")
@@ -962,12 +910,46 @@ def set_settings():
             print_dict(project.settingsDict, col="Cyan", gap="         ")
             show_settings()
             if guide.mode == "new":
-                return add_workflows()
+                return select_conditioning()
             if guide.mode == "modify":
                 return fillup_workflows()
         if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
             continue
+
+
+def set_comparison_settings():
+    last_sample = ""
+    for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
+
+        prPurple(f"\n      Sample: {sample}\n")
+        for key in ["GROUPS", "TYPES", "BATCHES"]:
+            if last_sample and key == "GROUPS":
+                ques = f"enter 'cp' to copy entries from sample before"
+            else:
+                ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
+            print(f"         {key}:")
+            guide.display(question=ques)
+            if guide.answer == "cp" and last_sample:
+                guide.clear(4)
+                for key in ["GROUPS", "TYPES", "BATCHES"]:
+                    to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
+                    prCyan(f"         {key}: {to_add}")
+                    get_by_path(project.settingsDict, maplist + [key]).append(to_add)
+                break
+            else:
+                last_sample = sample
+                guide.clear(4)
+                prCyan(f"         {key}: {guide.answer}")
+                try:
+                    get_by_path(project.settingsDict, maplist + [key]).append(
+                        guide.answer
+                    )
+                except:
+                    setInDict(project.settingsDict, maplist + [key], [])
+                    get_by_path(project.settingsDict, maplist + [key]).append(
+                        guide.answer
+                    )
 
 
 def modify():
@@ -1003,17 +985,16 @@ def modify():
         for path in condition_pathes:
             if path[-1] == "SAMPLES":
                 path = path[1:-1]
-                set_by_path(project.conditionDict, path, {})
+                setInDict(project.conditionDict, path, {})
 
         active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
-        for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS"]:
+        for e in none_workflow_keys:
             inactive_workflows.remove(e)
         for wf in inactive_workflows:
             project.workflowsDict[wf] = decouple(modify_config[wf])
         for e in modify_config["WORKFLOWS"].split(","):
             inactive_workflows.remove(e)
-
         prRed("\n   Following configuration was found :\n")
         prRed("   Condition-Tree:\n")
         print_dict(project.conditionDict, gap="      ")
@@ -1048,6 +1029,7 @@ def modify():
         if guide.answer == "5":
             project.settingsDict = NestedDefaultDict()
             project.conditionDict = NestedDefaultDict()
+            project.workflowsDict = NestedDefaultDict()
             continue
 
 
@@ -1094,7 +1076,7 @@ def add_conditions():
 
 
 def remove_workflows(actives, inactives):
-    prGreen("\n\nRemove Workflows")
+    prGreen("\n\nREMOVE WORKFLOWS")
     workflows = project.workflowsDict.keys()
     opts = NestedDefaultDict()
     number = 1
@@ -1140,7 +1122,7 @@ def remove_workflows(actives, inactives):
 
 
 def remove_conditions():
-    prGreen("\n\nRemove Conditions")
+    prGreen("\n\nREMOVE CONDITIONS")
     conditions = get_conditions_from_dict(project.conditionDict)
     opts = NestedDefaultDict()
     number = 1
@@ -1148,25 +1130,28 @@ def remove_conditions():
         opts[str(number)] = c
         number += 1
     while True:
+        new_settings = decouple(project.settingsDict)
+        new_workflows = decouple(project.workflowsDict)
+        new_conditions = decouple(project.conditionDict)
         print("\nfollowing conditions exist:\n")
         guide.display(
             question="enter numbers of conditions to be removed comma separated",
             options=opts,
             proof=opts.keys(),
         )
-        new_settings = NestedDefaultDict()
-        new_workflows = NestedDefaultDict()
-        new_conditions = NestedDefaultDict()
-        for key, value in opts.items():
-            if key in guide.answer.split(","):
-                continue
-            path = value.split(":")
-            setInDict(new_conditions, path, {})
-            toadd = get_by_path(project.settingsDict, path)
-            setInDict(new_settings, path, toadd)
-            for wf in project.workflowsDict.keys():
-                toadd = get_by_path(project.workflowsDict, [wf] + path)
-                setInDict(new_workflows, [wf] + path, toadd)
+        numbers = guide.answer.split(",")
+        for number in numbers:
+            path_to_remove = opts[number].split(":")
+            del_by_path(new_settings, path_to_remove)
+            del_by_path(new_conditions, path_to_remove)
+            for key in new_workflows.keys():
+                del_by_path(new_workflows, [key] + path_to_remove)
+        print_dict(new_settings)
+        input()
+        print_dict(new_conditions)
+        input()
+        print_dict(new_workflows)
+        input()
         prRed("\nNew condition-Tree:")
         print_dict(new_conditions)
         guide.display(
@@ -1182,47 +1167,24 @@ def remove_conditions():
             continue
 
 
-def add_workflows(existing_workflows=None):
-    prGreen("\nADD WORKFLOWS\n")
-    possible_workflows = list(project.baseDict.keys())
-    for e in ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS"]:
-        possible_workflows.remove(e)
-    if existing_workflows:
-        for e in existing_workflows:
-            possible_workflows.remove(e)
-    posWorkDict = NestedDefaultDict()
-    counter = 1
-    for w in possible_workflows:
-        posWorkDict[counter] = w
-        counter += 1
-    guide.display(
-        question="choose WORKFLOWS comma separated",
-        options=posWorkDict,
-        proof=list(str(i) for i in posWorkDict.keys()),
-    )
-    addedW = []
-    for number in guide.answer.split(","):
-        wf = posWorkDict[int(number)]
-        addedW.append(wf)
-        project.workflowsDict[wf]
-    guide.clear(3)
-    prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
-    show_settings()
-    return select_conditioning()
-
-
 def select_conditioning():
+    prGreen("\n\nSELECT CONDITIONS")
+    guide.toclear = 0
     while True:
         d = depth(project.conditionDict)
         for i in range(d - 1):
             select_id_to_set(project.conditionDict, i)
+            print(
+                "In the following steps you will make different settings for each condition.\nTo avoid repetitions, specify which conditions should get the same settings\nYou will set all conditions with the same number at once afterwards"
+            )
             guide.display(
-                question="In the following steps you will make different settings for each condition.\nTo avoid repetitions, specify which conditions should get the same settings\nYou will set all conditions with the same number at once afterwards\n\nTo loop through the possible selections press enter\n\nFinally enter 'ok' to make the settings",
+                question="To loop through the possible selections press enter\nFinally enter 'ok' to make the settings",
                 proof=["ok", ""],
             )
-            guide.toclear += 8
+            guide.toclear += 6
             if guide.answer == "ok":
-                guide.clear(10)
+                guide.clear(8)
+                show_settings()
                 return set_workflows()
             else:
                 guide.clear()
@@ -1275,26 +1237,37 @@ def set_workflows(wf=None):
             opt_dict = NestedDefaultDict()
             tools_to_use = NestedDefaultDict()
             if "TOOLS" in project.baseDict[workflow].keys():
-                print(f"   Tools:\n")
                 number = 1
                 for k in project.baseDict[workflow]["TOOLS"].keys():
                     opt_dict[number] = k
                     number += 1
-                guide.display(
-                    question="Select from these available Tools comma separated:",
-                    options=opt_dict,
-                    proof=[str(i) for i in opt_dict.keys()],
-                )
-                guide.clear(len(opt_dict) + 5)
-                for number in guide.answer.split(","):
-                    tools_to_use[opt_dict[int(number)]] = project.baseDict[workflow][
+                if number > 2:
+                    print(f"   Tools:\n")
+                    guide.display(
+                        question="Select from these available Tools comma separated:",
+                        options=opt_dict,
+                        proof=[str(i) for i in opt_dict.keys()],
+                    )
+                    guide.clear(len(opt_dict) + 5)
+                    for number in guide.answer.split(","):
+                        tools_to_use[opt_dict[int(number)]] = project.baseDict[
+                            workflow
+                        ]["TOOLS"][opt_dict[int(number)]]
+                    prCyan(f"   Tools: {', '.join(tools_to_use.keys())}")
+                else:
+                    tools_to_use[opt_dict[int(1)]] = project.baseDict[workflow][
                         "TOOLS"
-                    ][opt_dict[int(number)]]
-                prCyan(f"   Tools: {', '.join(tools_to_use.keys())}")
+                    ][opt_dict[int(1)]]
+                    prCyan(f"   Tool: {', '.join(tools_to_use.keys())}")
+
+            if (
+                workflow == "PEAKS"
+                and "macs" in ", ".join(tools_to_use.keys())
+                or workflow in comparable_workflows
+            ):
+                prRed(f"\n   Settings for differential Analyses:\n")
 
             if "CUTOFFS" in project.baseDict[workflow].keys() and not wf:
-
-                prRed(f"\n   Settings for differential Analyses:")
 
                 project.workflowsDict[workflow].update({"CUTOFFS": {}})
                 project.workflowsDict[workflow]["CUTOFFS"].update(
@@ -1302,11 +1275,11 @@ def set_workflows(wf=None):
                 )
 
                 for key, value in project.baseDict[workflow]["CUTOFFS"].items():
-                    print(f"\n      {key}:\n")
+                    print(f"      {key}:")
                     guide.display(
                         question=f"set cutoff", proof="only_numbers", spec=value
                     )
-                    guide.clear(5)
+                    guide.clear(4)
                     prCyan(f"      {key}: {guide.answer}")
                     set_by_path(
                         project.workflowsDict,
@@ -1314,50 +1287,73 @@ def set_workflows(wf=None):
                         str(guide.answer),
                     )
 
-            if "COMPARABLE" in project.baseDict[workflow].keys():
+            if (
+                workflow == "PEAKS"
+                and "macs" in ", ".join(tools_to_use.keys())
+                or workflow in comparable_workflows
+            ):
                 project.workflowsDict[workflow]["COMPARABLE"]
-                prCyan(f"\n      Comparables:\n")
-                while True:
-                    guide.display(
-                        question="\nPress enter to add a differential contrast or type 'ok'",
-                        proof=["", "ok"],
-                    )
-                    if guide.answer == "ok":
-                        guide.clear(3)
-                        break
-                    groups = set()
-                    conditions = get_conditions_from_dict(project.conditionDict)
-                    for condition in conditions:
-                        for g in get_by_path(
-                            project.settingsDict, condition.split(":") + ["GROUPS"]
-                        ):
-                            groups.add(g)
-                    number = 1
-                    guide.clear(3)
-                    opt_dict = NestedDefaultDict()
-                    for g in sorted(groups):
-                        opt_dict[number] = g
-                        number += 1
+                project.workflowsDict[workflow]["EXCLUDE"] = []
+                prCyan(f"      Comparables:\n")
+                groups = set()
+                conditions = get_conditions_from_dict(project.conditionDict)
+                for condition in conditions:
+                    for g in get_by_path(
+                        project.settingsDict, condition.split(":") + ["GROUPS"]
+                    ):
+                        groups.add(g)
+                if len(groups) < 2:
+                    guide.clear(2)
+                    prCyan(f"      Comparables: No Groups found\n")
+                    comp_name = "empty"
                     contrast = [[], []]
-                    for i in [0, 1]:
-                        print("")
+                    project.workflowsDict[workflow]["COMPARABLE"][comp_name] = contrast
+                else:
+                    while True:
                         guide.display(
-                            question=f"select {'base-condition' if i == 0 else 'contrast-condition'}",
+                            question="Press enter to add a differential contrast or type 'ok'",
+                            proof=["", "ok"],
+                        )
+                        if guide.answer == "ok":
+                            guide.clear(2)
+                            break
+
+                        number = 1
+                        guide.clear(2)
+                        opt_dict = NestedDefaultDict()
+                        for g in sorted(groups):
+                            opt_dict[str(number)] = g
+                            number += 1
+                        contrast = [[], []]
+                        guide.display(
+                            question="select base-condition",
                             options=opt_dict,
-                            proof=[str(i) for i in opt_dict],
+                            proof=opt_dict.keys(),
                         )
                         guide.toclear += 2
-                        contrast[i].append(opt_dict[int(guide.answer)])
-                    guide.toclear += 3
-                    guide.clear()
-                    comp_name = "-VS-".join(x[0] for x in contrast)
-                    prCyan(f"         {comp_name}")
-                    project.workflowsDict[workflow]["COMPARABLE"][comp_name] = contrast
+                        contrast[0].append(opt_dict[guide.answer])
+                        del opt_dict[guide.answer]
+                        print("")
+                        guide.display(
+                            question="select contrast-condition",
+                            options=opt_dict,
+                            proof=opt_dict.keys(),
+                        )
+                        guide.toclear += 2
+                        contrast[1].append(opt_dict[guide.answer])
+
+                        guide.toclear += 2
+                        guide.clear()
+                        comp_name = "-VS-".join(x[0] for x in contrast)
+                        prCyan(f"         {comp_name}")
+                        project.workflowsDict[workflow]["COMPARABLE"][
+                            comp_name
+                        ] = contrast
                 guide.clear(1)
 
             for setting in project.settingsList:
                 prRed(
-                    f"\n\n   Set Conditions:  >   {', '.join([':'.join(c) for c in setting])}   <"
+                    f"\n   Selected Conditions:   {' / '.join([':'.join(c) for c in setting])}"
                 )
                 for tool, bin in tools_to_use.items():
                     project.workflowsDict[workflow]["TOOLS"][tool] = bin
@@ -1365,33 +1361,26 @@ def set_workflows(wf=None):
                         setInDict(
                             project.workflowsDict,
                             [workflow] + maplist + [tool, "OPTIONS"],
-                            [],
+                            {},
                         )
-                    prPurple(f"\n      Tool:  {tool}\n")
-                    for i in range(len(project.baseDict[workflow][tool]["OPTIONS"])):
-                        print(
-                            f"      Options {i}:   (enter comma separated flags or values like:  -q 15, --length 8, std )"
-                        )
-                        if project.baseDict[workflow][tool]["OPTIONS"][i]:
-                            call = optionsDictToString(
-                                project.baseDict[workflow][tool]["OPTIONS"][i]
-                            )
-                        else:
-                            call = " "
+                    prPurple(f"\n      Set OPTIONS for tool:  {tool}\n")
+                    for option in project.baseDict[workflow][tool]["OPTIONS"]:
+                        print(f"      Option: '{option}'")
+                        call = project.baseDict[workflow][tool]["OPTIONS"][option]
                         guide.toclear = 0
                         guide.display(
-                            question=f"comment: {project.commentsDict[workflow][tool]['comment'][i]}",
+                            question=f"{project.commentsDict[workflow][tool]['comment'][option]}",
                             spec=call,
                         )
-                        optsDict = stringToOptionsDict(guide.answer)
+                        optsDict = guide.answer
                         for maplist in setting:
                             setInDict(
                                 project.workflowsDict,
-                                [workflow] + maplist + [tool, "OPTIONS"],
+                                [workflow] + maplist + [tool, "OPTIONS", option],
                                 optsDict,
                             )
                         guide.clear(4)
-                        prCyan(f"      Options {i}:  {guide.answer.replace(',', '')}")
+                        prCyan(f"      {option}:  {guide.answer}")
     show_settings()
     if guide.mode == "new" or guide.mode == "":
         return set_cores()
@@ -1419,6 +1408,7 @@ def finalize():
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
     final_dict["BINS"] = project.baseDict["BINS"]
     final_dict["MAXTHREADS"] = project.cores
+    final_dict["VERSION"] = __version__[1:]
     final_dict["SETTINGS"] = project.settingsDict
     final_dict.update(project.workflowsDict)
 
@@ -1464,6 +1454,7 @@ def finalize():
     if guide.answer == "abort":
         quit()
     else:
+        guide.clear(3)
         return create_project(final_dict)
 
 
@@ -1496,9 +1487,12 @@ def create_project(final_dict):
                     os.chdir(os.path.join(dir))
                 path = "/".join(cond_as_list)
                 cond_dir = os.path.join(fastq, path)
-                sample_sl = os.path.join(cond_dir, os.path.basename(k))
-                if not os.path.exists(sample_sl):
-                    os.symlink(os.path.realpath(k), sample_sl)
+                dst = os.path.join(cond_dir, project.samplesDict[k]["file"])
+                src = os.path.join(
+                    project.samplesDict[k]["dir"], project.samplesDict[k]["file"]
+                )
+                if not os.path.exists(dst):
+                    os.symlink(src, dst)
 
         # link reference and annotation
         for setting in project.settingsList:
@@ -1589,256 +1583,21 @@ def create_project(final_dict):
 ####    TEST VAR SPACE   ####
 #############################
 
-"""
-guide.mode = "new"
-project.name = "NextSnakessad"
-project.path = "/homes/brauerei/robin/Projects/NextSnakessad"
-project.cores = 1
-project.baseDict = {
-    "WORKFLOWS": "",
-    "BINS": "NextSnakes/scripts",
-    "MAXTHREADS": "",
-    "SETTINGS": {
-        "SAMPLES": [],
-        "GROUPS": [],
-        "TYPES": [],
-        "BATCHES": [],
-        "SEQUENCING": "",
-        "REFERENCE": "",
-        "INDEX": "",
-        "PREFIX": "",
-        "ANNOTATION": {"GTF": "", "GFF": ""},
-    },
-    "SRA": {"TOOLS": {"sra": "sra"}, "sra": {"OPTIONS": [{}]}},
-    "BASECALL": {
-        "TOOLS": {"guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"},
-        "guppy": {"OPTIONS": [{}]},
-    },
-    "QC": {"TOOLS": {"fastqc": "fastqc"}, "fastqc": {"OPTIONS": [{}]}},
-    "TRIMMING": {
-        "TOOLS": {"trimgalore": "trim_galore", "cutadapt": "cutadapt"},
-        "trimgalore": {"OPTIONS": [{"-q": "15", "--length": "8", "-e": "0.15"}]},
-        "cutadapt": {"OPTIONS": [{"-q": "15", "--length": "8", "-e": "0.15"}]},
-    },
-    "DEDUP": {
-        "TOOLS": {"umitools": "umi_tools"},
-        "umitools": {
-            "OPTIONS": [
-                {"--extract-method": "string", "--bc-pattern": "AGANNNNACGT"},
-                {"--extract-umi-method": "read_id"},
-            ]
-        },
-    },
-    "MAPPING": {
-        "TOOLS": {
-            "star": "STAR",
-            "segemehl3": "segemehl.x",
-            "hisat2": "hisat2",
-            "bwa": "bwa mem",
-            "minimap": "minimap2",
-        },
-        "star": {
-            "OPTIONS": [
-                {
-                    "--sjdbGTFfeatureExon": "exon",
-                    "--sjdbGTFtagExonParentTranscript": "Parent",
-                    "--genomeSAindexNbases": "13",
-                },
-                {
-                    "--sjdbGTFfeatureExon": "exon",
-                    "--sjdbGTFtagExonParentTranscript": "Parent",
-                    "--outSAMprimaryFlag AllBestScore": "",
-                },
-            ]
-        },
-        "segemehl3": {"OPTIONS": [{}]},
-        "hisat2": {"OPTIONS": [{}]},
-        "bwa": {"OPTIONS": [{}]},
-        "minimap": {"OPTIONS": [{}]},
-    },
-    "COUNTING": {
-        "TOOLS": {"countreads": "featureCounts"},
-        "FEATURES": {"exon": "Parent", "gene": "ID"},
-        "countreads": {
-            "OPTIONS": [{"-f": "", "--fraction": "", "-p": "", "-O": "", "-M": ""}]
-        },
-    },
-    "ANNOTATE": {
-        "TOOLS": {"annotatebed": "annotate"},
-        "annotatebed": {"ANNOFEATURE": "gene", "OPTIONS": [{"-w": "ON"}]},
-    },
-    "TRACKS": {
-        "TOOLS": {"ucsc": "ucsc"},
-        "ucsc": {
-            "OPTIONS": [
-                {
-                    "-n": "DM6_unpaired_Mapping",
-                    "-s": "dm6_st",
-                    "-l": "UCSC_DM6_unpaired_Mapping",
-                    "-b": "UCSC_dm6_star",
-                }
-            ]
-        },
-    },
-    "PEAKS": {
-        "TOOLS": {"macs": "macs2", "peaks": "peaks", "piranha": "Piranha"},
-        "macs": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
-        "peaks": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
-        "piranha": {"CLIP": "iCLIP", "OPTIONS": [{"-b": "10"}]},
-    },
-    "DE": {
-        "TOOLS": {"deseq2": "Analysis/DE/DESEQ2.R", "edger": "Analysis/DE/EDGER.R"},
-        "COMPARABLE": {"WTvsKO": [[], []]},
-        "EXCLUDE": [],
-        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
-        "deseq2": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"--cutoff": "10"},
-            ]
-        },
-        "edger": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"--cutoff": "10"},
-            ]
-        },
-    },
-    "DEU": {
-        "TOOLS": {"dexseq": "Analysis/DEU/DEXSEQ.R", "edger": "Analysis/DEU/EDGER.R"},
-        "COMPARABLE": {"WTvsKO": [[], []]},
-        "EXCLUDE": [],
-        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
-        "dexseq": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"--cutoff": "10"},
-            ]
-        },
-        "edger": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"--cutoff": "10"},
-            ]
-        },
-    },
-    "DAS": {
-        "TOOLS": {"diego": "Analysis/DAS/DIEGO.py", "edger": "Analysis/DAS/EDGER.R"},
-        "COMPARABLE": {"WTvsKO": [[], []]},
-        "EXCLUDE": [],
-        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
-        "diego": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"-c": "10", "-d": "3", "-q": "0.01", "-z": "1.0", "-r": ""},
-            ]
-        },
-        "edger": {
-            "OPTIONS": [
-                {"-t": "exon", "-g": "gene_id", "-f": "", "--fraction": "", "-O": ""},
-                {"--cutoff": "10"},
-            ]
-        },
-    },
-    "DTU": {
-        "TOOLS": {
-            "dexseq": "Analysis/DTU/DEXSEQ.R",
-            "drimseq": "Analysis/DTU/DRIMSEQ.R",
-        },
-        "COMPARABLE": {"WTvsKO": [[], []]},
-        "EXCLUDE": [],
-        "CUTOFFS": {"pvalue": "0.05", "lfc": "1.5"},
-        "drimseq": {"OPTIONS": [{"--gencode": ""}, {"-l": "A", "--gcBias": ""}]},
-        "dexseq": {"OPTIONS": [{"--gencode": ""}, {"-l": "A", "--gcBias": ""}]},
-    },
-}
-project.conditionDict = {"NextSnakessad": {}}
-project.samplesDict = {}
-project.settingsDict = {"NextSnakessad": {}}
-project.settingsList = []
-project.workflowsDict = {}
-project.commentsDict = {
-    "SETTINGS": {
-        "comment": {
-            "GROUPS": "set groups",
-            "TYPES": "set types",
-            "BATCHES": "set batches",
-            "SEQUENCING": "paired or single",
-            "REFERENCE": "set path to reference",
-            "INDEX": "set index",
-            "PREFIX": "set prefix",
-            "GTF": "set path to gtf",
-            "GFF": "set path to gff",
-        }
-    },
-    "SRA": {"sra": {"comment": ["??? options"]}},
-    "BASECALL": {"guppy": {"comment": ["??? options"]}},
-    "QC": {"fastqc": {"comment": ["??? options"]}},
-    "TRIMMING": {
-        "trimgalore": {"comment": ["??? options"]},
-        "cutadapt": {"comment": ["??? options"]},
-    },
-    "DEDUP": {"umitools": {"comment": ["??? options", "??? options"]}},
-    "MAPPING": {
-        "star": {
-            "comment": ["make settings for index ('url')", "make settings for mapping"]
-        },
-        "segemehl3": {"comment": ["??? options"]},
-        "hisat2": {"comment": ["??? options"]},
-        "bwa": {"comment": ["??? options"]},
-        "minimap": {"comment": ["??? options"]},
-    },
-    "COUNTING": {"countreads": {"comment": ["??? options"]}},
-    "ANNOTATE": {"annotatebed": {"comment": ["??? options"]}},
-    "TRACKS": {"ucsc": {"comment": ["??? options"]}},
-    "PEAKS": {
-        "macs": {"comment": ["??? options"]},
-        "peaks": {"comment": ["??? options"]},
-        "piranha": {"comment": ["??? options"]},
-    },
-    "DE": {
-        "deseq2": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
-        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
-    },
-    "DEU": {
-        "dexseq": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
-        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
-    },
-    "DAS": {
-        "diego": {"comment": ["set featureCounts options", "set Diego options"]},
-        "edger": {"comment": ["Set featureCounts options", "Set Cutoff ???"]},
-    },
-    "DTU": {
-        "drimseq": {
-            "comment": ["set Salmon INDEXing options", "set Salmon MAPPING options"]
-        },
-        "dexseq": {
-            "comment": ["set Salmon INDEXing options", "set Salmon MAPPING options"]
-        },
-    },
-}
-"""
-
 ####################
 ####    MAIN    ####
 ####################
 
-# os.chdir(os.path.realpath(os.path.abspath(__file__)))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == "__main__":
 
-    template = load_configfile("configs/template_base_commented.json")
+    template = load_configfile("../configs/template_base_commented.json")
+    __version__ = _version.get_versions()["version"]
+    none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+    comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
+    IP_workflows = ["PEAKS"]
+    index_prefix_workflows = ["MAPPING"]
 
     if args.test:
         guide.testing = True
 
-    # if args.quickmode:
-    #     prRed("\nrunning in quickmode\n")
-    # else:
-    #     prRed("\nrunning in explanation mode\n")
-
     prepare_project(template)
-    # add_sample_dirs()
-
-    # set_settings()
-    # add_workflows()

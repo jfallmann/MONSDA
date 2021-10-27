@@ -2168,7 +2168,13 @@ def nf_make_pre(
                 return None
 
             sconf = listofconfigs[0]
-            subsamples = get_samples(sconf)
+            if subwork == "QC":
+                subsamples = get_samples(sconf)
+            elif subwork == "FETCH":
+                subsamples = download_samples(sconf)
+            elif subwork == "BASECALL":
+                subsamples = basecall_samples(sconf)
+            log.debug(logid + f"Running {subwork} for SAMPLES {subsamples}")
 
             for i in range(0, len(listoftools)):
                 toolenv, toolbin = map(str, listoftools[i])
@@ -2212,7 +2218,7 @@ def nf_make_pre(
 
                 tp.append(
                     nf_tool_params(
-                        subsamples,
+                        subsamples[0],
                         None,
                         sconf,
                         subwork,
@@ -2567,6 +2573,7 @@ def nf_make_sub(
                     return None
 
                 sconf = listofconfigs[0]
+                subsamples = get_samples(sconf)
                 for i in range(0, len(listoftools)):
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
