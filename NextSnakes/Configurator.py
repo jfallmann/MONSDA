@@ -19,13 +19,6 @@ parser = argparse.ArgumentParser(
     description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
 )
 parser.add_argument(
-    "-q",
-    "--quickmode",
-    action="store_true",
-    default=False,
-    help="choose quickmode to hide explanatory text",
-)
-parser.add_argument(
     "-t",
     "--test",
     action="store_true",
@@ -138,6 +131,19 @@ class GUIDE:
                 else:
                     self.answer = a
                 break
+
+
+class bold_color:
+    PURPLE = "\033[95m"
+    CYAN = "\033[96m"
+    DARKCYAN = "\033[36m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    END = "\033[0m"
 
 
 ## PRINTERS
@@ -504,19 +510,6 @@ def prepare_project(template):
         del_by_path(project.baseDict, path)
     show_settings()
     return intro()
-
-
-class bold_color:
-    PURPLE = "\033[95m"
-    CYAN = "\033[96m"
-    DARKCYAN = "\033[36m"
-    BLUE = "\033[94m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    RED = "\033[91m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-    END = "\033[0m"
 
 
 def intro():
@@ -1608,7 +1601,3 @@ if __name__ == "__main__":
         guide.testing = True
 
     prepare_project(template)
-
-    # select_conditioning()
-    # set_workflows()
-    # add_workflows()
