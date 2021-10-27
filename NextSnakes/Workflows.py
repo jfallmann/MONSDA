@@ -2154,6 +2154,15 @@ def nf_make_pre(
             tp = list()
 
             log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
+
+            nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
+            with open(nfi, "r") as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                    line = re.sub(condapath, 'conda "' + envpath, line)
+                    subjobs.append(line)
+                subjobs.append("\n\n")
+
             listoftools, listofconfigs = create_subworkflow(
                 config, subwork, [condition]
             )

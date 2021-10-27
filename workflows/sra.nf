@@ -58,9 +58,9 @@ workflow FETCH{
     //SAMPLE CHANNELS
     samples_ch = Channel.of(SAMPLES)
 
-    collect_fetch(collection.collect())
-    fetchsra(collect_fetch.out.done, samples_ch)
+    collect_tofetch(collection.collect())
+    fetchsra(collect_tofetch.out.done, samples_ch)
 
     emit:
-    fetched = fetch.out.fq
+    fetched = fetchsra.out.fq
 }
