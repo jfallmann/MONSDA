@@ -174,7 +174,7 @@ def run_snakemake(
         else:
             log.warning(
                 logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided in this repository! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
+                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
             )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
@@ -244,9 +244,7 @@ def run_snakemake(
 
                 log.debug(logid + "PRESAMPLES: " + str(SAMPLES))
                 combinations = (
-                    get_combo(preprocess, config, conditions)
-                    if subworkflows
-                    else None
+                    get_combo(preprocess, config, conditions) if subworkflows else None
                 )
 
                 subwork = proc
@@ -492,10 +490,6 @@ def run_nextflow(
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
-            if (
-                "--profile" in optionalargs and "NextSnakes/slurm" in optionalargs
-            ):  # NEEDS REFIT FOR NEXTFLOW
-                makeoutdir("LOGS/SLURM")
 
         threads = (
             min(int(config["MAXTHREADS"]), procs) if "MAXTHREADS" in config else procs

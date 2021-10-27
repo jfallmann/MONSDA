@@ -1777,7 +1777,7 @@ def nf_get_processes(config):
     preprocess = subworkflows = postprocess = []
 
     # Define workflow stages
-    pre = ["QC"]  # , 'SRA', 'BASECALL']
+    pre = ["QC", 'SRA']  # , 'BASECALL']
     sub = ["TRIMMING", "MAPPING", "QC"]  # , 'DEDUP'
     post = (
         []
