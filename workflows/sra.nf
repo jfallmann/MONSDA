@@ -26,8 +26,8 @@ process fetchsra{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf(".log") >0)              "FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        else if (filename.indexOf(".log") >0)              "FASTQ/$CONDITION/${file(filename).getSimpleName()}.log"
         else null
     }
 
