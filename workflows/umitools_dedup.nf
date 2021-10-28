@@ -31,7 +31,7 @@ process dedup{
     }
 
     input:
-    val dummy
+    path dummy
     path samples
     
         
@@ -48,7 +48,7 @@ process dedup{
         """
     }
     else{
-        out=samples.getSimpleName()+"_dedup.fastq.gz"
+        out=samples.getSimpleName()+"_dedup.bam"
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
         """
@@ -95,7 +95,7 @@ workflow DEDUPBAM{
 
     msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
     usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
-    msamples_ch.combine(usamples_ch)
+    msamples_ch.join(usamples_ch)
 
     collect_dedup(collection.collect())
     dedup(collect_dedup.out.done, msamples_ch)
