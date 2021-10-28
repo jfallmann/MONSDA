@@ -22,8 +22,8 @@ process qc_raw{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/$filename"
-        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/$filename"
+        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
         else null
     }
 

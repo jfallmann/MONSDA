@@ -61,7 +61,7 @@ process extract{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("_dedup.fastq.gz") > 0)          "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename)}"
+        if (filename.indexOf("_dedup.fastq.gz") > 0)          "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.fastq.gz"
         else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/dedup_extract.log"
         else null
     }
@@ -131,5 +131,3 @@ workflow DEDUPEXTRACT{
     ex = extract.out.ex
     
 }
-
-

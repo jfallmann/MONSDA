@@ -63,9 +63,9 @@ process minimap_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
         else null
     }
 
