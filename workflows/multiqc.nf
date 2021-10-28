@@ -66,7 +66,7 @@ workflow MULTIQC{
         }
         DSAMPLES.sort()
         dsamples_ch = Channel.fromPath(DSAMPLES, followLinks: true)
-        samples_ch.merge(dsamples_ch)
+        samples_ch.join(dsamples_ch)
     }
 
     TSAMPLES = LONGSAMPLES.collect{

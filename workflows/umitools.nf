@@ -98,33 +98,33 @@ workflow DEDUPEXTRACT{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
+        R1SAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R1.fastq.gz"
         }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
+        R1SAMPLES.sort()
+        R2SAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R2.fastq.gz"
         }
-        T2SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+        R2SAMPLES.sort()
+        dedup_samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
 
     }else{
-        T1SAMPLES = LONGSAMPLES.collect{
+        R1SAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+".fastq.gz"
         }
-        T1SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
+        R1SAMPLES.sort()
+        dedup_samples_ch = Channel.fromPath(R1SAMPLES)
     }
 
     
     collect_extract(collection.collect())
 
     if (WHITELISTPARAMS != ''){
-        whitelist(collect_extract.out.done.collect(), dedup_samples_ch)
-        extract(whitelist.out.done.collect(), dedup_samples_ch)        
+        whitelist(collect_extract.out.done, dedup_samples_ch)
+        extract(whitelist.out.done.wl, dedup_samples_ch)        
     }
     else{
-        extract(collect_extract.out.done.collect(), dedup_samples_ch)        
+        extract(collect_extract.out.done, dedup_samples_ch)        
     }
     
     emit:

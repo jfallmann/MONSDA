@@ -24,23 +24,25 @@ process dedup{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam",
+        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
         else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
         else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/dedupbam.log"
         else null
     }
 
     input:
-    val dummy
+    path dummy
     path samples
         
     output:
     path "*.bam", emit: bam
+    path "*.bai", emit: bai
     path "*.log", emit: log
 
     script:
+    out=samples.getSimpleName()+"_dedup.bam"
     """
-    mkdir -p tmp && java $JAVAPARAMS -jar picard.jar MarkDuplicates $DEDUPPARAMS --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR=tmp INPUT=$samples OUTPUT=$samples"_dedup.bam" &> dedup.log && samtools index $out &>> dedup.log
+    mkdir -p tmp && java $JAVAPARAMS -jar picard.jar MarkDuplicates $DEDUPPARAMS --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR=tmp INPUT=$samples OUTPUT=$out &> dedup.log && samtools index $out &>> dedup.log
     """
 }
 
@@ -63,10 +65,10 @@ workflow DEDUPBAM{
 
     msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
     usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
-    msamples_ch.combine(usamples_ch)
+    msamples_ch.join(usamples_ch)
 
     collect_dedup(collection.collect())
-    dedup(collect_dedup.out.done.collect(), msamples_ch)
+    dedup(collect_dedup.out.done, msamples_ch)
 
     emit:
     dedup = dedup.out.bam
