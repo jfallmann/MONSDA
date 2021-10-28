@@ -1,4 +1,4 @@
-if rundedup and not "picard" in [DEDUPBIN, DEDUPENV for env_bin_from_config3(config, 'DEDUP')]:
+if rundedup:
     if paired == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
@@ -8,7 +8,13 @@ if rundedup and not "picard" in [DEDUPBIN, DEDUPENV for env_bin_from_config3(con
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"]),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"]) if DEDUPENV != "picard" else expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
+                    expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),                    
+                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                    expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
+                    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])
             output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
