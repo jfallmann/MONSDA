@@ -72,9 +72,10 @@ workflow QC_RAW{
     qc = qc_raw.out.fastqc_results
 }
 
-// TRIMMED QC
 
-process collect_fqtrim{
+// DEDUP QC
+
+process collect_fqdedup{
     input:
     path check
 
@@ -87,7 +88,7 @@ process collect_fqtrim{
     """
 }
 
-process qc_trimmed{
+process qc_dedup{
     conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -112,33 +113,33 @@ process qc_trimmed{
     """
 }
 
-workflow QC_TRIMMING{
+workflow QC_DEDUP{
     take: collection
 
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
         }
         T1SAMPLES.sort()
         T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
         }
         T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
         }
         T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
+        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    collect_fqtrim(collection.collect())
-    qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
+    collect_fqdedup(collection.collect())
+    qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
 
     emit:
-    qc = qc_trimmed.out.fastqc_results
+    qc = qc_dedup.out.fastqc_results
 }

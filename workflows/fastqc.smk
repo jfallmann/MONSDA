@@ -70,7 +70,7 @@ rule qc_mapped:
     conda:  ""+QCENV+".yaml"
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
-    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f sam_mapped {input.r1} 2> {log}"
+    shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
 
 rule qc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",

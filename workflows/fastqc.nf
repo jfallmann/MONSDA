@@ -37,7 +37,7 @@ process qc_raw{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f fastq $read
+    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
     """
 }
 
@@ -108,7 +108,7 @@ process qc_trimmed{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f fastq $read
+    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
     """
 }
 
@@ -183,7 +183,7 @@ process qc_mapped{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f bam_mapped $map $uni
+    fastqc --quiet -t $THREADS $QCPARAMS -f bam $map $uni
     """
 }
 
@@ -247,7 +247,7 @@ process qc_dedup{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f fastq $read
+    fastqc --quiet -t $THREADS $QCPARAMS -f bam $read
     """
 }
 

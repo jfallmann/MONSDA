@@ -36,7 +36,7 @@ process qc_raw{
 
     script:
     """
-    fastqc --quiet -t $THREADS --noextract -f fastq $read
+    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
     """
 }
 
