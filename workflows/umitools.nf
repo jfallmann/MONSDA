@@ -1,7 +1,7 @@
 DEDUPENV=get_always('DEDUPENV')
 DEDUPBIN=get_always('DEDUPBIN')
 
-WHITELISTPARAMS = get_always('picard_params_WHITELIST') ?: ''
+WHITELISTPARAMS = get_always('umitools_params_WHITELIST') ?: ''
 EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 
 

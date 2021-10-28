@@ -249,13 +249,12 @@ def get_samples_postprocess(config, subwork):
 @check_run
 def check_samples(config):
     logid = scriptname + ".Params_check_samples: "
-    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
-    log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
+    tocheck = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
+    log.debug(logid + "SEARCHING: " + str(tocheck))
     check = [
         os.path.join("FASTQ", str(x).replace(".fastq.gz", "") + "*.fastq.gz")
-        for x in SAMPLES
+        for x in tocheck
     ]
-    RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
         log.debug(logid + "SEARCHING: " + s)
