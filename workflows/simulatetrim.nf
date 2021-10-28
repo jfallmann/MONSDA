@@ -34,11 +34,11 @@ workflow TRIMMING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
-            R1SAMPLES = SAMPLES.collect{
+            R1SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_R1_dedup.fastq.gz"
             }
             R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
+            R2SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_R2_dedup.fastq.gz"
             }
             R2SAMPLES.sort()            
@@ -56,7 +56,7 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }else{
         if (RUNDEDUP == 'enabled'){
-            RSAMPLES = SAMPLES.collect{
+            RSAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_dedup.fastq.gz"
             }
         }
