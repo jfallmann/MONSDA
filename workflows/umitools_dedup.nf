@@ -6,7 +6,6 @@ DEDUPPARAMS = get_always('umitools_params_DEDUP') ?: ''
 process collect_dedup{
     input:
     path check
-    val checker
 
     output:
     path "collect.txt", emit: done
@@ -32,7 +31,9 @@ process dedup{
     }
 
     input:
+    val dummy
     path samples
+    
         
     output:
     path "*.bam", emit: bam
@@ -40,7 +41,7 @@ process dedup{
     path "*.log", emit: log
 
     script:
-    if paired{
+    if (PAIRED == 'paired'){
         out=samples.getSimpleName()+"_dedup.bam"
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --paired --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
@@ -96,8 +97,8 @@ workflow DEDUPBAM{
     usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
     msamples_ch.combine(usamples_ch)
 
-    collect_dedup(maplogs.collect())
-    dedup(collect_dedup.out.done.collect(), msamples_ch)
+    collect_dedup(collection.collect())
+    dedup(collect_dedup.out.done, msamples_ch)
 
     emit:
     dedup = dedup.out.bam

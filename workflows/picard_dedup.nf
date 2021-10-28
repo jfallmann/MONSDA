@@ -6,7 +6,6 @@ JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 process collect_dedup{
     input:
     path check
-    val checker
 
     output:
     path "collect.txt", emit: done
@@ -32,6 +31,7 @@ process dedup{
     }
 
     input:
+    val dummy
     path samples
         
     output:
@@ -46,7 +46,7 @@ process dedup{
 
 workflow DEDUPBAM{
     take:
-    maplogs
+    collection
 
     main:
 
@@ -65,7 +65,7 @@ workflow DEDUPBAM{
     usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
     msamples_ch.combine(usamples_ch)
 
-    collect_dedup(maplogs.collect())
+    collect_dedup(collection.collect())
     dedup(collect_dedup.out.done.collect(), msamples_ch)
 
     emit:

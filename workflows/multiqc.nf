@@ -60,7 +60,7 @@ workflow MULTIQC{
     RSAMPLES.sort()
     samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
 
-    if RUNDEDUP{
+    if (RUNDEDUP == 'enabled'){
         DSAMPLES=LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_dedup_fastqc.zip"
         }

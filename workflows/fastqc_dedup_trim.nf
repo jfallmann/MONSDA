@@ -180,5 +180,5 @@ workflow QC_DEDUP{
     qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
 
     emit:
-    qc = qc_trimmed.out.fastqc_results
+    qc = qc_dedup.out.fastqc_results
 }

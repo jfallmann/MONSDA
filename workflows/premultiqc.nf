@@ -1,26 +1,62 @@
 
+QCENV=get_always('QCENV')
+QCBIN=get_always('QCBIN')
+QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
-rule qcall:
-    input: expand("QC/Multi/{condition}/multiqc_report.html",condition=str.join(os.sep,conditiononly(SAMPLES[0],config)))
+process collect_multi{
+    input:
+    path check
+    
+    output:
+    path "collect.txt", emit: done
 
-if paired == 'paired':
-    rule multiqc:
-        input: expand("QC/{rawfile}_{read}_fastqc.zip", rawfile=list(SAMPLES), read=['R1','R2']),
-        output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                tmp = temp("QC/Multi/{condition}/tmp"),
-                lst = "QC/Multi/{condition}/qclist.txt"
-        log:    "LOGS/{condition}/multiqc.log"
-        conda:  "qc.yaml"
-        threads: 1
-        shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+    script:
+    """
+    echo "$check Collection successful!" > collect.txt
+    """
+}
 
-else:
-    rule multiqc:
-        input: expand("QC/{rawfile}_fastqc.zip", rawfile=list(SAMPLES)),
-        output: html = report("QC/Multi/{condition}/multiqc_report.html", category="QC"),
-                tmp = temp("QC/Multi/{condition}/tmp"),
-                lst = "QC/Multi/{condition}/qclist.txt"
-        log:    "LOGS/{condition}/multiqc.log"
-        conda:  "qc.yaml"
-        threads: 1
-        shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
+
+process premultiqc{
+    conda "$QCENV"+".yaml"
+    cpus THREADS
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    saveAs: {filename ->
+        if (filename.indexOf("zip") > 0)          "QC/Multi/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/$COMBO$CONDITION/$filename"
+        else null
+    }
+
+    input:
+    path samples
+
+    output:
+    path "*.{zip,html}", emit: multiqc_results
+
+    script:
+    """
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s 
+    """
+}
+
+workflow PREMULTIQC{
+    take:
+    otherqcs
+
+    main:
+
+    //SAMPLE CHANNELS
+    RSAMPLES=LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_fastqc.zip"
+    }
+    RSAMPLES.sort()
+    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
+
+        collect_premulti(otherqcs.collect())
+    multiqc(collect_premulti.out.done.collect(), samples_ch)
+
+    emit:
+    mqcres = premultiqc.out.multiqc_results
+}

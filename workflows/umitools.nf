@@ -5,10 +5,9 @@ WHITELISTPARAMS = get_always('picard_params_WHITELIST') ?: ''
 EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 
 
-process collect_dedup{
+process collect_extract{
     input:
     path check
-    val checker
 
     output:
     path "collect.txt", emit: done
@@ -39,7 +38,7 @@ process whitelist{
     path "*_whitelist", emit: wl
 
     script:
-    if paired{
+    if (PAIRED == 'paired'){
         r1=samples[0]
         r2=samples[1]
         out=samples[0].getSimpleName()+"_whitelist"
@@ -50,7 +49,7 @@ process whitelist{
     else{
         out=samples.getSimpleName()+"_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --stdout=$out
+            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$out
         """
     }
 }
@@ -68,13 +67,14 @@ process extract{
     }
 
     input:
+    val dummy
     path samples
         
     output:
     path "*_dedup.fastq.gz", emit: ex
 
     script:
-    if paired{
+    if (PAIRED == 'paired'){
         r1=samples[0]
         r2=samples[1]
         out=samples[0].getSimpleName()+"_dedup.fastq.gz"
@@ -86,13 +86,14 @@ process extract{
     else{
         out=samples.getSimpleName()+"_dedup.fastq.gz"
         """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --stdout=$out
+            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
         """
     }
 }
 
 workflow DEDUPEXTRACT{
-    take: collection
+    take: 
+    collection
 
     main:
     //SAMPLE CHANNELS
@@ -116,23 +117,19 @@ workflow DEDUPEXTRACT{
     }
 
     
-    collect_dedup(maplogs.collect())
-    if WHITELISTPARAMS != ''{
-        umitools_whitelist(collect_dedup.out.done.collect(), dedup_samples_ch)
-        umitools_extract(umitools_whitelist.out.done.collect(), dedup_samples_ch)        
+    collect_extract(collection.collect())
+
+    if (WHITELISTPARAMS != ''){
+        whitelist(collect_extract.out.done.collect(), dedup_samples_ch)
+        extract(whitelist.out.done.collect(), dedup_samples_ch)        
     }
     else{
-        umitools_extract(collect_dedup.out.done.collect(), dedup_samples_ch)        
+        extract(collect_extract.out.done.collect(), dedup_samples_ch)        
     }
     
     emit:
-    if WHITELISTPARAMS != ''{
-        white = whitelist.out.wl
-        extract = extract.out.ex
-    }
-    else{
-        extract = extract.out.ex
-    }
+    ex = extract.out.ex
+    
 }
 
 

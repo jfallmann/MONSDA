@@ -60,7 +60,7 @@ workflow TRIMMING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        if RUNDEDUP == 'enabled'{
+        if (RUNDEDUP == 'enabled'){
             R1SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1_dedup.fastq.gz"
             }
@@ -83,7 +83,7 @@ workflow TRIMMING{
         samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }
     else{
-        if RUNDEDUP == 'enabled'{
+        if (RUNDEDUP == 'enabled'){
             RSAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_dedup.fastq.gz"
             }
