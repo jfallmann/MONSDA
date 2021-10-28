@@ -30,6 +30,7 @@ process collect_tomap{
 process hisat2_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+    label 'big_mem'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -60,6 +61,7 @@ process hisat2_idx{
 process hisat2_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+    label 'big_mem'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',

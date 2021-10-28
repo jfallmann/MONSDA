@@ -31,6 +31,7 @@ process collect_tomap{
 process bwa_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+    label 'big_mem'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -59,6 +60,7 @@ process bwa_idx{
 process bwa_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+    label 'big_mem'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
