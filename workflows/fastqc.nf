@@ -183,7 +183,7 @@ process qc_mapped{
 
     script:
     """
-    fastqc --quiet -t $THREADS $QCPARAMS -f bam $map $uni
+    fastqc --quiet -t $THREADS $QCPARAMS -f bam $map && fastqc --quiet -t $THREADS $QCPARAMS -f bam $uni
     """
 }
 
@@ -192,17 +192,17 @@ workflow QC_MAPPING{
 
     main:
     //SAMPLE CHANNELS
-    M1SAMPLES = LONGSAMPLES.collect{
+    MSAMPLES = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
     }
-    M1SAMPLES.sort()
-    U1SAMPLES = LONGSAMPLES.collect{
+    MSAMPLES.sort()
+    USAMPLES = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
     }
-    U1SAMPLES.sort()
+    USAMPLES.sort()
 
-    mapped_samples_ch = Channel.fromPath(M1SAMPLES)
-    unique_samples_ch = Channel.fromPath(U1SAMPLES)
+    mapped_samples_ch = Channel.fromPath(MSAMPLES)
+    unique_samples_ch = Channel.fromPath(USAMPLES)
 
     collect_fqmap(collection.collect())
     qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)

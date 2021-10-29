@@ -33,6 +33,7 @@ process dedup{
     input:
     path dummy
     path samples
+    path indices
         
     output:
     path "*.bam", emit: bam
@@ -62,13 +63,24 @@ workflow DEDUPBAM{
         element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
     }
     USAMPLES.sort()
-
+    MINDEX = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam.bai"
+    }
+    MINDEX.sort()
+    
+    UINDEX = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam.bai"
+    }
+    UINDEX.sort()
     msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
     usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
     msamples_ch.join(usamples_ch)
-
+    mindex_ch = Channel.fromPath(MINDEX, followLinks: true)
+    uindex_ch = Channel.fromPath(UINDEX, followLinks: true)
+    mindex_ch.join(uindex_ch)
+    
     collect_dedup(collection.collect())
-    dedup(collect_dedup.out.done, msamples_ch)
+    dedup(collect_dedup.out.done, msamples_ch, mindex_ch)
 
     emit:
     dedup = dedup.out.bam

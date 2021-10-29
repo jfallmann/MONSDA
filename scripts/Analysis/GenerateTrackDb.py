@@ -56,6 +56,7 @@ import string
 import argparse
 import random
 import traceback as tb
+import inspect
 import logging
 
 cmd_subfolder = os.path.join(
@@ -258,7 +259,7 @@ def main(
 
         elif os.path.isfile(filenames):
             bigwigs = []
-            if ".gz" in file:
+            if ".gz" in filenames:
                 b = gzip.open(filenames, "rb")
                 for line in b:
                     bigwigs.append(line.split("\n", 2)[0])
