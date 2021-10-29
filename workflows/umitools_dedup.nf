@@ -24,38 +24,33 @@ process dedup{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
-        else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
-        else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/dedupbam.log"
+        if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
+        else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
+        else if (filename.indexOf(".log") > 0)    "LOGS/$COMBO$CONDITION/dedupbam.log"
         else null
     }
 
     input:
     path dummy
     path samples
-    
-        
+      
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
     path "*.log", emit: log
 
     script:
-    if (PAIRED == 'paired'){
-        out=samples.getSimpleName()+"_dedup.bam"
+    out=samples.getSimpleName()+"_dedup.bam"
+    if (PAIRED == 'paired'){        
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --paired --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
         """
     }
     else{
-        out=samples.getSimpleName()+"_dedup.bam"
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
         """
     }
-    """
-    
-    """
 }
 
 workflow DEDUPBAM{
