@@ -46,7 +46,7 @@ process sam2bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}bam.bai"
+        if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
         else if (filename.indexOf(".bam") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".log") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
         else null

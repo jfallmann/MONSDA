@@ -38,6 +38,12 @@ else:
                     expand("PEAKS/{combo}/{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup']),
                     expand("PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
+checklist = list()
+for file in samplecond(SAMPLES, config):
+    checktype = ['sorted', 'unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']
+    for type in checktype:
+        checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'_nosoftclip.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'_nosoftclip.bed.gz')) and os.path.isfile(os.path.abspath('MAPPED/'+scombo+file+'_mapped_'+type+'_nosoftclip.bam')) and not os.path.islink(os.path.abspath('MAPPED/'+scombo+file+'_mapped_'+type+'_nosoftclip.bam')))
+
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -61,37 +67,39 @@ rule UnzipGenome_no_us:
     params: bins = BINS
     shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
 
-rule remove_softclip:
-    input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
-            fa = REFERENCE,
-            refi = expand("{ref}.fai", ref=REFERENCE.replace('.fa.gz', '')),
-    output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
-            bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
-    log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
-    conda:  "scyphy.yaml"
-    threads: 1
-    params: bins = BINS,
-            tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
-    shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
 
-
-if not stranded or (stranded == 'fr' or stranded == 'ISF'):
-    rule BamToBed:
-        input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo)
-        output: "BED/{combo}/{file}_mapped_{type}_nosoftclip.bed.gz"
-        log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
-        conda:  "bedtools.yaml"
+if not all(checklist):
+    rule remove_softclip:
+        input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
+                fa = REFERENCE,
+                refi = expand("{ref}.fai", ref=REFERENCE.replace('.fa.gz', '')),
+        output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
+                bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
+        log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
+        conda:  "scyphy.yaml"
         threads: 1
-        shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+        params: bins = BINS,
+                tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
+        shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
 
-elif stranded and (stranded == 'rf' or stranded == 'ISR'):
-    rule BamToBed:
-        input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo))
-        output: "BED/{combo}/{file}_mapped_{type}_nosoftclip.bed.gz"
-        log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
-        conda:  "bedtools.yaml"
-        threads: 1
-        shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+
+    if not stranded or (stranded == 'fr' or stranded == 'ISF'):
+        rule BamToBed:
+            input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo)
+            output: "BED/{combo}/{file}_mapped_{type}_nosoftclip.bed.gz"
+            log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
+            conda:  "bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+
+    elif stranded and (stranded == 'rf' or stranded == 'ISR'):
+        rule BamToBed:
+            input:  expand("MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam", scombo=scombo)
+            output: "BED/{combo}/{file}_mapped_{type}_nosoftclip.bed.gz"
+            log:    "LOGS/PEAKS/{combo}/{file}bam2bed_{type}.log"
+            conda:  "bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
 
 rule extendbed:
@@ -116,7 +124,7 @@ rule rev_extendbed:
 
 if IP == 'iCLIP':
      rule BedToBedg:
-        input:  bed = "BED/{combo}/{{file}}_mapped_extended_{{type}}_nosoftclip.bed.gz",
+        input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
@@ -129,7 +137,7 @@ if IP == 'iCLIP':
 
 elif IP == 'revCLIP':
     rule BedToBedg:
-        input:  bed = "BED/{combo}/{{file}}_mapped_revtrimmed_{{type}}_nosoftclip.bed.gz",
+        input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
@@ -142,7 +150,7 @@ elif IP == 'revCLIP':
 
 else:
     rule BedToBedg:
-        input:  bed = "BED/{combo}/{{file}}_mapped_{{type}}_nosoftclip.bed.gz",
+        input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
@@ -155,12 +163,12 @@ else:
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
-    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz",
+    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz",
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
-             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', ""),
+             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
     shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
@@ -183,7 +191,7 @@ rule AddSequenceToPeak:
     conda:  "bedtools.yaml"
     threads: 1
     params: bins=BINS
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi" 
 
 if ANNOPEAK is not None:
     rule AnnotatePeak:
@@ -236,7 +244,7 @@ rule NormalizeBedg:
     shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 
-### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to UCSC via the track field
+### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to a genome browser via the track field
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,

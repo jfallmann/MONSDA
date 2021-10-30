@@ -92,7 +92,7 @@ else:
 
 if paired == 'paired':
     rule dedupbam:
-        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam" #bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
+        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam"
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
@@ -104,7 +104,7 @@ if paired == 'paired':
         shell: "mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}"
 else:
     rule dedupbam:  
-        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam" #bam = expand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=type)
+        input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam"
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
