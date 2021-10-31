@@ -205,7 +205,7 @@ def collectstats(fasta, bams, outdir, procs, verbosity):
             chroms = []
             for k, v in header["SQ"].items():
                 print(k, v)
-                chroms.extend = split(":", k)[1]
+                chroms.extend = str.split(":", k)[1]
             for chrom in chroms:
                 pool.apply_async(
                     collect, args=(bam, fasta, out, chrom)
@@ -227,12 +227,6 @@ def collectstats(fasta, bams, outdir, procs, verbosity):
 
 
 # 	print(res.get())
-
-
-def log_result(result):
-    # This is called whenever pool(i) returns a result.
-    # result_list is modified only by the main process, not the pool workers.
-    result_list.append(result)
 
 
 def test(x):
@@ -338,8 +332,8 @@ def close_bam(samfile):
 def check_idx(file):
     if (
         (os.path.isfile(file + ".idx"))
-        or (os.path.isfile(str.join(".", split(".", file)[0:-1], "fai")))
-        or (os.path.isfile(str.join(".", split(".", file)[0:-1], "faidx")))
+        or (os.path.isfile(str.join(".", str.split(".", file)[0:-1], "fai")))
+        or (os.path.isfile(str.join(".", str.split(".", file)[0:-1], "faidx")))
     ):
         return True
     else:
