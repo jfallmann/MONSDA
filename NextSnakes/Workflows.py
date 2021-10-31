@@ -2479,7 +2479,6 @@ def nf_make_sub(
 
                     if "DEDUP" in works:
                         flowlist.append("DEDUPBAM")
-                        flowlist.append("QC_DEDUP")
                         nfi = os.path.abspath(
                             os.path.join(workflowpath, deduptool + "_dedup.nf")
                         )
