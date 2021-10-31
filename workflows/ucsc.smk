@@ -52,13 +52,13 @@ rule UnzipGenome_no_us:
     params: bins = BINS
     shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
 
+
 checklist = list()
-checklist2 = list()
 for file in samplecond(SAMPLES, config):
-    for type in ['sorted','unique']:
+    for type in ['sorted','unique'] if not rundedup else ['sorted', 'unique', 'sorted_dedup', 'sorted_unique_dedup']:
         for orient in ['fw','rw']:
             checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
-            checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+scombo+file+'_mapped_'+type+'.'+orient+'.bedg.gz')))
+
 
 if not all(checklist):
     rule BedToBedg:

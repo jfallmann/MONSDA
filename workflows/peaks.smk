@@ -46,23 +46,23 @@ for file in samplecond(SAMPLES, config):
         checklist.append(os.path.isfile(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('BED/'+scombo+file+'_mapped_'+type+'.bed.gz')))
 
 if not all(checklist):
-    if not stranded or stranded == 'fr':
+    if not stranded or (stranded == 'fr' or stranded == 'ISF') :
         rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
-            threads: 1
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam",
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz",
+            log:    "LOGS/PEAKS/{scombo}/{file}_{type}_ucscbamtobed.log"
             conda:  "bedtools.yaml"
+            threads: 1
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
+    elif stranded and (stranded == 'rf' or stranded == 'ISR'):
+        rule BamToBed:
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam",
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz",
+            log:    "LOGS/PEAKS/{scombo}/{file}_{type}_ucscbamtobed.log"
+            conda:  "bedtools.yaml"
+            threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
-    elif stranded and stranded == 'rf':
-        rule BamToBed:
-            input:  "MAPPED/{scombo}/{file}_mapped_{type}.bam"
-            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
-            threads: 1
-            conda:  "bedtools.yaml"
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log}"
 
 rule UnzipGenome:
     input:  ref = REFERENCE,
@@ -111,49 +111,50 @@ if IP == 'iCLIP':
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+                tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0]))
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
-
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 elif IP == 'revCLIP':
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+                tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0]))
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
-
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 else:
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz"
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+                tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0]))
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")'| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")'|sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip >> {output.concat} 2>> {log}"
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
-    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz",
+    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
-             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', ""),
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n | gzip > {output.pre} 2> {log}"
+             opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
