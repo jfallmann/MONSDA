@@ -557,8 +557,8 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
     subsetting = subDict(config["SETTINGS"], x).get(setting)
 
     if setting == "ANNOTATION":  # Special case is annotation
-        subsetting = (
-            subsetting.get("GTF") if "GTF" in ANNO else subsetting.get("GFF")
+        subsetting = subsetting.get(
+            "GTF", subsetting.get("GFF")
         )  # by default GTF format will be used
 
     if subconf:  # check specific setting for workflow part
