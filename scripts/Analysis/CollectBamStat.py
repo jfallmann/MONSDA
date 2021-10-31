@@ -60,6 +60,7 @@ from pyfaidx import Fasta
 import multiprocessing
 from multiprocessing import Manager
 import traceback as tb
+import inspect
 
 # Container
 import collections

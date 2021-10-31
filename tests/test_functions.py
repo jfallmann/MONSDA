@@ -45,7 +45,12 @@
 #
 
 # Code:
-import glob, os, sys, inspect, json, shutil
+import glob
+import os
+import sys
+import inspect
+import json
+import shutil
 from collections import defaultdict
 import traceback as tb
 from snakemake import load_configfile

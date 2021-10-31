@@ -11,6 +11,7 @@ import gzip
 import warnings
 import traceback as tb
 import logging
+import inspect
 
 cmd_subfolder = os.path.join(
     os.path.dirname(

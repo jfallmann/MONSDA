@@ -46,60 +46,75 @@
 # Code:
 import logging
 import multiprocessing
-import os, sys, inspect
+import os
+import sys
+import inspect
 import traceback as tb
+
 
 def makelogdir(logdir):
     if not os.path.isabs(logdir):
-        logdir =  os.path.abspath(logdir)
+        logdir = os.path.abspath(logdir)
     if not os.path.exists(logdir):
         os.makedirs(logdir)
     return logdir
 
-def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING'):
+
+def setup_logger(
+    name, log_file, filemode="w", logformat=None, datefmt=None, level="WARNING"
+):
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
-    if log_file is not 'stdout' and log_file is not 'stderr':
+    if log_file is not "stdout" and log_file is not "stderr":
         makelogdir(os.path.dirname(log_file))
         handler = logging.FileHandler(log_file, mode=filemode)
     else:
         handler = logging.StreamHandler()
 
-    handler.setFormatter(logging.Formatter(fmt=logformat,datefmt=datefmt))
+    handler.setFormatter(logging.Formatter(fmt=logformat, datefmt=datefmt))
 
     logger.setLevel(level)
     logger.addHandler(handler)
 
     return logger
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     try:
         # set up logging to file
-        logging=setup_logger(name='', log_file='stderr', logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level='WARNING')
+        logging = setup_logger(
+            name="",
+            log_file="stderr",
+            logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+            datefmt="%m-%d %H:%M",
+            level="WARNING",
+        )
 
         # define a Handler which writes INFO messages or higher to the sys.stderr
-        #console = logging.StreamHandler()
-        #console.setLevel(logging.INFO)
+        # console = logging.StreamHandler()
+        # console.setLevel(logging.INFO)
         # set a format which is simpler for console use
-        #formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+        # formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
         # tell the handler to use this format
-        #console.setFormatter(formatter)
+        # console.setFormatter(formatter)
         # add the handler to the root logger
-        #logging.getLogger('').addHandler(console)
+        # logging.getLogger('').addHandler(console)
 
         # Now, we can log to the root logger, or any other logger. First the root...
-        #logging.info('Imported logger.py')
+        # logging.info('Imported logger.py')
         # Now, use this in code defining a couple of other loggers which might represent areas in your
         # application, e.g.:
-        #log = logging.getLogger('logger.main')
+        # log = logging.getLogger('logger.main')
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
-            exc_type, exc_value, exc_tb,
+            exc_type,
+            exc_value,
+            exc_tb,
         )
-        logging.error(''.join(tbe.format()))
+        logging.error("".join(tbe.format()))
 
 
 # log.py ends here

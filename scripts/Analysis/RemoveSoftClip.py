@@ -58,6 +58,8 @@ import pysam
 from pyfaidx import Fasta
 import traceback
 import logging
+import traceback as tb
+import inspect
 
 # Container
 import collections
