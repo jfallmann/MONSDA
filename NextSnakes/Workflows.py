@@ -1616,7 +1616,7 @@ def nf_fetch_params(
     ANNOTATION = ANNO.get("GTF") if ANNO else ""
     IP = SETTINGS.get("IP")
 
-    rundedup = True if (config.get("RUNDEDUP")) == "enabled" else False
+    rundedup = config.get("RUNDEDUP")
     if rundedup:
         log.debug("DEDUPLICATION ENABLED")
 
@@ -2393,22 +2393,13 @@ def nf_make_sub(
 
                         if works[j] == "QC":
                             if "TRIMMING" in works:
-                                if "DEDUP" in works:
-                                    subname = toolenv + "_dedup_trim.nf"
-                                    flowlist.append("QC_RAW")
-                                    flowlist.append("TRIMMING")
-                                    flowlist.append("QC_DEDUP_TRIM")
-                                    if "MAPPING" in works:
-                                        subname = toolenv + "_dedup_trim_map.nf"
-                                        flowlist.append("QC_MAP")
-                                else:
-                                    subname = toolenv + "_trim.nf"
-                                    flowlist.append("QC_RAW")
-                                    flowlist.append("TRIMMING")
-                                    flowlist.append("QC_TRIMMING")
-                                    if "MAPPING" in works:
-                                        subname = toolenv + "_trim_map.nf"
-                                        flowlist.append("QC_MAP")
+                                subname = toolenv + "_trim.nf"
+                                flowlist.append("QC_RAW")
+                                flowlist.append("TRIMMING")
+                                flowlist.append("QC_TRIMMING")
+                                if "MAPPING" in works:
+                                    subname = toolenv + "_trim_map.nf"
+                                    flowlist.append("QC_MAP")
                             else:
                                 if "DEDUP" in subworkflows:
                                     subname = toolenv + "_dedup.nf"

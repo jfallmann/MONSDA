@@ -247,7 +247,7 @@ process qc_dedup{
 
     script:
     """
-    fastqc --quiet -t $THREADS $QCPARAMS -f bam $read
+    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
     """
 }
 
