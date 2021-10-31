@@ -2415,7 +2415,6 @@ def nf_make_sub(
                                     flowlist.append("QC_RAW")
                                     if toolenv == "umitools":
                                         flowlist.append("DEDUPEXTRACT")
-                                    flowlist.append("QC_DEDUP")
                                     if "MAPPING" in works:
                                         subname = toolenv + "_dedup_map.nf"
                                         flowlist.append("QC_MAP")
@@ -2433,6 +2432,7 @@ def nf_make_sub(
                             deduptool = toolenv
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
+                                flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
                             else:
                                 continue
@@ -2527,9 +2527,26 @@ def nf_make_sub(
                         if w == "QC_RAW":
                             subjobs.append(" " * 4 + w + "(dummy)\n")
                         elif w == "PREDEDUP":
-                            subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
-                        elif w == "TRIMMING":
                             if "QC_RAW" not in flowlist:
+                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
+                            else:
+                                subjobs.append(
+                                    " " * 4
+                                    + "DEDUPEXTRACT"
+                                    + "(QC_RAW.out.qc.collect())\n"
+                                )
+                        elif w == "QC_DEDUP":
+                            subjobs.append(
+                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
+                            )
+                        elif w == "TRIMMING":
+                            if "PREDEDUP" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + "TRIMMING"
+                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                )
+                            elif "QC_RAW" not in flowlist:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                             else:
                                 subjobs.append(
@@ -2554,10 +2571,6 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
                             )
-                        elif w == "QC_DEDUP":
-                            subjobs.append(
-                                " " * 4 + w + "(DEDUPBAM.out.dedup.collect())\n"
-                            )
                         elif w == "MULTIQC":
                             if "MAPPING" in flowlist:
                                 subjobs.append(
@@ -2569,10 +2582,10 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4 + w + "(QC_TRIMMING.out.qc.collect())\n"
                                 )
-                            elif "DEDUPBAM" in flowlist:
-                                subjobs.append(
-                                    " " * 4 + w + "(QC_DEDUP.out.qc.collect())\n"
-                                )
+                            # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
+                            #    subjobs.append(
+                            #        " " * 4 + w + "(QC_DEDUP.out.qc.collect())\n"
+                            #    )
                             else:
                                 subjobs.append(
                                     " " * 4 + w + "(QC_RAW.out.qc.collect())\n"
