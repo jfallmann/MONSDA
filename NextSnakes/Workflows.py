@@ -2085,11 +2085,10 @@ def nf_make_pre(
                         subjobs.append("\n\n" + "workflow {\n")
                         for w in ["MULTIQC"]:
                             if w in flowlist:
-                                if w == "MULTIQC":
-                                    subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
-                                    subjobs.append(
-                                        " " * 4 + w + "(QC_RAW.out.qc.collect()\n"
-                                    )
+                                subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
+                                subjobs.append(
+                                    " " * 4 + w + "(QC_RAW.out.qc.collect()\n"
+                                )
                         subjobs.append("\n}\n")
 
                         # nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
@@ -2406,6 +2405,7 @@ def nf_make_sub(
                                     flowlist.append("QC_RAW")
                                     if toolenv == "umitools":
                                         flowlist.append("DEDUPEXTRACT")
+                                        sconf["PREDEDUP"] = "enabled"
                                     if "MAPPING" in works:
                                         subname = toolenv + "_dedup_map.nf"
                                         flowlist.append("QC_MAP")
@@ -2570,7 +2570,9 @@ def nf_make_sub(
                                 )
                             elif "TRIMMING" in flowlist:
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_TRIMMING.out.qc.collect())\n"
+                                    " " * 4
+                                    + w
+                                    + "(QC_TRIMMING.out.qc.collect(), dummy)\n"
                                 )
                             # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
                             #    subjobs.append(
@@ -2578,7 +2580,7 @@ def nf_make_sub(
                             #    )
                             else:
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect())\n"
+                                    " " * 4 + w + "(QC_RAW.out.qc.collect(), dummy)\n"
                                 )
                         else:
                             subjobs.append(" " * 4 + w + "(dummy)\n")

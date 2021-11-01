@@ -22,6 +22,7 @@ BINS = get_always('BINS')
 THREADS = get_always('MAXTHREAD')
 PAIRED = get_always('PAIRED') ?: null
 RUNDEDUP = get_always('RUNDEDUP') ?: null
+PREDEDUP = get_always('PREDEDUP') ?: null
 STRANDED = get_always('STRANDED') ?: null
 IP = get_always('IP') ?: null
 CONDITION = get_always('CONDITION') ?: null
