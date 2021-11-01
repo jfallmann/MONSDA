@@ -200,7 +200,8 @@ def remove_clip(bam, fasta, out, cluster=None):
                     )
 
             cigar = read.cigarstring
-            if "*" in cigar:
+            if not cigar or "*" in cigar:
+                bamout.write(read)
                 continue
 
             newcigar = []
