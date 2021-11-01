@@ -88,20 +88,20 @@ from snakemake import load_configfile
 import functools
 import datetime
 
-from NextSnakes.Utils import *
-from NextSnakes.Params import *
+from MONSDA.Utils import *
+from MONSDA.Params import *
 
 try:
     pythonversion = f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
     installpath = os.path.dirname(__file__).replace(
-        os.sep.join(["lib", pythonversion, "site-packages", "NextSnakes"]), "share"
+        os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
 except:
     installpath = os.path.cwd()
 
-workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
-envpath = os.path.join(installpath, "NextSnakes", "envs") + os.sep
-binpath = os.path.join(installpath, "NextSnakes", "scripts")
+workflowpath = os.path.join(installpath, "MONSDA", "workflows")
+envpath = os.path.join(installpath, "MONSDA", "envs") + os.sep
+binpath = os.path.join(installpath, "MONSDA", "scripts")
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -112,7 +112,7 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
+    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
@@ -142,16 +142,16 @@ except Exception:
 
 # Code:All subs from here on
 
-###Check NextSnakes version
+###Check MONSDA version
 @check_run
 def ns_check_version(v, r):
-    logid = scriptname + ".nextsnakes_check_version: "
+    logid = scriptname + ".MONSDA_check_version: "
 
     if parse_version(str(v)) == parse_version(str(r)):
         return True
     else:
         log.debug(f"Mismatch in installed version {v} and required version {r}")
-        return shutil.which("NextSnakes")
+        return shutil.which("MONSDA")
 
 
 ##############################
@@ -1420,7 +1420,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
             envlist = combname[condition]["envs"]
 
     # Add Header
-    sum_path = os.path.join(installpath, "NextSnakes", "scripts", "Analysis", "SUMMARY")
+    sum_path = os.path.join(installpath, "MONSDA", "scripts", "Analysis", "SUMMARY")
     rmd_header = os.path.abspath(os.path.join(sum_path, "header_summary.Rmd"))
 
     with open(rmd_header, "r") as read_file:
@@ -2091,7 +2091,7 @@ def nf_make_pre(
                                 )
                         subjobs.append("\n}\n")
 
-                        # nfi = os.path.abspath(os.path.join('NextSnakes', 'workflows', 'footer.nf'))
+                        # nfi = os.path.abspath(os.path.join('MONSDA', 'workflows', 'footer.nf'))
                         # with open(nfi, 'r') as nf:
                         #    for line in nf.readlines():
                         #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
@@ -2457,7 +2457,7 @@ def nf_make_sub(
                         nfi = os.path.abspath(
                             os.path.join(
                                 installpath,
-                                "NextSnakes",
+                                "MONSDA",
                                 "workflows",
                                 "simulatetrim.nf",
                             )
@@ -2587,7 +2587,7 @@ def nf_make_sub(
                 subjobs.append("}\n\n")
 
                 # Append footer and write out subflow and subconf per condition
-                # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
+                # nfi = os.path.abspath(os.path.join(installpath, 'MONSDA', 'workflows', 'footer.nf'))
                 # with open(nfi,'r') as nf:
                 #    for line in nf.readlines():
                 #        line = re.sub(condapath,'conda  "../', line)
@@ -2800,7 +2800,7 @@ def nf_make_sub(
             subjobs.append("}\n\n")
 
             # SKIP as nextflow exits too soon otherwise: Append footer and write out subflow and subconf per condition
-            # nfi = os.path.abspath(os.path.join(installpath, 'NextSnakes', 'workflows', 'footer.nf'))
+            # nfi = os.path.abspath(os.path.join(installpath, 'MONSDA', 'workflows', 'footer.nf'))
             # with open(nfi,'r') as nf:
             #    for line in nf.readlines():
             #        line = re.sub(condapath,'conda  "../', line)
@@ -2918,7 +2918,7 @@ def nf_make_post(
                             smkout.write("\n    ".w)
                     smkout.write("\n}\n")
 
-                # smkf = os.path.abspath(os.path.join(installpath, 'NextSnakes','workflows','footer.nf'))
+                # smkf = os.path.abspath(os.path.join(installpath, 'MONSDA','workflows','footer.nf'))
                 # with open(smko, 'a') as smkout:
                 #    with open(smkf,'r') as smk:
                 #        smkout.write(smk.read())
@@ -3046,7 +3046,7 @@ def nf_make_post(
                         smkout.write(smk.read())
                     smkout.write("\n")
 
-                # smkf = os.path.abspath(os.path.join(installpath, 'NextSnakes','workflows','footer.nf'))
+                # smkf = os.path.abspath(os.path.join(installpath, 'MONSDA','workflows','footer.nf'))
                 # with open(smko, 'a') as smkout:
                 #    with open(smkf,'r') as smk:
                 #        smkout.write(smk.read())

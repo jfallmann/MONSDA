@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# NextSnakes.py ---
+# MONSDA.py ---
 #
-# Filename: NextSnakes.py
+# Filename: MONSDA.py
 # Description:
 # Author: Joerg Fallmann
 # Maintainer:
@@ -38,7 +38,7 @@ import subprocess
 
 scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
-from NextSnakes.Logger import *
+from MONSDA.Logger import *
 from . import _version
 
 __version__ = _version.get_versions()["version"]
@@ -74,7 +74,7 @@ log = setup_logger(
 )
 
 # import Collection
-from NextSnakes.Workflows import *
+from MONSDA.Workflows import *
 
 
 # CODE
@@ -179,7 +179,7 @@ def run_snakemake(
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
-            if "--profile" in optionalargs and "NextSnakes/slurm" in optionalargs:
+            if "--profile" in optionalargs and "MONSDA/slurm" in optionalargs:
                 makeoutdir("LOGS/SLURM")
 
         threads = (
@@ -193,13 +193,13 @@ def run_snakemake(
                     f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
                 )
                 installpath = os.path.dirname(__file__).replace(
-                    os.sep.join(["lib", pythonversion, "site-packages", "NextSnakes"]),
+                    os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]),
                     "share",
                 )
             except:
                 installpath = os.path.cwd()
 
-            workflowpath = os.path.join(installpath, "NextSnakes", "workflows")
+            workflowpath = os.path.join(installpath, "MONSDA", "workflows")
             log.info(logid + "Unlocking directory")
             snk = os.path.abspath(os.path.join(workflowpath, "unlock.smk"))
             jobtorun = (
@@ -805,7 +805,7 @@ def runjob(jobtorun):
                         )
                     else:
                         log.error(logid + "STOPPING: " + str(output))
-                    log.info("PLEASE CHECK LOG AT LOGS/NextSnakes.log")
+                    log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
                     sys.exit()
                 else:
@@ -820,7 +820,7 @@ def runjob(jobtorun):
                     )
                 ):
                     log.error(logid + "STOPPING: " + str(outerr))
-                    log.info("PLEASE CHECK LOG AT LOGS/NextSnakes.log")
+                    log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
                     sys.exit()
                 else:
@@ -840,7 +840,7 @@ def runjob(jobtorun):
             outerr = str.join("", outerr).rstrip()
             if outerr and outerr != "" or output and output != "":
                 log.error(logid + "ERROR: " + outerr + output)
-                log.info("PLEASE CHECK LOG AT LOGS/NextSnakes.log")
+                log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
             job.kill()
             sys.exit("ERROR SIGNAL: " + str(job.returncode))
 
@@ -863,7 +863,7 @@ def main():
         optionalargs = args[1:]
 
         if knownargs.version:
-            sys.exit("NextSnakes version " + __version__)
+            sys.exit("MONSDA version " + __version__)
 
         log.setLevel(knownargs.loglevel)
 
@@ -889,7 +889,7 @@ def main():
                 + " Please install correct version before continuing!"
             )
         else:
-            log.info("Running NextSnakes version " + __version__ + " as configured")
+            log.info("Running MONSDA version " + __version__ + " as configured")
 
         MIN_PYTHON = (3, 7)
         if sys.version_info < MIN_PYTHON:
@@ -935,7 +935,7 @@ def main():
                     + str(nf_min_version)
                     + " and we only found "
                     + str(nf_ver)
-                    + "! Please install or use envs/NextSnakes.yaml to create conda environment accordingly"
+                    + "! Please install or use envs/MONSDA.yaml to create conda environment accordingly"
                 )
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -967,4 +967,4 @@ if __name__ == "__main__":
         )
         log.error(logid + "".join(tbe.format()))
 
-# NextSnakes.py ends here
+# MONSDA.py ends here

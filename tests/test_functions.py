@@ -59,8 +59,8 @@ import argparse
 import subprocess
 import re
 
-from NextSnakes.Collection import *
-from NextSnakes.Logger import *
+from MONSDA.Collection import *
+from MONSDA.Logger import *
 
 print(sys.argv)
 

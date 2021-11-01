@@ -9,14 +9,14 @@ import re
 from snakemake import load_configfile
 from collections import defaultdict
 import argparse
-from NextSnakes.Logger import *
+from MONSDA.Logger import *
 from functools import reduce
 import operator
 import datetime
 import _version
 
 parser = argparse.ArgumentParser(
-    description="Helper to create or manipulate initial config file used for workflow processing with NextSnakes"
+    description="Helper to create or manipulate initial config file used for workflow processing with MONSDA"
 )
 parser.add_argument(
     "-t",
@@ -514,7 +514,7 @@ def prepare_project(template):
 
 def intro():
     print("NSW: " + __version__)
-    print("RTD: https://nextsnakes.readthedocs.io/en/latest/index.html\n")
+    print("RTD: https://MONSDA.readthedocs.io/en/latest/index.html\n")
     print(
         bold_color.BOLD
         + "N E X T S N A K E S   C O N F I G U R A T O R"
@@ -1424,11 +1424,11 @@ def finalize():
     if guide.mode == "new":
         space = len(configfile)
         print(
-            "Above is your final configuration of NextSnakes. The Guide will create this directory as new project:\n"
+            "Above is your final configuration of MONSDA. The Guide will create this directory as new project:\n"
         )
         prGreen(f"  {os.path.dirname(project.path)}")
         prGreen(f"  └─{os.path.basename(project.path)}")
-        prGreen(f"     ├─NextSnakes{' '*(space-10)}   >  symlink to {os.getcwd()}")
+        prGreen(f"     ├─MONSDA{' '*(space-10)}   >  symlink to {os.getcwd()}")
         prGreen(
             f"     ├─FASTQ{' '*(space-5)}   >  contains symlinks of your samplefiles"
         )
@@ -1442,7 +1442,7 @@ def finalize():
             proof=["", "abort"],
         )
     if guide.mode == "modify":
-        print("Above is your updated configuration of NextSnakes\n")
+        print("Above is your updated configuration of MONSDA\n")
         print(
             "The old config-file will be preserved (it will have a timestamp in it's name)\n"
         )
@@ -1467,7 +1467,7 @@ def create_project(final_dict):
             os.mkdir(project.path)
         fastq = os.path.join(project.path, "FASTQ")
         gen = os.path.join(project.path, "GENOMES")
-        ns = os.path.join(project.path, "NextSnakes")
+        ns = os.path.join(project.path, "MONSDA")
         if not os.path.exists(fastq):
             os.mkdir(fastq)
         if not os.path.exists(gen):
@@ -1574,9 +1574,7 @@ def create_project(final_dict):
 
     print(f"\nStart RunSnakemake with\n")
     prGreen(f"   cd {project.path}\n")
-    prGreen(
-        f"   python3 NextSnakes/NextSnakes.py -c {configfile} --directory ${{PWD}}\n\n"
-    )
+    prGreen(f"   python3 MONSDA/MONSDA.py -c {configfile} --directory ${{PWD}}\n\n")
 
 
 #############################

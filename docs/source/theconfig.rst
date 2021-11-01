@@ -15,11 +15,11 @@ defines parameters specific for the job:
 
    "WORKFLOWS": "FETCH,QC,MAPPING,TRIMMING,DEDUP,COUNTING,UCSC,DE,DEU,DAS", # Here you define which main workflow steps should be run,
    "REFERENCE": "GENOMES", #where to find the reference genomes
-   "BINS": "NextSnakes/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
+   "BINS": "MONSDA/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
    "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load
 
 The next part defines where the path to the genome files and its main name plus an extension in case you use
-specific genomes for different runs.  The directory structure that ``NextSnakes.py|NextSnakes.py`` will
+specific genomes for different runs.  The directory structure that ``MONSDA.py|MONSDA.py`` will
 follow is in this example *GENOME\Dm6* and it would look for a genome file named *dm6.fa.gz* without further
 extension.  Here already the split by condition is applied, so you can define different genomes to use for
 different conditions/settings, e.g. when running on standard RNA-Seq and Bisulfite-Seq in parallel or on
@@ -212,7 +212,7 @@ no options just do not add the *OPTION* key
      }
 
 
-Nextsnakes further supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
+MONSDA further supports DE/DEU/DAS-Analysis as postprocessing steps for a defined set of samples. The config for this step looks as follows:
 
 ::
 
@@ -251,4 +251,4 @@ Nextsnakes further supports DE/DEU/DAS-Analysis as postprocessing steps for a de
 
 
 Keep in mind that every workflow/postprocessing step needs a corresponding entry in the config file or
-``NextSnakes.py|NextSnakes.py`` will throw an error.
+``MONSDA.py|MONSDA.py`` will throw an error.

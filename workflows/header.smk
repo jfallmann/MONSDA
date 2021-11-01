@@ -12,27 +12,27 @@ from collections import defaultdict
 from itertools import combinations
 import re
 
-cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes/NextSnakes"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes/NextSnakes"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../NextSnakes"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"NextSnakes")]
+cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA/MONSDA"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA/MONSDA"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA")]
 for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 
-from NextSnakes.Logger import *
-from NextSnakes.Params import *
+from MONSDA.Logger import *
+from MONSDA.Params import *
 
 
 loglevel="INFO"
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace('.py','')
-    if any(x in scriptname for x in ['NextSnakes','Configurator']):
+    if any(x in scriptname for x in ['MONSDA','Configurator']):
         log = logging.getLogger(scriptname)
     else:
         log = logging.getLogger('snakemake')
         for handler in log.handlers[:]:
             handler.close()
             log.removeHandler(handler)
-    handler = logging.FileHandler('LOGS/NextSnakes.log', mode='a')
+    handler = logging.FileHandler('LOGS/MONSDA.log', mode='a')
     handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M'))
     log.addHandler(handler)
     handler = logging.StreamHandler()
@@ -42,7 +42,7 @@ try:
     log.setLevel(lvl)
 
 except Exception as err:
-    log = setup_logger(name='NextSnakes.header', log_file='LOGS/NextSnakes.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
+    log = setup_logger(name='MONSDA.header', log_file='LOGS/MONSDA.log', logformat='%(asctime)s %(levelname)-8s %(name)-12s %(message)s', datefmt='%m-%d %H:%M', level=loglevel, filemode='a')
     #log = setup_logger(name=scriptname, log_file='stderr', logformat='%(asctime)s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M', level=loglevel)
 
     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -57,7 +57,7 @@ logid = 'header.smk: '
 # Parse SUBCONFIG
 try:
     installpath = os.path.dirname(__file__).replace(
-        os.sep.join(["lib", "python3.9", "site-packages", "NextSnakes"]), "share"
+        os.sep.join(["lib", "python3.9", "site-packages", "MONSDA"]), "share"
     )
 except:
     installpath = os.path.cwd()

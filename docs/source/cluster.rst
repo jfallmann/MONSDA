@@ -15,7 +15,7 @@ through the process of manually creating one, either using the cookiecutter exam
 repository simply adapt the call below to your needs.
 
 ``
-python NextSnakes/NextSnakes.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile NextSnakes/slurm --cluster-config NextSnakes/cluster/config_slurm.yamlx
+python MONSDA/MONSDA.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile MONSDA/slurm --cluster-config MONSDA/cluster/config_slurm.yamlx
 ``
 
 Further adaptions like grouping of jobs and advanced configs for rule
@@ -27,7 +27,7 @@ SGE(outdated)
 Define the cluster config file and for SGE support simply append
 
 ``
---cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript NextSnakes/cluster/sge.sh
+--cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript MONSDA/cluster/sge.sh
 ``
 
 Nextflow

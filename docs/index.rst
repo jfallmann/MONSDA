@@ -1,5 +1,5 @@
 =======================================
-Welcome to the NextSnakes documentation
+Welcome to the MONSDA documentation
 =======================================
 
 .. toctree::
@@ -23,5 +23,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
   
-NextSnakes.rst (END)
+MONSDA.rst (END)
 

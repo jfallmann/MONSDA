@@ -1,2 +1,2 @@
 include versioneer.py
-include NextSnakes/_version.py
+include MONSDA/_version.py

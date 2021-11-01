@@ -11,6 +11,6 @@ to create now:
 
 For now its enough just to create this three - the GUIDE will do that for you.
 Later we fill them. The best and clearest way to use NextSnkaes would be to
-create a directory 'NextSnakes' where you can store several projects side by side.
+create a directory 'MONSDA' where you can store several projects side by side.
 But this is up to you, only the existence of the above inside your PROJECT-FOLDER
 is really necessary.

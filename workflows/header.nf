@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 //includes
-//include {} from '../NextSnakes/lib/Collection.groovy'
+//include {} from '../MONSDA/lib/Collection.groovy'
 
 //Version Check
 nextflowVersion = '>=20.01.0.5264'
@@ -32,4 +32,4 @@ SAMPLES = get_always('SAMPLES').split(',') ?: null
 LONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
 SHORTSAMPLES = get_always('SHORTSAMPLES').split(',') ?: null
 //dummy
-dummy = Channel.fromPath("${workflow.workDir}/../LOGS/NextSnakes.log")
+dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")

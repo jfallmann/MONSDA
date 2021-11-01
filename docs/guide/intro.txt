@@ -1,17 +1,17 @@
-Welcome to NextSnakes, the modular assembler of snakemake and nexflow workflows
+Welcome to MONSDA, the modular assembler of snakemake and nexflow workflows
 centered on a single config file.
-NextSnakes provides HTS analysis from sra download, preprocessing and mapping
+MONSDA provides HTS analysis from sra download, preprocessing and mapping
 to postprocessing/analysis and ucsc track generation.
 
-For using NextSnakes you basically have to set up a PROJECT-FOLDER with your
+For using MONSDA you basically have to set up a PROJECT-FOLDER with your
 data and create a CONFIGFILE containig all informations about your project.
 
 This GUIDE will help you with how to set up both step by step. At the same time
-you will understand how NextSnakes works and how the the CONFIG-FILE is
+you will understand how MONSDA works and how the the CONFIG-FILE is
 structured. This is important so that you can read and edit CONFIGFILES more
 easily.
 
-Furthermore NextSnakes-projects can be expanded by adding further WORKFLOWS.
+Furthermore MONSDA-projects can be expanded by adding further WORKFLOWS.
 To do that you can also use this GUIDE to 'append' WORKFLOWS or data to an
 existing CONFIG-FILE.
 

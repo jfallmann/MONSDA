@@ -16,7 +16,7 @@ information on paths, files to process and settings beyond default for
 mapping tools and others.  The template on which analysis is based can
 be found in the ``config`` directory.
 
-For ``Nextsnakes`` to be as FAIR as possible, we rely on
+For ``MONSDA`` to be as FAIR as possible, we rely on
 ``conda`` as environment management system. For details on
 ``conda`` please refer to the [conda
 manual](https://docs.conda.io/en/latest/).
@@ -25,11 +25,11 @@ This workflow collection makes heavy use of ``conda`` and especially
 the [bioconda](https://bioconda.github.io) channel.
 
 To create a working environment for this repository please install the
-``NextSnakes.yaml`` environment as found in the ``envs`` directory
+``MONSDA.yaml`` environment as found in the ``envs`` directory
 like so:
 
 ``
-conda env create -n NextSnakes -f envs/NextSnakes.yaml
+conda env create -n MONSDA -f envs/MONSDA.yaml
 ``
 
 The ``envs`` directory holds all the environments needed to run the pipelines in the ``workflows`` directory,

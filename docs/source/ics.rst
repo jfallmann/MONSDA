@@ -6,7 +6,7 @@ For each ID you work on, you can define one or multiple conditions and
 settings that will be used for the analysis). The ICS also sets the
 file structure to follow for the FASTQ directory, where the ID is the
 first level and the Condition the second. Setting is used by
-``NextSnakes.py|NextSnakes.py`` to enable processing of the same
+``MONSDA.py|MONSDA.py`` to enable processing of the same
 samples under different settings like mapping tools, trimming tools
 and later also postprocessing tools or commandline options for these
 tools.

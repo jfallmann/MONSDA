@@ -3,7 +3,7 @@ you have to take into account. For DE, DEU and DAS you have to determine
 COMPARISON GROUPS and you can choose different analysis TOOLS.
 
 The COMPARISON GROUPS are particularly important at this point. You have to
-specify them according to the ICS structure. NextSnakes will collect the samples
+specify them according to the ICS structure. MONSDA will collect the samples
 and put them bundled up into the analysis TOOLS. Use the ICS-encoding for this.
 
 It becomes clear, when you look at the following example. This is how it should

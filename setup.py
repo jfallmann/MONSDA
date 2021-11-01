@@ -5,10 +5,12 @@ from collections import defaultdict
 import os
 import versioneer
 
-NAME = "NextSnakes"
-DESCRIPTION = "NextSnakes, a modular assembler of snakemake and nexflow workflows"
+NAME = "MONSDA"
+DESCRIPTION = (
+    "MONSDA, Modular Organizer of Nextflow and Snakemake driven htd Data Analysis"
+)
 # Set __version__ done by versioneer
-# exec(open("NextSnakes/__init__.py").read())
+# exec(open("MONSDA/__init__.py").read())
 
 
 def generate_datafiles():
@@ -20,7 +22,7 @@ def generate_datafiles():
         if any(x in s for x in [".pl", ".pm", ".py", ".sh", ".R"]):
             scripts.append(os.path.relpath(s))  # os.path.join(s, os.path.split(s)[1]))
     for s in scripts:
-        dirlist[str(os.path.join("share", "NextSnakes", os.path.dirname(s)))].append(s)
+        dirlist[str(os.path.join("share", "MONSDA", os.path.dirname(s)))].append(s)
 
     workflows = list()
     for d in glob("workflows/*"):
@@ -29,26 +31,26 @@ def generate_datafiles():
                 os.path.relpath(d)
             )  # os.path.join(d, os.path.split(d)[1]))
     for w in workflows:
-        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(w))].append(w)
+        dirlist[os.path.join("share", "MONSDA", os.path.dirname(w))].append(w)
 
     envs = list()
     for e in glob("envs/*"):
         envs.append(os.path.relpath(e))  # os.path.join(d, os.path.split(d)[1]))
     for e in envs:
-        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(e))].append(e)
+        dirlist[os.path.join("share", "MONSDA", os.path.dirname(e))].append(e)
 
     confs = list()
     for c in glob("configs/*"):
         if any(x in c for x in [".json"]):
             confs.append(os.path.relpath(c))  # os.path.join(d, os.path.split(d)[1]))
     for c in confs:
-        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(c))].append(c)
+        dirlist[os.path.join("share", "MONSDA", os.path.dirname(c))].append(c)
 
     profiles = list()
     for p in glob("profile_*/*"):
         confs.append(os.path.relpath(p))  # os.path.join(d, os.path.split(d)[1]))
     for p in profiles:
-        dirlist[os.path.join("share", "NextSnakes", os.path.dirname(p))].append(p)
+        dirlist[os.path.join("share", "MONSDA", os.path.dirname(p))].append(p)
 
     dirlist[""].append("LICENSE")
 
@@ -67,24 +69,24 @@ setup(
     description=DESCRIPTION,
     author="Joerg Fallmann",
     author_email="fall@bioinf.uni-leipzig.de",
-    packages=find_packages(include=["NextSnakes", "NextSnakes.*"]),
+    packages=find_packages(include=["MONSDA", "MONSDA.*"]),
     include_package_data=True,
     # scripts=scripts,
     data_files=generate_datafiles(),
     entry_points={
         "console_scripts": [
-            "NextSnakes = NextSnakes.RunNextSnakes:main",
-            "NextSnakes_configure = NextSnakes.Configurator:main",
+            "monsda = MONSDA.RunMONSDA:main",
+            "monsda_configure = MONSDA.Configurator:main",
         ]
     },
-    # scripts=["NextSnakes/Configurator.py"],
+    # scripts=["MONSDA/Configurator.py"],
     install_requires=requires,
     python_requires=">=3.6",
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,
     license="LICENSE",
-    url="https://github.com/jfallmann/NextSnakes",
+    url="https://github.com/jfallmann/MONSDA",
     long_description_content_type="text/markdown",
     long_description=open("README.md").read(),
 )

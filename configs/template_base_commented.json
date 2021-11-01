@@ -6,7 +6,7 @@
     "VERSION": "version number of pip installation"
   },
   "WORKFLOWS": "",
-  "BINS": "NextSnakes/scripts",
+  "BINS": "MONSDA/scripts",
   "MAXTHREADS": "",
   "VERSION": "",
   "SETTINGS": {

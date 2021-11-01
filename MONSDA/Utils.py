@@ -96,7 +96,7 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/NextSnakes.log", mode="a")
+    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
@@ -167,13 +167,13 @@ def rmempty(check):
 
 @check_run
 def ns_check_version(v, r):
-    logid = scriptname + ".nextsnakes_check_version: "
+    logid = scriptname + ".MONSDA_check_version: "
 
     if parse_version(v) < parse_version(check):
         log.debug(logid + check)
         return True
     else:
-        return shutil.which("NextSnakes")
+        return shutil.which("MONSDA")
 
 
 ##############################

@@ -3,7 +3,7 @@
 
 Fine, we have now established the basic structure of your project. In the next
 step you have to determine which WORKFLOWS you want to run. For understanding,
-NextSnakes differentiated betwween WORKFLOWS and POSTPROCESSING analyses.
+MONSDA differentiated betwween WORKFLOWS and POSTPROCESSING analyses.
 Later you have a few more options at the POSTPROCESSING steps but for now it's
 enough just to know that.
 

@@ -1,7 +1,7 @@
                                    Chapter 2
                                > ICS-STRUCTURE <
 
-All right, we now establish the core-part of NextSnakes, the ICS-structure.
+All right, we now establish the core-part of MONSDA, the ICS-structure.
 ICS stands for ID-CONDITION-SETTING and is the way you structure the experiment
 you want to analyze.
 You can imagine the ICS as a rooted tree, where your CONFIGFILE contains the
@@ -35,7 +35,7 @@ For identify a certain node or leaf in this tree, we use following annotation:
  > Human:Knock-Out
 
 From now on, we we are going to call such an identifyer an 'ics'. It is important
-to understand this structure, because NextSnakes will use it in different places:
+to understand this structure, because MONSDA will use it in different places:
 
 1. As file structure to follow for the 'FASTQ' directory, where the ID
    accordingly is the first level.

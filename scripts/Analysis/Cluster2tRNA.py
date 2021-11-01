@@ -59,8 +59,10 @@ import inspect
 
 ####load own modules
 cmd_subfolder = os.path.join(
-    os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))),
-    "../../NextSnakes",
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
+    "../../MONSDA",
 )
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
@@ -79,21 +81,32 @@ from Logger import *
 
 ### MAIN
 def parseargs():
-    parser = argparse.ArgumentParser(description='Read BAM file read by read and collect mapping statistics')
-    parser.add_argument("-f", "--fasta", type=str, help='Reference genome FASTA, needs to be indexed')
-    parser.add_argument("-o", "--outdir", type=str, default='.', help='Output directory')
+    parser = argparse.ArgumentParser(
+        description="Read BAM file read by read and collect mapping statistics"
+    )
     parser.add_argument(
-        "-v", "--verbosity", type=int, default=0, choices=[0, 1], help="increase output verbosity"
+        "-f", "--fasta", type=str, help="Reference genome FASTA, needs to be indexed"
+    )
+    parser.add_argument(
+        "-o", "--outdir", type=str, default=".", help="Output directory"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=0,
+        choices=[0, 1],
+        help="increase output verbosity",
     )
 
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         args = parseargs()
         if args.outdir:
-            print('Checking or creating outdir ' + str(args.outdir))
+            print("Checking or creating outdir " + str(args.outdir))
             if not os.path.isabs(args.outdir):
                 outdir = os.path.abspath(args.outdir)
             if not os.path.exists(args.outdir):
@@ -104,17 +117,19 @@ if __name__ == '__main__':
         translater = cluster2trna(args.fasta)
         outstring = []
 
-        for cluster in translater['cluster']:
+        for cluster in translater["cluster"]:
 
-            outstring.append('\t'.join([cluster, ','.join(translater['cluster'][cluster])]))
+            outstring.append(
+                "\t".join([cluster, ",".join(translater["cluster"][cluster])])
+            )
 
-        for chrom in translater['tRNA']:
-            for strand in translater['tRNA'][chrom]:
-                for tRNA in translater['tRNA'][chrom][strand]:
-                    outstring.append('\t'.join([tRNA, chrom, strand]))
+        for chrom in translater["tRNA"]:
+            for strand in translater["tRNA"][chrom]:
+                for tRNA in translater["tRNA"][chrom][strand]:
+                    outstring.append("\t".join([tRNA, chrom, strand]))
 
-        with open(os.path.join(outdir, 'cluster2trna_' + args.fasta), 'w') as o:
-            print('\n'.join(outstring), file=o)
+        with open(os.path.join(outdir, "cluster2trna_" + args.fasta), "w") as o:
+            print("\n".join(outstring), file=o)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -123,8 +138,8 @@ if __name__ == '__main__':
             exc_value,
             exc_tb,
         )
-        with open('error', 'a') as h:
-            print(''.join(tbe.format()), file=h)
+        with open("error", "a") as h:
+            print("".join(tbe.format()), file=h)
 
 
 #

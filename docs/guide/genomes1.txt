@@ -4,10 +4,10 @@
 Now we look at the 'GENOMES'-folder. It has also been created in your PROJECT-
 FOLDER. Later the WORKFLOWS you involve will find references like GTF- or
 FASTA-files here.
-NextSnakes implements two features, you need to know about:
+MONSDA implements two features, you need to know about:
 
  > It can happen, that your data includes multiple organisms, like in the example
-   above. For that case NextSnakes needs one subdirectory per organism in
+   above. For that case MONSDA needs one subdirectory per organism in
    the GENOMES-folder. But even if you only have one organism, the
    subdirectory is necessesary.
 
@@ -24,14 +24,14 @@ NextSnakes implements two features, you need to know about:
    '.reduced' and '.extended' as additional identifier for 'Human'.
 
 
- > Please notice that NextSnakes will append the ending '.fa.gz' automatically.
+ > Please notice that MONSDA will append the ending '.fa.gz' automatically.
    You won't have to type it anywhere yourself.
 
 Well, to set up all that properly in the CONFIGFILE, you have to do four steps:
 
 1. First you have to specify a key-value pair in the CONFIGFILE that assigns the
    organisms your samples come from to the basename(!) of a FASTA-file.
-   NextSnakes will append the ending '.fa.gz' automatically.
+   MONSDA will append the ending '.fa.gz' automatically.
 
    In the CONFIGFILE it will look like this for example:
 
@@ -76,7 +76,7 @@ Well, to set up all that properly in the CONFIGFILE, you have to do four steps:
                 }
 
 
-All in all our example will leads NextSnakes to following files:
+All in all our example will leads MONSDA to following files:
 
  > /GENOMES/Human/hg38.extended.fa.gz
  > /GENOMES/Drosophila/dm6.normal.fa.gz

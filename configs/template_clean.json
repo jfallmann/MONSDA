@@ -1,6 +1,6 @@
 {
   "WORKFLOWS": "",
-  "BINS": "NextSnakes/scripts",
+  "BINS": "MONSDA/scripts",
   "MAXTHREADS": "20",
   "VERSION": "0.0.7",
   "SETTINGS": {
