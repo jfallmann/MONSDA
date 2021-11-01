@@ -37,6 +37,7 @@ process minimap_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "minimap.idx")                  "$MAPIDX"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap_index.log"
         else                                        "$MAPUIDX"
     }
 
@@ -52,7 +53,7 @@ process minimap_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -t $THREADS -d $MAPUIDXNAME $IDXPARAMS $genome && ln -fs $MAPUIDXNAME minimap.idx
+    $MAPBIN -t $THREADS -d $MAPUIDXNAME $IDXPARAMS $genome &> index.log&& ln -fs $MAPUIDXNAME minimap.idx
     """
 
 }
@@ -67,7 +68,7 @@ process minimap_mapping{
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap.log"
         else null
     }
 

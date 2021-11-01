@@ -37,6 +37,7 @@ process segemehl3_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "segemehl3.idx")                  "$MAPIDX"
+        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl_index.log"
         else                                              "$MAPUIDX"
     }
 
@@ -52,7 +53,7 @@ process segemehl3_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME && ln -s $MAPUIDXNAME segemehl3.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME &> index.log&& ln -s $MAPUIDXNAME segemehl3.idx
     """
 
 }
@@ -67,7 +68,7 @@ process segemehl3_mapping{
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl.log"
         else null
     }
 

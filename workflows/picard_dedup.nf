@@ -26,7 +26,7 @@ process dedup{
     saveAs: {filename ->
         if (filename.indexOf("_dedup.bam") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
         else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
-        else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/dedupbam.log"
+        else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
         else null
     }
 

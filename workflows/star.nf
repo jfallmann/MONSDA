@@ -39,7 +39,7 @@ process star_idx{
         else if (filename == "Genome")                "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".txt") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
         else if (filename.indexOf(".tab") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
+        else if (filename.indexOf("Log.out") >0)      "LOGS/$COMBO$CONDITION/star_index.log"
         else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
         else null
     }
@@ -78,7 +78,7 @@ process star_mapping{
     saveAs: {filename ->
         if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed.Unmapped.out.gz\E/,"")}.fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Qtrimmed.Aligned.out.sam.gz\E/,"")}mapped.sam.gz"
-        else if (filename.indexOf(".out") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed\E/,"").replaceAll(/\Q.out\E/,"")}.log"
+        else if (filename.indexOf(".out") >0)        "LOGS/$COMBO$CONDITION/MAPPING/star_"+"${filename.replaceAll(/\Q_trimmed\E/,"").replaceAll(/\Q.out\E/,"")}.log"
         else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed\E/,"")}"
         else null
     }

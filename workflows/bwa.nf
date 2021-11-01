@@ -67,7 +67,7 @@ process bwa_mapping{
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "MAPPED/$COMBO$CONDITION/$filename"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/bwa.log"
         else null
     }
 

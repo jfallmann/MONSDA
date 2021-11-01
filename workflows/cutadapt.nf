@@ -27,7 +27,7 @@ process trim{
     saveAs: {filename ->
         if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
         else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
-        else if (filename.indexOf(".log") >0)              "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") >0)              "LOGS/$COMBO$CONDITION/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
 

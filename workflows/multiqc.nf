@@ -86,7 +86,7 @@ workflow MULTIQC{
     USAMPLES.sort()
 
     MAPLOG = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+".log"
+        element -> return "${workflow.workDir}/../LOGS/$COMBO/MAPPING/*.log"
     }
     MAPLOG.sort()
 

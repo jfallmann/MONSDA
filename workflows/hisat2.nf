@@ -37,6 +37,7 @@ process hisat2_idx{
     saveAs: {filename ->
         if (filename.indexOf(".ht2") > 0)        "$MAPUIDX"+"/"+"${filename.replaceFirst(/tmp\.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
+        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/MAPPING/hisat2_index.log"
         else null
     }
 
@@ -53,7 +54,7 @@ process hisat2_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$indexbin && ln -fs $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$indexbin  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
     """
 
 }
@@ -68,7 +69,7 @@ process hisat2_mapping{
     saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "MAPPED/$COMBO$CONDITION/"+"${filename}.log"
+        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/MAPPING/hisat2.log"
         else null
     }
 

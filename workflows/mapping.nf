@@ -48,7 +48,7 @@ process sam2bam{
     saveAs: {filename ->
         if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
         else if (filename.indexOf(".bam") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
-        else if (filename.indexOf(".log") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)  "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
 
@@ -77,7 +77,7 @@ process uniqsam{
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.sam.gz"
-        else if (filename.indexOf(".log") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)       "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
 
@@ -106,7 +106,7 @@ process sam2bamuniq{
     saveAs: {filename ->
         if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
         else if (filename.indexOf(".bam") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
-        else if (filename.indexOf(".log") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)  "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
 
