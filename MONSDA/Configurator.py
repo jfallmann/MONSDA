@@ -872,7 +872,7 @@ def set_settings():
                         s = last_answer
                     if key in ["GTF", "GFF"]:
                         p = f"end_exist_.{key.lower()}.*.gz"
-                    elif kez == "IP":
+                    elif key == "IP":
                         p = None
                     else:
                         p = "end_exist_.gz"
@@ -918,7 +918,7 @@ def set_settings():
             continue
 
 
-def set_comparison_settings():
+def set_comparison_settings(maplist):
     last_sample = ""
     for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
 
