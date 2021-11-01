@@ -7,7 +7,7 @@ import versioneer
 
 NAME = "MONSDA"
 DESCRIPTION = (
-    "MONSDA, Modular Organizer of Nextflow and Snakemake driven htd Data Analysis"
+    "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
 )
 # Set __version__ done by versioneer
 # exec(open("MONSDA/__init__.py").read())
