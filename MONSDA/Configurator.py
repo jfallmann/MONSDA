@@ -1053,39 +1053,39 @@ def set_settings():
             continue
 
 
-def set_comparison_settings():
-    project.current_func = "set_comparison_settings"
-    last_sample = ""
-    for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
-
-        prPurple(f"\n      Sample: {sample}\n")
-        for key in ["GROUPS", "TYPES", "BATCHES"]:
-            if last_sample and key == "GROUPS":
-                ques = f"enter 'cp' to copy entries from sample before"
-            else:
-                ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
-            print(f"         {key}:")
-            guide.display(question=ques)
-            if guide.answer == "cp" and last_sample:
-                guide.clear(4)
-                for key in ["GROUPS", "TYPES", "BATCHES"]:
-                    to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
-                    prCyan(f"         {key}: {to_add}")
-                    get_by_path(project.settingsDict, maplist + [key]).append(to_add)
-                break
-            else:
-                last_sample = sample
-                guide.clear(4)
-                prCyan(f"         {key}: {guide.answer}")
-                try:
-                    get_by_path(project.settingsDict, maplist + [key]).append(
-                        guide.answer
-                    )
-                except:
-                    setInDict(project.settingsDict, maplist + [key], [])
-                    get_by_path(project.settingsDict, maplist + [key]).append(
-                        guide.answer
-                    )
+# def set_comparison_settings():
+#     project.current_func = "set_comparison_settings"
+#     last_sample = ""
+#     for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
+#
+#         prPurple(f"\n      Sample: {sample}\n")
+#         for key in ["GROUPS", "TYPES", "BATCHES"]:
+#             if last_sample and key == "GROUPS":
+#                 ques = f"enter 'cp' to copy entries from sample before"
+#             else:
+#                 ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
+#             print(f"         {key}:")
+#             guide.display(question=ques)
+#             if guide.answer == "cp" and last_sample:
+#                 guide.clear(4)
+#                 for key in ["GROUPS", "TYPES", "BATCHES"]:
+#                     to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
+#                     prCyan(f"         {key}: {to_add}")
+#                     get_by_path(project.settingsDict, maplist + [key]).append(to_add)
+#                 break
+#             else:
+#                 last_sample = sample
+#                 guide.clear(4)
+#                 prCyan(f"         {key}: {guide.answer}")
+#                 try:
+#                     get_by_path(project.settingsDict, maplist + [key]).append(
+#                         guide.answer
+#                     )
+#                 except:
+#                     setInDict(project.settingsDict, maplist + [key], [])
+#                     get_by_path(project.settingsDict, maplist + [key]).append(
+#                         guide.answer
+#                     )
 
 
 def modify(config=None):
@@ -1449,7 +1449,7 @@ def set_workflows(wf=None):
             if (
                 workflow == "PEAKS"
                 and "macs" in ", ".join(tools_to_use.keys())
-                or workflow in comparable_workflows and not project.workflowsDict[workflow][COMPARABLE]
+                or workflow in comparable_workflows and not project.workflowsDict[workflow]["COMPARABLE"]
             ):
                 project.workflowsDict[workflow]["COMPARABLE"]
                 project.workflowsDict[workflow]["EXCLUDE"] = []
