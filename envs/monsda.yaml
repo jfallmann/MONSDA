@@ -1,4 +1,4 @@
-name: MONSDA
+name: monsda
 channels:
   - conda-forge
   - bioconda
@@ -44,12 +44,14 @@ dependencies:
   - cmarkgfm=0.6.0
   - coincbc=2.10.5
   - colorama=0.4.4
+  - conda=4.10.3
+  - conda-package-handling=1.7.3
   - configargparse=1.5.1
   - connection_pool=0.0.3
   - coreutils=8.32
   - crc32c=2.2.post0
   - cryptography=3.4.7
-  - curl=7.77.0
+  - curl=7.79.1
   - cycler=0.10.0
   - dataclasses=0.8
   - datrie=0.8.2
@@ -118,16 +120,17 @@ dependencies:
   - jupyter_core=4.7.1
   - keyring=23.0.1
   - kiwisolver=1.3.1
-  - krb5=1.19.1
+  - krb5=1.19.2
   - lcms2=2.12
   - ld_impl_linux-64=2.36.1
   - lerc=2.2.1
+  - libarchive=3.5.2
   - libblas=3.9.0
   - libcblas=3.9.0
   - libclang=11.1.0
   - libcrc32c=1.1.1
   - libcroco=0.6.13
-  - libcurl=7.77.0
+  - libcurl=7.79.1
   - libdeflate=1.7
   - libedit=3.1.20210216
   - libev=4.33
@@ -151,8 +154,9 @@ dependencies:
   - libprotobuf=3.17.2
   - librsvg=2.50.7
   - libsodium=1.0.18
-  - libssh2=1.9.0
-  - libstdcxx-ng=9.3.0
+  - libsolv=0.7.19
+  - libssh2=1.10.0
+  - libstdcxx-ng=11.2.0
   - libtiff=4.3.0
   - libtool=2.4.6
   - libuuid=2.32.1
@@ -165,6 +169,8 @@ dependencies:
   - libzlib=1.2.11
   - logmuse=0.2.6
   - lz4-c=1.9.3
+  - lzo=2.10
+  - mamba=0.17.0
   - markupsafe=2.0.1
   - matplotlib=3.4.2
   - matplotlib-base=3.4.2
@@ -200,7 +206,6 @@ dependencies:
   - peppy=0.31.1
   - perl=5.32.1
   - pillow=8.3.1
-  - pip=21.1.3
   - pixman=0.40.0
   - pkg-config=0.29.2
   - pkginfo=1.7.1
@@ -215,6 +220,7 @@ dependencies:
   - pyasn1=0.4.8
   - pyasn1-modules=0.2.8
   - pycodestyle=2.7.0
+  - pycosat=0.6.3
   - pycparser=2.20
   - pyflakes=2.3.1
   - pygments=2.9.0
@@ -244,11 +250,14 @@ dependencies:
   - readline=8.1
   - readme_renderer=27.0
   - regex=2021.7.6
+  - reproc=14.2.1
+  - reproc-cpp=14.2.1
   - requests=2.25.1
   - requests-oauthlib=1.3.0
   - requests-toolbelt=0.9.1
   - rfc3986=1.5.0
   - rsa=4.7.2
+  - ruamel_yaml=0.15.80
   - s3transfer=0.4.2
   - scipy=1.7.0
   - secretstorage=3.3.1
@@ -273,7 +282,7 @@ dependencies:
   - stone=3.2.1
   - stopit=1.1.2
   - tabulate=0.8.9
-  - tk=8.6.10
+  - tk=8.6.11
   - toml=0.10.2
   - toposort=1.6
   - tornado=6.1
@@ -318,3 +327,13 @@ dependencies:
   - zipp=3.5.0
   - zlib=1.2.11
   - zstd=1.5.0
+  - pip:
+    - dnspython==1.16.0
+    - docopt==0.6.2
+    - fett==0.3.2
+    - pip==21.3
+    - pymongo==3.11.4
+    - python-jsonrpc-server==0.3.4
+    - snooty-lextudio==1.11.4.dev0
+    - ujson==1.35
+    - watchdog==1.0.2
