@@ -1,51 +1,260 @@
-=======================================
-CREATE config.json WITH Configurator.py
-=======================================
+.. role::  raw-html(raw)
+    :format: html
 
-To enable users easy ``snakemake`` configuration, we host the
-executable ``Configurator.py`` which generates a ``config.json``
-file based on the users needs. This ``config.json`` follows standard
-``json`` format and contains all the information needed to run the
-analysis.  Making use of ``Configurator.py`` allows to start with a
-simple ``config.json`` based on the template in the configs
-directory and append workflows as needed step by step, or create the
-full configuration at once.  Usually a user will start an analysis
-running initial Quality Control on raw files. Although
-``MONSDA.py`` will run QC (when enabled) also for trimming and
-mapping steps, this will be used as first step explaining
-``Configurator.py``.
 
-To list all options and available choices for each option simply run:
-``
-./snakes/Configurator.py
-``
+==========================================
+CONTROLING MONSDA WITH Configurator.py
+==========================================
 
-To create an initial ``config.json`` simply run:
-``
-./snakes/Configurator.py -w QC -i hs:01012020:std -c config_basic.json -m hs:hg38 -g hg38:hg38genomefile -x hg38:all_chromosomes
-``
+| MONSDA operates from a project folder containing a configuration file.
+| To enable easy setup and configuration, we host the executable Configurator.
+| The Configurator works as an interactive terminal user interface (TUI).
+| It supports you in three main things:
 
-Where ``-w`` is the option to add 'QC' as workflow step, ``-i``
-sets the IdentifierConditionSetting relationship ``-c`` names the
-output file where the configuration is written to and so on, please
-refer to the help output of the tool for more information.
+1. Creating the complete initial project folder
+2. Creating the configuration file
+3. Modifying existing configuration files easily
 
-After 'QC', the user wants to start trimming and mapping and also add
-new ICSs so we append to the just created config to make
-``MONSDA.py`` aware of that.
+| To learn more about the project folder `click here`_.
 
-``
-./snakes/Configurator.py -w QC,TRIMMING,MAPPING -i hs:01012020:std,newlab:12012020:specific,otherspecies:24032003:test -c config_basic.json -m hs:hg38,newlab:hg38,otherspecies:dm6 -g hg38:hg38genomefile,dm6:dm6genomefile -x hg38:all_chromosomes
-``
+.. _projectfolder.rst
 
-And ``Configurator.py`` will append to the existing
-``config.json`` everything that is new and overwrite what has
-changed and keep the rest intact.  Following this procedure the user
-can stepwise analyze samples one by one, step by step or run the whole
-pipeline at once with all samples and processing steps. It is also
-possible to append to another existing ``config.json``, simply
-change the filename of the ``-c`` option.
+| To learn more about structure and function of the configuration file `click here`_.
 
-When run with the standard template.json as input, most setting will
-be very basic, only a subset of tools will be used so we recommend to
-manually go over the configuration and adapt settings to your needs.
+.. _theconfig.rst
+
+Run the Configurator
+====================
+
+To run the Configurator, the ``monsda.yaml`` conda environent must be installed and activated.
+
+.. code-block::
+
+   conda env create -f ./MONSDA/envs/monsda.yaml -n MONSDA
+    conda activate MONSDA
+
+
+Run the Configurator.py
+
+.. code-block::
+
+ MONSDA_configure
+
+
+Main Functions
+==============
+
+When the Configurator is started it provides three basic options: To Create a new project, to create a new config-file or to modify an existing config-file.
+
+With the first two options you enter the `Create Mode`_. In both cases you create a configuration file.
+The difference with creating a project is that the Configurator asks you for a destination for the project folder and sets soft links for all your input files.
+
+In the following it will be explained in detail, which options the configurator offers you.
+
+
+Create Mode
+------------
+
++---------------------------------------------------------------------------------------------------------------------------+
+| ``SELECT WORKFLOWS``                                                                                                      |
+| :raw-html:`&vrtri;`                                                                                                       |
+| ``MAKE CONDITION-TREE``                                                                                                   |
+| :raw-html:`&vrtri;`                                                                                                       |
+| ``ASSIGN SAMPLES``                                                                                                        |
+| :raw-html:`&vrtri;`                                                                                                       |
+| ``SET WORKFLOWS``                                                                                                         |
+| :raw-html:`&vrtri;`                                                                                                       |
+| ``SET THREADS``                                                                                                           |
++===========================================================================================================================+
+| To create a new project or a new config-file, the Configurator will take you through all necessary steps.                 |
+| For creating a project you have to enter a path to establish. Note, that your project folder will grow with your results. |
+| Choose a place with enough memory if necessary.                                                                             |
++---------------------------------------------------------------------------------------------------------------------------+
+
+Modify Mode
+-----------
+
+
+
+1. Add workflows
+````````````````
+
++------------------------------------------------------------------------------------+
+| ``SELECT CONFIG``                                                                  |
+| :raw-html:`&vrtri;`                                                                |
+| ``SELECT ADDITIONAL WORKFLOWS``                                                    |
+| :raw-html:`&vrtri;`                                                                |
+| ``SET WORKFLOWS``                                                                  |
++====================================================================================+
+| Select Workflows not activated in an existing config-file. The Configurator will   |
+| expand each condition. Afterwards you have to make settings for the new workflows. |
++------------------------------------------------------------------------------------+
+
+2. Remove workflows
+```````````````````
+
++------------------------------------------------------------------------------------+
+| ``SELECT CONFIG``                                                                  |
+| :raw-html:`&vrtri;`                                                                |
+| ``SELECT REMOVABLE WORKFLOWS``                                                     |
++====================================================================================+
+| The Configurator will show you all established workflows. After selecting the ones |
+| to be removed it will delete them from the config-file for each condition.         |
++------------------------------------------------------------------------------------+
+
+3. Add conditions
+`````````````````
+
++-----------------------------------------------------------------------------------------------------+
+| ``SELECT CONFIG``                                                                                   |
+| :raw-html:`&vrtri;`                                                                                 |
+| ``MAKE CONDITION-TREE``                                                                             |
+| :raw-html:`&vrtri;`                                                                                 |
+| ``ASSIGN SAMPLES``                                                                                  |
+| :raw-html:`&vrtri;`                                                                                 |
+| ``SET WORKFLOWS``                                                                                   |
++=====================================================================================================+
+| You can add conditions in a similar way you created the condition-tree. But note, that you can't    |
+| add subconditions to existing leafes. The configurator will expand the condition-tree               |
+| for the settings-block and each workflow. Because now you have new option fields in the config-file |
+| the Configurator will ask you for copying existing workflow settings or to make new ones.           |
++-----------------------------------------------------------------------------------------------------+
+
+4. Remove conditions
+````````````````````
+
++-------------------------------------------------------------------------------+
+| ``SELECT CONFIG``                                                             |
+| :raw-html:`&vrtri;`                                                           |
+| ``SELECT REMOVABLE CONDITIONS``                                               |
++===============================================================================+
+| The Configurator will offer you all conditions the condition-tree represents. |
+| After selecting the one or several to be removed it will delete them in the   |
+| settings-block and for each condition.                                        |
++-------------------------------------------------------------------------------+
+
+Take a Break
+============
+
+It can happen, that the Configurator asks for entries, you haven't thought about yet.
+So you don't have to abort the creation to start all over again, you can cache your previous entries.
+The Configurator will safe all your entries in a backup file called ``unfinished_config_timestamp.pkl``
+
+Whereever you are, type in the terminal:
+
+.. code-block::
+
+    takeabreake
+
+Later, you can continue the session by entering:
+
+.. code-block:: bash
+
+    Configurator.py -s unfinished_config_timestamp.pkl
+
+
+Assistance in detail
+====================
+
+Create Condition-Tree
+---------------------
+
+.. code-block::
+
+  ============================================================
+
+  {
+        "NewExperiment": {
+              "wildtype": {
+                    "day1": {},
+                    "day2": {}
+              },
+              "knockout": {
+                    "day1": {},
+                    "day2": {}    <=(add subconditions here)
+              }
+        }
+  }
+
+  ============================================================
+
+MONSDA understands your experimental design by creating a condition-tree.
+The Configurator helps you to create it. To do this, the Configurator points to a condition in which you are allowed to add further sub-conditions.
+In this way you can create a nested condtion-tree.
+Note that each leaf of this tree represents a separate codition. later you will make the workflow settings for each of these conditions.
+
+
+Sample Assignment:
+------------------
+
+
+.. code-block::
+
+    ============================================================
+
+    {
+        "DSM1294asdf": {
+              "wildtype": {
+                    "day1": {
+                          "SAMPLES": [
+                                "Sample_1",
+                                "Sample_2"
+                          ]
+                    },
+                    "day2": {}           <-
+              },
+              "knockout": {
+                    "day1": {},
+                    "day2": {}
+              }
+        }
+    }
+
+  ============================================================
+
+       1  >  Sample_1     in  path/to/knockout/samples
+       2  >  Sample_2     in  path/to/knockout/samples
+       3  >  Sample_3     in  path/to/knockout/samples
+       4  >  Sample_4     in  path/to/knockout/samples
+       5  >  Sample_a     in  path/to/wildtype/samples
+       6  >  Sample_b     in  path/to/wildtype/samples
+       7  >  Sample_c     in  path/to/wildtype/samples
+       8  >  Sample_d     in  path/to/wildtype/samples
+
+The Configurator helps you to assign samples to conditions. If you have activated the FETCH workflow, it will ask you for SRA Accession Numbers.
+Otherwise you have to add pathes where your samples are stored. The Configurator finds every file with ".fastq.gz" ending and presents it for assignment.
+At the same time, the condition-Tree is displayed with an arrow indicating the condition to which samples are assigned.
+
+
+
+Make Settings for Conditions
+----------------------------
+
+.. code-block::
+
+    ============================================================
+
+      {
+            "NewExperiment": {
+                  "wildtype": {
+                        "day1": {},           <-  1
+                        "day2": {},           <-  1
+                        "day3": {}            <-  1
+                  },
+                  "knockout": {
+                        "day1": {},           <-    2
+                        "day2": {},           <-    2
+                        "day3": {}            <-    2
+                  }
+            }
+      }
+
+    ============================================================
+
+MONSDA can run the same workflow with different settings, differentiated by conditions.
+Therefore the config-file needs workflow settings for each condition you created.
+However you will often set the same settings. To avoid these repetitions during config-creation
+the configurator offers you to set several conditions at once.
+In the example shown above, you would go through two setting loops.
+All subconditions of both "wildtype" and "knockout" are assigned the same settings.
+To change the conditions set simoulatnously, you can loop through the possible selections by pressing enter.
