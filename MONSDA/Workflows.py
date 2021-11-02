@@ -1617,6 +1617,8 @@ def nf_fetch_params(
     IP = SETTINGS.get("IP")
 
     rundedup = config.get("RUNDEDUP")
+    prededup = config.get("PREDEDUP")
+
     if rundedup:
         log.debug("DEDUPLICATION ENABLED")
 
@@ -1649,6 +1651,8 @@ def nf_fetch_params(
         retconf["STRANDED"] = stranded
     if rundedup:
         retconf["RUNDEDUP"] = rundedup
+    if prededup:
+        retconf["PREDEDUP"] = prededup
 
     # MAPPING Variables
     if "MAPPING" in config:
@@ -2419,14 +2423,35 @@ def nf_make_sub(
                             flowlist.append("QC_MAPPING")
 
                         if works[j] == "DEDUP":
-                            deduptool = toolenv
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
                                 flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
-                            else:
-                                continue
+                                nfi = os.path.abspath(
+                                    os.path.join(workflowpath, subname)
+                                )
+                                with open(nfi, "r") as nf:
+                                    for line in nf.readlines():
+                                        line = re.sub(
+                                            condapath, 'conda "' + envpath, line
+                                        )
+                                        subjobs.append(line)
+                                    subjobs.append("\n\n")
+
+                                tp.append(
+                                    nf_tool_params(
+                                        subsamples[0],
+                                        None,
+                                        sconf,
+                                        works[j],
+                                        toolenv,
+                                        toolbin,
+                                        None,
+                                        condition,
+                                    )
+                                )
+                            subname = toolenv + "_dedup.nf"
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
@@ -2479,15 +2504,6 @@ def nf_make_sub(
 
                     if "DEDUP" in works:
                         flowlist.append("DEDUPBAM")
-                        nfi = os.path.abspath(
-                            os.path.join(workflowpath, deduptool + "_dedup.nf")
-                        )
-
-                        with open(nfi, "r") as nf:
-                            for line in nf.readlines():
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
 
                 if "QC" in works:
                     flowlist.append("MULTIQC")
