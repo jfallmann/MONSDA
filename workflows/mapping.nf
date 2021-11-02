@@ -46,7 +46,7 @@ process sam2bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.endsWith(".bam") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
+        if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
         else if (filename.indexOf(".log") > 0)  "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
         else null
@@ -104,7 +104,7 @@ process sam2bamuniq{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.endsWith(".bam") > 0)       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
+        if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
         else if (filename.indexOf(".log") > 0)  "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
         else null

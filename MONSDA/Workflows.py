@@ -2405,7 +2405,6 @@ def nf_make_sub(
                                     flowlist.append("QC_RAW")
                                     if toolenv == "umitools":
                                         flowlist.append("DEDUPEXTRACT")
-                                        sconf["PREDEDUP"] = "enabled"
                                     if "MAPPING" in works:
                                         subname = toolenv + "_dedup_map.nf"
                                         flowlist.append("QC_MAP")
@@ -2423,6 +2422,7 @@ def nf_make_sub(
                             deduptool = toolenv
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
+                                subconf["PREDEDUP"] = "enabled"
                                 flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
                             else:
