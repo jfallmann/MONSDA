@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+import sys
 import json
 import copy
 import readline
@@ -9,16 +10,26 @@ import re
 from snakemake import load_configfile
 from collections import defaultdict
 import argparse
-from Logger import *
 from functools import reduce
 import operator
 import datetime
-from _version import *
 import pickle
 
+from MONSDA.Logger import *
+from . import _version
+
+__version__ = _version.get_versions()["version"]
 
 
+try:
+    pythonversion = f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
+    installpath = os.path.dirname(__file__).replace(
+        os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
+    )
+except:
+    installpath = os.path.cwd()
 
+configpath = os.path.join(installpath, "MONSDA", "configs")
 
 parser = argparse.ArgumentParser(
     description="Helper to create or manipulate configuration file or project folder used for workflow processing with MONSDA"
@@ -53,6 +64,7 @@ args = parser.parse_args()
 class NestedDefaultDict(defaultdict):
     def __init__(self, *args, **kwargs):
         super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
+
     def __reduce__(self):
         return (type(self), (), None, None, iter(self.items()))
 
@@ -121,13 +133,14 @@ class GUIDE:
                 else:
                     a = input(">>> ").strip().replace(" ", "")
             if a == "takeabreak":
-                file = os.path.join(current_path,f"unfinished_config_{datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S')}.pkl")
-                with open(file, 'wb') as f:
+                file = os.path.join(
+                    current_path,
+                    f"unfinished_config_{datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S')}.pkl",
+                )
+                with open(file, "wb") as f:
                     pickle.dump(project, f)
                 print(f"\n\nYour entries has been saved. Continue your Session with\n")
-                prGreen(
-                f"   MONSDA_configure -s {file}\n\n"
-                )
+                prGreen(f"   MONSDA_configure -s {file}\n\n")
                 exit()
 
             if any(x in unallowed_characters for x in a):
@@ -534,6 +547,7 @@ def rlinput(prompt, prefill=""):
 def complete(text, state):
     return (glob.glob(text + "*") + [None])[state]
 
+
 def print_intro():
     print("NSW: " + __version__)
     print("RTD: https://MONSDA.readthedocs.io/en/latest/index.html\n")
@@ -551,8 +565,6 @@ readline.set_completer(complete)
 
 project = PROJECT()
 guide = GUIDE()
-
-
 
 
 ################################################################################################################
@@ -731,7 +743,7 @@ def create_condition_tree():
 def add_sample_dirs(only_conditions=None):
     project.current_func = "add_sample_dirs"
     if "FETCH" in project.workflowsDict.keys():
-          return assign_SRA(only_conditions)
+        return assign_SRA(only_conditions)
     print("\n  FASTQ files:")
     path_to_samples_dict = NestedDefaultDict()
     er = 0
@@ -814,6 +826,7 @@ def add_sample_dirs(only_conditions=None):
     show_settings(only_conditions)
     return assign_samples()
 
+
 def assign_SRA(only_conditions=None):
     project.current_func = "assign_SRA"
     prCyan("\n  Sample Assignment:  SRA Accession Numbers\n")
@@ -827,7 +840,7 @@ def assign_SRA(only_conditions=None):
         conditions = [":".join(x) for x in only_conditions]
     else:
         conditions = [
-        pattern for pattern in get_conditions_from_dict(project.conditionsDict)
+            pattern for pattern in get_conditions_from_dict(project.conditionsDict)
         ]
     guide.toclear = 0
     while True:
@@ -844,7 +857,7 @@ def assign_SRA(only_conditions=None):
             guide.display(
                 question=ques,
             )
-            AccNumbers = guide.answer.split(',')
+            AccNumbers = guide.answer.split(",")
             set_by_path(
                 project.settingsDict,
                 cond_as_list,
@@ -865,6 +878,7 @@ def assign_SRA(only_conditions=None):
             break
     show_settings()
     return set_settings()
+
 
 def assign_samples():
     project.current_func = "assign_samples"
@@ -1393,9 +1407,15 @@ def set_workflows(wf=None):
             opt_dict = NestedDefaultDict()
             tools_to_use = NestedDefaultDict()
             #
-            if "TOOLS" in project.baseDict[workflow].keys() and project.workflowsDict[workflow]["TOOLS"]:
+            if (
+                "TOOLS" in project.baseDict[workflow].keys()
+                and project.workflowsDict[workflow]["TOOLS"]
+            ):
                 tools_to_use = project.workflowsDict[workflow]["TOOLS"]
-            if "TOOLS" in project.baseDict[workflow].keys() and not project.workflowsDict[workflow]["TOOLS"]:
+            if (
+                "TOOLS" in project.baseDict[workflow].keys()
+                and not project.workflowsDict[workflow]["TOOLS"]
+            ):
                 number = 1
                 for k in project.baseDict[workflow]["TOOLS"].keys():
                     opt_dict[number] = k
@@ -1449,7 +1469,8 @@ def set_workflows(wf=None):
             if (
                 workflow == "PEAKS"
                 and "macs" in ", ".join(tools_to_use.keys())
-                or workflow in comparable_workflows and not project.workflowsDict[workflow]["COMPARABLE"]
+                or workflow in comparable_workflows
+                and not project.workflowsDict[workflow]["COMPARABLE"]
             ):
                 project.workflowsDict[workflow]["COMPARABLE"]
                 project.workflowsDict[workflow]["EXCLUDE"] = []
@@ -1457,9 +1478,11 @@ def set_workflows(wf=None):
                 groups = set()
                 conditions = get_conditions_from_dict(project.conditionsDict)
                 for condition in conditions:
-                    groups.add(get_by_path(
-                        project.settingsDict, condition.split(":") + ["GROUPS"]
-                    ))
+                    groups.add(
+                        get_by_path(
+                            project.settingsDict, condition.split(":") + ["GROUPS"]
+                        )
+                    )
                 if len(groups) < 2:
                     guide.clear(2)
                     prCyan(f"      Comparables: No Groups found\n")
@@ -1745,26 +1768,17 @@ def create_project(final_dict):
         print(json.dumps(final_dict, indent=4), file=jsonout)
 
     print(f"\nStart MONSDA with\n")
-    prGreen(
-        f"   MONSDA -c {configfile} --directory ${{PWD}}\n\n"
-    )
+    prGreen(f"   MONSDA -c {configfile} --directory ${{PWD}}\n\n")
 
 
-#############################
-####    TEST VAR SPACE   ####
-#############################
-
-####################
-####    MAIN    ####
-####################
-
-if __name__ == "__main__":
+def main():
     current_path = os.getcwd()
     dir_path = os.path.dirname(os.path.realpath(__file__))
     os.chdir(dir_path)
 
-    template = load_configfile("../configs/template_base_commented.json")
-    __version__ = get_versions()["version"]
+    template = load_configfile(
+        os.sep.join([configpath, "template_base_commented.json"])
+    )
     none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
     comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
     IP_workflows = ["PEAKS"]
@@ -1772,16 +1786,16 @@ if __name__ == "__main__":
     if args.test:
         guide.testing = True
     if args.config:
-        file = os.path.join(current_path,args.config)
-        config=file
+        file = os.path.join(current_path, args.config)
+        config = file
     else:
-        config=None
+        config = None
     if args.session:
-        with open(args.session, 'rb') as f:
+        with open(args.session, "rb") as f:
             project = pickle.load(f)
         print_intro()
         prGreen("CONTINUE WITH SETTINGS FROM")
-        prCyan("\n   "+os.path.basename(args.session))
+        prCyan("\n   " + os.path.basename(args.session))
         prRed("\n   Condition-Tree:\n")
         print_dict(project.conditionsDict, gap="      ")
         prRed("\n   Workflows:\n")
@@ -1789,6 +1803,14 @@ if __name__ == "__main__":
         prRed("\n   Settings:\n")
         print_dict(project.settingsDict, gap="      ")
         locals()[project.current_func]()
-        print('\n\n')
+        print("\n\n")
     else:
         prepare_project(template, config)
+
+
+####################
+####    MAIN    ####
+####################
+
+if __name__ == "__main__":
+    main()
