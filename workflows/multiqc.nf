@@ -17,7 +17,7 @@ process collect_multi{
 }
 
 
-process multiqc{
+process mqc{
     conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -32,17 +32,13 @@ process multiqc{
     input:
     path others
     path samples
-    path tsamples
-    path msamples
-    path usamples
-    path logs
 
     output:
-    path "*.{zip,html}", emit: multiqc_results
+    path "*.{zip,html}", emit: mqc_results
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -z -O MultiQC
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
     """
 }
 
@@ -58,14 +54,14 @@ workflow MULTIQC{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_fastqc.zip"
     }
     RSAMPLES.sort()
-    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
+    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true).ifEmpty([])
 
     if (RUNDEDUP == 'enabled'){
         DSAMPLES=LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_dedup_fastqc.zip"
         }
         DSAMPLES.sort()
-        dsamples_ch = Channel.fromPath(DSAMPLES, followLinks: true)
+        dsamples_ch = Channel.fromPath(DSAMPLES, followLinks: true).ifEmpty([])
         samples_ch.join(dsamples_ch)
     }
 
@@ -73,7 +69,7 @@ workflow MULTIQC{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_trimmed_fastqc.zip"
     }
     TSAMPLES.sort()
-    tsamples_ch = Channel.fromPath(TSAMPLES, followLinks: true)
+    tsamples_ch = Channel.fromPath(TSAMPLES, followLinks: true).ifEmpty([])
 
     MSAMPLES = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_mapped_sorted_fastqc.zip"
@@ -90,13 +86,15 @@ workflow MULTIQC{
     }
     MAPLOG.sort()
 
-    msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
-    usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
-    logs_ch = Channel.fromPath(MAPLOG, followLinks: true)
+    msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true).ifEmpty([])
+    usamples_ch = Channel.fromPath(USAMPLES, followLinks: true).ifEmpty([])
+    logs_ch = Channel.fromPath(MAPLOG, followLinks: true).ifEmpty([])
+
+    toqc_ch = samples_ch.concat(tsamples_ch, msamples_ch, usamples_ch, logs_ch)
 
     collect_multi(otherqcs.collect(), maplogs.collect())
-    multiqc(collect_multi.out.done.collect(), samples_ch, tsamples_ch, msamples_ch, usamples_ch, logs_ch)
+    mqc(collect_multi.out.done.collect(), toqc_ch)
 
     emit:
-    mqcres = multiqc.out.multiqc_results
+    mqcres = mqc.out.mqc_results
 }
