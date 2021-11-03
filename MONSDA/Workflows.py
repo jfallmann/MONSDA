@@ -71,7 +71,6 @@ import numpy as np
 import heapq
 import itertools
 from operator import itemgetter
-from natsort import natsorted
 import traceback as tb
 from io import StringIO
 from Bio import SeqIO
