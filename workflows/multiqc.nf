@@ -26,7 +26,7 @@ process multiqc{
     saveAs: {filename ->
         if (filename.indexOf("zip") > 0)          "QC/Multi/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
         else if (filename.indexOf("html") > 0)    "QC/Multi/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
-        else null
+        else "QC/Multi/$COMBO$CONDITION/${file(filename).getName()}"
     }
 
     input:
