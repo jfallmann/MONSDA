@@ -2,12 +2,12 @@
     :format: html
 
 
-==========================================
-CONTROLING MONSDA WITH Configurator.py
-==========================================
+=======================================
+CONTROLING MONSDA WITH monsda_configure
+=======================================
 
 | MONSDA operates from a project folder containing a configuration file.
-| To enable easy setup and configuration, we host the executable Configurator.
+| To enable easy setup and configuration, we host the executable ``Configurator.py``.
 | The Configurator works as an interactive terminal user interface (TUI).
 | It supports you in three main things:
 
@@ -15,13 +15,15 @@ CONTROLING MONSDA WITH Configurator.py
 2. Creating the configuration file
 3. Modifying existing configuration files easily
 
-| To learn more about the project folder `click here`_.
+| To learn more about the project folder click here_.
 
 .. _projectfolder.rst
 
-| To learn more about structure and function of the configuration file `click here`_.
+| To learn more about structure and function of the configuration file click here_.
 
 .. _theconfig.rst
+
+----
 
 Run the Configurator
 ====================
@@ -30,16 +32,17 @@ To run the Configurator, the ``monsda.yaml`` conda environent must be installed 
 
 .. code-block::
 
-   conda env create -f ./MONSDA/envs/monsda.yaml -n MONSDA
+    conda env create -n MONSDA -f ./MONSDA/envs/monsda.yaml
     conda activate MONSDA
 
 
-Run the Configurator.py
+Run the Configurator with
 
 .. code-block::
 
- MONSDA_configure
+ monsda_configure
 
+----
 
 Main Functions
 ==============
@@ -65,16 +68,15 @@ Create Mode
 | ``SET WORKFLOWS``                                                                                                         |
 | :raw-html:`&vrtri;`                                                                                                       |
 | ``SET THREADS``                                                                                                           |
-+===========================================================================================================================+
-| To create a new project or a new config-file, the Configurator will take you through all necessary steps.                 |
-| For creating a project you have to enter a path to establish. Note, that your project folder will grow with your results. |
-| Choose a place with enough memory if necessary.                                                                             |
 +---------------------------------------------------------------------------------------------------------------------------+
+
+To create a new project or a new config-file, the Configurator will take you through all necessary steps.
+For creating a project you have to enter a path to establish. Note, that your project folder will grow with your results.
+Choose a place with enough memory if necessary.
+
 
 Modify Mode
 -----------
-
-
 
 1. Add workflows
 ````````````````
@@ -85,10 +87,10 @@ Modify Mode
 | ``SELECT ADDITIONAL WORKFLOWS``                                                    |
 | :raw-html:`&vrtri;`                                                                |
 | ``SET WORKFLOWS``                                                                  |
-+====================================================================================+
-| Select Workflows not activated in an existing config-file. The Configurator will   |
-| expand each condition. Afterwards you have to make settings for the new workflows. |
 +------------------------------------------------------------------------------------+
+
+Select Workflows not activated in an existing config-file. The Configurator will
+expand each condition. Afterwards you have to make settings for the new workflows.
 
 2. Remove workflows
 ```````````````````
@@ -97,10 +99,10 @@ Modify Mode
 | ``SELECT CONFIG``                                                                  |
 | :raw-html:`&vrtri;`                                                                |
 | ``SELECT REMOVABLE WORKFLOWS``                                                     |
-+====================================================================================+
-| The Configurator will show you all established workflows. After selecting the ones |
-| to be removed it will delete them from the config-file for each condition.         |
 +------------------------------------------------------------------------------------+
+
+The Configurator will show you all established workflows. After selecting the ones
+to be removed it will delete them from the config-file for each condition.
 
 3. Add conditions
 `````````````````
@@ -113,12 +115,12 @@ Modify Mode
 | ``ASSIGN SAMPLES``                                                                                  |
 | :raw-html:`&vrtri;`                                                                                 |
 | ``SET WORKFLOWS``                                                                                   |
-+=====================================================================================================+
-| You can add conditions in a similar way you created the condition-tree. But note, that you can't    |
-| add subconditions to existing leafes. The configurator will expand the condition-tree               |
-| for the settings-block and each workflow. Because now you have new option fields in the config-file |
-| the Configurator will ask you for copying existing workflow settings or to make new ones.           |
 +-----------------------------------------------------------------------------------------------------+
+
+You can add conditions in a similar way you created the condition-tree. But note, that you can't
+add subconditions to existing leafes. The configurator will expand the condition-tree
+for the settings-block and each workflow. Because now you have new option fields in the config-file
+the Configurator will ask you for copying existing workflow settings or to make new ones.
 
 4. Remove conditions
 ````````````````````
@@ -127,31 +129,38 @@ Modify Mode
 | ``SELECT CONFIG``                                                             |
 | :raw-html:`&vrtri;`                                                           |
 | ``SELECT REMOVABLE CONDITIONS``                                               |
-+===============================================================================+
-| The Configurator will offer you all conditions the condition-tree represents. |
-| After selecting the one or several to be removed it will delete them in the   |
-| settings-block and for each condition.                                        |
 +-------------------------------------------------------------------------------+
+
+The Configurator will offer you all conditions the condition-tree represents.
+After selecting the one or several to be removed it will delete them in the
+settings-block and for each condition.
+
+----
 
 Take a Break
 ============
 
 It can happen, that the Configurator asks for entries, you haven't thought about yet.
 So you don't have to abort the creation to start all over again, you can cache your previous entries.
-The Configurator will safe all your entries in a backup file called ``unfinished_config_timestamp.pkl``
+During creation the Configurator saves all your entries in a backup file called ``unfinished_config.pkl``
 
-Whereever you are, type in the terminal:
+To continue later exactly at the same point type
 
 .. code-block::
 
-    takeabreake
+    exit
 
-Later, you can continue the session by entering:
+When you start the Configurator again later and it finds the ``unfinished_config.pkl`` in the current directory,
+it will serves a fourth option to continue the session.
+
+Note, that the ``unfinished_config.pkl`` will always be overwritten. To avoid this, you can rename the file.
+You can than continue with the --session flag. Run the Configurator like this:
 
 .. code-block:: bash
 
-    Configurator.py -s unfinished_config_timestamp.pkl
+    monsda_configure -s my_renamed_unfinished_config.pkl
 
+----
 
 Assistance in detail
 ====================

@@ -30,6 +30,16 @@ except:
     installpath = os.path.cwd()
 
 configpath = os.path.join(installpath, "MONSDA", "configs")
+current_path = os.getcwd()
+dir_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir_path)
+
+template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
+none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
+IP_workflows = ["PEAKS"]
+index_prefix_workflows = ["MAPPING"]
+
 
 parser = argparse.ArgumentParser(
     description="Helper to create or manipulate configuration file or project folder used for workflow processing with MONSDA"
@@ -71,8 +81,11 @@ class NestedDefaultDict(defaultdict):
 
 class PROJECT:
     def __init__(self):
+        self.mode = ""
         self.name = ""
+        self.unfinished_config = ""
         self.current_func = ""
+        self.current_func_arg = None
         self.current_wf = []
         self.finished_maplists = []
         self.finished_settings = []
@@ -92,7 +105,6 @@ class PROJECT:
 
 class GUIDE:
     def __init__(self):
-        self.mode = ""
         self.answer = ""
         self.toclear = 0
         self.testing = False
@@ -123,7 +135,7 @@ class GUIDE:
         self.proof_input(whitespace, proof, spec)
 
     def proof_input(self, whitespace, proof=None, spec=None):
-        unallowed_characters = ["{", "}"]
+        unallowed_characters = []
         while True:
             if spec:
                 a = rlinput(">>> ", spec)
@@ -132,15 +144,17 @@ class GUIDE:
                     a = input(">>> ").strip()
                 else:
                     a = input(">>> ").strip().replace(" ", "")
-            if a == "takeabreak":
-                file = os.path.join(
-                    current_path,
-                    f"unfinished_config_{datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S')}.pkl",
-                )
-                with open(file, "wb") as f:
-                    pickle.dump(project, f)
-                print(f"\n\nYour entries has been saved. Continue your Session with\n")
-                prGreen(f"   MONSDA_configure -s {file}\n\n")
+            if a == "exit":
+                if project.current_func:
+                    pickle_unfinished(project.current_func)
+                    file = os.path.join(
+                        current_path,
+                        "unfinished_config.pkl",
+                    )
+                    print(
+                        f"\n\nYour entries has been saved. Continue your Session with\n"
+                    )
+                    prGreen(f"   monsda_configure -s {file}\n\n")
                 exit()
 
             if any(x in unallowed_characters for x in a):
@@ -503,11 +517,21 @@ def location(dictionary, setting, indent=6):
     guide.toclear += 4
 
 
+def pickle_unfinished(current_func):
+    project.current_func = current_func
+    file = os.path.join(
+        current_path,
+        "unfinished_config.pkl",
+    )
+    with open(file, "wb") as f:
+        pickle.dump(project, f)
+
+
 def show_settings():
     if guide.testing == False:
         return
     provars = NestedDefaultDict()
-    provars["guide.mode"] = guide.mode
+    provars["project.mode"] = project.mode
     provars["project.name"] = project.name
     provars["project.current_func"] = project.current_func
     provars["project.current_wf"] = project.current_wf
@@ -563,9 +587,6 @@ readline.set_completer_delims(" \t\n;")
 readline.parse_and_bind("tab: menu-complete")
 readline.set_completer(complete)
 
-project = PROJECT()
-guide = GUIDE()
-
 
 ################################################################################################################
 ####                                            CONVERSATION                                                ####
@@ -590,13 +611,15 @@ def prepare_project(template, config):
 def intro(config):
     print_intro()
     if config:
-        guide.mode = "modify"
+        project.mode = "modify"
         return modify(config)
     opts = {
         "1": "create project",
         "2": "create config",
         "3": "modify config",
     }
+    if os.path.exists(os.path.join(current_path, "unfinished_config.pkl")):
+        opts["4"] = "continue unfinished"
     guide.display(
         question="choose an option",
         options=opts,
@@ -604,18 +627,38 @@ def intro(config):
     )
     guide.clear(3)
     if guide.answer == "1":
-        guide.mode = "project"
+        project.mode = "project"
         return new_project()
     if guide.answer == "2":
-        guide.mode = "config"
+        project.mode = "config"
         return new_config()
     if guide.answer == "3":
-        guide.mode = "modify"
+        project.mode = "modify"
         return modify()
+    if guide.answer == "4":
+        project.unfinished_config = os.path.join(current_path, "unfinished_config.pkl")
+        return continue_unfinished()
+
+
+def continue_unfinished():
+    global project
+    file = project.unfinished_config
+    with open(project.unfinished_config, "rb") as f:
+        project = pickle.load(f)
+    project.unfinished_config = file
+    prGreen("\nCONTINUE WITH SETTINGS FROM")
+    prCyan("\n   " + project.unfinished_config)
+    prRed("\n   Condition-Tree:\n")
+    print_dict(project.conditionsDict, gap="      ")
+    prRed("\n   Workflows:\n")
+    print_dict(project.workflowsDict, gap="      ")
+    prRed("\n   Settings:\n")
+    print_dict(project.settingsDict, gap="      ")
+    globals()[project.current_func]()
 
 
 def new_config():
-    project.current_func = "new_config"
+    # pickle_unfinished("new_config")
     prGreen("\nCREATE NEW CONFIG")
     print("\n   Name:")
     guide.display(
@@ -631,7 +674,7 @@ def new_config():
 
 
 def new_project():
-    project.current_func = "new_project"
+    # pickle_unfinished("new_project")
     prGreen("\nCREATE NEW PROJECT")
     print("\n   Directory:")
     existing = False
@@ -682,7 +725,7 @@ def new_project():
 
 
 def add_workflows(existing_workflows=None):
-    project.current_func = "add_workflows"
+    pickle_unfinished("add_workflows")
     prGreen("\nADD WORKFLOWS\n")
     possible_workflows = list(project.baseDict.keys())
     for e in none_workflow_keys:
@@ -708,14 +751,14 @@ def add_workflows(existing_workflows=None):
     guide.clear(3)
     prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
     show_settings()
-    if guide.mode == "modify":
+    if project.mode == "modify":
         return select_conditioning()
-    if guide.mode == "project" or "config":
+    if project.mode == "project" or "config":
         return create_condition_tree()
 
 
 def create_condition_tree():
-    project.current_func = "create_condition_tree"
+    pickle_unfinished("create_condition_tree")
     prGreen("\nCREATE CONDITION-TREE:")
     while True:
         rec_tree_builder(project.conditionsDict, [project.name])
@@ -741,7 +784,8 @@ def create_condition_tree():
 
 
 def add_sample_dirs(only_conditions=None):
-    project.current_func = "add_sample_dirs"
+    pickle_unfinished("add_sample_dirs")
+    # project.current_func_arg = only_conditions
     if "FETCH" in project.workflowsDict.keys():
         return assign_SRA(only_conditions)
     print("\n  FASTQ files:")
@@ -823,17 +867,17 @@ def add_sample_dirs(only_conditions=None):
             er = 3
             continue
     counter = 1
-    show_settings(only_conditions)
-    return assign_samples()
+    show_settings()
+    return assign_samples(only_conditions)
 
 
 def assign_SRA(only_conditions=None):
-    project.current_func = "assign_SRA"
+    pickle_unfinished("assign_SRA")
     prCyan("\n  Sample Assignment:  SRA Accession Numbers\n")
-    print(guide.mode)
-    if guide.mode == "modify":
+    print(project.mode)
+    if project.mode == "modify":
         safety_dict = decouple(project.settingsDict)
-    if guide.mode == "project" or guide.mode == "config":
+    if project.mode == "project" or project.mode == "config":
         safety_dict = decouple(project.conditionsDict)
         project.settingsDict = decouple(project.conditionsDict)
     if only_conditions:
@@ -880,18 +924,18 @@ def assign_SRA(only_conditions=None):
     return set_settings()
 
 
-def assign_samples():
-    project.current_func = "assign_samples"
+def assign_samples(only_conditions=None):
+    pickle_unfinished("assign_samples")
     prCyan("\n  Sample Assignment:\n")
-    if only_conditions:
-        conditions = only_conditions
+    if only_conditions != None:
+        conditions = [":".join(x) for x in only_conditions]
     else:
         conditions = [
             pattern for pattern in get_conditions_from_dict(project.conditionsDict)
         ]
-    if guide.mode == "modify":
+    if project.mode == "modify":
         safety_dict = decouple(project.settingsDict)
-    if guide.mode == "project" or guide.mode == "config":
+    if project.mode == "project" or project.mode == "config":
         safety_dict = decouple(project.conditionsDict)
         project.settingsDict = decouple(project.conditionsDict)
     er = 0
@@ -965,7 +1009,7 @@ def assign_samples():
 
 
 def set_settings():
-    project.current_func = "set_settings"
+    pickle_unfinished("set_settings")
     prGreen("\nGENERAL SETTINGS")
     print("(blank entry possible)")
     guide.toclear = 0
@@ -1058,52 +1102,17 @@ def set_settings():
             prCyan("\n\n   SETTINGS Key:\n")
             print_dict(project.settingsDict, col="Cyan", gap="         ")
             show_settings()
-            if guide.mode == "project" or guide.mode == "config":
+            if project.mode == "project" or project.mode == "config":
                 return select_conditioning()
-            if guide.mode == "modify":
+            if project.mode == "modify":
                 return fillup_workflows()
         if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
             continue
 
 
-# def set_comparison_settings():
-#     project.current_func = "set_comparison_settings"
-#     last_sample = ""
-#     for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
-#
-#         prPurple(f"\n      Sample: {sample}\n")
-#         for key in ["GROUPS", "TYPES", "BATCHES"]:
-#             if last_sample and key == "GROUPS":
-#                 ques = f"enter 'cp' to copy entries from sample before"
-#             else:
-#                 ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
-#             print(f"         {key}:")
-#             guide.display(question=ques)
-#             if guide.answer == "cp" and last_sample:
-#                 guide.clear(4)
-#                 for key in ["GROUPS", "TYPES", "BATCHES"]:
-#                     to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
-#                     prCyan(f"         {key}: {to_add}")
-#                     get_by_path(project.settingsDict, maplist + [key]).append(to_add)
-#                 break
-#             else:
-#                 last_sample = sample
-#                 guide.clear(4)
-#                 prCyan(f"         {key}: {guide.answer}")
-#                 try:
-#                     get_by_path(project.settingsDict, maplist + [key]).append(
-#                         guide.answer
-#                     )
-#                 except:
-#                     setInDict(project.settingsDict, maplist + [key], [])
-#                     get_by_path(project.settingsDict, maplist + [key]).append(
-#                         guide.answer
-#                     )
-
-
 def modify(config=None):
-    project.current_func = "modify"
+    # pickle_unfinished("modify")
     prGreen("\nMODIFY PROJECT")
     er = 0
     while True:
@@ -1195,7 +1204,7 @@ def modify(config=None):
 
 
 def add_conditions():
-    project.current_func = "add_conditions"
+    pickle_unfinished("add_conditions")
     prGreen("\n\nADD CONDIIONS")
     old_conditions = [
         pattern.split(":")
@@ -1239,7 +1248,7 @@ def add_conditions():
 
 
 def remove_workflows(actives, inactives):
-    project.current_func = "remove_workflows"
+    pickle_unfinished("remove_workflows")
     prGreen("\n\nREMOVE WORKFLOWS")
     workflows = project.workflowsDict.keys()
     opts = NestedDefaultDict()
@@ -1286,7 +1295,7 @@ def remove_workflows(actives, inactives):
 
 
 def remove_conditions():
-    project.current_func = "remove_conditions"
+    pickle_unfinished("remove_conditions")
     prGreen("\n\nREMOVE CONDITIONS")
     conditions = get_conditions_from_dict(project.conditionsDict)
     opts = NestedDefaultDict()
@@ -1327,7 +1336,7 @@ def remove_conditions():
 
 
 def select_conditioning():
-    project.current_func = "select_conditioning"
+    pickle_unfinished("select_conditioning")
     conditions = [
         pattern.split(":")
         for pattern in get_conditions_from_dict(project.conditionsDict)
@@ -1358,7 +1367,7 @@ def select_conditioning():
 
 
 def fillup_workflows():
-    project.current_func = "fillup_workflows"
+    pickle_unfinished("fillup_workflows")
     conditions = [
         pattern.split(":")
         for pattern in get_conditions_from_dict(project.conditionsDict)
@@ -1395,7 +1404,7 @@ def fillup_workflows():
 
 
 def set_workflows(wf=None):
-    project.current_func = "set_workflows"
+    pickle_unfinished("set_workflows")
     if wf:
         workflows = [wf]
     else:
@@ -1573,14 +1582,14 @@ def set_workflows(wf=None):
                 project.finished_maplists = []
             project.finished_settings = []
     show_settings()
-    if guide.mode == "project" or guide.mode == "config":
+    if project.mode == "project" or project.mode == "config":
         return set_cores()
-    if guide.mode == "modify":
+    if project.mode == "modify":
         return
 
 
 def set_cores():
-    project.current_func = "set_cores"
+    pickle_unfinished("set_cores")
     prGreen("\nSET THREADS\n")
     print("   MAXTHREADS:")
     guide.display(
@@ -1595,7 +1604,7 @@ def set_cores():
 
 
 def finalize():
-    project.current_func = "finalize"
+    pickle_unfinished("finalize")
     final_dict = NestedDefaultDict()
 
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
@@ -1614,13 +1623,13 @@ def finalize():
     print_dict(final_dict)
     print("\n")
 
-    if guide.mode == "config":
+    if project.mode == "config":
         print("Above is your final configuration of MONSDA.")
         guide.display(
             question=f"\npress enter to create the config_{project.name}.json file or type 'abort' before it gets serious",
             proof=["", "abort"],
         )
-    if guide.mode == "project":
+    if project.mode == "project":
         space = len(configfile)
         print(
             "Above is your final configuration of MONSDA. The Guide will create this directory as new project:\n"
@@ -1639,7 +1648,7 @@ def finalize():
             question="\npress enter to create your project or type 'abort' before it gets serious",
             proof=["", "abort"],
         )
-    if guide.mode == "modify":
+    if project.mode == "modify":
         print("Above is your updated configuration of MONSDA\n")
         print(
             "The old config-file will be preserved (it will have a timestamp in it's name)\n"
@@ -1657,18 +1666,18 @@ def finalize():
 
 
 def create_project(final_dict):
-    if guide.mode == "project":
+    if project.mode == "project":
 
         # create Project Folder
         cwd = os.getcwd()
         if not os.path.exists(project.path):
             os.mkdir(project.path)
-        fastq = os.path.join(project.path, "FASTQ")
+        fastq = os.path.join(project.path, "FASTQ", project.name)
         gen = os.path.join(project.path, "GENOMES")
         if not os.path.exists(fastq):
-            os.mkdir(fastq)
+            os.makedirs(fastq)
         if not os.path.exists(gen):
-            os.mkdir(gen)
+            os.makedirs(gen)
 
         # LINK samples into FASTQ and insert samplenames in dict
         for k in project.samplesDict.keys():
@@ -1688,6 +1697,18 @@ def create_project(final_dict):
                 )
                 if not os.path.exists(dst):
                     os.symlink(src, dst)
+                    if "paired" in project.samplesDict[k]["seq"]:
+                        if "_R1" in project.samplesDict[k]["file"]:
+                            other = project.samplesDict[k]["file"].replace("_R1", "_R2")
+                        elif "_R2" in project.samplesDict[k]["file"]:
+                            other = project.samplesDict[k]["file"].replace("_R2", "_R1")
+                        else:
+                            prRed(
+                                f"WARNING: Paired sample {project.samplesDict[k]} isn't named correctly. Check R1, R2 in filename"
+                            )
+                        dst = os.path.join(cond_dir, other)
+                        src = os.path.join(project.samplesDict[k]["dir"], other)
+                        os.symlink(src, dst)
 
         # link reference and annotation
         for setting in project.settingsList:
@@ -1724,7 +1745,7 @@ def create_project(final_dict):
                     )
                 else:
                     prRed(
-                        f"WARNING: GTF path at {condition} is not correct, could not symlink, please do by hand"
+                        f"WARNING: GTF path at {condition} is not correct or not given, could not symlink"
                     )
                     setInDict(
                         project.settingsDict, condition + ["ANNOTATION", "GTF"], ""
@@ -1746,13 +1767,13 @@ def create_project(final_dict):
                     )
                 else:
                     prRed(
-                        f"WARNING: GFF path at {condition} is not correct, could not symlink, please do by hand"
+                        f"WARNING: GFF path at {condition} is not correct or not given, could not symlink"
                     )
                     setInDict(
                         project.settingsDict, condition + ["ANNOTATION", "GFF"], ""
                     )
 
-    if guide.mode == "modify":
+    if project.mode == "modify":
         file = os.path.join(project.path, f"config_{project.name}.json")
         bakfile = os.path.join(
             project.path,
@@ -1766,23 +1787,16 @@ def create_project(final_dict):
         configfile = f"config_{project.name}.json"
     with open(os.path.join(project.path, configfile), "w") as jsonout:
         print(json.dumps(final_dict, indent=4), file=jsonout)
-
+    os.remove(os.path.join(current_path, project.unfinished_config))
     print(f"\nStart MONSDA with\n")
-    prGreen(f"   MONSDA -c {configfile} --directory ${{PWD}}\n\n")
+    prGreen(f"   monsda -c {configfile} --directory ${{PWD}}\n\n")
 
 
 def main():
-    current_path = os.getcwd()
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(dir_path)
-
-    template = load_configfile(
-        os.sep.join([configpath, "template_base_commented.json"])
-    )
-    none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
-    comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
-    IP_workflows = ["PEAKS"]
-    index_prefix_workflows = ["MAPPING"]
+    global project
+    global guide
+    project = PROJECT()
+    guide = GUIDE()
     if args.test:
         guide.testing = True
     if args.config:
@@ -1791,19 +1805,9 @@ def main():
     else:
         config = None
     if args.session:
-        with open(args.session, "rb") as f:
-            project = pickle.load(f)
+        project.unfinished_config = os.path.join(current_path, args.session)
         print_intro()
-        prGreen("CONTINUE WITH SETTINGS FROM")
-        prCyan("\n   " + os.path.basename(args.session))
-        prRed("\n   Condition-Tree:\n")
-        print_dict(project.conditionsDict, gap="      ")
-        prRed("\n   Workflows:\n")
-        print_dict(project.workflowsDict, gap="      ")
-        prRed("\n   Settings:\n")
-        print_dict(project.settingsDict, gap="      ")
-        locals()[project.current_func]()
-        print("\n\n")
+        continue_unfinished()
     else:
         prepare_project(template, config)
 
