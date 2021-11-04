@@ -58,7 +58,6 @@ dependencies:
   - dbus=1.13.18
   - decorator=5.0.9
   - docutils=0.17.1
-  - dropbox=11.13.3
   - expat=2.4.1
   - fftw=3.3.9
   - filechunkio=1.8
@@ -206,6 +205,7 @@ dependencies:
   - peppy=0.31.1
   - perl=5.32.1
   - pillow=8.3.1
+  - pip=21.3.1
   - pixman=0.40.0
   - pkg-config=0.29.2
   - pkginfo=1.7.1
@@ -279,7 +279,6 @@ dependencies:
   - sphinxcontrib-qthelp=1.0.3
   - sphinxcontrib-serializinghtml=1.1.5
   - sqlite=3.36.0
-  - stone=3.2.1
   - stopit=1.1.2
   - tabulate=0.8.9
   - tk=8.6.11
