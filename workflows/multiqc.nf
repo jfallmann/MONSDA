@@ -54,14 +54,14 @@ workflow MULTIQC{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"**_fastqc.zip"
     }
     SAMPLES.sort()
-    samples_ch = Channel.fromPath(SAMPLES, followLinks: true).ifEmpty([])
+    samples_ch = Channel.fromPath(SAMPLES, followLinks: true)
     
     MAPLOG = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../LOGS/$COMBO/MAPPING/**.log"
     }
     MAPLOG.sort()
 
-    logs_ch = Channel.fromPath(MAPLOG, followLinks: true).ifEmpty([])
+    logs_ch = Channel.fromPath(MAPLOG, followLinks: true)
 
     toqc_ch = samples_ch.concat(logs_ch)
 
