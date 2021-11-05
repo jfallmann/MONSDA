@@ -130,7 +130,7 @@ workflow MAPPING{
     checkidx = file(MAPUIDX)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPIDX)
+        idxfile = Channel.fromPath(MAPUIDX)
         collect_tomap(collection.collect())
         star_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }

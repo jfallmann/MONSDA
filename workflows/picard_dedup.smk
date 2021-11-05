@@ -11,7 +11,7 @@ rule dedupbam:
     params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),
             dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
             dedup = DEDUPBIN
-    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} MarkDuplicates --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"
+    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} --REMOVE_DUPLICATES --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"
 
 rule dedupuniqbam:
     input:  bam = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
@@ -25,4 +25,4 @@ rule dedupuniqbam:
     params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),
             dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
             dedup = DEDUPBIN
-    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} MarkDuplicates --REMOVE_DUPLICATES TRUE --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"
+    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} --REMOVE_DUPLICATES TRUE --ASSUME_SORTED --TMP_DIR={output.td} INPUT={input.bam} OUTPUT={output.bam} 2>> {log}"

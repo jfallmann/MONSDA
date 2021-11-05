@@ -127,10 +127,10 @@ workflow MAPPING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    checkidx = file(MAPIDX)
+    checkidx = file(MAPUIDX)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPIDX)
+        idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
         collect_tomap(collection.collect())
         minimao_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)

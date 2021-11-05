@@ -141,7 +141,7 @@ workflow MAPPING{
     checkidx = file(MAPIDX)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPIDX)
+        idxfile = Channel.fromPath(MAPUIDX)
         collect_tomap(collection.collect())
         hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
     }
