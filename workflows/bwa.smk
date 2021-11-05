@@ -35,7 +35,7 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
     else:
         rule mapping:
             input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                    index = rules.generate_index.output.uidx,
+                    uidx = rules.generate_index.output.uidx[0],
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
@@ -45,7 +45,7 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN
                     #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-            shell:  "{params.mapp} {params.mpara} -t {threads} {input.index} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+            shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} | tee >(samtools view -h -F 4 > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
 
 elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to continue the workflow
     if paired == 'paired': # handled like sampe

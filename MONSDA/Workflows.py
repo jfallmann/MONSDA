@@ -391,9 +391,7 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
                 [subwork == x for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]]
             ):
                 if config[subwork].get("CUTOFFS"):
-                    tempconf[subwork]["CUTOFFS"] = config[subwork][
-                        "CUTOFFS"
-                    ]  # else '.05'
+                    tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
                 if subwork == "COUNTING":
                     tempconf["COUNTING"]["FEATURES"] = config["COUNTING"]["FEATURES"]
                 if "COMPARABLE" in config[subwork]:
@@ -781,7 +779,7 @@ def make_sub(
                             and "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in works:
+                            if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
                             else:
                                 subname = toolenv + "_trim.smk"
@@ -791,7 +789,7 @@ def make_sub(
                             and not "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in subworkflows:
+                            if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
                             else:
                                 subname = toolenv + "_raw.smk"
@@ -799,6 +797,8 @@ def make_sub(
                         # Picard tools can be extended here
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
+                        elif works[j] == "DEDUP" and toolenv == "umitools":
+                            subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
@@ -1619,7 +1619,10 @@ def nf_fetch_params(
     prededup = config.get("PREDEDUP")
 
     if rundedup:
-        log.debug("DEDUPLICATION ENABLED")
+        if prededup:
+            log.debug("(PRE)DEDUPLICATION ENABLED")
+        else:
+            log.debug("DEDUPLICATION ENABLED")
 
     paired = checkpaired([SAMPLES[0]], config)
     if paired == "paired":

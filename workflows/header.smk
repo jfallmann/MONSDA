@@ -85,8 +85,13 @@ PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
 IP = SETTINGS.get('IP')
 rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
+prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
+
 if rundedup:
-    log.debug('DEDUPLICATION ENABLED')
+    if prededup:
+        log.debug('(PRE)DEDUPLICATION ENABLED')
+    else:
+        log.debug('DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 

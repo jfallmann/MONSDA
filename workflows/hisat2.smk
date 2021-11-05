@@ -13,7 +13,7 @@ rule generate_index:
     threads: MAXTHREAD
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
-            lnkidx = lambda w: expand("{mape}_{unikey}", mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))
+            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell:  "if [[ -f \"{output.uidx}/idx\" ]]; then ln -fs {output.lnkidx} {output.idx} && touch {output.uidx} {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {output.lnkidx} {output.idx} && touch {output.uidx};fi"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
@@ -22,7 +22,7 @@ if paired == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                uidx = rules.generate_index.output.uidx,
+                uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
@@ -41,7 +41,7 @@ if paired == 'paired':
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                uidx = rules.generate_index.output.uidx,
+                uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
