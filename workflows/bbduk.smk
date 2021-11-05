@@ -11,8 +11,8 @@ wildcard_constraints:
 
 if paired = 'paired':
     rule bbduk_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
         output: o1 = "{outdir}{file}_R1_val_1.fq.gz",
                 o2 = "{outdir}{file}_R2_val_2.fq.gz"
         log:    "LOGS/{combo}/{file}_trim.log"
@@ -33,7 +33,7 @@ if paired = 'paired':
         shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"
 else:
     rule bbduk_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not rundedup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
         output: o1 = "{outdir}{file}_trimmed.fq.gz"
         log:    "LOGS/{combo}/{file}_trim.log"
         conda: ""+TRIMENV+".yaml"

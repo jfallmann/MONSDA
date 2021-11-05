@@ -296,9 +296,12 @@ def get_processes(config):
 
 
 @check_run
-def create_subworkflow(config, subwork, conditions, stage="", combination=None):
+def create_subworkflow(config, subwork, conditions, stage="", envs=None):
     logid = scriptname + ".Workflows_create_subworkflow: "
-    log.debug(logid + str([config, subwork, conditions, stage]))
+    log.debug(
+        logid
+        + f"config:{config}, subwork:{subwork}, condition:{conditions}, stage:{stage}, envs:{envs}"
+    )
     toollist = list()
     configs = list()
     tempconf = NestedDefaultDict()
@@ -379,6 +382,8 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
                     if key == "SETTINGS":
                         if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
                             tempconf["RUNDEDUP"] = "enabled"
+                            if envs and "umitools" in envs:
+                                tempconf["PREDEDUP"] = "enabled"
 
             if ("TOOLS" in config[subwork] and env == "" and exe == "") and len(
                 getFromDict(config[subwork], condition)
@@ -391,9 +396,7 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
                 [subwork == x for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]]
             ):
                 if config[subwork].get("CUTOFFS"):
-                    tempconf[subwork]["CUTOFFS"] = config[subwork][
-                        "CUTOFFS"
-                    ]  # else '.05'
+                    tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
                 if subwork == "COUNTING":
                     tempconf["COUNTING"]["FEATURES"] = config["COUNTING"]["FEATURES"]
                 if "COMPARABLE" in config[subwork]:
@@ -479,7 +482,7 @@ def make_pre(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -566,7 +569,6 @@ def make_pre(
         for condition in conditions:
             subjobs = list()
             add = list()
-
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
@@ -753,7 +755,7 @@ def make_sub(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -781,7 +783,7 @@ def make_sub(
                             and "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in works:
+                            if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
                             else:
                                 subname = toolenv + "_trim.smk"
@@ -791,7 +793,7 @@ def make_sub(
                             and not "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in subworkflows:
+                            if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
                             else:
                                 subname = toolenv + "_raw.smk"
@@ -799,6 +801,8 @@ def make_sub(
                         # Picard tools can be extended here
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
+                        # elif works[j] == "DEDUP" and toolenv == "umitools":
+                        #    subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
@@ -1022,7 +1026,7 @@ def make_post(
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
             condition = list(combname.keys())[0]
-            envlist = combname[condition]["envs"]
+            envlist = combname[condition].get("envs")
             subconf = NestedDefaultDict()
             add = list()
 
@@ -1037,7 +1041,7 @@ def make_post(
                 envs = envlist[i].split("-")
 
                 listoftools, listofconfigs = create_subworkflow(
-                    config, subwork, combname
+                    config, subwork, combname, envs
                 )
 
                 if listoftools is None:
@@ -1152,7 +1156,7 @@ def make_post(
 
         else:
             for condition in combname:
-                envlist = combname[condition]["envs"]
+                envlist = combname[condition].get("envs")
                 log.debug(
                     logid
                     + "POSTLISTS:     "
@@ -1176,7 +1180,7 @@ def make_post(
                     envs = envlist[i].split("-")
 
                     listoftools, listofconfigs = create_subworkflow(
-                        config, subwork, [condition]
+                        config, subwork, [condition], envs
                     )
 
                     if listoftools is None:
@@ -1619,7 +1623,10 @@ def nf_fetch_params(
     prededup = config.get("PREDEDUP")
 
     if rundedup:
-        log.debug("DEDUPLICATION ENABLED")
+        if prededup:
+            log.debug("(PRE)DEDUPLICATION ENABLED")
+        else:
+            log.debug("DEDUPLICATION ENABLED")
 
     paired = checkpaired([SAMPLES[0]], config)
     if paired == "paired":
@@ -2017,7 +2024,7 @@ def nf_make_pre(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -2354,7 +2361,7 @@ def nf_make_sub(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -2997,7 +3004,6 @@ def nf_make_post(
             log.debug(
                 logid + "SUBWORK: " + str(subwork) + " CONDITION: " + str(conditions)
             )
-            # listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
             listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
 
             if listoftools is None:  # or listoftoolscount is None:
