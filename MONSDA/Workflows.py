@@ -2520,12 +2520,12 @@ def nf_make_sub(
                 for w in [
                     "QC_RAW",
                     "PREDEDUP",
+                    "QC_DEDUP",
                     "TRIMMING",
                     "QC_TRIMMING",
                     "MAPPING",
                     "QC_MAPPING",
                     "DEDUPBAM",
-                    "QC_DEDUP",
                     "MULTIQC",
                 ]:
                     if w in flowlist:
