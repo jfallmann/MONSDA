@@ -13,8 +13,9 @@ rule generate_index:
     threads: MAXTHREAD
     params: indexer = MAPPERBIN.split(' ')[0],
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
-            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.uidx}/idx\" ]]; then ln -fs {output.lnkidx} {output.idx} && touch {output.uidx} {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx} 2> {log} && ln -fs {output.lnkidx} {output.idx} && touch {output.uidx};fi"
+            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
+            pref = PREFIX if (PREFIX and PREFIX != '') else MAPPERENV
+    shell:  "if [[ -f \"{output.uidx}/idx\" ]]; then ln -fs {params.lnkidx} {output.idx} && mkdir -p {output.uidx} && touch {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && {params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx}/{params.pref} 2> {log} && ln -fs {params.lnkidx} {output.idx} && touch {output.uidx};fi"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
 

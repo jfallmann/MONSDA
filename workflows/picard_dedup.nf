@@ -24,9 +24,10 @@ process dedup{
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.endsWith("_dedup.bam"))          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
-        else if (filename.indexOf("_dedup.bam.bai") > 0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
-        else if (filename.indexOf("log") > 0)    "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
+        if (filename.endsWith("_dedup.bam"))              "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
+        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
+        else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
+        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedupmetrics.txt"
         else null
     }
 
@@ -43,7 +44,7 @@ process dedup{
     script:
     out=samples.getSimpleName()+"_dedup.bam"
     """
-    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS $DEDUPPARAMS MarkDuplicates --REMOVE_DUPLICATES=TRUE --ASSUME_SORT_ORDER=coordinates --TMP_DIR=tmp INPUT=$samples OUTPUT=$out &> dedup.log && samtools index $out &>> dedup.log
+    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS $DEDUPPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $samples --OUTPUT $out --METRICS_FILE dedup_metrics.txt &> dedup.log && samtools index $out &>> dedup.log
     """
 }
 
