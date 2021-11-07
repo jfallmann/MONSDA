@@ -245,7 +245,7 @@ def subDict(dataDict, mapList):
 
 @check_run
 def subSetDict(dataDict, mapList):
-    logid = scriptname + ".Collection_subDict: "
+    logid = scriptname + ".Collection_subSetDict: "
     log.debug(logid + str(mapList))
     parse = subDict(dataDict, mapList)
     ret = {}

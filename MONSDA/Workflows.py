@@ -296,7 +296,7 @@ def get_processes(config):
 
 
 @check_run
-def create_subworkflow(config, subwork, conditions, stage="", envs=None):
+def create_subworkflow(config, subwork, conditions, envs=None, stage=""):
     logid = scriptname + ".Workflows_create_subworkflow: "
     log.debug(
         logid
@@ -304,7 +304,7 @@ def create_subworkflow(config, subwork, conditions, stage="", envs=None):
     )
     toollist = list()
     configs = list()
-    tempconf = NestedDefaultDict()
+
     for condition in conditions:
         try:
             env = str(subDict(config[subwork], condition)[stage + "ENV"])
@@ -375,32 +375,48 @@ def create_subworkflow(config, subwork, conditions, stage="", envs=None):
                         toollist.append([None, None])
                         configs.append(None)
                 else:
-                    tempconf[key] = subSetDict(config[key], condition)
+                    if key == "SETTINGS":
+                        tempconf[key] = subSetDict(config[key], condition)
+                        if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
+                            tempconf["RUNDEDUP"] = "enabled"
+                        continue
+                    if ("TOOLS" in config[key] and env == "" and exe == "") and len(
+                        getFromDict(config[key], condition)
+                    ) != 0:  # env and exe overrule TOOLS
+                        for k, v in config[key]["TOOLS"].items():
+                            toollist.append([k, v])
+                            if envs and k in envs and k != "None":
+                                tempconf[key]["TOOLS"][k] = config[key]["TOOLS"][k]
+                                tc = list(condition)
+                                tc.append(k)
+                                tempconf[key].merge(subSetDict(config[key], tc))
+                                if k == "umitools":
+                                    tempconf["PREDEDUP"] = "enabled"
+                            elif not envs:
+                                tempconf[key] = subSetDict(config[key], condition)
+                    else:
+                        tempconf[key] = subSetDict(config[key], condition)
+
                     tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
                         "SAMPLES"
                     ]
-                    if key == "SETTINGS":
-                        if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
-                            tempconf["RUNDEDUP"] = "enabled"
-                            if envs and "umitools" in envs:
-                                tempconf["PREDEDUP"] = "enabled"
 
-            if ("TOOLS" in config[subwork] and env == "" and exe == "") and len(
-                getFromDict(config[subwork], condition)
-            ) >= 1:  # env and exe overrule TOOLS
-                tempconf[subwork]["TOOLS"] = config[subwork]["TOOLS"]
-                for k, v in config[subwork]["TOOLS"].items():
-                    toollist.append([k, v])
-
-            if any(
-                [subwork == x for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]]
-            ):
-                if config[subwork].get("CUTOFFS"):
-                    tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
-                if subwork == "COUNTING":
-                    tempconf["COUNTING"]["FEATURES"] = config["COUNTING"]["FEATURES"]
-                if "COMPARABLE" in config[subwork]:
-                    tempconf[subwork]["COMPARABLE"] = config[subwork]["COMPARABLE"]
+                    if any(
+                        [
+                            subwork == x
+                            for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]
+                        ]
+                    ):
+                        if config[subwork].get("CUTOFFS"):
+                            tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
+                        if subwork == "COUNTING":
+                            tempconf["COUNTING"]["FEATURES"] = config["COUNTING"][
+                                "FEATURES"
+                            ]
+                        if "COMPARABLE" in config[subwork]:
+                            tempconf[subwork]["COMPARABLE"] = config[subwork][
+                                "COMPARABLE"
+                            ]
 
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -496,6 +512,7 @@ def make_pre(
                         return None
 
                     sconf = listofconfigs[0]
+                    sconf.pop("RUNDEDUP")  # cleanup
                     for a in range(0, len(listoftools)):
                         toolenv, toolbin = map(str, listoftools[a])
                         if toolenv != envs[j] or toolbin is None:
@@ -599,6 +616,7 @@ def make_pre(
                 return None
 
             sconf = listofconfigs[0]
+            sconf.pop("RUNDEDUP")  # cleanup
             if sconf is None:
                 continue
             for i in range(0, len(listoftools)):
@@ -777,7 +795,7 @@ def make_sub(
                         sconf[works[j] + "BIN"] = toolbin
                         subconf.update(sconf)
                         subname = toolenv + ".smk"
-
+                        log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
