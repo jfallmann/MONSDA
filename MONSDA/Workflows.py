@@ -383,15 +383,17 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=""):
                     if ("TOOLS" in config[key] and env == "" and exe == "") and len(
                         getFromDict(config[key], condition)
                     ) != 0:  # env and exe overrule TOOLS
-                        for k, v in config[key]["TOOLS"].items():
+                        for k, v in config[key][
+                            "TOOLS"
+                        ].items():  # each tool will be added to the config
                             toollist.append([k, v])
                             if envs and k in envs and k != "None":
+                                if k == "umitools":
+                                    tempconf["PREDEDUP"] = "enabled"
                                 tempconf[key]["TOOLS"][k] = config[key]["TOOLS"][k]
                                 tc = list(condition)
                                 tc.append(k)
                                 tempconf[key].merge(subSetDict(config[key], tc))
-                                if k == "umitools":
-                                    tempconf["PREDEDUP"] = "enabled"
                             elif not envs:
                                 tempconf[key] = subSetDict(config[key], condition)
                     else:
@@ -519,7 +521,7 @@ def make_pre(
                             continue
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
-                        subconf.update(sconf)
+                        subconf.merge(sconf)
                         subname = toolenv + ".smk"
 
                         if works[j] == "QC":
@@ -627,7 +629,7 @@ def make_pre(
                 subconf = NestedDefaultDict()
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
-                subconf.update(sconf)
+                subconf.merge(sconf)
                 subname = toolenv + ".smk"
 
                 if subwork == "QC":
@@ -793,7 +795,7 @@ def make_sub(
                             continue
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
-                        subconf.update(sconf)
+                        subconf.merge(sconf)
                         subname = toolenv + ".smk"
                         log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
                         if (
@@ -919,7 +921,7 @@ def make_sub(
                     subconf = NestedDefaultDict()
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
-                    subconf.update(sconf)
+                    subconf.merge(sconf)
                     subname = toolenv + ".smk"
 
                     if (
@@ -1109,7 +1111,7 @@ def make_post(
                         + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                     )
                     subjobs.append("\n\n")
-                    subconf.update(sconf)
+                    subconf.merge(sconf)
 
                     subname = toolenv + ".smk"
                     smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -1256,7 +1258,7 @@ def make_post(
                             + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                         )
                         subjobs.append("\n\n")
-                        subconf.update(sconf)
+                        subconf.merge(sconf)
 
                         subname = toolenv + ".smk"
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -1375,7 +1377,7 @@ def make_post(
                     + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                 )
                 subjobs.append("\n\n")
-                subconf.update(sconf)
+                subconf.merge(sconf)
 
                 subname = toolenv + ".smk"
                 smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -2914,7 +2916,7 @@ def nf_make_post(
 
             for i in range(0, len(listoftools)):
                 toolenv, toolbin = map(str, listoftools[i])
-                subconf.update(listofconfigs[i])
+                subconf.merge(listofconfigs[i])
                 subname = toolenv + ".nf"
                 subsamples = list(set(sampleslong(subconf)))
                 log.debug(
