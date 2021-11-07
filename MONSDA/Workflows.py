@@ -386,15 +386,14 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=""):
                         for k, v in config[key][
                             "TOOLS"
                         ].items():  # each tool will be added to the config
-                            toollist.append([k, v])
                             if envs and k in envs and k != "None":
-                                if k == "umitools":
-                                    tempconf["PREDEDUP"] = "enabled"
+                                toollist.append([k, v])
                                 tempconf[key]["TOOLS"][k] = config[key]["TOOLS"][k]
                                 tc = list(condition)
                                 tc.append(k)
                                 tempconf[key].merge(subSetDict(config[key], tc))
                             elif not envs:
+                                toollist.append([k, v])
                                 tempconf[key] = subSetDict(config[key], condition)
                     else:
                         tempconf[key] = subSetDict(config[key], condition)
@@ -514,7 +513,9 @@ def make_pre(
                         return None
 
                     sconf = listofconfigs[0]
-                    sconf.pop("RUNDEDUP")  # cleanup
+                    sconf.pop("RUNDEDUP", None)  # cleanup
+                    sconf.pop("PREDEDUP", None)  # cleanup
+
                     for a in range(0, len(listoftools)):
                         toolenv, toolbin = map(str, listoftools[a])
                         if toolenv != envs[j] or toolbin is None:
@@ -618,7 +619,9 @@ def make_pre(
                 return None
 
             sconf = listofconfigs[0]
-            sconf.pop("RUNDEDUP")  # cleanup
+            sconf.pop("RUNDEDUP", None)  # cleanup
+            sconf.pop("PREDEDUP", None)  # cleanup
+
             if sconf is None:
                 continue
             for i in range(0, len(listoftools)):
@@ -795,6 +798,7 @@ def make_sub(
                             continue
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
+
                         subconf.update(sconf)
                         subname = toolenv + ".smk"
                         log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
@@ -821,8 +825,9 @@ def make_sub(
                         # Picard tools can be extended here
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
-                        # elif works[j] == "DEDUP" and toolenv == "umitools":
-                        #    subconf["PREDEDUP"] = "enabled"
+                            subconf.pop("PREDEDUP", None)
+                        elif works[j] == "DEDUP" and toolenv == "umitools":
+                            subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
@@ -914,6 +919,8 @@ def make_sub(
                     return None
 
                 sconf = listofconfigs[0]
+                # if any("umitools" in x for x in listoftools):
+                #    sconf["PREDEDUP"] = "enabled"
                 for i in range(0, len(listoftools)):
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
@@ -936,22 +943,12 @@ def make_sub(
                         else:
                             subname = toolenv + "_trim.smk"
 
-                    if (
-                        subwork == "QC"
-                        and not "TRIMMING" in subworkflows
-                        and not "MAPPING" in subworkflows
-                    ):
-                        if "DEDUP" in subworkflows and not "picard" in any(
-                            [x for x in listoftools]
-                        ):
-                            subname = toolenv + "_dedup.smk"
-                        else:
-                            subname = toolenv + "_raw.smk"
-
                     # Picard tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.smk"
-
+                        subconf.poop("PREDEDUP", None)
+                    elif works[j] == "DEDUP" and toolenv == "umitools":
+                        subconf["PREDEDUP"] = "enabled"
                     # Add rulethemall based on chosen workflows
                     add.append(
                         "".join(
@@ -1004,7 +1001,6 @@ def make_sub(
             with open(smko, "a") as smkout:
                 smkout.write(str.join("", add))
                 smkout.write(str.join("", subjobs))
-
             confo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
             )
@@ -1070,6 +1066,8 @@ def make_post(
                     )
 
                 sconf = listofconfigs[0]
+                sconf.pop("PREDEDUP", None)  # cleanup
+
                 for c in range(1, len(listofconfigs)):
                     sconf = merge_dicts(sconf, listofconfigs[c])
 
@@ -1214,6 +1212,8 @@ def make_post(
                         continue
 
                     sconf = listofconfigs[0]
+                    sconf.pop("PREDEDUP", None)  # cleanup
+
                     if subwork == "PEAKS":
                         for c in range(1, len(listofconfigs)):
                             sconf = merge_dicts(sconf, listofconfigs[c])
@@ -1349,6 +1349,8 @@ def make_post(
                 continue
 
             sconf = listofconfigs[0]
+            sconf.pop("PREDEDUP", None)  # cleanup
+
             for a in range(0, len(listoftools)):
                 subjobs = list()
 

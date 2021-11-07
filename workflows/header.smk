@@ -89,9 +89,9 @@ prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
 
 if rundedup:
     if prededup:
-        log.debug('(PRE)DEDUPLICATION ENABLED')
+        log.info(logid+'(PRE)DEDUPLICATION ENABLED')
     else:
-        log.debug('DEDUPLICATION ENABLED')
+        log.info(logid+'DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
