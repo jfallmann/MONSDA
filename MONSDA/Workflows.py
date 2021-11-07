@@ -2868,13 +2868,13 @@ def nf_make_post(
 ):
     logid = scriptname + ".Workflows_nf_make_sub: "
 
-    if "PEAKS" in config and "PEAKS" in postprocess:
+    if "PEAKS" in config and "PEAKS" in postworkflow:
         CLIP = checkclip(samples, config)
         log.info(logid + "Running Peak finding for " + CLIP + " protocol")
 
     for condition in conditions:
         subconf = NestedDefaultDict()
-        for subwork in postprocess:
+        for subwork in postworkflow:
             if any(subwork == x for x in ["DE", "DEU", "DAS"]):
                 continue
             log.debug(
@@ -2997,7 +2997,7 @@ def nf_make_post(
 
     # THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
     for analysis in ["DE", "DEU", "DAS"]:
-        if analysis in config and analysis in postprocess:
+        if analysis in config and analysis in postworkflow:
             log.info(logid + "STARTING " + analysis + " Analysis...")
             subwork = analysis
             subconf = NestedDefaultDict()
