@@ -6,7 +6,7 @@ MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
 MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = get_always('MAPPINGREFDIR')
 MAPANNO = get_always('MAPPINGANNO')
-MAPPREFIX = get_always('MAPPINGPREFIX')
+MAPPREFIX = get_always('MAPPINGPREFIX') ?: MAPBIN.split(' ')[0]
 MAPUIDX.replace('.idx','')
 
 IDXPARAMS = get_always('hisat2_params_INDEX') ?: ''
@@ -37,7 +37,7 @@ process hisat2_idx{
     saveAs: {filename ->
         if (filename.indexOf(".ht2") > 0)        "$MAPUIDX"+"/"+"${filename.replaceFirst(/tmp\.idx/, '')}"
         else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
-        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/MAPPING/hisat2_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/$COMBO$CONDITION/MAPPING/hisat2_index.log"
         else null
     }
 
@@ -54,7 +54,7 @@ process hisat2_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$indexbin  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$MAPREFIX  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
     """
 
 }
@@ -105,11 +105,11 @@ process hisat2_mapping{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPUIDXNAME} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }
 }
