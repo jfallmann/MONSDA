@@ -13,7 +13,7 @@ rule generate_index:
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
             lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
             pref = PREFIX
-    shell:  "if [[ -f \"{output.uidx}/idx\" ]]; then ln -fs {params.lnkidx} {output.idx} && mkdir -p {output.uidx} && touch {output.tmp} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && mkdir -p {output.uidx} ;{params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx}/{params.pref} 2> {log} && ln -fs {params.lnkidx} {output.idx} && touch {output.uidx} && touch {output.idxfile};fi"
+    shell:  "if [[ -f \"{output.idxfile}\" ]]; then ln -fs {params.lnkidx} {output.idx} && mkdir -p {output.uidx} && touch {output.tmp} {output.idxfile} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && mkdir -p {output.uidx} ;{params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx}/{params.pref} 2> {log} && ln -fs {params.lnkidx} {output.idx} && touch {output.uidx} && touch {output.idxfile};fi"
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
 

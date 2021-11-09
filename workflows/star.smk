@@ -14,7 +14,7 @@ rule generate_index:
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
             pref = PREFIX,
             lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.uidx}/{params.pref}SAindex\" ]]; then touch {output.dummy} && ln -fs {output.dummy} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {params.tmpidx}/star_ref.fa && zcat {params.anno} > {params.tmpidx}/star_ref.anno && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.tmpidx}/star --genomeDir {output.uidx} --genomeFastaFiles {params.tmpidx}/star_ref.fa --sjdbGTFfile {params.tmpidx}/star_ref.anno 2> {log} && touch {output.dummy} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/{params.pref}Log.out >> {log} && rm -rf {params.tmpidx};fi"
+    shell:  "if [[ -f \"{output.dummy}\" ]]; then touch {output.dummy} && ln -fs {output.dummy} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {params.tmpidx}/star_ref.fa && zcat {params.anno} > {params.tmpidx}/star_ref.anno && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.tmpidx}/star --genomeDir {output.uidx} --genomeFastaFiles {params.tmpidx}/star_ref.fa --sjdbGTFfile {params.tmpidx}/star_ref.anno 2> {log} && touch {output.dummy} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/{params.pref}Log.out >> {log} && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:

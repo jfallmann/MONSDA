@@ -75,6 +75,7 @@ dependencies:
   - pixman=0.40.0
   - r-base=4.0.3
   - readline=8.1
+  - samtools=1.13  
   - sed=4.8
   - sysroot_linux-64=2.17
   - tk=8.6.10
