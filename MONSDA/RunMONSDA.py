@@ -384,7 +384,6 @@ def run_snakemake(
                     if subworkflows
                     else None
                 )
-                log.debug(logid + "POSTPROCESSING WITH COMBOS: " + str(combinations))
 
                 jobs = make_post(
                     subwork,

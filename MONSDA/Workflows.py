@@ -296,7 +296,7 @@ def get_processes(config):
 
 
 @check_run
-def create_subworkflow(config, subwork, conditions, envs=None, stage=""):
+def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
     logid = scriptname + ".Workflows_create_subworkflow: "
     log.debug(
         logid
@@ -405,9 +405,19 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=""):
                     if any(
                         [
                             subwork == x
-                            for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]
+                            for x in [
+                                "PEAKS",
+                                "DE",
+                                "DEU",
+                                "DAS",
+                                "DTU",
+                                "COUNTING",
+                                "TRACKS",
+                            ]
                         ]
                     ):
+                        if not config[subwork].get("TOOLS"):
+                            tempconf[subwork] = subSetDict(config[subwork], condition)
                         if config[subwork].get("CUTOFFS"):
                             tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
                         if subwork == "COUNTING":
@@ -1057,7 +1067,7 @@ def make_post(
                 envs = envlist[i].split("-")
 
                 listoftools, listofconfigs = create_subworkflow(
-                    config, subwork, combname, envs
+                    config, subwork, combname
                 )
 
                 if listoftools is None:
@@ -1074,6 +1084,14 @@ def make_post(
                 for a in range(0, len(listoftools)):
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
+                    tc = list(condition)
+                    tc.append(toolenv)
+                    sconf[subwork].update(subSetDict(config[subwork], tc))
+
+                    if sconf[subwork].get("TOOLS"):
+                        sconf[subwork]["TOOLS"] = subDict(
+                            sconf[subwork]["TOOLS"], [toolenv]
+                        )
                     if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
                         "deseq",
                         "diego",
@@ -1175,15 +1193,8 @@ def make_post(
         else:
             for condition in combname:
                 envlist = combname[condition].get("envs")
-                log.debug(
-                    logid
-                    + "POSTLISTS:     "
-                    + str(condition)
-                    + "\t"
-                    + str(subwork)
-                    + "\t"
-                    + str(envlist)
-                )
+                log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
+
                 subconf = NestedDefaultDict()
                 add = list()
 
@@ -1198,7 +1209,7 @@ def make_post(
                     envs = envlist[i].split("-")
 
                     listoftools, listofconfigs = create_subworkflow(
-                        config, subwork, [condition], envs
+                        config, subwork, [condition]
                     )
 
                     if listoftools is None:
@@ -1221,10 +1232,19 @@ def make_post(
                     for a in range(0, len(listoftools)):
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
+                        tc = list(condition)
+                        tc.append(toolenv)
+                        sconf[subwork].update(subSetDict(config[subwork], tc))
+
+                        if sconf[subwork].get("TOOLS"):
+                            sconf[subwork]["TOOLS"] = subDict(
+                                sconf[subwork]["TOOLS"], [toolenv]
+                            )
+
                         if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
                             "deseq",
                             "diego",
-                        ]:  # for all other postprocessing tools we have more than one     defined subworkflow
+                        ]:  # for all other postprocessing tools we have more than one defined subworkflow
                             toolenv = toolenv + "_" + subwork
 
                         sconf[subwork + "ENV"] = toolenv
