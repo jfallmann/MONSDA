@@ -735,7 +735,7 @@ def make_sub(
 ):
     logid = scriptname + ".Workflows_make_sub: "
 
-    log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
+    log.info(logid + f'STARTING PROCESSING FOR {conditions}')
 
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
@@ -1380,7 +1380,7 @@ def make_post(
                     "diego",
                 ]:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv + "_" + subwork
-                    log.info(logid + "toolenv: " + str(toolenv))
+                    log.debug(logid + "toolenv: " + str(toolenv))
 
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
@@ -1569,11 +1569,11 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
                 todos.append(allrawqc + "\n\n")
 
     if "MAPPING" in subworkflows and "QC" not in subworkflows:
-        log.info(logid + "Mapping without QC!")
+        log.debug(logid + "Mapping without QC!")
         todos.append(allmap + "\n\n")
 
     if "MAPPING" in subworkflows and "TRIMMING" not in subworkflows:
-        log.info(logid + "Simulated read trimming only!")
+        log.debug(logid + "Simulated read trimming only!")
         makeoutdir("TRIMMED_FASTQ")
         smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
         with open(smkf, "r") as smk:
@@ -1585,7 +1585,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         and "QC" not in subworkflows
         and "MAPPING" not in subworkflows
     ):
-        log.info(logid + "Trimming without QC!")
+        log.debug(logid + "Trimming without QC!")
         todos.append(alltrim + "\n\n")
 
     if (
@@ -1594,7 +1594,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         and "TRIMMING" not in subworkflows
         and "MAPPING" not in subworkflows
     ):
-        log.info(logid + "DEDUP without QC!")
+        log.debug(logid + "DEDUP without QC!")
         todos.append(alldedup + "\n\n")
 
     return todos
@@ -1775,7 +1775,7 @@ def nf_fetch_params(
             )  # by default GTF forma
         if not IP:
             IP = check_IP(SAMPLES, config)
-        log.info(logid + "Running Peak finding for " + IP + " protocol")
+        log.debug(logid + "Running Peak finding for " + IP + " protocol")
 
         retconf["PEAKREF"] = REFERENCE
         retconf["PEAKREFDIR"] = REFDIR
@@ -2029,8 +2029,7 @@ def nf_make_pre(
     combinations=None,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
-    log.debug(logid + "PREPROCESSING: " + str(subwork))
-    log.info(logid + "PREPROCESSING SAMPLES: " + str(samples))
+    log.info(logid + f'PREPROCESSING: {subwork} and SAMPLES: {samples}')
 
     jobs = list()
     state = "pre_"
@@ -2367,8 +2366,7 @@ def nf_make_sub(
 ):
     logid = scriptname + ".Workflows_nf_make_sub: "
 
-    log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
-    log.info(logid + "PROCESSING SAMPLES: " + str(samples))
+    log.info(logid + f'STARTING PROCESSING FOR {conditions} and SAMPLES: {samples})
     jobs = list()
     condapath = re.compile(r'conda\s+"')
     logfix = re.compile(r'loglevel="INFO"')
@@ -2523,9 +2521,9 @@ def nf_make_sub(
 
                 if "MAPPING" in works:
                     if "QC" not in works:
-                        log.info(logid + "Mapping without QC!")
+                        log.debug(logid + "Mapping without QC!")
                     if "TRIMMING" not in works:
-                        log.info(logid + "Simulated read trimming only!")
+                        log.debug(logid + "Simulated read trimming only!")
                         flowlist.append("TRIMMING")
                         nfi = os.path.abspath(
                             os.path.join(
@@ -2796,9 +2794,9 @@ def nf_make_sub(
 
             if "MAPPING" in subworkflows:
                 if "QC" not in subworkflows:
-                    log.info(logid + "Mapping without QC!")
+                    log.debug(logid + "Mapping without QC!")
                 if "TRIMMING" not in subworkflows:
-                    log.info(logid + "Simulated read trimming only!")
+                    log.debug(logid + "Simulated read trimming only!")
                     flowlist.append("TRIMMING")
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
                     with open(nfi, "r") as nf:
@@ -2912,7 +2910,7 @@ def nf_make_post(
 
     if "PEAKS" in config and "PEAKS" in postworkflow:
         CLIP = checkclip(samples, config)
-        log.info(logid + "Running Peak finding for " + CLIP + " protocol")
+        log.debug(logid + "Running Peak finding for " + CLIP + " protocol")
 
     for condition in conditions:
         subconf = NestedDefaultDict()
