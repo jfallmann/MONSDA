@@ -105,11 +105,11 @@ if stranded != '':
 
 # MAPPING Variables
 if 'MAPPING' in config:
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     MAPCONF = subDict(config['MAPPING'], SETUP)
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
-    REF = MAPCONF.get('REFERENCE') if MAPCONF.get('REFERENCE') else MAPCONF[MAPPERENV].get('REFERENCE')
-    MANNO = MAPCONF.get('ANNOTATION') if MAPCONF.get('ANNOTATION') else MAPCONF[MAPPERENV].get('ANNOTATION')
+    REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
+    MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -117,7 +117,7 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-    IDX = MAPCONF.get('INDEX')
+    IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
     if IDX:
         INDEX = IDX
     if not INDEX:
@@ -125,7 +125,8 @@ if 'MAPPING' in config:
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
-    PRE = MAPCONF.get('PREFIX')
+    MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
+    PRE = MAPCONF.get('PREFIX', MAPCONF.get('EXTENSION', MAPOPT.get('PREFIX', MAPOPT.get('EXTENSION'))))
     if PRE and PRE is not None:
         PREFIX = PRE
     if not PREFIX or PREFIX is None:

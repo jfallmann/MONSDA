@@ -378,7 +378,7 @@ def run_snakemake(
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                log.info(logid + "POSTPROCESSING SAMPLES: " + str(SAMPLES))
+                log.info(logid + f"POSTPROCESSING {subwork} with SAMPLES: {SAMPLES}")
                 combinations = (
                     get_combo(subworkflows, config, conditions)
                     if subworkflows

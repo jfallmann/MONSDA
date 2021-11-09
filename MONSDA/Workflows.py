@@ -1027,7 +1027,7 @@ def make_post(
 ):
     logid = scriptname + ".Workflows_make_post: "
 
-    log.info(logid + "STARTING POSTPROCESSING FOR " + str(conditions))
+    log.debug(logid + "STARTING POSTPROCESSING FOR " + str(conditions))
 
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
