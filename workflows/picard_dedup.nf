@@ -44,7 +44,7 @@ process dedup{
     script:
     out=samples.getSimpleName()+"_dedup.bam"
     """
-    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS $DEDUPPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $samples --OUTPUT $out --METRICS_FILE dedup_metrics.txt &> dedup.log && samtools index $out &>> dedup.log
+    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $samples --OUTPUT $out --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $out &>> dedup.log
     """
 }
 
