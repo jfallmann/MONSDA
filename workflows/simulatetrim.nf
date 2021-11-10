@@ -2,13 +2,13 @@ T1SAMPLES = null
 T2SAMPLES = null
 
 process simtrim{
-    conda "$TOOLENV"+".yaml"
+    //conda "$TOOLENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
-        if (filename.indexOf("fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
         else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
         else null
     }
@@ -21,8 +21,10 @@ process simtrim{
     path "*trimming_report.txt", emit: rep
 
     script:
+    a=read.getSimpleName()+"_trimming_report.txt"
+    b=read.getSimpleName()+"_trimmed.fastq.gz"
     """
-    a=basename($read); b={a%.fastq.gz}; cp $read $b\.trimmed.fastq.gz ; echo "simulated" > \${a}_trimming_report.txt
+    ln -sf $read $b ; echo "simulated $read trimming" > $a
     """
 
 }

@@ -6,13 +6,15 @@ process collect_multi{
     input:
     path check
     val checker
+    path collection
 
     output:
-    path "collect.txt", emit: done
+    path "*collect.txt", emit: done
 
     script:
+    name=check+"_collect.txt"
     """
-    echo "$check Collection successful!" > collect.txt
+    echo "$collection Collection successful!" >> $name
     """
 }
 
@@ -34,15 +36,16 @@ process mqc{
     path samples
 
     output:
-    path "*.{zip,html}", emit: mqc_results
+    path "*.zip", emit: mqc
+    path "*.html", emit: html
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
+    touch $samples; export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
     """
 }
 
-collect_dummy{
+process collect_dummy{
     input:
     path check
 
@@ -76,12 +79,12 @@ workflow MULTIQC{
 
     logs_ch = Channel.fromPath(MAPLOG).ifEmpty([])
 
-    toqc_ch = samples_ch.concat(logs_ch)
+    toqc_ch = samples_ch.mix(logs_ch)
 
-    collect_multi(otherqcs.collect(), maplogs.collect())
+    collect_multi(otherqcs.collect(), maplogs.collect(), toqc_ch)
     mqc(collect_multi.out.done.collect(), toqc_ch)
-    collect_dummy(mqc.out.mqc_results.collect())
+    collect_dummy(mqc.out.mqc.collect())
 
     emit:
-    mqcres = mqc.out.mqc_results
+    mqcres = mqc.out.mqc
 }

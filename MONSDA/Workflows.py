@@ -2909,7 +2909,7 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_MAPPING.out.qc.collect(), MAPPING.out.log.collect())\n"
+                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect())\n"
                                 )
                             elif "TRIMMING" in flowlist:
                                 subjobs.append(
