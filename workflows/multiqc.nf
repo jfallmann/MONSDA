@@ -42,6 +42,19 @@ process mqc{
     """
 }
 
+collect_dummy{
+    input:
+    path check
+
+    output:
+    path "mqc.txt", emit: done
+
+    script:
+    """
+    echo "$check MQC successful!" > mqc.txt
+    """
+}
+
 workflow MULTIQC{
     take:
     otherqcs
@@ -54,19 +67,20 @@ workflow MULTIQC{
         element -> return "${workflow.workDir}/../QC/$COMBO"+element+"**_fastqc.zip"
     }
     SAMPLES.sort()
-    samples_ch = Channel.fromPath(SAMPLES, followLinks: true)
+    samples_ch = Channel.fromPath(SAMPLES).ifEmpty([])
     
     MAPLOG = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../LOGS/$COMBO/MAPPING/**.log"
     }
     MAPLOG.sort()
 
-    logs_ch = Channel.fromPath(MAPLOG, followLinks: true)
+    logs_ch = Channel.fromPath(MAPLOG).ifEmpty([])
 
     toqc_ch = samples_ch.concat(logs_ch)
 
     collect_multi(otherqcs.collect(), maplogs.collect())
     mqc(collect_multi.out.done.collect(), toqc_ch)
+    collect_dummy(mqc.out.mqc_results.collect())
 
     emit:
     mqcres = mqc.out.mqc_results
