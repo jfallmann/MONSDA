@@ -66,7 +66,7 @@ workflow MULTIQC{
     toqc_ch = samples_ch.concat(logs_ch)
 
     collect_multi(otherqcs.collect(), maplogs.collect())
-    mqc(collect_multi.out.done.collect(), toqc_ch)
+    mqc(collect_multi.out.done.collect(), toqc_ch.collect())
 
     emit:
     mqcres = mqc.out.mqc_results
