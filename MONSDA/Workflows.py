@@ -481,7 +481,9 @@ def make_pre(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda:  "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -554,7 +556,9 @@ def make_pre(
                                 )
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -564,7 +568,9 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -616,7 +622,9 @@ def make_pre(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
                 add.append("\n\n")
 
@@ -681,7 +689,9 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -690,7 +700,9 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -771,7 +783,9 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -863,7 +877,9 @@ def make_sub(
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -874,7 +890,7 @@ def make_sub(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -884,7 +900,7 @@ def make_sub(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -894,7 +910,9 @@ def make_sub(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -933,7 +951,9 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
                 add.append("\n\n")
 
@@ -1009,7 +1029,7 @@ def make_sub(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -1019,7 +1039,9 @@ def make_sub(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
@@ -1028,7 +1050,7 @@ def make_sub(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -1038,7 +1060,9 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     subjobs.append(line)
                 subjobs.append("\n\n")
 
@@ -1101,7 +1125,9 @@ def make_post(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
 
             for i in range(len(envlist)):
@@ -1177,7 +1203,7 @@ def make_post(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -1188,7 +1214,7 @@ def make_post(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -1250,7 +1276,9 @@ def make_post(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         add.append(line)
 
                 for i in range(len(envlist)):
@@ -1335,7 +1363,9 @@ def make_post(
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -1346,7 +1376,9 @@ def make_post(
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "../', line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -1406,7 +1438,9 @@ def make_post(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
 
             listoftools, listofconfigs = create_subworkflow(
@@ -1462,7 +1496,9 @@ def make_post(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -1471,7 +1507,9 @@ def make_post(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -1562,7 +1600,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
         for line in smk.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
             line = re.sub(condapath, 'conda: "' + envpath, line)
-            line = re.sub(includepath, 'include:  "' + workflowpath, line)
+            line = re.sub(includepath, 'include:  "' + workflowpath + os.sep, line)
             subjobs.append(line)
         subjobs.append("\n\n")
 
@@ -1641,7 +1679,7 @@ def rulethemall(
             for line in smk.readlines():
                 line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                 line = re.sub(condapath, 'conda:  "' + envpath, line)
-                line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                line = re.sub(includepath, 'include:  "' + workflowpath + os.sep, line)
                 todos.append(line)
         todos.append("\n\n")
 
@@ -2115,7 +2153,9 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
                 add.append("\n\n")
 
@@ -2184,7 +2224,9 @@ def nf_make_pre(
                                 )
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -2200,7 +2242,9 @@ def nf_make_pre(
                                     )
                                     line = re.sub(condapath, 'conda "' + envpath, line)
                                     line = re.sub(
-                                        includepath, 'include:  "' + workflowpath, line
+                                        includepath,
+                                        'include:  "' + workflowpath + os.sep,
+                                        line,
                                     )
                                     subjobs.append(line)
                                 subjobs.append("\n\n")
@@ -2291,7 +2335,9 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     subjobs.append(line)
                 subjobs.append("\n\n")
 
@@ -2354,7 +2400,9 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2376,7 +2424,9 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2461,7 +2511,9 @@ def nf_make_sub(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                    line = re.sub(
+                        includepath, 'include:  "' + workflowpath + os.sep, line
+                    )
                     add.append(line)
                 add.append("\n\n")
 
@@ -2562,7 +2614,7 @@ def nf_make_sub(
                                         )
                                         line = re.sub(
                                             includepath,
-                                            'include:  "' + workflowpath,
+                                            'include:  "' + workflowpath + os.sep,
                                             line,
                                         )
                                         subjobs.append(line)
@@ -2587,7 +2639,9 @@ def nf_make_sub(
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -2623,7 +2677,9 @@ def nf_make_sub(
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 line = re.sub(
-                                    includepath, 'include:  "' + workflowpath, line
+                                    includepath,
+                                    'include:  "' + workflowpath + os.sep,
+                                    line,
                                 )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -2635,7 +2691,7 @@ def nf_make_sub(
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -2650,7 +2706,7 @@ def nf_make_sub(
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -2872,7 +2928,7 @@ def nf_make_sub(
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -2901,7 +2957,7 @@ def nf_make_sub(
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -2912,7 +2968,9 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2922,7 +2980,9 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        line = re.sub(includepath, 'include:  "' + workflowpath, line)
+                        line = re.sub(
+                            includepath, 'include:  "' + workflowpath + os.sep, line
+                        )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -3197,7 +3257,7 @@ def nf_make_post(
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda  "../', line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             smkout.write(line)
                     smkout.write("\n\n")
@@ -3213,7 +3273,7 @@ def nf_make_post(
                             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                             line = re.sub(condapath, 'conda:  "' + envpath, line)
                             line = re.sub(
-                                includepath, 'include:  "' + workflowpath, line
+                                includepath, 'include:  "' + workflowpath + os.sep, line
                             )
                             smkout.write(line)
                     smkout.write("\n")
