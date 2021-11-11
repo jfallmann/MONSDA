@@ -401,10 +401,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                         tempconf[key] = subSetDict(config[key], condition)
 
                     if stage and stage == "POST":
-                        tempconf["SAMPLES"] = [
-                            os.path.basename(x)
-                            for x in get_samples_postprocess(config, subwork)
-                        ]
+                        tempconf["SAMPLES"] = get_samples_postprocess(config, key)
                     else:
                         tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
                             "SAMPLES"
@@ -2911,7 +2908,7 @@ def nf_make_sub(
                                 " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
                             )
                         elif w == "MULTIQC":
-                            if "DEDUP" in flowlist:
+                            if "DEDUPBAM" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w

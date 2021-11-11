@@ -49,7 +49,7 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
     conda:  ""+PEAKENV+".yaml"
     threads: 1
-    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', SAMPLES), scombo),
+    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', get_samples_postprocess(config, 'PEAKS')), scombo),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),

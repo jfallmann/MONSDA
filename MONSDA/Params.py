@@ -875,7 +875,7 @@ def checkstranded(sample, config):
 
 @check_run
 def set_pairing(samples, config):
-    logid = scriptname + ".Params_set_pairings: "
+    logid = scriptname + ".Params_set_pairing: "
     ret = list()
     cond = conditiononly(samples[0], config)
     pconf = subDict(config["PEAKS"], cond)
@@ -885,7 +885,7 @@ def set_pairing(samples, config):
     if pairlist:
         for k, v in pairlist.items():
             for x in samples:
-                if k in x:
+                if str(k) == str(os.path.basename(x)):
                     ret.extend(samplecond([x], config))
     else:
         return samples
@@ -895,7 +895,7 @@ def set_pairing(samples, config):
 
 @check_run
 def get_pairing(sample, stype, config, samples, scombo=""):
-    logid = scriptname + ".Params_get_pairings: "
+    logid = scriptname + ".Params_get_pairing: "
     cond = conditiononly(sample, config)
     pconf = subDict(config["PEAKS"], cond)
     pairlist = pconf.get("COMPARABLE", config["PEAKS"].get("COMPARABLE"))
@@ -913,26 +913,34 @@ def get_pairing(sample, stype, config, samples, scombo=""):
     )
     if pairlist:
         for k, v in pairlist.items():
-            if k in sample:
+            if str(k) == str(os.path.basename(sample)):
                 for x in samples:
-                    if v in x:
+                    if str(v) == str(os.path.basename(x)) and x != sample:
                         log.debug(logid + "Match found: " + str(v) + " : " + str(x))
-                        matching = samplecond([x], config)[0].replace("MAPPED/", "")
+                        try:
+                            matching = samplecond([x], config)[0].replace("MAPPED/", "")
+                        except:
+                            matching = x
                         log.info(logid + "PAIRINGS: " + sample + ": " + str(matching))
+        if not matching or matching == "":
+            log.error(
+                logid
+                + f"COMPARABLE set in config but no fitting pair could be found for sample {sample} in {pairlist}. Please check config."
+            )
+        else:
+            retstr = (
+                "-c MAPPED"
+                + os.sep
+                + str(scombo)
+                + os.sep
+                + str(matching)
+                + "_mapped_"
+                + str(stype)
+                + ".bam"
+            )
 
-        retstr = (
-            "-c MAPPED"
-            + os.sep
-            + str(scombo)
-            + os.sep
-            + str(matching)
-            + "_mapped_"
-            + str(stype)
-            + ".bam"
-        )
-
-        log.debug(logid + retstr)
-        return retstr
+            log.debug(logid + retstr)
+            return retstr
     else:
         log.warning(logid + "No matching sample found")
         return ""
