@@ -880,7 +880,7 @@ def set_pairings(samples, config):
     cond = conditiononly(samples[0], config)
     pconf = subDict(config["PEAKS"], cond)
     log.debug(logid + "SAMPLES: " + str(samples))
-    pairlist = pconf.get("COMPARABLE")
+    pairlist = pconf.get("COMPARABLE", config["PEAKS"].get("COMPARABLE"))
     log.debug(logid + "PAIRLIST: " + str(pairlist))
     if pairlist:
         for k, v in pairlist.items():
@@ -898,7 +898,7 @@ def get_pairing(sample, stype, config, samples, scombo=""):
     logid = scriptname + ".Params_get_pairings: "
     cond = conditiononly(sample, config)
     pconf = subDict(config["PEAKS"], cond)
-    pairlist = pconf.get("COMPARABLE")
+    pairlist = pconf.get("COMPARABLE", config["PEAKS"].get("COMPARABLE"))
     matching = ""
     log.debug(
         logid
@@ -949,17 +949,6 @@ def post_checkpaired(sample, config):
         p = subDict(config["SETTINGS"], check)
         log.debug(logid + "P: " + str(p))
         paired = p.get("SEQUENCING").split(",")[0]
-        # check = os.path.dirname(s).split(os.sep)
-        # tmplist = check
-        # p = getFromDict(config['SEQUENCING'], tmplist)[0]
-        # if not dict_inst(p):
-        # paired = p[0] if 'paired' in p or 'unpaired' in p or 'singlecell' in p else ''
-        # for r in runstate_from_sample([s], config):
-        #    log.debug(logid+'R: '+str(r))
-        #    if r in p:
-        #        tmplist.append(r)
-        #        paired = getFromDict(config['SEQUENCING'], tmplist)[0].split(',')[0]
-        #        tmplist = tmplist[:2]
     log.debug(logid + "PAIRED: " + str(paired))
     return paired
 
@@ -968,7 +957,7 @@ def post_checkpaired(sample, config):
 def check_IP(sample, config):
     logid = scriptname + ".Params_check_IP: "
     ret = list()
-    clip = ""
+    ip = ""
     for s in sample:
         log.debug(logid + "SAMPLE: " + str(s))
         check = os.path.dirname(s).split(os.sep)
@@ -981,12 +970,12 @@ def check_IP(sample, config):
         log.debug(logid + "TMP: " + str(tmplist))
         check = getFromDict(config["PEAKS"], tmplist)[0]
         log.debug(logid + "CHECK: " + str(check))
-        if "CLIP" in check:
-            clip = check["CLIP"]
+        if "IP" in check:
+            ip = check["IP"]
         else:
-            log.debug(logid + "Key CLIP not found in config")
-    log.debug(logid + "CLIP is: " + str(clip))
-    return str(clip)
+            log.debug(logid + "Key IP not found in config")
+    log.debug(logid + "IP is: " + str(ip))
+    return str(ip)
 
 
 @check_run
@@ -1009,37 +998,8 @@ def check_tool_params(sample, runstate, config, subconf, idx):
 @check_run
 def comparable_as_string(config, subwork):
     logid = scriptname + ".comparable_as_string: "
-    check = config[subwork].get("COMPARABLE")
-    if check:
-        log.debug(logid + "determine comparables in " + subwork)
-        complist = []
-        compdict = config[subwork]["COMPARABLE"]
-        for key in compdict:
-            for value in compdict[key]:
-                complist.append(f"{key}-vs-{value}")
-        compstr = ",".join(complist)
-        return compstr
-    else:
-        log.warning(
-            logid + "no comparables found in " + subwork + ". Compare All vs. All."
-        )
-        groups_by_condition = list(yield_from_dict("GROUPS", config))
-        flattened = sorted(
-            set(val for sublist in groups_by_condition for val in sublist)
-        )
-        combined = list(set(itertools.combinations(flattened, 2)))
-        complist = []
-        for key, value in combined:
-            complist.append(f"{key}-vs-{value}")
-        compstr = ",".join(complist)
-        return compstr
-
-
-@check_run
-def comparable_as_string2(config, subwork):
-    logid = scriptname + ".comparable_as_string2: "
     log.debug(logid + "this is the config: " + str(config))
-    check = config[subwork]["COMPARABLE"]
+    check = config[subwork].get("COMPARABLE")
     if check:
         log.debug(logid + "determine comparables in " + subwork)
         complist = []
@@ -1066,35 +1026,6 @@ def comparable_as_string2(config, subwork):
         complist = []
         for key, value in combined:
             complist.append(f"{key}vs{value}:{key}-vs-{value}")
-        compstr = ",".join(complist)
-        return compstr
-
-
-@check_run
-def comparable_as_string3(config, subwork):
-    logid = scriptname + ".comparable_as_string: "
-    check = config[subwork].get("COMPARABLE")
-    if check:
-        log.debug(logid + "determine comparables in " + subwork)
-        complist = []
-        compdict = config[subwork]["COMPARABLE"]
-        for key in compdict:
-            for value in compdict[key]:
-                complist.append(f"{key}-vs-{value}")
-        compstr = ",".join(complist)
-        return compstr
-    else:
-        log.warning(
-            logid + "no comparables found in " + subwork + ". Compare All vs. All."
-        )
-        groups_by_condition = list(yield_from_dict("GROUPS", config))
-        flattened = sorted(
-            set(val for sublist in groups_by_condition for val in sublist)
-        )
-        combined = list(set(itertools.combinations(flattened, 2)))
-        complist = []
-        for key, value in combined:
-            complist.append(f"{key}-vs-{value}")
         compstr = ",".join(complist)
         return compstr
 

@@ -1,7 +1,7 @@
 DEUBIN, DEUENV = env_bin_from_config3(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
-comparison = comparable_as_string2(config,'DEU')
+comparison = comparable_as_string(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 
 rule themall:
