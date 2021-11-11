@@ -874,7 +874,7 @@ def checkstranded(sample, config):
 
 
 @check_run
-def set_pairings(samples, config):
+def set_pairing(samples, config):
     logid = scriptname + ".Params_set_pairings: "
     ret = list()
     cond = conditiononly(samples[0], config)

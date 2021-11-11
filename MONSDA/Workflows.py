@@ -400,9 +400,15 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                     else:
                         tempconf[key] = subSetDict(config[key], condition)
 
-                    tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
-                        "SAMPLES"
-                    ]
+                    if stage and stage == "POST":
+                        tempconf["SAMPLES"] = [
+                            os.path.basename(x)
+                            for x in get_samples_postprocess(config, subwork)
+                        ]
+                    else:
+                        tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
+                            "SAMPLES"
+                        ]
 
                     if any(
                         [
@@ -1172,7 +1178,7 @@ def make_post(
                 envs = envlist[i].split("-")
 
                 listoftools, listofconfigs = create_subworkflow(
-                    config, subwork, combname
+                    config, subwork, combname, stage="POST"
                 )
 
                 if listoftools is None:
@@ -1336,7 +1342,7 @@ def make_post(
                     envs = envlist[i].split("-")
 
                     listoftools, listofconfigs = create_subworkflow(
-                        config, subwork, [condition]
+                        config, subwork, [condition], stage="POST"
                     )
 
                     if listoftools is None:
@@ -1504,7 +1510,7 @@ def make_post(
                     add.append(line)
 
             listoftools, listofconfigs = create_subworkflow(
-                config, subwork, [condition]
+                config, subwork, [condition], stage="POST"
             )
 
             if listoftools is None:
@@ -3228,7 +3234,7 @@ def nf_make_post(
                 logid + "POSTPROCESS: " + str(subwork) + " CONDITION: " + str(condition)
             )
             listoftools, listofconfigs = create_subworkflow(
-                config, subwork, [condition]
+                config, subwork, [condition], stage="POST"
             )
             log.debug(logid + str([listoftools, listofconfigs]))
             if listoftools is None:
@@ -3351,7 +3357,9 @@ def nf_make_post(
             log.debug(
                 logid + "SUBWORK: " + str(subwork) + " CONDITION: " + str(conditions)
             )
-            listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+            listoftools, listofconfigs = create_subworkflow(
+                config, subwork, conditions, stage="POST"
+            )
 
             if listoftools is None:  # or listoftoolscount is None:
                 log.error(

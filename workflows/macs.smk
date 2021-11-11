@@ -1,8 +1,5 @@
 PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
-PEAKSAMPLES = set_pairings(SAMPLES, config)
-
-#wildcard_constraints:
-#    file = samplecond(PEAKSAMPLES, config)
+PEAKSAMPLES = set_pairing(SAMPLES, config)
 
 log.info('PEAKSAMPLES: '+str(PEAKSAMPLES))
 
@@ -52,7 +49,7 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
     conda:  ""+PEAKENV+".yaml"
     threads: 1
-    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES, scombo),
+    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', SAMPLES), scombo),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
