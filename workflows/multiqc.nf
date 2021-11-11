@@ -62,6 +62,7 @@ workflow MULTIQC{
     take:
     otherqcs
     maplogs
+    unique
 
     main:
 
@@ -81,7 +82,7 @@ workflow MULTIQC{
 
     toqc_ch = samples_ch.mix(logs_ch)
 
-    collect_multi(otherqcs.collect(), maplogs.collect(), toqc_ch)
+    collect_multi(otherqcs.collect(), maplogs.collect(), unique.collect())
     mqc(collect_multi.out.done.collect(), toqc_ch)
     collect_dummy(mqc.out.mqc.collect())
 

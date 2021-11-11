@@ -2911,17 +2911,23 @@ def nf_make_sub(
                                 " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
                             )
                         elif w == "MULTIQC":
-                            if "MAPPING" in flowlist:
+                            if "DEDUP" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect())\n"
+                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect(), DEDUPBAM.out.dedup.collect())\n"
+                                )
+                            elif "MAPPING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect(), dummy)\n"
                                 )
                             elif "TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_TRIMMING.out.qc.collect(), dummy)\n"
+                                    + "(QC_TRIMMING.out.qc.collect(), dummy, dummy)\n"
                                 )
                             # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
                             #    subjobs.append(
