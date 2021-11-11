@@ -1,5 +1,5 @@
 process output_documentation {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy'
+    publishDir "${params.outdir}/pipeline_info", mode: 'link'
 
     input:
     file output_docs from ch_output_docs

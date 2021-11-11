@@ -18,7 +18,7 @@ process sortsam{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".sam.gz") > 0)     "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.sam.gz"
         else null
@@ -44,7 +44,7 @@ process sam2bam{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
@@ -74,7 +74,7 @@ process uniqsam{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.sam.gz"
         else if (filename.indexOf(".log") > 0)       "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
@@ -102,7 +102,7 @@ process sam2bamuniq{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"

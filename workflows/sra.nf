@@ -24,7 +24,7 @@ process prefetch_sra{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/Prefetch_SRA.log"
         else null
@@ -49,7 +49,7 @@ process download_sra{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
         else if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/SRA.log"

@@ -24,7 +24,7 @@ process whitelist{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_whitelist") > 0)         "FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_whitelist"
         else if (filename.indexOf("log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedup_whitelist.log"
@@ -59,7 +59,7 @@ process extract{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
         else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedup_extract.log"
