@@ -729,7 +729,10 @@ def runstate_from_sample(sample, config):
             s = os.path.dirname(s)
             n = s.split(os.sep)[-1]
         log.debug(logid + "SAMPLE: " + s)
-        c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
+        try:
+            c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
+        except:
+            c = None
         log.debug(logid + "SETTINGS: " + str(c))
         if dict_inst(c):
             if not c.get("SAMPLES"):
