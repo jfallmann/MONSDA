@@ -2,55 +2,34 @@
 Install
 =======
 
-Simply clone with ``git clone``.
+Install MONSDA via ```conda``` or ```pip```
+-------------------------------------------
 
-For details on ``Snakemake`` and it's features please refer to the
-[snakemake
-documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
-For details on ``Nextflow`` and it's features please refer to the
-[nextflow
-documentation](https://www.nextflow.io/docs/latest/index.html).
+To install via ```conda/mamba``` simply run
 
-In general it is necessary to write a configuration file containing
-information on paths, files to process and settings beyond default for
-mapping tools and others.  The template on which analysis is based can
-be found in the ``config`` directory.
+```
+mamba install -c bioconda -c conda-forge monsda
+```
 
-For ``MONSDA`` to be as FAIR as possible, we rely on
-``conda`` as environment management system. For details on
-``conda`` please refer to the [conda
-manual](https://docs.conda.io/en/latest/).
+To install via ```pip``` you first need to create the ```MONSDA``` environment as found in the ```envs``` directory of this repository like so:
 
-This workflow collection makes heavy use of ``conda`` and especially
-the [bioconda](https://bioconda.github.io) channel.
+```
+mamba env create -n monsda -f MONSDA/envs/monsda.yaml
+```
 
-To create a working environment for this repository please install the
-``MONSDA.yaml`` environment as found in the ``envs`` directory
-like so:
+The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically alongside ```MONSDA```.
 
-``
-conda env create -n MONSDA -f envs/MONSDA.yaml
-``
+For that activate the ```MONSDA``` environment and run ```pip```
 
-The ``envs`` directory holds all the environments needed to run the pipelines in the ``workflows`` directory,
-these will be installed automatically when needed.
+```
+conda activate monsda
+pip install MONSDA
+```
 
-For fast resolve of conda packages, we recommend ``mamba``
-[mamba](https://github.com/TheSnakePit/mamba)
+Install from source
+-------------------
 
-For distribution of jobs one can either rely on local hardware, use
-scheduling software like
-[Slurm](https://slurm.schedmd.com/documentation.html) or the
-[SGE](https://docs.oracle.com/cd/E19957-01/820-0699/chp1-1/index.html)
-or follow any other integration of
-[Snakemake](https://snakemake.readthedocs.io/en/stable/executing/cluster-cloud.html)
-or
-[Nextflow](https://www.nextflow.io/docs/latest/awscloud.html#aws-batch)
-but be aware that most of these have not been tested for this
-repository and usually require additional system dependent setup and
-configuration.
+Simply clone this repository with ``git clone``.
 
-This manual will only show examples on local and SLURM usage, but more
-information on how to use other scheduling software is available under
-the link above.  We also provide an example for SGE integration, this
-however dates back to the times before ``snakemake profiles``.
+You can then install dependencies as described for ```pip``` installation and manually run ```setup.py```.
+Be aware that ```MONSDA``` is version dependent, so config files can only be run with the specified version of '''MONSDA''' in order to guarantee reproducibility by conserving dependencies and environments.
