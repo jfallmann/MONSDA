@@ -2932,7 +2932,9 @@ def nf_make_sub(
                             #    )
                             else:
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect(), dummy)\n"
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.collect(), dummy, dummy)\n"
                                 )
                         else:
                             subjobs.append(" " * 4 + w + "(dummy)\n")

@@ -4,17 +4,16 @@ QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
 process collect_multi{
     input:
-    path check
-    val checker
-    path collection
+    path qclog
+    path maplog
+    path unique
 
     output:
-    path "*collect.txt", emit: done
+    path "*mqccollect.txt", emit: done
 
     script:
-    name=check+"_collect.txt"
     """
-    echo "$collection Collection successful!" >> $name
+    echo "$qclog, $maplog, $unique Collection successful!" > mqccollect.txt
     """
 }
 
