@@ -131,14 +131,17 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        bwa_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //bwa_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        bwa_mapping(genomefile, idxfile, collection.collect())
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        //bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
+        bwa_idx(genomefile)
+        bwa_mapping(genomefile, bwa_idx.out.idx, collection.collect())
     }
 
 

@@ -147,5 +147,7 @@ workflow POSTMAPPING{
 
     emit:
     postmap  = sam2bam.out.bam
+    postbai  = sam2bam.out.bai
     postmapuni = sam2bamuniq.out.bam
+    postunibai = sam2bamuniq.out.bai
 }

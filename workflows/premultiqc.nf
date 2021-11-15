@@ -54,8 +54,9 @@ workflow PREMULTIQC{
     RSAMPLES.sort()
     samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
 
-        collect_premulti(otherqcs.collect())
-    multiqc(collect_premulti.out.done.collect(), samples_ch)
+    //collect_premulti(otherqcs.collect())
+    //multiqc(collect_premulti.out.done.collect(), samples_ch)
+    multiqc(otherqcs.collect())
 
     emit:
     mqcres = premultiqc.out.multiqc_results

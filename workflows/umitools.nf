@@ -67,7 +67,6 @@ process extract{
     }
 
     input:
-    val dummy
     path samples
         
     output:
@@ -90,6 +89,45 @@ process extract{
         """
     }
 }
+
+
+process extract_wl{
+    conda "$DEDUPENV"+".yaml"
+    cpus THREADS
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedup_extract.log"
+        else null
+    }
+
+    input:
+    path wl
+    path samples
+        
+    output:
+    path "*_dedup.fastq.gz", emit: ex
+
+    script:
+    if (PAIRED == 'paired'){
+        r1=samples[0]
+        r2=samples[1]
+        out=samples[0].getSimpleName()+"_dedup.fastq.gz"
+        out2=samples[1].getSimpleName()+"_dedup.fastq.gz"
+        """
+            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
+        """
+    }
+    else{
+        out=samples.getSimpleName()+"_dedup.fastq.gz"
+        """
+            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
+        """
+    }
+}
+
 
 workflow DEDUPEXTRACT{
     take: 
@@ -121,10 +159,13 @@ workflow DEDUPEXTRACT{
 
     if (WHITELISTPARAMS != ''){
         whitelist(collect_extract.out.done, dedup_samples_ch)
-        extract(whitelist.out.done.wl, dedup_samples_ch)        
+        extract(whitelist.out.done.wl, dedup_samples_ch)
+        //whitelist(collection.collect())
+        //extract_wl(whitelist.out.done.wl, dedup_samples_ch)          
     }
     else{
-        extract(collect_extract.out.done, dedup_samples_ch)        
+        extract(collect_extract.out.done, dedup_samples_ch) 
+        //extract(collection.collect())
     }
     
     emit:

@@ -42,8 +42,8 @@ process segemehl3_idx{
     }
 
     input:
-    val collect
-    path reads
+    //val collect
+    //path reads
     path genome
 
     output:
@@ -73,7 +73,7 @@ process segemehl3_mapping{
     }
 
     input:
-    val collect
+    //val collect
     path genome
     path idxfile
     path reads
@@ -132,14 +132,17 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        segemehl3_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //segemehl3_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        segemehl3_mapping(genomefile, idxfile, collection.collect())
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        segemehl3_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        segemehl3_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //segemehl3_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        //segemehl3_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        segemehl3_idx(genomefile)
+        segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection.collect())
     }
 
 

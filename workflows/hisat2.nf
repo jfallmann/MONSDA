@@ -42,8 +42,8 @@ process hisat2_idx{
     }
 
     input:
-    val collect
-    path reads
+    //val collect
+    //path reads
     path genome
 
     output:
@@ -74,7 +74,7 @@ process hisat2_mapping{
     }
 
     input:
-    val collect
+    //val collect
     path idx
     path reads
 
@@ -142,14 +142,17 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        collect_tomap(collection.collect())
-        hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
+        hisat2_mapping(idxfile, collection.collect())
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.htidx, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        //hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.htidx, trimmed_samples_ch)
+        hisat2_idx(genomefile)
+        hisat2_mapping(hisat2_idx.out.htidx, collection.collect())
     }
 
 

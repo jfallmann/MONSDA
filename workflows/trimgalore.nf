@@ -32,7 +32,7 @@ process trim{
     }
 
     input:
-    val collect
+    //val collect
     path reads
 
     output:
@@ -98,8 +98,9 @@ workflow TRIMMING{
     }
 
     
-    collect_totrim(collection.collect())
-    trim(collect_totrim.out.done, samples_ch)
+    //collect_totrim(collection.collect())
+    //trim(collect_totrim.out.done, samples_ch)
+    trim(collection.collect())
 
     emit:
     trimmed = trim.out.trim

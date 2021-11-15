@@ -32,9 +32,9 @@ process dedup{
     }
 
     input:
-    path dummy
+    //path dummy
     path samples
-    path indices
+    //path indices
         
     output:
     path "*.bam", emit: bam
@@ -80,8 +80,9 @@ workflow DEDUPBAM{
     uindex_ch = Channel.fromPath(UINDEX, followLinks: true)
     mindex_ch.join(uindex_ch)
     
-    collect_dedup(collection.collect())
-    dedup(collect_dedup.out.done, msamples_ch, mindex_ch)
+    //collect_dedup(collection.collect())
+    //dedup(collect_dedup.out.done, msamples_ch, mindex_ch)
+    dedup(collection.collect())
 
     emit:
     dedup = dedup.out.bam

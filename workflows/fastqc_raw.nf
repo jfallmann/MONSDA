@@ -66,6 +66,7 @@ workflow QC_RAW{
 
     collect_fqraw(collection.collect())
     qc_raw(collect_fqraw.out.done, samples_ch)
+    //qc_raw(collection.collect())
 
     emit:
     qc = qc_raw.out.fastqc_results

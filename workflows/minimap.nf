@@ -42,8 +42,8 @@ process minimap_idx{
     }
 
     input:
-    val collect
-    path reads
+    //val collect
+    //path reads
     path genome
 
     output:
@@ -73,7 +73,7 @@ process minimap_mapping{
     }
 
     input:
-    val collect
+    //val collect
     path genome
     path idxfile
     path reads
@@ -132,14 +132,17 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        minimao_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //minimap_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        minimap_mapping(genomefile, idxfile, collection.collect())
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        minimap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        minimap_mapping(collect_tomap.out.done, genomefile, minimap_idx.out.idx, trimmed_samples_ch)
+        //collect_tomap(collection.collect())
+        //minimap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
+        //minimap_mapping(collect_tomap.out.done, genomefile, minimap_idx.out.idx, trimmed_samples_ch)
+        minimap_idx(genomefile)
+        minimap_mapping(genomefile, minimap_idx.out.idx, collection.collect())
     }
 
 

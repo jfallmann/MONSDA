@@ -30,7 +30,8 @@ process simtrim{
 }
 
 workflow TRIMMING{
-    take: samples_ch
+    take: 
+    collection
 
     main:
     //SAMPLE CHANNELS
@@ -70,8 +71,9 @@ workflow TRIMMING{
         RSAMPLES.sort()
         samples_ch = Channel.fromPath(RSAMPLES)
     }
+    samples_ch.mix(collection.collect())
 
-    simtrim(samples_ch)
+    simtrim(samples_ch.collect())
 
     emit:
     trimmed = simtrim.out.trim

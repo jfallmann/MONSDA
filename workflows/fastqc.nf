@@ -67,6 +67,7 @@ workflow QC_RAW{
 
     collect_fqraw(collection.collect())
     qc_raw(collect_fqraw.out.done, samples_ch)
+    //qc_raw(collection.collect())
 
     emit:
     qc = qc_raw.out.fastqc_results
@@ -100,7 +101,7 @@ process qc_trimmed{
     }
 
     input:
-    val collect
+    //val collect
     path read
 
     output:
@@ -136,8 +137,9 @@ workflow QC_TRIMMING{
         trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    collect_fqtrim(collection.collect())
-    qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
+    //collect_fqtrim(collection.collect())
+    //qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
+    qc_trimmed(collection.collect())
 
     emit:
     qc = qc_trimmed.out.fastqc_results
@@ -174,22 +176,24 @@ process qc_mapped{
     }
 
     input:
-    val collect
+    //val collect
     path map
-    path uni
+    //path uni
 
     output:
     path "*.{zip,html}", emit: fastqc_results
 
     script:
     """
-    fastqc --quiet -t $THREADS $QCPARAMS -f bam $map && fastqc --quiet -t $THREADS $QCPARAMS -f bam $uni
+    fastqc --quiet -t $THREADS $QCPARAMS -f bam $map
     """
+    //"""
+    //fastqc --quiet -t $THREADS $QCPARAMS -f bam $map && fastqc --quiet -t $THREADS $QCPARAMS -f bam $uni
+    //"""
 }
 
 workflow QC_MAPPING{
     take: collection
-
     main:
     //SAMPLE CHANNELS
     MSAMPLES = LONGSAMPLES.collect{
@@ -204,8 +208,9 @@ workflow QC_MAPPING{
     mapped_samples_ch = Channel.fromPath(MSAMPLES)
     unique_samples_ch = Channel.fromPath(USAMPLES)
 
-    collect_fqmap(collection.collect())
-    qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)
+    //collect_fqmap(collection.collect())
+    //qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)
+    qc_mapped(collection.collect())
 
     emit:
     qc = qc_mapped.out.fastqc_results
@@ -239,7 +244,7 @@ process qc_dedup{
     }
 
     input:
-    val collect
+    //val collect
     path read
 
     output:
@@ -275,8 +280,9 @@ workflow QC_DEDUP{
         dedup_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    collect_fqdedup(collection.collect())
-    qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
+    //collect_fqdedup(collection.collect())
+    //qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
+    qc_dedup(collection.collect())
 
     emit:
     qc = qc_dedup.out.fastqc_results

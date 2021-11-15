@@ -32,7 +32,7 @@ process mqc{
 
     input:
     path others
-    path samples
+    //path samples
 
     output:
     path "*.zip", emit: mqc
@@ -40,7 +40,7 @@ process mqc{
 
     script:
     """
-    touch $samples; export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
+    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
     """
 }
 
@@ -60,8 +60,8 @@ process collect_dummy{
 workflow MULTIQC{
     take:
     otherqcs
-    maplogs
-    unique
+    //maplogs
+    //unique
 
     main:
 
@@ -81,9 +81,10 @@ workflow MULTIQC{
 
     toqc_ch = samples_ch.mix(logs_ch)
 
-    collect_multi(otherqcs.collect(), maplogs.collect(), unique.collect())
-    mqc(collect_multi.out.done.collect(), toqc_ch)
-    collect_dummy(mqc.out.mqc.collect())
+    //collect_multi(otherqcs.collect(), maplogs.collect(), unique.collect())
+    //mqc(collect_multi.out.done.collect(), toqc_ch)
+    //collect_dummy(mqc.out.mqc.collect())
+    mqc(otherqcs.collect())
 
     emit:
     mqcres = mqc.out.mqc
