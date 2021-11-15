@@ -71,7 +71,7 @@ workflow TRIMMING{
         RSAMPLES.sort()
         samples_ch = Channel.fromPath(RSAMPLES)
     }
-    samples_ch.mix(collection.collect())
+    samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
 
     simtrim(samples_ch.collect())
 
