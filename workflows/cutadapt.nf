@@ -98,7 +98,12 @@ workflow TRIMMING{
     }
     //collect_totrim(collection.collect())
     //trim(collect_totrim.out.done, samples_ch)
-    trim(collection.collect())
+    if collection.collect().isEmtpy(){
+        trim(samples_ch.collect())
+    }
+    else{
+        trim(collection.collect())
+    }
 
     emit:
     trimmed = trim.out.trim

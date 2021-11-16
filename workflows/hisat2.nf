@@ -35,10 +35,9 @@ process hisat2_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".ht2") > 0)        "$MAPUIDX"+"/"+"${filename.replaceFirst(/tmp\.idx/, '')}"
-        else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
+        if (filename == "hisat2.idx")            "$MAPIDX"
         else if (filename.indexOf(".log") >0)    "LOGS/$COMBO$CONDITION/MAPPING/hisat2_index.log"
-        else null
+        else                                     "$MAPUIDX"
     }
 
     input:
@@ -47,14 +46,14 @@ process hisat2_idx{
     path genome
 
     output:
-    path "*.idx", emit: idx
-    path "*.ht2", emit: htidx
+    path "hisat2.idx", emit: idx
+    path "hisat2_*", emit: htidx
 
     script:
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$MAPREFIX  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$MAPPREFIX  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
     """
 
 }

@@ -37,7 +37,7 @@ process segemehl3_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "segemehl3.idx")                  "$MAPIDX"
-        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl_index.log"
+        else if (filename.indexOf(".log") >0)             "LOGS/$COMBO$CONDITION/MAPPING/segemehl_index.log"
         else                                              "$MAPUIDX"
     }
 
@@ -66,7 +66,7 @@ process segemehl3_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
         else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl.log"
         else null

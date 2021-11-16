@@ -1904,29 +1904,28 @@ def nf_fetch_params(
     # MAPPING Variables
     if "MAPPING" in config:
         MAPCONF = subDict(config["MAPPING"], SETUP)
+        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
+        MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF.get("REFERENCE")
+        REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
+        MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-        MANNO = MAPCONF.get("ANNOTATION")
         if MANNO:
             ANNOTATION = MANNO
         else:
-            ANNOTATION = (
-                ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
-            )  # by default GTF format will be used
-        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
-        PRE = MAPCONF.get("PREFIX")
-        if PRE:
+            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
+        PRE = MAPCONF.get('PREFIX', MAPCONF.get('EXTENSION', MAPOPT.get('PREFIX', MAPOPT.get('EXTENSION'))))
+        if PRE and PRE is not None:
             PREFIX = PRE
         if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
-        IDX = MAPCONF.get("INDEX")
+        IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
         if IDX:
             INDEX = IDX
         if not INDEX:
-            INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
+            INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
         unikey = get_dict_hash(
             subDict(
                 tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
@@ -2886,7 +2885,7 @@ def nf_make_sub(
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                             else:
                                 subjobs.append(
-                                    " " * 4 + "TRIMMING" + "(QC_RAW.out.qc.collect())\n"
+                                    " " * 4 + "TRIMMING" + "(dummy)\n"
                                 )
                         elif w == "QC_TRIMMING":
                             subjobs.append(

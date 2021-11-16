@@ -37,22 +37,22 @@ process bwa_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "bwa.idx")                  "$MAPIDX"
-        else                                        "$MAPUIDX"
+        else if (filename.indexOf("Log.out") >0)    "LOGS/$COMBO$CONDITION/bwa_index.log"
+        else                                        "$MAPUIDX/${filename}"
     }
 
     input:
-    val collect
-    path reads
+    //val collect
+    //path reads
     path genome
 
     output:
-    path "*.idx", emit: idx
     path "$MAPUIDXNAME", emit: uidx
 
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -p $MAPUIDXNAME $IDXPARAMS && ln -fs $MAPUIDXNAME bwa.idx
+    touch $MAPUIDXNAME && $MAPBIN index -p $MAPPREFIX $IDXPARAMS $genome &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
     """
 
 }
@@ -65,14 +65,14 @@ process bwa_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}.fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
         else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/bwa.log"
         else null
     }
 
     input:
-    val collect
+    //val collect
     path genome
     path idxfile
     path reads
@@ -85,7 +85,7 @@ process bwa_mapping{
     script:
     fn = file(reads[0]).getSimpleName()
     pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
+    uf = fn.replaceAll(/trimmed.fastq.gz/,"")+".unmapped.fastq.gz"
     gen =  genome.getName()
     idx = idxfile.getName()
 
@@ -97,7 +97,7 @@ process bwa_mapping{
         """
     }else{
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }
 }
@@ -141,7 +141,7 @@ workflow MAPPING{
         //bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
         //bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
         bwa_idx(genomefile)
-        bwa_mapping(genomefile, bwa_idx.out.idx, collection.collect())
+        bwa_mapping(genomefile, bwa_idx.out.uidx, collection.collect())
     }
 
 

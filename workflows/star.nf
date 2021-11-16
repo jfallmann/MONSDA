@@ -35,13 +35,9 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename =~ /SA/)                         "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename == "Genome")                "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "LOGS/$COMBO$CONDITION/star_index.log"
-        else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
-        else null
+        if (filename.indexOf("Log.out") >0)      "LOGS/$COMBO$CONDITION/star_index.log"
+        else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
+        else                                     "$MAPUIDX/${filename}"
     }
 
     input:
@@ -51,7 +47,8 @@ process star_idx{
     path anno
 
     output:
-    path "*SA*", emit: idx
+    path "$MAPUIDXNAME", emit: idx
+    path "*SA*", emit: sa
     path "*Log.out", emit: idxlog
     path "*.txt", emit: txts
     path "*.tab", emit: tabs
@@ -99,7 +96,7 @@ process star_mapping{
     of = fn+'Aligned.out.sam'
 
     """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir ${workflow.workDir}/../$MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idx --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
     """
 }
 
