@@ -100,7 +100,7 @@ workflow TRIMMING{
     
     //collect_totrim(collection.collect())
     //trim(collect_totrim.out.done, samples_ch)
-     if collection.collect().isEmtpy(){
+     if (collection.collect().isEmtpy()){
         trim(samples_ch.collect())
     }
     else{

@@ -155,16 +155,16 @@ workflow DEDUPEXTRACT{
     }
 
     
-    collect_extract(collection.collect())
+    //collect_extract(collection.collect())
 
     if (WHITELISTPARAMS != ''){
-        whitelist(collect_extract.out.done, dedup_samples_ch)
+        whitelist(dedup_samples_ch)
         extract(whitelist.out.done.wl, dedup_samples_ch)
         //whitelist(collection.collect())
         //extract_wl(whitelist.out.done.wl, dedup_samples_ch)          
     }
     else{
-        extract(collect_extract.out.done, dedup_samples_ch) 
+        extract(dedup_samples_ch) 
         //extract(collection.collect())
     }
     
