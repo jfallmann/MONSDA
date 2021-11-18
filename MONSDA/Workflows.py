@@ -1192,9 +1192,10 @@ def make_post(
                 for a in range(0, len(listoftools)):
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
-                    tc = list(condition)
-                    tc.append(toolenv)
-                    sconf[subwork].update(subSetDict(config[subwork], tc))
+                    for cond in combname.keys():
+                        tc = list(cond)
+                        tc.append(toolenv)
+                        sconf[subwork].merge(subSetDict(config[subwork], tc))
 
                     if sconf[subwork].get("TOOLS"):
                         sconf[subwork]["TOOLS"] = subDict(
@@ -1370,12 +1371,6 @@ def make_post(
                             sconf[subwork]["TOOLS"] = subDict(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
-
-                        if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                            "deseq",
-                            "diego",
-                        ]:  # for all other postprocessing tools we have more than one defined subworkflow
-                            toolenv = toolenv + "_" + subwork
 
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
@@ -1905,27 +1900,34 @@ def nf_fetch_params(
     if "MAPPING" in config:
         MAPCONF = subDict(config["MAPPING"], SETUP)
         MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
-        MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
+        MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
-        MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
+        REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
+        MANNO = MAPCONF.get("ANNOTATION", MAPCONF[MAPPERENV].get("ANNOTATION"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
         if MANNO:
             ANNOTATION = MANNO
         else:
-            ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-        PRE = MAPCONF.get('PREFIX', MAPCONF.get('EXTENSION', MAPOPT.get('PREFIX', MAPOPT.get('EXTENSION'))))
+            ANNOTATION = (
+                ANNO.get("GTF")
+                if "GTF" in ANNO and ANNO.get("GTF") != ""
+                else ANNO.get("GFF")
+            )  # by default GTF format will be used
+        PRE = MAPCONF.get(
+            "PREFIX",
+            MAPCONF.get("EXTENSION", MAPOPT.get("PREFIX", MAPOPT.get("EXTENSION"))),
+        )
         if PRE and PRE is not None:
             PREFIX = PRE
         if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
-        IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
+        IDX = MAPCONF.get("INDEX", MAPCONF[MAPPERENV].get("INDEX"))
         if IDX:
             INDEX = IDX
         if not INDEX:
-            INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
+            INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         unikey = get_dict_hash(
             subDict(
                 tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
@@ -2884,9 +2886,7 @@ def nf_make_sub(
                             elif "QC_RAW" not in flowlist:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                             else:
-                                subjobs.append(
-                                    " " * 4 + "TRIMMING" + "(dummy)\n"
-                                )
+                                subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                         elif w == "QC_TRIMMING":
                             subjobs.append(
                                 " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
