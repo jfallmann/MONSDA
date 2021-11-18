@@ -1195,7 +1195,9 @@ def make_post(
                     for cond in combname.keys():
                         tc = list(cond)
                         tc.append(toolenv)
-                        sconf[subwork].merge(subSetDict(config[subwork], tc))
+                        sconf[subwork] = merge_dicts(
+                            sconf[subwork], subSetDict(config[subwork], tc)
+                        )
 
                     if sconf[subwork].get("TOOLS"):
                         sconf[subwork]["TOOLS"] = subDict(
@@ -1356,9 +1358,8 @@ def make_post(
                     sconf = listofconfigs[0]
                     sconf.pop("PREDEDUP", None)  # cleanup
 
-                    if subwork == "PEAKS":
-                        for c in range(1, len(listofconfigs)):
-                            sconf = merge_dicts(sconf, listofconfigs[c])
+                    for c in range(1, len(listofconfigs)):
+                        sconf = merge_dicts(sconf, listofconfigs[c])
 
                     for a in range(0, len(listoftools)):
                         subjobs = list()
