@@ -65,8 +65,8 @@ workflow QC_RAW{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    collect_fqraw(collection.collect())
-    qc_raw(collect_fqraw.out.done, samples_ch)
+    //collect_fqraw(collection.collect())
+    qc_raw(collection.collect(), samples_ch)
     //qc_raw(collection.collect())
 
     emit:

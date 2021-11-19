@@ -67,6 +67,7 @@ workflow QC_RAW{
 
     collect_fqraw(collection.collect())
     qc_raw(collect_fqraw.out.done, samples_ch)
+    //qc_raw(collection.collect())
 
     emit:
     qc = qc_raw.out.fastqc_results
@@ -100,7 +101,7 @@ process qc_trimmed{
     }
 
     input:
-    val collect
+    //val collect
     path read
 
     output:
@@ -140,7 +141,7 @@ process qc_dedup{
     }
 
     input:
-    val collect
+    //val collect
     path read
 
     output:
@@ -176,8 +177,9 @@ workflow QC_DEDUP{
         dedup_samples_ch = Channel.fromPath(T1SAMPLES)
     }
 
-    collect_fqdedup(collection.collect())
-    qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
+    //collect_fqdedup(collection.collect())
+    //qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
+    qc_dedup(collection.collect())
 
     emit:
     qc = qc_dedup.out.fastqc_results
