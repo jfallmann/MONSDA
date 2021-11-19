@@ -61,7 +61,6 @@ if not all(checklist):
                 tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
         shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
 
-
     if not stranded or (stranded == 'fr' or stranded == 'ISF'):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bam", scombo=scombo)
