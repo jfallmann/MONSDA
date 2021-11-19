@@ -105,7 +105,7 @@ if IP == 'iCLIP':
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
@@ -118,7 +118,7 @@ elif IP == 'revCLIP':
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
@@ -131,7 +131,7 @@ else:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bed.gz", scombo=scombo),
                 fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-        output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
+        output: concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
@@ -142,13 +142,14 @@ else:
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
-    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
+    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz",
+            tmp = temp("PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.unsrt")
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts}  > {output.tmp} && sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 {output.tmp}| gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre

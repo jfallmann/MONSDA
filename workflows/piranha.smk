@@ -129,13 +129,14 @@ else:
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
-    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
+    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz",
+            tmp = temp("PEAKS/{combo}/{file}_prepeak_{type}.bed.unsrt")
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} > {output.tmp} && sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 {output.tmp}| gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre
