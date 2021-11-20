@@ -1,7 +1,7 @@
 T1SAMPLES = null
 T2SAMPLES = null
 
-process simtrim{
+process trim{
     //conda "$TOOLENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -37,45 +37,38 @@ workflow TRIMMING{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
-            R1SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
+            SAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
             }
-            R1SAMPLES.sort()
-            R2SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+            SAMPLES.sort()            
         }
         else{   
-            R1SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
             }
-            R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+            SAMPLES.sort()            
         }
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
     }else{
         if (RUNDEDUP == 'enabled'){
-            RSAMPLES = LONGSAMPLES.collect{
+            SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
             }
         }
         else{
-            RSAMPLES = SAMPLES.collect{
+            SAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
             }
         }                 
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
+        SAMPLES.sort()
+        samples_ch = Channel.fromPath(SAMPLES)
     }
-    samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
-
-    simtrim(samples_ch.collect())
+    //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
+    //simtrim(samples_ch.collect())
+    collection.collect().join(samples_ch).unique().filter(!~/MONSDA.log/)
+    trim(collection.collect())
 
     emit:
-    trimmed = simtrim.out.trim
-    report  = simtrim.out.rep
+    trimmed = trim.out.trim
+    report  = trim.out.rep
 }

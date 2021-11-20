@@ -64,19 +64,6 @@ workflow MULTIQC{
     //unique
 
     main:
-
-    //SAMPLE CHANNELS
-    //SAMPLES=LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../QC/$COMBO"+element+"**_fastqc.zip"
-    //}
-    //SAMPLES.sort()
-    //samples_ch = Channel.fromPath(SAMPLES).ifEmpty([])
-    
-    //MAPLOG = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../LOGS/$COMBO/MAPPING/**.log"
-    //}
-    //MAPLOG.sort()
-
     //logs_ch = Channel.fromPath(MAPLOG).ifEmpty([])
 
     //toqc_ch = samples_ch.mix(logs_ch)

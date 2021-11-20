@@ -2230,7 +2230,10 @@ def nf_make_pre(
     combinations=None,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
-    log.info(logid + f"PREPROCESSING: {subwork} and SAMPLES: {samples}")
+    log.info(
+        logid
+        + f"PREPROCESSING: {subwork} and SAMPLES: {samples} for COMBINATIONS:{combinations}"
+    )
 
     jobs = list()
     state = "pre_"
@@ -2358,12 +2361,11 @@ def nf_make_pre(
 
                         # workflow merger
                         subjobs.append("\n\n" + "workflow {\n")
-                        for w in ["MULTIQC"]:
-                            if w in flowlist:
-                                subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
-                                subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect()\n"
-                                )
+                        if "MULTIQC" in flowlist:
+                            subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
+                            subjobs.append(
+                                " " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n"
+                            )
                         subjobs.append("\n}\n")
 
                         # nfi = os.path.abspath(os.path.join('MONSDA', 'workflows', 'footer.nf'))
@@ -2547,6 +2549,8 @@ def nf_make_pre(
             for w in ["QC_RAW", "FETCH", "BASECALL"]:
                 if w in flowlist:
                     subjobs.append(" " * 4 + w + "(dummy)\n")
+            if "MULTIQC" in flowlist:
+                subjobs.append(" " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n")
             subjobs.append("}\n\n")
 
             nfo = os.path.abspath(

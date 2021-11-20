@@ -48,14 +48,6 @@ workflow PREMULTIQC{
     main:
 
     //SAMPLE CHANNELS
-    RSAMPLES=LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../QC/$COMBO"+element+"_fastqc.zip"
-    }
-    RSAMPLES.sort()
-    samples_ch = Channel.fromPath(RSAMPLES, followLinks: true)
-
-    //collect_premulti(otherqcs.collect())
-    //multiqc(collect_premulti.out.done.collect(), samples_ch)
     multiqc(otherqcs.collect())
 
     emit:

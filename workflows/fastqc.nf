@@ -47,15 +47,11 @@ workflow QC_RAW{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        SAMPLES.sort()        
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
 
     }else{
         RSAMPLES=SAMPLES.collect{
@@ -65,8 +61,8 @@ workflow QC_RAW{
         samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    //collect_fqraw(collection.collect())
-    qc_raw(collection.collect(), samples_ch)
+    collect_fqraw(collection.collect())
+    qc_raw(collect_fqraw.out.done, samples_ch)
     //qc_raw(collection.collect())
 
     emit:
@@ -119,15 +115,11 @@ workflow QC_TRIMMING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
+        SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R{1,2}_trimmed.*fastq.gz"
         }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+        SAMPLES.sort()        
+        trimmed_samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(T2SAMPLES))
 
     }else{
         T1SAMPLES = LONGSAMPLES.collect{
@@ -196,17 +188,17 @@ workflow QC_MAPPING{
     take: collection
     main:
     //SAMPLE CHANNELS
-    MSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
-    }
-    MSAMPLES.sort()
-    USAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
-    }
-    USAMPLES.sort()
-
-    mapped_samples_ch = Channel.fromPath(MSAMPLES)
-    unique_samples_ch = Channel.fromPath(USAMPLES)
+    //MSAMPLES = LONGSAMPLES.collect{
+    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
+    //}
+    //MSAMPLES.sort()
+    //USAMPLES = LONGSAMPLES.collect{
+    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
+    //}
+    //USAMPLES.sort()
+//
+    //mapped_samples_ch = Channel.fromPath(MSAMPLES)
+    //unique_samples_ch = Channel.fromPath(USAMPLES)
 
     //collect_fqmap(collection.collect())
     //qc_mapped(collect_fqmap.out.done, mapped_samples_ch, unique_samples_ch)
@@ -261,24 +253,24 @@ workflow QC_DEDUP{
 
     main:
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
+    //if (PAIRED == 'paired'){
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    T2SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
+    //    }
+    //    T2SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+//
+    //}else{
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES)
+    //}
 
     //collect_fqdedup(collection.collect())
     //qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)

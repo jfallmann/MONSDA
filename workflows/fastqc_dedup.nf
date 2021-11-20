@@ -47,15 +47,11 @@ workflow QC_RAW{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        SAMPLES.sort()        
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
 
     }else{
         RSAMPLES=SAMPLES.collect{
@@ -119,24 +115,24 @@ workflow QC_DEDUP{
 
     main:
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
+    //if (PAIRED == 'paired'){
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    T2SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
+    //    }
+    //    T2SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+//
+    //}else{
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES)
+    //}
 
     //collect_fqdedup(collection.collect())
     //qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)
@@ -145,3 +141,4 @@ workflow QC_DEDUP{
     emit:
     qc = qc_dedup.out.fastqc_results
 }
+

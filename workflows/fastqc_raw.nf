@@ -46,15 +46,11 @@ workflow QC_RAW{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        SAMPLES.sort()        
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
 
     }else{
         RSAMPLES=SAMPLES.collect{

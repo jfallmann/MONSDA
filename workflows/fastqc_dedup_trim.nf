@@ -2,7 +2,7 @@ QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
 QCPARAMS = get_always('fastqc_params_QC') ?: ''
 
-// RAW QC
+//QC RAW
 process collect_fqraw{
     input:
     path check
@@ -47,15 +47,11 @@ workflow QC_RAW{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        SAMPLES.sort()        
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
 
     }else{
         RSAMPLES=SAMPLES.collect{
@@ -73,7 +69,7 @@ workflow QC_RAW{
     qc = qc_raw.out.fastqc_results
 }
 
-// TRIMMED QC
+//QC TRIM
 
 process collect_fqtrim{
     input:
@@ -112,6 +108,35 @@ process qc_trimmed{
     fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
     """
 }
+
+workflow QC_TRIMMING{
+    take: collection
+
+    main:
+    //SAMPLE CHANNELS
+    if (PAIRED == 'paired'){
+        SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R{1,2}_trimmed.*fastq.gz"
+        }
+        SAMPLES.sort()        
+        trimmed_samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(T2SAMPLES))
+
+    }else{
+        T1SAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
+        }
+        T1SAMPLES.sort()
+        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
+    }
+
+    //collect_fqtrim(collection.collect())
+    //qc_trimmed(collect_fqtrim.out.done, trimmed_samples_ch)
+    qc_trimmed(collection.collect())
+
+    emit:
+    qc = qc_trimmed.out.fastqc_results
+}
+
 
 // DEDUP QC
 
@@ -158,24 +183,24 @@ workflow QC_DEDUP{
 
     main:
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
+    //if (PAIRED == 'paired'){
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    T2SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
+    //    }
+    //    T2SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
+//
+    //}else{
+    //    T1SAMPLES = LONGSAMPLES.collect{
+    //        element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
+    //    }
+    //    T1SAMPLES.sort()
+    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES)
+    //}
 
     //collect_fqdedup(collection.collect())
     //qc_dedup(collect_fqdedup.out.done, dedup_samples_ch)

@@ -60,52 +60,41 @@ workflow TRIMMING{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            R1SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
+        if (RUNDEDUP == 'enabled'){
+            SAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
             }
-            R1SAMPLES.sort()
-            R2SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+            SAMPLES.sort()            
         }
         else{   
-            R1SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
             }
-            R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+            SAMPLES.sort()            
         }
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
-    }
-    else{
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            RSAMPLES = LONGSAMPLES.collect{
+        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
+    }else{
+        if (RUNDEDUP == 'enabled'){
+            SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
             }
         }
         else{
-            RSAMPLES = SAMPLES.collect{
+            SAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
             }
         }                 
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
+        SAMPLES.sort()
+        samples_ch = Channel.fromPath(SAMPLES)
     }
-
+    //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
+    //trim(samples_ch.collect())
     
     //collect_totrim(collection.collect())
     //trim(collect_totrim.out.done, samples_ch)
-     if (collection.collect().isEmtpy()){
-        trim(samples_ch.collect())
-    }
-    else{
-        trim(collection.collect())
-    }
+    collection.collect().join(samples_ch).unique().filter(!~/MONSDA.log/)
+    trim(collection.collect())
+
     emit:
     trimmed = trim.out.trim
     report  = trim.out.rep
