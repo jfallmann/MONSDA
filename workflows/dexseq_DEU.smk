@@ -29,8 +29,8 @@ rule prepare_deu_annotation:
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo),
-            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+            countgtf = rules.prepare_deu_annotation.output.countgtf
+            deugtf = rules.prepare_deu_annotation.output.deugtf
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
