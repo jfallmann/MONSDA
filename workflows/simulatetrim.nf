@@ -65,7 +65,7 @@ workflow TRIMMING{
     }
     //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
     //simtrim(samples_ch.collect())
-    collection.collect().join(samples_ch).unique().filter(!~/MONSDA.log/)
+    collection.collect().join(samples_ch).filter(~/.fastq.gz/)
     trim(collection.collect())
 
     emit:

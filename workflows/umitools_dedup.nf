@@ -108,7 +108,7 @@ workflow DEDUPBAM{
 
     //collect_dedup(collection.collect())
     //dedup(collect_dedup.out.done, msamples_ch, mindex_ch)
-    collection.collect().unique().filter(!~/MONSDA.log/)
+    collection.collect().filter(~/.bam/)
     dedup(collection.collect())
 
     emit:

@@ -138,7 +138,7 @@ workflow MAPPING{
     //}
 
     checkidx = file(MAPIDX)
-    collection.collect().unique().filter(!~/MONSDA.log/)
+    collection.collect().filter(~/.fastq.gz/)
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)

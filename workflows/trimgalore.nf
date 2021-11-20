@@ -64,13 +64,13 @@ workflow TRIMMING{
             SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
             }
-            SAMPLES.sort()            
+            //SAMPLES.sort()            
         }
         else{   
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
             }
-            SAMPLES.sort()            
+            //SAMPLES.sort()            
         }
         samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
     }else{
@@ -84,7 +84,7 @@ workflow TRIMMING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
             }
         }                 
-        SAMPLES.sort()
+        //SAMPLES.sort()
         samples_ch = Channel.fromPath(SAMPLES)
     }
     //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
@@ -92,8 +92,9 @@ workflow TRIMMING{
     
     //collect_totrim(collection.collect())
     //trim(collect_totrim.out.done, samples_ch)
-    collection.collect().join(samples_ch).unique().filter(!~/MONSDA.log/)
-    trim(collection.collect())
+    collection.collect().filter(~/.fastq.gz/).ifEmpty([])
+    samples_ch.join(collection)
+    trim(samples_ch.collect())
 
     emit:
     trimmed = trim.out.trim
