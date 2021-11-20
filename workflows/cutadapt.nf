@@ -25,8 +25,8 @@ process trim{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}"
         else if (filename.indexOf(".log") >0)              "LOGS/$COMBO$CONDITION/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
@@ -36,20 +36,25 @@ process trim{
     path reads
 
     output:
-    path "*fq.gz", emit: trim
+    path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[0]
+        o = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        p = file(r2).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS --paired $TRIMPARAMS $r1 $r2
+        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o -p $p $r1 $r2 &> $r
         """
     }
     else{
+        o = file(reads).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(reads).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS $TRIMPARAMS $reads
+        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o $reads &> $r
         """
     }
 }
@@ -62,38 +67,38 @@ workflow TRIMMING{
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R1,R2}_dedup.*fastq.gz"
             }            
         }
         else{   
             SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
             }
         }
-        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
     }else{
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.*fastq.gz"
             }
         }
         else{
             SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }
         }
-        samples_ch = Channel.fromPath(SAMPLES)
     }
-    //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
-    //trim(samples_ch.collect())
-    
-    //collect_totrim(collection.collect())
-    //trim(collect_totrim.out.done, samples_ch)
-    //collection.collect().join(samples_ch).filter(~/.fastq.gz/)
-    //trim(collection.collect())
-    collection.collect().filter(~/.fastq.gz/).ifEmpty([])
-    samples_ch.join(collection)
-    trim(samples_ch.collect())
+
+    if (collection.collect().contains('MONSDA.log')){
+        if (PAIRED == 'paired'){
+            //collection = Channel.fromFilePairs(SAMPLES)
+            collection = Channel.fromPath(SAMPLES)
+        }
+        else{
+            collection = Channel.fromPath(SAMPLES)
+        }
+    }
+
+    trim(collection.collect())
 
     emit:
     trimmed = trim.out.trim

@@ -62,39 +62,38 @@ workflow TRIMMING{
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
-            }
-            //SAMPLES.sort()            
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R1,R2}_dedup.*fastq.gz"
+            }           
         }
         else{   
             SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
-            }
-            //SAMPLES.sort()            
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
+            }        
         }
-        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
     }else{
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.*fastq.gz"
             }
         }
         else{
             SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }
         }                 
-        //SAMPLES.sort()
-        samples_ch = Channel.fromPath(SAMPLES)
     }
-    //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
-    //trim(samples_ch.collect())
-    
-    //collect_totrim(collection.collect())
-    //trim(collect_totrim.out.done, samples_ch)
-    collection.collect().filter(~/.fastq.gz/).ifEmpty([])
-    samples_ch.join(collection)
-    trim(samples_ch.collect())
+
+    if (collection.collect().contains('MONSDA.log')){
+        if (PAIRED == 'paired'){
+            //collection = Channel.fromFilePairs(SAMPLES)
+            collection = Channel.fromPath(SAMPLES)
+        }
+        else{
+            collection = Channel.fromPath(SAMPLES)
+        }
+    }
+
+    trim(collection.collect())
 
     emit:
     trimmed = trim.out.trim

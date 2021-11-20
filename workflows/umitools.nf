@@ -137,30 +137,29 @@ workflow DEDUPEXTRACT{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
         }
-        SAMPLES.sort()        
-        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
-
     }else{
-        RSAMPLES=SAMPLES.collect{
+        SAMPLES=SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
         }
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
     }
     
-    //collect_extract(collection.collect())
-
+    if (collection.collect().contains('MONSDA.log')){
+        if (PAIRED == 'paired'){
+            collection = Channel.fromFilePairs(SAMPLES)
+        }
+        else{
+            collection = Channel.fromPath(SAMPLES)
+        }
+    }
+       
     if (WHITELISTPARAMS != ''){
-        whitelist(samples_ch)
-        extract_wl(whitelist.out.done.wl, samples_ch)
-        //whitelist(collection.collect())
-        //extract_wl(whitelist.out.done.wl, dedup_samples_ch)          
+        whitelist(collection.collect())
+        extract_wl(whitelist.out.done.wl, collection.collect())
     }
     else{
-        extract(samples_ch) 
-        //extract(collection.collect())
+        extract(collection.collect())
     }
     
     emit:

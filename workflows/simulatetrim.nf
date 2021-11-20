@@ -38,17 +38,14 @@ workflow TRIMMING{
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R{1,2}_dedup.*fastq.gz"
-            }
-            SAMPLES.sort()            
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R1,R2}_dedup.*fastq.gz"
+            }    
         }
         else{   
             SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
-            }
-            SAMPLES.sort()            
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
+            } 
         }
-        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
     }else{
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
@@ -60,12 +57,15 @@ workflow TRIMMING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
             }
         }                 
-        SAMPLES.sort()
-        samples_ch = Channel.fromPath(SAMPLES)
     }
-    //samples_ch.mix(collection.collect())  //NEED FIX HERE, EITHER EMPTY OR NOT ABSPATH
-    //simtrim(samples_ch.collect())
-    collection.collect().join(samples_ch).filter(~/.fastq.gz/)
+   if (collection.collect().contains('MONSDA.log')){
+        if (PAIRED == 'paired'){
+            collection = Channel.fromFilePairs(SAMPLES)
+        }
+        else{
+            collection = Channel.fromPath(SAMPLES)
+        }
+    }
     trim(collection.collect())
 
     emit:
