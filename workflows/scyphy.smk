@@ -142,14 +142,13 @@ else:
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
-    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz",
-            tmp = temp("PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.unsrt")
+    output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts}  > {output.tmp} && sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 {output.tmp}| gzip > {output.pre} 2> {log}"
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre
@@ -159,7 +158,7 @@ rule FindPeaks:
     threads: 1
     params: ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}) 2> {log}|tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}|sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6) 2> {log}|tail -n+2| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,
