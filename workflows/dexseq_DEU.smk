@@ -18,8 +18,8 @@ rule themall:
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION
-    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-            deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
+    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
+            deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
     log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
@@ -29,8 +29,8 @@ rule prepare_deu_annotation:
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo),
-            countgtf = rules.prepare_deu_annotation.output.countgtf,
-            deugtf = rules.prepare_deu_annotation.output.deugtf
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
