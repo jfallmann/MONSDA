@@ -26,7 +26,7 @@ process trim{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_trimmed.fastq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
         else if (filename.indexOf(".log") >0)              "LOGS/$COMBO$CONDITION/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
@@ -36,7 +36,7 @@ process trim{
     path reads
 
     output:
-    path "*fq.gz", emit: trim
+    path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
 
     script:
@@ -44,12 +44,12 @@ process trim{
         r1 = reads[1]
         r2 = reads[0]
         """
-        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\1_trimmed.fastq.gz/g' *.fq.gz
+        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
     else{
         """
-        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads && rename 's/.fq.gz/_R\1_trimmed.fastq.gz/g' *.fq.gz
+        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads &> trim.log && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
 }
