@@ -98,7 +98,7 @@ workflow TRIMMING{
         }
     }
 
-    trim(collection.collect())
+    trim(collection)
 
     emit:
     trimmed = trim.out.trim
