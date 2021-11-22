@@ -2877,33 +2877,23 @@ def nf_make_sub(
                                 subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                             else:
                                 subjobs.append(
-                                    " " * 4
-                                    + "DEDUPEXTRACT"
-                                    + "(QC_RAW.out.qc.collect())\n"
+                                    " " * 4 + "DEDUPEXTRACT" + "(QC_RAW.out.qc)\n"
                                 )
                         elif w == "QC_DEDUP":
-                            subjobs.append(
-                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.ex)\n")
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
-                                    " " * 4
-                                    + "TRIMMING"
-                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                    " " * 4 + "TRIMMING" + "(DEDUPEXTRACT.out.ex)\n"
                                 )
                             else:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                         elif w == "QC_TRIMMING":
-                            subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         elif w == "MAPPING":
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                             subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
-                            subjobs.append(
-                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped.collect())\n"
+                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
                             )
                             # if not "MULTIQC" in flowlist:
                             #    subjobs.append(
@@ -2913,13 +2903,13 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(MAPPING.out.mapped.collect().mix(POSTMAPPING.out.postmapuni.collect()))\n"
+                                + "(MAPPING.out.mapped.mix(POSTMAPPING.out.postmapuni))\n"
                             )
                         elif w == "DEDUPBAM":
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.collect().mix(POSTMAPPING.out.postbai.collect().mix(POSTMAPPING.out.postmapuni.collect().mix(POSTMAPPING.out.postunibai.collect()))))\n"
+                                + "(POSTMAPPING.out.postmap.mix(POSTMAPPING.out.postbai.mix(POSTMAPPING.out.postmapuni.mix(POSTMAPPING.out.postunibai))))\n"
                             )
                         elif w == "MULTIQC":
                             if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
