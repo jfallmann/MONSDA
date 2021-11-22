@@ -85,11 +85,10 @@ workflow TRIMMING{
 
     if (collection.collect().contains('MONSDA.log')){
         if (PAIRED == 'paired'){
-            //collection = Channel.fromFilePairs(SAMPLES)
-            collection = Channel.fromPath(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 2 )
         }
         else{
-            collection = Channel.fromPath(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
     }
 
