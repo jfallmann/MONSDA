@@ -41,8 +41,8 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[0]
         """
         $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2
         """

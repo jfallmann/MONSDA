@@ -58,58 +58,9 @@ workflow DEDUPBAM{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //if (PAIRED == 'paired'){
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R1.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    T2SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+"_R2.fastq.gz"
-    //    }
-    //    T2SAMPLES.sort()
-    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-//
-    //}else{
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../FASTQ/$COMBO"+element+".fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    dedup_samples_ch = Channel.fromPath(T1SAMPLES)
-    //}
-//
-    ////SAMPLE CHANNELS
-    //MSAMPLES = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam"
-    //}
-    //MSAMPLES.sort()
-//
-    //USAMPLES = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam"
-    //}
-    //USAMPLES.sort()
-//
-    //MINDEX = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted.bam.bai"
-    //}
-    //MINDEX.sort()
-    //
-    //UINDEX = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped_sorted_unique.bam.bai"
-    //}
-    //UINDEX.sort()
-//
-    //msamples_ch = Channel.fromPath(MSAMPLES, followLinks: true)
-    //usamples_ch = Channel.fromPath(USAMPLES, followLinks: true)
-    //mindex_ch = Channel.fromPath(MINDEX, followLinks: true)
-    //uindex_ch = Channel.fromPath(UINDEX, followLinks: true)
-    //msamples_ch.join(usamples_ch)
-    //mindex_ch.join(uindex_ch)
-
-    //collect_dedup(collection.collect())
-    //dedup(collect_dedup.out.done, msamples_ch, mindex_ch)
-    collection.collect().filter(~/.bam/)
-    dedup(collection.collect())
+ 
+    collection.filter(~/.bam|.bai/)
+    dedup(collection)
 
     emit:
     dedup = dedup.out.bam

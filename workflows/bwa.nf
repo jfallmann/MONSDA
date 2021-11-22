@@ -90,8 +90,8 @@ process bwa_mapping{
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[0]
         """
         $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
@@ -106,43 +106,19 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //if (PAIRED == 'paired'){
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    T2SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-    //    }
-    //    T2SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-//
-    //}else{
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    //}
-
+    
     checkidx = file(MAPUIDX)
-    collection.collect().filter(~/.fastq.gz/)
+    collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        //collect_tomap(collection.collect())
-        //bwa_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
-        bwa_mapping(genomefile, idxfile, collection.collect())
+        bwa_mapping(genomefile, idxfile, collection)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        //collect_tomap(collection.collect())
-        //bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        //bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
         bwa_idx(genomefile)
-        bwa_mapping(genomefile, bwa_idx.out.uidx, collection.collect())
+        bwa_mapping(genomefile, bwa_idx.out.uidx, collection)
     }
 
 

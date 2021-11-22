@@ -104,43 +104,18 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //if (PAIRED == 'paired'){
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    T2SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-    //    }
-    //    T2SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-//
-    //}else{
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    //}
-
     checkidx = file(MAPUIDX)
-    collection.collect().filter(~/.fastq.gz/)
+    collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        //collect_tomap(collection.collect())
-        //star_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
-        star_mapping(idxfile, collection.collect())
+        star_mapping(idxfile, collection)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
-        //collect_tomap(collection.collect())
-        //star_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile, annofile)
-        //star_mapping(collect_tomap.out.done, star_idx.out.idx, trimmed_samples_ch)
         star_idx(genomefile, annofile)
-        star_mapping(star_idx.out.idx, collection.collect())
+        star_mapping(star_idx.out.idx, collection)
     }
 
 

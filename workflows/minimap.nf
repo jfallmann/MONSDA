@@ -107,43 +107,19 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //if (PAIRED == 'paired'){
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    T2SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-    //    }
-    //    T2SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-//
-    //}else{
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    //}
-
+ 
     checkidx = file(MAPUIDX)
-    collection.collect().filter(~/.fastq.gz/)
+    collection.filter(~/.fastq.gz/)
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        //collect_tomap(collection.collect())
-        //minimap_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
-        minimap_mapping(genomefile, idxfile, collection.collect())
+        minimap_mapping(genomefile, idxfile, collection)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        //collect_tomap(collection.collect())
-        //minimap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        //minimap_mapping(collect_tomap.out.done, genomefile, minimap_idx.out.idx, trimmed_samples_ch)
         minimap_idx(genomefile)
-        minimap_mapping(genomefile, minimap_idx.out.idx, collection.collect())
+        minimap_mapping(genomefile, minimap_idx.out.idx, collection)
     }
 
 

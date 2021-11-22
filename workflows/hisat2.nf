@@ -101,8 +101,8 @@ process hisat2_mapping{
     }
 
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[0]
         """
         $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
@@ -117,42 +117,18 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //if (PAIRED == 'paired'){
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    T2SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-    //    }
-    //    T2SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-//
-    //}else{
-    //    T1SAMPLES = LONGSAMPLES.collect{
-    //        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-    //    }
-    //    T1SAMPLES.sort()
-    //    trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    //}
-
+   
     checkidx = file(MAPIDX)
-    collection.collect().filter(~/.fastq.gz/)
+    collection.filter(~/.fastq.gz/)
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        //collect_tomap(collection.collect())
-        //hisat2_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
-        hisat2_mapping(idxfile, collection.collect())
+        hisat2_mapping(idxfile, collection)
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        //collect_tomap(collection.collect())
-        //hisat2_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        //hisat2_mapping(collect_tomap.out.done, hisat2_idx.out.htidx, trimmed_samples_ch)
         hisat2_idx(genomefile)
-        hisat2_mapping(hisat2_idx.out.htidx, collection.collect())
+        hisat2_mapping(hisat2_idx.out.htidx, collection)
     }
 
 
