@@ -68,12 +68,12 @@ workflow TRIMMING{
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
                 element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R1,R2}_dedup.*fastq.gz"
-            }            
+            }           
         }
         else{   
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
-            }
+            }        
         }
     }else{
         if (RUNDEDUP == 'enabled'){
@@ -85,20 +85,20 @@ workflow TRIMMING{
             SAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }
-        }
+        }                 
     }
 
     if (collection.collect().contains('MONSDA.log')){
         if (PAIRED == 'paired'){
-            //collection = Channel.fromFilePairs(SAMPLES)
-            collection = Channel.fromPath(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 2 )
         }
         else{
-            collection = Channel.fromPath(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
     }
 
     trim(collection)
+
 
     emit:
     trimmed = trim.out.trim

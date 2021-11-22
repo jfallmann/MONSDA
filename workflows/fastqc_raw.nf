@@ -2,19 +2,6 @@ QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
 QCPARAMS = get_always('fastqc_params_QC') ?: ''
 
-process collect_fqraw{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process qc_raw{
     conda "$QCENV"+".yaml"
     cpus THREADS
@@ -28,7 +15,6 @@ process qc_raw{
     }
 
     input:
-    val collect
     path read
 
     output:
@@ -49,20 +35,15 @@ workflow QC_RAW{
         SAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
-        SAMPLES.sort()        
-        samples_ch = Channel.fromPath(SAMPLES)//.join(Channel.fromPath(R2SAMPLES))
-
     }else{
-        RSAMPLES=SAMPLES.collect{
+        SAMPLES=SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
         }
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    collect_fqraw(collection.collect())
-    qc_raw(collect_fqraw.out.done, samples_ch)
-    //qc_raw(collection.collect())
+    samples_ch = Channel.fromPath(SAMPLES)
+
+    qc_raw(samples_ch.collect())
 
     emit:
     qc = qc_raw.out.fastqc_results

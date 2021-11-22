@@ -134,32 +134,32 @@ workflow DEDUPEXTRACT{
     collection
 
     main:
-    //SAMPLE CHANNELS
+        //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
         }
     }else{
         SAMPLES=SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
         }
     }
-    
+
     if (collection.collect().contains('MONSDA.log')){
         if (PAIRED == 'paired'){
-            collection = Channel.fromFilePairs(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 2 )
         }
         else{
-            collection = Channel.fromPath(SAMPLES)
+            collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
     }
        
     if (WHITELISTPARAMS != ''){
-        whitelist(collection.collect())
-        extract_wl(whitelist.out.done.wl, collection.collect())
+        whitelist(collection)
+        extract_wl(whitelist.out.done.wl, collection)
     }
     else{
-        extract(collection.collect())
+        extract(collection)
     }
     
     emit:
