@@ -92,7 +92,7 @@ process star_mapping{
     path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
-    fn = file(reads[0]).getSimpleName()+'.'
+    fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R{1,2}_trimmed\E/,"")+'.'
     of = fn+'Aligned.out.sam'
 
     """
@@ -105,17 +105,25 @@ workflow MAPPING{
 
     main:
     checkidx = file(MAPUIDX)
-    collection.filter(~/.fastq.gz/)
+    //collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        star_mapping(idxfile, collection)
+        if (PAIRED == 'paired'){
+            star_mapping(idxfile, collection)//.buffer( size: 2 ))
+        }else{
+            star_mapping(idxfile, collection)//.buffer( size: 1 ))
+        }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
         star_idx(genomefile, annofile)
-        star_mapping(star_idx.out.idx, collection)
+        if (PAIRED == 'paired'){
+            star_mapping(star_idx.out.idx, collection)//.buffer( size: 2 ))
+        }else{
+            star_mapping(star_idx.out.idx, collection)//.buffer( size: 1 ))
+        }
     }
 
 

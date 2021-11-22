@@ -114,12 +114,20 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        segemehl3_mapping(genomefile, idxfile, collection)
+        if (PAIRED == 'paired'){
+            segemehl3_mapping(genomefile, idxfile, collection.collate(2))
+        }else{
+            segemehl3_mapping(genomefile, idxfile, collection.collate(1))
+        }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         segemehl3_idx(genomefile)
-        segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection)
+        if (PAIRED == 'paired'){
+            segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection.collate(2))
+        }else{
+            segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection.collate(1))
+        }
     }
 
 

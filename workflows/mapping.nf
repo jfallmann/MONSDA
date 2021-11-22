@@ -139,16 +139,16 @@ workflow POSTMAPPING{
     //M1SAMPLES.sort()
     //mapped_samples_ch = Channel.fromPath(M1SAMPLES)
 
-    //collect_postmap(collection.collect())
+    //collect_postmap(collection)
     //sortsam(collect_postmap.out.done, mapped_samples_ch)
     //sam2bam(collect_postmap.out.done, sortsam.out.sam)
     //uniqsam(collect_postmap.out.done, sortsam.out.sam)
     //sam2bamuniq(collect_postmap.out.done, uniqsam.out.sam)
 
-    sortsam(collection.collect())
-    sam2bam(sortsam.out.sam.collect())
-    uniqsam(sortsam.out.sam.collect())
-    sam2bamuniq(uniqsam.out.sam.collect())
+    sortsam(collection)
+    sam2bam(sortsam.out.sam)
+    uniqsam(sortsam.out.sam)
+    sam2bamuniq(uniqsam.out.sam)
 
     emit:
     postmap  = sam2bam.out.bam

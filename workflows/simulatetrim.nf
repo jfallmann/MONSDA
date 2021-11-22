@@ -59,7 +59,7 @@ workflow TRIMMING{
         }                 
     }
 
-    if (collection.collect().contains('MONSDA.log')){
+    if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
         if (PAIRED == 'paired'){
             collection = Channel.fromPath(SAMPLES).collate( 2 )
         }

@@ -123,12 +123,20 @@ workflow MAPPING{
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        hisat2_mapping(idxfile, collection)
+        if (PAIRED == 'paired'){
+            hisat2_mapping(idxfile, collection.collate(2))
+        }else{
+            hisat2_mapping(idxfile, collection.collate(1))
+        }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         hisat2_idx(genomefile)
-        hisat2_mapping(hisat2_idx.out.htidx, collection)
+        if (PAIRED == 'paired'){
+            hisat2_mapping(hisat2_idx.out.htidx, collection.collate(2))
+        }else{
+            hisat2_mapping(hisat2_idx.out.htidx, collection.collate(1))
+        }
     }
 
 
