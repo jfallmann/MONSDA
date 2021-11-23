@@ -18,8 +18,8 @@ rule themall:
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION
-    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
-            deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
+    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
+            deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
     log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
