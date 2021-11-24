@@ -41,8 +41,8 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[0]
+        r1 = reads[0]
+        r2 = reads[1]
         o = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         p = file(r2).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
@@ -88,7 +88,7 @@ workflow TRIMMING{
         }                 
     }
 
-    if (collection.collect().contains('MONSDA.log')){
+    if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
         if (PAIRED == 'paired'){
             collection = Channel.fromPath(SAMPLES).collate( 2 )
         }

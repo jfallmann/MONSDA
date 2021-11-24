@@ -8,25 +8,35 @@ process trim{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_trimmed.fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/Trimming_report.txt"
         else null
     }
 
     input:
-    path read
+    path reads
 
     output:
     path "*trimmed.fastq.gz" , emit: trim
-    path "*trimming_report.txt", emit: rep
+    path "Trimming_report.txt", emit: rep
 
     script:
-    a=read.getSimpleName()+"_trimming_report.txt"
-    b=read.getSimpleName()+"_trimmed.fastq.gz"
-    """
-    ln -sf $read $b ; echo "simulated $read trimming" > $a
-    """
-
+    if (PAIRED == 'paired'){
+        r1 = reads[1]
+        r2 = reads[0]
+        a="Trimming_report.txt"
+        b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        """
+        ln -sf $r1 $b ; ln -sf $r2 $c; echo "simulated $r1 $r2 trimming" > $a
+        """
+    }else{
+        a="Trimming_report.txt"
+        b=file(reads).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        """
+        ln -sf $reads $b ; echo "simulated $reads trimming" > $a
+        """
+    }
 }
 
 workflow TRIMMING{

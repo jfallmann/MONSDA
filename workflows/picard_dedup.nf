@@ -32,9 +32,8 @@ process dedup{
     }
 
     input:
-    //path dummy
-    path samples
-    //path indices
+    path bams
+    path bais
         
     output:
     path "*.bam", emit: bam
@@ -42,7 +41,7 @@ process dedup{
     path "*.log", emit: log
 
     script:
-    out=samples.getSimpleName()+"_dedup.bam"
+    out=bams.getSimpleName()+"_dedup.bam"
     """
     mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $samples --OUTPUT $out --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $out &>> dedup.log
     """
@@ -54,8 +53,9 @@ workflow DEDUPBAM{
 
     main:
 
-    collection.filter(~/.bam|.bai/)
-    dedup(collection)
+    bams = collection.filter(~/.bam/)
+    bais = collection.filter(~/.bai/)
+    dedup(bams, bais)
 
     emit:
     dedup = dedup.out.bam

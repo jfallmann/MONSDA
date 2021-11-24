@@ -25,7 +25,6 @@ process sortsam{
     }
 
     input:
-    //val collect
     path map
 
     output:
@@ -53,7 +52,6 @@ process sam2bam{
     }
 
     input:
-    //val collect
     path sam
 
     output:
@@ -82,7 +80,6 @@ process uniqsam{
     }
 
     input:
-    //val collect
     path sam
 
     output:
@@ -111,7 +108,6 @@ process sam2bamuniq{
     }
 
     input:
-    //val collect
     path sam
 
     output:
@@ -132,19 +128,7 @@ workflow POSTMAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    //M1SAMPLES = LONGSAMPLES.collect{
-    //    element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped.sam.gz"
-    //}
-    //M1SAMPLES.sort()
-    //mapped_samples_ch = Channel.fromPath(M1SAMPLES)
-
-    //collect_postmap(collection)
-    //sortsam(collect_postmap.out.done, mapped_samples_ch)
-    //sam2bam(collect_postmap.out.done, sortsam.out.sam)
-    //uniqsam(collect_postmap.out.done, sortsam.out.sam)
-    //sam2bamuniq(collect_postmap.out.done, uniqsam.out.sam)
-
+  
     sortsam(collection)
     sam2bam(sortsam.out.sam)
     uniqsam(sortsam.out.sam)

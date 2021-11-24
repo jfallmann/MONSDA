@@ -83,19 +83,22 @@ process bwa_mapping{
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn.replaceAll(/trimmed.fastq.gz/,"")+".unmapped.fastq.gz"
     gen =  genome.getName()
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[0]
+        r1 = reads[0]
+        r2 = reads[1]
+        fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn.replaceAll(/trimmed.fastq.gz/,"")+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }else{
+        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """

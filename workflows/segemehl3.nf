@@ -84,19 +84,22 @@ process segemehl3_mapping{
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
     gen =  genome.getName()
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[0]
+        r1 = reads[0]
+        r2 = reads[1]
+        fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && touch $uf && gzip *.sam
         """
     }else{
+        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && touch $uf && gzip *.sam
         """

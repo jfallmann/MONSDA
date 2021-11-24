@@ -2893,7 +2893,7 @@ def nf_make_sub(
                         elif w == "MAPPING":
                             subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                             subjobs.append(
-                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
+                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped.collect())\n"
                             )
                             # if not "MULTIQC" in flowlist:
                             #    subjobs.append(

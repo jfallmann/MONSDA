@@ -88,10 +88,6 @@ process hisat2_mapping{
     } else {
         mapbin = MAPBIN
     }
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
-
     if (STRANDED == 'fr'){
         stranded = '--rna-strandness F'
     }else if (STRANDED == 'rf'){
@@ -101,12 +97,18 @@ process hisat2_mapping{
     }
 
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[0]
+        r1 = reads[0]
+        r2 = reads[1]
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
+        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
         $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """

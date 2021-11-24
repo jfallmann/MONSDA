@@ -31,9 +31,8 @@ process dedup{
     }
 
     input:
-    //path dummy
-    path samples
-    //path indices
+    path bams
+    path bais
       
     output:
     path "*.bam", emit: bam
@@ -41,7 +40,7 @@ process dedup{
     path "*.log", emit: log
 
     script:
-    out=samples.getSimpleName()+"_dedup.bam"
+    out=bams.getSimpleName()+"_dedup.bam"
     if (PAIRED == 'paired'){        
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --paired --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
@@ -59,8 +58,9 @@ workflow DEDUPBAM{
 
     main:
  
-    collection.filter(~/.bam|.bai/)
-    dedup(collection)
+    bams = collection.filter(~/.bam/)
+    bais = collection.filter(~/.bai/)
+    dedup(bams, bais)
 
     emit:
     dedup = dedup.out.bam
