@@ -137,7 +137,7 @@ workflow DEDUPEXTRACT{
         //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R{1,2}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
         }
     }else{
         SAMPLES=SAMPLES.collect{

@@ -62,12 +62,12 @@ workflow TRIMMING{
     if (PAIRED == 'paired'){
         if (RUNDEDUP == 'enabled'){
             SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R1,R2}_dedup.*fastq.gz"
+                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"._{R2,R1}_dedup.*fastq.gz"
             }           
         }
         else{   
             SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"._{R2,R1}.*fastq.gz"
             }        
         }
     }else{
