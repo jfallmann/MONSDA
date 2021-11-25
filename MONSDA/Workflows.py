@@ -2876,9 +2876,7 @@ def nf_make_sub(
                             if "QC_RAW" not in flowlist:
                                 subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                             else:
-                                subjobs.append(
-                                    " " * 4 + "DEDUPEXTRACT" + "(QC_RAW.out.qc)\n"
-                                )
+                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
                             subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.ex)\n")
                         elif w == "TRIMMING":
