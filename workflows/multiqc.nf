@@ -2,22 +2,6 @@ QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
 QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
-process collect_multi{
-    input:
-    path qclog
-    path maplog
-    path unique
-
-    output:
-    path "*mqccollect.txt", emit: done
-
-    script:
-    """
-    echo "$qclog, $maplog, $unique Collection successful!" > mqccollect.txt
-    """
-}
-
-
 process mqc{
     conda "$QCENV"+".yaml"
     cpus THREADS
@@ -40,20 +24,7 @@ process mqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
-    """
-}
-
-process collect_dummy{
-    input:
-    path check
-
-    output:
-    path "mqc.txt", emit: done
-
-    script:
-    """
-    echo "$check MQC successful!" > mqc.txt
+    touch $others; export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -o \${PWD} .
     """
 }
 
