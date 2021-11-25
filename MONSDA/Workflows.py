@@ -2904,20 +2904,20 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(MAPPING.out.mapped.join(POSTMAPPING.out.postmapuni.join(DEDUPBAM.out.dedup)))\n"
+                                    + "(MAPPING.out.mapped.collect().join(POSTMAPPING.out.postmapuni.collect().join(DEDUPBAM.out.dedup.collect())))\n"
                                 )
                             else:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(MAPPING.out.mapped.join(POSTMAPPING.out.postmapuni))\n"
+                                    + "(MAPPING.out.mapped.collect().join(POSTMAPPING.out.postmapuni.collect()))\n"
                                 )
                         elif w == "MULTIQC":
                             if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc.join(QC_MAPPING.out.qc.join(MAPPING.out.log))))\n"
+                                    + "(QC_RAW.out.qc.collect().join(QC_TRIMMING.out.qc.collect().join(QC_MAPPING.out.qc.collect().join(MAPPING.out.log.collect()))))\n"
                                 )
                             elif (
                                 "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist
@@ -2925,13 +2925,13 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.join(QC_MAPPING.out.qc.join(MAPPING.out.log)))\n"
+                                    + "(QC_RAW.out.qc.collect().join(QC_MAPPING.out.qc.collect().join(MAPPING.out.log.collect())))\n"
                                 )
                             elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc.join(QC_MAPPING.out.qc.join(POSTMAPPING.out.postmapuni))))\n"
+                                    + "(QC_RAW.out.qc.collect().join(QC_TRIMMING.out.qc.collect().join(QC_MAPPING.out.qc.collect().join(POSTMAPPING.out.postmapuni.collect()))))\n"
                                 )
                             elif (
                                 "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist
@@ -2939,20 +2939,22 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.join(QC_MAPPING.out.qc.join(POSTMAPPING.out.postmapuni.concat)))\n"
+                                    + "(QC_RAW.out.qc.collect().join(QC_MAPPING.out.qc.collect().join(POSTMAPPING.out.postmapuni.collect())))\n"
                                 )
                             elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc))\n"
+                                    + "(QC_RAW.out.qc.collect().join(QC_TRIMMING.out.qc.collect()))\n"
                                 )
                             # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
                             #    subjobs.append(
                             #        " " * 4 + w + "(QC_DEDUP.out.qc.collect())\n"
                             #    )
                             else:
-                                subjobs.append(" " * 4 + w + "(QC_RAW.out.qc)\n")
+                                subjobs.append(
+                                    " " * 4 + w + "(QC_RAW.out.qc.collect())\n"
+                                )
                         else:
                             subjobs.append(" " * 4 + w + "(dummy)\n")
                 subjobs.append("}\n\n")
