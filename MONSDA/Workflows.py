@@ -2899,27 +2899,27 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))))\n"
+                                + "(POSTMAPPING.out.postmap.join(POSTMAPPING.out.postbai.join(POSTMAPPING.out.postmapuni.join(POSTMAPPING.out.postunibai))))\n"
                             )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(MAPPING.out.mapped.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
+                                    + "(MAPPING.out.mapped.join(POSTMAPPING.out.postmapuni.join(DEDUPBAM.out.dedup)))\n"
                                 )
                             else:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(MAPPING.out.mapped.concat(POSTMAPPING.out.postmapuni))\n"
+                                    + "(MAPPING.out.mapped.join(POSTMAPPING.out.postmapuni))\n"
                                 )
                         elif w == "MULTIQC":
                             if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.log))))\n"
+                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc.join(QC_MAPPING.out.qc.join(MAPPING.out.log))))\n"
                                 )
                             elif (
                                 "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist
@@ -2927,13 +2927,13 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.log)))\n"
+                                    + "(QC_RAW.out.qc.join(QC_MAPPING.out.qc.join(MAPPING.out.log)))\n"
                                 )
                             elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))))\n"
+                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc.join(QC_MAPPING.out.qc.join(POSTMAPPING.out.postmapuni))))\n"
                                 )
                             elif (
                                 "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist
@@ -2941,13 +2941,13 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni.concat)))\n"
+                                    + "(QC_RAW.out.qc.join(QC_MAPPING.out.qc.join(POSTMAPPING.out.postmapuni.concat)))\n"
                                 )
                             elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc))\n"
+                                    + "(QC_RAW.out.qc.join(QC_TRIMMING.out.qc))\n"
                                 )
                             # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
                             #    subjobs.append(
