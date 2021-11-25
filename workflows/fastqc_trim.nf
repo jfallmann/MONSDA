@@ -38,7 +38,7 @@ workflow QC_RAW{
         }
     }else{
         SAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
     }
 
