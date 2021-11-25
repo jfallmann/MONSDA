@@ -25,14 +25,14 @@ process trim{
         r1 = reads[1]
         r2 = reads[0]
         a="Trimming_report.txt"
-        b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
-        c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        b=file(r1).replace(".fastq.gz", "_trimmed.fastq.gz")
+        c=file(r2).replace(".fastq.gz", "_trimmed.fastq.gz")
         """
         ln -sf $r1 $b ; ln -sf $r2 $c; echo "simulated $r1 $r2 trimming" > $a
         """
     }else{
         a="Trimming_report.txt"
-        b=file(reads).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        b=file(reads).replace(".fastq.gz", "_trimmed.fastq.gz")
         """
         ln -sf $reads $b ; echo "simulated $reads trimming" > $a
         """
