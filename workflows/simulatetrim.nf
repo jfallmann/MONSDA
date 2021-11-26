@@ -22,8 +22,8 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[0]
+        r1 = reads[0]
+        r2 = reads[1]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
@@ -44,38 +44,20 @@ workflow TRIMMING{
     collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        if (RUNDEDUP == 'enabled'){
-            SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_{R2,R1}_dedup.*fastq.gz"
-            }           
-        }
-        else{   
+
+    if (collection.collect().contains('MONSDA.log') || collection.isEmpty()){
+        //SAMPLE CHANNELS
+        if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
-            }        
-        }
-    }else{
-        if (RUNDEDUP == 'enabled'){
-            SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.*fastq.gz"
-            }
-        }
-        else{
-            SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-            }
-        }                 
-    }
-
-    if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
-        if (PAIRED == 'paired'){
+            }                    
             collection = Channel.fromPath(SAMPLES).collate( 2 )
-        }
-        else{
+        }else{            
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+            }            
             collection = Channel.fromPath(SAMPLES).collate( 1 )
-        }
+        }        
     }
 
     trim(collection)

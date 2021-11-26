@@ -3,7 +3,7 @@ DEDUPBIN=get_always('DEDUPBIN')
 
 DEDUPPARAMS = get_always('umitools_params_DEDUP') ?: ''
 
-process dedup{
+process dedup_bam{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -12,29 +12,30 @@ process dedup{
     saveAs: {filename ->
         if (filename.endsWith("_dedup.bam"))          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf("_dedup.bam.bai") > 0) "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf(".log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
+        else if (filename.indexOf("dedup.log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
         else null
     }
 
     input:
-    path bams
-    path bais
-      
+    path todedup
+        
     output:
-    path "*.bam", emit: bam
-    path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*_dedup.bam", emit: bam
+    path "*_dedup.bam.bai", emit: bai
+    path "dedup.log", emit: logs
 
     script:
-    out=bams.getSimpleName()+"_dedup.bam"
+    bams = todedup[0]
+    bais = todedup[1]
+    outf = bams.getSimpleName()+"_dedup.bam"
     if (PAIRED == 'paired'){        
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --paired --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --paired --stdin=$samples --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
         """
     }
     else{
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=ded.log --stdin=$samples --stdout=$out && samtools index $out &>> ded.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --stdin=$samples --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
         """
     }
 }
@@ -44,12 +45,19 @@ workflow DEDUPBAM{
 
     main:
  
-    bams = collection.filter(~/.bam/)
-    bais = collection.filter(~/.bai/)
-    dedup(bams, bais)
+    //bams = collection.filter(~/\*.bam/)
+    //bais = collection.filter(~/\*.bai/)
+    //dedup(bams, bais)
+    //dedup_bam(collection.branch {
+    //    bams: it ==~ /\*.bam/
+    //    bais: it ==~ /\*.bai/
+    //})
+    dedup_bam(collection)
 
     emit:
-    dedup = dedup.out.bam
+    dedup = dedup_bam.out.bam
+    dedupbai = dedup_bam.out.bai
+    deduplog = dedup_bam.out.logs
 }
 
 

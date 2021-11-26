@@ -24,22 +24,22 @@ process whitelist{
 
     script:
     if (PAIRED == 'paired'){
-        r1=samples[0]
-        r2=samples[1]
-        out=samples[0].getSimpleName()+"_whitelist"
+        r1 = samples[0]
+        r2 = samples[1]
+        outf = samples[0].getSimpleName()+"_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$out
+            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$outf
         """
     }
     else{
-        out=samples.getSimpleName()+"_whitelist"
+        outf = samples.getSimpleName()+"_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$out
+            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$outf
         """
     }
 }
 
-process extract{
+process extract_fq{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -56,36 +56,36 @@ process extract{
     path samples
         
     output:
-    path "*_dedup.fastq.gz", emit: ex
+    path "*_dedup.fastq.gz", emit: ext
     path "ex.log", emit: logs
 
     script:
     if (PAIRED == 'paired'){
-        r1=samples[0]
-        r2=samples[1]
-        out=samples[0].getSimpleName()+"_dedup.fastq.gz"
-        out2=samples[1].getSimpleName()+"_dedup.fastq.gz"
-        if (wl == ''){
+        r1 = samples[0]
+        r2 = samples[1]
+        outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
+        outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
+        if (wl == 'MONSDA.log'){
             """
-                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
             """
         }
         else{
             """
-                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
             """
         }
     }
     else{
-        out=samples.getSimpleName()+"_dedup.fastq.gz"
-        if (wl == ''){
+        outf = samples.getSimpleName()+"_dedup.fastq.gz"
+        if (wl == 'MONSDA.log'){
             """
-                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
             """
         }
         else{        
             """
-                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
             """
         }
     }
@@ -96,35 +96,30 @@ workflow DEDUPEXTRACT{
     collection
 
     main:
-        //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
-        }
-    }else{
-        SAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-        }
-    }
-
+    //SAMPLE CHANNELS
     if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
         if (PAIRED == 'paired'){
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            }
             collection = Channel.fromPath(SAMPLES).collate( 2 )
-        }
-        else{
+        }else{
+            SAMPLES=SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+            }
             collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
     }
        
     if (WHITELISTPARAMS != ''){
         whitelist(collection)
-        extract(whitelist.out.done.wl, collection)
+        extract_fq(whitelist.out.done.wl, collection)
     }
     else{
-        extract(Channel.of(''), collection)
+        extract_fq(dummy, collection)
     }
     
     emit:    
-    ex = extract.out.ex
-    logs = extract.out.logs
+    ext = extract_fq.out.ext
+    logs = extract_fq.out.logs
 }

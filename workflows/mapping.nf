@@ -1,18 +1,5 @@
 //POST MAPPING PROCESSES
 
-process collect_postmap{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process sortsam{
     conda "samtools.yaml"
     cpus THREADS
@@ -57,7 +44,7 @@ process sam2bam{
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -84,7 +71,7 @@ process uniqsam{
 
     output:
     path "*_unique.sam.gz", emit: sam
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -113,7 +100,7 @@ process sam2bamuniq{
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()

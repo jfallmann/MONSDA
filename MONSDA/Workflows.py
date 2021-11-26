@@ -2876,15 +2876,11 @@ def nf_make_sub(
                         elif w == "PREDEDUP":
                             subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
-                            subjobs.append(
-                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.ext)\n")
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
-                                    " " * 4
-                                    + "TRIMMING"
-                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                    " " * 4 + "TRIMMING" + "(DEDUPEXTRACT.out.ext)\n"
                                 )
                             else:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
@@ -2899,7 +2895,7 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))))\n"
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))).collate( 2 ))\n"
                             )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:

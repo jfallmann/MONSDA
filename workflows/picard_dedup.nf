@@ -3,7 +3,7 @@ DEDUPBIN=get_always('DEDUPBIN')
 DEDUPPARAMS = get_always('picard_params_DEDUP') ?: ''
 JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 
-process dedup{
+process dedup_bam{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -12,24 +12,25 @@ process dedup{
     saveAs: {filename ->
         if (filename.endsWith("_dedup.bam"))              "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
         else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
-        else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
         else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedupmetrics.txt"
         else null
     }
 
     input:
-    path bams
-    path bais
+    path todedup
         
     output:
-    path "*.bam", emit: bam
-    path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*_dedup.bam", emit: bam
+    path "*_dedup.bam.bai", emit: bai
+    path "dedup.log", emit: logs
 
     script:
-    out=bams.getSimpleName()+"_dedup.bam"
+    bams = todedup[1]
+    bais = todedup[0]
+    outf = bams.getSimpleName()+"_dedup.bam"
     """
-    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $samples --OUTPUT $out --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $out &>> dedup.log
+    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $bams --OUTPUT $outf --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $outf &>> dedup.log
     """
 }
 
@@ -38,13 +39,13 @@ workflow DEDUPBAM{
     collection
 
     main:
-
-    bams = collection.filter(~/.bam/)
-    bais = collection.filter(~/.bai/)
-    dedup(bams, bais)
+    
+    dedup_bam(collection)
 
     emit:
-    dedup = dedup.out.bam
+    dedup = dedup_bam.out.bam
+    dedupbai = dedup_bam.out.bai
+    deduplog = dedup_bam.out.logs
 }
 
 
