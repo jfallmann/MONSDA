@@ -4,21 +4,6 @@ DEDUPBIN=get_always('DEDUPBIN')
 WHITELISTPARAMS = get_always('umitools_params_WHITELIST') ?: ''
 EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 
-
-process collect_extract{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
-
 process whitelist{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
@@ -26,7 +11,7 @@ process whitelist{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_whitelist") > 0)         "FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_whitelist"
+        if (filename.indexOf("_whitelist") > 0)         "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_whitelist"
         else if (filename.indexOf("log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedup_whitelist.log"
         else null
     }
@@ -67,48 +52,12 @@ process extract{
     }
 
     input:
-    path samples
-        
-    output:
-    path "*_dedup.fastq.gz", emit: ex
-
-    script:
-    if (PAIRED == 'paired'){
-        r1=samples[0]
-        r2=samples[1]
-        out=samples[0].getSimpleName()+"_dedup.fastq.gz"
-        out2=samples[1].getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
-        """
-    }
-    else{
-        out=samples.getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
-        """
-    }
-}
-
-
-process extract_wl{
-    conda "$DEDUPENV"+".yaml"
-    cpus THREADS
-    //validExitStatus 0,1
-
-    publishDir "${workflow.workDir}/../" , mode: 'link',
-    saveAs: {filename ->
-        if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedup_extract.log"
-        else null
-    }
-
-    input:
     path wl
     path samples
         
     output:
     path "*_dedup.fastq.gz", emit: ex
+    path "ex.log", emit: logs
 
     script:
     if (PAIRED == 'paired'){
@@ -116,18 +65,31 @@ process extract_wl{
         r2=samples[1]
         out=samples[0].getSimpleName()+"_dedup.fastq.gz"
         out2=samples[1].getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
-        """
+        if (wl == ''){
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
+            """
+        }
+        else{
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
+            """
+        }
     }
     else{
         out=samples.getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
-        """
+        if (wl == ''){
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
+            """
+        }
+        else{        
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
+            """
+        }
     }
 }
-
 
 workflow DEDUPEXTRACT{
     take: 
@@ -141,7 +103,7 @@ workflow DEDUPEXTRACT{
         }
     }else{
         SAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
     }
 
@@ -156,13 +118,13 @@ workflow DEDUPEXTRACT{
        
     if (WHITELISTPARAMS != ''){
         whitelist(collection)
-        extract_wl(whitelist.out.done.wl, collection)
+        extract(whitelist.out.done.wl, collection)
     }
     else{
-        extract(collection)
+        extract(Channel.of(''), collection)
     }
     
-    emit:
+    emit:    
     ex = extract.out.ex
-    
+    logs = extract.out.logs
 }

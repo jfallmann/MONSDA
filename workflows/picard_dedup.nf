@@ -3,20 +3,6 @@ DEDUPBIN=get_always('DEDUPBIN')
 DEDUPPARAMS = get_always('picard_params_DEDUP') ?: ''
 JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 
-process collect_dedup{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
-
 process dedup{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS

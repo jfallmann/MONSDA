@@ -2721,7 +2721,8 @@ def nf_make_sub(
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
-                                flowlist.append("QC_DEDUP")
+                                if "QC" in flowlist:
+                                    flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
                                 nfi = os.path.abspath(
                                     os.path.join(workflowpath, subname)
@@ -2873,16 +2874,17 @@ def nf_make_sub(
                         if w == "QC_RAW":
                             subjobs.append(" " * 4 + w + "(dummy)\n")
                         elif w == "PREDEDUP":
-                            if "QC_RAW" not in flowlist:
-                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
-                            else:
-                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
+                            subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
-                            subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.ex)\n")
+                            subjobs.append(
+                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
+                            )
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
-                                    " " * 4 + "TRIMMING" + "(DEDUPEXTRACT.out.ex)\n"
+                                    " " * 4
+                                    + "TRIMMING"
+                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
                                 )
                             else:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
@@ -2897,7 +2899,7 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.join(POSTMAPPING.out.postbai.join(POSTMAPPING.out.postmapuni.join(POSTMAPPING.out.postunibai))))\n"
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))))\n"
                             )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
