@@ -30,12 +30,12 @@ process dedup_bam{
     outf = bams.getSimpleName()+"_dedup.bam"
     if (PAIRED == 'paired'){        
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --paired --stdin=$samples --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --paired --stdin=$bams --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
         """
     }
     else{
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --stdin=$samples --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --stdin=$bams --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
         """
     }
 }
@@ -44,14 +44,6 @@ workflow DEDUPBAM{
     take: collection
 
     main:
- 
-    //bams = collection.filter(~/\*.bam/)
-    //bais = collection.filter(~/\*.bai/)
-    //dedup(bams, bais)
-    //dedup_bam(collection.branch {
-    //    bams: it ==~ /\*.bam/
-    //    bais: it ==~ /\*.bai/
-    //})
     dedup_bam(collection)
 
     emit:

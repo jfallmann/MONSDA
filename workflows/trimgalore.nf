@@ -44,12 +44,12 @@ process trim{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
     else{
         """
-        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads &> trim.log && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
 }
@@ -58,7 +58,9 @@ workflow TRIMMING{
     take: collection
 
     main:
-   if (collection.collect().contains('MONSDA.log') || collection.isEmpty()){
+     if ( PREDEDUP == 'enabled' ){
+        trim(collection)
+    } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
         //SAMPLE CHANNELS
         if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
@@ -70,10 +72,11 @@ workflow TRIMMING{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }            
             collection = Channel.fromPath(SAMPLES).collate( 1 )
-        }        
+        }
+        trim(collection)
+    } else{
+        trim(collection)
     }
-    
-    trim(collection)
 
     emit:
     trimmed = trim.out.trim

@@ -43,16 +43,16 @@ process trim{
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
-        o = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
-        p = file(r2).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
-        r = file(r1).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
+        o = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
         $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o -p $p $r1 $r2 &> $r
         """
     }
     else{
-        o = file(reads).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
-        r = file(reads).getSimpleName().replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
+        o = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
         $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o $reads &> $r
         """
@@ -63,7 +63,9 @@ workflow TRIMMING{
     take: collection
 
     main:
-    if (collection.collect().contains('MONSDA.log') || collection.isEmpty()){
+    if ( PREDEDUP == 'enabled' ){
+        trim(collection)
+    } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
         //SAMPLE CHANNELS
         if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
@@ -75,10 +77,11 @@ workflow TRIMMING{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }            
             collection = Channel.fromPath(SAMPLES).collate( 1 )
-        }        
+        }
+        trim(collection)
+    } else{
+        trim(collection)
     }
-
-    trim(collection)
 
     emit:
     trimmed = trim.out.trim

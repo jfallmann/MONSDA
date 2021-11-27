@@ -26,8 +26,8 @@ process dedup_bam{
     path "dedup.log", emit: logs
 
     script:
-    bams = todedup[1]
-    bais = todedup[0]
+    bams = todedup[0]
+    bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
     """
     mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $bams --OUTPUT $outf --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $outf &>> dedup.log
@@ -38,8 +38,7 @@ workflow DEDUPBAM{
     take:
     collection
 
-    main:
-    
+    main:   
     dedup_bam(collection)
 
     emit:
