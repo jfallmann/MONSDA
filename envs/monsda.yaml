@@ -349,7 +349,6 @@ dependencies:
     - dnspython==1.16.0
     - docopt==0.6.2
     - fett==0.3.2
-    - monsda==0.0.24
     - pymongo==3.11.4
     - python-jsonrpc-server==0.3.4
     - snooty-lextudio==1.11.4.dev0
