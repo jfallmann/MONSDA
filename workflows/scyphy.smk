@@ -214,35 +214,42 @@ else:
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
     input:  fw = rules.PeakToBedg.output.fw,
-            re = rules.PeakToBedg.output.re
+            re = rules.PeakToBedg.output.re,
+            map = rule.BedToBedg.output.concat
     output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.norm.bedg.gz",
-            re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
+            re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz",
+            map = "PEAKS/{combo}/{file}_mapped_{type}.norm.bedg.gz"
     log:    "LOGS/PEAKS/{combo}/ucscpeaknormalizebedgraph_{type}_{file}.log"
     conda:  "perl.yaml"
     threads: 1
-    shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.map})| sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map} 2> {log}; else gzip < /dev/null > {output.map}; echo \"File {input.map} empty\" >> {log}; fi"
 
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to a genome browser via the track field
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
+            map = rules.NormalizeBedg.output.map,
             fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
+            map = "TRACKS/PEAKS/{combo}/{file}_mapped_{type}.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
-            tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
+            tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp"),
+            tmap = temp("TRACKS/PEAKS/{combo}/{file}_{type}map_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log} && zcat {input.map} > {output.tmap} 2>> {log} && bedGraphToBigWig {output.tmap} {input.fas} {output.map} 2>> {log}"
 
 
 rule GenerateTrack:
     input:  fw = rules.PeakToTRACKS.output.fw,
-            re = rules.PeakToTRACKS.output.re
+            re = rules.PeakToTRACKS.output.re,
+            map = rules.PeakToTRACKS.output.map,
     output: "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw.trackdone",
-            "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
+            "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone",
+            "TRACKS/PEAKS/{combo}/{file}_mapped_{type}.bw.trackdone"
     log:    "LOGS/PEAKS/{combo}/generatetrack_{type}_{file}.log"
     conda:  "base.yaml"
     threads: MAXTHREAD
@@ -251,4 +258,4 @@ rule GenerateTrack:
             gen = REFDIR,#lambda wildcards: os.path.basename(genomepath(wildcards.file, config)),
             options = '-n Peaks_'+str(PEAKENV)+' -s peaks -l TRACKS_peaks_'+str(PEAKENV)+' -b TRACKS_'+str(PEAKENV),
             uid = lambda wildcards: "{src}".format(src='TRACKS'+os.sep+'PEAKS'+os.sep+combo+SETS.replace(os.sep, '_'))
-    shell: "echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}"
+    shell: "echo -e \"{input.fw}\\n{input.re}\\n{input.map}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone && touch {input.map}.trackdone 2> {log}"
