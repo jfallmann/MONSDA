@@ -219,7 +219,7 @@ else:
 rule NormalizeBedg:
     input:  fw = rules.PeakToBedg.output.fw,
             re = rules.PeakToBedg.output.re,
-            map = rule.BedToBedg.output.concat
+            map = rules.BedToBedg.output.concat
     output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.norm.bedg.gz",
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz",
             map = "PEAKS/{combo}/{file}_mapped_{type}.norm.bedg.gz"
