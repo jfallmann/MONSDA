@@ -35,9 +35,10 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") >0)      "LOGS/$COMBO$CONDITION/star_index.log"
-        else if (filename.indexOf(".idx") > 0)   "$MAPIDX"
-        else                                     "$MAPUIDX/${filename}"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/$COMBO$CONDITION/star_index.log"
+        else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
+        else if (filename == "$MAPUIDXNAME")              "$MAPUIDX"
+        else                                             "$MAPUIDX/${filename}"
     }
 
     input:
@@ -48,19 +49,15 @@ process star_idx{
 
     output:
     path "$MAPUIDXNAME", emit: idx
-    path "*SA*", emit: sa
     path "*Log.out", emit: idxlog
-    path "*.txt", emit: txts
-    path "*.tab", emit: tabs
     path "*.idx", emit: tmpidx
-    path "*Genome*", emit: idxgen
 
     script:
     gen =  genome.getName()
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno
     """
 
 }
@@ -92,6 +89,7 @@ process star_mapping{
     path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
+    idxdir = idx.toRealPath()
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
@@ -100,7 +98,7 @@ process star_mapping{
         of = fn+'Aligned.out.sam'
  
         """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idx --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
     else{
@@ -108,7 +106,7 @@ process star_mapping{
         of = fn+'Aligned.out.sam'
 
         """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idx --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
 }
