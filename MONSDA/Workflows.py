@@ -214,7 +214,7 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS", "ANNOTATE"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -418,6 +418,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 "DTU",
                                 "COUNTING",
                                 "TRACKS",
+                                "CIRCS"
                             ]
                         ]
                     ):
@@ -1323,7 +1324,7 @@ def make_post(
             for condition in combname:
                 envlist = combname[condition].get("envs")
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
-
+                                  
                 subconf = NestedDefaultDict()
                 add = list()
 
@@ -1364,6 +1365,13 @@ def make_post(
                     for a in range(0, len(listoftools)):
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
+
+                        if subwork == 'CIRCS':
+                            if toolenv == 'ciri2' and 'bwa' not in envs:
+                                log.warning('CIRI2 needs BWA mapped files, will skip input produced otherwise')
+                                continue 
+
+
                         tc = list(condition)
                         tc.append(toolenv)
                         sconf[subwork].update(subSetDict(config[subwork], tc))
