@@ -33,11 +33,11 @@ process star_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename.indexOf("Log.out") > 0)             "LOGS/$COMBO$CONDITION/star_index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
-        else if (filename == "$MAPUIDXNAME")              "$MAPUIDX"
+        else if (filename == "$MAPUIDXNAME")             "$MAPUIDX"
         else                                             "$MAPUIDX/${filename}"
     }
 
