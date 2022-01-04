@@ -22,7 +22,5 @@ rule FindCircs:
     conda:  ""+CENV+".yaml"
     threads: MAXTHREAD
     params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'].get('CIRC', ""),
-            circ = CBIN,
-            outdir = lambda wildcards, output: os.path.dirname(output.peak),
-            outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.sam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then gunzip -c {input.sam}|samtools sort -n -@ {threads} -u -m 20G -O sam -T {output.tmp} > {output.ts} && perl {params.circ} -I {output.ts} -O {output.circs} -F <(zcat {input.ref}) -T {threads} -A <(zcat {input.anno}) -G {log} {params.cpara}; else gzip < /dev/null > {output.circs}; echo \"File {input.sam} empty\" >> {log}; fi"
+            circ = CBIN
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.sam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.sam}|samtools sort -n -@ {threads} -u -m 20G -O sam -T {output.tmp} > {output.ts} && perl {params.circ} -I {output.ts} -O {output.circs} -F <(zcat {input.ref}) -T {threads} -A <(zcat {input.anno}) -G {log} {params.cpara}; else gzip < /dev/null > {output.circs}; echo \"File {input.sam} empty\" >> {log}; fi"
