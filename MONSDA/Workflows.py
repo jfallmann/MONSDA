@@ -2075,6 +2075,9 @@ def nf_tool_params(
         )
     )
 
+    if ' ' in toolbin:
+        toolbin = toolbin.replace(' ', '_')
+
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
     if runstate is None:
