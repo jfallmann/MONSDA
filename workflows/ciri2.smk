@@ -18,8 +18,8 @@ rule FindCircs:
     output: circs = "CIRCS/{combo}/CIRI2/{file}_circs",
             tmp = temp(directory("CIRCS/{combo}/CIRI2/TMP/{file}")),
             ts = temp("CIRCS/{combo}/CIRI2/{file}_tmp.sam"),
-            ta = temp("CIRCS/{combo}/CIRI2/{file}_tmp.anno"),
-            tf = temp("CIRCS/{combo}/CIRI2/{file}_tmp.fasta")
+            ta = temp("CIRCS/{combo}/CIRI2/{file}_tmp.gtf"),
+            tf = temp("CIRCS/{combo}/CIRI2/{file}_tmp.fa")
     log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
     conda:  ""+CENV+".yaml"
     threads: MAXTHREAD
