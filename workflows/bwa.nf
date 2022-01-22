@@ -38,9 +38,9 @@ process bwa_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "bwa.idx")                  "$MAPIDX"
-        else if (filename.indexOf("Log.out") >0)    "LOGS/$COMBO$CONDITION/bwa_index.log"
-        else                                        "$MAPUIDX/${filename}"
+        if (filename == "bwa.idx")                          "$MAPIDX"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/$COMBO$CONDITION/bwa_index.log"
+        else if (filename.indexOf("$MAPPREFIX") > 0)        "$MAPUIDX/${filename}"
     }
 
     input:
@@ -50,6 +50,7 @@ process bwa_idx{
 
     output:
     path "$MAPUIDXNAME", emit: uidx
+    path "$MAPPREFIX"+"*", emit: fix
 
     script:
     gen =  genome.getName()
