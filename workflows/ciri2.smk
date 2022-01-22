@@ -16,7 +16,7 @@ rule FindCircs:
             ref = REFERENCE,
             anno = ANNOTATION
     output: circs = "CIRCS/{combo}/CIRI2/{file}_circs",
-            tmp = temp(directory("CIRCS/{combo}/CIRI2/TMP/{file}")),
+            tmp = temp(directory("CIRCS/{combo}/CIRI2/{file}_tmp")),
             ts = temp("CIRCS/{combo}/CIRI2/{file}_tmp.sam"),
             ta = temp("CIRCS/{combo}/CIRI2/{file}_tmp.gtf"),
             tf = temp("CIRCS/{combo}/CIRI2/{file}_tmp.fa")
