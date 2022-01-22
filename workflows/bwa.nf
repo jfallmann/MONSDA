@@ -54,7 +54,7 @@ process bwa_idx{
     script:
     gen =  genome.getName()
     """
-    touch $MAPUIDXNAME && $MAPBIN index -p $MAPPREFIX $IDXPARAMS $genome &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
+    touch $MAPUIDXNAME && $IDXBIN index -p $MAPPREFIX $IDXPARAMS $genome &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
     """
 
 }
