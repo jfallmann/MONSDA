@@ -244,7 +244,7 @@ rule PeakToTRACKS:
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log} && zcat {input.map} > {output.tmap} 2>> {log} && bedGraphToBigWig {output.tmap} {input.fas} {output.map} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log} && zcat {input.map} |cut -f1-3,5 > {output.tmap} 2>> {log} && bedGraphToBigWig {output.tmap} {input.fas} {output.map} 2>> {log}"
 
 
 rule GenerateTrack:
