@@ -51,6 +51,7 @@ process bwa_idx{
     output:
     path "$MAPUIDXNAME", emit: uidx
     path "$MAPPREFIX"+"*", emit: idxfiles
+    path "bwa.idx", emit: link
 
     script:
     gen =  genome.getName()
