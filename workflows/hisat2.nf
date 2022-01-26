@@ -33,7 +33,7 @@ process hisat2_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "hisat2.idx")            "$MAPIDX"
         else if (filename.indexOf(".log") >0)    "LOGS/$COMBO$CONDITION/MAPPING/hisat2_index.log"

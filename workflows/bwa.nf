@@ -36,11 +36,11 @@ process bwa_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "bwa.idx")                          "$MAPIDX"
         else if (filename.indexOf("Log.out") > 0)           "LOGS/$COMBO$CONDITION/bwa_index.log"
-        else                                                "$MAPUIDX/${filename}"
+        else                                                "$MAPUIDX"
     }
 
     input:
@@ -49,14 +49,13 @@ process bwa_idx{
     path genome
 
     output:
-    path "$MAPUIDXNAME", emit: uidx
-    path "$MAPPREFIX"+"*", emit: idxfiles
-    path "bwa.idx", emit: link
+    path "bwa.idx", emit: idx
+    path "bwa_*", emit: bwidx
 
     script:
     gen =  genome.getName()
     """
-    touch $MAPUIDXNAME && $IDXBIN index -p $MAPPREFIX $IDXPARAMS $genome &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
+    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
     """
 
 }
@@ -130,9 +129,9 @@ workflow MAPPING{
         genomefile = Channel.fromPath(MAPREF)
         bwa_idx(genomefile)
         if (PAIRED == 'paired'){
-            bwa_mapping(genomefile, bwa_idx.out.uidx, collection.collate(2))
+            bwa_mapping(genomefile, bwa_idx.out.bwidx, collection.collate(2))
         }else{
-            bwa_mapping(genomefile, bwa_idx.out.uidx, collection.collate(1))
+            bwa_mapping(genomefile, bwa_idx.out.bwidx, collection.collate(1))
         }
     }
 
