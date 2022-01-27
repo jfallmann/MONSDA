@@ -73,7 +73,6 @@ process hisat2_mapping{
     }
 
     input:
-    //val collect
     path idx
     path reads
 

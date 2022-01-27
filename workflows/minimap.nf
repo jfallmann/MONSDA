@@ -34,7 +34,7 @@ process minimap_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "minimap.idx")                  "$MAPIDX"
         else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap_index.log"
@@ -42,8 +42,6 @@ process minimap_idx{
     }
 
     input:
-    //val collect
-    //path reads
     path genome
 
     output:
@@ -73,8 +71,6 @@ process minimap_mapping{
     }
 
     input:
-    //val collect
-    path genome
     path idxfile
     path reads
 
@@ -84,7 +80,6 @@ process minimap_mapping{
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:    
-    gen =  genome.getName()
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
@@ -94,14 +89,14 @@ process minimap_mapping{
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }else{
         fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }
 }
@@ -116,11 +111,10 @@ workflow MAPPING{
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        genomefile = Channel.fromPath(MAPREF)
         if (PAIRED == 'paired'){
-            minimap_mapping(genomefile, idxfile, collection.collate(2))
+            minimap_mapping(idxfile, collection.collate(2))
         }else{
-            minimap_mapping(genomefile, idxfile, collection.collate(1))
+            minimap_mapping(idxfile, collection.collate(1))
         }
         
     }
@@ -128,9 +122,9 @@ workflow MAPPING{
         genomefile = Channel.fromPath(MAPREF)
         minimap_idx(genomefile)
         if (PAIRED == 'paired'){
-            minimap_mapping(genomefile, minimap_idx.out.idx, collection.collate(2))
+            minimap_mapping(minimap_idx.out.idx, collection.collate(2))
         }else{
-            minimap_mapping(genomefile, minimap_idx.out.idx, collection.collate(1))
+            minimap_mapping(minimap_idx.out.idx, collection.collate(1))
         }
     }
 
