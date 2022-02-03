@@ -279,7 +279,7 @@ def run_snakemake(
         """
         ONCE FILES ARE DOWNLOADED WE CAN START OTHER PREPROCESSING STEPS
         """
-
+        makeoutdir("TMP")
         SAMPLES = get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
 
@@ -331,7 +331,7 @@ def run_snakemake(
         """
         END OF PREPROCESSING, START OF PROCESSING
         """
-
+        makeoutdir("TMP")
         if subworkflows:
             combinations = (
                 get_combo(subworkflows, config, conditions) if subworkflows else None
@@ -373,18 +373,17 @@ def run_snakemake(
         """
         END OF PROCESSING, START OF POSTPROCESSING
         """
-
+        makeoutdir("TMP")
         if postprocess:
             for subwork in postprocess:
 
                 SAMPLES = get_samples_postprocess(config, subwork)
-                log.info(logid + "POSTPROCESSING SAMPLES: " + str(SAMPLES))
+                log.info(logid + f"POSTPROCESSING {subwork} with SAMPLES: {SAMPLES}")
                 combinations = (
                     get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
-                log.debug(logid + "POSTPROCESSING WITH COMBOS: " + str(combinations))
 
                 jobs = make_post(
                     subwork,
@@ -579,7 +578,7 @@ def run_nextflow(
         """
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
         """
-
+        makeoutdir("TMP")
         SAMPLES = get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
         conditions = get_conditions(config)
@@ -635,7 +634,7 @@ def run_nextflow(
         """
         END OF PREPROCESSING, START OF PROCESSING
         """
-
+        makeoutdir("TMP")
         if subworkflows:
             combinations = (
                 get_combo(subworkflows, config, conditions) if subworkflows else None
@@ -680,7 +679,7 @@ def run_nextflow(
         """
         END OF PROCESSING, START OF POSTPROCESSING
         """
-
+        makeoutdir("TMP")
         if postprocess:
             log.error(
                 "At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!"

@@ -71,7 +71,6 @@ import numpy as np
 import heapq
 import itertools
 from operator import itemgetter
-from natsort import natsorted
 import traceback as tb
 from io import StringIO
 from Bio import SeqIO
@@ -102,6 +101,8 @@ except:
 workflowpath = os.path.join(installpath, "MONSDA", "workflows")
 envpath = os.path.join(installpath, "MONSDA", "envs") + os.sep
 binpath = os.path.join(installpath, "MONSDA", "scripts")
+condapath = re.compile(r'conda:\s+"')
+logfix = re.compile(r'loglevel="INFO"')
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -213,7 +214,7 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS", "ANNOTATE"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -297,12 +298,15 @@ def get_processes(config):
 
 
 @check_run
-def create_subworkflow(config, subwork, conditions, stage="", combination=None):
+def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
     logid = scriptname + ".Workflows_create_subworkflow: "
-    log.debug(logid + str([config, subwork, conditions, stage]))
+    log.debug(
+        logid
+        + f"config:{config}, subwork:{subwork}, condition:{conditions}, stage:{stage}, envs:{envs}"
+    )
     toollist = list()
     configs = list()
-    tempconf = NestedDefaultDict()
+
     for condition in conditions:
         try:
             env = str(subDict(config[subwork], condition)[stage + "ENV"])
@@ -373,32 +377,63 @@ def create_subworkflow(config, subwork, conditions, stage="", combination=None):
                         toollist.append([None, None])
                         configs.append(None)
                 else:
-                    tempconf[key] = subSetDict(config[key], condition)
-                    tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
-                        "SAMPLES"
-                    ]
                     if key == "SETTINGS":
+                        tempconf[key] = subSetDict(config[key], condition)
                         if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
                             tempconf["RUNDEDUP"] = "enabled"
+                        continue
+                    if ("TOOLS" in config[key] and env == "" and exe == "") and len(
+                        getFromDict(config[key], condition)
+                    ) != 0:  # env and exe overrule TOOLS
+                        for k, v in config[key][
+                            "TOOLS"
+                        ].items():  # each tool will be added to the config
+                            if envs and k in envs and k != "None":
+                                toollist.append([k, v])
+                                tempconf[key]["TOOLS"][k] = config[key]["TOOLS"][k]
+                                tc = list(condition)
+                                tc.append(k)
+                                tempconf[key].merge(subSetDict(config[key], tc))
+                            elif not envs:
+                                toollist.append([k, v])
+                                tempconf[key] = subSetDict(config[key], condition)
+                    else:
+                        tempconf[key] = subSetDict(config[key], condition)
 
-            if ("TOOLS" in config[subwork] and env == "" and exe == "") and len(
-                getFromDict(config[subwork], condition)
-            ) >= 1:  # env and exe overrule TOOLS
-                tempconf[subwork]["TOOLS"] = config[subwork]["TOOLS"]
-                for k, v in config[subwork]["TOOLS"].items():
-                    toollist.append([k, v])
+                    if stage and stage == "POST":
+                        tempconf["SAMPLES"] = get_samples_postprocess(config, key)
+                    else:
+                        tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
+                            "SAMPLES"
+                        ]
 
-            if any(
-                [subwork == x for x in ["PEAKS", "DE", "DEU", "DAS", "DTU", "COUNTING"]]
-            ):
-                if config[subwork].get("CUTOFFS"):
-                    tempconf[subwork]["CUTOFFS"] = config[subwork][
-                        "CUTOFFS"
-                    ]  # else '.05'
-                if subwork == "COUNTING":
-                    tempconf["COUNTING"]["FEATURES"] = config["COUNTING"]["FEATURES"]
-                if "COMPARABLE" in config[subwork]:
-                    tempconf[subwork]["COMPARABLE"] = config[subwork]["COMPARABLE"]
+                    if any(
+                        [
+                            subwork == x
+                            for x in [
+                                "PEAKS",
+                                "DE",
+                                "DEU",
+                                "DAS",
+                                "DTU",
+                                "COUNTING",
+                                "TRACKS",
+                                "CIRCS"
+                            ]
+                        ]
+                    ):
+                        if not config[subwork].get("TOOLS"):
+                            tempconf[subwork] = subSetDict(config[subwork], condition)
+                        if config[subwork].get("CUTOFFS"):
+                            tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
+                        if subwork == "COUNTING":
+                            tempconf["COUNTING"]["FEATURES"] = config["COUNTING"][
+                                "FEATURES"
+                            ]
+                        if "COMPARABLE" in config[subwork]:
+                            tempconf[subwork]["COMPARABLE"] = config[subwork][
+                                "COMPARABLE"
+                            ]
 
         except KeyError:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -451,6 +486,10 @@ def make_pre(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda:  "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -473,14 +512,19 @@ def make_pre(
                 subjobs.append(
                     "".join(
                         rulethemall(
-                            subwork, config, loglevel, condapath, logfix, envlist[i]
+                            subwork,
+                            config,
+                            loglevel,
+                            condapath,
+                            logfix,
+                            envlist[i],
                         )
                     )
                 )
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -494,6 +538,9 @@ def make_pre(
                         return None
 
                     sconf = listofconfigs[0]
+                    sconf.pop("RUNDEDUP", None)  # cleanup
+                    sconf.pop("PREDEDUP", None)  # cleanup
+
                     for a in range(0, len(listoftools)):
                         toolenv, toolbin = map(str, listoftools[a])
                         if toolenv != envs[j] or toolbin is None:
@@ -513,6 +560,15 @@ def make_pre(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -521,6 +577,10 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -567,12 +627,15 @@ def make_pre(
         for condition in conditions:
             subjobs = list()
             add = list()
-
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
                 add.append("\n\n")
 
@@ -598,6 +661,9 @@ def make_pre(
                 return None
 
             sconf = listofconfigs[0]
+            sconf.pop("RUNDEDUP", None)  # cleanup
+            sconf.pop("PREDEDUP", None)  # cleanup
+
             if sconf is None:
                 continue
             for i in range(0, len(listoftools)):
@@ -633,6 +699,10 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -641,6 +711,10 @@ def make_pre(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -701,7 +775,7 @@ def make_sub(
 ):
     logid = scriptname + ".Workflows_make_sub: "
 
-    log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
+    log.info(logid + f"STARTING PROCESSING FOR {conditions}")
 
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
@@ -720,6 +794,10 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
 
             for i in range(len(worklist)):
@@ -754,7 +832,7 @@ def make_sub(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -774,15 +852,16 @@ def make_sub(
                             continue
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
+
                         subconf.update(sconf)
                         subname = toolenv + ".smk"
-
+                        log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in works:
+                            if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
                             else:
                                 subname = toolenv + "_trim.smk"
@@ -792,7 +871,7 @@ def make_sub(
                             and not "TRIMMING" in works
                             and not "MAPPING" in works
                         ):
-                            if "DEDUP" in subworkflows:
+                            if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
                             else:
                                 subname = toolenv + "_raw.smk"
@@ -800,11 +879,23 @@ def make_sub(
                         # Picard tools can be extended here
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
+                            subconf.pop("PREDEDUP", None)
+                        elif works[j] == "DEDUP" and toolenv == "umitools":
+                            subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -813,6 +904,15 @@ def make_sub(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
                 if "QC" in subworkflows:
@@ -820,6 +920,15 @@ def make_sub(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -828,6 +937,10 @@ def make_sub(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -866,6 +979,10 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
                 add.append("\n\n")
 
@@ -891,6 +1008,8 @@ def make_sub(
                     return None
 
                 sconf = listofconfigs[0]
+                # if any("umitools" in x for x in listoftools):
+                #    sconf["PREDEDUP"] = "enabled"
                 for i in range(0, len(listoftools)):
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
@@ -913,22 +1032,12 @@ def make_sub(
                         else:
                             subname = toolenv + "_trim.smk"
 
-                    if (
-                        subwork == "QC"
-                        and not "TRIMMING" in subworkflows
-                        and not "MAPPING" in subworkflows
-                    ):
-                        if "DEDUP" in subworkflows and not "picard" in any(
-                            [x for x in listoftools]
-                        ):
-                            subname = toolenv + "_dedup.smk"
-                        else:
-                            subname = toolenv + "_raw.smk"
-
                     # Picard tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.smk"
-
+                        subconf.poop("PREDEDUP", None)
+                    elif works[j] == "DEDUP" and toolenv == "umitools":
+                        subconf["PREDEDUP"] = "enabled"
                     # Add rulethemall based on chosen workflows
                     add.append(
                         "".join(
@@ -947,6 +1056,15 @@ def make_sub(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -955,6 +1073,10 @@ def make_sub(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
@@ -962,6 +1084,15 @@ def make_sub(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -970,6 +1101,10 @@ def make_sub(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     subjobs.append(line)
                 subjobs.append("\n\n")
 
@@ -981,7 +1116,6 @@ def make_sub(
             with open(smko, "a") as smkout:
                 smkout.write(str.join("", add))
                 smkout.write(str.join("", subjobs))
-
             confo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
             )
@@ -1008,7 +1142,7 @@ def make_post(
 ):
     logid = scriptname + ".Workflows_make_post: "
 
-    log.info(logid + "STARTING POSTPROCESSING FOR " + str(conditions))
+    log.debug(logid + f"STARTING POSTPROCESSING {postworkflow} FOR {conditions}")
 
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
@@ -1023,7 +1157,7 @@ def make_post(
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
             condition = list(combname.keys())[0]
-            envlist = combname[condition]["envs"]
+            envlist = combname[condition].get("envs")
             subconf = NestedDefaultDict()
             add = list()
 
@@ -1032,13 +1166,17 @@ def make_post(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
 
             for i in range(len(envlist)):
                 envs = envlist[i].split("-")
 
                 listoftools, listofconfigs = create_subworkflow(
-                    config, subwork, combname
+                    config, subwork, combname, stage="POST"
                 )
 
                 if listoftools is None:
@@ -1047,12 +1185,25 @@ def make_post(
                     )
 
                 sconf = listofconfigs[0]
+                sconf.pop("PREDEDUP", None)  # cleanup
+
                 for c in range(1, len(listofconfigs)):
                     sconf = merge_dicts(sconf, listofconfigs[c])
 
                 for a in range(0, len(listoftools)):
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
+                    for cond in combname.keys():
+                        tc = list(cond)
+                        tc.append(toolenv)
+                        sconf[subwork] = merge_dicts(
+                            sconf[subwork], subSetDict(config[subwork], tc)
+                        )
+
+                    if sconf[subwork].get("TOOLS"):
+                        sconf[subwork]["TOOLS"] = subDict(
+                            sconf[subwork]["TOOLS"], [toolenv]
+                        )
                     if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
                         "deseq",
                         "diego",
@@ -1096,6 +1247,15 @@ def make_post(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -1104,6 +1264,15 @@ def make_post(
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
                             line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -1153,16 +1322,9 @@ def make_post(
 
         else:
             for condition in combname:
-                envlist = combname[condition]["envs"]
-                log.debug(
-                    logid
-                    + "POSTLISTS:     "
-                    + str(condition)
-                    + "\t"
-                    + str(subwork)
-                    + "\t"
-                    + str(envlist)
-                )
+                envlist = combname[condition].get("envs")
+                log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
+                                  
                 subconf = NestedDefaultDict()
                 add = list()
 
@@ -1171,13 +1333,17 @@ def make_post(
                     for line in smk.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         add.append(line)
 
                 for i in range(len(envlist)):
                     envs = envlist[i].split("-")
 
                     listoftools, listofconfigs = create_subworkflow(
-                        config, subwork, [condition]
+                        config, subwork, [condition], stage="POST"
                     )
 
                     if listoftools is None:
@@ -1191,18 +1357,29 @@ def make_post(
                         continue
 
                     sconf = listofconfigs[0]
-                    if subwork == "PEAKS":
-                        for c in range(1, len(listofconfigs)):
-                            sconf = merge_dicts(sconf, listofconfigs[c])
+                    sconf.pop("PREDEDUP", None)  # cleanup
+
+                    for c in range(1, len(listofconfigs)):
+                        sconf = merge_dicts(sconf, listofconfigs[c])
 
                     for a in range(0, len(listoftools)):
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
-                        if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                            "deseq",
-                            "diego",
-                        ]:  # for all other postprocessing tools we have more than one     defined subworkflow
-                            toolenv = toolenv + "_" + subwork
+
+                        if subwork == 'CIRCS':
+                            if toolenv == 'ciri2' and 'bwa' not in envs:
+                                log.warning('CIRI2 needs BWA mapped files, will skip input produced otherwise')
+                                continue 
+
+
+                        tc = list(condition)
+                        tc.append(toolenv)
+                        sconf[subwork].update(subSetDict(config[subwork], tc))
+
+                        if sconf[subwork].get("TOOLS"):
+                            sconf[subwork]["TOOLS"] = subDict(
+                                sconf[subwork]["TOOLS"], [toolenv]
+                            )
 
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
@@ -1243,6 +1420,15 @@ def make_post(
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -1251,6 +1437,15 @@ def make_post(
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(condapath, 'conda: "../', line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -1309,10 +1504,14 @@ def make_post(
                 for line in smk.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
 
             listoftools, listofconfigs = create_subworkflow(
-                config, subwork, [condition]
+                config, subwork, [condition], stage="POST"
             )
 
             if listoftools is None:
@@ -1326,6 +1525,8 @@ def make_post(
                 continue
 
             sconf = listofconfigs[0]
+            sconf.pop("PREDEDUP", None)  # cleanup
+
             for a in range(0, len(listoftools)):
                 subjobs = list()
 
@@ -1335,7 +1536,7 @@ def make_post(
                     "diego",
                 ]:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv + "_" + subwork
-                    log.info(logid + "toolenv: " + str(toolenv))
+                    log.debug(logid + "toolenv: " + str(toolenv))
 
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
@@ -1362,6 +1563,10 @@ def make_post(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -1370,6 +1575,10 @@ def make_post(
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -1459,6 +1668,10 @@ def make_summary(config, subdir, loglevel, combinations=None):
         for line in smk.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
             line = re.sub(condapath, 'conda: "' + envpath, line)
+            if "include: " in line:
+                line = fixinclude(
+                    line, loglevel, condapath, envpath, workflowpath, logfix
+                )
             subjobs.append(line)
         subjobs.append("\n\n")
 
@@ -1524,15 +1737,22 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
                 todos.append(allrawqc + "\n\n")
 
     if "MAPPING" in subworkflows and "QC" not in subworkflows:
-        log.info(logid + "Mapping without QC!")
+        log.debug(logid + "Mapping without QC!")
         todos.append(allmap + "\n\n")
 
     if "MAPPING" in subworkflows and "TRIMMING" not in subworkflows:
-        log.info(logid + "Simulated read trimming only!")
+        log.debug(logid + "Simulated read trimming only!")
         makeoutdir("TRIMMED_FASTQ")
         smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
         with open(smkf, "r") as smk:
-            todos.append(re.sub(condapath, 'conda: "' + envpath, smk.read()))
+            for line in smk.readlines():
+                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                line = re.sub(condapath, 'conda:  "' + envpath, line)
+                if "include: " in line:
+                    line = fixinclude(
+                        line, loglevel, condapath, envpath, workflowpath, logfix
+                    )
+                todos.append(line)
         todos.append("\n\n")
 
     if (
@@ -1540,7 +1760,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         and "QC" not in subworkflows
         and "MAPPING" not in subworkflows
     ):
-        log.info(logid + "Trimming without QC!")
+        log.debug(logid + "Trimming without QC!")
         todos.append(alltrim + "\n\n")
 
     if (
@@ -1549,10 +1769,38 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         and "TRIMMING" not in subworkflows
         and "MAPPING" not in subworkflows
     ):
-        log.info(logid + "DEDUP without QC!")
+        log.debug(logid + "DEDUP without QC!")
         todos.append(alldedup + "\n\n")
 
     return todos
+
+
+@check_run
+def fixinclude(
+    line,
+    loglevel,
+    condapath=condapath,
+    envpath=envpath,
+    workflowpath=workflowpath,
+    logfix=logfix,
+):
+
+    logid = scriptname + ".Workflows_fixinclude: "
+
+    linelist = list()
+    toinclude = str.split(line)[-1].replace('"', "")
+    toinclude = str.join(os.sep, [workflowpath, toinclude])
+    with open(toinclude, "r") as incl:
+        for line in incl.readlines():
+            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+            line = re.sub(condapath, 'conda:  "' + envpath, line)
+            if "include: " in line:
+                line = fixinclude(
+                    line, loglevel, condapath, envpath, workflowpath, logfix
+                )
+            linelist.append(line)
+    toinclude = str.join("", linelist)
+    return toinclude
 
 
 ##############################
@@ -1617,8 +1865,13 @@ def nf_fetch_params(
     IP = SETTINGS.get("IP")
 
     rundedup = config.get("RUNDEDUP")
+    prededup = config.get("PREDEDUP")
+
     if rundedup:
-        log.debug("DEDUPLICATION ENABLED")
+        if prededup:
+            log.debug("(PRE)DEDUPLICATION ENABLED")
+        else:
+            log.debug("DEDUPLICATION ENABLED")
 
     paired = checkpaired([SAMPLES[0]], config)
     if paired == "paired":
@@ -1649,29 +1902,37 @@ def nf_fetch_params(
         retconf["STRANDED"] = stranded
     if rundedup:
         retconf["RUNDEDUP"] = rundedup
+    if prededup:
+        retconf["PREDEDUP"] = prededup
 
     # MAPPING Variables
     if "MAPPING" in config:
         MAPCONF = subDict(config["MAPPING"], SETUP)
+        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
+        MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF.get("REFERENCE")
+        REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
+        MANNO = MAPCONF.get("ANNOTATION", MAPCONF[MAPPERENV].get("ANNOTATION"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-        MANNO = MAPCONF.get("ANNOTATION")
         if MANNO:
             ANNOTATION = MANNO
         else:
             ANNOTATION = (
-                ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
+                ANNO.get("GTF")
+                if "GTF" in ANNO and ANNO.get("GTF") != ""
+                else ANNO.get("GFF")
             )  # by default GTF format will be used
-        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
-        PRE = MAPCONF.get("PREFIX")
-        if PRE:
+        PRE = MAPCONF.get(
+            "PREFIX",
+            MAPCONF.get("EXTENSION", MAPOPT.get("PREFIX", MAPOPT.get("EXTENSION"))),
+        )
+        if PRE and PRE is not None:
             PREFIX = PRE
         if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
-        IDX = MAPCONF.get("INDEX")
+        IDX = MAPCONF.get("INDEX", MAPCONF[MAPPERENV].get("INDEX"))
         if IDX:
             INDEX = IDX
         if not INDEX:
@@ -1723,7 +1984,7 @@ def nf_fetch_params(
             )  # by default GTF forma
         if not IP:
             IP = check_IP(SAMPLES, config)
-        log.info(logid + "Running Peak finding for " + IP + " protocol")
+        log.debug(logid + "Running Peak finding for " + IP + " protocol")
 
         retconf["PEAKREF"] = REFERENCE
         retconf["PEAKREFDIR"] = REFDIR
@@ -1813,6 +2074,9 @@ def nf_tool_params(
             ),
         )
     )
+
+    if ' ' in toolbin:
+        toolbin = toolbin.replace(' ', '_')
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -1977,12 +2241,15 @@ def nf_make_pre(
     combinations=None,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
-    log.debug(logid + "PREPROCESSING: " + str(subwork))
-    log.info(logid + "PREPROCESSING SAMPLES: " + str(samples))
+    log.info(
+        logid
+        + f"PREPROCESSING: {subwork} and SAMPLES: {samples} for COMBINATIONS:{combinations}"
+    )
 
     jobs = list()
     state = "pre_"
     condapath = re.compile(r'conda\s+"')
+    includepath = re.compile(r'include:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
@@ -1998,6 +2265,10 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
                 add.append("\n\n")
 
@@ -2014,7 +2285,7 @@ def nf_make_pre(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -2065,6 +2336,15 @@ def nf_make_pre(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
                                 line = re.sub(condapath, 'conda "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2078,17 +2358,25 @@ def nf_make_pre(
                                         logfix, "loglevel='" + loglevel + "'", line
                                     )
                                     line = re.sub(condapath, 'conda "' + envpath, line)
+                                    if "include: " in line:
+                                        line = fixinclude(
+                                            line,
+                                            loglevel,
+                                            condapath,
+                                            envpath,
+                                            workflowpath,
+                                            logfix,
+                                        )
                                     subjobs.append(line)
                                 subjobs.append("\n\n")
 
                         # workflow merger
                         subjobs.append("\n\n" + "workflow {\n")
-                        for w in ["MULTIQC"]:
-                            if w in flowlist:
-                                subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
-                                subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect()\n"
-                                )
+                        if "MULTIQC" in flowlist:
+                            subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
+                            subjobs.append(
+                                " " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n"
+                            )
                         subjobs.append("\n}\n")
 
                         # nfi = os.path.abspath(os.path.join('MONSDA', 'workflows', 'footer.nf'))
@@ -2167,6 +2455,10 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     subjobs.append(line)
                 subjobs.append("\n\n")
 
@@ -2229,6 +2521,10 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2250,6 +2546,10 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2260,6 +2560,8 @@ def nf_make_pre(
             for w in ["QC_RAW", "FETCH", "BASECALL"]:
                 if w in flowlist:
                     subjobs.append(" " * 4 + w + "(dummy)\n")
+            if "MULTIQC" in flowlist:
+                subjobs.append(" " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n")
             subjobs.append("}\n\n")
 
             nfo = os.path.abspath(
@@ -2315,10 +2617,10 @@ def nf_make_sub(
 ):
     logid = scriptname + ".Workflows_nf_make_sub: "
 
-    log.info(logid + "STARTING PROCESSING FOR " + str(conditions))
-    log.info(logid + "PROCESSING SAMPLES: " + str(samples))
+    log.info(logid + f"STARTING PROCESSING FOR {conditions} and SAMPLES: {samples}")
     jobs = list()
     condapath = re.compile(r'conda\s+"')
+    includepath = re.compile(r'include:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
@@ -2334,6 +2636,10 @@ def nf_make_sub(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
                     add.append(line)
                 add.append("\n\n")
 
@@ -2351,7 +2657,7 @@ def nf_make_sub(
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
-                        config, works[j], [condition]
+                        config, works[j], [condition], envs
                     )
 
                     if listoftools is None:
@@ -2418,20 +2724,64 @@ def nf_make_sub(
                             subname = toolenv + ".nf"
                             flowlist.append("QC_MAPPING")
 
+                        if works[j] == "TRIMMING" and "TRIMMING" not in flowlist:
+                            subname = toolenv + ".nf"
+                            flowlist.append("TRIMMING")
+
                         if works[j] == "DEDUP":
-                            deduptool = toolenv
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
-                                flowlist.append("QC_DEDUP")
+                                if "QC" in flowlist:
+                                    flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
-                            else:
-                                continue
+                                nfi = os.path.abspath(
+                                    os.path.join(workflowpath, subname)
+                                )
+                                with open(nfi, "r") as nf:
+                                    for line in nf.readlines():
+                                        line = re.sub(
+                                            condapath, 'conda "' + envpath, line
+                                        )
+                                        if "include: " in line:
+                                            line = fixinclude(
+                                                line,
+                                                loglevel,
+                                                condapath,
+                                                envpath,
+                                                workflowpath,
+                                                logfix,
+                                            )
+                                        subjobs.append(line)
+                                    subjobs.append("\n\n")
+
+                                tp.append(
+                                    nf_tool_params(
+                                        subsamples[0],
+                                        None,
+                                        sconf,
+                                        works[j],
+                                        toolenv,
+                                        toolbin,
+                                        None,
+                                        condition,
+                                    )
+                                )
+                            subname = toolenv + "_dedup.nf"
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2450,9 +2800,9 @@ def nf_make_sub(
 
                 if "MAPPING" in works:
                     if "QC" not in works:
-                        log.info(logid + "Mapping without QC!")
+                        log.debug(logid + "Mapping without QC!")
                     if "TRIMMING" not in works:
-                        log.info(logid + "Simulated read trimming only!")
+                        log.debug(logid + "Simulated read trimming only!")
                         flowlist.append("TRIMMING")
                         nfi = os.path.abspath(
                             os.path.join(
@@ -2465,6 +2815,15 @@ def nf_make_sub(
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
@@ -2474,20 +2833,20 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
                     if "DEDUP" in works:
                         flowlist.append("DEDUPBAM")
-                        nfi = os.path.abspath(
-                            os.path.join(workflowpath, deduptool + "_dedup.nf")
-                        )
-
-                        with open(nfi, "r") as nf:
-                            for line in nf.readlines():
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
 
                 if "QC" in works:
                     flowlist.append("MULTIQC")
@@ -2495,6 +2854,15 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2505,74 +2873,92 @@ def nf_make_sub(
                 for w in [
                     "QC_RAW",
                     "PREDEDUP",
+                    "QC_DEDUP",
                     "TRIMMING",
                     "QC_TRIMMING",
                     "MAPPING",
-                    "QC_MAPPING",
                     "DEDUPBAM",
-                    "QC_DEDUP",
+                    "QC_MAPPING",
                     "MULTIQC",
                 ]:
                     if w in flowlist:
                         if w == "QC_RAW":
                             subjobs.append(" " * 4 + w + "(dummy)\n")
                         elif w == "PREDEDUP":
-                            if "QC_RAW" not in flowlist:
-                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
-                            else:
-                                subjobs.append(
-                                    " " * 4
-                                    + "DEDUPEXTRACT"
-                                    + "(QC_RAW.out.qc.collect())\n"
-                                )
+                            subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
                             subjobs.append(
-                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                " " * 4 + w + "(DEDUPEXTRACT.out.ext)\n"
                             )
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + "TRIMMING"
-                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                    + "(DEDUPEXTRACT.out.ext)\n"
                                 )
-                            elif "QC_RAW" not in flowlist:
-                                subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                             else:
-                                subjobs.append(
-                                    " " * 4 + "TRIMMING" + "(QC_RAW.out.qc.collect())\n"
-                                )
+                                subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                         elif w == "QC_TRIMMING":
-                            subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         elif w == "MAPPING":
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                             subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
-                            subjobs.append(
-                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped.collect())\n"
-                            )
-                        elif w == "QC_MAPPING":
-                            subjobs.append(
-                                " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
+                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
                             )
                         elif w == "DEDUPBAM":
                             subjobs.append(
-                                " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))).collate( 2 ))\n"
                             )
-                        elif w == "MULTIQC":
-                            if "MAPPING" in flowlist:
+                        elif w == "QC_MAPPING":
+                            if "DEDUPBAM" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_MAPPING.out.qc.collect(), MAPPING.out.log.collect())\n"
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
                                 )
-                            elif "TRIMMING" in flowlist:
+                            else:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_TRIMMING.out.qc.collect(), dummy)\n"
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                                )
+                        elif w == "MULTIQC":
+                            if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs))).collect())\n"
+                                )
+                            elif (
+                                "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist
+                            ):
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs)).collect())\n"
+                                )
+                            elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))).collect())\n"
+                                )
+                            elif (
+                                "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist
+                            ):
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni)).collect())\n"
+                                )
+                            elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc).collect())\n"
                                 )
                             # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
                             #    subjobs.append(
@@ -2580,7 +2966,7 @@ def nf_make_sub(
                             #    )
                             else:
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect(), dummy)\n"
+                                    " " * 4 + w + "(QC_RAW.out.qc.collect())\n"
                                 )
                         else:
                             subjobs.append(" " * 4 + w + "(dummy)\n")
@@ -2714,6 +3100,15 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2732,14 +3127,23 @@ def nf_make_sub(
 
             if "MAPPING" in subworkflows:
                 if "QC" not in subworkflows:
-                    log.info(logid + "Mapping without QC!")
+                    log.debug(logid + "Mapping without QC!")
                 if "TRIMMING" not in subworkflows:
-                    log.info(logid + "Simulated read trimming only!")
+                    log.debug(logid + "Simulated read trimming only!")
                     flowlist.append("TRIMMING")
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             subjobs.append(line)
                         subjobs.append("\n\n")
 
@@ -2749,6 +3153,10 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2758,6 +3166,10 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
@@ -2846,20 +3258,20 @@ def nf_make_post(
 ):
     logid = scriptname + ".Workflows_nf_make_sub: "
 
-    if "PEAKS" in config and "PEAKS" in postprocess:
+    if "PEAKS" in config and "PEAKS" in postworkflow:
         CLIP = checkclip(samples, config)
-        log.info(logid + "Running Peak finding for " + CLIP + " protocol")
+        log.debug(logid + "Running Peak finding for " + CLIP + " protocol")
 
     for condition in conditions:
         subconf = NestedDefaultDict()
-        for subwork in postprocess:
+        for subwork in postworkflow:
             if any(subwork == x for x in ["DE", "DEU", "DAS"]):
                 continue
             log.debug(
                 logid + "POSTPROCESS: " + str(subwork) + " CONDITION: " + str(condition)
             )
             listoftools, listofconfigs = create_subworkflow(
-                config, subwork, [condition]
+                config, subwork, [condition], stage="POST"
             )
             log.debug(logid + str([listoftools, listofconfigs]))
             if listoftools is None:
@@ -2975,15 +3387,16 @@ def nf_make_post(
 
     # THIS SECTION IS FOR DE, DEU, DAS ANALYSIS, WE USE THE CONDITIONS TO MAKE PAIRWISE COMPARISONS
     for analysis in ["DE", "DEU", "DAS"]:
-        if analysis in config and analysis in postprocess:
+        if analysis in config and analysis in postworkflow:
             log.info(logid + "STARTING " + analysis + " Analysis...")
             subwork = analysis
             subconf = NestedDefaultDict()
             log.debug(
                 logid + "SUBWORK: " + str(subwork) + " CONDITION: " + str(conditions)
             )
-            # listoftoolscount, listofconfigscount = create_subworkflow(config, 'COUNTING', conditions) #Counting is now done on per analysis rule to increase freedom for user
-            listoftools, listofconfigs = create_subworkflow(config, subwork, conditions)
+            listoftools, listofconfigs = create_subworkflow(
+                config, subwork, conditions, stage="POST"
+            )
 
             if listoftools is None:  # or listoftoolscount is None:
                 log.error(
@@ -3031,7 +3444,16 @@ def nf_make_post(
                 with open(smko, "a") as smkout:
                     with open(smkf, "r") as smk:
                         for line in smk.readlines():
-                            # line = re.sub(condapath,'conda  \"../', line)
+                            line = re.sub(condapath, 'conda  "../', line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
                             smkout.write(line)
                     smkout.write("\n\n")
                 smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -3042,8 +3464,19 @@ def nf_make_post(
                     "a",
                 ) as smkout:
                     with open(smkf, "r") as smk:
-                        # smkout.write(re.sub(condapath,'conda  \"../', smk.read()))
-                        smkout.write(smk.read())
+                        for line in smk.readlines():
+                            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                            line = re.sub(condapath, 'conda:  "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                )
+                            smkout.write(line)
                     smkout.write("\n")
 
                 # smkf = os.path.abspath(os.path.join(installpath, 'MONSDA','workflows','footer.nf'))

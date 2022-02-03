@@ -2,25 +2,12 @@ QCENV=get_always('QCENV')
 QCBIN=get_always('QCBIN')
 QCPARAMS = get_always('fastqc_params_QC') ?: ''
 
-process collect_fqraw{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process qc_raw{
     conda "$QCENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
         else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
@@ -28,7 +15,6 @@ process qc_raw{
     }
 
     input:
-    val collect
     path read
 
     output:
@@ -46,26 +32,18 @@ workflow QC_RAW{
     main:
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+        SAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
-
     }else{
-        RSAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
+        SAMPLES=SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
     }
 
-    collect_fqraw(collection.collect())
-    qc_raw(collect_fqraw.out.done, samples_ch)
+    samples_ch = Channel.fromPath(SAMPLES)
+
+    qc_raw(samples_ch.collect())
 
     emit:
     qc = qc_raw.out.fastqc_results

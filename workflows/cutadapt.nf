@@ -23,33 +23,38 @@ process trim{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}"
         else if (filename.indexOf(".log") >0)              "LOGS/$COMBO$CONDITION/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
 
     input:
-    val collect
+    //val collect
     path reads
 
     output:
-    path "*fq.gz", emit: trim
+    path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
 
     script:
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
+        o = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS --paired $TRIMPARAMS $r1 $r2
+        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o -p $p $r1 $r2 &> $r
         """
     }
     else{
+        o = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS $TRIMPARAMS $reads
+        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o $reads &> $r
         """
     }
 }
@@ -58,46 +63,25 @@ workflow TRIMMING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            R1SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+    if ( PREDEDUP == 'enabled' ){
+        trim(collection)
+    } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
+        //SAMPLE CHANNELS
+        if (PAIRED == 'paired'){
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            }                    
+            collection = Channel.fromPath(SAMPLES).collate( 2 )
+        }else{            
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+            }            
+            collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
-        else{   
-            R1SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-            }
-            R2SAMPLES.sort()            
-        }
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
+        trim(collection)
+    } else{
+        trim(collection)
     }
-    else{
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            RSAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-            }
-        }
-        else{
-            RSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-            }
-        }                 
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
-    }
-    collect_totrim(collection.collect())
-    trim(collect_totrim.out.done, samples_ch)
 
     emit:
     trimmed = trim.out.trim

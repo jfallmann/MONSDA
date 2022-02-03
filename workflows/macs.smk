@@ -1,8 +1,5 @@
 PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
-PEAKSAMPLES = set_pairings(SAMPLES, config)
-
-#wildcard_constraints:
-#    file = samplecond(PEAKSAMPLES, config)
+PEAKSAMPLES = set_pairing(SAMPLES, config)
 
 log.info('PEAKSAMPLES: '+str(PEAKSAMPLES))
 
@@ -44,17 +41,7 @@ else:
                     expand("PEAKS/{combo}/{file}_peak_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup']),
                     expand("PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz", combo=combo, file=samplecond(PEAKSAMPLES, config), type=['sorted', 'sorted_unique', 'sorted_dedup', 'sorted_unique_dedup'])
 
-rule UnzipGenome:
-    input:  ref = REFERENCE,
-    output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
-            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
-    conda:  "samtools.yaml"
-    threads: 1
-    params: bins = BINS
-    shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
-
+include: "manipulate_genome.smk"
 
 rule FindPeaks:
     input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
@@ -62,7 +49,7 @@ rule FindPeaks:
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
     conda:  ""+PEAKENV+".yaml"
     threads: 1
-    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, SAMPLES, scombo),
+    params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', get_samples_postprocess(config, 'PEAKS')), scombo),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),

@@ -34,7 +34,7 @@ process minimap_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "minimap.idx")                  "$MAPIDX"
         else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap_index.log"
@@ -42,8 +42,6 @@ process minimap_idx{
     }
 
     input:
-    val collect
-    path reads
     path genome
 
     output:
@@ -64,7 +62,7 @@ process minimap_mapping{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
@@ -73,8 +71,6 @@ process minimap_mapping{
     }
 
     input:
-    val collect
-    path genome
     path idxfile
     path reads
 
@@ -83,22 +79,24 @@ process minimap_mapping{
     path "*Log.out", emit: logs
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
-    script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
-    gen =  genome.getName()
+    script:    
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
+        fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }else{
+        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
         """
     }
 }
@@ -107,39 +105,27 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
-
-    checkidx = file(MAPIDX)
-
+ 
+    checkidx = file(MAPUIDX)
+    collection.filter(~/.fastq.gz/)
+    
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPIDX)
-        genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        minimao_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        idxfile = Channel.fromPath(MAPUIDX)
+        if (PAIRED == 'paired'){
+            minimap_mapping(idxfile, collection.collate(2))
+        }else{
+            minimap_mapping(idxfile, collection.collate(1))
+        }
+        
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        minimap_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        minimap_mapping(collect_tomap.out.done, genomefile, minimap_idx.out.idx, trimmed_samples_ch)
+        minimap_idx(genomefile)
+        if (PAIRED == 'paired'){
+            minimap_mapping(minimap_idx.out.idx, collection.collate(2))
+        }else{
+            minimap_mapping(minimap_idx.out.idx, collection.collate(1))
+        }
     }
 
 

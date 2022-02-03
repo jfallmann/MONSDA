@@ -1,35 +1,51 @@
-# snakes
+# MONSDA
 
-[![Documentation Status](https://readthedocs.org/projects/MONSDA/badge/?version=latest)](https://MONSDA.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/monsda/badge/?version=latest)](https://monsda.readthedocs.io/en/latest/?badge=latest)
 
 
-Welcome to MONSDA, a modular assembler of snakemake and nexflow workflows
-for HTS analysis from sra download, preprocessing and mapping to
-postprocessing/analysis and ucsc track generation centered on a single config file
+Welcome to MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis
 
-Simply clone with ```git clone```.
+Automizing hts analysis from sra download, preprocessing and mapping to
+postprocessing/analysis and ucsc track generation centered on a single config file.
+MONSDA can create ```snakemake``` and ```nextflow``` workflows based on user defined configuration.
+These workflows can either be saved to disk for manual inspection and running or automatically executed.
 
-For details on ```snakemake``` and it's features please refer to the [snakemake documentation](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
+For details on ```snakemake``` and ```nextflow``` and their features please refer to the corresponding [snakemake](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html)  or [nextflow](https://www.nextflow.io/docs/latest/index.html) documentation.
 
 In general it is necessary to write a configuration file containing information on paths, files to process and settings beyond default for mapping tools and others.
 The template on which analysis is based can be found in the ```config``` directory.
 
-For ```snakemake``` to be fully FAIR, one needs to use ```conda``` or similar environment management systems. For details on ```conda``` please refer to the [conda manual](https://docs.conda.io/en/latest/).
+For MONSDA to be as FAIR as possible, one needs to use ```conda``` or the faster drop-in replacement ```mamba```. For details on either please refer to the corresponding [conda](https://docs.conda.io/en/latest/) or [mamba](https://mamba.readthedocs.io/en/latest/) manual.
 
 This workflow collection makes heavy use of ```conda``` and especially the [bioconda](https://bioconda.github.io) channel.
 
-To create a working environment for this repository please install the snakemake environment as found in the ```envs``` directory like so:
+## Install MONSDA via ```conda``` or ```pip```
+
+To install via ```conda/mamba``` simply run
 
 ```
-conda env create -n snakemake -f snakes/envs/snakemake.yaml
+mamba install -c bioconda -c conda-forge monsda
 ```
 
-The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically when needed.
+To install via ```pip``` you first need to create the ```MONSDA``` environment as found in the ```envs``` directory of this repository like so:
 
-More information can be found in the official [documentation](https://MONSDA.readthedocs.io/en/latest/?badge=latest)
+```
+mamba env create -n monsda -f MONSDA/envs/monsda.yaml
+```
+
+The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically alongside ```MONSDA```.
+
+For that activate the ```monsda``` environment and run ```pip```
+
+```
+conda activate monsda
+pip install MONSDA
+```
+
+More information can be found in the official [documentation](https://monsda.readthedocs.io/en/latest/?badge=latest)
 
 
-## What is happening
+## How does it work
 
 This repository hosts the executable ```MONSDA.py``` which acts a wrapper around ```snakemake``` and the ```config.json``` file.
 The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```MONSDA.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
@@ -40,33 +56,57 @@ To successfully run an analysis pipeline, a few steps have to be followed:
   * Config file: This is the central part of the analysis. Depending on this file ```MONSDA.py``` will determine processing steps and generate according config and ```snakemake``` workflow files to run each subworkflow until all processing steps are done.
 
 ## Run the pipeline
-Simply run
+
+Run
 
 ```
-python snakes/MONSDA.py
+monsda
+```
+to see the help and available options that will be passed through to ```snakemake``` or ```nextflow```.
+
+and 
+
+```
+monsda_configure
 ```
 
-to see the help and available options that will be passed through to ```snakemake```.
+To spin up the configurator that guides you through the creation of config.json files.
 
-To start a simple run call
-```
-python snakes/MONSDA.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json --directory ${PWD}
-```
-or add additional arguments for ```snakemake``` as you see fit.
+Once a config.json is available you can start a ```snakemake``` run with
 
-### Run on cluster
+```
+monsda -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD} --conda-frontend mamba --conda-prefix ${PATH_TO_conda_envs}
+```
+and add additional arguments for ```snakemake``` as you see fit.
+
+
+For a ```nextflow``` run use
+```
+monsda --nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
+```
+and add additional arguments for ```nextflow``` as you see fit.
+
+
+### Run on workload manager
 
 ####SLURM
 
-You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that comes with this repository, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. To use the preconfigured example that comes with this repository simply adapt the call below to your needs.
+You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that can be found in the ```profile_snakemake``` directory, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. 
+For ```nextflow``` a minimalistic example profile can be found under ```profile_nextflow```.
 
-```python snakes/MONSDA.py -j ${cpus} --configfile ${config.json} --directory ${PWD} --profile snakes/slurm --cluster-config snakes/cluster/config_slurm.yamlx```
+Then run
+```
+monsda -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD} --conda-frontend mamba --profile ${SLURMPROFILE} --conda-prefix ${PATH_TO_conda_envs}
+```
+or
+```
+export NXF_EXECUTOR=slurm; monsda --nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
+```
+repsectively.
 
-Further adaptions like grouping of jobs and advanced configs for rule based performance increase will follow.
 
-####SGE(outdated)
+For other workload managers please refer to the documentation of ```snakemake``` and ```nextflow```.
 
-Define the cluster config file and for SGE support simply append ```--cluster "qsub -q ${QUEUENAME} -e ${PWD}/sgeerror -o ${PWD}/sgeout -N ${JOBNAME}" --jobscript snakes/cluster/sge.sh```
 
 ## Contribute
 If you like this project, are missing features, want to contribute or
@@ -76,7 +116,7 @@ To contribute new tools feel free to adopt existing ones,
 there should be a number of examples available that cover
 implementation details for almost all sorts of tools. If you need to
 add new python/groovy functions for processing of options or
-parameters add them to the corresponding file in the lib directory.
+parameters add them to the corresponding file in the MONSTA directory.
 New environments go into the envs directory, new subworkflows into the
 workflows directory. Do not forget to also extend the template.json
 and add some documentation.

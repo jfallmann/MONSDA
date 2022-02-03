@@ -4,29 +4,14 @@ DEDUPBIN=get_always('DEDUPBIN')
 WHITELISTPARAMS = get_always('umitools_params_WHITELIST') ?: ''
 EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 
-
-process collect_extract{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
-
 process whitelist{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_whitelist") > 0)         "FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_whitelist"
+        if (filename.indexOf("_whitelist") > 0)         "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_whitelist"
         else if (filename.indexOf("log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedup_whitelist.log"
         else null
     }
@@ -39,27 +24,27 @@ process whitelist{
 
     script:
     if (PAIRED == 'paired'){
-        r1=samples[0]
-        r2=samples[1]
-        out=samples[0].getSimpleName()+"_whitelist"
+        r1 = samples[0]
+        r2 = samples[1]
+        outf = samples[0].getSimpleName()+"_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$out
+            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$outf
         """
     }
     else{
-        out=samples.getSimpleName()+"_whitelist"
+        outf = samples.getSimpleName()+"_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$out
+            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$outf
         """
     }
 }
 
-process extract{
+process extract_fq{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
         else if (filename.indexOf("log") > 0)             "LOGS/$COMBO$CONDITION/DEDUP/dedup_extract.log"
@@ -67,27 +52,42 @@ process extract{
     }
 
     input:
-    val dummy
+    path wl
     path samples
         
     output:
-    path "*_dedup.fastq.gz", emit: ex
+    path "*_dedup.fastq.gz", emit: ext
+    path "ex.log", emit: logs
 
     script:
     if (PAIRED == 'paired'){
-        r1=samples[0]
-        r2=samples[1]
-        out=samples[0].getSimpleName()+"_dedup.fastq.gz"
-        out2=samples[1].getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$out --read2-out=$out2
-        """
+        r1 = samples[0]
+        r2 = samples[1]
+        outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
+        outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
+        if (wl == 'MONSDA.log'){
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
+            """
+        }
+        else{
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
+            """
+        }
     }
     else{
-        out=samples.getSimpleName()+"_dedup.fastq.gz"
-        """
-            mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$out
-        """
+        outf = samples.getSimpleName()+"_dedup.fastq.gz"
+        if (wl == 'MONSDA.log'){
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
+            """
+        }
+        else{        
+            """
+                mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --whitelist=$wl --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
+            """
+        }
     }
 }
 
@@ -97,37 +97,29 @@ workflow DEDUPEXTRACT{
 
     main:
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
+    if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
+        if (PAIRED == 'paired'){
+            SAMPLES = SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            }
+            collection = Channel.fromPath(SAMPLES).collate( 2 )
+        }else{
+            SAMPLES=SAMPLES.collect{
+                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+            }
+            collection = Channel.fromPath(SAMPLES).collate( 1 )
         }
-        R1SAMPLES.sort()
-        R2SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-        }
-        R2SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
-
-    }else{
-        R1SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-        }
-        R1SAMPLES.sort()
-        dedup_samples_ch = Channel.fromPath(R1SAMPLES)
     }
-
-    
-    collect_extract(collection.collect())
-
+       
     if (WHITELISTPARAMS != ''){
-        whitelist(collect_extract.out.done, dedup_samples_ch)
-        extract(whitelist.out.done.wl, dedup_samples_ch)        
+        whitelist(collection)
+        extract_fq(whitelist.out.done.wl, collection)
     }
     else{
-        extract(collect_extract.out.done, dedup_samples_ch)        
+        extract_fq(dummy, collection)
     }
     
-    emit:
-    ex = extract.out.ex
-    
+    emit:    
+    ext = extract_fq.out.ext
+    logs = extract_fq.out.logs
 }

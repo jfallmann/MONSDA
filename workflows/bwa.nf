@@ -12,6 +12,8 @@ MAPUIDX.replace('.idx','')
 IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
 MAPPARAMS = get_always('bwa_params_MAP') ?: ''
 
+IDXBIN = MAPBIN.split('_')[0]
+MAPBIN = MAPBIN.replace('_', ' ')
 
 //MAPPING PROCESSES
 
@@ -34,25 +36,26 @@ process bwa_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename == "bwa.idx")                  "$MAPIDX"
-        else                                        "$MAPUIDX"
+        if (filename == "bwa.idx")                          "$MAPIDX"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/$COMBO$CONDITION/bwa_index.log"
+        else                                                "$MAPUIDX"
     }
 
     input:
-    val collect
-    path reads
+    //val collect
+    //path reads
     path genome
 
     output:
-    path "*.idx", emit: idx
-    path "$MAPUIDXNAME", emit: uidx
+    path "bwa.idx", emit: idx
+    path "bwa_*", emit: bwidx
 
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -p $MAPUIDXNAME $IDXPARAMS && ln -fs $MAPUIDXNAME bwa.idx
+    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
     """
 
 }
@@ -63,41 +66,39 @@ process bwa_mapping{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
+        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}.fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
         else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/bwa.log"
         else null
     }
 
     input:
-    val collect
-    path genome
-    path idxfile
+    path idx
     path reads
 
     output:
     path "*.sam.gz", emit: maps
-    path "*Log.out", emit: logs
     path "*fastq.gz", includeInputs:false, emit: unmapped
+    path "*Log.out", emit: logs
 
     script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
-    gen =  genome.getName()
-    idx = idxfile.getName()
-
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
+        fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> Log.out && touch $uf && gzip *.sam
         """
     }else{
+        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        pf = fn+".mapped.sam"
+        uf = fn+".unmapped.fastq.gz"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS $idx $r1|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> Log.out && touch $uf && gzip *.sam
         """
     }
 }
@@ -106,39 +107,26 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
-
-    checkidx = file(MAPIDX)
+    
+    checkidx = file(MAPUIDX)
+    collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPIDX)
-        genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        bwa_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        idxfile = Channel.fromPath(MAPUIDX)
+        if (PAIRED == 'paired'){
+            bwa_mapping(idxfile, collection.collate(2))
+        }else{
+            bwa_mapping(idxfile, collection.collate(1))
+        }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        bwa_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        bwa_mapping(collect_tomap.out.done, genomefile, bwa_idx.out.idx, trimmed_samples_ch)
+        bwa_idx(genomefile)
+        if (PAIRED == 'paired'){
+            bwa_mapping(bwa_idx.out.bwidx, collection.collate(2))
+        }else{
+            bwa_mapping(bwa_idx.out.bwidx, collection.collate(1))
+        }
     }
 
 

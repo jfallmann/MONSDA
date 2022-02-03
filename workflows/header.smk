@@ -85,8 +85,13 @@ PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
 IP = SETTINGS.get('IP')
 rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
+prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
+
 if rundedup:
-    log.debug('DEDUPLICATION ENABLED')
+    if prededup:
+        log.info(logid+'(PRE)DEDUPLICATION ENABLED')
+    else:
+        log.info(logid+'DEDUPLICATION ENABLED')
 
 log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 
@@ -100,11 +105,11 @@ if stranded != '':
 
 # MAPPING Variables
 if 'MAPPING' in config:
+    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
     MAPCONF = subDict(config['MAPPING'], SETUP)
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
-    REF = MAPCONF.get('REFERENCE') if MAPCONF.get('REFERENCE') else MAPCONF[MAPPERENV].get('REFERENCE')
-    MANNO = MAPCONF.get('ANNOTATION') if MAPCONF.get('ANNOTATION') else MAPCONF[MAPPERENV].get('ANNOTATION')
+    REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
+    MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -112,7 +117,7 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-    IDX = MAPCONF.get('INDEX')
+    IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
     if IDX:
         INDEX = IDX
     if not INDEX:
@@ -120,7 +125,8 @@ if 'MAPPING' in config:
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
-    PRE = MAPCONF.get('PREFIX')
+    MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
+    PRE = MAPCONF.get('PREFIX', MAPCONF.get('EXTENSION', MAPOPT.get('PREFIX', MAPOPT.get('EXTENSION'))))
     if PRE and PRE is not None:
         PREFIX = PRE
     if not PREFIX or PREFIX is None:
@@ -138,8 +144,8 @@ if 'MAPPING' in config:
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
     PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
-    REF = PEAKCONF.get('REFERENCE') if PEAKCONF.get('REFERENCE') else PEAKCONF[PEAKENV].get('REFERENCE')
-    ANNOPEAK = PEAKCONF.get('ANNOTATION') if PEAKCONF.get('ANNOTATION') else PEAKCONF[PEAKENV].get('ANNOTATION')
+    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -158,8 +164,8 @@ for x in ['TRACKS', 'COUNTING']:
         XBIN, XENV = env_bin_from_config3(config, x)
         XCONF = subDict(config[x], SETUP)
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
-        XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
+        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
+        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -185,8 +191,8 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         XBIN, XENV = env_bin_from_config3(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
-        XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
+        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
+        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -201,8 +207,8 @@ if 'CIRCS' in config:
     CIRCCONF = subDict(config['CIRCS'], SETUP)
     XBIN, XENV = env_bin_from_config3(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
-    REF = CIRCCONF.get('REFERENCE') if CIRCCONF.get('REFERENCE') else CIRCCONF[XENV].get('REFERENCE')
-    XANNO = CIRCCONF.get('ANNOTATION') if CIRCCONF.get('ANNOTATION') else CIRCCONF[XENV].get('ANNOTATION')
+    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))
+    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))

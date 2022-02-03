@@ -19,15 +19,14 @@ process collect_tofetch{
     """
 }
 
-process fetchsra{
+process prefetch_sra{
     conda "$FETCHENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/SRA.log"
+        if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/Prefetch_SRA.log"
         else null
     }
 
@@ -36,17 +35,42 @@ process fetchsra{
     val reads
 
     output:
+    path "*.sra", emit: sra
+
+    script:
+        fn = reads+".sra"
+        """
+        prefetch $reads -o $fn &> prefetch.log
+        """
+}
+
+process download_sra{
+    conda "$FETCHENV"+".yaml"
+    cpus THREADS
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        else if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/SRA.log"
+        else null
+    }
+
+    input:
+    path sras
+
+    output:
     path "*fastq.gz", emit: fq
 
     script:
     if (PAIRED == 'paired'){        
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
+        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log && rename 's/.sra_([1|2])/_R\$1/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS $reads &> sra.log && rename 's/_1/_R1/' *.fastq && rename 's/_2/_R2/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
+        fasterq-dump -e $THREADS $FETCHPARAMS $sras &> sra.log && rename 's/.sra.fastq/.fastq/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
 }
@@ -59,8 +83,9 @@ workflow FETCH{
     samples_ch = Channel.of(SHORTSAMPLES)
 
     collect_tofetch(collection.collect())
-    fetchsra(collect_tofetch.out.done, samples_ch)
+    prefetch_sra(collect_tofetch.out.done, samples_ch)
+    download_sra(prefetch_sra.out.sra)
 
     emit:
-    fetched = fetchsra.out.fq
+    fetched = download_sra.out.fq
 }

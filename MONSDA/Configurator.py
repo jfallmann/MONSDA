@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+import sys
 import json
 import copy
 import readline
@@ -9,14 +10,39 @@ import re
 from snakemake import load_configfile
 from collections import defaultdict
 import argparse
-from MONSDA.Logger import *
 from functools import reduce
 import operator
 import datetime
-import _version
+import pickle
+
+from MONSDA.Logger import *
+from . import _version
+
+__version__ = _version.get_versions()["version"]
+
+
+try:
+    pythonversion = f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
+    installpath = os.path.dirname(__file__).replace(
+        os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
+    )
+except:
+    installpath = os.path.cwd()
+
+configpath = os.path.join(installpath, "MONSDA", "configs")
+current_path = os.getcwd()
+dir_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir_path)
+
+template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
+none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
+IP_workflows = ["PEAKS"]
+index_prefix_workflows = ["MAPPING"]
+
 
 parser = argparse.ArgumentParser(
-    description="Helper to create or manipulate initial config file used for workflow processing with MONSDA"
+    description="Helper to create or manipulate configuration file or project folder used for workflow processing with MONSDA"
 )
 parser.add_argument(
     "-t",
@@ -25,6 +51,23 @@ parser.add_argument(
     default=False,
     help="runnign in test-mode for showing interim results to copy",
 )
+
+parser.add_argument(
+    "-s",
+    "--session",
+    type=str,
+    default=False,
+    help="load unfinished config session to continue",
+)
+
+parser.add_argument(
+    "-c",
+    "--config",
+    type=str,
+    default=False,
+    help="takes configuration file to modify",
+)
+
 args = parser.parse_args()
 
 
@@ -32,16 +75,28 @@ class NestedDefaultDict(defaultdict):
     def __init__(self, *args, **kwargs):
         super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
 
+    def __reduce__(self):
+        return (type(self), (), None, None, iter(self.items()))
+
 
 class PROJECT:
     def __init__(self):
+        self.mode = ""
         self.name = ""
+        self.unfinished_config = ""
+        self.current_func = ""
+        self.current_func_arg = None
+        self.current_wf = []
+        self.finished_maplists = []
+        self.finished_settings = []
+        self.finished_set_keys = []
+        self.finished_set_maplists = []
         self.subname = ""
         self.path = ""
         self.cores = 1
         self.baseDict = NestedDefaultDict()
         self.commentsDict = NestedDefaultDict()
-        self.conditionDict = NestedDefaultDict()
+        self.conditionsDict = NestedDefaultDict()
         self.samplesDict = NestedDefaultDict()
         self.workflowsDict = NestedDefaultDict()
         self.settingsDict = NestedDefaultDict()
@@ -50,7 +105,6 @@ class PROJECT:
 
 class GUIDE:
     def __init__(self):
-        self.mode = ""
         self.answer = ""
         self.toclear = 0
         self.testing = False
@@ -64,7 +118,9 @@ class GUIDE:
             print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)
         self.toclear = 0
 
-    def display(self, options=None, question=None, proof=None, spec=None):
+    def display(
+        self, options=None, question=None, proof=None, spec=None, whitespace=False
+    ):
         if options:
             space = 0
             for k, v in options.items():
@@ -76,15 +132,30 @@ class GUIDE:
         if question:
             print("\n" + bold_color.BOLD + question + bold_color.END)
             guide.toclear += 1
-        self.proof_input(proof, spec)
+        self.proof_input(whitespace, proof, spec)
 
-    def proof_input(self, proof=None, spec=None):
-        unallowed_characters = ["{", "}"]
+    def proof_input(self, whitespace, proof=None, spec=None):
+        unallowed_characters = []
         while True:
             if spec:
                 a = rlinput(">>> ", spec)
             else:
-                a = input(">>> ").strip()
+                if whitespace:
+                    a = input(">>> ").strip()
+                else:
+                    a = input(">>> ").strip().replace(" ", "")
+            if a == "exit":
+                if project.current_func:
+                    pickle_unfinished(project.current_func)
+                    file = os.path.join(
+                        current_path,
+                        "unfinished_config.pkl",
+                    )
+                    print(
+                        f"\n\nYour entries has been saved. Continue your Session with\n"
+                    )
+                    prGreen(f"   monsda_configure -s {file}\n\n")
+                exit()
 
             if any(x in unallowed_characters for x in a):
                 safe = self.toclear
@@ -293,14 +364,14 @@ def print_dict_pointer(dict, path, copy, indent=6):
             if len(route) == level + 2:
                 if route[level - 1] == "step":
                     if copy and copy != [""]:
-                        out += f"{line}    <-\n"
+                        out += f"{line}    <=(add sub conditions here)\n"
                         option = f"enter ID's on condition level comma separated \n\nor copy {copy} with 'cp'"
                         guide.toclear += 2
                     else:
-                        out += f"{line}    <-\n"
+                        out += f"{line}    <=(add sub conditions here)\n"
                         option = "enter ID's on conditions comma separated "
                 else:
-                    out += f"{line}    <-\n"
+                    out += f"{line}    <=(add sub conditions here)\n"
                     option = "enter ID's on conditions comma separated "
             else:
                 out += line + "\n"
@@ -310,7 +381,7 @@ def print_dict_pointer(dict, path, copy, indent=6):
     return out, option
 
 
-def rec_tree_builder(subtree, leafes, path=[], tree=None):
+def rec_tree_builder(subtree, leafes, path=[], tree=None, add_mode=False):
     if tree == None:
         tree = subtree
     if not leafes[0]:
@@ -321,10 +392,12 @@ def rec_tree_builder(subtree, leafes, path=[], tree=None):
             subtree[leaf] = NestedDefaultDict()
     copy = []
     for k, v in subtree.items():
+        if str(v) == "{}":
+            continue
         path.append(k)
         text, opt = print_dict_pointer(tree, path, copy)
         for line in text.split("\n"):
-            if "<-" in line:
+            if "<=(add sub conditions here)" in line:
                 prYellow("  " + line)
             else:
                 prRed("  " + line)
@@ -340,7 +413,7 @@ def rec_tree_builder(subtree, leafes, path=[], tree=None):
             leafes = [""]
         if leafes == ["cp"]:
             leafes = copy
-        rec_tree_builder(subtree[k], leafes, path, tree)
+        rec_tree_builder(subtree[k], leafes, path, tree, add_mode)
         copy = leafes
         leafes = [""]
     if len(path) > 0:
@@ -386,13 +459,13 @@ def select_id_to_set(cdict, i, indent=6):
             project.settingsList.append([])
         if "{}" in line:
             if "," in line:
-                out = f"{line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <-{' '*((counter+1)%2)*2}  {counter}"
+                out = f"{line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <={' '*((counter+1)%2)*2}  {counter}"
                 if counter % 2:
                     prPurple("  " + out)
                 else:
                     prLightPurple("  " + out)
             else:
-                out = f"{line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <-{' '*((counter+1)%2)*2}  {counter}"
+                out = f"{line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <={' '*((counter+1)%2)*2}  {counter}"
                 if counter % 2:
                     prPurple("  " + out)
                 else:
@@ -430,11 +503,11 @@ def location(dictionary, setting, indent=6):
                     if not path:
                         if "," in line:
                             prYellow(
-                                f"  {line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <-"
+                                f"  {line}{' '*(14-len(key) + indent*(d-2)-indent*level)} <="
                             )
                         else:
                             prYellow(
-                                f"  {line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <-"
+                                f"  {line}{' '*(15-len(key) + indent*(d-2)-indent*level)} <="
                             )
                         switch = False
         if switch:
@@ -444,16 +517,31 @@ def location(dictionary, setting, indent=6):
     guide.toclear += 4
 
 
+def pickle_unfinished(current_func):
+    project.current_func = current_func
+    file = os.path.join(
+        current_path,
+        "unfinished_config.pkl",
+    )
+    with open(file, "wb") as f:
+        pickle.dump(project, f)
+
+
 def show_settings():
     if guide.testing == False:
         return
     provars = NestedDefaultDict()
-    provars["guide.mode"] = guide.mode
+    provars["project.mode"] = project.mode
     provars["project.name"] = project.name
-    provars["project.path"] = project.path
+    provars["project.current_func"] = project.current_func
+    provars["project.current_wf"] = project.current_wf
+    provars["project.finished_settings"] = project.finished_settings
+    provars["project.finished_maplists"] = project.finished_maplists
+    provars["project.finished_set_keys"] = project.finished_set_keys
+    provars["project.finished_set_maplists"] = project.finished_set_maplists
     provars["project.cores"] = project.cores
     provars["project.baseDict"] = project.baseDict
-    provars["project.conditionDict"] = project.conditionDict
+    provars["project.conditionsDict"] = project.conditionsDict
     provars["project.samplesDict"] = project.samplesDict
     provars["project.settingsDict"] = project.settingsDict
     provars["project.settingsList"] = project.settingsList
@@ -484,12 +572,20 @@ def complete(text, state):
     return (glob.glob(text + "*") + [None])[state]
 
 
+def print_intro():
+    print("NSW: " + __version__)
+    print("RTD: https://MONSDA.readthedocs.io/en/latest/index.html\n")
+    print(
+        bold_color.BOLD
+        + "M O N S D A   C O N F I G U R A T O R"
+        + bold_color.END
+        + "\n"
+    )
+
+
 readline.set_completer_delims(" \t\n;")
 readline.parse_and_bind("tab: menu-complete")
 readline.set_completer(complete)
-
-project = PROJECT()
-guide = GUIDE()
 
 
 ################################################################################################################
@@ -497,7 +593,7 @@ guide = GUIDE()
 ################################################################################################################
 
 
-def prepare_project(template):
+def prepare_project(template, config):
     # add template dict to project object
     project.baseDict = template
     # add comments to commentsdict and remove them from baseDict
@@ -509,23 +605,21 @@ def prepare_project(template):
         set_by_path(project.commentsDict, path, opt)
         del_by_path(project.baseDict, path)
     show_settings()
-    return intro()
+    return intro(config)
 
 
-def intro():
-    print("NSW: " + __version__)
-    print("RTD: https://MONSDA.readthedocs.io/en/latest/index.html\n")
-    print(
-        bold_color.BOLD
-        + "N E X T S N A K E S   C O N F I G U R A T O R"
-        + bold_color.END
-        + "\n"
-    )
+def intro(config):
+    print_intro()
+    if config:
+        project.mode = "modify"
+        return modify(config)
     opts = {
-        "1": "create new project",
-        "2": "modify existing config-file",
-        "3": "add config-file to existing project",
+        "1": "create project",
+        "2": "create config",
+        "3": "modify config",
     }
+    if os.path.exists(os.path.join(current_path, "unfinished_config.pkl")):
+        opts["4"] = "continue unfinished"
     guide.display(
         question="choose an option",
         options=opts,
@@ -533,48 +627,91 @@ def intro():
     )
     guide.clear(3)
     if guide.answer == "1":
-        guide.mode = "new"
-        return new()
+        project.mode = "project"
+        return new_project()
     if guide.answer == "2":
-        guide.mode = "modify"
-        return modify()
+        project.mode = "config"
+        return new_config()
     if guide.answer == "3":
-        guide.mode = "new"
-        return new(existing=True)
+        project.mode = "modify"
+        return modify()
+    if guide.answer == "4":
+        project.unfinished_config = os.path.join(current_path, "unfinished_config.pkl")
+        return continue_unfinished()
 
 
-def new(existing=False):
-    if existing:
-        prGreen("\nCREATE NEW CONFIG")
-    else:
-        prGreen("\nCREATE NEW PROJECT")
+def continue_unfinished():
+    global project
+    file = project.unfinished_config
+    with open(project.unfinished_config, "rb") as f:
+        project = pickle.load(f)
+    project.unfinished_config = file
+    prGreen("\nCONTINUE WITH SETTINGS FROM")
+    prCyan("\n   " + project.unfinished_config)
+    prRed("\n   Condition-Tree:\n")
+    print_dict(project.conditionsDict, gap="      ")
+    prRed("\n   Workflows:\n")
+    print_dict(project.workflowsDict, gap="      ")
+    prRed("\n   Settings:\n")
+    print_dict(project.settingsDict, gap="      ")
+    globals()[project.current_func]()
+
+
+def new_config():
+    # pickle_unfinished("new_config")
+    prGreen("\nCREATE NEW CONFIG")
+    print("\n   Name:")
+    guide.display(
+        question="Enter the Name of the new config file",
+        proof=None,
+    )
+    project.name = guide.answer
+    project.path = current_path
+    guide.clear(4)
+    prCyan(f"   Name: config_{project.name}.json")
+    show_settings()
+    return add_workflows()
+
+
+def new_project():
+    # pickle_unfinished("new_project")
+    prGreen("\nCREATE NEW PROJECT")
     print("\n   Directory:")
+    existing = False
     er = 0
     while True:
         if er == 0:
-            if existing:
-                ques = "Enter the absolute of your project-folder"
-            else:
-                ques = "Enter the absolute path where your project-folder should be created"
+            ques = "Enter the absolute path where your project-folder should be created"
         if er == 1:
             ques = "couldn't find this directory"
-        if er == 2:
-            ques = "WARNING: The directory you entered already exist."
-        guide.display(question=ques, spec=os.getcwd())
+        guide.display(question=ques, spec=current_path)
         project.name = os.path.basename(guide.answer)
         project.path = guide.answer
         if os.path.isdir(project.path) and not existing:
             guide.clear(3)
-            er = 2
-            continue
+            print("")
+            guide.display(
+                question="WARNING: Directory already exist.",
+                options={
+                    "1": "enter new path",
+                    "2": "add another config file to existing folder",
+                },
+                proof=["1", "2"],
+            )
+            if guide.answer == "1":
+                guide.clear(6)
+                continue
+            if guide.answer == "2":
+                guide.clear(3)
+                existing = True
         if os.path.isdir(project.path) and existing:
             guide.clear(4)
-            prCyan(f"  Directory: {project.path}")
-            print("\n  Subname: ")
-            guide.display(question=f"enter subname to differ from {project.name}")
+            prCyan(f"   Directory: {project.path}")
+            print("\n   Subname: ")
+            guide.display(question=f"enter subname to differ from '{project.name}'")
             project.subname = guide.answer
             guide.clear(4)
-            prCyan(f"  Subname: {project.subname}")
+            prCyan(f"   Subname: {project.subname}")
             break
         if os.path.isdir(os.path.dirname(project.path)):
             guide.clear(4)
@@ -588,6 +725,7 @@ def new(existing=False):
 
 
 def add_workflows(existing_workflows=None):
+    pickle_unfinished("add_workflows")
     prGreen("\nADD WORKFLOWS\n")
     possible_workflows = list(project.baseDict.keys())
     for e in none_workflow_keys:
@@ -613,18 +751,19 @@ def add_workflows(existing_workflows=None):
     guide.clear(3)
     prCyan(f"\n   Added Workflows: {', '.join(addedW)}")
     show_settings()
-    if guide.mode == "modify":
+    if project.mode == "modify":
         return select_conditioning()
-    if guide.mode == "new":
+    if project.mode == "project" or "config":
         return create_condition_tree()
 
 
 def create_condition_tree():
+    pickle_unfinished("create_condition_tree")
     prGreen("\nCREATE CONDITION-TREE:")
     while True:
-        rec_tree_builder(project.conditionDict, [project.name])
+        rec_tree_builder(project.conditionsDict, [project.name])
         print("")
-        print_dict(project.conditionDict, gap="   ")
+        print_dict(project.conditionsDict, gap="   ")
         guide.display(
             question="press enter to continue or type 'no' to create it again",
             proof=["", "no"],
@@ -632,19 +771,23 @@ def create_condition_tree():
         if guide.answer == "no":
             guide.toclear += 2
             guide.clear()
-            project.conditionDict = NestedDefaultDict()
+            project.conditionsDict = NestedDefaultDict()
         else:
             guide.toclear += 2
             guide.clear()
             # prCyan("   Condition-Tree:\n")
-            print_dict(project.conditionDict, col="Cyan", gap="         ")
-            project.settingsDict = decouple(project.conditionDict)
+            print_dict(project.conditionsDict, col="Cyan", gap="         ")
+            project.settingsDict = decouple(project.conditionsDict)
             break
     show_settings()
     return add_sample_dirs()
 
 
-def add_sample_dirs():
+def add_sample_dirs(only_conditions=None):
+    pickle_unfinished("add_sample_dirs")
+    # project.current_func_arg = only_conditions
+    if "FETCH" in project.workflowsDict.keys():
+        return assign_SRA(only_conditions)
     print("\n  FASTQ files:")
     path_to_samples_dict = NestedDefaultDict()
     er = 0
@@ -652,7 +795,7 @@ def add_sample_dirs():
 
         if er == 0:
             ques = "Enter an absolute path where samples are stored"
-            sp = os.getcwd()
+            sp = current_path
         if er == 3:
             ques = "Add another path or press enter to continue"
             sp = ""
@@ -661,10 +804,9 @@ def add_sample_dirs():
             sp = dir
         if er == 2:
             ques = f"Samples must be specified to continue. Enter an absolute path where samples are stored"
-            sp = os.getcwd()
+            sp = current_path
         guide.display(
             question=ques,
-            # options = path_to_samples_dict,
             spec=sp,
         )
         dir = guide.answer
@@ -724,25 +866,78 @@ def add_sample_dirs():
             # print_dict(project.samplesDict)
             er = 3
             continue
-
     counter = 1
     show_settings()
-    return assign_samples()
+    return assign_samples(only_conditions)
 
 
-def assign_samples():
-    prCyan("\n  Sample Assignment:\n")
-    conditions = [
-        pattern for pattern in get_conditions_from_dict(project.conditionDict)
-    ]
-    if guide.mode == "modify":
+def assign_SRA(only_conditions=None):
+    pickle_unfinished("assign_SRA")
+    prCyan("\n  Sample Assignment:  SRA Accession Numbers\n")
+    print(project.mode)
+    if project.mode == "modify":
         safety_dict = decouple(project.settingsDict)
-    elif guide.mode == "new":
-        safety_dict = decouple(project.conditionDict)
-        project.settingsDict = decouple(project.conditionDict)
+    if project.mode == "project" or project.mode == "config":
+        safety_dict = decouple(project.conditionsDict)
+        project.settingsDict = decouple(project.conditionsDict)
+    if only_conditions:
+        conditions = [":".join(x) for x in only_conditions]
     else:
-        print("WARNING: NO MODE!!")
-        exit()
+        conditions = [
+            pattern for pattern in get_conditions_from_dict(project.conditionsDict)
+        ]
+    guide.toclear = 0
+    while True:
+        for condition in conditions:
+            if (
+                "SAMPLES"
+                in get_by_path(project.settingsDict, condition.split(":")).keys()
+            ):
+                continue
+
+            ques = f"Enter SRA Accession Numbers according to the displayed condition comma separated"
+            cond_as_list = [x for x in condition.split(":")]
+            location(project.settingsDict, [cond_as_list])
+            guide.display(
+                question=ques,
+            )
+            AccNumbers = guide.answer.split(",")
+            set_by_path(
+                project.settingsDict,
+                cond_as_list,
+                {"SAMPLES": AccNumbers},
+            )
+            guide.clear(guide.toclear + 4)
+        print_dict(project.settingsDict, gap="   ")
+        guide.display(
+            question="press enter to continue or type 'no' to assign samples again"
+        )
+        if guide.answer == "no":
+            guide.toclear += 2
+            project.settingsDict = decouple(safety_dict)
+        else:
+            guide.toclear += 2
+            guide.clear()
+            print_dict(project.settingsDict, col="Cyan", gap="         ")
+            break
+    show_settings()
+    return set_settings()
+
+
+def assign_samples(only_conditions=None):
+    pickle_unfinished("assign_samples")
+    prCyan("\n  Sample Assignment:\n")
+    if only_conditions != None:
+        conditions = [":".join(x) for x in only_conditions]
+    else:
+        conditions = [
+            pattern for pattern in get_conditions_from_dict(project.conditionsDict)
+        ]
+    if project.mode == "modify":
+        safety_dict = decouple(project.settingsDict)
+    if project.mode == "project" or project.mode == "config":
+        safety_dict = decouple(project.conditionsDict)
+        project.settingsDict = decouple(project.conditionsDict)
     er = 0
     guide.toclear = 0
     while True:
@@ -758,15 +953,7 @@ def assign_samples():
                     number
                 ] = f"{k}{' '*(space+2-len(k))} in  {project.samplesDict[k]['dir']}"
                 number += 1
-        # samplesInList = []
         for condition in conditions:
-            # for s in samplesInList:
-            #     toDelete = []
-            #     for k, v in opts.items():
-            #         if s in v:
-            #             toDelete.append(k)
-            # for d in toDelete:
-            #     del opts[d]
             if (
                 "SAMPLES"
                 in get_by_path(project.settingsDict, condition.split(":")).keys()
@@ -822,18 +1009,19 @@ def assign_samples():
 
 
 def set_settings():
+    pickle_unfinished("set_settings")
     prGreen("\nGENERAL SETTINGS")
     print("(blank entry possible)")
     guide.toclear = 0
     safety_dict = decouple(project.settingsDict)
     conditions_list = [
         pattern.split(":")
-        for pattern in get_conditions_from_dict(project.conditionDict)
+        for pattern in get_conditions_from_dict(project.conditionsDict)
     ]
     while True:
         previous_maplist = []
         for maplist in conditions_list:
-            if "SEQUENCING" in get_by_path(project.settingsDict, maplist).keys():
+            if maplist in project.finished_set_maplists:
                 continue
             prRed(f"\n   Condition:   {' : '.join(maplist)} \n")
             seq = ""
@@ -854,8 +1042,10 @@ def set_settings():
                 settings_to_make = settings_to_make + ["GROUPS", "TYPES", "BATCHES"]
             if list(set(project.workflowsDict.keys()) & set(index_prefix_workflows)):
                 settings_to_make = settings_to_make + ["INDEX", "PREFIX"]
-            last_answer = os.getcwd()
+            last_answer = current_path
             for key in settings_to_make:
+                if key in project.finished_set_keys:
+                    continue
                 print(f"   {key}:")
                 if key in ["REFERENCE", "GTF", "GFF", "IP"]:
                     if previous_maplist:
@@ -895,7 +1085,10 @@ def set_settings():
                     )
                 else:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
+                project.finished_set_keys.append(key)
             previous_maplist = maplist
+            project.finished_set_keys = []
+            project.finished_set_maplists.append(maplist)
         guide.toclear = 0
         print("\n\n   SETTINGS Key:\n")
         print_dict(project.settingsDict, gap="   ")
@@ -909,50 +1102,17 @@ def set_settings():
             prCyan("\n\n   SETTINGS Key:\n")
             print_dict(project.settingsDict, col="Cyan", gap="         ")
             show_settings()
-            if guide.mode == "new":
+            if project.mode == "project" or project.mode == "config":
                 return select_conditioning()
-            if guide.mode == "modify":
+            if project.mode == "modify":
                 return fillup_workflows()
         if guide.answer == "no":
             project.settingsDict = decouple(safety_dict)
             continue
 
 
-def set_comparison_settings(maplist):
-    last_sample = ""
-    for sample in get_by_path(project.settingsDict, maplist + ["SAMPLES"]):
-
-        prPurple(f"\n      Sample: {sample}\n")
-        for key in ["GROUPS", "TYPES", "BATCHES"]:
-            if last_sample and key == "GROUPS":
-                ques = f"enter 'cp' to copy entries from sample before"
-            else:
-                ques = f"{project.commentsDict['SETTINGS']['comment'][key]}"
-            print(f"         {key}:")
-            guide.display(question=ques)
-            if guide.answer == "cp" and last_sample:
-                guide.clear(4)
-                for key in ["GROUPS", "TYPES", "BATCHES"]:
-                    to_add = get_by_path(project.settingsDict, maplist + [key])[-1]
-                    prCyan(f"         {key}: {to_add}")
-                    get_by_path(project.settingsDict, maplist + [key]).append(to_add)
-                break
-            else:
-                last_sample = sample
-                guide.clear(4)
-                prCyan(f"         {key}: {guide.answer}")
-                try:
-                    get_by_path(project.settingsDict, maplist + [key]).append(
-                        guide.answer
-                    )
-                except:
-                    setInDict(project.settingsDict, maplist + [key], [])
-                    get_by_path(project.settingsDict, maplist + [key]).append(
-                        guide.answer
-                    )
-
-
-def modify():
+def modify(config=None):
+    # pickle_unfinished("modify")
     prGreen("\nMODIFY PROJECT")
     er = 0
     while True:
@@ -960,24 +1120,31 @@ def modify():
             ques = "Enter the absolut path of the config file to be modified"
         if er == 1:
             ques = "couldn't find the file"
+            config = None
         if er == 2:
             ques = (
                 "can't read the file, check if it's the right file or if it's corrupted"
             )
-        guide.display(question=ques, spec=os.getcwd())
-        if not os.path.isfile(guide.answer):
+        if not config:
+            guide.display(question=ques, spec=current_path)
+            config = guide.answer
+        if not os.path.isfile(config):
             guide.clear(3)
             er = 1
             continue
         try:
-            modify_config = load_configfile(guide.answer)
-            project.path = os.path.dirname(guide.answer)
+            modify_config = load_configfile(config)
+            project.path = os.path.dirname(config)
             project.name = list(modify_config["SETTINGS"].keys())[0]
             project.cores = modify_config["MAXTHREADS"]
             project.settingsDict = modify_config["SETTINGS"]
-            project.conditionDict = NestedDefaultDict()
-            guide.clear(2)
-            prCyan(f"   {guide.answer}")
+            project.conditionsDict = NestedDefaultDict()
+
+            if not config:
+                guide.clear(2)
+            else:
+                print("")
+            prCyan(f"   {config}")
         except:
             er = 2
 
@@ -985,8 +1152,11 @@ def modify():
         for path in condition_pathes:
             if path[-1] == "SAMPLES":
                 path = path[1:-1]
-                setInDict(project.conditionDict, path, {})
-
+                setInDict(project.conditionsDict, path, {})
+        project.finished_set_maplists = [
+            pattern.split(":")
+            for pattern in get_conditions_from_dict(project.conditionsDict)
+        ]
         active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
         for e in none_workflow_keys:
@@ -997,7 +1167,7 @@ def modify():
             inactive_workflows.remove(e)
         prRed("\n   Following configuration was found :\n")
         prRed("   Condition-Tree:\n")
-        print_dict(project.conditionDict, gap="      ")
+        print_dict(project.conditionsDict, gap="      ")
         prRed("\n   active WORKFLOWS:\n")
         if active_workflows:
             print("      " + ", ".join(active_workflows))
@@ -1028,16 +1198,21 @@ def modify():
             return remove_conditions()
         if guide.answer == "5":
             project.settingsDict = NestedDefaultDict()
-            project.conditionDict = NestedDefaultDict()
+            project.conditionsDict = NestedDefaultDict()
             project.workflowsDict = NestedDefaultDict()
             continue
 
 
 def add_conditions():
+    pickle_unfinished("add_conditions")
     prGreen("\n\nADD CONDIIONS")
+    old_conditions = [
+        pattern.split(":")
+        for pattern in get_conditions_from_dict(project.conditionsDict)
+    ]
     while True:
-        new_conditions = decouple(project.conditionDict)
-        rec_tree_builder(new_conditions, [project.name])
+        new_conditions = decouple(project.conditionsDict)
+        rec_tree_builder(new_conditions, [project.name], add_mode=True)
         print("\n   New Condition-Tree:\n")
         print_dict(new_conditions, gap="   ")
         guide.display(
@@ -1049,33 +1224,31 @@ def add_conditions():
             guide.clear()
             continue
         else:
-            project.conditionDict = new_conditions
+            project.conditionsDict = new_conditions
             guide.toclear += 4
             guide.clear()
             prCyan("   New Condition-Tree:\n")
-            print_dict(project.conditionDict, col="Cyan", gap="         ")
-            # project.settingsDict = decouple(project.conditionDict)
+            print_dict(project.conditionsDict, col="Cyan", gap="         ")
+            # project.settingsDict = decouple(project.conditionsDict)
             break
 
-    conditions = [
+    all_conditions = [
         pattern.split(":")
-        for pattern in get_conditions_from_dict(project.conditionDict)
+        for pattern in get_conditions_from_dict(project.conditionsDict)
     ]
-    for condition in conditions:
-        try:
-            get_by_path(project.settingsDict, condition)
-        except:
-            setInDict(project.settingsDict, condition, NestedDefaultDict())
+    print(all_conditions)
+    new_conditions = [x for x in all_conditions if x not in old_conditions]
+    print(new_conditions)
+    for condition in new_conditions:
+        setInDict(project.settingsDict, condition, NestedDefaultDict())
         for wf in project.workflowsDict.keys():
-            try:
-                get_by_path(project.workflowsDict, [wf] + condition)
-            except:
-                setInDict(project.workflowsDict, [wf] + condition, NestedDefaultDict())
+            setInDict(project.workflowsDict, [wf] + condition, NestedDefaultDict())
     show_settings()
-    return add_sample_dirs()
+    return add_sample_dirs(new_conditions)
 
 
 def remove_workflows(actives, inactives):
+    pickle_unfinished("remove_workflows")
     prGreen("\n\nREMOVE WORKFLOWS")
     workflows = project.workflowsDict.keys()
     opts = NestedDefaultDict()
@@ -1122,8 +1295,9 @@ def remove_workflows(actives, inactives):
 
 
 def remove_conditions():
+    pickle_unfinished("remove_conditions")
     prGreen("\n\nREMOVE CONDITIONS")
-    conditions = get_conditions_from_dict(project.conditionDict)
+    conditions = get_conditions_from_dict(project.conditionsDict)
     opts = NestedDefaultDict()
     number = 1
     for c in conditions:
@@ -1132,7 +1306,7 @@ def remove_conditions():
     while True:
         new_settings = decouple(project.settingsDict)
         new_workflows = decouple(project.workflowsDict)
-        new_conditions = decouple(project.conditionDict)
+        new_conditions = decouple(project.conditionsDict)
         print("\nfollowing conditions exist:\n")
         guide.display(
             question="enter numbers of conditions to be removed comma separated",
@@ -1146,12 +1320,6 @@ def remove_conditions():
             del_by_path(new_conditions, path_to_remove)
             for key in new_workflows.keys():
                 del_by_path(new_workflows, [key] + path_to_remove)
-        print_dict(new_settings)
-        input()
-        print_dict(new_conditions)
-        input()
-        print_dict(new_workflows)
-        input()
         prRed("\nNew condition-Tree:")
         print_dict(new_conditions)
         guide.display(
@@ -1161,19 +1329,27 @@ def remove_conditions():
         if guide.answer == "":
             project.settingsDict = new_settings
             project.workflowsDict = new_workflows
-            project.conditionDict = new_conditions
+            project.conditionsDict = new_conditions
             return finalize()
         if guide.answer == "no":
             continue
 
 
 def select_conditioning():
+    pickle_unfinished("select_conditioning")
+    conditions = [
+        pattern.split(":")
+        for pattern in get_conditions_from_dict(project.conditionsDict)
+    ]
+    if len(conditions) == 1:
+        project.settingsList = [conditions]
+        return set_workflows()
     prGreen("\n\nSELECT CONDITIONS")
     guide.toclear = 0
     while True:
-        d = depth(project.conditionDict)
+        d = depth(project.conditionsDict)
         for i in range(d - 1):
-            select_id_to_set(project.conditionDict, i)
+            select_id_to_set(project.conditionsDict, i)
             print(
                 "In the following steps you will make different settings for each condition.\nTo avoid repetitions, specify which conditions should get the same settings\nYou will set all conditions with the same number at once afterwards"
             )
@@ -1191,9 +1367,10 @@ def select_conditioning():
 
 
 def fillup_workflows():
+    pickle_unfinished("fillup_workflows")
     conditions = [
         pattern.split(":")
-        for pattern in get_conditions_from_dict(project.conditionDict)
+        for pattern in get_conditions_from_dict(project.conditionsDict)
     ]
     fillupDict = NestedDefaultDict()
     for wf in project.workflowsDict.keys():
@@ -1227,16 +1404,27 @@ def fillup_workflows():
 
 
 def set_workflows(wf=None):
+    pickle_unfinished("set_workflows")
     if wf:
         workflows = [wf]
     else:
         workflows = project.workflowsDict.keys()
     for workflow in workflows:
-        if not project.workflowsDict[workflow] or wf:
+        if not project.workflowsDict[workflow] or wf or workflow == project.current_wf:
+            project.current_wf = workflow
             prGreen(f"\nMAKE SETTINGS FOR {workflow}\n")
             opt_dict = NestedDefaultDict()
             tools_to_use = NestedDefaultDict()
-            if "TOOLS" in project.baseDict[workflow].keys():
+            #
+            if (
+                "TOOLS" in project.baseDict[workflow].keys()
+                and project.workflowsDict[workflow]["TOOLS"]
+            ):
+                tools_to_use = project.workflowsDict[workflow]["TOOLS"]
+            if (
+                "TOOLS" in project.baseDict[workflow].keys()
+                and not project.workflowsDict[workflow]["TOOLS"]
+            ):
                 number = 1
                 for k in project.baseDict[workflow]["TOOLS"].keys():
                     opt_dict[number] = k
@@ -1291,17 +1479,19 @@ def set_workflows(wf=None):
                 workflow == "PEAKS"
                 and "macs" in ", ".join(tools_to_use.keys())
                 or workflow in comparable_workflows
+                and not project.workflowsDict[workflow]["COMPARABLE"]
             ):
                 project.workflowsDict[workflow]["COMPARABLE"]
                 project.workflowsDict[workflow]["EXCLUDE"] = []
                 prCyan(f"      Comparables:\n")
                 groups = set()
-                conditions = get_conditions_from_dict(project.conditionDict)
+                conditions = get_conditions_from_dict(project.conditionsDict)
                 for condition in conditions:
-                    for g in get_by_path(
-                        project.settingsDict, condition.split(":") + ["GROUPS"]
-                    ):
-                        groups.add(g)
+                    groups.add(
+                        get_by_path(
+                            project.settingsDict, condition.split(":") + ["GROUPS"]
+                        )
+                    )
                 if len(groups) < 2:
                     guide.clear(2)
                     prCyan(f"      Comparables: No Groups found\n")
@@ -1352,17 +1542,22 @@ def set_workflows(wf=None):
                 guide.clear(1)
 
             for setting in project.settingsList:
+                if setting in project.finished_settings:
+                    continue
                 prRed(
                     f"\n   Selected Conditions:   {' / '.join([':'.join(c) for c in setting])}"
                 )
                 for tool, bin in tools_to_use.items():
                     project.workflowsDict[workflow]["TOOLS"][tool] = bin
                     for maplist in setting:
+                        if maplist in project.finished_maplists:
+                            continue
                         setInDict(
                             project.workflowsDict,
                             [workflow] + maplist + [tool, "OPTIONS"],
                             {},
                         )
+
                     prPurple(f"\n      Set OPTIONS for tool:  {tool}\n")
                     for option in project.baseDict[workflow][tool]["OPTIONS"]:
                         print(f"      Option: '{option}'")
@@ -1371,6 +1566,7 @@ def set_workflows(wf=None):
                         guide.display(
                             question=f"{project.commentsDict[workflow][tool]['comment'][option]}",
                             spec=call,
+                            whitespace=True,
                         )
                         optsDict = guide.answer
                         for maplist in setting:
@@ -1379,16 +1575,21 @@ def set_workflows(wf=None):
                                 [workflow] + maplist + [tool, "OPTIONS", option],
                                 optsDict,
                             )
+                        project.finished_maplists.append(maplist)
                         guide.clear(4)
                         prCyan(f"      {option}:  {guide.answer}")
+                project.finished_settings.append(setting)
+                project.finished_maplists = []
+            project.finished_settings = []
     show_settings()
-    if guide.mode == "new" or guide.mode == "":
+    if project.mode == "project" or project.mode == "config":
         return set_cores()
-    if guide.mode == "modify":
-        return finalize()
+    if project.mode == "modify":
+        return
 
 
 def set_cores():
+    pickle_unfinished("set_cores")
     prGreen("\nSET THREADS\n")
     print("   MAXTHREADS:")
     guide.display(
@@ -1403,6 +1604,7 @@ def set_cores():
 
 
 def finalize():
+    pickle_unfinished("finalize")
     final_dict = NestedDefaultDict()
 
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
@@ -1421,14 +1623,19 @@ def finalize():
     print_dict(final_dict)
     print("\n")
 
-    if guide.mode == "new":
+    if project.mode == "config":
+        print("Above is your final configuration of MONSDA.")
+        guide.display(
+            question=f"\npress enter to create the config_{project.name}.json file or type 'abort' before it gets serious",
+            proof=["", "abort"],
+        )
+    if project.mode == "project":
         space = len(configfile)
         print(
             "Above is your final configuration of MONSDA. The Guide will create this directory as new project:\n"
         )
         prGreen(f"  {os.path.dirname(project.path)}")
         prGreen(f"  └─{os.path.basename(project.path)}")
-        prGreen(f"     ├─MONSDA{' '*(space-10)}   >  symlink to {os.getcwd()}")
         prGreen(
             f"     ├─FASTQ{' '*(space-5)}   >  contains symlinks of your samplefiles"
         )
@@ -1441,7 +1648,7 @@ def finalize():
             question="\npress enter to create your project or type 'abort' before it gets serious",
             proof=["", "abort"],
         )
-    if guide.mode == "modify":
+    if project.mode == "modify":
         print("Above is your updated configuration of MONSDA\n")
         print(
             "The old config-file will be preserved (it will have a timestamp in it's name)\n"
@@ -1459,21 +1666,18 @@ def finalize():
 
 
 def create_project(final_dict):
-    if guide.mode == "new":
+    if project.mode == "project":
 
         # create Project Folder
         cwd = os.getcwd()
         if not os.path.exists(project.path):
             os.mkdir(project.path)
-        fastq = os.path.join(project.path, "FASTQ")
+        fastq = os.path.join(project.path, "FASTQ", project.name)
         gen = os.path.join(project.path, "GENOMES")
-        ns = os.path.join(project.path, "MONSDA")
         if not os.path.exists(fastq):
-            os.mkdir(fastq)
+            os.makedirs(fastq)
         if not os.path.exists(gen):
-            os.mkdir(gen)
-        if not os.path.exists(ns):
-            os.symlink(cwd, ns)
+            os.makedirs(gen)
 
         # LINK samples into FASTQ and insert samplenames in dict
         for k in project.samplesDict.keys():
@@ -1493,6 +1697,18 @@ def create_project(final_dict):
                 )
                 if not os.path.exists(dst):
                     os.symlink(src, dst)
+                    if "paired" in project.samplesDict[k]["seq"]:
+                        if "_R1" in project.samplesDict[k]["file"]:
+                            other = project.samplesDict[k]["file"].replace("_R1", "_R2")
+                        elif "_R2" in project.samplesDict[k]["file"]:
+                            other = project.samplesDict[k]["file"].replace("_R2", "_R1")
+                        else:
+                            prRed(
+                                f"WARNING: Paired sample {project.samplesDict[k]} isn't named correctly. Check R1, R2 in filename"
+                            )
+                        dst = os.path.join(cond_dir, other)
+                        src = os.path.join(project.samplesDict[k]["dir"], other)
+                        os.symlink(src, dst)
 
         # link reference and annotation
         for setting in project.settingsList:
@@ -1529,7 +1745,7 @@ def create_project(final_dict):
                     )
                 else:
                     prRed(
-                        f"WARNING: GTF path at {condition} is not correct, could not symlink, please do by hand"
+                        f"WARNING: GTF path at {condition} is not correct or not given, could not symlink"
                     )
                     setInDict(
                         project.settingsDict, condition + ["ANNOTATION", "GTF"], ""
@@ -1551,13 +1767,13 @@ def create_project(final_dict):
                     )
                 else:
                     prRed(
-                        f"WARNING: GFF path at {condition} is not correct, could not symlink, please do by hand"
+                        f"WARNING: GFF path at {condition} is not correct or not given, could not symlink"
                     )
                     setInDict(
                         project.settingsDict, condition + ["ANNOTATION", "GFF"], ""
                     )
 
-    if guide.mode == "modify":
+    if project.mode == "modify":
         file = os.path.join(project.path, f"config_{project.name}.json")
         bakfile = os.path.join(
             project.path,
@@ -1571,31 +1787,34 @@ def create_project(final_dict):
         configfile = f"config_{project.name}.json"
     with open(os.path.join(project.path, configfile), "w") as jsonout:
         print(json.dumps(final_dict, indent=4), file=jsonout)
+    os.remove(os.path.join(current_path, project.unfinished_config))
+    print(f"\nStart MONSDA with\n")
+    prGreen(f"   monsda -c {configfile} --directory ${{PWD}}\n\n")
 
-    print(f"\nStart RunSnakemake with\n")
-    prGreen(f"   cd {project.path}\n")
-    prGreen(f"   python3 MONSDA/MONSDA.py -c {configfile} --directory ${{PWD}}\n\n")
 
+def main():
+    global project
+    global guide
+    project = PROJECT()
+    guide = GUIDE()
+    if args.test:
+        guide.testing = True
+    if args.config:
+        file = os.path.join(current_path, args.config)
+        config = file
+    else:
+        config = None
+    if args.session:
+        project.unfinished_config = os.path.join(current_path, args.session)
+        print_intro()
+        continue_unfinished()
+    else:
+        prepare_project(template, config)
 
-#############################
-####    TEST VAR SPACE   ####
-#############################
 
 ####################
 ####    MAIN    ####
 ####################
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == "__main__":
-
-    template = load_configfile("../configs/template_base_commented.json")
-    __version__ = _version.get_versions()["version"]
-    none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
-    comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
-    IP_workflows = ["PEAKS"]
-    index_prefix_workflows = ["MAPPING"]
-
-    if args.test:
-        guide.testing = True
-
-    prepare_project(template)
+    main()

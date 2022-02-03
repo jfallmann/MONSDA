@@ -1,31 +1,17 @@
 //POST MAPPING PROCESSES
 
-process collect_postmap{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process sortsam{
     conda "samtools.yaml"
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".sam.gz") > 0)     "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.sam.gz"
         else null
     }
 
     input:
-    val collect
     path map
 
     output:
@@ -44,7 +30,7 @@ process sam2bam{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
@@ -53,13 +39,12 @@ process sam2bam{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -74,7 +59,7 @@ process uniqsam{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.sam.gz"
         else if (filename.indexOf(".log") > 0)       "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getSimpleName()}.log"
@@ -82,12 +67,11 @@ process uniqsam{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*_unique.sam.gz", emit: sam
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -102,7 +86,7 @@ process sam2bamuniq{
     cpus THREADS
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copy',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
@@ -111,13 +95,12 @@ process sam2bamuniq{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -132,20 +115,15 @@ workflow POSTMAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    M1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped.sam.gz"
-    }
-    M1SAMPLES.sort()
-    mapped_samples_ch = Channel.fromPath(M1SAMPLES)
-
-    collect_postmap(collection.collect())
-    sortsam(collect_postmap.out.done, mapped_samples_ch)
-    sam2bam(collect_postmap.out.done, sortsam.out.sam)
-    uniqsam(collect_postmap.out.done, sortsam.out.sam)
-    sam2bamuniq(collect_postmap.out.done, uniqsam.out.sam)
+  
+    sortsam(collection)
+    sam2bam(sortsam.out.sam)
+    uniqsam(sortsam.out.sam)
+    sam2bamuniq(uniqsam.out.sam)
 
     emit:
     postmap  = sam2bam.out.bam
+    postbai  = sam2bam.out.bai
     postmapuni = sam2bamuniq.out.bam
+    postunibai = sam2bamuniq.out.bai
 }
