@@ -3,7 +3,6 @@ CBIN, CENV = env_bin_from_config3(config, 'CIRCS')
 if not 'bwa' in combo or not 'bwa' in scombo:
         log.warning('Ciri2 needs BWA input, can only be used with BWA in mapping step')
 
-
 if not rundedup:
     rule themall:
         input:  expand("CIRCS/{combo}/CIRI2/{file}_circs", combo=combo, file=samplecond(SAMPLES, config))
@@ -25,4 +24,4 @@ rule FindCircs:
     threads: MAXTHREAD
     params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'].get('CIRC', ""),
             circ = CBIN
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.sam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.sam}|samtools sort -n -@ {threads} -u -m 20G -O sam -T {output.tmp} > {output.ts} && zcat {input.anno} > {output.ta} && zcat {input.ref} > {output.tf} && perl {params.circ} -I {output.ts} -O {output.circs} -F {output.tf} -T {threads} -A {output.ta} {params.cpara} &> {log}; else gzip < /dev/null > {output.circs}; echo \"File {input.sam} empty\" >> {log}; fi; cat CIRIerror.log >> {log} && rm -f CIRIerror.log && touch {output.circs}"
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.sam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then mkdir -p {output.tmp} && zcat {input.sam}|samtools sort -n -@ {threads} -u -m 20G -O sam -T {output.tmp} > {output.ts} && zcat {input.anno} > {output.ta} && zcat {input.ref} > {output.tf} && perl {params.circ} -I {output.ts} -O {output.circs} -F {output.tf} -T {threads} -A {output.ta} -G {log} {params.cpara} &>> {log}; else gzip < /dev/null > {output.circs}; echo \"File {input.sam} empty\" >> {log}; fi; touch CIRIerror.log && cat CIRIerror.log >> {log} && echo '' > CIRIerror.log && touch {output.circs} && mkdir -p {output.tmp}"
