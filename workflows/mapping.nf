@@ -20,8 +20,9 @@ process sortsam{
     script:
     fn = file(map[0]).getSimpleName()
     sorted = fn+'_sorted.sam.gz'
+    sortmem = toString(${THREADS}*2.5)+'%'
     """
-    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S 25% -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$COMBO$CONDITION/$map
+    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$COMBO$CONDITION/$map
     """
 }
 
