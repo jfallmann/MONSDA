@@ -5,20 +5,20 @@ if not 'bwa' in combo or not 'bwa' in scombo:
 
 if not rundedup:
     rule themall:
-        input:  expand("CIRCS/{combo}/CIRI2/{file}_circs", combo=combo, file=samplecond(SAMPLES, config))
+        input:  expand("CIRCS/{combo}/{file}_circs", combo=combo, file=samplecond(SAMPLES, config))
 else:
     rule themall:
-        input:  expand("CIRCS/{combo}/CIRI2/{file}_{type}", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_dedup'])
+        input:  expand("CIRCS/{combo}/{file}_{type}", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_dedup'])
 
 rule FindCircs:
     input:  sam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.sam.gz", scombo=scombo),
             ref = REFERENCE,
             anno = ANNOTATION
-    output: circs = "CIRCS/{combo}/CIRI2/{file}_circs",
-            tmp = temp(directory("CIRCS/{combo}/CIRI2/{file}_tmp")),
-            ts = temp("CIRCS/{combo}/CIRI2/{file}_tmp.sam"),
-            ta = temp("CIRCS/{combo}/CIRI2/{file}_tmp.gtf"),
-            tf = temp("CIRCS/{combo}/CIRI2/{file}_tmp.fa")
+    output: circs = "CIRCS/{combo}/{file}_circs",
+            tmp = temp(directory("CIRCS/{combo}/{file}_tmp")),
+            ts = temp("CIRCS/{combo}/{file}_tmp.sam"),
+            ta = temp("CIRCS/{combo}/{file}_tmp.gtf"),
+            tf = temp("CIRCS/{combo}/{file}_tmp.fa")
     log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
     conda:  ""+CENV+".yaml"
     threads: MAXTHREAD

@@ -37,7 +37,7 @@ rule count_mappers:
             "COUNTS/{file}_mapped_unique.count"
     conda:  "../envs/samtools.yaml"
     threads: MAXTHREAD
-    params: sortmem = MAXTHREAD*2.5
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input}); alen=${{#arr[@]}}; orr=({output}); for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T SORTTMP -u |wc -l > ${{orr[$i]}};done"
 
 rule summarize_counts:

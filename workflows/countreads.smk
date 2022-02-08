@@ -41,7 +41,7 @@ rule count_mappers:
     log:    "LOGS/{combo}/{file}/countmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    params: sortmem = MAXTHREAD*2.5
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_mappers:
@@ -50,7 +50,7 @@ rule count_unique_mappers:
     log:    "LOGS/{combo}/{file}/count_unique_mappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    params: sortmem = MAXTHREAD*2.5
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule count_dedup_mappers:
@@ -59,7 +59,7 @@ rule count_dedup_mappers:
     log:    "LOGS/{combo}/{file}/countdedupmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    params: sortmem = MAXTHREAD*2.5
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_dedup_mappers:
@@ -68,7 +68,7 @@ rule count_unique_dedup_mappers:
     log:    "LOGS/{combo}/{file}/count_unique_dedupmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    params: sortmem = MAXTHREAD*2.5
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule featurecount:
@@ -83,7 +83,7 @@ rule featurecount:
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = MAXTHREAD*2.5
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
@@ -98,7 +98,7 @@ rule featurecount_unique:
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = MAXTHREAD*2.5
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_dedup:
@@ -113,7 +113,7 @@ rule featurecount_dedup:
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = MAXTHREAD*2.5
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique_dedup:
@@ -128,7 +128,7 @@ rule featurecount_unique_dedup:
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = MAXTHREAD*2.5
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 if rundedup:
