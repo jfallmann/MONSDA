@@ -2,7 +2,7 @@ TRIMENV=get_always('TRIMMINGENV')
 TRIMBIN=get_always('TRIMMINGBIN')
 
 TRIMPARAMS = get_always('cutadapt_params_TRIM') ?: ''
-
+cores = min(THREADS,4)
 //TRIMMING PROCESSES
 
 process collect_totrim{
@@ -20,7 +20,7 @@ process collect_totrim{
 
 process trim{
     conda "$TRIMENV"+".yaml"
-    cpus THREADS
+    cpus cores
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -64,7 +64,11 @@ workflow TRIMMING{
 
     main:
     if ( PREDEDUP == 'enabled' ){
-        trim(collection)
+        if (PAIRED == 'paired'){
+            trim(collection.collate( 2 ))
+        } else{
+            trim(collection.collate( 1 ))
+        }
     } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
         //SAMPLE CHANNELS
         if (PAIRED == 'paired'){
@@ -80,7 +84,11 @@ workflow TRIMMING{
         }
         trim(collection)
     } else{
-        trim(collection)
+        if (PAIRED == 'paired'){
+            trim(collection.collate( 2 ))
+        } else{
+            trim(collection.collate( 1 ))
+        }
     }
 
     emit:

@@ -43,7 +43,7 @@ workflow QC_RAW{
     }
 
     samples_ch = Channel.fromPath(SAMPLES)
-    qc_raw(samples_ch.collect())
+    qc_raw(samples_ch.collate( 1 ))
 
     emit:
     qc = qc_raw.out.fastqc_results
@@ -80,7 +80,7 @@ workflow QC_TRIMMING{
 
     main:
     
-    qc_trimmed(collection.collect())
+    qc_trimmed(collection.collect().collate( 1 ))
 
     emit:
     qc = qc_trimmed.out.fastqc_results

@@ -102,21 +102,30 @@ workflow DEDUPEXTRACT{
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
             }
-            collection = Channel.fromPath(SAMPLES).collate( 2 )
+            collection = Channel.fromPath(SAMPLES)
         }else{
             SAMPLES=SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }
-            collection = Channel.fromPath(SAMPLES).collate( 1 )
+            collection = Channel.fromPath(SAMPLES)
         }
     }
        
     if (WHITELISTPARAMS != ''){
-        whitelist(collection)
-        extract_fq(whitelist.out.done.wl, collection)
+        if (PAIRED == 'paired'){
+            whitelist(collection.collate( 2 ))
+            extract_fq(whitelist.out.done.wl, collection.collate( 2 ))
+        } else{
+            whitelist(collection.collate( 1 ))
+            extract_fq(whitelist.out.done.wl, collection.collate( 1 ))
+        }
     }
     else{
-        extract_fq(dummy, collection)
+        if (PAIRED == 'paired'){
+            extract_fq(dummy, collection.collate( 2 ))
+        } else{
+            extract_fq(dummy, collection.collate( 1 ))
+        }
     }
     
     emit:    
