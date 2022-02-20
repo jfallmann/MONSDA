@@ -56,7 +56,7 @@ process extract_fq{
     path samples
         
     output:
-    path "*_dedup.fastq.gz", emit: ext
+    path "*_dedup.fastq.gz", emit: extract
     path "ex.log", emit: logs
 
     script:
@@ -97,7 +97,7 @@ workflow DEDUPEXTRACT{
 
     main:
     //SAMPLE CHANNELS
-    if (collection.collect().contains('MONSDA.log') || collection.collect().isEmpty()){
+    if ( PREDEDUP == 'enabled' ){
         if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
@@ -129,6 +129,6 @@ workflow DEDUPEXTRACT{
     }
     
     emit:    
-    ext = extract_fq.out.ext
+    extract = extract_fq.out.extract
     logs = extract_fq.out.logs
 }

@@ -214,7 +214,17 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS", "ANNOTATE"]
+    post = [
+        "COUNTING",
+        "TRACKS",
+        "PEAKS",
+        "DE",
+        "DEU",
+        "DAS",
+        "DTU",
+        "CIRCS",
+        "ANNOTATE",
+    ]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -418,7 +428,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 "DTU",
                                 "COUNTING",
                                 "TRACKS",
-                                "CIRCS"
+                                "CIRCS",
                             ]
                         ]
                     ):
@@ -1324,7 +1334,7 @@ def make_post(
             for condition in combname:
                 envlist = combname[condition].get("envs")
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
-                                  
+
                 subconf = NestedDefaultDict()
                 add = list()
 
@@ -1366,11 +1376,12 @@ def make_post(
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
 
-                        if subwork == 'CIRCS':
-                            if toolenv == 'ciri2' and 'bwa' not in envs:
-                                log.warning('CIRI2 needs BWA mapped files, will skip input produced otherwise')
-                                continue 
-
+                        if subwork == "CIRCS":
+                            if toolenv == "ciri2" and "bwa" not in envs:
+                                log.warning(
+                                    "CIRI2 needs BWA mapped files, will skip input produced otherwise"
+                                )
+                                continue
 
                         tc = list(condition)
                         tc.append(toolenv)
@@ -2075,8 +2086,8 @@ def nf_tool_params(
         )
     )
 
-    if ' ' in toolbin:
-        toolbin = toolbin.replace(' ', '_')
+    if " " in toolbin:
+        toolbin = toolbin.replace(" ", "_")
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -2887,15 +2898,13 @@ def nf_make_sub(
                         elif w == "PREDEDUP":
                             subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
-                            subjobs.append(
-                                " " * 4 + w + "(DEDUPEXTRACT.out.ext)\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.extract)\n")
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + "TRIMMING"
-                                    + "(DEDUPEXTRACT.out.ext)\n"
+                                    + "(DEDUPEXTRACT.out.extract)\n"
                                 )
                             else:
                                 subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")

@@ -2,7 +2,7 @@ TRIMENV=get_always('TRIMMINGENV')
 TRIMBIN=get_always('TRIMMINGBIN')
 
 TRIMPARAMS = get_always('cutadapt_params_TRIM') ?: ''
-cores = min(THREADS,4)
+//int cores = min(THREADS,4)
 //TRIMMING PROCESSES
 
 process collect_totrim{
@@ -20,7 +20,7 @@ process collect_totrim{
 
 process trim{
     conda "$TRIMENV"+".yaml"
-    cpus cores
+    cpus 4//cores
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -63,26 +63,28 @@ workflow TRIMMING{
     take: collection
 
     main:
+    check = collection.toList()
     if ( PREDEDUP == 'enabled' ){
         if (PAIRED == 'paired'){
             trim(collection.collate( 2 ))
         } else{
             trim(collection.collate( 1 ))
         }
-    } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
+    } else if ( check.contains('MONSDA.log') || collection.isEmpty()){
         //SAMPLE CHANNELS
         if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
             }                    
-            collection = Channel.fromPath(SAMPLES).collate( 2 )
+            collection = Channel.fromPath(SAMPLES)
+            trim(collection.collate( 2 ))
         }else{            
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }            
-            collection = Channel.fromPath(SAMPLES).collate( 1 )
+            collection = Channel.fromPath(SAMPLES)
+            trim(collection.collate( 1 ))
         }
-        trim(collection)
     } else{
         if (PAIRED == 'paired'){
             trim(collection.collate( 2 ))
