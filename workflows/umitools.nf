@@ -102,13 +102,12 @@ workflow DEDUPEXTRACT{
             SAMPLES = SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
             }
-            collection = Channel.fromPath(SAMPLES)
         }else{
             SAMPLES=SAMPLES.collect{
                 element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
             }
-            collection = Channel.fromPath(SAMPLES)
         }
+        collection = Channel.fromPath(SAMPLES)
     }
        
     if (WHITELISTPARAMS != ''){

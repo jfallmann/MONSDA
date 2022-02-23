@@ -80,7 +80,7 @@ workflow QC_TRIMMING{
 
     main:
     
-    qc_trimmed(collection.collate( 1 ))
+    qc_trimmed(collection.collect())
 
     emit:
     qc = qc_trimmed.out.fastqc_results
