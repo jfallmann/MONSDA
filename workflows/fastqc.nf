@@ -43,7 +43,7 @@ workflow QC_RAW{
     }
 
     samples_ch = Channel.fromPath(SAMPLES)
-    qc_raw(samples_ch.collate( 1 ))
+    qc_raw(samples_ch)
 
     emit:
     qc = qc_raw.out.fastqc_results
