@@ -93,7 +93,7 @@ process extract_fq{
 
 workflow DEDUPEXTRACT{
     take: 
-    collection
+    samples_ch
 
     main:
     //SAMPLE CHANNELS
@@ -110,9 +110,10 @@ workflow DEDUPEXTRACT{
             collection = Channel.fromPath(SAMPLES)
         }
     }
-       
-    if (WHITELISTPARAMS != ''){
-        
+    else{
+        collection = samples_ch
+    }
+    if (WHITELISTPARAMS != ''){        
         if (PAIRED == 'paired'){
             list = collection.collate(2)
             whitelist(list)

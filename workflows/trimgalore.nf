@@ -5,19 +5,6 @@ TRIMPARAMS = get_always('trimgalore_params_TRIM') ?: ''
 //int cores = min(THREADS,4)
 //TRIMMING PROCESSES
 
-process collect_totrim{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process trim{
     conda "$TRIMENV"+".yaml"
     cpus 4//cores
@@ -55,13 +42,12 @@ process trim{
 }
 
 workflow TRIMMING{
-    take: collection
+    take: 
+    samples_ch    
 
     main:
-    check = collection.toList()
-    if ( PREDEDUP == 'enabled' ){
-        trim(collection)
-    } else if ( check.contains('MONSDA.log') || collection.isEmpty()){
+    check = samples_ch.toList()
+    if ( check.contains('MONSDA.log') || samples_ch.isEmpty()){
         //SAMPLE CHANNELS
         if (PAIRED == 'paired'){
             SAMPLES = SAMPLES.collect{
@@ -76,14 +62,21 @@ workflow TRIMMING{
             collection = Channel.fromPath(SAMPLES)
             trim(collection.collate( 1 ))
         }
-    } else{
+    } else if ( PREDEDUP == 'enabled' ){
         if (PAIRED == 'paired'){
-            trim(collection)
+            trim(samples_ch.collate(2))
         } else{
-            trim(collection)
+            trim(samples_ch.collate(1))
+        }
+    } else{
+        collection = samples_ch
+        if (PAIRED == 'paired'){
+            trim(collection.collate(2))
+        } else{
+            trim(collection.collate(1))
         }
     }
-   
+
     emit:
     trimmed = trim.out.trim
     report  = trim.out.rep
