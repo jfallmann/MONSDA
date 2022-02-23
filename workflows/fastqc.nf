@@ -80,7 +80,7 @@ workflow QC_TRIMMING{
 
     main:
     
-    qc_trimmed(collection.collect())
+    qc_trimmed(collection)
 
     emit:
     qc = qc_trimmed.out.fastqc_results
@@ -117,7 +117,7 @@ workflow QC_MAPPING{
     take: collection
     main:
    
-    qc_mapped(collection.collect())
+    qc_mapped(collection)
 
     emit:
     qc = qc_mapped.out.fastqc_results
@@ -154,7 +154,7 @@ workflow QC_DEDUP{
 
     main:
    
-    qc_dedup(collection.collect())
+    qc_dedup(collection)
 
     emit:
     qc = qc_dedup.out.fastqc_results

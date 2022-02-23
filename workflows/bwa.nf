@@ -87,7 +87,7 @@ process bwa_mapping{
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
-        fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
