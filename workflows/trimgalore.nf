@@ -78,9 +78,9 @@ workflow TRIMMING{
         }
     } else{
         if (PAIRED == 'paired'){
-            trim(collection.collate( 2 ))
+            trim(collection)
         } else{
-            trim(collection.collate( 1 ))
+            trim(collection)
         }
     }
    

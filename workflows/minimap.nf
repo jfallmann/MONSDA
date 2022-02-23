@@ -112,9 +112,9 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         if (PAIRED == 'paired'){
-            minimap_mapping(idxfile, collection.collate(2))
+            minimap_mapping(idxfile, collection)
         }else{
-            minimap_mapping(idxfile, collection.collate(1))
+            minimap_mapping(idxfile, collection)
         }
         
     }
@@ -122,9 +122,9 @@ workflow MAPPING{
         genomefile = Channel.fromPath(MAPREF)
         minimap_idx(genomefile)
         if (PAIRED == 'paired'){
-            minimap_mapping(minimap_idx.out.idx, collection.collate(2))
+            minimap_mapping(minimap_idx.out.idx, collection)
         }else{
-            minimap_mapping(minimap_idx.out.idx, collection.collate(1))
+            minimap_mapping(minimap_idx.out.idx, collection)
         }
     }
 
