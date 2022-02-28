@@ -44,8 +44,6 @@ process bwa_idx{
     }
 
     input:
-    //val collect
-    //path reads
     path genome
 
     output:
@@ -75,7 +73,6 @@ process bwa_mapping{
     }
 
     input:
-    path idx
     path reads
 
     output:
@@ -84,9 +81,10 @@ process bwa_mapping{
     path "*Log.out", emit: logs
 
     script:
+    idx = reads[0]
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
@@ -94,7 +92,7 @@ process bwa_mapping{
         $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> Log.out && touch $uf && gzip *.sam
         """
     }else{
-        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
@@ -114,18 +112,18 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         if (PAIRED == 'paired'){
-            bwa_mapping(idxfile, collection)
+            bwa_mapping(idxfile.combine(collection))
         }else{
-            bwa_mapping(idxfile, collection)
+            bwa_mapping(idxfile.combine(collection))
         }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         bwa_idx(genomefile)
         if (PAIRED == 'paired'){
-            bwa_mapping(bwa_idx.out.bwidx, collection)
+            bwa_mapping(bwa_idx.out.bwidx.combine(collection))
         }else{
-            bwa_mapping(bwa_idx.out.bwidx, collection)
+            bwa_mapping(bwa_idx.out.bwidx.combine(collection))
         }
     }
 
