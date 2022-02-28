@@ -42,8 +42,6 @@ process segemehl3_idx{
     }
 
     input:
-    //val collect
-    //path reads
     path genome
 
     output:
@@ -73,9 +71,6 @@ process segemehl3_mapping{
     }
 
     input:
-    //val collect
-    path genome
-    path idxfile
     path reads
 
     output:
@@ -84,12 +79,14 @@ process segemehl3_mapping{
     path "*fastq.gz", includeInputs:false, emit: unmapped
 
     script:
+    genome = reads[0]
+    idx = reads[1]
     gen =  genome.getName()
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[2]
+        r2 = reads[3]
         fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
@@ -97,7 +94,7 @@ process segemehl3_mapping{
         $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && touch $uf && gzip *.sam
         """
     }else{
-        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
@@ -117,22 +114,13 @@ workflow MAPPING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        if (PAIRED == 'paired'){
-            segemehl3_mapping(genomefile, idxfile, collection)
-        }else{
-            segemehl3_mapping(genomefile, idxfile, collection)
-        }
+        segemehl3_mapping(genomefile.combine(idxfile.combine(collection)))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         segemehl3_idx(genomefile)
-        if (PAIRED == 'paired'){
-            segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection)
-        }else{
-            segemehl3_mapping(genomefile, segemehl3_idx.out.idx.collect(), collection)
-        }
+        segemehl3_mapping(genomefile.combine(segemehl3_idx.out.idx.combine(collection)))
     }
-
 
     emit:
     mapped  = segemehl3_mapping.out.maps

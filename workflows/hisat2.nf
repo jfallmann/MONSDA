@@ -73,7 +73,6 @@ process hisat2_mapping{
     }
 
     input:
-    path idx
     path reads
 
     output:
@@ -95,9 +94,10 @@ process hisat2_mapping{
         stranded = ''
     }
 
+    idx = reads[0]
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
@@ -105,7 +105,7 @@ process hisat2_mapping{
         $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
         """
     }else{
-        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
         """
@@ -124,22 +124,13 @@ workflow MAPPING{
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        if (PAIRED == 'paired'){
-            hisat2_mapping(idxfile, collection)
-        }else{
-            hisat2_mapping(idxfile, collection)
-        }
+        hisat2_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         hisat2_idx(genomefile)
-        if (PAIRED == 'paired'){
-            hisat2_mapping(hisat2_idx.out.htidx, collection)
-        }else{
-            hisat2_mapping(hisat2_idx.out.htidx, collection)
-        }
+        hisat2_mapping(hisat2_idx.out.htidx.combine(collection))
     }
-
 
     emit:
     mapped = hisat2_mapping.out.maps

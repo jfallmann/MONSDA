@@ -44,7 +44,7 @@ workflow DEDUPBAM{
     take: collection
 
     main:
-    dedup_bam(collection)
+    dedup_bam(collection.collate( 2 ))
 
     emit:
     dedup = dedup_bam.out.bam

@@ -42,8 +42,6 @@ process star_idx{
     }
 
     input:
-    //val collect
-    //path reads
     path genome
     path anno
 
@@ -78,8 +76,6 @@ process star_mapping{
     }
 
     input:
-    //val collect
-    path idx
     path reads
 
     output:
@@ -89,10 +85,11 @@ process star_mapping{
     path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
+    idx = reads[0]
     idxdir = idx.toRealPath()
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[1]
+        r2 = reads[2]
         a = "Trimming_report.txt"
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")+"."
         of = fn+'Aligned.out.sam'
@@ -102,7 +99,7 @@ process star_mapping{
         """
     }
     else{
-        fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
         of = fn+'Aligned.out.sam'
 
         """
@@ -120,21 +117,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        if (PAIRED == 'paired'){
-            star_mapping(idxfile, collection)//.buffer( size: 2 ))
-        }else{
-            star_mapping(idxfile, collection)//.buffer( size: 1 ))
-        }
+        star_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
         star_idx(genomefile, annofile)
-        if (PAIRED == 'paired'){
-            star_mapping(star_idx.out.idx, collection)//.buffer( size: 2 ))
-        }else{
-            star_mapping(star_idx.out.idx, collection)//.buffer( size: 1 ))
-        }
+        star_mapping(star_idx.out.idx.combine(collection))
     }
 
 

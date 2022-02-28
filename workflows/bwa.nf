@@ -111,22 +111,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        if (PAIRED == 'paired'){
-            bwa_mapping(idxfile.combine(collection))
-        }else{
-            bwa_mapping(idxfile.combine(collection))
-        }
+        bwa_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         bwa_idx(genomefile)
-        if (PAIRED == 'paired'){
-            bwa_mapping(bwa_idx.out.bwidx.combine(collection))
-        }else{
-            bwa_mapping(bwa_idx.out.bwidx.combine(collection))
-        }
+        bwa_mapping(bwa_idx.out.bwidx.combine(collection))
     }
-
 
     emit:
     mapped  = bwa_mapping.out.maps
