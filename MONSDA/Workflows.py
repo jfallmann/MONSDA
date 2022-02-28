@@ -2919,7 +2919,9 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postbai.concat(POSTMAPPING.out.postmapuni.concat(POSTMAPPING.out.postunibai))).collate( 2 ))\n"
+                                + "(POSTMAPPING.out.postmap.combine(POSTMAPPING.out.postbai))\n"
+                                + w
+                                + "(POSTMAPPING.out.postmapuni.combine(POSTMAPPING.out.postunibai))\n"
                             )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
