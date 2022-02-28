@@ -48,24 +48,10 @@ workflow TRIMMING{
     if ( PREDEDUP == 'enabled' ){
         trim(collection)
     } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
-        //SAMPLE CHANNELS
-        if (PAIRED == 'paired'){
-            SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
-            }                    
-            collection = Channel.fromPath(SAMPLES).collate( 2 )
-        }else{            
-            SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-            }            
-            collection = Channel.fromPath(SAMPLES).collate( 1 )
-        }
-        trim(collection)
+        trim(samples_ch)
     } else{
         trim(collection)
-    }
-
-    
+    }    
 
     emit:
     trimmed = trim.out.trim

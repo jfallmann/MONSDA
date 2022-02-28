@@ -28,7 +28,8 @@ process qc_raw{
 }
 
 workflow QC_RAW{
-    take: collection
+    take:
+    collection
 
     main:
     

@@ -19,7 +19,6 @@ process trim{
     }
 
     input:
-    //val collect
     path reads
 
     output:
@@ -51,14 +50,9 @@ workflow TRIMMING{
     collection    
 
     main:
-    main:
-    check = collection.toList()
-    if ( PREDEDUP == 'enabled' && !check.contains('MONSDA.log')){
-        if (PAIRED == 'paired'){
-            trim(collection.collate(2))
-        } else{
-            trim(collection.collate(1))
-        }
+    //check = collection.toList()
+    if ( PREDEDUP == 'enabled' ){  // && !check.contains('MONSDA.log')){
+        trim(collection)
     }else {        
         if (PAIRED == 'paired'){
             trim(samples_ch.collate(2))

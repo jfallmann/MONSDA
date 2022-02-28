@@ -22,20 +22,27 @@ process whitelist{
     output:
     path "*_whitelist", emit: wl
 
-    script:
-    if (PAIRED == 'paired'){
-        r1 = samples[0]
-        r2 = samples[1]
-        outf = samples[0].getSimpleName()+"_whitelist"
+    script:    
+    if (WHITELISTPARAMS == ''){    
+        outf = samples[0].getSimpleName().replace("_R1","")+"_dummy_whitelist"
         """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$outf
+        touch $outf
         """
-    }
-    else{
-        outf = samples.getSimpleName()+"_whitelist"
-        """
-            mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$outf
-        """
+    } else {
+        if (PAIRED == 'paired'){
+            r1 = samples[0]
+            r2 = samples[1]
+            outf = samples[0].getSimpleName().replace("_R1","")+"_whitelist"
+            """
+                mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$outf
+            """
+        }
+        else{
+            outf = samples.getSimpleName()+"_whitelist"
+            """
+                mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$samples --stdout=$outf
+            """
+        }
     }
 }
 
@@ -65,7 +72,7 @@ process extract_fq{
         r2 = samples[1]
         outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
         outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
-        if (wl == 'MONSDA.log'){
+        if (wl ==~ /\*dummy_whitelist/){
             """
                 mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
             """
@@ -78,7 +85,7 @@ process extract_fq{
     }
     else{
         outf = samples.getSimpleName()+"_dedup.fastq.gz"
-        if (wl == 'MONSDA.log'){
+        if (wl ==~ 'dummy_whitelist'){
             """
                 mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
             """
@@ -98,41 +105,23 @@ workflow DEDUPEXTRACT{
     main:
     //SAMPLE CHANNELS
     if ( PREDEDUP == 'enabled' ){ 
-        if (WHITELISTPARAMS != ''){        
-            if (PAIRED == 'paired'){                
-                whitelist(samples_ch.collate( 2 ))
-                extract_fq(whitelist.out.wl, samples_ch.collate( 2 ))
-            } else{                
-                whitelist(samples_ch.collate( 1 ))
-                extract_fq(whitelist.out.wl, samples_ch.collate( 1 ))
-            }
-        }
-        else{
-            if (PAIRED == 'paired'){
-                extract_fq(dummy, samples_ch.collate( 2 ))
-            } else{
-                extract_fq(dummy, samples_ch.collate( 1 ))
-            }
+        if (PAIRED == 'paired'){                
+            whitelist(samples_ch.collate( 2 ))
+            extract_fq(whitelist.out.wl, samples_ch.collate( 2 ))
+        } else{                
+            whitelist(samples_ch.collate( 1 ))
+            extract_fq(whitelist.out.wl, samples_ch.collate( 1 ))
         }
     }else{
-        if (WHITELISTPARAMS != ''){        
-            if (PAIRED == 'paired'){
-                whitelist(collection.collate(2))
-                extract_fq(whitelist.out.wl, collection.collate( 2 ))
-            } else{
-                whitelist(collection.collate( 1 ))
-                extract_fq(whitelist.out.wl, collection.collate( 1 ))
-            }
-        }
-        else{
-            if (PAIRED == 'paired'){
-                extract_fq(dummy, collection.collate( 2 ))
-            } else{
-                extract_fq(dummy, collection.collate( 1 ))
-            }
+        if (PAIRED == 'paired'){
+            whitelist(collection.collate(2))
+            extract_fq(whitelist.out.wl, collection.collate( 2 ))
+        } else{
+            whitelist(collection.collate( 1 ))
+            extract_fq(whitelist.out.wl, collection.collate( 1 ))
         }
     }
-    
+
     emit:    
     extract = extract_fq.out.extract
     logs = extract_fq.out.logs
