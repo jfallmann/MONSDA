@@ -67,8 +67,8 @@ process bwa_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}.fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/bwa.log"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getName().replaceAll(/_trimmed/,"")}"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
@@ -88,15 +88,17 @@ process bwa_mapping{
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> $lf && touch $uf && gzip *.sam
         """
     }else{
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> $lf && touch $uf && gzip *.sam
         """
     }
 }

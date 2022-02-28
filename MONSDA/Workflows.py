@@ -2919,9 +2919,7 @@ def nf_make_sub(
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.combine(POSTMAPPING.out.postbai))\n"
-                                + w
-                                + "(POSTMAPPING.out.postmapuni.combine(POSTMAPPING.out.postunibai))\n"
+                                + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
                             )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
@@ -2971,10 +2969,6 @@ def nf_make_sub(
                                     + w
                                     + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc).collect())\n"
                                 )
-                            # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
-                            #    subjobs.append(
-                            #        " " * 4 + w + "(QC_DEDUP.out.qc.collect())\n"
-                            #    )
                             else:
                                 subjobs.append(
                                     " " * 4 + w + "(QC_RAW.out.qc.collect())\n"

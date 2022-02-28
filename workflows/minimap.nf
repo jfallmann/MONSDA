@@ -66,7 +66,7 @@ process minimap_mapping{
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap.log"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
@@ -88,15 +88,17 @@ process minimap_mapping{
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> $lf && touch $uf && gzip *.sam
         """
     }else{
         fn = file(reads).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2&> $lf && touch $uf && gzip *.sam
         """
     }
 }

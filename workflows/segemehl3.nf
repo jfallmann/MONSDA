@@ -37,7 +37,7 @@ process segemehl3_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "segemehl3.idx")                  "$MAPIDX"
-        else if (filename.indexOf(".log") >0)             "LOGS/$COMBO$CONDITION/MAPPING/segemehl_index.log"
+        else if (filename.indexOf(".log") >0)             "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else                                              "$MAPUIDX"
     }
 
@@ -51,7 +51,7 @@ process segemehl3_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME &> index.log&& ln -s $MAPUIDXNAME segemehl3.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME &> index.log && ln -s $MAPUIDXNAME segemehl3.idx
     """
 
 }
@@ -66,7 +66,7 @@ process segemehl3_mapping{
         saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl.log"
+        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
@@ -90,15 +90,17 @@ process segemehl3_mapping{
         fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> $lf && touch $uf && gzip *.sam
         """
     }else{
         fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> $lf && touch $uf && gzip *.sam
         """
     }
 }

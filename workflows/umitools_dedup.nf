@@ -18,6 +18,7 @@ process dedup_bam{
 
     input:
     path todedup
+    path bami
         
     output:
     path "*_dedup.bam", emit: bam
@@ -41,10 +42,14 @@ process dedup_bam{
 }
 
 workflow DEDUPBAM{
-    take: collection
+    take: 
+    map
+    mapi
+    mapu
+    mapui
 
     main:
-    dedup_bam(collection)
+    dedup_bam(map.concat(mapu), mapi.concat(mapui))
 
     emit:
     dedup = dedup_bam.out.bam

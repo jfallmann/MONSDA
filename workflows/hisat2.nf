@@ -68,7 +68,7 @@ process hisat2_mapping{
     saveAs: {filename ->
         if (filename.indexOf(".unmapped.fastq.gz") > 0)     "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)            "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/MAPPING/hisat2.log"
+        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
@@ -101,15 +101,17 @@ process hisat2_mapping{
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> $lf && gzip *.sam && touch $uf
         """
     }else{
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+".mapped.sam"
         uf = fn+".unmapped.fastq.gz"
+        lf = fn+"_Log.out"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $reads -S $pf --un-conc-gz $uf &> hisat_map.log && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $reads -S $pf --un-conc-gz $uf &> $lf && gzip *.sam && touch $uf
         """
     }
 }
