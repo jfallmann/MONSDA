@@ -48,37 +48,22 @@ process trim{
 
 workflow TRIMMING{
     take: 
-    samples_ch    
+    collection    
 
     main:
-    check = samples_ch.toList()
-    if ( check.contains('MONSDA.log') || samples_ch.isEmpty()){
-        //SAMPLE CHANNELS
-        if (PAIRED == 'paired'){
-            SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
-            }                    
-            collection = Channel.fromPath(SAMPLES)
-            trim(collection.collate( 2 ))
-        }else{            
-            SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-            }            
-            collection = Channel.fromPath(SAMPLES)
-            trim(collection.collate( 1 ))
-        }
-    } else if ( PREDEDUP == 'enabled' ){
-        if (PAIRED == 'paired'){
-            trim(samples_ch.collate(2))
-        } else{
-            trim(samples_ch.collate(1))
-        }
-    } else{
-        collection = samples_ch
+    main:
+    check = collection.toList()
+    if ( PREDEDUP == 'enabled' && !check.contains('MONSDA.log')){
         if (PAIRED == 'paired'){
             trim(collection.collate(2))
         } else{
             trim(collection.collate(1))
+        }
+    }else {        
+        if (PAIRED == 'paired'){
+            trim(samples_ch.collate(2))
+        } else{
+            trim(samples_ch.collate(1))
         }
     }
 

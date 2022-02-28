@@ -93,42 +93,43 @@ process extract_fq{
 
 workflow DEDUPEXTRACT{
     take: 
-    samples_ch
+    collection
 
     main:
     //SAMPLE CHANNELS
-    if ( PREDEDUP == 'enabled' ){
-        if (PAIRED == 'paired'){
-            SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+    if ( PREDEDUP == 'enabled' ){ 
+        if (WHITELISTPARAMS != ''){        
+            if (PAIRED == 'paired'){                
+                whitelist(samples_ch.collate( 2 ))
+                extract_fq(whitelist.out.wl, samples_ch.collate( 2 ))
+            } else{                
+                whitelist(samples_ch.collate( 1 ))
+                extract_fq(whitelist.out.wl, samples_ch.collate( 1 ))
             }
-            collection = Channel.fromPath(SAMPLES)
-        }else{
-            SAMPLES=SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+        }
+        else{
+            if (PAIRED == 'paired'){
+                extract_fq(dummy, samples_ch.collate( 2 ))
+            } else{
+                extract_fq(dummy, samples_ch.collate( 1 ))
             }
-            collection = Channel.fromPath(SAMPLES)
         }
-    }
-    else{
-        collection = samples_ch
-    }
-    if (WHITELISTPARAMS != ''){        
-        if (PAIRED == 'paired'){
-            list = collection.collate(2)
-            whitelist(list)
-            extract_fq(whitelist.out.wl, collection.collate(2))
-        } else{
-            list = collection
-            whitelist(list)
-            extract_fq(whitelist.out.wl, collection)
+    }else{
+        if (WHITELISTPARAMS != ''){        
+            if (PAIRED == 'paired'){
+                whitelist(collection.collate(2))
+                extract_fq(whitelist.out.wl, collection.collate( 2 ))
+            } else{
+                whitelist(collection.collate( 1 ))
+                extract_fq(whitelist.out.wl, collection.collate( 1 ))
+            }
         }
-    }
-    else{
-        if (PAIRED == 'paired'){
-            extract_fq(dummy, collection.collate(2))
-        } else{
-            extract_fq(dummy, collection)
+        else{
+            if (PAIRED == 'paired'){
+                extract_fq(dummy, collection.collate( 2 ))
+            } else{
+                extract_fq(dummy, collection.collate( 1 ))
+            }
         }
     }
     

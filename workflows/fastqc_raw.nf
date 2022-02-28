@@ -30,20 +30,8 @@ workflow QC_RAW{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
-        }
-    }else{
-        SAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-        }
-    }
-
-    samples_ch = Channel.fromPath(SAMPLES)
-
-    qc_raw(samples_ch.collect())
+    
+    qc_raw(samples_ch)
 
     emit:
     qc = qc_raw.out.fastqc_results
