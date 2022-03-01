@@ -66,9 +66,9 @@ process bwa_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}.fastq.gz"
+        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}.fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
@@ -78,7 +78,7 @@ process bwa_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
-    path "*Log.out", emit: logs
+    path "*.log", emit: logs
 
     script:
     idx = reads[0]
@@ -86,19 +86,20 @@ process bwa_mapping{
         r1 = reads[1]
         r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-        pf = fn+".mapped.sam"
-        uf = fn+".unmapped.fastq.gz"
-        lf = fn+"_Log.out"
+        pf = fn+"_mapped.sam"
+        uf = fn+"_unmapped.fastq.gz"
+        lf = "bwa_"+fn+".log"
         """
         $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> $lf && touch $uf && gzip *.sam
         """
     }else{
+        read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-        pf = fn+".mapped.sam"
-        uf = fn+".unmapped.fastq.gz"
-        lf = fn+"_Log.out"
+        pf = fn+"_mapped.sam"
+        uf = fn+"_unmapped.fastq.gz"
+        lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $reads|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> $lf && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null &> $lf && touch $uf && gzip *.sam
         """
     }
 }
