@@ -80,7 +80,7 @@ process segemehl3_mapping{
 
     script:
     genome = reads[0]
-    idx = reads[1]
+    idxfile = reads[1]
     gen =  genome.getName()
     idx = idxfile.getName()
 
