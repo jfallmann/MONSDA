@@ -31,7 +31,7 @@ process dedup_bam{
     bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
     """
-    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $bams --OUTPUT $outf --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $outf &>> dedup.log
+    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates REMOVE_DUPLICATES true ASSUME_SORT_ORDER coordinate TMP_DIR tmp INPUT $bams OUTPUT $outf METRICS_FILE dedup_metrics.txt $DEDUPPARAMS  &> dedup.log && samtools index $outf &>> dedup.log
     """
 }
 
