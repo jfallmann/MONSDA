@@ -10,10 +10,10 @@ process dedup_bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith("_dedup.bam"))              "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam"
-        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedup.bam.bai"
-        else if (filename.indexOf("dedup.log") > 0)       "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
-        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}_dedupmetrics.txt"
+        if (filename.endsWith("_dedup.bam"))              "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
+        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/$COMBO$CONDITION/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
         else null
     }
 
@@ -24,14 +24,17 @@ process dedup_bam{
     output:
     path "*_dedup.bam", emit: bam
     path "*_dedup.bam.bai", emit: bai
-    path "dedup.log", emit: logs
+    path "*_dedup.log", emit: logs
+    path "*_dedup_metrix.txt", emit: metrics
 
     script:
     bams = todedup[0]
     bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
+    outl = bams.getSimpleName()+"_dedup.log"
+    outm = bams.getSimpleName()+"_dedup_metrix.txt"
     """
-    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $bams --OUTPUT $outf --METRICS_FILE dedup_metrics.txt $DEDUPPARAMS &> dedup.log && samtools index $outf &>> dedup.log
+    mkdir -p tmp && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR tmp --INPUT $bams --OUTPUT $outf --METRICS_FILE $outm $DEDUPPARAMS &> $outl && samtools index $outf &>> $outl
     """
 }
 

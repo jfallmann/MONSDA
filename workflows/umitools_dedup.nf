@@ -10,9 +10,9 @@ process dedup_bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith("_dedup.bam"))          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam"
-        else if (filename.indexOf("_dedup.bam.bai") > 0) "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf("dedup.log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/dedupbam.log"
+        if (filename.endsWith("_dedup.bam"))          "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
+        else if (filename.indexOf("_dedup.bam.bai") > 0) "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)           "LOGS/$COMBO$CONDITION/DEDUP/${file(filename).getName()}"
         else null
     }
 
@@ -23,20 +23,21 @@ process dedup_bam{
     output:
     path "*_dedup.bam", emit: bam
     path "*_dedup.bam.bai", emit: bai
-    path "dedup.log", emit: logs
+    path "*_dedup.log", emit: logs
 
     script:
     bams = todedup[0]
     bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
+    outl = bams.getSimpleName()+"_dedup.log"
     if (PAIRED == 'paired'){        
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --paired --stdin=$bams --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=$outl --paired --stdin=$bams --stdout=$outf && samtools index $outf >> $outl
         """
     }
     else{
         """
-            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=dedup.log --stdin=$bams --stdout=$outf && samtools index $outf &> tmp.log && cat tmp.log >> dedup.log
+            mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=$outl --stdin=$bams --stdout=$outf && samtools index $outf >> $outl
         """
     }
 }
