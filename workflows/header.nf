@@ -33,3 +33,16 @@ LONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
 SHORTSAMPLES = get_always('SHORTSAMPLES').split(',') ?: null
 //dummy
 dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
+
+//SAMPLE CHANNELS
+if (PAIRED == 'paired'){
+    SAMPLES = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+    }
+}else{
+    SAMPLES=SAMPLES.collect{
+        element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+    }
+}
+
+samples_ch = Channel.fromPath(SAMPLES)

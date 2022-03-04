@@ -41,7 +41,8 @@ rule count_mappers:
     log:    "LOGS/{combo}/{file}/countmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_mappers:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique.bam", combo=scombo)
@@ -49,7 +50,8 @@ rule count_unique_mappers:
     log:    "LOGS/{combo}/{file}/count_unique_mappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule count_dedup_mappers:
     input:  m = expand("MAPPED/{combo}/{{file}}_mapped_sorted_dedup.bam", combo=scombo)
@@ -57,7 +59,8 @@ rule count_dedup_mappers:
     log:    "LOGS/{combo}/{file}/countdedupmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
 
 rule count_unique_dedup_mappers:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique_dedup.bam", combo=scombo)
@@ -65,7 +68,8 @@ rule count_unique_dedup_mappers:
     log:    "LOGS/{combo}/{file}/count_unique_dedupmappers.log"
     conda:  "samtools.yaml"
     threads: MAXTHREAD
-    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S 25% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
 
 rule featurecount:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted.bam", combo=scombo)
@@ -78,8 +82,9 @@ rule featurecount:
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique.bam", combo=scombo)
@@ -92,8 +97,9 @@ rule featurecount_unique:
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_dedup:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted_dedup.bam", combo=scombo)
@@ -106,8 +112,9 @@ rule featurecount_dedup:
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 rule featurecount_unique_dedup:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique_dedup.bam", combo=scombo)
@@ -120,8 +127,9 @@ rule featurecount_unique_dedup:
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
             paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else ''
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S 25% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
 
 if rundedup:
     rule summarize_counts:

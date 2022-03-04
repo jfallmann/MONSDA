@@ -214,7 +214,17 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "ANNOTATE"]
+    post = [
+        "COUNTING",
+        "TRACKS",
+        "PEAKS",
+        "DE",
+        "DEU",
+        "DAS",
+        "DTU",
+        "CIRCS",
+        "ANNOTATE",
+    ]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -418,6 +428,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 "DTU",
                                 "COUNTING",
                                 "TRACKS",
+                                "CIRCS",
                             ]
                         ]
                     ):
@@ -1192,9 +1203,12 @@ def make_post(
                 for a in range(0, len(listoftools)):
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
-                    tc = list(condition)
-                    tc.append(toolenv)
-                    sconf[subwork].update(subSetDict(config[subwork], tc))
+                    for cond in combname.keys():
+                        tc = list(cond)
+                        tc.append(toolenv)
+                        sconf[subwork] = merge_dicts(
+                            sconf[subwork], subSetDict(config[subwork], tc)
+                        )
 
                     if sconf[subwork].get("TOOLS"):
                         sconf[subwork]["TOOLS"] = subDict(
@@ -1355,13 +1369,20 @@ def make_post(
                     sconf = listofconfigs[0]
                     sconf.pop("PREDEDUP", None)  # cleanup
 
-                    if subwork == "PEAKS":
-                        for c in range(1, len(listofconfigs)):
-                            sconf = merge_dicts(sconf, listofconfigs[c])
+                    for c in range(1, len(listofconfigs)):
+                        sconf = merge_dicts(sconf, listofconfigs[c])
 
                     for a in range(0, len(listoftools)):
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
+
+                        if subwork == "CIRCS":
+                            if toolenv == "ciri2" and "bwa" not in envs:
+                                log.warning(
+                                    "CIRI2 needs BWA mapped files, will skip input produced otherwise"
+                                )
+                                continue
+
                         tc = list(condition)
                         tc.append(toolenv)
                         sconf[subwork].update(subSetDict(config[subwork], tc))
@@ -1370,12 +1391,6 @@ def make_post(
                             sconf[subwork]["TOOLS"] = subDict(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
-
-                        if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                            "deseq",
-                            "diego",
-                        ]:  # for all other postprocessing tools we have more than one defined subworkflow
-                            toolenv = toolenv + "_" + subwork
 
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
@@ -1904,25 +1919,31 @@ def nf_fetch_params(
     # MAPPING Variables
     if "MAPPING" in config:
         MAPCONF = subDict(config["MAPPING"], SETUP)
+        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
+        MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF.get("REFERENCE")
+        REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
+        MANNO = MAPCONF.get("ANNOTATION", MAPCONF[MAPPERENV].get("ANNOTATION"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-        MANNO = MAPCONF.get("ANNOTATION")
         if MANNO:
             ANNOTATION = MANNO
         else:
             ANNOTATION = (
-                ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
+                ANNO.get("GTF")
+                if "GTF" in ANNO and ANNO.get("GTF") != ""
+                else ANNO.get("GFF")
             )  # by default GTF format will be used
-        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
-        PRE = MAPCONF.get("PREFIX")
-        if PRE:
+        PRE = MAPCONF.get(
+            "PREFIX",
+            MAPCONF.get("EXTENSION", MAPOPT.get("PREFIX", MAPOPT.get("EXTENSION"))),
+        )
+        if PRE and PRE is not None:
             PREFIX = PRE
         if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
-        IDX = MAPCONF.get("INDEX")
+        IDX = MAPCONF.get("INDEX", MAPCONF[MAPPERENV].get("INDEX"))
         if IDX:
             INDEX = IDX
         if not INDEX:
@@ -2064,6 +2085,9 @@ def nf_tool_params(
             ),
         )
     )
+
+    if " " in toolbin:
+        toolbin = toolbin.replace(" ", "_")
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -2228,7 +2252,10 @@ def nf_make_pre(
     combinations=None,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
-    log.info(logid + f"PREPROCESSING: {subwork} and SAMPLES: {samples}")
+    log.info(
+        logid
+        + f"PREPROCESSING: {subwork} and SAMPLES: {samples} for COMBINATIONS:{combinations}"
+    )
 
     jobs = list()
     state = "pre_"
@@ -2356,12 +2383,11 @@ def nf_make_pre(
 
                         # workflow merger
                         subjobs.append("\n\n" + "workflow {\n")
-                        for w in ["MULTIQC"]:
-                            if w in flowlist:
-                                subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
-                                subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect()\n"
-                                )
+                        if "MULTIQC" in flowlist:
+                            subjobs.append(" " * 4 + "QC_RAW(dummy)\n")
+                            subjobs.append(
+                                " " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n"
+                            )
                         subjobs.append("\n}\n")
 
                         # nfi = os.path.abspath(os.path.join('MONSDA', 'workflows', 'footer.nf'))
@@ -2545,6 +2571,8 @@ def nf_make_pre(
             for w in ["QC_RAW", "FETCH", "BASECALL"]:
                 if w in flowlist:
                     subjobs.append(" " * 4 + w + "(dummy)\n")
+            if "MULTIQC" in flowlist:
+                subjobs.append(" " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n")
             subjobs.append("}\n\n")
 
             nfo = os.path.abspath(
@@ -2707,11 +2735,16 @@ def nf_make_sub(
                             subname = toolenv + ".nf"
                             flowlist.append("QC_MAPPING")
 
+                        if works[j] == "TRIMMING" and "TRIMMING" not in flowlist:
+                            subname = toolenv + ".nf"
+                            flowlist.append("TRIMMING")
+
                         if works[j] == "DEDUP":
                             if toolenv == "umitools":
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
-                                flowlist.append("QC_DEDUP")
+                                if "QC" in flowlist:
+                                    flowlist.append("QC_DEDUP")
                                 subname = toolenv + ".nf"
                                 nfi = os.path.abspath(
                                     os.path.join(workflowpath, subname)
@@ -2855,84 +2888,90 @@ def nf_make_sub(
                     "TRIMMING",
                     "QC_TRIMMING",
                     "MAPPING",
-                    "QC_MAPPING",
                     "DEDUPBAM",
+                    "QC_MAPPING",
                     "MULTIQC",
                 ]:
                     if w in flowlist:
                         if w == "QC_RAW":
                             subjobs.append(" " * 4 + w + "(dummy)\n")
                         elif w == "PREDEDUP":
-                            if "QC_RAW" not in flowlist:
-                                subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
-                            else:
-                                subjobs.append(
-                                    " " * 4
-                                    + "DEDUPEXTRACT"
-                                    + "(QC_RAW.out.qc.collect())\n"
-                                )
+                            subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
                         elif w == "QC_DEDUP":
-                            subjobs.append(
-                                " " * 4 + w + "(DEDUPEXTRACT.out.ex.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.extract)\n")
                         elif w == "TRIMMING":
                             if "PREDEDUP" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + "TRIMMING"
-                                    + "(DEDUPEXTRACT.out.ex.collect())\n"
+                                    + "(DEDUPEXTRACT.out.extract)\n"
                                 )
-                            elif "QC_RAW" not in flowlist:
-                                subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                             else:
-                                subjobs.append(
-                                    " " * 4 + "TRIMMING" + "(QC_RAW.out.qc.collect())\n"
-                                )
+                                subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                         elif w == "QC_TRIMMING":
-                            subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         elif w == "MAPPING":
+                            subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                             subjobs.append(
-                                " " * 4 + w + "(TRIMMING.out.trimmed.collect())\n"
-                            )
-                            subjobs.append(
-                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped.collect())\n"
-                            )
-                        elif w == "QC_MAPPING":
-                            subjobs.append(
-                                " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
+                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
                             )
                         elif w == "DEDUPBAM":
                             subjobs.append(
-                                " " * 4 + w + "(POSTMAPPING.out.postmapuni.collect())\n"
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
                             )
-                        elif w == "MULTIQC":
+                        elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect(), DEDUPBAM.out.dedup.collect())\n"
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
                                 )
-                            elif "MAPPING" in flowlist:
-                                subjobs.append(
-                                    " " * 4
-                                    + w
-                                    + "(QC_MAPPING.out.qc.collect(), POSTMAPPING.out.postmapuni.collect(), dummy)\n"
-                                )
-                            elif "TRIMMING" in flowlist:
-                                subjobs.append(
-                                    " " * 4
-                                    + w
-                                    + "(QC_TRIMMING.out.qc.collect(), dummy, dummy)\n"
-                                )
-                            # elif "DEDUPBAM" in flowlist:  # not needed, qc_dedup only works on fastq files
-                            #    subjobs.append(
-                            #        " " * 4 + w + "(QC_DEDUP.out.qc.collect())\n"
-                            #    )
                             else:
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_RAW.out.qc.collect(), dummy)\n"
+                                    " " * 4
+                                    + w
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                                )
+                        elif w == "MULTIQC":
+                            if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs))).collect())\n"
+                                )
+                            elif (
+                                "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist
+                            ):
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs)).collect())\n"
+                                )
+                            elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))).collect())\n"
+                                )
+                            elif (
+                                "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist
+                            ):
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni)).collect())\n"
+                                )
+                            elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc).collect())\n"
+                                )
+                            else:
+                                subjobs.append(
+                                    " " * 4 + w + "(QC_RAW.out.qc.collect())\n"
                                 )
                         else:
                             subjobs.append(" " * 4 + w + "(dummy)\n")

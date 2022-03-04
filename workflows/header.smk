@@ -144,8 +144,8 @@ if 'MAPPING' in config:
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
     PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
-    REF = PEAKCONF.get('REFERENCE') if PEAKCONF.get('REFERENCE') else PEAKCONF[PEAKENV].get('REFERENCE')
-    ANNOPEAK = PEAKCONF.get('ANNOTATION') if PEAKCONF.get('ANNOTATION') else PEAKCONF[PEAKENV].get('ANNOTATION')
+    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -164,8 +164,8 @@ for x in ['TRACKS', 'COUNTING']:
         XBIN, XENV = env_bin_from_config3(config, x)
         XCONF = subDict(config[x], SETUP)
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
-        XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
+        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
+        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -191,8 +191,8 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         XBIN, XENV = env_bin_from_config3(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE') if XCONF.get('REFERENCE') else XCONF[XENV].get('REFERENCE')
-        XANNO = XCONF.get('ANNOTATION') if XCONF.get('ANNOTATION') else XCONF[XENV].get('ANNOTATION')
+        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
+        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -207,8 +207,8 @@ if 'CIRCS' in config:
     CIRCCONF = subDict(config['CIRCS'], SETUP)
     XBIN, XENV = env_bin_from_config3(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
-    REF = CIRCCONF.get('REFERENCE') if CIRCCONF.get('REFERENCE') else CIRCCONF[XENV].get('REFERENCE')
-    XANNO = CIRCCONF.get('ANNOTATION') if CIRCCONF.get('ANNOTATION') else CIRCCONF[XENV].get('ANNOTATION')
+    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))
+    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION'))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))

@@ -1,18 +1,5 @@
 //POST MAPPING PROCESSES
 
-process collect_postmap{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process sortsam{
     conda "samtools.yaml"
     cpus THREADS
@@ -25,7 +12,6 @@ process sortsam{
     }
 
     input:
-    val collect
     path map
 
     output:
@@ -34,8 +20,10 @@ process sortsam{
     script:
     fn = file(map[0]).getSimpleName()
     sorted = fn+'_sorted.sam.gz'
+    //No Maxthread in nextflow 
+    sortmem = '30%'
     """
-    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S 25% -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$COMBO$CONDITION/$map
+    set +o pipefail;samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/$COMBO$CONDITION/$map
     """
 }
 
@@ -53,13 +41,12 @@ process sam2bam{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -82,12 +69,11 @@ process uniqsam{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*_unique.sam.gz", emit: sam
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -111,13 +97,12 @@ process sam2bamuniq{
     }
 
     input:
-    val collect
     path sam
 
     output:
     path "*.bam", emit: bam
     path "*.bai", emit: bai
-    path "*.log", emit: log
+    path "*.log", emit: logs
 
     script:
     fn = file(sam[0]).getSimpleName()
@@ -132,20 +117,15 @@ workflow POSTMAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    M1SAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/$COMBO"+element+"_mapped.sam.gz"
-    }
-    M1SAMPLES.sort()
-    mapped_samples_ch = Channel.fromPath(M1SAMPLES)
-
-    collect_postmap(collection.collect())
-    sortsam(collect_postmap.out.done, mapped_samples_ch)
-    sam2bam(collect_postmap.out.done, sortsam.out.sam)
-    uniqsam(collect_postmap.out.done, sortsam.out.sam)
-    sam2bamuniq(collect_postmap.out.done, uniqsam.out.sam)
+  
+    sortsam(collection)
+    sam2bam(sortsam.out.sam)
+    uniqsam(sortsam.out.sam)
+    sam2bamuniq(uniqsam.out.sam)
 
     emit:
     postmap  = sam2bam.out.bam
+    postbai  = sam2bam.out.bai
     postmapuni = sam2bamuniq.out.bam
+    postunibai = sam2bamuniq.out.bai
 }

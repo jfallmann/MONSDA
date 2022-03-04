@@ -33,37 +33,29 @@ process star_idx{
     label 'big_mem'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename =~ /SA/)                         "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename == "Genome")                "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".txt") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf(".tab") > 0)        "$MAPUIDX"+"/"+"${filename.replaceAll(/star.idx/,"")}"
-        else if (filename.indexOf("Log.out") >0)      "LOGS/$COMBO$CONDITION/star_index.log"
-        else if (filename.indexOf(".idx") > 0)        "$MAPIDX"
-        else null
+        if (filename.indexOf("Log.out") > 0)             "LOGS/$COMBO$CONDITION/star_index.log"
+        else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
+        else if (filename == "$MAPUIDXNAME")             "$MAPUIDX"
+        else                                             "$MAPUIDX/${filename}"
     }
 
     input:
-    val collect
-    path reads
     path genome
     path anno
 
     output:
-    path "*SA*", emit: idx
+    path "$MAPUIDXNAME", emit: idx
     path "*Log.out", emit: idxlog
-    path "*.txt", emit: txts
-    path "*.tab", emit: tabs
     path "*.idx", emit: tmpidx
-    path "*Genome*", emit: idxgen
 
     script:
     gen =  genome.getName()
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir . --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno
     """
 
 }
@@ -76,16 +68,14 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed.Unmapped.out.gz\E/,"")}.fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Qtrimmed.Aligned.out.sam.gz\E/,"")}mapped.sam.gz"
-        else if (filename.indexOf(".out") >0)        "LOGS/$COMBO$CONDITION/MAPPING/star_"+"${filename.replaceAll(/\Q_trimmed\E/,"").replaceAll(/\Q.out\E/,"")}.log"
-        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed\E/,"")}"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed.unmapped.out.gz\E/,"")}.fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
+        else if (filename.indexOf(".out") >0)        "LOGS/$COMBO$CONDITION/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename}"
         else null
     }
 
     input:
-    val collect
-    path idx
     path reads
 
     output:
@@ -95,51 +85,46 @@ process star_mapping{
     path "*Unmapped.out*gz", includeInputs:false, emit: unmapped
 
     script:
-    fn = file(reads[0]).getSimpleName()+'.'
-    of = fn+'Aligned.out.sam'
+    idx = reads[0]
+    idxdir = idx.toRealPath()
+    if (PAIRED == 'paired'){
+        r1 = reads[1]
+        r2 = reads[2]
+        a = "Trimming_report.txt"
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")+"."
+        of = fn+'Aligned.out.sam'
+ 
+        """
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        """
+    }
+    else{
+        read = reads[1]
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
+        of = fn+'Aligned.out.sam'
 
-    """
-    $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir ${workflow.workDir}/../$MAPUIDX --readFilesCommand zcat --readFilesIn $reads --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
-    """
+        """
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        """
+    }
 }
 
 workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
-
     checkidx = file(MAPUIDX)
+    //collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        collect_tomap(collection.collect())
-        star_mapping(collect_tomap.out.done, idxfile, trimmed_samples_ch)
+        star_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
-        collect_tomap(collection.collect())
-        star_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile, annofile)
-        star_mapping(collect_tomap.out.done, star_idx.out.idx, trimmed_samples_ch)
+        star_idx(genomefile, annofile)
+        star_mapping(star_idx.out.idx.combine(collection))
     }
 
 

@@ -1,79 +1,59 @@
 T1SAMPLES = null
 T2SAMPLES = null
 
-process simtrim{
+process trim{
     //conda "$TOOLENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_trimmed.fastq.gz") > 0)           "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)     "TRIMMED_FASTQ/$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/Trimming_report.txt"
         else null
     }
 
     input:
-    path read
+    path reads
 
     output:
     path "*trimmed.fastq.gz" , emit: trim
-    path "*trimming_report.txt", emit: rep
+    path "Trimming_report.txt", emit: rep
 
     script:
-    a=read.getSimpleName()+"_trimming_report.txt"
-    b=read.getSimpleName()+"_trimmed.fastq.gz"
-    """
-    ln -sf $read $b ; echo "simulated $read trimming" > $a
-    """
-
+    if (PAIRED == 'paired'){
+        r1 = reads[0]
+        r2 = reads[1]
+        a="Trimming_report.txt"
+        b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        """
+        ln -sf $r1 $b ; ln -sf $r2 $c; echo "simulated $r1 $r2 trimming" > $a
+        """
+    }else{
+        a="Trimming_report.txt"
+        b=file(reads).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
+        """
+        ln -sf $reads $b ; echo "simulated $reads trimming" > $a
+        """
+    }
 }
 
 workflow TRIMMING{
-    take: samples_ch
+    take: 
+    collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        if (RUNDEDUP == 'enabled'){
-            R1SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-            }
-            R2SAMPLES.sort()            
-        }
-        else{   
-            R1SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-            }
-            R2SAMPLES.sort()            
-        }
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
-    }else{
-        if (RUNDEDUP == 'enabled'){
-            RSAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-            }
-        }
-        else{
-            RSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-            }
-        }                 
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
-    }
 
-    simtrim(samples_ch)
+    if ( PREDEDUP == 'enabled' ){
+        trim(collection)
+    } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
+        trim(samples_ch)
+    } else{
+        trim(collection)
+    }    
 
     emit:
-    trimmed = simtrim.out.trim
-    report  = simtrim.out.rep
+    trimmed = trim.out.trim
+    report  = trim.out.rep
 }

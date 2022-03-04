@@ -37,13 +37,11 @@ process segemehl3_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "segemehl3.idx")                  "$MAPIDX"
-        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl_index.log"
+        else if (filename.indexOf(".log") >0)             "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else                                              "$MAPUIDX"
     }
 
     input:
-    val collect
-    path reads
     path genome
 
     output:
@@ -53,7 +51,7 @@ process segemehl3_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME &> index.log&& ln -s $MAPUIDXNAME segemehl3.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME &> index.log && ln -s $MAPUIDXNAME segemehl3.idx
     """
 
 }
@@ -66,39 +64,44 @@ process segemehl3_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/unmapped.fastq.gz/,"").getSimpleName()}fastq.gz"
+        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/"+"${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
         else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf("Log.out") >0)          "LOGS/$COMBO$CONDITION/MAPPING/segemehl.log"
+        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
         else null
     }
 
     input:
-    val collect
-    path genome
-    path idxfile
     path reads
 
     output:
     path "*.sam.gz", emit: maps
-    path "*Log.out", emit: logs
     path "*fastq.gz", includeInputs:false, emit: unmapped
+    path "*.log", emit: logs
 
     script:
-    fn = file(reads[0]).getSimpleName()
-    pf = fn+".mapped.sam"
-    uf = fn+".unmapped.fastq.gz"
+    genome = reads[0]
+    idxfile = reads[1]
     gen =  genome.getName()
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        r1 = reads[2]
+        r2 = reads[3]
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        pf = fn+"_mapped.sam"
+        uf = fn+"_unmapped.fastq.gz"
+        lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2 -o $pf -u $uf &> $lf && touch $uf && gzip *.sam
         """
     }else{
+        fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        read = reads[2]
+        pf = fn+"_mapped.sam"
+        uf = fn+"_unmapped.fastq.gz"
+        lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $reads -o $pf -u $uf  &> Log.out && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $read -o $pf -u $uf  &> $lf && touch $uf && gzip *.sam
         """
     }
 }
@@ -107,41 +110,20 @@ workflow MAPPING{
     take: collection
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R1_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        T2SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_R2_trimmed.fastq.gz"
-        }
-        T2SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES).join(Channel.fromPath(T2SAMPLES))
-
-    }else{
-        T1SAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/$COMBO"+element+"_trimmed.fastq.gz"
-        }
-        T1SAMPLES.sort()
-        trimmed_samples_ch = Channel.fromPath(T1SAMPLES)
-    }
-
+    
     checkidx = file(MAPUIDX)
+    collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        segemehl3_mapping(collect_tomap.out.done, genomefile, idxfile, trimmed_samples_ch)
+        segemehl3_mapping(genomefile.combine(idxfile.combine(collection)))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        collect_tomap(collection.collect())
-        segemehl3_idx(collect_tomap.out.done, trimmed_samples_ch, genomefile)
-        segemehl3_mapping(collect_tomap.out.done, genomefile, segemehl3_idx.out.idx, trimmed_samples_ch)
+        segemehl3_idx(genomefile)
+        segemehl3_mapping(genomefile.combine(segemehl3_idx.out.idx.combine(collection)))
     }
-
 
     emit:
     mapped  = segemehl3_mapping.out.maps

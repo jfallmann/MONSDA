@@ -2,41 +2,27 @@ TRIMENV=get_always('TRIMMINGENV')
 TRIMBIN=get_always('TRIMMINGBIN')
 
 TRIMPARAMS = get_always('trimgalore_params_TRIM') ?: ''
-
+//int cores = min(THREADS,4)
 //TRIMMING PROCESSES
-
-process collect_totrim{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
 
 process trim{
     conda "$TRIMENV"+".yaml"
-    cpus THREADS
+    cpus 4//cores
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".fq.gz") > 0)                "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName()}_trimming_report.txt"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
         else if (filename.indexOf(".log") >0)              "LOGS/$COMBO$CONDITION/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
 
     input:
-    val collect
     path reads
 
     output:
-    path "*fq.gz", emit: trim
+    path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
 
     script:
@@ -44,62 +30,31 @@ process trim{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2
+        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
     else{
         """
-        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads
+        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
 }
 
 workflow TRIMMING{
-    take: collection
+    take: 
+    collection    
 
     main:
-    //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            R1SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R1_dedup.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_R2_dedup.fastq.gz"
-            }
-            R2SAMPLES.sort()            
+    //check = collection.toList()
+    if ( PREDEDUP == 'enabled' ){  // && !check.contains('MONSDA.log')){
+        trim(collection)
+    }else {        
+        if (PAIRED == 'paired'){
+            trim(samples_ch.collate(2))
+        } else{
+            trim(samples_ch.collate(1))
         }
-        else{   
-            R1SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R1.fastq.gz"
-            }
-            R1SAMPLES.sort()
-            R2SAMPLES = SAMPLES.collect{
-                element -> return "${workflow.workDir}/../FASTQ/"+element+"_R2.fastq.gz"
-            }
-            R2SAMPLES.sort()            
-        }
-        samples_ch = Channel.fromPath(R1SAMPLES).join(Channel.fromPath(R2SAMPLES))
     }
-    else{
-        if (RUNDEDUP == 'enabled' && PREDEDUP == 'enabled'){
-            RSAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../DEDUP_FASTQ/$COMBO"+element+"_dedup.fastq.gz"
-            }
-        }
-        else{
-            RSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".fastq.gz"
-            }
-        }                 
-        RSAMPLES.sort()
-        samples_ch = Channel.fromPath(RSAMPLES)
-    }
-
-    
-    collect_totrim(collection.collect())
-    trim(collect_totrim.out.done, samples_ch)
 
     emit:
     trimmed = trim.out.trim

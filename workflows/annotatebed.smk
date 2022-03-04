@@ -93,8 +93,9 @@ rule AddSequenceToBed:
     log:    "LOGS/BED/seq2bed{type}_{file}.log"
     conda:  "bedtools.yaml"
     threads: 1
-    params: bins=BINS
-    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"
+    params: bins=BINS,
+            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"
 
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
@@ -102,4 +103,5 @@ rule MergeAnnoBed:
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "bedtools.yaml"
     threads: 1
-    shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S 25% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
+    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+    shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
