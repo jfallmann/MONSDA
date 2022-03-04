@@ -15,12 +15,12 @@ mapping tools and others.  The template on which analysis is based can
 be found in the ``config`` directory.
 
 
-``MONSDA`` acts a wrapper around ``snakemake`` or ``nextflow`` and the corresponding``config.json`` file.  The ``config.json`` holds all the information that is needed to run the jobs and will be parsed by ``MONSDA`` and split into sub-configs that can later be found in the directory ``SubSnakes`` or ``SubFlows`` respectively. Command line execution calls are storen in the directory '''JOBS''', so users can manipulate those or rerun them manually as needed.
+``MONSDA`` acts a wrapper around ``Snakemake`` or ``Nextflow`` and the corresponding``config.json`` file.  The ``config.json`` holds all the information that is needed to run the jobs and will be parsed by ``MONSDA`` and split into sub-configs that can later be found in the directory ``SubSnakes`` or ``SubFlows`` respectively. Command line execution calls are storen in the directory '''JOBS''', so users can manipulate those or rerun them manually as needed.
 
 To successfully run an analysis pipeline, a few steps have to be followed:
   * Install MONSDA either via ``bioconda`` or ``pip``` folling the instruction in INSTALL
   * Directory structure: The structure for the directories is dictated by the ICS (Identifier-Condition-Setting relationship) in the config file
-  * Config file: This is the central part of the analysis. Depending on this file ``MONSDA`` will determine processing steps and generate according config and ``snakemake`` subworkflow files to run each subworkflow until all processing steps are done.
+  * Config file: This is the central part of the analysis. Depending on this file ``MONSDA`` will determine processing steps and generate according config and workflow files to run each subworkflow until all processing steps are done.
 
 
 In general it is necessary to write a configuration file containing
@@ -37,11 +37,11 @@ This workflow collection makes heavy use of ``conda`` and especially
 the [bioconda](https://bioconda.github.io) channel.
 
 To create a working environment for this repository please install the
-``MONSDA.yaml`` environment as found in the ``envs`` directory
+``MONSDA.yaml`` environment (if not installed via ``bioconda``) as found in the ``envs`` directory
 like so:
 
 ``
-conda env create -n MONSDA -f envs/MONSDA.yaml
+conda env create -n monsda -f envs/MONSDA.yaml
 ``
 
 The ``envs`` directory holds all the environments needed to run the pipelines in the ``workflows`` directory,

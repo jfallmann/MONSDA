@@ -6,36 +6,33 @@ Start a pipline run
 Snakemake
 ---------
 
-Run
+Activate the ``MONSDA`` conda environment and run
 
 ``
-python MONSDA/MONSDA.py
+monsda --help
 ``
 
 to see the help and available options that will be passed through to ``snakemake``.
 
-To start a simple run call
+To start a job with ``Snakemake``, which is the default, run
 
 ``
-python MONSDA/MONSDA.py -j NUMBER_OF_CORES --configfile YOUR_CONFIG.json --directory ${PWD}
+monsda -j NUMBER_OF_CORES -c YOUR_CONFIG.json --directory ${PWD}
 ``
-or add additional arguments for ``Snakemake`` as you see fit.
+or add additional arguments for ``Snakemake`` as you see fit,
+we highly recommend to set mamba as conda frontend and set a fixed directory to store environments (here conda_envs)
+``
+ --conda-frontend mamba --conda-prefix conda_envs
+``
 
 
 Nextflow
 --------
 
-Run
+To run ```MONSDA``` in ``Nextflow`` mode just add '--nextflow'
 
 ``
-python MONSDA/MONSDA.py
+monsda --nextflow -j NUMBER_OF_CORES -c YOUR_CONFIG.json --directory ${PWD}
 ``
 
-to see the help and available options that will be passed through to ``Nextflow``.
-
-To start a simple run call
-
-``
-python MONSDA/MONSDA.py -c YOUR_CONFIG.json -d ${PWD}
-``
-or add additional arguments for ``Nextflow`` as you see fit.
+As with ``Snakemake`` additional arguments for ``Nextflow`` can be added and will be passed through.

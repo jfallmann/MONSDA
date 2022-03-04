@@ -3,7 +3,7 @@ CONTRIBUTE
 ==========
 
 If you like this project, are missing features, want to contribute or
-file bugs please leave an issue or contact me directly.
+file bugs please leave an issue or contact us directly.
 
 To contribute new tools feel free to adopt existing ones, there should
 be a number of examples available that cover implementation details
@@ -12,7 +12,7 @@ python/groovy functions for processing of options or parameters add
 them to the corresponding file in the lib directory.  New environments
 go into the envs directory, new subworkflows into the workflows
 directory. Do not forget to also extend the template.json and add some
-documentation.
+documentation before opening a pull request.
 
 PRs always welcome.
 
