@@ -83,7 +83,7 @@ class PROJECT:
     def __init__(self):
         self.mode = ""
         self.name = ""
-        self.unfinished_config = ""
+        self.unfinished_config = "unfinished_config.pkl"
         self.current_func = ""
         self.current_func_arg = None
         self.current_wf = []
@@ -573,8 +573,8 @@ def complete(text, state):
 
 
 def print_intro():
-    print("NSW: " + __version__)
-    print("RTD: https://MONSDA.readthedocs.io/en/latest/index.html\n")
+    print("version: " + __version__)
+    print("https://MONSDA.readthedocs.io/en/latest/index.html\n")
     print(
         bold_color.BOLD
         + "M O N S D A   C O N F I G U R A T O R"
@@ -1585,7 +1585,7 @@ def set_workflows(wf=None):
     if project.mode == "project" or project.mode == "config":
         return set_cores()
     if project.mode == "modify":
-        return
+        return finalize()
 
 
 def set_cores():
@@ -1608,9 +1608,9 @@ def finalize():
     final_dict = NestedDefaultDict()
 
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
-    final_dict["BINS"] = project.baseDict["BINS"]
+    final_dict["BINS"] = "" # project.baseDict["BINS"]
     final_dict["MAXTHREADS"] = project.cores
-    final_dict["VERSION"] = __version__[1:]
+    final_dict["VERSION"] = __version__
     final_dict["SETTINGS"] = project.settingsDict
     final_dict.update(project.workflowsDict)
 
@@ -1800,11 +1800,17 @@ def main():
     if args.test:
         guide.testing = True
     if args.config:
+        if not args.config.endswith(".json"):
+            print("Session flag requires .json file")
+            exit()
         file = os.path.join(current_path, args.config)
         config = file
     else:
         config = None
     if args.session:
+        if not args.session.endswith(".pkl"):
+            print("Session flag requires .pkl file")
+            exit()
         project.unfinished_config = os.path.join(current_path, args.session)
         print_intro()
         continue_unfinished()
