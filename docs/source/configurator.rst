@@ -1,34 +1,27 @@
 .. role::  raw-html(raw)
     :format: html
 
+================
+Configure MONSDA
+================
 
-=======================================
-CONTROLING MONSDA WITH monsda_configure
-=======================================
 
-| MONSDA operates from a project folder containing a configuration file.
-| To enable easy setup and configuration, we host the executable ``Configurator.py``.
-| The Configurator works as an interactive terminal user interface (TUI).
+| MONSDA operates from a project folder containing a ``config`` json file.
+| To enable easy setup and configuration, we host the executable ``Configurator``.
+| The Configurator works as an interactive terminal user interface.
 | It supports you in three main things:
 
 1. Creating the complete initial project folder
 2. Creating the configuration file
 3. Modifying existing configuration files easily
 
-| To learn more about the project folder click here_.
-
-.. _projectfolder.rst
-
-| To learn more about structure and function of the configuration file click here_.
-
-.. _theconfig.rst
 
 ----
 
 Run the Configurator
 ====================
 
-To run the Configurator, the ``monsda.yaml`` conda environent must be installed and activated.
+To run the ``Configurator``, the ``monsda.yaml`` conda environent must be installed and activated.
 
 .. code-block::
 
@@ -42,21 +35,19 @@ Run the Configurator with
 
  monsda_configure
 
+To see further options run the Configurator with the - -help flag
+
+.. code-block::
+
+ monsda_configure --help
+
 ----
 
 Main Functions
 ==============
 
-When the Configurator is started it provides three basic options: To Create a new project, to create a new config-file or to modify an existing config-file.
-
-With the first two options you enter the `Create Mode`_. In both cases you create a configuration file.
-The difference with creating a project is that the Configurator asks you for a destination for the project folder and sets soft links for all your input files.
-
-In the following it will be explained in detail, which options the configurator offers you.
-
-
-Create Mode
-------------
+Create a new project or config-file
+-----------------------------------
 
 +---------------------------------------------------------------------------------------------------------------------------+
 | ``SELECT WORKFLOWS``                                                                                                      |
@@ -75,8 +66,8 @@ For creating a project you have to enter a path to establish. Note, that your pr
 Choose a place with enough memory if necessary.
 
 
-Modify Mode
------------
+Modify an existing config-file
+------------------------------
 
 1. Add workflows
 ````````````````

@@ -1,6 +1,6 @@
-=========================
-The config.json explained
-=========================
+===============
+The config-file
+===============
 
 It consists of multiple sections which will be explained in detail.  For the template please refer to the
 ``template.json`` file in the ``config`` directory of the repo.  The ``template.json`` is the default
