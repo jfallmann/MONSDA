@@ -118,7 +118,7 @@ rule BedToBedg_ext:
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.bedg.gz",
-            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
+            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_ext.unsrt")
     log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_ext_{type}.log"
     conda:  "bedtools.yaml"
     threads: 1
@@ -134,7 +134,7 @@ rule BedToBedg_rev:
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.bedg.gz",
-            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
+            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_rev.unsrt")
     log:    "LOGS/PEAKS/{combo}/bed2bedgraph_rev_{type}_{file}.log"
     conda:  "bedtools.yaml"
     threads: 1
