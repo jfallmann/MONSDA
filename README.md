@@ -5,10 +5,10 @@
 
 Welcome to MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis
 
-Automizing hts analysis from sra download, preprocessing and mapping to
-postprocessing/analysis and ucsc track generation centered on a single config file.
+Automizing hts analysis from data download, preprocessing and mapping to
+postprocessing/analysis and track generation centered on a single config file.
 MONSDA can create ```snakemake``` and ```nextflow``` workflows based on user defined configuration.
-These workflows can either be saved to disk for manual inspection and running or automatically executed.
+These workflows can either be saved to disk for manual inspection and execution or automatically executed.
 
 For details on ```snakemake``` and ```nextflow``` and their features please refer to the corresponding [snakemake](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html)  or [nextflow](https://www.nextflow.io/docs/latest/index.html) documentation.
 

@@ -1,6 +1,6 @@
-=========================
-The config.json explained
-=========================
+===============
+The config-file
+===============
 
 It consists of multiple sections which will be explained in detail.  For the template please refer to the
 ``template.json`` file in the ``config`` directory of the repo.  The ``template.json`` is the default
@@ -13,13 +13,12 @@ defines parameters specific for the job:
 
 ::
 
-   "WORKFLOWS": "FETCH,QC,MAPPING,TRIMMING,DEDUP,COUNTING,UCSC,DE,DEU,DAS", # Here you define which main workflow steps should be run,
-   "REFERENCE": "GENOMES", #where to find the reference genomes
-   "BINS": "MONSDA/scripts", #where to find the scripts used in the workflow, if you soft-link or clone the snake git to your working directory use this path
+   "WORKFLOWS": "FETCH,QC,MAPPING,TRIMMING,DEDUP,COUNTING,TRACKS,DE,DEU,DAS", # Here you define which main workflow steps should be run
    "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load
+   "BINS": "", where to find custom scripts used in the workflow !!!ADVANCED USAGE!!!
 
 The next part defines where the path to the genome files and its main name plus an extension in case you use
-specific genomes for different runs.  The directory structure that ``MONSDA.py|MONSDA.py`` will
+specific genomes for different runs.  The directory structure that ``MONSDA.py`` will
 follow is in this example *GENOME\Dm6* and it would look for a genome file named *dm6.fa.gz* without further
 extension.  Here already the split by condition is applied, so you can define different genomes to use for
 different conditions/settings, e.g. when running on standard RNA-Seq and Bisulfite-Seq in parallel or on

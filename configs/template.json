@@ -1,29 +1,22 @@
 {
     "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS"
-    "BINS": "MONSDA/scripts", #where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository
+    "BINS": "", #where to find customscripts used in the workflow !!!ADVANCED USAGE ONLY!!!
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
-    "VERSION": "0.0.7",
-    "SAMPLES": {  #which samples to analyze
-                  "id": { #key for source and genome
-                          "condition": { # sample id
-                                         "setting": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2/_R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2/_R1/_R2 extension, this will be appended automatically
-                                       }
-                        }
-               },
+    "VERSION": "0.0.7", #needs to be identical to the installed version for reproducibility reasons
     "SETTINGS": {
         "id": {
             "condition": {
                 "setting": {
-                    "SAMPLES": ["Sample_1_r1","Sample_1_r2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _r1/_r2/_R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _r1/_r2/_R1/_R2 extension, this will be appended automatically
-                    "SEQUENCING": "single",  #or paired and stranded info comma separated
+                    "SAMPLES": ["Sample_1","Sample_2"] # List of samples you whish to analyze; skip file ending, this names will be used for input/output files of various formats; if paired sequencing make sure the names have _R1/_R2 as identifiers of first/second in pair at the very end of the filename and only list one file without the _R1/_R2 extension, this will be appended automatically
+                    "SEQUENCING": "single",  #or paired and stranded (rf,fr) info comma separated
                     "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",  #default Referene Genome fa.gz file
-                    "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings
-                    "PREFIX": "idx",  #if needed, prefix for mapping software can be set here
+                    "INDEX": "GENOMES/Dm6/INDICES/star",  #default index to use for mapping with this settings, empty if not already existing
+                    "PREFIX": "idx",  #OPTIONAL, prefix for mapping software can be set here
                     "ANNOTATION": {
                         "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
                         "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
                     },
-                    "IP": "iCLIP" # OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol
+                    "IP": "iCLIP" # OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol, options are CLIP, iCLIP, revCLIP
                 }
             }
         }

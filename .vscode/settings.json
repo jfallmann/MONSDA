@@ -7,5 +7,5 @@
     "python.testing.pytestEnabled": true,
     "restructuredtext.confPath": "${workspaceFolder}/docs",
     "esbonio.server.enabled": true,
-    "esbonio.sphinx.confDir": "/home/fall/MONSDA/docs"
+    "esbonio.sphinx.confDir": "${workspaceFolder}/docs"
 }

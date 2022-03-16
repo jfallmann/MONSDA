@@ -80,39 +80,39 @@ from MONSDA.Workflows import *
 # CODE
 def parseargs():
     parser = argparse.ArgumentParser(
-        description="Wrapper around snakemake to run config based jobs automatically"
+        description="Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
     )
     parser.add_argument(
         "-c", "--configfile", type=str, help="Configuration json to read"
     )
     parser.add_argument(
-        "-d", "--directory", type=str, default="", help="Directory to work in"
+        "-d", "--directory", type=str, default="", help="Working Directory"
     )
     parser.add_argument(
         "-u",
         "--use-conda",
         action="store_true",
         default=True,
-        help="Should conda be used",
+        help="Should conda be used, default",
     )
     parser.add_argument(
         "-l",
         "--unlock",
         action="store_true",
-        help="If directory is locked you can unlock before processing",
+        help="If Snakemake directory is locked you can unlock before processing",
     )
     parser.add_argument(
         "-j",
         "--procs",
         type=int,
         default=1,
-        help="Number of parallel processed to start snakemake with, capped by MAXTHREADS in config!",
+        help="Number of parallel processed to start MONSDA with, capped by MAXTHREADS in config!",
     )
     parser.add_argument(
         "--save",
         type=str,
         default=None,
-        help="Do not run jobs from wrapper, create named text file containing jobs and arguments for manual running instead",
+        help="Do not actually run jobs, create corresponding text file containing jobs and arguments for manual running instead",
     )
     parser.add_argument(
         "-s",
@@ -121,7 +121,7 @@ def parseargs():
         help="Just create the minimal directory hierarchy as needed",
     )
     parser.add_argument(
-        "--snakemake", action="store_true", default=True, help="Wrap around snakemake"
+        "--snakemake", action="store_true", default=True, help="Wrap around snakemake, default"
     )
     parser.add_argument(
         "--nextflow", action="store_true", default=False, help="Wrap around nextflow"
