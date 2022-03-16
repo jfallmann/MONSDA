@@ -170,7 +170,7 @@ if IP == 'iCLIP':
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
         shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
-else if IP == 'revCLIP':
+elif IP == 'revCLIP':
     rule PreprocessPeaks:
         input:  bedg = rules.BedToBedg_rev.output.concat
         output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
