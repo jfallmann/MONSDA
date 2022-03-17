@@ -118,7 +118,7 @@ rule BedToBedg_ext:
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.bedg.gz",
-            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
+            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_ext.unsrt")
     log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_ext_{type}.log"
     conda:  "bedtools.yaml"
     threads: 1
@@ -134,7 +134,7 @@ rule BedToBedg_rev:
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.bedg.gz",
-            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
+            tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_rev.unsrt")
     log:    "LOGS/PEAKS/{combo}/bed2bedgraph_rev_{type}_{file}.log"
     conda:  "bedtools.yaml"
     threads: 1
@@ -293,11 +293,15 @@ rule PeakToTRACKS:
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp"),
             tmapfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapfw_tmp"),
-            tmapre = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapre_tmp")
+            tmapre = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapre_tmp"),
+            tmapfw_ext = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapfw_ext_tmp"),
+            tmapre_ext = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapre_ext_tmp"),
+            tmapfw_rev = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapfw_rev_tmp"),
+            tmapre_rev = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapre_rev_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log} && zcat {input.map_fw} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw} 2>> {log} && zcat {input.map_re} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re} 2>> {log} && zcat {input.map_fw_ext} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw_ext} 2>> {log} && zcat {input.map_re_ext} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re_ext} 2>> {log} && zcat {input.map_fw_rev} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw_rev} 2>> {log} && zcat {input.map_re_rev} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re_rev} 2>> {log}"
+    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log} && zcat {input.map_fw} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw} 2>> {log} && zcat {input.map_re} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re} 2>> {log} && zcat {input.map_fw_ext} > {output.tmapfw_ext} 2>> {log} && bedGraphToBigWig {output.tmapfw_ext} {input.fas} {output.map_fw_ext} 2>> {log} && zcat {input.map_re_ext} > {output.tmapre_ext} 2>> {log} && bedGraphToBigWig {output.tmapre_ext} {input.fas} {output.map_re_ext} 2>> {log} && zcat {input.map_fw_rev} > {output.tmapfw_rev} 2>> {log} && bedGraphToBigWig {output.tmapfw_rev} {input.fas} {output.map_fw_rev} 2>> {log} && zcat {input.map_re_rev} > {output.tmapre_rev} 2>> {log} && bedGraphToBigWig {output.tmapre_rev} {input.fas} {output.map_re_rev} 2>> {log}"
 
 
 rule GenerateTrack:
