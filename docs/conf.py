@@ -14,6 +14,12 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("."))
+sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../MONSDA"))
+
+from MONSDA import _version
+
+__version__ = _version.get_versions()["version"]
 
 # -- Project information -----------------------------------------------------
 
@@ -22,12 +28,12 @@ copyright = "2020, Joerg Fallmann"
 author = "Joerg Fallmann"
 
 # The full version, including alpha/beta/rc tags
-release = "1.0"
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # Master file to be generated
 
-master_doc = "index"
+master_doc = "source/index"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -60,11 +66,11 @@ html_theme = "sphinx_rtd_theme"
 
 html_theme_options = {
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

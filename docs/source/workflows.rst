@@ -23,7 +23,7 @@ Deduplication
 Read-Counting and Quantification
 ================================
 
-Annotaion
+Annotation
 =========
 
 
