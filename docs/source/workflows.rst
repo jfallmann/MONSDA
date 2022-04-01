@@ -87,14 +87,18 @@ Trimming
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - trim_galore
+     - A wrapper tool around Cutadapt and FastQC to consistently apply quality and adapter trimming to FastQ files, with some extra functionality for MspI-digested RRBS-type (Reduced Representation Bisufite-Seq) libraries.
+     - trimgalore/trim_galore
+     - `LINK <https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/>`_
+   * - Cutadapt
+     - Cutadapt finds and removes adapter sequences, primers, poly-A tails and other types of unwanted sequence from your high-throughput sequencing reads.
+     - cutadapt/cutadapt
+     - `LINK <https://cutadapt.readthedocs.io/en/stable/>`_
 
 
 Mapping
-=======
+#######
 
 .. list-table::
    :widths: 25 50 25 50
@@ -104,12 +108,29 @@ Mapping
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - HISAT2
+     - HISAT2 is a fast and sensitive alignment program
+     - hisat2/hisat2
+     - `LINK <http://daehwankimlab.github.io/hisat2/manual/>`_
+   * - STAR
+     - Spliced Transcripts Alignment to a Reference
+     - star/star
+     - `LINK <https://github.com/alexdobin/STAR>`_
+   * - Segemehl2|3
+     - Segemehl is a software to map short sequencer reads to reference genomes.
+     - segmehl2|3/segemehl.x
+     - `LINK <https://www.bioinf.uni-leipzig.de/Software/segemehl/>`_
+   * - BWA
+     - BWA is a software package for mapping low-divergent sequences against a large reference genome
+     - bwa/bwa mem
+     - `LINK <http://bio-bwa.sourceforge.net/>`_
+   * - Minimap2
+     - Minimap2 is a versatile sequence alignment program that aligns DNA or mRNA sequences against a large reference database. 
+     - minimap/minimap2
+     - `LINK <https://github.com/lh3/minimap2>`_    
 
-Deduplication
+
+DEDUP
 =============
 
 .. list-table::
@@ -130,7 +151,7 @@ POSTPROCESSING
 ==============
 
 Read-Counting and Quantification
-================================
+################################
 
 .. list-table::
    :widths: 25 50 25 50
@@ -146,7 +167,7 @@ Read-Counting and Quantification
      - `LINK <https://github.com/>`_
 
 Differential Analyses
-=====================
+#####################
 
 +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
 | Tool      | Analysis                            | Filtering        | Normalization   | Distribution   | Testing                         | Significance   | Results Table                                        | further                                 | SigTables                               | Clustering        | further                                                           | Rmd   |
@@ -168,8 +189,8 @@ Differential Analyses
 | DRIMSeq   | Differential Transcript Usage       | dmFilter()       |                 | DM             |                                 | pValue, LFC    | results(transcript, genes)                           | Proportions-table, genewise precision   | Sig, SigUP, SigDOWN (transcipt, gene)   |                   | FeatPerGene, precision, Pvalues (per comparison)                  | ✓     |
 +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
 
-Track Generator
-=======================
+TRACKS
+###############
 
 .. list-table::
    :widths: 25 50 25 50
@@ -184,8 +205,8 @@ Track Generator
      - env/bin
      - `LINK <https://github.com/>`_
 
-Peak-calling
-============
+PEAKS
+#####
 
 .. list-table::
    :widths: 25 50 25 50
