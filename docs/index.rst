@@ -11,6 +11,7 @@ MONSDA
    source/first
    source/tutorial
 
+
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -83,6 +84,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-  
+
 MONSDA.rst (END)
 

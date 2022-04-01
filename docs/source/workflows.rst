@@ -7,8 +7,10 @@ general concept:
     * example Settings
  * Destination of the results
 
-SRA Download
-============
+FETCH
+======
+
+
 
 Quality Control
 ===============
