@@ -1,3 +1,5 @@
+.. _config-file:
+
 ===============
 The config-file
 ===============

@@ -1,6 +1,7 @@
-=================================================
-The ICS (Identifier-Condition-Setting relationship)
-=================================================
+.. _condition-tree:
+
+The Condition Tree
+====================================================
 
 For each ID you work on, you can define no, one or multiple conditions and
 settings that will be used for the analysis). The ICS also sets the

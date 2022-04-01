@@ -10,29 +10,20 @@ general concept:
 SRA Download
 ============
 
-Mapping
-=======
-
-
 Quality Control
 ===============
+
+Trimming
+========
+
+Mapping
+=======
 
 Deduplication
 =============
 
 Read-Counting and Quantification
 ================================
-
-Annotation
-=========
-
-
-Trimming
-========
-
-Peak-calling
-============
-
 
 Differential Analyses
 =====================
@@ -57,6 +48,8 @@ Differential Analyses
 | DRIMSeq   | Differential Transcript Usage       | dmFilter()       |                 | DM             |                                 | pValue, LFC    | results(transcript, genes)                           | Proportions-table, genewise precision   | Sig, SigUP, SigDOWN (transcipt, gene)   |                   | FeatPerGene, precision, Pvalues (per comparison)                  | ✓     |
 +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
 
-UCSC Trackhub Generator
+Track Generator
 =======================
 
+Peak-calling
+============

@@ -28,7 +28,7 @@ we highly recommend to set mamba as conda frontend and set a fixed directory to 
 
 .. code-block::
     
-    --conda-frontend mamba --conda-prefix conda_envs
+    --conda-frontend mamba --conda-prefix path_to_conda_envs
 
 
 Nextflow
