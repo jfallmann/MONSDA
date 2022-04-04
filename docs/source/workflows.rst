@@ -141,10 +141,14 @@ DEDUP
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - UMI-tools
+     - UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes.
+     - umitools/umi_tools
+     - `LINK <https://umi-tools.readthedocs.io/en/latest/>`_
+   * - Picard-tools
+     - A better duplication marking algorithm that handles all cases including clipped and gapped alignments.
+     - picard/picard
+     - `LINK <https://gatk.broadinstitute.org/hc/en-us/articles/360037052812-MarkDuplicates-Picard->`_
 
 
 POSTPROCESSING
@@ -161,10 +165,14 @@ Read-Counting and Quantification
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - FeatureCounts
+     - A software program developed for counting reads to genomic features such as genes, exons, promoters and genomic bins
+     - countreads/featureCounts
+     - `LINK <http://subread.sourceforge.net/>`_
+   * - Salmon
+     - Salmon is a tool for wicked-fast transcript quantification from RNA-seq data.
+     - salmon/salmon
+     - `LINK <https://salmon.readthedocs.io/en/latest/salmon.html>`_
 
 Differential Analyses
 #####################
@@ -200,10 +208,10 @@ TRACKS
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - UCSC
+     - Track hubs are web-accessible directories of genomic data that can be viewed on the UCSC Genome Browser
+     - ucsc/ucsc
+     - `LINK <https://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.html#Intro>`_
 
 PEAKS
 #####
@@ -216,7 +224,36 @@ PEAKS
      - Description
      - Env/Bin
      - Link
-   * - tools
-     - blabla
-     - env/bin
-     - `LINK <https://github.com/>`_
+   * - Piranha
+     - Piranha is a peak-caller for CLIP- and RIP-Seq data.
+     - piranha/piranha
+     - `LINK <http://smithlabresearch.org/software/piranha/>`_
+   * - Peaks
+     - Slinding window peak finding tool for quick assessment of peaks. UNPUBLISHED, recommended for initial scanning only
+     - peaks/peaks
+     - `LINK <https://www.embopress.org/doi/full/10.15252/msb.20156628>`_
+   * - Sciphy
+     - Software for cyPhyRNA-Seq Data analysis
+     - sciphy/piranha
+     - `LINK <https://doi.org/10.1080/15476286.2021.1999105>`_
+   * - MACS
+     - Model-based Analysis of ChIP-Seq (MACS), for identifying transcript factor binding sites.
+     - macs/macs
+     - `LINK <https://github.com/macs3-project/MACS>`_
+
+CIRCS
+###############
+
+.. list-table::
+   :widths: 25 50 25 50
+   :header-rows: 1
+
+   * - Tool
+     - Description
+     - Env/Bin
+     - Link
+   * - Ciri2
+     - CIRI (circRNA identifier) is a novel chiastic clipping signal based algorithm,which can unbiasedly and accurately detect circRNAs from transcriptome data by employing multiple filtration strategies.
+     - ciri2/Path_to_CIRI2.pl
+     - `LINK <https://ciri-cookbook.readthedocs.io/en/latest/CIRI2.html>`_
+
