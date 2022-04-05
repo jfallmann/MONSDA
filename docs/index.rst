@@ -8,17 +8,14 @@ MONSDA
 
    source/installation
    source/first
-   source/tutorial
-
 
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: CREATING A PROJECT
+   :caption: PREPARING YOUR PROJECT
 
    source/preparation
    source/configurator
-   source/continue
 
 .. toctree::
    :hidden:
@@ -38,19 +35,24 @@ MONSDA
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: DETAIL DESCRIPTION
+   :caption: TUTORIAL
+
+   source/tutorial
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: DETAILS
 
    source/wrapper
-   source/wfs
    source/conditiontree
    source/config
 
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: INTEGRATE YOUR WORKFLOWS
+   :caption: CONTRIBUTE
 
-   source/possible
    source/integrate
    source/contribute
 

@@ -1,3 +1,6 @@
+Here we need to describe input/output and how the subworkflows are integrated for each processing step
+
+
 PREPROCESSING
 =============
 
@@ -131,7 +134,7 @@ Mapping
 
 
 DEDUP
-=============
+#####
 
 .. list-table::
    :widths: 25 50 25 50

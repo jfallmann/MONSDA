@@ -153,6 +153,11 @@ You can than continue with the --session flag. Run the Configurator like this:
 
 ----
 
+Continue after a Break
+======================
+
+
+
 Assistance in detail
 ====================
 
@@ -257,4 +262,4 @@ However you will often set the same settings. To avoid these repetitions during 
 the configurator offers you to set several conditions at once.
 In the example shown above, you would go through two setting loops.
 All subconditions of both "wildtype" and "knockout" are assigned the same settings.
-To change the conditions set simoulatnously, you can loop through the possible selections by pressing enter.
+To change the conditions set simultanously, you can loop through the possible selections by pressing enter.

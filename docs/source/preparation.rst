@@ -1,6 +1,7 @@
-=========================
-Preparation is everything
-=========================
+.. _preparation:
+
+Plannig a project run
+======================
 
   1. answer following questions:
 

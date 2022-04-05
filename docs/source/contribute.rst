@@ -1,14 +1,8 @@
-==========
 Contribute
 ==========
 
-
- + pull-request
- + entrys in workflow overview
-
-
 If you like this project, are missing features, want to contribute or
-file bugs please leave an issue or contact us directly.
+file bugs please open a PR, leave an issue or contact us directly.
 
 To contribute new tools feel free to adopt existing ones, there should
 be a number of examples available that cover implementation details
@@ -23,5 +17,5 @@ PRs always welcome.
 
 
 ##Contributors
-Joerg Fallmann
-Robin Goldmann
+Joerg Fallmann @jfallmann
+Robin Goldmann @meisterL
