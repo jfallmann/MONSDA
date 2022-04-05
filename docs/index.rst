@@ -77,14 +77,3 @@ For ``MONSDA`` to be as FAIR as possible, one needs to use ``conda`` or the fast
 This workflow organizer makes heavy use of ``conda`` and especially the bioconda_ channel.
 
 .. _bioconda: https://bioconda.github.io
-
-==================
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-MONSDA.rst (END)
-
