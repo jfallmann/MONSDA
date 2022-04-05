@@ -3,6 +3,8 @@
 Plannig a project run
 ======================
 
+Depending on the analysis you want to coduct, it may make more or less sense to split samples into different conditions and settings, following the :ref:`condition-tree`.
+
   1. answer following questions:
 
     * what is the experimental design? which conditions do i have?
