@@ -1,0 +1,32 @@
+{
+    "WORKFLOWS": "FETCH,MAPPING",
+    "BINS": "",
+    "MAXTHREADS": "16",
+    "VERSION": "1.0.0",
+    "SETTINGS": {
+        "AMPLICON": {
+            "SAMPLES": [
+                "T4RNL-sF",
+            ],
+            "SEQUENCING": "paired",
+            "REFERENCE": "/scr/k70san2/robin/GENOMES/Schisto/PRJEA36577_masked.fa.gz",
+            "ANNOTATION": {
+                "GFF": "/scr/k70san2/robin/GENOMES/Schisto/Schisto_WB_RZ_Cluster.gff3.gz"
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR"
+        },
+        "AMPLICON": {
+            "star": {
+                "OPTIONS": {
+                    "INDEX": "--genomeSAindexNbases 8",
+                    "MAP": "--outSAMprimaryFlag AllBestScore --limitOutSJcollapsed 300000000 --limitIObufferSize 8200000000 --outFilterMultimapNmax 20",
+                    "EXTENSION": ""
+                }
+            }
+        }
+    }
+}

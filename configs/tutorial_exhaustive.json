@@ -1,0 +1,528 @@
+{
+    "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS, DTU, COUNTING",
+    "VERSION": "0.0.24",
+    "BINS": "",
+    "MAXTHREADS": "18",
+    "SETTINGS": {
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "SAMPLES": [
+                        "SRR16324019", 
+                        "SRR16324018",
+                        "SRR16324017"
+                    ],
+                    "GROUPS": [
+                        "sym",
+                        "sym",
+                        "sym"
+                    ],
+                    "SEQUENCING": "paired",
+                    "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
+                    "ANNOTATION": {
+                        "GFF": "GENOMES/Ecoli/ecoli2.gff.gz",
+                        "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                    },
+                    "IP": "iCLIP"
+                }
+            },
+            "paired": {
+                "SAMPLES": [
+                    "SRR16324016", 
+                    "SRR16324015",
+                    "SRR16324014"
+                ],
+                "GROUPS": [
+                    "ctrl",
+                    "ctrl",
+                    "ctrl"
+                ],
+                "SEQUENCING": "paired",
+                "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
+                "ANNOTATION": {
+                    "GFF": "GENOMES/Ecoli/ecoli2.gff.gz",
+                    "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                },
+                "IP": "iCLIP"
+            }
+        }
+    },
+    "FETCH": {
+        "TOOLS" :
+        {
+            "sra" : "fasterq-dump"
+        },
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "sra": {
+                        "OPTIONS":
+                        {
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "sra": {
+                    "OPTIONS":
+                    {
+                        "DOWNLOAD": ""
+                    }
+                }
+            }
+        }
+    },
+    "QC": {
+        "TOOLS" :
+        {
+            "fastqc" : "fastqc"
+        },
+        "Ecoli": {
+            "paired": {
+                "fastqc": {
+                    "OPTIONS":
+                    {
+                        "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
+                        "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                    }
+                }
+            },
+            "compare": {
+                "test": {
+                    "fastqc": {
+                        "OPTIONS":
+                        {
+                            "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "TRIMMING": {
+        "TOOLS" :
+        {
+            "trimgalore": "trim_galore",
+            "cutadapt": "cutadapt"
+        },
+        "Ecoli": {
+            "paired": {
+                "trimgalore":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                    }
+                },
+                "cutadapt":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                    }
+                }
+            },
+            "compare": {
+                "test": {
+                    "trimgalore":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        }
+                    },
+                    "cutadapt":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "DEDUP": {
+        "TOOLS": {
+            "umitools": "umi_tools",
+            "picard": "picard"
+        },
+        "Ecoli": {
+            "paired":{
+                "umitools":{
+                    "OPTIONS":
+                    {
+                        "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                        "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                    }
+                },
+               "picard":{
+                    "OPTIONS":
+                    {
+                        "JAVA": "",
+                        "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                    }
+              }
+            },
+            "compare":{
+                "test": {
+                    "umitools": {
+                        "OPTIONS":
+                        {
+                            "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                            "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                        }
+                    },
+                   "picard": {
+                     "OPTIONS":
+                        {
+                            "JAVA": "",
+                            "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR",
+            "segemehl3": "segemehl.x",
+            "hisat2": "hisat2",
+            #"bwa": "bwa mem",
+            #"minimap": "minimap2"
+        },
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "star": {
+                        "OPTIONS": {
+                            "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                            "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                        }
+                    },
+                    "segemehl3": {
+                        "OPTIONS": {
+                            "INDEX": "",
+                            "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                        }
+                    },
+                    "hisat2": {
+                        "OPTIONS":
+                        {
+                          "INDEX": ""
+                        }
+                    },
+                    "bwa": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-a bwtsw",
+                            "MAP": ""
+                        }
+                    },
+                    "minimap": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-k 15",
+                            "MAP": "-ax sr -ub -Y -L --MD"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "star": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                        "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                    }
+                },
+                "segemehl3": {
+                    "OPTIONS": {
+                        "INDEX":  "",
+                        "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                    }
+                },
+                "hisat2": {
+                    "OPTIONS":
+                    {
+                      "INDEX": ""
+                    }
+                },
+                "bwa": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-a bwtsw",
+                        "MAP": ""
+                    }
+                },
+                "minimap": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-k 15",
+                        "MAP": "-ax sr -ub -Y -L --MD"
+                    }
+                }
+            }
+        }
+    },
+    "COUNTING": {
+        "FEATURES": {
+            "CDS": "ID"
+        },
+        "TOOLS": {
+            "countreads": "featureCounts"
+        },
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "countreads": {
+                        "OPTIONS":
+                        {
+                            "COUNT" : "-f --fraction -O -M"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "countreads": {
+                    "OPTIONS":
+                    {
+                        "COUNT" : "-f --fraction -O -M"
+                    }
+                }
+            }
+        }
+    },
+    "TRACKS": {
+        "TOOLS": {
+            "ucsc": "ucsc"
+        },
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "ucsc": {
+                        "OPTIONS":
+                        {
+                            "UCSC": "-n Eco_compare_Mapping -s dm6_st -l UCSC_DM6_compare_Mapping -b UCSC_dm6_star1"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "ucsc": {
+                    "OPTIONS":
+                    {
+                        "UCSC": "-n Eco_paired_Mapping -s dm6_p -l UCSC_DM6_paired_Mapping -b UCSC_dm6_pstar1"
+                    }
+                }
+            }
+        }
+    },
+#DE Analysis
+    "DE": {
+        "TOOLS" :
+        {
+            "deseq2" : "Analysis/DE/DESEQ2.R",
+            "edger" : "Analysis/DE/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+        ],
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "deseq2": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": ""  # Options for DE Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": ""  # Options for DE Analysis
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "deseq2": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                        "DE": ""  # Options for DE Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                        "DE": ""  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#DEU Analysis options
+    "DEU": {
+        "TOOLS" :
+        {
+            "dexseq" : "Analysis/DEU/DEXSEQ.R",
+            "edger" : "Analysis/DEU/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+        ],
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "dexseq": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DE Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DE Analysis
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "dexseq": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DEU": ""  # Options for DE Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DEU": ""  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#DAS Analysis options
+    "DAS": {
+        "TOOLS" :
+        {
+            "diego" : "diego.py",
+            "edger" : "Analysis/DAS/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+        ],
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "diego": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": ""  # Options for DE Analysis
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "diego": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": ""  # Options for DE Analysis
+                    }
+                }
+            }
+        }
+    },
+#PEAKS Analysis options
+    "PEAKS": {
+        "TOOLS" :
+        {
+            "macs" : "macs2",
+            "peaks" : "peaks",
+            "scyphy" : "Piranha"
+        },
+        "COMPARABLE" :
+        {
+            "SRR16324019": "SRR16324018",
+            "SRR16324014": "SRR16324015"
+        },
+        "Ecoli": {
+            "compare": {
+                "test": {
+                    "macs": {
+                        "OPTIONS":
+                        {
+                            "FINDPEAKS": "--nomodel --extsize 28"
+                        }
+                    },
+                    "peaks":{
+                        "OPTIONS":
+                        {
+                            "PREPROCESS": "",
+                            "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                        }
+                    },
+                    "scyphy":{
+                        "OPTIONS":
+                        {
+                            "PREPROCESS": "",
+                            "FINDPEAKS": "-b 100"
+                        }
+                    }
+                }
+            },
+            "paired": {
+                "macs": {
+                    "OPTIONS":
+                    {
+                        "FINDPEAKS": "--nomodel --extsize 28"
+                    }
+                },
+                "peaks":{
+                    "OPTIONS":
+                    {
+                        "PREPROCESS": "",
+                        "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                    }
+                },
+                "scyphy":{
+                    "OPTIONS":
+                    {
+                        "PREPROCESS": "",
+                        "FINDPEAKS": "-b 100"
+                    }
+                }
+            }
+        }
+    }
+}
