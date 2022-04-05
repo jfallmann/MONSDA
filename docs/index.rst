@@ -25,12 +25,6 @@ MONSDA
    source/runsmk
    source/cluster
 
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: WORKFLOW AND TOOL OVERVIEW
-
-   source/workflows
 
 .. toctree::
    :hidden:
@@ -38,6 +32,15 @@ MONSDA
    :caption: TUTORIAL
 
    source/tutorial
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: WORKFLOW AND TOOL OVERVIEW
+
+   source/workflows
+
 
 .. toctree::
    :hidden:
