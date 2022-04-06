@@ -10,7 +10,7 @@ blueprint for a config file used by ``Configurator.py``.
 
 The config file contains all the information needed to run stated workflows and to find the sample/genome
 files.  It starts with a key/value pair defining which workflows and pre-/postprocessing steps to run. Be
-aware that every workflow and postproccessing value has to correspond to a key later in the config.json that
+aware that every workflow and postprocessing value has to correspond to a key later in the config.json that
 defines parameters specific for the job:
 
 ::

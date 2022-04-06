@@ -1,8 +1,8 @@
 {
     "WORKFLOWS": "FETCH,MAPPING",
     "BINS": "",
-    "MAXTHREADS": "16",
-    "VERSION": "1.0.0",
+    "MAXTHREADS": "4",
+    "VERSION": "0.1.2+0.gdcd8ec2.dirty",
     "SETTINGS": {
         "SIMPLE": {
             "SAMPLES": [

@@ -13,5 +13,10 @@
     "restructuredtext.linter.run": "onSave",
     "restructuredtext.linter.doc8.extraArgs": [
         "--ignore D001"
-    ]    
+    ],
+    "cSpell.words": [
+        "DEDUP",
+        "MAXTHREADS",
+        "subdir"
+    ]
 }

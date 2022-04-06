@@ -1,0 +1,25 @@
+name: monsda
+channels:
+- defaults
+- bioconda
+- conda-forge
+dependencies:
+- yaml=0.2.5
+- pandas=1.4.1
+- libmamba=0.21.2
+- perl=5.32.1
+- biopython=1.79
+- snakemake==6.5.3
+- snakemake-minimal==6.5.3
+- numpy==1.21.0
+- nextflow
+- natsort==7.1.1
+- mamba==0.17.0
+- more-itertools==8.8.0
+- conda==4.10.3
+- grep==3.4
+- python==3.9.2
+- scipy==1.7.0
+- versioneer==0.20
+- zlib==1.2.11
+- zstd==1.5.0
