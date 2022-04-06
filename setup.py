@@ -62,7 +62,7 @@ def generate_datafiles():
     return df
 
 
-requires = open("requirements.txt").read().strip().split("\n")
+requires = open(os.path.abspath("requirements.txt")).read().strip().split("\n")
 
 setup(
     name=NAME,
