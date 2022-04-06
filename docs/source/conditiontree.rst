@@ -21,6 +21,8 @@ As an example, I want to analyse samples retreived from LabA on 01012020 (yes th
 
 You do not need to copy input from ``FASTQ/LabA/01012020`` to ``FASTQ/LabA/01012020/SETTING1/2/3``, instead ``MONSDA`` will find the input in ``FASTQ/LabA/01012020`` and generate output directories which contain the *Setting* level.
 
-This works of course also if you want to analyze samples from different dates and same lab with same settings or different labs and so on. ```MONSDA``` will automatically generate output folders ``FASTQ/LabA/01012020/star`` and ``FASTQ/LabA/01012020/hisat`` if no other tools where configured to be used.
+This works of course also if you want to analyze samples from different dates and same lab with same settings or different labs and so on.
 
-Optionally a user can also run one or the other tool with different settings for example to benchmark tools, e.g. ``map_stringent`` and ``map_relaxed`` and indicate this on the *Setting* level in the config file. FASTQ input will still be found in ``FASTQ/LabA/01012020`` while output files will appear in ``FASTQ/LabA/01012020/map_stringent/star`` and ``FASTQ/LabA/01012020/map_stringent/hisat`` or ``FASTQ/LabA/01012020/map_relaxed/star`` and ``FASTQ/LabA/01012020/map_relaxed/star`` respectively.
+```MONSDA``` will automatically define a unique *tool-key* based on currently enabled workflow steps and the combination of tools defined in the config file. From that information it will generate output folders like ``MAPPING/LabA/01012020/star`` and ``MAPPING/LabA/01012020/hisat`` if no other tools and workflow steps where configured to be used.
+
+Optionally a user can also run one or the other tool with different settings for example to benchmark tools. Define for example  ``map_stringent`` and ``map_relaxed`` and indicate this on the *Setting* level in the config file. FASTQ input will still be found in ``FASTQ/LabA/01012020`` while output files will appear in ``MAPPING/LabA/01012020/map_stringent/star`` and ``MAPPING/LabA/01012020/map_stringent/hisat`` or ``MAPPING/LabA/01012020/map_relaxed/star`` and ``MAPPING/LabA/01012020/map_relaxed/star`` respectively.
