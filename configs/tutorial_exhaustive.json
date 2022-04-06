@@ -185,15 +185,15 @@
             "star": "STAR",
             "segemehl3": "segemehl.x",
             "hisat2": "hisat2",
-            #"bwa": "bwa mem",
-            #"minimap": "minimap2"
+            "bwa": "bwa mem",
+            "minimap": "minimap2"
         },
         "Ecoli": {
             "WT": {
                 "dummylevel": {
                     "star": {
                         "OPTIONS": {
-                            "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                            "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 8",
                             "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
                         }
                     },
@@ -229,7 +229,7 @@
                 "star": {
                     "OPTIONS":
                     {
-                        "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                        "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 8",
                         "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
                     }
                 },

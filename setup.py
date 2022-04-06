@@ -73,7 +73,6 @@ setup(
     author_email="fall@bioinf.uni-leipzig.de",
     packages=find_packages(include=["MONSDA", "MONSDA.*"]),
     include_package_data=True,
-    # scripts=scripts,
     data_files=generate_datafiles(),
     entry_points={
         "console_scripts": [
@@ -81,9 +80,8 @@ setup(
             "monsda_configure = MONSDA.Configurator:main",
         ]
     },
-    # scripts=["MONSDA/Configurator.py"],
     install_requires=requires,
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,

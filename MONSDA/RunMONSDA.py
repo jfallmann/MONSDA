@@ -121,7 +121,10 @@ def parseargs():
         help="Just create the minimal directory hierarchy as needed",
     )
     parser.add_argument(
-        "--snakemake", action="store_true", default=True, help="Wrap around snakemake, default"
+        "--snakemake",
+        action="store_true",
+        default=True,
+        help="Wrap around snakemake, default",
     )
     parser.add_argument(
         "--nextflow", action="store_true", default=False, help="Wrap around nextflow"
@@ -900,7 +903,7 @@ def main():
         log.debug(logid + str(log.handlers))
 
         if not knownargs.nextflow:
-            min_version("5.32.0")
+            min_version("6.5.3")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
@@ -914,7 +917,7 @@ def main():
             )
 
         else:
-            nf_min_version = "20.10"
+            nf_min_version = "21.10"
             nf_ver = nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(
