@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
+    "sphinx.ext.graphviz",
     "recommonmark",
     "sphinx_rtd_theme",
 ]
