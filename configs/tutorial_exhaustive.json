@@ -1,12 +1,12 @@
 {
     "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS, DTU, COUNTING",
-    "VERSION": "0.0.24",
+    "VERSION": "1.0.0",
     "BINS": "",
-    "MAXTHREADS": "18",
+    "MAXTHREADS": "16",
     "SETTINGS": {
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "SAMPLES": [
                         "SRR16324019", 
                         "SRR16324018",
@@ -20,13 +20,12 @@
                     "SEQUENCING": "paired",
                     "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
                     "ANNOTATION": {
-                        "GFF": "GENOMES/Ecoli/ecoli2.gff.gz",
+                        "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                         "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
-                    },
-                    "IP": "iCLIP"
+                    }
                 }
             },
-            "paired": {
+            "KO": {
                 "SAMPLES": [
                     "SRR16324016", 
                     "SRR16324015",
@@ -40,10 +39,9 @@
                 "SEQUENCING": "paired",
                 "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
                 "ANNOTATION": {
-                    "GFF": "GENOMES/Ecoli/ecoli2.gff.gz",
+                    "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                     "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
-                },
-                "IP": "iCLIP"
+                }
             }
         }
     },
@@ -53,16 +51,17 @@
             "sra" : "fasterq-dump"
         },
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "sra": {
                         "OPTIONS":
                         {
+                            "DOWNLOAD": ""
                         }
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "sra": {
                     "OPTIONS":
                     {
@@ -78,22 +77,22 @@
             "fastqc" : "fastqc"
         },
         "Ecoli": {
-            "paired": {
+            "KO": {
                 "fastqc": {
                     "OPTIONS":
                     {
-                        "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
-                        "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                        "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                        "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
                     }
                 }
             },
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "fastqc": {
                         "OPTIONS":
                         {
-                            "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
-                            "MULTI": ""  #MultiQC options here if any, paired is not required, will be resolved by rules
+                            "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
                         }
                     }
                 }
@@ -107,32 +106,32 @@
             "cutadapt": "cutadapt"
         },
         "Ecoli": {
-            "paired": {
+            "KO": {
                 "trimgalore":{
                     "OPTIONS":
                     {
-                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
                     }
                 },
                 "cutadapt":{
                     "OPTIONS":
                     {
-                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
                     }
                 }
             },
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "trimgalore":{
                         "OPTIONS":
                         {
-                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
                         }
                     },
                     "cutadapt":{
                         "OPTIONS":
                         {
-                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
+                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
                         }
                     }
                 }
@@ -145,7 +144,7 @@
             "picard": "picard"
         },
         "Ecoli": {
-            "paired":{
+            "KO":{
                 "umitools":{
                     "OPTIONS":
                     {
@@ -161,8 +160,8 @@
                     }
               }
             },
-            "compare":{
-                "test": {
+            "WT":{
+                "dummylevel": {
                     "umitools": {
                         "OPTIONS":
                         {
@@ -190,8 +189,8 @@
             #"minimap": "minimap2"
         },
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "star": {
                         "OPTIONS": {
                             "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
@@ -226,7 +225,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "star": {
                     "OPTIONS":
                     {
@@ -271,8 +270,8 @@
             "countreads": "featureCounts"
         },
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "countreads": {
                         "OPTIONS":
                         {
@@ -281,7 +280,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "countreads": {
                     "OPTIONS":
                     {
@@ -296,8 +295,8 @@
             "ucsc": "ucsc"
         },
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "ucsc": {
                         "OPTIONS":
                         {
@@ -306,7 +305,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "ucsc": {
                     "OPTIONS":
                     {
@@ -329,8 +328,8 @@
         "EXCLUDE": [
         ],
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "deseq2": {
                         "OPTIONS":
                         {
@@ -347,7 +346,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "deseq2": {
                     "OPTIONS":
                     {
@@ -378,8 +377,8 @@
         "EXCLUDE": [
         ],
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "dexseq": {
                         "OPTIONS":
                         {
@@ -396,7 +395,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "dexseq": {
                     "OPTIONS":
                     {
@@ -427,8 +426,8 @@
         "EXCLUDE": [
         ],
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "diego": {
                         "OPTIONS":
                         {
@@ -445,7 +444,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "diego": {
                     "OPTIONS":
                     {
@@ -477,8 +476,8 @@
             "SRR16324014": "SRR16324015"
         },
         "Ecoli": {
-            "compare": {
-                "test": {
+            "WT": {
+                "dummylevel": {
                     "macs": {
                         "OPTIONS":
                         {
@@ -501,7 +500,7 @@
                     }
                 }
             },
-            "paired": {
+            "KO": {
                 "macs": {
                     "OPTIONS":
                     {

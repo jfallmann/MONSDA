@@ -4,14 +4,31 @@
     "MAXTHREADS": "16",
     "VERSION": "1.0.0",
     "SETTINGS": {
-        "AMPLICON": {
+        "SIMPLE": {
             "SAMPLES": [
-                "T4RNL-sF",
+                "SRR16324019"
             ],
             "SEQUENCING": "paired",
-            "REFERENCE": "/scr/k70san2/robin/GENOMES/Schisto/PRJEA36577_masked.fa.gz",
+            "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
             "ANNOTATION": {
-                "GFF": "/scr/k70san2/robin/GENOMES/Schisto/Schisto_WB_RZ_Cluster.gff3.gz"
+                "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
+                "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+            }
+        }
+    },
+    "FETCH": {
+        "TOOLS" :
+        {
+            "sra" : "fasterq-dump"
+        },
+        "Ecoli": {
+            "SIMPLE": {
+                "sra": {
+                    "OPTIONS":
+                    {
+                        "DOWNLOAD": ""
+                    }
+                }
             }
         }
     },
@@ -19,7 +36,7 @@
         "TOOLS": {
             "star": "STAR"
         },
-        "AMPLICON": {
+        "SIMPLE": {
             "star": {
                 "OPTIONS": {
                     "INDEX": "--genomeSAindexNbases 8",
