@@ -35,7 +35,7 @@ rule salmon_index:
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
-            ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('INDEX', ""),
+            ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', COUNTENV)['OPTIONS'].get('INDEX', ""),
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell:  "set +euo pipefail; {params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 

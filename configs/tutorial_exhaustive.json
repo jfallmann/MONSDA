@@ -2,7 +2,7 @@
     "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS, DTU, COUNTING",
     "VERSION": "1.0.0",
     "BINS": "",
-    "MAXTHREADS": "16",
+    "MAXTHREADS": "12",
     "SETTINGS": {
         "Ecoli": {
             "WT": {
@@ -13,9 +13,9 @@
                         "SRR16324017"
                     ],
                     "GROUPS": [
-                        "sym",
-                        "sym",
-                        "sym"
+                        "ctrl",
+                        "ctrl",
+                        "ctrl"
                     ],
                     "SEQUENCING": "paired",
                     "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
@@ -32,9 +32,9 @@
                     "SRR16324014"
                 ],
                 "GROUPS": [
-                    "ctrl",
-                    "ctrl",
-                    "ctrl"
+                    "ko",
+                    "ko",
+                    "ko"
                 ],
                 "SEQUENCING": "paired",
                 "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
@@ -383,14 +383,14 @@
                         "OPTIONS":
                         {
                             "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DEU": ""  # Options for DE Analysis
+                            "DEU": ""  # Options for DEU Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
                             "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DEU": ""  # Options for DE Analysis
+                            "DEU": ""  # Options for DEU Analysis
                         }
                     }
                 }
@@ -400,14 +400,14 @@
                     "OPTIONS":
                     {
                         "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DEU": ""  # Options for DE Analysis
+                        "DEU": ""  # Options for DEU Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
                         "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DEU": ""  # Options for DE Analysis
+                        "DEU": ""  # Options for DEU Analysis
                     }
                 }
             }
@@ -432,14 +432,14 @@
                         "OPTIONS":
                         {
                             "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
                             "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DAS": ""  # Options for DE Analysis
+                            "DAS": ""  # Options for DAS Analysis
                         }
                     }
                 }
@@ -449,14 +449,62 @@
                     "OPTIONS":
                     {
                         "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for Analysis
+                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
                         "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DAS": ""  # Options for DE Analysis
+                        "DAS": ""  # Options for DAS Analysis
+                    }
+                }
+            }
+        }
+    },
+    "DTU": {
+        "TOOLS" :
+        {
+            "dexseq" : "Analysis/DTU/DEXSEQ.R",
+            "drimseq" : "Analysis/DTU/DRIMSEQ.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+        ],
+        "Ecoli": {
+            "WT": {
+                "dummylevel": {
+                    "dexseq": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DTU Analysis
+                        }
+                    },
+                    "drimseq": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": ""  # Options for DTU Analysis
+                        }
+                    }
+                }
+            },
+            "KO": {
+                "dexseq": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DTU": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DTU Analysis
+                    }
+                },
+                "drimseq": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DTU": ""  # Options for DTU Analysis
                     }
                 }
             }

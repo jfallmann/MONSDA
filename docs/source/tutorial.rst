@@ -44,18 +44,62 @@ Starting the run with 4 cores (defining more will be capped by the config file a
     monsda -j 4 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_quick.json --directory ${PWD}
 
 Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index and a "MAPPING" directory containing the mapped files. Furthermore, ``MONSDA`` will create a "LOG" directory containing it's own log, as well as logs of all executed jobs.
+A successful run will show the message 'Workflow finished, no error'
+
 
 A more complex run
 ###################
 
-This slightly more complex use case involves multiple input files, two conditions (WT/KO) and a more or less standard DE analysis workflow.
+This slightly more complex use case involves multiple input files, two conditions (WT/KO) and a more or less standard DE analysis workflow. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that ``MONSDA`` can work on condition-trees of differing depth. 
+
+Workflows include: 
+
+    - FETCH: Download from SRA
+    - QC: FASTQC of input and output
+    - TRIMMING: Adaptor removal with cutadapt/trimgalore
+    - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
+    - DEDUP: Read deduplication with umi_tools and picard
+    - DE: Differential Expression analysis with EdgeR and DESeq2
+
+The more complex config for this analysis follows
 
 .. literalinclude:: ../../configs/tutorial_de.json
     :language: json
 
+Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE stage and can be used to define "COMPARABLES" that tell ``MONSDA`` which Samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our simple case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE step. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
+
+Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
+
+.. code-block:: bash
+
+    monsda -j 21 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_de.json --directory ${PWD}
+
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, ``MONSDA`` will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
+
+A successful run will show the message 'Workflow finished, no error'
 
 Run it all
 ###########
+
+This exhaustive use case involves multiple input files, two conditions (WT/KO) and a set of postprocessing workflows. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that ``MONSDA`` can work on condition-trees of differing depth. 
+
+Workflows include: 
+
+    - FETCH: Download from SRA
+    - QC: FASTQC of input and output
+    - TRIMMING: Adaptor removal with cutadapt/trimgalore
+    - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
+    - DEDUP: Read deduplication with umi_tools and picard
+    - DE: Differential Expression analysis with EdgeR and DESeq2
+    - DEU: Differential Exon Usage analysis with EdgeR and DEXSeq
+    - DAS: Differential Alternative Splicing analysis with EdgeR and DIEGO
+    - DTU: Differential Transcript Usage analysis with 
+    - COUNTING:
+    - TRACKS:
+    - PEAKS:
+
+The more complex config for this analysis follows
+
 
 .. literalinclude:: ../../configs/tutorial_exhaustive.json
     :language: json

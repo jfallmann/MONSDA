@@ -12,9 +12,9 @@
                     "SRR16324017"
                 ],
                 "GROUPS": [
-                    "sym",
-                    "sym",
-                    "sym"
+                    "ctrl",
+                    "ctrl",
+                    "ctrl"
                 ],
                 "SEQUENCING": "paired",
                 "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
@@ -30,9 +30,9 @@
                     "SRR16324014"
                 ],
                 "GROUPS": [
-                    "ctrl",
-                    "ctrl",
-                    "ctrl"
+                    "ko",
+                    "ko",
+                    "ko"
                 ],
                 "SEQUENCING": "paired",
                 "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
