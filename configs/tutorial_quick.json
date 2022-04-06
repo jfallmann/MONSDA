@@ -21,13 +21,11 @@
         {
             "sra" : "fasterq-dump"
         },
-        "Ecoli": {
-            "SIMPLE": {
-                "sra": {
-                    "OPTIONS":
-                    {
-                        "DOWNLOAD": ""
-                    }
+        "SIMPLE": {
+            "sra": {
+                "OPTIONS":
+                {
+                    "DOWNLOAD": ""
                 }
             }
         }
