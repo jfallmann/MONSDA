@@ -1,3 +1,5 @@
+.. _WFoverview:
+
 Here we need to describe input/output and how the subworkflows are integrated for each processing step
 
 

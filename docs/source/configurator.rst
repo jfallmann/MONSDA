@@ -128,14 +128,14 @@ settings-block and for each condition.
 
 ----
 
-Take a Break
-============
+Interrupt Configuration
+=======================
 
 It can happen, that the Configurator asks for entries, you haven't thought about yet.
-So you don't have to abort the creation to start all over again, you can cache your previous entries.
-During creation the Configurator saves all your entries in a backup file called ``unfinished_config.pkl``
+In this case you can interrupt the configuration and the ``Configurator`` will cache your entries.
+A temporary backup file called ``unfinished_config.pkl`` is created for that. 
 
-To continue later exactly at the same point type
+in most cases you can even just abort the script, but to guarantee clean re-entry you should type
 
 .. code-block::
 
@@ -152,11 +152,6 @@ You can than continue with the --session flag. Run the Configurator like this:
     monsda_configure -s my_renamed_unfinished_config.pkl
 
 ----
-
-Continue after a Break
-======================
-
-
 
 Assistance in detail
 ====================
@@ -198,7 +193,7 @@ Sample Assignment:
     ============================================================
 
     {
-        "DSM1294asdf": {
+        "NewExperiment": {
               "wildtype": {
                     "day1": {
                           "SAMPLES": [
