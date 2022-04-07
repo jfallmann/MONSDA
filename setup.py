@@ -61,7 +61,6 @@ def generate_datafiles():
 
     return df
 
-
 requires = open(os.path.abspath("requirements.txt")).read().strip().split("\n")
 
 setup(
