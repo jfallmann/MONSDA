@@ -61,7 +61,7 @@ def generate_datafiles():
 
     return df
 
-requires = open(os.path.abspath("requirements.txt")).read().strip().split("\n")
+#requires = open(os.path.abspath("requirements.txt")).read().strip().split("\n")
 
 setup(
     name=NAME,
@@ -79,7 +79,15 @@ setup(
             "monsda_configure = MONSDA.Configurator:main",
         ]
     },
-    install_requires=requires,
+    #install_requires=requires,
+    install_requires=[
+        "biopython">=1.78
+        "snakemake">=6.5.3
+        "black">=21.5b2
+        "flake8">=3.8.3
+        "isort">=5.9.2
+        "sphinx">=4.1.0
+    ],
     python_requires=">=3.9",
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
