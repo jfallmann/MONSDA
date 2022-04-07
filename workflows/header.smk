@@ -200,7 +200,15 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-
+        if x == 'DTU':
+            IDX = XCONF.get('INDEX')
+            if IDX:
+                INDEX = IDX
+            if not INDEX:
+                INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
+                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])))
+            INDICES = INDEX.split(',') if INDEX else list(UIDX)
+            INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 
 # CIRCS Variables
 if 'CIRCS' in config:
