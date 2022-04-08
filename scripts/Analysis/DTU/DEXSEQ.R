@@ -36,10 +36,7 @@ get_gene_name <- function(id, df){
 gtf.rtl <- rtracklayer::import(gtf)
 gtf.df <- as.data.frame(gtf.rtl)
 
-# define cutoffs
-# cutoffs <- strsplit(cutts, '-')[[1]]
-# pv_cut   <- as.numeric(sub("pval:", "", cutoffs[1]))
-# lfc_cut  <- as.numeric(sub("lfc:", "", cutoffs[2]))
+BPPARAM = MulticoreParam(workers=cores)
 
 # Importing counts
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
@@ -67,7 +64,7 @@ cts.original <- cts
 rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # Transcript-to-gene mapping
-txdb.filename <- file.path("GENOMES/gencode.v35.annotation.sqlite")
+txdb.filename <- file.path(paste(gtf,"sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
 # saveDb(txdb, txdb.filename)
 # txdb <- loadDb(txdb.filename)
@@ -199,4 +196,4 @@ for(contrast in comparisons[[1]]){
     # write.table(as.data.frame(dex.padj), gzfile(paste("DTU_DEXSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 }
 
-save.image(file = paste("DTU","DEXSEQ",combi,"SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU", combi, "DTU_DEXSEQ_SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

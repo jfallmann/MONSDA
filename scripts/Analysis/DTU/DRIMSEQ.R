@@ -272,4 +272,4 @@ for(contrast in comparisons[[1]]){
     })
 }
 
-save.image(file = paste("DTU", "DRIMSEQ", combi, "SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU", combi, "DTU_DRIMSEQ_SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
