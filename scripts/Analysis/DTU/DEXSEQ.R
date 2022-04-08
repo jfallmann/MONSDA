@@ -45,7 +45,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 samps <- read.table(file = gzfile(anname), header=TRUE, row.names=NULL)
 samps$sample_id <- paste(samps$sample_id, samps$condition, sep="_")
 samps$condition <- factor(samps$condition)
-files <- file.path(samps$path, "quant.sf")
+files <- file.path(samps$path, "quant.sf.gz")
 names(files) <- samps$sample_id
 
 groups <- factor(samps$condition)
