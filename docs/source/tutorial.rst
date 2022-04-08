@@ -100,6 +100,26 @@ Workflows include:
 
 The more complex config for this analysis follows
 
+You will see here that for DTU workflows we will need an additional FASTA and GTF file covering transcripts. As our sample data is from E.coli, transcripts and genes can be seen as synonymous, so we can easily create the needed files from our already downloaded files.
+
+Creating a transcript gtf file from the downloaded gtf by subsetting for gene features:
+
+.. code-block:: bash
+    zcat ecoli.gtf.gz |head -n+3 > bla; zcat ecoli.gtf.gz|grep -P '\tgene\t' >> bla;cat bla|gzip > Ecoli_trans.gtf.gz;rm -f bla
+
+We now fix the empty transcript-id tag by replacing it with the gene-id followed by "_1":abbr:
+
+.. code-block:: bash
+    zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\"";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|gzip > Ecoli_trans_fix.gtf.gz
+
+From this gtf we can now create a fasta file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. We then only need to clean up the name tag as follows:
+
+.. code-block:: bash
+    zcat Ecoli_trans_fix.gtf.gz|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
+    bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
+    perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa|gzip > Ecoli_trans.fa.gz
+
+With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files we can now also run the DTU workflow. The config file for the exhaustive run looks as follows:
 
 .. literalinclude:: ../../configs/tutorial_exhaustive.json
     :language: json

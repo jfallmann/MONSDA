@@ -10,7 +10,6 @@ options(echo=TRUE)
 
 ### ARGS
 args <- commandArgs(trailingOnly = TRUE)
-
 anname  <- args[1]
 gtf     <- args[2]
 outdir  <- args[3]
@@ -78,7 +77,7 @@ all(rownames(cts) %in% txdf$TXNAME)
 txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
 all(rownames(cts) == txdf$TXNAME)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=samps)
 
 # Filter before running procedures:
