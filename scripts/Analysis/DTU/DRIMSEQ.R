@@ -65,17 +65,17 @@ rownames(cts) <- sub("\\|.*", "", rownames(cts))
 # Transcript-to-gene mapping
 txdb.filename <- file.path(paste(gtf, "sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
-txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
+txdf <- select(txdb, keys(txdb, "GENEID"), "TXID", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # DRIMSEQ
 #check for integrity -> define exception..
-all(rownames(cts) %in% txdf$TXNAME)
-txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
-all(rownames(cts) == txdf$TXNAME)
+all(rownames(cts) %in% txdf$TXID)
+txdf <- txdf[match(rownames(cts),txdf$TXID),]
+all(rownames(cts) == txdf$TXID)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXID, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=sampleData)
 
 # Filter before running procedures:
