@@ -216,7 +216,8 @@ for(contrast in comparisons[[1]]){
                 dev.off()
             },
             warning = function(w){
-                message('Caught an warning!')
+                file.create(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
+                message('Caught a warning!')
                 print(w)
             },
             error = function(e){
@@ -275,4 +276,4 @@ for(contrast in comparisons[[1]]){
 }
 
 
-save.image(file = paste("DTU", combi, "DTU_DRIMSEQ_SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU_DRIMSEQ", combi, "SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

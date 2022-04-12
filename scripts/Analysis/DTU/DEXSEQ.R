@@ -1,4 +1,5 @@
 suppressPackageStartupMessages({
+    require(BiocParallel)
     library(tximport)
     library(GenomicFeatures)
     library(DRIMSeq)
@@ -149,15 +150,14 @@ for(contrast in comparisons[[1]]){
     count.data <- round(as.matrix(counts(d)[,-c(1:2)]))
     # The design formula of the DEXSeqDataSet here uses the language “exon” but this should be read as “transcript” for our analysis.
     dxd <- DEXSeqDataSet(countData=count.data,
-                        sampleData=sample.data,
-                        design=~sample + exon + condition:exon,
-                        featureID=counts(d)$feature_id,
-                        groupID=counts(d)$gene_id)
-    system.time({
-        dxd <- estimateSizeFactors(dxd)
-        dxd <- estimateDispersions(dxd, quiet=TRUE)
-        dxd <- testForDEU(dxd, reducedModel=~sample + exon)
-    })
+                sampleData=sample.data,
+                design=~sample + exon + condition:exon,
+                featureID=counts(d)$feature_id,
+                groupID=counts(d)$gene_id
+            )
+    dxd <- DEXSeq::estimateSizeFactors(dxd) 
+    dxd <- DEXSeq::estimateDispersions(dxd, quiet=TRUE)
+    dxd <- testForDEU(dxd, reducedModel=~sample + exon)
 
     dxr <- DEXSeqResults(dxd, independentFiltering=FALSE)
     qval <- perGeneQValue(dxr)
@@ -192,4 +192,4 @@ for(contrast in comparisons[[1]]){
     # write.table(as.data.frame(dex.padj), gzfile(paste("DTU_DEXSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 }
 
-save.image(file = paste("DTU", combi, "DTU_DEXSEQ_SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU_DEXSEQ", combi, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
