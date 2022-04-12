@@ -110,12 +110,12 @@ Creating a transcript gtf file from the downloaded gtf by subsetting for gene fe
 We now fix the empty transcript-id tag by replacing it with the gene-id followed by "_1":abbr:
 
 .. code-block:: bash
-    zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\"";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|gzip > Ecoli_trans_fix.gtf.gz
+    zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|perl -F'\t' -wlane 'print $_;if($_ !~/^#/){print join("\t",@F[0..1])."\ttranscript\t".join("\t",@F[3..$#F])}'|gzip > Ecoli_trans_fix.gtf.gz
 
 From this gtf we can now create a fasta file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. We then only need to clean up the name tag as follows:
 
 .. code-block:: bash
-    zcat Ecoli_trans_fix.gtf.gz|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
+    zcat Ecoli_trans_fix.gtf.gz|grep -P '\ttranscript\t'|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
     bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
     perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa|gzip > Ecoli_trans.fa.gz
 

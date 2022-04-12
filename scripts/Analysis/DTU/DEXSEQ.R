@@ -65,17 +65,17 @@ rownames(cts) <- sub("\\|.*", "", rownames(cts))
 # Transcript-to-gene mapping
 txdb.filename <- file.path(paste(gtf, "sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
-txdf <- select(txdb, keys(txdb, "GENEID"), "TXID", "GENEID")
+txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # DRIMSEQ
 #check for integrity -> define exception..
-all(rownames(cts) %in% txdf$TXID)
-txdf <- txdf[match(rownames(cts),txdf$TXID),]
-all(rownames(cts) == txdf$TXID)
+all(rownames(cts) %in% txdf$TXNAME)
+txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
+all(rownames(cts) == txdf$TXNAME)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXID, cts, check.names=FALSE)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=samps)
 
 # Filter before running procedures:
@@ -89,8 +89,8 @@ d <- dmFilter(d,
               min_samps_feature_prop=n.small, min_feature_prop=0.1,
               min_samps_gene_expr=n, min_gene_expr=10)
 
-# shows how many of the remaining genes have N isoforms
-table(table(counts(d)$gene_id))
+## shows how many of the remaining genes have N isoforms
+#table(table(counts(d)$gene_id))
 
 # create designmatrix
 #   original code for simple model
@@ -121,7 +121,6 @@ design <- model.matrix(~groups, data=DRIMSeq::samples(d))
 
 comparison_objs <- list()
 setwd(outdir)
-# dir.create(file.path(outdir,"Figures"))
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
@@ -172,7 +171,7 @@ for(contrast in comparisons[[1]]){
     dxr <- apply(dxr,2,as.character)
 
     write.table(as.data.frame(dxr), gzfile(paste("Tables/DTU","DEXSEQ",combi,contrast_name,"table","results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-
+    
     # # stageR following DEXSeq
     # strp <- function(x) substr(x,1,15)
     # pConfirmation <- matrix(dxr$pvalue,ncol=1)

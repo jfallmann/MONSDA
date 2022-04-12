@@ -102,7 +102,7 @@ rule run_DTU:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             outdir = 'DTU/'+combo,
-            ref = ANNOTATION
+            ref = os.path.abspath(ANNOTATION)
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
 
 rule filter_significant_drimseq:

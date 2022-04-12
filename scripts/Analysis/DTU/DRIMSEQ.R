@@ -65,17 +65,17 @@ rownames(cts) <- sub("\\|.*", "", rownames(cts))
 # Transcript-to-gene mapping
 txdb.filename <- file.path(paste(gtf, "sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
-txdf <- select(txdb, keys(txdb, "GENEID"), "TXID", "GENEID")
+txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
 
 # DRIMSEQ
 #check for integrity -> define exception..
-all(rownames(cts) %in% txdf$TXID)
-txdf <- txdf[match(rownames(cts),txdf$TXID),]
-all(rownames(cts) == txdf$TXID)
+all(rownames(cts) %in% txdf$TXNAME)
+txdf <- txdf[match(rownames(cts),txdf$TXNAME),]
+all(rownames(cts) == txdf$TXNAME)
 
-counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXID, cts, check.names=FALSE)
+counts <- data.frame(gene_id=txdf$GENEID, feature_id=txdf$TXNAME, cts, check.names=FALSE)
 d <- dmDSdata(counts=counts, samples=sampleData)
 
 # Filter before running procedures:
@@ -89,8 +89,8 @@ d <- dmFilter(d,
                 min_samps_feature_prop=n.small, min_feature_prop=0.1,
                 min_samps_gene_expr=n, min_gene_expr=10)
 
-# shows how many of the remaining genes have N isoforms
-table(table(counts(d)$gene_id))
+## shows how many of the remaining genes have N isoforms
+# table(table(counts(d)$gene_id))
 
 # # create designmatrix
 # #   original code for simple model
@@ -125,12 +125,9 @@ if (length(levels(sampleData$type)) > 1){
 
 comparison_objs <- list()
 setwd(outdir)
-# dir.create(file.path(outdir,"Figures"))
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
-
-    #contrast <- comparisons[[1]][1]
 
     contrast_name <- strsplit(contrast,":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast,":")[[1]][2], "-vs-")
@@ -206,13 +203,10 @@ for(contrast in comparisons[[1]]){
         res.txp.print     <- as.data.frame(apply(res.txp,2,as.character))
 
         # CREATE RESULTS TABLES
-        # setwd(file.path(outdir,"Tables"))
         write.table(as.data.frame(proportions.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","proportions.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
         write.table(as.data.frame(res.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genes.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
         write.table(as.data.frame(res.txp.print), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","transcripts.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
         write.table(as.data.frame(genewise_precision(d)), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genewise-precision.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
-
-        # setwd(file.path(outdir, "Figures"))
 
         ## Plot feature per gene histogram
         png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
@@ -269,5 +263,6 @@ for(contrast in comparisons[[1]]){
 
     })
 }
+
 
 save.image(file = paste("DTU", combi, "DTU_DRIMSEQ_SESSION.gz", sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
