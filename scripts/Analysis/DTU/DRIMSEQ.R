@@ -209,10 +209,20 @@ for(contrast in comparisons[[1]]){
         write.table(as.data.frame(genewise_precision(d)), gzfile(paste("Tables/DTU","DRIMSEQ",combi,contrast_name,"table","genewise-precision.tsv.gz", sep="_")), sep="\t", quote=F, row.names=FALSE)
 
         ## Plot feature per gene histogram
-        png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
-        print(plotData(d))
-        dev.off()
-
+        tryCatch(
+            {
+                png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
+                print(plotData(d))                
+                dev.off()
+            },
+            warning = function(w){
+                message('Caught an warning!')
+                print(w)
+            },
+            error = function(e){
+                file.create(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","FeatPerGene.png",sep="_"))
+            }
+        )
         ## Plot precision
         png(paste("Figures/DTU","DRIMSEQ",combi,contrast_name,"figure","Precision.png",sep="_"))
         print(plotPrecision(d))
