@@ -580,7 +580,11 @@ def get_reps(samples, config, analysis):
     log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = sample.split(os.sep)[4:-1]
+        scond = (
+            sample.split(os.sep)[4:-1]
+            if len(sample.split(os.sep)) > 5
+            else sample.split(os.sep)[3:-1]
+        )
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
         partconf = subDict(config["SETTINGS"], scond)
         log.debug(logid + "CONF: " + str(partconf))
@@ -591,9 +595,8 @@ def get_reps(samples, config, analysis):
         ret["reps"].append(sample)
         wcfile = sample.split(os.sep)[-1].replace("_mapped_sorted_unique.counts.gz", "")
         idx = partconf["SAMPLES"].index(wcfile)
-        ret["pairs"].append(
-            checkpaired_rep([str.join(os.sep, sample.split(os.sep)[4:])], config)
-        )
+        scond.append(sample.split(os.sep)[-1])
+        ret["pairs"].append(checkpaired_rep([str.join(os.sep, scond)], config))
         ret["conds"].append(partconf["GROUPS"][idx])
         if "BATCHES" in partconf and len(partconf["BATCHES"]) >= idx:
             ret["batches"].append(str(partconf["BATCHES"][idx]).replace(",", "_"))
