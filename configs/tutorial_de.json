@@ -5,22 +5,24 @@
     "MAXTHREADS": "16",
     "SETTINGS": {
         "Ecoli": {
-            "WT": {            
-                "SAMPLES": [
-                    "SRR16324019", 
-                    "SRR16324018",
-                    "SRR16324017"
-                ],
-                "GROUPS": [
-                    "ctrl",
-                    "ctrl",
-                    "ctrl"
-                ],
-                "SEQUENCING": "paired",
-                "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
-                "ANNOTATION": {
-                    "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
-                    "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+            "WT": {   
+                "dummylevel": {       
+                    "SAMPLES": [
+                        "SRR16324019", 
+                        "SRR16324018",
+                        "SRR16324017"
+                    ],
+                    "GROUPS": [
+                        "ctrl",
+                        "ctrl",
+                        "ctrl"
+                    ],
+                    "SEQUENCING": "paired",
+                    "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
+                    "ANNOTATION": {
+                        "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
+                        "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                    }
                 }
             },
             "KO": {
@@ -50,10 +52,12 @@
         },
         "Ecoli": {
             "WT": {
-                "sra": {
-                    "OPTIONS":
-                    {
-                        "DOWNLOAD": ""
+                "dummylevel": {
+                    "sra": {
+                        "OPTIONS":
+                        {
+                            "DOWNLOAD": ""
+                        }
                     }
                 }
             },
@@ -83,11 +87,13 @@
                 }
             },
             "WT": {
-                "fastqc": {
-                    "OPTIONS":
-                    {
-                        "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
-                        "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                "dummylevel": {       
+                    "fastqc": {
+                        "OPTIONS":
+                        {
+                            "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                        }
                     }
                 }
             }
@@ -115,16 +121,18 @@
                 }
             },
             "WT": {
-                "trimgalore":{
-                    "OPTIONS":
-                    {
-                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
-                    }
-                },
-                "cutadapt":{
-                    "OPTIONS":
-                    {
-                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                "dummylevel": {       
+                    "trimgalore":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                        }
+                    },
+                    "cutadapt":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                        }
                     }
                 }
             }
@@ -153,18 +161,20 @@
               }
             },
             "WT":{
-                "umitools": {
-                    "OPTIONS":
-                    {
-                        "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
-                        "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
-                    }
-                },
-                "picard": {
-                    "OPTIONS":
-                    {
-                        "JAVA": "",
-                        "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                "dummylevel": {       
+                    "umitools": {
+                        "OPTIONS":
+                        {
+                            "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                            "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                        }
+                    },
+                    "picard": {
+                        "OPTIONS":
+                        {
+                            "JAVA": "",
+                            "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                        }
                     }
                 }
             }
@@ -180,7 +190,7 @@
         },
         "Ecoli": {
             "WT": {
-                "test": {
+                "dummylevel": {       
                     "star": {
                         "OPTIONS": {
                             "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
@@ -196,7 +206,8 @@
                     "hisat2": {
                         "OPTIONS":
                         {
-                          "INDEX": ""
+                          "INDEX": "",
+                          "MAP": ""
                         }
                     },
                     "bwa": {
@@ -265,18 +276,20 @@
         ],
         "Ecoli": {
             "WT": {
-                "deseq2": {
-                    "OPTIONS":
-                    {
-                        "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
-                        "DE": ""  # Options for DE Analysis
-                    }
-                },
-                "edger": {
-                    "OPTIONS":
-                    {
-                        "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
-                        "DE": ""  # Options for DE Analysis
+                "dummylevel": {       
+                    "deseq2": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": ""  # Options for DE Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-O",  # Options for read counting, independent of COUNTS workflows
+                            "DE": ""  # Options for DE Analysis
+                        }
                     }
                 }
             },
