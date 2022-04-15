@@ -19,9 +19,7 @@ As an example, I want to analyze samples retrieved from LabA on 01012020 (yes th
 
     'ID1' -> 'CONDITION1' -> 'SETTING1', 'SETTING2', 'SETTING3'
 
-You do not need to copy input from ``FASTQ/LabA/01012020`` to ``FASTQ/LabA/01012020/SETTING1/2/3``, instead ``MONSDA`` will find the input in ``FASTQ/LabA/01012020`` and generate output directories which contain the *Setting* level. It is important, however, that new levels are not added at the 'SETTINGS' part of the config file but only later on in the workflow levels.
-
-This works of course also if you want to analyze samples from different dates and same lab with same settings or different labs and so on.
+You do not need to copy input from ``FASTQ/LabA/01012020`` to ``FASTQ/LabA/01012020/SETTING1/2/3``, instead ``MONSDA`` will find the input in ``FASTQ/LabA/01012020`` and generate output directories which contain the *Setting* level. This works of course also if you want to analyze samples from different dates and same lab with same settings or different labs and so on.
 
 ```MONSDA``` will automatically define a unique *tool-key* based on currently enabled workflow steps and the combination of tools defined in the config file. From that information it will generate output folders like ``MAPPING/LabA/01012020/star`` and ``MAPPING/LabA/01012020/hisat`` if no other tools and workflow steps where configured to be used.
 
