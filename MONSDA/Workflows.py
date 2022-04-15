@@ -1634,6 +1634,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
     condapath = re.compile(r'conda:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
+    envlist = list()
     if combinations:
         combname = get_combo_name(combinations)
         for condition in combname:
@@ -1652,7 +1653,11 @@ def make_summary(config, subdir, loglevel, combinations=None):
     if len(envlist) == 0:
         envlist.append("")
     for scombo in envlist:
-        snippets = glob.glob(f"REPORTS/SUMMARY/RmdSnippets/{scombo}/*")
+        scombo = str(scombo) + os.sep
+        snippath = str.join(os.sep, ["REPORTS", "SUMMARY", "RmdSnippets", scombo + "*"])
+        snippets = [x for x in glob.glob(snippath) if os.path.isfile(x)]
+
+        log.debug(f"{logid} snippets found: {snippets} for path: {snippath}")
         for snippet in snippets:
             with open(snippet, "r") as read_file:
                 for line in read_file.readlines():
