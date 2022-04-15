@@ -431,7 +431,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
 
             log.debug(logid + "RETURN: " + str(ret))
             return list(set(ret))
-    log.warning(logid + "NO SAMPLES FOUND")
+    log.error(logid + "NO SAMPLES FOUND")
     return list()
 
 
