@@ -1649,6 +1649,8 @@ def make_summary(config, subdir, loglevel, combinations=None):
         lines.append("\n\n")
 
     # Add rMarkdown snippets
+    if len(envlist) == 0:
+        envlist.append("")
     for scombo in envlist:
         snippets = glob.glob(f"REPORTS/SUMMARY/RmdSnippets/{scombo}/*")
         for snippet in snippets:
