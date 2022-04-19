@@ -85,6 +85,7 @@ Where 'BATCHES' and 'TYPES' can take on arbitrary values, but 'BATCHES' is inten
 Another extra-key for these analysis steps is 'EXCLUDE'. It can be used to exclude samples from postprocessing, for example if the first round of analysis shows an outlier. The most important key is 'COMPARABLE', which, if left empty, will generate all-vs-all comparisons from all 'GROUPS' available. In case you want to only compare certain groups, you can edit the config to look like this:
 
 .. code-block:: json
+    
         "COMPARABLE" :
         {
             "comparison-name":
