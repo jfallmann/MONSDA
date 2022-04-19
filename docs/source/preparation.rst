@@ -4,7 +4,7 @@ Planning a project run
 ======================
 
 Before you set up a ``MONSDA`` project, you should take a few things into considerations to make sure that ``MONSDA`` "understands" your experiment. 
-You should also have a good overview of your data and best decide in advance what analysis steps you want to run. Although it is possible to run ``MONSDA`` sequentially, building up a config step by step, this will lead to some workflows being run multiple times, as a unique "tool-key" will be defined for the set of enabled workflow steps and configured tools, more information on that can be found in :ref:`here<condition-tree>`.
+You should also have a good overview of your data and best decide in advance what analysis steps you want to run. Although it is possible to run ``MONSDA`` sequentially, building up a config step by step, this will lead to some workflows being run multiple times, as a unique "tool-key" will be defined for the set of enabled workflow steps and configured tools, more information on that can be found in :ref:`condition-tree`.
 
 To be well prepared, go through the following steps. Afterwards you will run the ``Configurator``, which helps you to set up ``MONSDA``.
 

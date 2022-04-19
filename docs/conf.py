@@ -79,3 +79,8 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["source/_static"]
 pygments_style = "sphinx"
+
+
+# Add custom css to prevent tables with wide side-scrolling
+def setup(app):
+    app.add_stylesheet("css/custom.css")

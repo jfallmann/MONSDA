@@ -2,7 +2,7 @@
     "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS"
     "BINS": "", #where to find customscripts used in the workflow !!!ADVANCED USAGE ONLY!!!
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
-    "VERSION": "0.0.7", #needs to be identical to the installed version for reproducibility reasons
+    "VERSION": "1.0.0", #needs to be identical to the installed version for reproducibility reasons
     "SETTINGS": {
         "id": {
             "condition": {
