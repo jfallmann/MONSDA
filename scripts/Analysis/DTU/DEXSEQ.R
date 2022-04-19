@@ -1,4 +1,5 @@
 suppressPackageStartupMessages({
+    require(BiocParallel)
     library(tximport)
     library(GenomicFeatures)
     library(DRIMSeq)
@@ -63,10 +64,8 @@ cts.original <- cts
 rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # Transcript-to-gene mapping
-txdb.filename <- file.path(paste(gtf,"sqlite", sep="."))
+txdb.filename <- file.path(paste(gtf, "sqlite", sep="."))
 txdb <- makeTxDbFromGFF(gtf, format="gtf")
-# saveDb(txdb, txdb.filename)
-# txdb <- loadDb(txdb.filename)
 txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
@@ -91,8 +90,8 @@ d <- dmFilter(d,
               min_samps_feature_prop=n.small, min_feature_prop=0.1,
               min_samps_gene_expr=n, min_gene_expr=10)
 
-# shows how many of the remaining genes have N isoforms
-table(table(counts(d)$gene_id))
+## shows how many of the remaining genes have N isoforms
+#table(table(counts(d)$gene_id))
 
 # create designmatrix
 #   original code for simple model
@@ -123,7 +122,6 @@ design <- model.matrix(~groups, data=DRIMSeq::samples(d))
 
 comparison_objs <- list()
 setwd(outdir)
-# dir.create(file.path(outdir,"Figures"))
 
 ## Analyze according to comparison groups
 for(contrast in comparisons[[1]]){
@@ -152,15 +150,14 @@ for(contrast in comparisons[[1]]){
     count.data <- round(as.matrix(counts(d)[,-c(1:2)]))
     # The design formula of the DEXSeqDataSet here uses the language “exon” but this should be read as “transcript” for our analysis.
     dxd <- DEXSeqDataSet(countData=count.data,
-                        sampleData=sample.data,
-                        design=~sample + exon + condition:exon,
-                        featureID=counts(d)$feature_id,
-                        groupID=counts(d)$gene_id)
-    system.time({
-        dxd <- estimateSizeFactors(dxd)
-        dxd <- estimateDispersions(dxd, quiet=TRUE)
-        dxd <- testForDEU(dxd, reducedModel=~sample + exon)
-    })
+                sampleData=sample.data,
+                design=~sample + exon + condition:exon,
+                featureID=counts(d)$feature_id,
+                groupID=counts(d)$gene_id
+            )
+    dxd <- DEXSeq::estimateSizeFactors(dxd) 
+    dxd <- DEXSeq::estimateDispersions(dxd, quiet=TRUE)
+    dxd <- testForDEU(dxd, reducedModel=~sample + exon)
 
     dxr <- DEXSeqResults(dxd, independentFiltering=FALSE)
     qval <- perGeneQValue(dxr)
@@ -174,7 +171,7 @@ for(contrast in comparisons[[1]]){
     dxr <- apply(dxr,2,as.character)
 
     write.table(as.data.frame(dxr), gzfile(paste("Tables/DTU","DEXSEQ",combi,contrast_name,"table","results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
-
+    
     # # stageR following DEXSeq
     # strp <- function(x) substr(x,1,15)
     # pConfirmation <- matrix(dxr$pvalue,ncol=1)
@@ -195,4 +192,4 @@ for(contrast in comparisons[[1]]){
     # write.table(as.data.frame(dex.padj), gzfile(paste("DTU_DEXSEQ",contrast_name,"stageR-filtered.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
 }
 
-save.image(file = paste("DTU", combi, "DTU_DEXSEQ_SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
+save.image(file = paste("DTU_DEXSEQ", combi, "SESSION.gz",sep="_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

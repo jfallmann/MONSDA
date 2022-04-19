@@ -29,8 +29,8 @@ rule salmon_index:
 
 if paired == 'paired':
     rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_R1_dedup.fastq.gz", scombo=scombo),
-                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_R2_dedup.fastq.gz", scombo=scombo),
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
+                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
@@ -46,7 +46,7 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo) if not rundedup else expand("DEDUP_FASTQ/{scombo}/{{file}}_dedup.fastq.gz", scombo=scombo),
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
@@ -58,7 +58,7 @@ else:
                 mapp=COUNTBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
                 linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 
 
 rule create_annotation_table:
@@ -82,7 +82,7 @@ rule run_DTU:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             outdir = 'DTU/'+combo,
-            ref = ANNOTATION
+            ref = os.path.abspath(ANNOTATION)
             # pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
             # lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"

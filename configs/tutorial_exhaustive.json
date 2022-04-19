@@ -477,34 +477,46 @@
             "WT": {
                 "dummylevel": {
                     "dexseq": {
+                        "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                        "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DTU Analysis
+                            "INDEX": "",
+                            "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": ""  # Options for DE Analysis
                         }
                     },
                     "drimseq": {
+                        "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                        "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": ""  # Options for DTU Analysis
+                            "INDEX": "",
+                            "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": ""  # Options for DE Analysis
                         }
                     }
                 }
             },
             "KO": {
                 "dexseq": {
+                    "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                    "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DTU": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DTU Analysis
+                        "INDEX": "",
+                        "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                        "DTU": ""  # Options for DE Analysis
                     }
                 },
                 "drimseq": {
+                    "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                    "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DTU": ""  # Options for DTU Analysis
+                        "INDEX": "",  # Options for read counting, independent of COUNTS workflows
+                        "QUANT": "",
+                        "DTU": ""  # Options for DE Analysis
                     }
                 }
             }
