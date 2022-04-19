@@ -8,16 +8,14 @@ It consists of multiple sections which will be explained in detail.  For the tem
 ``template.json`` file in the ``config`` directory of the repo.  The ``template.json`` is the default
 blueprint for a config file used by ``Configurator.py``.
 
-The config file contains all the information needed to run stated workflows and to find the sample/genome
+The config file contains all the information needed to run stated workflows and to find the sample/genome/annotation
 files.  It starts with a key/value pair defining which workflows and pre-/postprocessing steps to run. Be
 aware that every workflow and postprocessing value has to correspond to a key later in the config.json that
 defines parameters specific for the job:
 
-::
+.. literalinclude:: ../../configs/template.json
+    :language: json
 
-   "WORKFLOWS": "FETCH,QC,MAPPING,TRIMMING,DEDUP,COUNTING,TRACKS,DE,DEU,DAS", # Here you define which main workflow steps should be run
-   "MAXTHREADS": "20", #maximum number of cores to use, make sure your cluster/machine can handle the load
-   "BINS": "", where to find custom scripts used in the workflow !!!ADVANCED USAGE!!!
 
 The next part defines where the path to the genome files and its main name plus an extension in case you use
 specific genomes for different runs.  The directory structure that ``MONSDA.py`` will
