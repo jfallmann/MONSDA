@@ -3,9 +3,9 @@
 TUTORIAL
 ========
 
-Here we will show three ``MONSDA`` runs from simple to most-complex, explaining the configuration and how to run this in real life.
+Here we will show three **MONSDA** runs from simple to most-complex, explaining the configuration and how to run this in real life.
 
-First please create a working directory and access it, then install ``MONSDA`` following :ref:`install` and activate the conda environment.
+First please create a working directory and access it, then install **MONSDA** following :ref:`install` and activate the conda environment.
 
 All examples are based on data from SRA_ , which you can either download beforehand or you use the "FETCH" workflow as demonstrated in the tutorial.
 
@@ -19,7 +19,7 @@ Genome and Annotation files need to be downloaded beforehand and can be found he
 
 Ideally you download those files into a sub-directory of your workspace named "GENOME/Ecoli" and rename them to something simpler, in the tutorial we will refer to "GCF_000005845.2_ASM584v2_genomic" as "ecoli". You also need to change the ".fna.gz" suffix of the genome file to ".fa.gz" and we should be ready to go.
 
-All config files this tutorial is based on can be found in ``envs/monsda/share/MONSDA/configs`` of your local ``conda`` installation or the "configs" directory of the ``MONSDA`` repository.
+All config files this tutorial is based on can be found in **envs/monsda/share/MONSDA/configs** of your local **conda** installation or the "configs" directory of the **MONSDA** repository.
 
 A simple run
 #############
@@ -32,12 +32,12 @@ The corresponding config file looks as follows:
     :language: json
 
 
-This tells ``MONSDA`` version "1.0.0" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
+This tells **MONSDA** version "1.0.0" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
 
 "FETCH" will activate the environment "sra" and run the binary "fasterq-dump" with no extra options to fetch the sample from SRA.
 
 "MAPPING" will then run the executable "STAR" in environment "star" on the downloaded FASTQ file. First it will check for existence of the needed INDEX file, and as no INDEX file is defined in the config it will try to generate one. For that it will use the REFERENCE "GENOMES/Ecoli/ecoli.fa.gz" as well as the ANNOTATION GTF "GENOMES/Ecoli/ecoli.gtf.gz". GTF is always selected first and GFF is used as a fallback if no GTF is found. 
-After successfully building the *STAR* index, ``MONSDA`` will start mapping with *STAR* in "paired" mode and applying a set of options as can be seen under the "MAP" key in section "MAPPING"->"SIMPLE"->"star"->"OPTIONS". We do not define a pre- or suffix for output files, so "EXTENSION" can be skipped or left blank.
+After successfully building the *STAR* index, **MONSDA** will start mapping with *STAR* in "paired" mode and applying a set of options as can be seen under the "MAP" key in section "MAPPING"->"SIMPLE"->"star"->"OPTIONS". We do not define a pre- or suffix for output files, so "EXTENSION" can be skipped or left blank.
 
 Starting the run with 4 cores (defining more will be capped by the config file as MAXTHREADS is set to 4)
 
@@ -45,14 +45,14 @@ Starting the run with 4 cores (defining more will be capped by the config file a
 
     monsda -j 4 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_quick.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index and a "MAPPING" directory containing the mapped files. Furthermore, ``MONSDA`` will create a "LOG" directory containing it's own log, as well as logs of all executed jobs.
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index and a "MAPPING" directory containing the mapped files. Furthermore, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs.
 A successful run will show the message 'Workflow finished, no error'
 
 
 A more complex run
 ###################
 
-This slightly more complex use case involves multiple input files, two conditions (WT/KO) and a more or less standard DE analysis workflow. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that ``MONSDA`` can work on condition-trees of differing depth. 
+This slightly more complex use case involves multiple input files, two conditions (WT/KO) and a more or less standard DE analysis workflow. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
 
 Workflows include: 
 
@@ -68,7 +68,7 @@ The more complex config for this analysis follows
 .. literalinclude:: ../../configs/tutorial_de.json
     :language: json
 
-Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE stage and can be used to define "COMPARABLES" that tell ``MONSDA`` which Samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our simple case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE step. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
+Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE stage and can be used to define "COMPARABLES" that tell **MONSDA** which Samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our simple case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE step. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
 
 Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
 
@@ -76,14 +76,14 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 21 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_de.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, ``MONSDA`` will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
 
 A successful run will show the message 'Workflow finished, no error'
 
 Run it all
 ###########
 
-This exhaustive use case involves multiple input files, two conditions (WT/KO) and a set of postprocessing workflows. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that ``MONSDA`` can work on condition-trees of differing depth. 
+This exhaustive use case involves multiple input files, two conditions (WT/KO) and a set of postprocessing workflows. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
 
 Workflows include: 
 
@@ -129,9 +129,9 @@ With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files we can now als
 .. literalinclude:: ../../configs/tutorial_exhaustive.json
     :language: json
 
-Same as for the more complex run we can see that "SETTINGS" contains "GROUPS" which hold identifiers for the DE/DEU/DAS/DTU stages that will be used to define "COMPARABLES" that tell ``MONSDA`` which samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE/DEU/DAS steps. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
+Same as for the more complex run we can see that "SETTINGS" contains "GROUPS" which hold identifiers for the DE/DEU/DAS/DTU stages that will be used to define "COMPARABLES" that tell **MONSDA** which samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE/DEU/DAS steps. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
 
-Somewhat special is the DTU step. Here we use the pseudo-mapper salmon to quantify expression of transcripts. These transcripts are first defined in the preprocessing part of this tutorial chapter. As we can see the REFERENCE and ANNOTATION differ from what is listed in SETTINGS, so we make use of the ability of ``MONSDA`` to define those settings on a per-workflow basis. This will ALWAYS over-rule the settings made in SETTINGS. So we simply define the REFERENCE and ANNOTATION key for each tool within the regular tool setting part of the config and this will make sure that these files are used instead of the globally defined ones.
+Somewhat special is the DTU step. Here we use the pseudo-mapper salmon to quantify expression of transcripts. These transcripts are first defined in the preprocessing part of this tutorial chapter. As we can see the REFERENCE and ANNOTATION differ from what is listed in SETTINGS, so we make use of the ability of **MONSDA** to define those settings on a per-workflow basis. This will ALWAYS over-rule the settings made in SETTINGS. So we simply define the REFERENCE and ANNOTATION key for each tool within the regular tool setting part of the config and this will make sure that these files are used instead of the globally defined ones.
 
 Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
 
@@ -139,6 +139,6 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 21 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_exhaustive.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS" directories will be created which will hold output from counting with featurecounts and DE/DEU/DAS input and output from EDGER, DESeq2, DEXSeq and DIEGO respectively. Again, ``MONSDA`` will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS" directories will be created which will hold output from counting with featurecounts and DE/DEU/DAS input and output from EDGER, DESeq2, DEXSeq and DIEGO respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
 
 A successful run will show the message 'Workflow finished, no error'. Be aware that is indeed an exhaustive workflow and will require a decent amount of disk-space and compute-time, depending on the hardware at your disposal.

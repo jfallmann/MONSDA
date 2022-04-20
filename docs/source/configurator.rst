@@ -6,8 +6,8 @@ Configure MONSDA
 ================
 
 
-| MONSDA operates from a project folder containing a ``config`` json file.
-| To enable easy setup and configuration, we host the executable ``Configurator``.
+| MONSDA operates from a project folder containing a **config** json file.
+| To enable easy setup and configuration, we host the executable **Configurator**.
 | The Configurator works as an interactive terminal user interface.
 | It supports you in three main things:
 
@@ -21,7 +21,7 @@ Configure MONSDA
 Run the Configurator
 ====================
 
-To run the ``Configurator``, the ``monsda.yaml`` conda environment must be installed and activated.
+To run the **Configurator**, the **monsda.yaml** conda environment must be installed and activated.
 
 .. code-block::
 
@@ -50,15 +50,15 @@ Create a new project or config-file
 -----------------------------------
 
 +---------------------------------------------------------------------------------------------------------------------------+
-| ``SELECT WORKFLOWS``                                                                                                      |
+| **SELECT WORKFLOWS**                                                                                                      |
 | :raw-html:`&vrtri;`                                                                                                       |
-| ``MAKE CONDITION-TREE``                                                                                                   |
+| **MAKE CONDITION-TREE**                                                                                                   |
 | :raw-html:`&vrtri;`                                                                                                       |
-| ``ASSIGN SAMPLES``                                                                                                        |
+| **ASSIGN SAMPLES**                                                                                                        |
 | :raw-html:`&vrtri;`                                                                                                       |
-| ``SET WORKFLOWS``                                                                                                         |
+| **SET WORKFLOWS**                                                                                                         |
 | :raw-html:`&vrtri;`                                                                                                       |
-| ``SET THREADS``                                                                                                           |
+| **SET THREADS**                                                                                                           |
 +---------------------------------------------------------------------------------------------------------------------------+
 
 To create a new project or a new config-file, the Configurator will take you through all necessary steps.
@@ -70,42 +70,42 @@ Modify an existing config-file
 ------------------------------
 
 1. Add workflows
-````````````````
+****************
 
 +------------------------------------------------------------------------------------+
-| ``SELECT CONFIG``                                                                  |
+| **SELECT CONFIG**                                                                  |
 | :raw-html:`&vrtri;`                                                                |
-| ``SELECT ADDITIONAL WORKFLOWS``                                                    |
+| **SELECT ADDITIONAL WORKFLOWS**                                                    |
 | :raw-html:`&vrtri;`                                                                |
-| ``SET WORKFLOWS``                                                                  |
+| **SET WORKFLOWS**                                                                  |
 +------------------------------------------------------------------------------------+
 
 Select Workflows not activated in an existing config-file. The Configurator will
 expand each condition. Afterwards you have to make settings for the new workflows.
 
 2. Remove workflows
-```````````````````
+******************`
 
 +------------------------------------------------------------------------------------+
-| ``SELECT CONFIG``                                                                  |
+| **SELECT CONFIG**                                                                  |
 | :raw-html:`&vrtri;`                                                                |
-| ``SELECT REMOVABLE WORKFLOWS``                                                     |
+| **SELECT REMOVABLE WORKFLOWS**                                                     |
 +------------------------------------------------------------------------------------+
 
 The Configurator will show you all established workflows. After selecting the ones
 to be removed it will delete them from the config-file for each condition.
 
 3. Add conditions
-`````````````````
+****************`
 
 +-----------------------------------------------------------------------------------------------------+
-| ``SELECT CONFIG``                                                                                   |
+| **SELECT CONFIG**                                                                                   |
 | :raw-html:`&vrtri;`                                                                                 |
-| ``MAKE CONDITION-TREE``                                                                             |
+| **MAKE CONDITION-TREE**                                                                             |
 | :raw-html:`&vrtri;`                                                                                 |
-| ``ASSIGN SAMPLES``                                                                                  |
+| **ASSIGN SAMPLES**                                                                                  |
 | :raw-html:`&vrtri;`                                                                                 |
-| ``SET WORKFLOWS``                                                                                   |
+| **SET WORKFLOWS**                                                                                   |
 +-----------------------------------------------------------------------------------------------------+
 
 You can add conditions in a similar way you created the condition-tree. But note, that you can't
@@ -113,12 +113,12 @@ add sub-conditions to existing leafs. The configurator will expand the condition
 for the settings-block and each workflow. Because now you have new option fields in the config-file the Configurator will ask you for copying existing workflow settings or to make new ones.
 
 4. Remove conditions
-````````````````````
+********************
 
 +-------------------------------------------------------------------------------+
-| ``SELECT CONFIG``                                                             |
+| **SELECT CONFIG**                                                             |
 | :raw-html:`&vrtri;`                                                           |
-| ``SELECT REMOVABLE CONDITIONS``                                               |
+| **SELECT REMOVABLE CONDITIONS**                                               |
 +-------------------------------------------------------------------------------+
 
 The Configurator will offer you all conditions the condition-tree represents.
@@ -131,8 +131,8 @@ Interrupt Configuration
 =======================
 
 It can happen, that the Configurator asks for entries, you haven't thought about yet.
-In this case you can interrupt the configuration and the ``Configurator`` will cache your entries.
-A temporary backup file called ``unfinished_config.pkl`` is created for that. 
+In this case you can interrupt the configuration and the **Configurator** will cache your entries.
+A temporary backup file called **unfinished_config.pkl** is created for that. 
 
 In most cases you can even just abort the script, but to guarantee clean re-entry you should type
 
@@ -140,9 +140,9 @@ In most cases you can even just abort the script, but to guarantee clean re-entr
 
     exit
 
-When you start the Configurator again later and it finds the ``unfinished_config.pkl`` in the current directory, it will serves a fourth option to continue the session.
+When you start the Configurator again later and it finds the **unfinished_config.pkl** in the current directory, it will serves a fourth option to continue the session.
 
-Note, that the ``unfinished_config.pkl`` will always be overwritten. To avoid this, you can rename the file.
+Note, that the **unfinished_config.pkl** will always be overwritten. To avoid this, you can rename the file.
 You can than continue with the --session flag. Run the Configurator like this:
 
 .. code-block:: bash
