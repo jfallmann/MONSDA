@@ -83,4 +83,4 @@ pygments_style = "sphinx"
 
 # Add custom css to prevent tables with wide side-scrolling
 def setup(app):
-    app.add_stylesheet("css/custom.css")
+    app.add_css_file("css/custom.css")
