@@ -1,12 +1,32 @@
 .. _WFoverview:
 
-Here we need to describe input/output and how the subworkflows are integrated for each processing step
+
+Available Workflows
+===================
+
+FETCH -> Download from SRA
+BASECALL -> Call bases from FAST5
+QC -> Quality Control of FASTQ/BAM files
+TRIMMING -> Trim adaptor remnants
+MAPPING -> Map reads to reference
+DEDUP -> Deduplicate reads
+COUNTING -> Count or quantify reads
+TRACKS -> Generates trackdb.txt and BIGWIG files
+PEAKS -> Call peaks for ChIP, RIP, CLIP and other
+DE -> Differential Expression Analysis
+DEU -> Differential Exon Usage Analysis
+DAS -> Differential Alternative Splicing Analysis
+DTU -> Differential Transcript Usage Analysis
+
 
 PREPROCESSING
 =============
 
 FETCH
 #####
+
+Downloads files from SRA
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -20,6 +40,8 @@ FETCH
 
 BASECALL
 ########
+
+Creates FASTQ files from ONT FAST5, Guppy needs to be installed locally
 
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
@@ -70,6 +92,8 @@ If any of the below listed processing steps is defined in the config.json, quali
 Trimming
 ########
 
+Trims adaptor left-overs from fastq files
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -85,6 +109,8 @@ Trimming
 
 Mapping
 #######
+
+Maps sequences to reference genomes or transcriptomes
 
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
@@ -108,6 +134,8 @@ Mapping
 DEDUP
 #####
 
+Deduplicate reads by UMI or based on mapping position and CIGAR string
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -127,6 +155,8 @@ POSTPROCESSING
 Read-Counting and Quantification
 ################################
 
+Count (unique) mapped reads and how often they map to defined features
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -142,6 +172,8 @@ Read-Counting and Quantification
 
 Differential Analyses
 #####################
+
+Includes DE, DEU, DAS and DTU
 
 .. table:: 
   :class: tight-table
@@ -185,6 +217,8 @@ This workflow generates trackdb.txt files and bigwig files which can be used to 
 PEAKS
 #####
 
+Calls peaks from mapping data for ChIP, RIP, CLIP and other
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -205,7 +239,7 @@ PEAKS
 CIRCS
 ###############
 
-CIRI2 needs to be installed locally.
+Find circular RNAs in mapping data, CIRI2 needs to be installed locally.
 
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10

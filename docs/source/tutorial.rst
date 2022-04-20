@@ -24,7 +24,7 @@ All config files this tutorial is based on can be found in **envs/monsda/share/M
 A simple run
 #############
 
-This run is based on a simple mapping only use-case. We have a single paired end FASTQ file and want to map that. In this case we have no information about strandedness and ignore this setting.
+This run is based on a simple mapping only use-case. We have a single paired-end FASTQ file and want to map that. In this case we have no information about strandedness and ignore this setting.
 
 The corresponding config file looks as follows:
 
@@ -45,8 +45,8 @@ Starting the run with 4 cores (defining more will be capped by the config file a
 
     monsda -j 4 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_quick.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index and a "MAPPING" directory containing the mapped files. Furthermore, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs.
-A successful run will show the message 'Workflow finished, no error'
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built index and a "MAPPING" directory containing the mapped files. Furthermore, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and a "JOBS" directory containing the 'monsda.commands' file, which contains all command-line calls that **MONSDA** runs.
+A successful run will show the message 'Workflow finished, no error' at the end.
 
 
 A more complex run
@@ -68,22 +68,22 @@ The more complex config for this analysis follows
 .. literalinclude:: ../../configs/tutorial_de.json
     :language: json
 
-Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE stage and can be used to define "COMPARABLES" that tell **MONSDA** which Samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our simple case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE step. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
+Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE stage and can be used to define "COMPARABLES" that tell **MONSDA** which samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our simple case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE step. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly.
 
 Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
 
 .. code-block:: bash
 
-    monsda -j 21 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_de.json --directory ${PWD}
+    monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_de.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and the "JOBS" directory with all command-line calls. 
 
-A successful run will show the message 'Workflow finished, no error'
+A successful run will show the message 'Workflow finished, no error' at the end.
 
 Run it all
 ###########
 
-This exhaustive use case involves multiple input files, two conditions (WT/KO) and a set of postprocessing workflows. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
+This exhaustive use case involves multiple input files, two conditions (WT/KO) and almost all workflows available. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
 
 Workflows include: 
 
@@ -116,7 +116,7 @@ We now fix the empty transcript-id tag by replacing it with the gene-id followed
     
     zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|perl -F'\t' -wlane 'print $_;if($_ !~/^#/){print join("\t",@F[0..1])."\ttranscript\t".join("\t",@F[3..$#F])}'|gzip > Ecoli_trans_fix.gtf.gz
 
-From this gtf we can now create a fasta file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. We then only need to clean up the name tag as follows:
+From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. We then only need to clean up the name tag as follows:
 
 .. code-block:: bash
     
@@ -137,8 +137,8 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
 .. code-block:: bash
 
-    monsda -j 21 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_exhaustive.json --directory ${PWD}
+    monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_exhaustive.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS" directories will be created which will hold output from counting with featurecounts and DE/DEU/DAS input and output from EDGER, DESeq2, DEXSeq and DIEGO respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS" directories will be created which will hold output from counting with featurecounts and DE/DEU/DAS input and output from EDGER, DESeq2, DEXSeq and DIEGO respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
 
-A successful run will show the message 'Workflow finished, no error'. Be aware that is indeed an exhaustive workflow and will require a decent amount of disk-space and compute-time, depending on the hardware at your disposal.
+A successful run will show the message 'Workflow finished, no error'. Be aware that this is indeed an exhaustive workflow and will require a decent amount of disk-space, memory and compute-time, depending on the hardware at your disposal.

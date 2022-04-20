@@ -14,7 +14,7 @@ Activate the **MONSDA** conda environment and run
     monsda --help
 
 
-to see the help and available options that will be passed through to **snakemake**.
+to see the help and available options that will be passed through to **Snakemake**.
 
 To start a job with **Snakemake**, which is the default, run
 
@@ -34,11 +34,11 @@ we highly recommend to set mamba as conda frontend and set a fixed directory to 
 Nextflow
 --------
 
-To run **MONSDA** in **Nextflow** mode just add '--nextflow'
+To run **MONSDA** in **Nextflow** mode just add '--Nextflow'
 
 .. code-block::
 
-    monsda --nextflow -j NUMBER_OF_CORES -c YOUR_CONFIG.json --directory ${PWD}
+    monsda --Nextflow -j NUMBER_OF_CORES -c YOUR_CONFIG.json --directory ${PWD}
 
 
 As with **Snakemake** additional arguments for **Nextflow** can be added and will be passed through.

@@ -25,7 +25,7 @@ based performance increase will be tackled in future releases of **MONSDA**.
 Nextflow
 ========
 
-Cluster config for Nextflow follows the description Nextflow-Executors_ and Nextflow-Profiles_. To use **SlURM** as executor you can adapt the profile that comes with this repository and simply append 
+Cluster config for Nextflow follows the description Nextflow-Executors_ and Nextflow-Profiles_. To use **SLURM** as executor you can adapt the profile that comes with this repository and simply append 
 
 .. code-block::
     
@@ -33,5 +33,5 @@ Cluster config for Nextflow follows the description Nextflow-Executors_ and Next
     
 to the call to **MONSDA**.
 
-.. _Nextflow-Executors: https://www.nextflow.io/docs/latest/executor.html
-.. _Nextflow-Profiles: https://www.nextflow.io/docs/latest/config.html#config-profiles 
+.. _Nextflow-Executors: https://www.Nextflow.io/docs/latest/executor.html
+.. _Nextflow-Profiles: https://www.Nextflow.io/docs/latest/config.html#config-profiles 

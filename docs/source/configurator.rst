@@ -7,11 +7,11 @@ Configure MONSDA
 
 
 | MONSDA operates from a project folder containing a **config** json file.
-| To enable easy setup and configuration, we host the executable **Configurator**.
-| The Configurator works as an interactive terminal user interface.
+| To enable easy setup and configuration, we host the executable *Configurator* which can be called via **monsda_configure**.
+| The *Configurator* works as an interactive terminal user interface.
 | It supports you in three main things:
 
-1. Creating the complete initial project folder
+1. Setting up an initial project folder
 2. Creating the configuration file
 3. Modifying existing configuration files easily
 
@@ -21,12 +21,11 @@ Configure MONSDA
 Run the Configurator
 ====================
 
-To run the **Configurator**, the **monsda.yaml** conda environment must be installed and activated.
+To run the **Configurator**, the **MONSDA** conda environment must be installed and activated (we assume you installed via conda in an environment named 'monsda').
 
 .. code-block::
 
-    conda env create -n MONSDA -f ./MONSDA/envs/monsda.yaml
-    conda activate MONSDA
+    conda activate monsda
 
 
 Run the Configurator with
@@ -61,9 +60,7 @@ Create a new project or config-file
 | **SET THREADS**                                                                                                           |
 +---------------------------------------------------------------------------------------------------------------------------+
 
-To create a new project or a new config-file, the Configurator will take you through all necessary steps.
-For creating a project you have to enter a path to establish. Note, that your project folder will grow with your results.
-Choose a place with enough memory if necessary.
+To create a new project or a new config-file, the Configurator will take you through all necessary steps. You will have to choose a working directory. Note, that your project folder will grow with your results, so choose a place with enough space.
 
 
 Modify an existing config-file
@@ -80,8 +77,8 @@ Modify an existing config-file
 | **SET WORKFLOWS**                                                                  |
 +------------------------------------------------------------------------------------+
 
-Select Workflows not activated in an existing config-file. The Configurator will
-expand each condition. Afterwards you have to make settings for the new workflows.
+Select workflows not activated in an existing config-file. The Configurator will
+expand each condition. Afterwards you have to define settings for the new workflows.
 
 2. Remove workflows
 ******************`
@@ -108,9 +105,7 @@ to be removed it will delete them from the config-file for each condition.
 | **SET WORKFLOWS**                                                                                   |
 +-----------------------------------------------------------------------------------------------------+
 
-You can add conditions in a similar way you created the condition-tree. But note, that you can't
-add sub-conditions to existing leafs. The configurator will expand the condition-tree
-for the settings-block and each workflow. Because now you have new option fields in the config-file the Configurator will ask you for copying existing workflow settings or to make new ones.
+You can add conditions in a similar way you created the condition-tree. But note, that you can't add sub-conditions to existing leafs. The configurator will expand the condition-tree for the settings-block and each workflow. Because now you have new option fields in the config-file the Configurator will ask you for copying existing workflow settings or to make new ones.
 
 4. Remove conditions
 ********************
@@ -121,9 +116,7 @@ for the settings-block and each workflow. Because now you have new option fields
 | **SELECT REMOVABLE CONDITIONS**                                               |
 +-------------------------------------------------------------------------------+
 
-The Configurator will offer you all conditions the condition-tree represents.
-After selecting one or several to be removed it will delete them in the
-settings-block and for each condition.
+The Configurator will offer you all conditions the condition-tree represents. After selecting one or several to be removed it will delete them in the settings-block and for each condition.
 
 ----
 
@@ -140,7 +133,7 @@ In most cases you can even just abort the script, but to guarantee clean re-entr
 
     exit
 
-When you start the Configurator again later and it finds the **unfinished_config.pkl** in the current directory, it will serves a fourth option to continue the session.
+When you start the Configurator again later and it finds the **unfinished_config.pkl** in the current directory, it will provide the option to continue the session.
 
 Note, that the **unfinished_config.pkl** will always be overwritten. To avoid this, you can rename the file.
 You can than continue with the --session flag. Run the Configurator like this:
@@ -179,7 +172,7 @@ Create Condition-Tree
 MONSDA understands your experimental design by creating a condition-tree.
 The Configurator helps you to create it. To do this, the Configurator points to a condition in which you are allowed to add further sub-conditions.
 In this way you can create a nested condition-tree.
-Note that each leaf of this tree represents a separate condition. later you will make the workflow settings for each of these conditions.
+Note that each leaf of this tree represents a separate condition. later you will define the workflow settings for each of these conditions.
 
 
 Sample Assignment:

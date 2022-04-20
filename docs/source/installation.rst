@@ -7,14 +7,14 @@ Installation
 Install MONSDA via **conda** or **pip**
 -------------------------------------------
 
-To install via **conda/mamba** simply run
+To install via **conda/mamba** in an environment named 'monsda' simply run
 
 .. code-block::
 
-    mamba install -c bioconda -c conda-forge monsda
+    mamba create -n monsda -c bioconda -c conda-forge monsda
 
 
-To install via **pip** you first need to create the **MONSDA** environment as found in the **envs** directory of this repository like so:
+To install via **pip** you first need to create the **MONSDA** environment as found in the **envs** directory of this repository (simply clone with git clone) like so:
 
 .. code-block::
 
@@ -38,7 +38,8 @@ Simply clone this repository with
 
 .. code-block::
     
-    git clone
+    git clone git@github.com:jfallmann/MONSDA.git
 
 You can then install dependencies as described for **pip** installation and manually run **setup.py**.
-Be aware that **MONSDA** is version dependent, so config files can only be run with the specified version of **MONSDA** in order to guarantee reproducibility by conserving dependencies and environments.
+
+Be aware that **MONSDA** is *version dependent*, so config files can only be run with the **specified** version of **MONSDA** in order to guarantee reproducibility by conserving dependencies and environments.

@@ -15,8 +15,10 @@
         "--ignore D001"
     ],
     "cSpell.words": [
+        "COMPARABLES",
         "DEDUP",
         "MAXTHREADS",
-        "subdir"
+        "subdir",
+        "unstranded"
     ]
 }
