@@ -28,8 +28,8 @@ then
 else
     if [[ "$1" == *.gz* ]]
     then
-        zcat $in | grep -v "^@" | grep -w -P "\tNH:i:1|\ttp:A:P" | pigz -p $threads -f >> $out
+        zcat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz -p $threads -f >> $out
     else
-        cat $in | grep -v "^@" | grep -w -P "\tNH:i:1|\ttp:A:P" | pigz -p $threads -f >> $out
+        cat $in | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P" | pigz -p $threads -f >> $out
     fi
 fi
