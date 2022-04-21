@@ -446,6 +446,11 @@ def run_snakemake(
         else:
             log.warning(logid + "No postprocessing steps defined! Nothing to do!")
 
+        if save:
+            log.info(
+                f"{logid} All CLI calls have been saved to monsda.commands in directory JOBS"
+            )
+
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
