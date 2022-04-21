@@ -48,7 +48,7 @@ import datetime
 
 makelogdir("LOGS")
 if not os.path.isfile(os.path.abspath("LOGS" + os.sep + scriptname + ".log")):
-    open("LOGS/" + scriptname + ".log", "a").close()
+    open("LOGS/" + scriptname + ".log", "w").close()
 else:
     ts = str(
         datetime.datetime.fromtimestamp(
@@ -169,8 +169,6 @@ def run_snakemake(
         config = load_configfile(configfile)
         subdir = "SubSnakes"
         create_skeleton(subdir, skeleton)
-        if skeleton:
-            sys.exit("Skeleton created")
 
         argslist = list()
         if useconda:
