@@ -93,7 +93,7 @@ def parseargs():
         "--use-conda",
         action="store_true",
         default=True,
-        help="Should conda be used, default",
+        help="Should conda be used, default True",
     )
     parser.add_argument(
         "-l",
@@ -106,13 +106,12 @@ def parseargs():
         "--procs",
         type=int,
         default=1,
-        help="Number of parallel processed to start MONSDA with, capped by MAXTHREADS in config!",
+        help="Number of parallel processes to start MONSDA with, capped by MAXTHREADS in config!",
     )
     parser.add_argument(
         "--save",
-        type=str,
-        default=None,
-        help="Do not actually run jobs, create corresponding text file containing jobs and arguments for manual running instead",
+        action="store_true",
+        help="Do not actually run jobs, create corresponding text file containing CLI-calls and arguments for manual running instead",
     )
     parser.add_argument(
         "-s",
@@ -124,15 +123,15 @@ def parseargs():
         "--snakemake",
         action="store_true",
         default=True,
-        help="Wrap around snakemake, default",
+        help="Wrap around Snakemake, default",
     )
     parser.add_argument(
-        "--nextflow", action="store_true", default=False, help="Wrap around nextflow"
+        "--nextflow", action="store_true", default=False, help="Wrap around Nextflow"
     )
     parser.add_argument(
         "--clean",
         action="store_true",
-        help="Cleanup workdir (nextflow), append -n to see list of files to clean or -f to actually remove those files",
+        help="Cleanup workdir (Nextflow), append -n to see list of files to clean or -f to actually remove those files",
     )
     parser.add_argument(
         "--loglevel",
@@ -144,7 +143,7 @@ def parseargs():
     parser.add_argument(
         "--version",
         action="store_true",
-        help="Print version",
+        help="Print version and exit",
     )
 
     if len(sys.argv) == 1:
@@ -170,6 +169,8 @@ def run_snakemake(
         config = load_configfile(configfile)
         subdir = "SubSnakes"
         create_skeleton(subdir, skeleton)
+        if skeleton:
+            sys.exit("Skeleton created")
 
         argslist = list()
         if useconda:
@@ -414,7 +415,10 @@ def run_snakemake(
                             jid = runjob(job)
                             log.debug(logid + "JOB CODE " + str(jid))
 
-            if any([x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]]):
+            if (
+                any([x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]])
+                and not save
+            ):
                 # SUMMARY RUN
                 combinations = (
                     get_combo(subworkflows, config, conditions)
