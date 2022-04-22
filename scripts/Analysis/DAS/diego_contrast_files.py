@@ -7,11 +7,13 @@ import inspect
 import gzip
 import glob
 import re
-improt logging
+import logging
 import traceback as tb
 
 cmd_subfolder = os.path.join(
-    os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))),
+    os.path.dirname(
+        os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    ),
     "../../lib",
 )
 if cmd_subfolder not in sys.path:
@@ -56,14 +58,13 @@ except Exception:
     print("".join(tbe.format()), file=sys.stderr)
 
 
-
 def parseargs():
-    parser = argparse.ArgumentParser(description='Creates contrast list for DIEGO')
-    parser.add_argument('-a', '--annofile', type=str, default="", help='')
-    parser.add_argument('-b', '--combi', type=str, default="", help='')
-    parser.add_argument('-c', '--comparisons', type=str, default="", help='')
-    parser.add_argument('-o', '--outdir', type=str, default="", help='')
-    parser.add_argument('--loglevel', default='INFO', help="Log verbosity")
+    parser = argparse.ArgumentParser(description="Creates contrast list for DIEGO")
+    parser.add_argument("-a", "--annofile", type=str, default="", help="")
+    parser.add_argument("-b", "--combi", type=str, default="", help="")
+    parser.add_argument("-c", "--comparisons", type=str, default="", help="")
+    parser.add_argument("-o", "--outdir", type=str, default="", help="")
+    parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -73,10 +74,10 @@ def parseargs():
 
 
 def create_tables(annofile, combi, comparisons, outdir):
-    logid = scriptname + '.create_tables: '
+    logid = scriptname + ".create_tables: "
 
-    if combi == 'none':
-        combi = ''
+    if combi == "none":
+        combi = ""
 
     comps = comparisons.split(",")
 
@@ -107,27 +108,27 @@ def create_tables(annofile, combi, comparisons, outdir):
 ####    MAIN    ####
 ####################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    logid = scriptname + '.main: '
+    logid = scriptname + ".main: "
     try:
         args = parseargs()
         print(scriptname)
         print(os.path.basename(inspect.stack()[-1].filename))
         try:
-            makelogdir('LOGS')
+            makelogdir("LOGS")
             log = setup_logger(
                 name=scriptname,
-                log_file='LOGS/' + scriptname + '.log',
-                logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
+                log_file="LOGS/" + scriptname + ".log",
+                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                datefmt="%m-%d %H:%M",
                 level=args.loglevel,
             )
             log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
-        log.info('RUNNING!')
+        log.info("RUNNING!")
         create_tables(args.annofile, args.combi, args.comparisons, args.outdir)
 
     except Exception as err:
@@ -137,7 +138,7 @@ if __name__ == '__main__':
             exc_value,
             exc_tb,
         )
-        log.error(logid + ''.join(tbe.format()))
+        log.error(logid + "".join(tbe.format()))
 
 
 # diego_contrast_files.py ends here
