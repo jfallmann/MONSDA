@@ -21,6 +21,8 @@ Ideally you download those files into a sub-directory of your workspace named "G
 
 All config files this tutorial is based on can be found in **envs/monsda/share/MONSDA/configs** of your local **conda** installation or the "configs" directory of the **MONSDA** repository.
 
+Please be aware that we are currently working on the implementation of postprocessing workflows for Nextflow, so at the moment you can only run the simple tutorial in Nextflow mode, but this will change soon.
+
 A simple run
 #############
 

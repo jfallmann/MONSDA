@@ -524,6 +524,7 @@ def create_skeleton(runner, skeleton=None):
                 "JOBS" + os.sep + scriptname + ".commands",
                 "JOBS" + os.sep + scriptname + "_" + ts + ".commands",
             )
+            open("JOBS" + os.sep + scriptname + ".commands", "w").close()
 
 
 @check_run
