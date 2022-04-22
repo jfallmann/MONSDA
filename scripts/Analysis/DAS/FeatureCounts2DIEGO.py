@@ -6,7 +6,7 @@ import os
 import inspect
 import gzip
 import glob
-improt re
+import re
 import logging
 import traceback as tb
 
