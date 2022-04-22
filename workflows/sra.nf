@@ -65,7 +65,7 @@ process download_sra{
     script:
     if (PAIRED == 'paired'){        
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log && rename 's/.sra_([1|2])/_R\$1/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
+        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log && rename 's/.sra_|_([1|2])/_R\$1/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{

@@ -22,7 +22,7 @@ if paired == 'paired':
         params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w, input: os.path.abspath(input.prefetch),
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
-        shell: "fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {log} && cd {params.outdir[0]} && rename 's/.sra_([1|2])/_R$1/' *.fastq && for i in *.fastq;do gzip $i;done"
+        shell: "fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {log} && cd {params.outdir[0]} && rename 's/.sra_|_([1|2])/_R$1/' *.fastq && for i in *.fastq;do gzip $i;done"
 
 else:
     log.info('Downloading single-end fastq files from SRA')
@@ -46,4 +46,3 @@ else:
                 ids = lambda w, input: os.path.abspath(input.prefetch),
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
         shell: "fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {log} && cd {params.outdir[0]} && rename 's/.sra.fastq/.fastq/' *.fastq && for i in *.fastq; do gzip $i;done"
-        #"arr=({params.ids}); orr=({params.outdir}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do fasterq-dump -O ${{orr[0]}} -e {threads} -t TMP {params.spara} ${{arr[$i]}} &> {log};done && cd ${{orr[0]}} && for i in *.fastq;do pigz -p {threads} $i;done"
