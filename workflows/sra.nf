@@ -65,12 +65,12 @@ process download_sra{
     script:
     if (PAIRED == 'paired'){        
         """
-        set +euo pipefail;fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log && rename 's/.sra_|_([1|2])/_R\$1/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done || exit 0
+        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R$2/' *.fastq; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{
         """
-        set +euo pipefail;fasterq-dump -e $THREADS $FETCHPARAMS $sras &> sra.log && rename 's/.sra.fastq/.fastq/' *.fastq && for i in *.fastq;do pigz -p $THREADS \$i;done || exit 0
+        fasterq-dump -e $THREADS $FETCHPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R$2/' *.fastq ; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
 }

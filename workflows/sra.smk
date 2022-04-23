@@ -18,11 +18,13 @@ if paired == 'paired':
         output: fq = expand("FASTQ/{{srafile}}_{read}.fastq.gz", read=['R1','R2'])
         log:    "LOGS/FETCH/{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
-        threads: MAXTHREAD
+        threads: min(MAXTHREAD, 6)
         params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w, input: os.path.abspath(input.prefetch),
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
-        shell: "set +euo pipefail; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {log} && cd {params.outdir[0]} && rename 's/.sra_|_([1|2])/_R$1/' *.fastq && for i in *.fastq;do gzip $i;done || exit 0"
+                wd = lambda wildcards: os.getcwd()+os.sep,
+                sra = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0]
+        shell: "set +euo pipefail; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq;do gzip $i &>> {params.wd}{log};done ; exit 0"
 
 else:
     log.info('Downloading single-end fastq files from SRA')
@@ -41,8 +43,10 @@ else:
         output: fq = "FASTQ/{srafile}.fastq.gz"
         log:    "LOGS/FETCH/{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
-        threads: MAXTHREAD
+        threads: min(MAXTHREAD, 6)
         params: outdir = lambda w, output: expand("{cond}", cond=os.path.dirname(output.fq)),
                 ids = lambda w, input: os.path.abspath(input.prefetch),
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
-        shell: "set +euo pipefail;fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {log} && cd {params.outdir[0]} && rename 's/.sra.fastq/.fastq/' *.fastq && for i in *.fastq; do gzip $i;done || exit 0"
+                wd = lambda wildcards: os.getcwd()+os.sep,
+                sra = lambda wildcards:  os.path.splitext(os.path.basename(wildcards.srafile))[0]
+        shell: "set +euo pipefail; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq; do gzip $i &>> {params.wd}{log};done ; exit 0"
