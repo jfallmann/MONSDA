@@ -976,12 +976,10 @@ def check_IP(sample, config):
     for s in sample:
         log.debug(logid + "SAMPLE: " + str(s))
         check = os.path.dirname(s).split(os.sep)
-        r = runstate_from_sample([s], config)
-        log.debug(logid + "RUNSTATE: " + str(r))
         tmplist = check
-        if r not in tmplist:
-            tmplist.extend(r)
-        log.debug(logid + str(tmplist))
+        for r in runstate_from_sample([s], config):
+            if r not in tmplist:
+                tmplist.extend(r)
         log.debug(logid + "TMP: " + str(tmplist))
         check = getFromDict(config["PEAKS"], tmplist)[0]
         log.debug(logid + "CHECK: " + str(check))
