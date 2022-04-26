@@ -22,7 +22,8 @@
                     "ANNOTATION": {
                         "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                         "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
-                    }
+                    },
+                    "IP": "CLIP"
                 }
             },
             "KO": {
@@ -41,7 +42,8 @@
                 "ANNOTATION": {
                     "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                     "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
-                }
+                },
+                "IP": "CLIP"
             }
         }
     },
