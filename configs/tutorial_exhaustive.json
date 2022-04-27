@@ -528,7 +528,6 @@
     "PEAKS": {
         "TOOLS" :
         {
-            "macs" : "macs2",
             "peaks" : "peaks",
             "scyphy" : "Piranha"
         },
@@ -540,12 +539,6 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
-                    "macs": {
-                        "OPTIONS":
-                        {
-                            "FINDPEAKS": "--nomodel --extsize 28"
-                        }
-                    },
                     "peaks":{
                         "OPTIONS":
                         {
@@ -563,12 +556,6 @@
                 }
             },
             "KO": {
-                "macs": {
-                    "OPTIONS":
-                    {
-                        "FINDPEAKS": "--nomodel --extsize 28"
-                    }
-                },
                 "peaks":{
                     "OPTIONS":
                     {
