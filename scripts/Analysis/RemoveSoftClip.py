@@ -125,7 +125,7 @@ def parseargs():
         "-b",
         "--bams",
         type=str,
-        help="Mapped reads BAM(s) comma separated, need to besorted and indexed",
+        help="Mapped reads BAM(s) comma separated, need to be sorted and indexed",
     )
     parser.add_argument("-o", "--out", type=str, default=None, help="Output file name")
     parser.add_argument(

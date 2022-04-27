@@ -67,8 +67,9 @@ if not all(checklist):
         conda:  "scyphy.yaml"
         threads: 1
         params: bins = BINS,
-                tmpidx = lambda x: tempfile.mkdtemp(dir='TMP')
-        shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} -c -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
+                tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
+                opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('SOFTCLIP', "")
+        shell: "python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} {params.opts} -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}"
 
     if not stranded or (stranded == 'fr' or stranded == 'ISF'):
         rule BamToBed:
@@ -166,7 +167,7 @@ if IP == 'iCLIP':
         log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
         conda:  "perl.yaml"
         threads: 1
-        params:  bins = BINS,
+        params: bins = BINS,
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
         shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
