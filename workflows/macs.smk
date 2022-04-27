@@ -54,7 +54,8 @@ rule FindPeaks:
             peak = PEAKBIN,
             outdir = lambda wildcards, output: os.path.dirname(output.peak),
             outname = lambda wildcards: os.path.basename(wildcards.file)+'_peak_'+wildcards.type,
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f BAM {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
+            mapmode = lambda wildcards: 'BAMPE' if paired == 'paired' and 'unique' not in wildcards.type else 'BAM'
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f {params.mapmode} {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi"
 
 
 rule AddSequenceToPeak:
