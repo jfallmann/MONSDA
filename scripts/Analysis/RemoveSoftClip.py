@@ -135,7 +135,13 @@ def parseargs():
         action="store_true",
         help="Parses cluster information from chromosome tag",
     )
-
+    parser.add_argument(
+        "--loglevel",
+        type=str,
+        default="INFO",
+        choices=["WARNING", "ERROR", "INFO", "DEBUG"],
+        help="Set log level",
+    )
     return parser.parse_args()
 
 
@@ -223,18 +229,21 @@ def remove_clip(bam, fasta, out, cluster=None):
                     inseq = True
                     newcigar.append((op, length))
 
-            qual = read.query_qualities[
-                read.query_alignment_start : read.query_alignment_end
-            ]
+            qual = read.query_alignment_qualities
             read.query_sequence = read.query_alignment_sequence
             try:
                 read.query_qualities = qual
             except:
                 log.info("Alignment quality not available " + str(read.query_qualities))
 
-            read.reference_start = (
-                read.reference_start + read.query_alignment_start + start
-            )
+            """
+            read.reference_start does not need to be changed, according to SAM specs
+            S for softclip does NOT consume a reference base and is thus not considered 
+            for Alignment start position!
+            https://samtools.github.io/hts-specs/SAMv1.pdf
+            # read.reference_start = read.reference_start + read.query_alignment_start + start
+            """
+
             read.cigar = newcigar
             read.reference_name = chrom
             read.next_reference_name = mate_chrom
@@ -277,6 +286,8 @@ def check_idx(file):
 
 if __name__ == "__main__":
     args = parseargs()
+    if args.loglevel:
+        log.setLevel(args.loglevel)
     process(args.fasta, args.bams, args.out, args.cluster)
 
 #
