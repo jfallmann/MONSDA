@@ -370,7 +370,6 @@
     "DEU": {
         "TOOLS" :
         {
-            "dexseq" : "Analysis/DEU/DEXSEQ.R",
             "edger" : "Analysis/DEU/EDGER.R"
         },
         "COMPARABLE" :
@@ -381,13 +380,6 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
-                    "dexseq": {
-                        "OPTIONS":
-                        {
-                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DEU": ""  # Options for DEU Analysis
-                        }
-                    },
                     "edger": {
                         "OPTIONS":
                         {
@@ -398,13 +390,6 @@
                 }
             },
             "KO": {
-                "dexseq": {
-                    "OPTIONS":
-                    {
-                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DEU": ""  # Options for DEU Analysis
-                    }
-                },
                 "edger": {
                     "OPTIONS":
                     {
@@ -467,7 +452,6 @@
     "DTU": {
         "TOOLS" :
         {
-            "dexseq" : "Analysis/DTU/DEXSEQ.R",
             "drimseq" : "Analysis/DTU/DRIMSEQ.R"
         },
         "COMPARABLE" :
@@ -478,16 +462,6 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
-                    "dexseq": {
-                        "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
-                        "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
-                        "OPTIONS":
-                        {
-                            "INDEX": "",
-                            "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": ""  # Options for DE Analysis
-                        }
-                    },
                     "drimseq": {
                         "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                         "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
@@ -501,16 +475,6 @@
                 }
             },
             "KO": {
-                "dexseq": {
-                    "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
-                    "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
-                    "OPTIONS":
-                    {
-                        "INDEX": "",
-                        "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                        "DTU": ""  # Options for DE Analysis
-                    }
-                },
                 "drimseq": {
                     "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                     "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
