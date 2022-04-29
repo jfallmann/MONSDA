@@ -528,8 +528,7 @@
     "PEAKS": {
         "TOOLS" :
         {
-            "peaks" : "peaks",
-            "scyphy" : "Piranha"
+            "piranha" : "Piranha"
         },
         "COMPARABLE" :
         {
@@ -539,14 +538,7 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
-                    "peaks":{
-                        "OPTIONS":
-                        {
-                            "PREPROCESS": "",
-                            "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
-                        }
-                    },
-                    "scyphy":{
+                    "piranha":{
                         "OPTIONS":
                         {
                             "PREPROCESS": "",
@@ -556,14 +548,7 @@
                 }
             },
             "KO": {
-                "peaks":{
-                    "OPTIONS":
-                    {
-                        "PREPROCESS": "",
-                        "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
-                    }
-                },
-                "scyphy":{
+                "piranha":{
                     "OPTIONS":
                     {
                         "PREPROCESS": "",
