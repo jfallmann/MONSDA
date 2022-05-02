@@ -133,7 +133,7 @@ for(compare in comparisons[[1]]){
     dge <- dge[keep, , keep.lib.sizes=FALSE]
 
     #relevel to base condition B
-    dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
+    dge$samples$group <- relevel(dge$samples$group, ref = B[[1]])
 
     ## normalize with TMM
     dge <- calcNormFactors(dge, method = "TMM", BPPARAM=BPPARAM)
@@ -191,7 +191,6 @@ for(compare in comparisons[[1]]){
         # qlf <- glmQLFTest(fit, contrast = contrast)
         qlf <- glmQLFTest(fit)
         is.de <- decideTests(qlf, p.value=0.05)
-        summary(is.de)
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
