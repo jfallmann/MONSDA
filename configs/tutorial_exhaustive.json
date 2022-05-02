@@ -419,7 +419,7 @@
                         "OPTIONS":
                         {
                             "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
+                            "DAS": "-c 3 -d 1 -q 0.05 -z .5 -r"  # Options for DAS Analysis
                         }
                     },
                     "edger": {
@@ -436,7 +436,7 @@
                     "OPTIONS":
                     {
                         "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
-                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
+                        "DAS": "-c 3 -d 1 -q 0.05 -z .5 -r"  # Options for DAS Analysis
                     }
                 },
                 "edger": {
