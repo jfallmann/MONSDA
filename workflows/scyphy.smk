@@ -73,7 +73,7 @@ if not all(checklist):
 
     if not stranded or (stranded == 'fr' or stranded == 'ISF'):
         rule BamToBed:
-            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bam", scombo=scombo)
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
             output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
@@ -83,7 +83,7 @@ if not all(checklist):
 
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
-            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bam", scombo=scombo)
+            input:  "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
             output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
@@ -113,7 +113,7 @@ rule rev_extendbed:
     shell:  "{params.bins}/Universal/ExtendBed.pl -d 0 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
 
 rule BedToBedg_ext:
-    input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}_nosoftclip.bed.gz", scombo=scombo),
+    input:  bed = "BED/{scombo}/{file}_mapped_extended_{type}_nosoftclip.bed.gz",
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.fw.bedg.gz",
@@ -129,7 +129,7 @@ rule BedToBedg_ext:
     shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
 rule BedToBedg_rev:
-    input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}_nosoftclip.bed.gz", scombo=scombo),
+    input:  bed = "BED/{scombo}/{file}_mapped_revtrimmed_{type}_nosoftclip.bed.gz",
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.fw.bedg.gz",
@@ -145,7 +145,7 @@ rule BedToBedg_rev:
     shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
 rule BedToBedg:
-    input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bed.gz", scombo=scombo),
+    input:  bed = "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz",
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.fw.bedg.gz",
