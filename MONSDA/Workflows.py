@@ -389,7 +389,9 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                 else:
                     if key == "SETTINGS":
                         tempconf[key] = subSetDict(config[key], condition)
-                        if config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]:
+                        if (
+                            config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]
+                        ) or config.get("RUNDEDUP"):
                             tempconf["RUNDEDUP"] = "enabled"
                         continue
                     if ("TOOLS" in config[key] and env == "" and exe == "") and len(
