@@ -82,8 +82,8 @@ Will start the run in the current directory and generate a "FASTQ" sub-directory
 
 A successful run will show the message 'Workflow finished, no error' at the end.
 
-Run it all
-###########
+Run it all (almost)
+###################
 
 This exhaustive use case involves multiple input files, two conditions (WT/KO) and almost all workflows available. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
 
@@ -95,10 +95,10 @@ Workflows include:
     - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
     - DEDUP: Read deduplication with umi_tools and picard
     - DE: Differential Expression analysis with EdgeR and DESeq2
-    - DEU: Differential Exon Usage analysis with EdgeR and DEXSeq
-    - DAS: Differential Alternative Splicing analysis with EdgeR and DIEGO
-    - DTU: Differential Transcript Usage analysis with DRIMSeq and DEXSeq
-    - COUNTING: Read counting with FeaturCounts ot quantification with Salmon
+    - DEU: Differential Exon Usage analysis with EdgeR (DEXSeq skipped, runtime)
+    - DAS: Differential Alternative Splicing analysis with EdgeR and DIEGO (skipped, E.coli)
+    - DTU: Differential Transcript Usage analysis with DRIMSeq (DEXSeq skipped, redundant)
+    - COUNTING: Read counting with FeaturCounts (quantification with Salmon skipped, see DTU)
     - TRACKS: Generation of tracks for UCSC or other genome browsers
     - PEAKS: Analysis of ChIP-Seq or CLIP-Seq or cyPhyRNA-Seq Peaks
 
@@ -141,6 +141,6 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_exhaustive.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS" directories will be created which will hold output from counting with featurecounts and DE/DEU/DAS input and output from EDGER, DESeq2, DEXSeq and DIEGO respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DTU" directories will be created which will hold output from counting with featurecounts (or salmon for DTU) and DE/DEU/DTU input and output from EDGER, DESeq2 and DrimSeq respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error'. Be aware that this is indeed an exhaustive workflow and will require a decent amount of disk-space, memory and compute-time, depending on the hardware at your disposal.
