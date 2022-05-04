@@ -194,7 +194,7 @@ def remove_clip(bam, fasta, out, cluster=None):
             mate_chrom = read.next_reference_name
             start, end = (0, 0)
 
-            if cluster and ":" in chrom:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
+            if cluster and "::" in chrom:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
                 t, n, chrom, coord = chrom.split(":")
                 start, end = map(int, coord.split("(")[0].split("-"))
                 start = start - 1
@@ -241,8 +241,10 @@ def remove_clip(bam, fasta, out, cluster=None):
             S for softclip does NOT consume a reference base and is thus not considered 
             for Alignment start position!
             https://samtools.github.io/hts-specs/SAMv1.pdf
-            # read.reference_start = read.reference_start + read.query_alignment_start + start
+            EXCEPT if we have cluster enabled!
             """
+            if cluster:
+                read.reference_start = read.reference_start + start
 
             read.cigar = newcigar
             read.reference_name = chrom
