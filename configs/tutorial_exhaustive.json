@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DTU, COUNTING",
+    "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS, DTU, COUNTING",
     "VERSION": "1.0.0",
     "BINS": "",
     "MAXTHREADS": "16",
@@ -370,6 +370,7 @@
     "DEU": {
         "TOOLS" :
         {
+            "dexseq" : "Analysis/DEU/DEXSEQ.R",
             "edger" : "Analysis/DEU/EDGER.R"
         },
         "COMPARABLE" :
@@ -380,6 +381,13 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
+                    "dexseq": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DEU": ""  # Options for DEU Analysis
+                        }
+                    },
                     "edger": {
                         "OPTIONS":
                         {
@@ -390,6 +398,13 @@
                 }
             },
             "KO": {
+                "dexseq": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DEU": ""  # Options for DEU Analysis
+                    }
+                },
                 "edger": {
                     "OPTIONS":
                     {
@@ -400,9 +415,59 @@
             }
         }
     },
+#DAS Analysis options
+    "DAS": {
+        "TOOLS" :
+        {
+            "diego" : "diego.py",
+            "edger" : "Analysis/DAS/EDGER.R"
+        },
+        "COMPARABLE" :
+        {
+        },
+        "EXCLUDE": [
+        ],
+        "Ecoli": {
+            "WT": {
+                "dummylevel": {
+                    "diego": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
+                        }
+                    },
+                    "edger": {
+                        "OPTIONS":
+                        {
+                            "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                            "DAS": ""  # Options for DAS Analysis
+                        }
+                    }
+                }
+            },
+            "KO": {
+                "diego": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"  # Options for DAS Analysis
+                    }
+                },
+                "edger": {
+                    "OPTIONS":
+                    {
+                        "COUNT": "-f -O",  # Options for read counting, independent of COUNTS workflows
+                        "DAS": ""  # Options for DAS Analysis
+                    }
+                }
+            }
+        }
+    },
     "DTU": {
         "TOOLS" :
         {
+            "dexseq" : "Analysis/DTU/DEXSEQ.R",
             "drimseq" : "Analysis/DTU/DRIMSEQ.R"
         },
         "COMPARABLE" :
@@ -413,6 +478,16 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
+                    "dexseq": {
+                        "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                        "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                        "OPTIONS":
+                        {
+                            "INDEX": "",
+                            "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": ""  # Options for DE Analysis
+                        }
+                    },
                     "drimseq": {
                         "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                         "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
@@ -426,6 +501,16 @@
                 }
             },
             "KO": {
+                "dexseq": {
+                    "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                    "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                    "OPTIONS":
+                    {
+                        "INDEX": "",
+                        "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                        "DTU": ""  # Options for DE Analysis
+                    }
+                },
                 "drimseq": {
                     "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                     "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
@@ -443,7 +528,8 @@
     "PEAKS": {
         "TOOLS" :
         {
-            "piranha" : "Piranha"
+            "peaks" : "peaks",
+            "scyphy" : "Piranha"
         },
         "COMPARABLE" :
         {
@@ -453,7 +539,14 @@
         "Ecoli": {
             "WT": {
                 "dummylevel": {
-                    "piranha":{
+                    "peaks":{
+                        "OPTIONS":
+                        {
+                            "PREPROCESS": "",
+                            "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                        }
+                    },
+                    "scyphy":{
                         "OPTIONS":
                         {
                             "PREPROCESS": "",
@@ -463,7 +556,14 @@
                 }
             },
             "KO": {
-                "piranha":{
+                "peaks":{
+                    "OPTIONS":
+                    {
+                        "PREPROCESS": "",
+                        "FINDPEAKS": "-l 0.6 -t 1 -w 5 -r 0.8 -c 3 -a 3"
+                    }
+                },
+                "scyphy":{
                     "OPTIONS":
                     {
                         "PREPROCESS": "",

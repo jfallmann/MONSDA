@@ -1,0 +1,266 @@
+{
+    "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP",
+    "VERSION": "1.0.0",
+    "BINS": "",
+    "MAXTHREADS": "16",
+    "SETTINGS": {
+        "Ecoli": {
+            "WT": {   
+                "dummylevel": {       
+                    "SAMPLES": [
+                        "SRR16324019", 
+                        "SRR16324018",
+                        "SRR16324017"
+                    ],
+                    "GROUPS": [
+                        "ctrl",
+                        "ctrl",
+                        "ctrl"
+                    ],
+                    "SEQUENCING": "paired",
+                    "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
+                    "ANNOTATION": {
+                        "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
+                        "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                    }
+                }
+            },
+            "KO": {
+                "SAMPLES": [
+                    "SRR16324016", 
+                    "SRR16324015",
+                    "SRR16324014"
+                ],
+                "GROUPS": [
+                    "ko",
+                    "ko",
+                    "ko"
+                ],
+                "SEQUENCING": "paired",
+                "REFERENCE": "GENOMES/Ecoli/ecoli.fa.gz",
+                "ANNOTATION": {
+                    "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
+                    "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                }
+            }
+        }
+    },
+    "FETCH": {
+        "TOOLS" :
+        {
+            "sra" : "fasterq-dump"
+        },
+        "Ecoli": {
+            "WT": {
+                "dummylevel": {
+                    "sra": {
+                        "OPTIONS":
+                        {
+                            "DOWNLOAD": ""
+                        }
+                    }
+                }
+            },
+            "KO": {
+                "sra": {
+                    "OPTIONS":
+                    {
+                        "DOWNLOAD": ""
+                    }
+                }
+            }
+        }
+    },
+    "QC": {
+        "TOOLS" :
+        {
+            "fastqc" : "fastqc"
+        },
+        "Ecoli": {
+            "KO": {
+                "fastqc": {
+                    "OPTIONS":
+                    {
+                        "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                        "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                    }
+                }
+            },
+            "WT": {
+                "dummylevel": {       
+                    "fastqc": {
+                        "OPTIONS":
+                        {
+                            "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "TRIMMING": {
+        "TOOLS" :
+        {
+            "trimgalore": "trim_galore",
+            "cutadapt": "cutadapt"
+        },
+        "Ecoli": {
+            "KO": {
+                "trimgalore":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                    }
+                },
+                "cutadapt":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                    }
+                }
+            },
+            "WT": {
+                "dummylevel": {       
+                    "trimgalore":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                        }
+                    },
+                    "cutadapt":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "DEDUP": {
+        "TOOLS": {
+            "umitools": "umi_tools",
+            "picard": "picard"
+        },
+        "Ecoli": {
+            "KO":{
+                "umitools":{
+                    "OPTIONS":
+                    {
+                        "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                        "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                    }
+                },
+               "picard":{
+                    "OPTIONS":
+                    {
+                        "JAVA": "",
+                        "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                    }
+              }
+            },
+            "WT":{
+                "dummylevel": {       
+                    "umitools": {
+                        "OPTIONS":
+                        {
+                            "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                            "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
+                        }
+                    },
+                    "picard": {
+                        "OPTIONS":
+                        {
+                            "JAVA": "",
+                            "DEDUP": "--VALIDATION_STRINGENCY SILENT"# umitools dedup options
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR",
+            "segemehl3": "segemehl.x",
+            "hisat2": "hisat2",
+            "bwa": "bwa mem",
+            "minimap": "minimap2"
+        },
+        "Ecoli": {
+            "WT": {
+                "dummylevel": {       
+                    "star": {
+                        "OPTIONS": {
+                            "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                            "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                        }
+                    },
+                    "segemehl3": {
+                        "OPTIONS": {
+                            "INDEX": "",
+                            "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                        }
+                    },
+                    "hisat2": {
+                        "OPTIONS":
+                        {
+                          "INDEX": "",
+                          "MAP": ""
+                        }
+                    },
+                    "bwa": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-a bwtsw",
+                            "MAP": ""
+                        }
+                    },
+                    "minimap": {
+                        "OPTIONS":
+                        {
+                            "INDEX": "-k 15",
+                            "MAP": "-ax sr -ub -Y -L --MD"
+                        }
+                    }
+                }
+            },
+            "KO": {
+                "star": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+                        "MAP": "--sjdbGTFfeatureExon CDS --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outFilterMultimapNmax 20"
+                    }
+                },
+                "segemehl3": {
+                    "OPTIONS": {
+                        "INDEX":  "",
+                        "MAP": "--MEOP --splits --accuracy 95 --differences 1 --evalue 5 --hitstrategy 1 --minsize 15 --minfraglen 20"
+                    }
+                },
+                "hisat2": {
+                    "OPTIONS":
+                    {
+                      "INDEX": ""
+                    }
+                },
+                "bwa": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-a bwtsw",
+                        "MAP": ""
+                    }
+                },
+                "minimap": {
+                    "OPTIONS":
+                    {
+                        "INDEX": "-k 15",
+                        "MAP": "-ax sr -ub -Y -L --MD"
+                    }
+                }
+            }
+        }
+    }
+}
