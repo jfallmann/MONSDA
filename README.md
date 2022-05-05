@@ -5,7 +5,7 @@
 
 Welcome to MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis
 
-Automizing hts analysis from data download, preprocessing and mapping to
+Automating HTS analysis from data download, preprocessing and mapping to
 postprocessing/analysis and track generation centered on a single config file.
 MONSDA can create ```Snakemake``` and ```Nextflow``` workflows based on user defined configuration.
 These workflows can either be saved to disk for manual inspection and execution or automatically executed.
@@ -48,11 +48,11 @@ More information can be found in the official [documentation](https://monsda.rea
 ## How does it work
 
 This repository hosts the executable ```MONSDA.py``` which acts a wrapper around ```Snakemake``` and the ```config.json``` file.
-The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```MONSDA.py``` and split into sub-configs that can later be found in the directory ```SubSnakes```.
+The ```config.json``` holds all the information that is needed to run the jobs and will be parsed by ```MONSDA.py``` and split into sub-configs that can later be found in the directory ```SubSnakes``` or ```SubFlows``` respectively.
 
 To successfully run an analysis pipeline, a few steps have to be followed:
   * Directory structure: The structure for the directories is dictated by the condition-tree in the config file
-  * Config file: This is the central part of the analysis. Depending on this file ```MONSDA.py``` will determine processing steps and generate according config and ```Snakemake``` workflow files to run each subworkflow until all processing steps are done.
+  * Config file: This is the central part of the analysis. Depending on this file ```MONSDA.py``` will determine processing steps and generate according config and ```Snakemake/Nextflow``` workflow files to run each subworkflow until all processing steps are done.
 
 ## Run the pipeline
 
@@ -91,7 +91,7 @@ and add additional arguments for ```Nextflow``` as you see fit.
 ####SLURM
 
 You can either use the slurm profile adapted from [Snakemake-Profiles](https://github.com/Snakemake-Profiles/slurm) that can be found in the ```profile_Snakemake``` directory, or go through the process of manually creating one, either using the cookiecutter example in the ```Snakemake-Profiles``` repository or on your own. 
-For ```Nextflow``` a minimalistic example profile can be found under ```profile_Nextflow```.
+For ```Nextflow``` a minimalist's example profile can be found under ```profile_Nextflow```.
 
 Then run
 ```
@@ -101,7 +101,7 @@ or
 ```
 export NXF_EXECUTOR=slurm; monsda --Nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
 ```
-repsectively.
+respectively.
 
 
 For other workload managers please refer to the documentation of ```Snakemake``` and ```Nextflow```.
@@ -115,7 +115,7 @@ To contribute new tools feel free to adopt existing ones,
 there should be a number of examples available that cover
 implementation details for almost all sorts of tools. If you need to
 add new python/groovy functions for processing of options or
-parameters add them to the corresponding file in the MONSTA directory.
+parameters add them to the corresponding file in the ```MONSDA``` directory.
 New environments go into the envs directory, new subworkflows into the
 workflows directory. Do not forget to also extend the template.json
 and add some documentation.
