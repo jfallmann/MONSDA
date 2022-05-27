@@ -16,15 +16,13 @@ rule themall:
             fig_F   = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_FeatPerGene.png", combo=combo, comparison=compstr, scombo=scombo),
             fig_P   = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_Precision.png", combo=combo, comparison=compstr, scombo=scombo),
             fig_PV  = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_figure_PValues.png", combo=combo, comparison=compstr, scombo=scombo),
-            fig_files = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_list_sigGenesFigures.tsv", combo=combo, comparison=compstr, scombo=scombo),
+            fig_files = expand("DTU/{combo}/Figures/DTU_DRIMSEQ_{scombo}_{comparison}_list_sig{feature}Figures.tsv", combo=combo, comparison=compstr, scombo=scombo, feature=["Gene","Transcript"]),
             sig_t    = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_dt   = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_ut   = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_g    = expand("DTU/{combo}/Tables/Sig_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_dg   = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_ug   = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            # res_stager = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_stageR-filtered.tsv.gz", combo=combo, comparison=compstr),
-            # res_posthoc = expand("DTU/{combo}/DTU_DRIMSEQ_{comparison}_results_post-hoc-filtered-on-SD.tsv.gz", combo=combo, comparison=compstr),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule salmon_index:
