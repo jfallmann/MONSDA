@@ -103,7 +103,7 @@ process hisat2_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 -S $pf --un-conc-gz $uf &> $lf && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && gzip *.sam && touch $uf
         """
     }else{
         read = reads[1]
@@ -112,7 +112,7 @@ process hisat2_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $read -S $pf --un-conc-gz $uf &> $lf && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $read | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && gzip *.sam && touch $uf
         """
     }
 }

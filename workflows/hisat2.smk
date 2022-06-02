@@ -37,7 +37,7 @@ if paired == 'paired':
                 um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz'),
                 umn = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', ''),
                 pref = PREFIX
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -1 {input.r1} -2 {input.r2} -S {output.mapped} --un-conc-gz {params.um} --new-summary --summary-file {output.summary} 2>> {log} && touch {params.umn}.unmapped.1.gz {params.umn}.unmapped.2.gz; rename 's/.unmapped.([1|2]).gz/_R$1_unmapped.fastq.gz/' {params.umn}.unmapped.*.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}"
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -1 {input.r1} -2 {input.r2} --new-summary --summary-file {output.summary} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {params.umn}.unmapped.1.gz {params.umn}.unmapped.2.gz; rename 's/.unmapped.([1|2]).gz/_R$1_unmapped.fastq.gz/' {params.umn}.unmapped.*.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}"
 
 else:
     rule mapping:
@@ -55,4 +55,4 @@ else:
                 mapp=MAPPERBIN,
                 stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
                 pref = PREFIX
-        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -U {input.query} -S {output.mapped} --un-gz {output.unmapped} --new-summary --summary-file {output.summary} 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -U {input.query} --new-summary --summary-file {output.summary} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"

@@ -75,7 +75,7 @@ all(rownames(cts) %in% txdf$TXNAME)
 txdf <- txdf[match(rownames(cts), txdf$TXNAME), ]
 all(rownames(cts) == txdf$TXNAME)
 
-counts <- na.omit(data.frame(gene_id = txdf$GENEID, feature_id = txdf$TXNAME, cts, check.names = FALSE))
+counts <- data.frame(gene_id = txdf$GENEID, feature_id = txdf$TXNAME, cts, check.names = FALSE)
 d <- dmDSdata(counts = counts, samples = sampleData)
 
 # Filter before running procedures:
