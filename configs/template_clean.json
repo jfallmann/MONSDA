@@ -92,7 +92,7 @@
               "TRIM": "-q 15 --length 8 -e 0.15"
             }
         },
-        "cutadept": {
+        "cutadapt": {
           "OPTIONS": 
             {
               "TRIM": "-q 15 --length 8 -e 0.15"
