@@ -341,4 +341,4 @@ if __name__ == "__main__":
         log.error(logid + "".join(tbe.format()))
 
 #
-# build_salmon_table.py ends here
+# build_DTU_table.py ends here

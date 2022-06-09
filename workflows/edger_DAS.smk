@@ -21,8 +21,8 @@ rule themall:
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
     output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
-            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
-            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
+            tmph = temp("DAS/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc = temp("DAS/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
@@ -45,7 +45,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
              bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} --loglevel DEBUG 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} -n 2> {log}"
 
 rule run_edger:
     input:  tbl  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
