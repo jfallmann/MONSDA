@@ -215,7 +215,9 @@ def prepare_table(
 
             if cond in my_groups:
                 my_groups[cond].replicate_paths.append(rep)
-                my_groups[cond].replicate_names.append(os.path.basename(rep))
+                my_groups[cond].replicate_names.append(
+                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                )
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
                 if bat is not None:
@@ -223,7 +225,9 @@ def prepare_table(
             else:
                 my_groups[cond] = make_sample_list(cond)
                 my_groups[cond].replicate_paths.append(rep)
-                my_groups[cond].replicate_names.append(os.path.basename(rep))
+                my_groups[cond].replicate_names.append(
+                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                )
                 # my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)

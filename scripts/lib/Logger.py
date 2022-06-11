@@ -66,7 +66,7 @@ def setup_logger(
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
-    if log_file is not "stdout" and log_file is not "stderr":
+    if log_file != "stdout" and log_file != "stderr":
         makelogdir(os.path.dirname(log_file))
         handler = logging.FileHandler(log_file, mode=filemode)
     else:

@@ -230,7 +230,9 @@ def prepare_table(
 
             if cond in my_groups:
                 my_groups[cond].replicate_paths.append(rep)
-                my_groups[cond].replicate_names.append(str.split(os.sep, rep)[-1])
+                my_groups[cond].replicate_names.append(
+                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                )
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
                 if bat is not None:
@@ -238,7 +240,9 @@ def prepare_table(
             else:
                 my_groups[cond] = make_sample_list(cond)
                 my_groups[cond].replicate_paths.append(rep)
-                my_groups[cond].replicate_names.append(str.split(os.sep, rep)[-1])
+                my_groups[cond].replicate_names.append(
+                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                )
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
                 if bat is not None:
@@ -258,6 +262,7 @@ def prepare_table(
             conds = [x for x in my_groups.keys()]
 
         log.debug(logid + "CONDS: " + str(conds))
+        groupanno = list()
         typeanno = list()
         batchanno = list()
         for gruppies in conds:
@@ -273,6 +278,7 @@ def prepare_table(
                     myMatrix[0].append(
                         my_groups[gruppies].replicate_names[condition_index]
                     )
+                    groupanno.append(my_groups[gruppies].group_name)
                     typeanno.append(
                         my_groups[gruppies].replicate_types[condition_index]
                     )
@@ -283,6 +289,7 @@ def prepare_table(
                     myMatrix[0].append(
                         str(my_groups[gruppies].group_name) + "_" + str(rep_nr)
                     )
+                    groupanno.append(my_groups[gruppies].group_name)
                     typeanno.append(
                         my_groups[gruppies].replicate_types[condition_index]
                     )
@@ -328,10 +335,9 @@ def prepare_table(
         annos = list()
 
         for i in range(1, len(myMatrix[0])):
-            # for c in myMatrix[0][1:]:
             c = myMatrix[0][i]
             # a = ''.join([i for i in c if not i.isdigit()])
-            a = str.join("_", str(c).split("_")[:-1])
+            a = str(groupanno[i - 1])
             a += "\t" + str(typeanno[i - 1]) if types is not None else None
             a += "\t" + str(batchanno[i - 1]) if batches is not None else None
             annos.append(str(c) + "\t" + str(a))
@@ -345,7 +351,7 @@ def prepare_table(
             line = str(zeilen[0]) + "\t"
             for x in range(1, len(zeilen)):
                 line = line + str(zeilen[x]) + "\t"
-            toprint = toprint + str(line) + "\n"
+            toprint = toprint + str(line[:-1]) + "\n"
 
         with gzip.open(table, "wb") as t:
             t.write(bytes(str(toprint), encoding="UTF8"))
