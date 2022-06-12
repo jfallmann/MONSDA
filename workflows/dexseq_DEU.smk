@@ -55,7 +55,7 @@ rule prepare_count_table:
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DEU'),
              bins = BINS
-    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} -n 2> {log}"
+    shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_dexseq:
     input:  cnt  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),

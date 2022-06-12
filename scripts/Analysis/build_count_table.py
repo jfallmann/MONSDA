@@ -265,6 +265,8 @@ def prepare_table(
         groupanno = list()
         typeanno = list()
         batchanno = list()
+        sampledict = dict()
+
         for gruppies in conds:
             condition_index = -1
             rep_nr = 0
@@ -290,6 +292,9 @@ def prepare_table(
                         str(my_groups[gruppies].group_name) + "_" + str(rep_nr)
                     )
                     groupanno.append(my_groups[gruppies].group_name)
+                    sampledict[replicate_names[condition_index]] = (
+                        str(my_groups[gruppies].group_name) + "_" + str(rep_nr)
+                    )
                     typeanno.append(
                         my_groups[gruppies].replicate_types[condition_index]
                     )
@@ -355,6 +360,14 @@ def prepare_table(
 
         with gzip.open(table, "wb") as t:
             t.write(bytes(str(toprint), encoding="UTF8"))
+
+        if not sample_name:
+            outfile = table.replace("_COUNTS.gz", "_SampleDict.gz")
+            toprint = ""
+            for k, v in sampledict.items():
+                toprint = f"{k}\t{v}\n"
+            with gzip.open(outfile, "wb") as s:
+                s.write(bytes(str(toprint), encoding="UTF8"))
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()
