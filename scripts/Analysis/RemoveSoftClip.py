@@ -197,7 +197,6 @@ def remove_clip(bam, fasta, out, cluster=None):
             if cluster and "::" in chrom:  # Hammerhead_1::SM_V7_1:2251747-2251831(+)
                 t, n, chrom, coord = chrom.split(":")
                 start, end = map(int, coord.split("(")[0].split("-"))
-                start = start - 1
                 if mate_chrom:
                     t, n, mate_chrom, mcoord = (
                         mate_chrom.split(":")
