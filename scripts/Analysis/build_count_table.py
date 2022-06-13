@@ -292,7 +292,7 @@ def prepare_table(
                         str(my_groups[gruppies].group_name) + "_" + str(rep_nr)
                     )
                     groupanno.append(my_groups[gruppies].group_name)
-                    sampledict[replicate_names[condition_index]] = (
+                    sampledict[my_groups[gruppies].replicate_names[condition_index]] = (
                         str(my_groups[gruppies].group_name) + "_" + str(rep_nr)
                     )
                     typeanno.append(
@@ -365,7 +365,7 @@ def prepare_table(
             outfile = table.replace("_COUNTS.gz", "_SampleDict.gz")
             toprint = ""
             for k, v in sampledict.items():
-                toprint = f"{k}\t{v}\n"
+                toprint = toprint + f"{k}\t{v}\n"
             with gzip.open(outfile, "wb") as s:
                 s.write(bytes(str(toprint), encoding="UTF8"))
 
