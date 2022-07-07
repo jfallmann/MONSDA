@@ -2,9 +2,8 @@ DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 
 wlparams = tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST')
 
-type = ['sorted', 'sorted_unique']
-
-#wildcard_constraints:
+wildcard_constraints:
+    type = ['sorted', 'sorted_unique']
 #    rawfile = '|'.join(list(SAMPLES)),
 #    read = "R1|R2",
 #    outdir = dedupoutdir
