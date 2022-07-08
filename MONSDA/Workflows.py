@@ -439,10 +439,14 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                         if config[subwork].get("CUTOFFS"):
                             tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
                         if subwork == "COUNTING":
-                            tempconf["COUNTING"]["FEATURES"] = config["COUNTING"][
-                                "FEATURES"
-                            ]
-                        if "COMPARABLE" in config[subwork]:
+                            tempconf["COUNTING"]["FEATURES"] = (
+                                config["COUNTING"]["FEATURES"]
+                                if config["COUNTING"].get("FEATURES")
+                                else subSetDict(config[subwork], condition)["FEATURES"]
+                            )
+                        if "COMPARABLE" in config[
+                            subwork
+                        ] or "COMPARABLE" in subSetDict(config[subwork], condition):
                             tempconf[subwork]["COMPARABLE"] = config[subwork][
                                 "COMPARABLE"
                             ]
