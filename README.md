@@ -1,7 +1,6 @@
 # MONSDA
 
-[![Documentation Status](https://readthedocs.org/projects/monsda/badge/?version=latest)](https://monsda.readthedocs.io/en/latest/?badge=latest)
-
+[![Documentation Status](https://readthedocs.org/projects/monsda/badge/?version=latest)](https://monsda.readthedocs.io/en/latest/?badge=latest) [![Conda Install](https://anaconda.org/bioconda/monsda/badges/installer/conda.svg)](https://anaconda.org/bioconda/monsda/badges/installer/conda.svg) [![PyPI Latest Release](https://img.shields.io/pypi/v/MONSDA.svg)](https://pypi.org/project/MONSDA/) [![PRs](https://img.shields.io/badge/PRs-welcome-blue)](https://github.com/jfallmann/RNAmediator/pulls)
 
 Welcome to MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis
 
