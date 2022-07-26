@@ -5,21 +5,34 @@ Available Workflows
 ===================
 
 FETCH -> Download from SRA
+
 BASECALL -> Call bases from FAST5
+
 QC -> Quality Control of FASTQ/BAM files
+
 TRIMMING -> Trim adaptor remnants
+
 MAPPING -> Map reads to reference
+
 DEDUP -> Deduplicate reads
 
 Please be aware that we are currently working on postprocessing workflows for the Nextflow mode, so currently workflows listed below can only be run in Snakemake mode. This will change soon and we will update this documentation accordingly.
 
 COUNTING -> Count or quantify reads
+
 TRACKS -> Generates trackdb.txt and BIGWIG files
+
 PEAKS -> Call peaks for ChIP, RIP, CLIP and other
+
 DE -> Differential Expression Analysis
+
 DEU -> Differential Exon Usage Analysis
+
 DAS -> Differential Alternative Splicing Analysis
+
 DTU -> Differential Transcript Usage Analysis
+
+CIRCS -> Circular RNA identification
 
 
 PREPROCESSING
