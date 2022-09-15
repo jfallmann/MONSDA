@@ -166,7 +166,7 @@ def rmempty(check):
 
 
 @check_run
-def ns_check_version(v, r):
+def monsda_check_version(v, r):
     logid = scriptname + ".MONSDA_check_version: "
 
     if parse_version(v) < parse_version(check):

@@ -691,10 +691,10 @@ def run_nextflow(
         """
         makeoutdir("TMP")
         if postprocess:
-            log.error(
-                "At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!"
-            )
-            sys.exit()
+            # log.error(
+            #    "At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!"
+            # )
+            # sys.exit()
 
             ## Once postprocessing is enabled, here comes a framework that should work
             for subwork in postprocess:
@@ -738,7 +738,9 @@ def run_nextflow(
                             jid = runjob(job)
                             log.debug(logid + "JOB CODE " + str(jid))
 
-            if any([x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]]):
+            if any(
+                [x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]] and not save
+            ):
                 # SUMMARY RUN
                 combinations = (
                     get_combo(subworkflows, config, conditions)
@@ -882,7 +884,7 @@ def main():
                 "Can not check version needed, please add VERSION key to config file"
             )
 
-        if ns_check_version(__version__, required_version) is not True:
+        if monsda_check_version(__version__, required_version) is not True:
             log.error(
                 "Version required in config file "
                 + str(required_version)
