@@ -21,9 +21,8 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "salmon.idx")            "$COUNTIDX"
+        if (filename == "salmon.idx")            "$COUNTUIDX"
         else if (filename.indexOf(".log") >0)    "LOGS/$COMBO$CONDITION/COUNTING/salmon_index.log"
-        else                                     "$COUNTINGUIDX"
     }
 
     input:

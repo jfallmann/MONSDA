@@ -2051,7 +2051,7 @@ def nf_fetch_params(
                             ["INDEX"],
                         )
                     )
-                    UIDX = f"{REFDIR}/INDICES/{XENV}/{unikey}.idx"
+                    UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
                 INDEX = (
@@ -2093,7 +2093,7 @@ def nf_fetch_params(
                             ["INDEX"],
                         )
                     )
-                    UIDX = f"{REFDIR}/INDICES/{XENV}/{unikey}.idx"
+                    UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
                 INDEX = (
                     str(os.path.abspath(INDICES[0]))
