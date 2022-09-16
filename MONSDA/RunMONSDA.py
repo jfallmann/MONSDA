@@ -738,8 +738,9 @@ def run_nextflow(
                             jid = runjob(job)
                             log.debug(logid + "JOB CODE " + str(jid))
 
-            if any(
-                [x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]] and not save
+            if (
+                any([x in postprocess for x in ["DE", "DEU", "DAS", "DTU"]])
+                and not save
             ):
                 # SUMMARY RUN
                 combinations = (

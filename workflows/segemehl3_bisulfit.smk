@@ -5,7 +5,7 @@ rule generate_index:
     output: idx1 = INDEX,
 	        idx2 = INDEX2,
             uidx1 = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))
-            uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX']))+'second')
+            uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX']))+'_second')
     log:    expand("LOGS/{mape}.idx.log", mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     threads: MAXTHREAD

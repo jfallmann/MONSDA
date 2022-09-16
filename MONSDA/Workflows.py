@@ -492,8 +492,8 @@ def make_pre(
     if combinations:
         combname = get_combo_name(combinations)
         for condition in combname:
-            worklist = combname[condition]["works"]
-            envlist = combname[condition]["envs"]
+            worklist = combname[condition].get("works")
+            envlist = combname[condition].get("envs")
             subconf = NestedDefaultDict()
             add = list()
 
@@ -800,8 +800,8 @@ def make_sub(
     if combinations:
         combname = get_combo_name(combinations)
         for condition in combname:
-            worklist = combname[condition]["works"]
-            envlist = combname[condition]["envs"]
+            worklist = combname[condition].get("works")
+            envlist = combname[condition].get("envs")
             subconf = NestedDefaultDict()
             add = list()
 
@@ -1881,7 +1881,6 @@ def nf_fetch_params(
     REFERENCE = SETTINGS.get("REFERENCE")
     REFDIR = str(os.path.dirname(REFERENCE))
     INDEX = SETTINGS.get("INDEX")
-    INDEX2 = SETTINGS.get("INDEX")
     UIDX = SETTINGS.get("UIDX")
     PREFIX = SETTINGS.get("PREFIX")
     ANNO = SETTINGS.get("ANNOTATION")
@@ -1978,10 +1977,16 @@ def nf_fetch_params(
         if len(INDICES) > 1:
             if str(os.path.abspath(INDICES[1])) not in UIDX:
                 INDEX2 = str(os.path.abspath(INDICES[1]))
+                UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
+                UIDXNAME2 = f"{MAPPERENV}_{unikey}_bs"
             else:
                 INDEX2 = str(os.path.abspath(INDICES[1])) + "_idx"
+                UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
+                UIDXNAME2 = f"{MAPPERENV}_{unikey}_bs"
         else:
             INDEX2 = None
+            UIDX2 = None
+            UIDXNAME2 = None
 
         retconf["MAPPINGREF"] = REFERENCE
         retconf["MAPPINGREFDIR"] = REFDIR
@@ -1989,7 +1994,9 @@ def nf_fetch_params(
         retconf["MAPPINGIDX"] = INDEX
         retconf["MAPPINGIDX2"] = INDEX2
         retconf["MAPPINGUIDX"] = UIDX
+        retconf["MAPPINGUIDX2"] = UIDX2
         retconf["MAPPINGUIDXNAME"] = UIDXNAME
+        retconf["MAPPINGUIDXNAME2"] = UIDXNAME2
         retconf["MAPPINGPREFIX"] = PREFIX
 
     # Peak Calling Variables
@@ -2018,6 +2025,7 @@ def nf_fetch_params(
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
         if x in config:
+            XBIN, XENV = env_bin_from_config3(config, x)
             XCONF = subDict(config[x], SETUP)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
@@ -2031,9 +2039,31 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-        retconf["TRACKSREF"] = REFERENCE
-        retconf["TRACKSREFDIR"] = REFDIR
-        retconf["TRACKSANNO"] = ANNOTATION
+            if XENV == "salmon":
+                IDX = XCONF.get("INDEX")
+                if IDX:
+                    INDEX = IDX
+                else:
+                    INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
+                    unikey = get_dict_hash(
+                        subDict(
+                            tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
+                            ["INDEX"],
+                        )
+                    )
+                    UIDX = f"{REFDIR}/INDICES/{XENV}/{unikey}.idx"
+                    UIDXNAME = f"{XENV}_{unikey}"
+                INDICES = INDEX.split(",") if INDEX else list(UIDX)
+                INDEX = (
+                    str(os.path.abspath(INDICES[0]))
+                    if str(os.path.abspath(INDICES[0])) not in UIDX
+                    else str(os.path.abspath(INDICES[0])) + "_idx"
+                )
+                retconf[x + "IDX"] = INDEX
+                retconf[x + "UIDX"] = UIDX
+            retconf[x + "REF"] = REFERENCE
+            retconf[x + "REFDIR"] = REFDIR
+            retconf[x + "ANNO"] = ANNOTATION
 
     # DE/DEU/DAS/DTU Variables
     for x in ["DE", "DEU", "DAS", "DTU"]:
@@ -2051,9 +2081,30 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-        retconf["DEREF"] = REFERENCE
-        retconf["DEREFDIR"] = REFDIR
-        retconf["DEANNO"] = ANNOTATION
+            if x == "DTU":
+                IDX = XCONF.get("INDEX")
+                if IDX:
+                    INDEX = IDX
+                if not INDEX:
+                    INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
+                    unikey = get_dict_hash(
+                        subDict(
+                            tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
+                            ["INDEX"],
+                        )
+                    )
+                    UIDX = f"{REFDIR}/INDICES/{XENV}/{unikey}.idx"
+                INDICES = INDEX.split(",") if INDEX else list(UIDX)
+                INDEX = (
+                    str(os.path.abspath(INDICES[0]))
+                    if str(os.path.abspath(INDICES[0])) not in UIDX
+                    else str(os.path.abspath(INDICES[0])) + "_idx"
+                )
+                retconf[x + "IDX"] = INDEX
+                retconf[x + "UIDX"] = UIDX
+        retconf[x + "REF"] = REFERENCE
+        retconf[x + "REFDIR"] = REFDIR
+        retconf[x + "ANNO"] = ANNOTATION
 
     # CIRCS Variables
     if "CIRCS" in config:
@@ -2278,8 +2329,8 @@ def nf_make_pre(
         combname = get_combo_name(combinations)
 
         for condition in combname:
-            worklist = combname[condition]["works"]
-            envlist = combname[condition]["envs"]
+            worklist = combname[condition].get("works")
+            envlist = combname[condition].get("envs")
             add = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
@@ -2649,8 +2700,8 @@ def nf_make_sub(
         combname = get_combo_name(combinations)
 
         for condition in combname:
-            worklist = combname[condition]["works"]
-            envlist = combname[condition]["envs"]
+            worklist = combname[condition].get("works")
+            envlist = combname[condition].get("envs")
             add = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
@@ -3290,6 +3341,7 @@ def nf_make_post(
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
             condition = list(combname.keys())[0]
+            worklist = combname[condition].get("works")
             envlist = combname[condition].get("envs")
             subconf = NestedDefaultDict()
             add = list()
@@ -3353,6 +3405,7 @@ def nf_make_post(
 
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
+                    subsamples = get_samples(sconf)
 
                     log.debug(
                         logid
@@ -3393,7 +3446,7 @@ def nf_make_post(
                             subsamples[0],
                             None,
                             sconf,
-                            works[j],
+                            subwork,
                             toolenv,
                             toolbin,
                             None,
@@ -3453,6 +3506,7 @@ def nf_make_post(
                     jobs.append([nfo, confo, tpl, para])
         else:
             for condition in combname:
+                worklist = combname[condition].get("works")
                 envlist = combname[condition].get("envs")
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
@@ -3517,6 +3571,7 @@ def nf_make_post(
                             )
 
                         flowlist.append(subwork)
+                        subsamples = get_samples(sconf)
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
 
@@ -3561,7 +3616,7 @@ def nf_make_post(
                                 subsamples[0],
                                 None,
                                 sconf,
-                                works[j],
+                                subwork,
                                 toolenv,
                                 toolbin,
                                 None,
@@ -3670,6 +3725,7 @@ def nf_make_post(
 
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
+                subsamples = get_samples(sconf)
 
                 scombo = ""
                 combo = toolenv
@@ -3696,7 +3752,7 @@ def nf_make_post(
                         subsamples[0],
                         None,
                         sconf,
-                        works[j],
+                        subwork,
                         toolenv,
                         toolbin,
                         None,
