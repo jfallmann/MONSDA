@@ -60,7 +60,6 @@ process salmon_quant{
     path "*.log", emit: logs
 
     script:
-    mapbin = MAPBIN        
 
     idx = reads[0]
     if (PAIRED == 'paired'){
@@ -79,7 +78,7 @@ process salmon_quant{
         oz = fn+"/COUNT.sf.gz"
         ol = fn+"_COUNT.sf.gz"
         """
-        $MAPBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -sf $oz $ol
+        $COUNTBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -sf $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -96,7 +95,7 @@ process salmon_quant{
         oz = fn+"/COUNT.sf.gz"
         ol = fn+"_COUNT.sf.gz"
         """
-        $MAPBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -sf $oz $ol
+        $COUNTBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -sf $oz $ol
         """
     }
 }
@@ -111,12 +110,12 @@ workflow COUNTING{
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(COUNTUIDX)
-        salmon_quant(idxfile.combine(collection))
+        salmon_quant(idxfile.combine(samples_ch))
     }
     else{
         genomefile = Channel.fromPath(COUNTREF)
         salmon_idx(genomefile)
-        salmon_quant(salmon_idx.out.idx.combine(collection))
+        salmon_quant(salmon_idx.out.idx.combine(samples_ch))
     }
 
     emit:
