@@ -2167,9 +2167,7 @@ def nf_get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH"]  # , 'BASECALL']
     sub = ["TRIMMING", "MAPPING", "QC", "DEDUP"]
-    post = (
-        []
-    )  # ['COUNTING', 'TRACKS', 'PEAKS', 'DE', 'DEU', 'DAS', 'DTU', 'ANNOTATE']  # Not implemented yet, TODO
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -3349,9 +3347,9 @@ def nf_make_post(
                         "diego",
                     ]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
                         toolenv = toolenv + "_" + subwork
-                        flowlist.add(subwork + "_" + toolbin)
+                        flowlist.append(subwork + "_" + toolbin)
                     else:
-                        flowlist.add(subwork)
+                        flowlist.append(subwork)
 
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
@@ -3518,7 +3516,7 @@ def nf_make_post(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
 
-                        flowlist.add(subwork)
+                        flowlist.append(subwork)
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
 
@@ -3666,9 +3664,9 @@ def nf_make_post(
                 ]:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv + "_" + subwork
                     log.debug(logid + "toolenv: " + str(toolenv))
-                    flowlist.add(subwork + "_" + toolbin)
+                    flowlist.append(subwork + "_" + toolbin)
                 else:
-                    flowlist.add(subwork)
+                    flowlist.append(subwork)
 
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
