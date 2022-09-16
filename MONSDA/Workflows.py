@@ -3344,13 +3344,14 @@ def nf_make_post(
                             sconf[subwork]["TOOLS"], [toolenv]
                         )
 
-                    flowlist.add(subwork + "_" + toolbin)
-
                     if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
                         "deseq",
                         "diego",
                     ]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
                         toolenv = toolenv + "_" + subwork
+                        flowlist.add(subwork + "_" + toolbin)
+                    else:
+                        flowlist.add(subwork)
 
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
@@ -3452,9 +3453,310 @@ def nf_make_post(
                     para = nf_fetch_params(confo, condition, combi)
 
                     jobs.append([nfo, confo, tpl, para])
+        else:
+            for condition in combname:
+                envlist = combname[condition].get("envs")
+                log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
+                subconf = NestedDefaultDict()
+                add = list()
 
-####TODO ELSE AND TESTING, THIS NEEDS WAY MORE WORK
+                nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
+                with open(nfi, "r") as nf:
+                    for line in nf.readlines():
+                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                        line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
+                        add.append(line)
+                    add.append("\n\n")
+
+                for i in range(len(envlist)):
+                    envs = envlist[i].split("-")
+                    works = worklist[i].split("-")
+                    flowlist = list()
+                    tp = list()
+
+                    listoftools, listofconfigs = create_subworkflow(
+                        config, subwork, [condition], stage="POST"
+                    )
+
+                    if listoftools is None:
+                        log.error(
+                            logid
+                            + "No entry in config fits processing step"
+                            + str(subwork)
+                        )
+
+                    sconf = listofconfigs[0]
+                    sconf.pop("PREDEDUP", None)  # cleanup
+
+                    for c in range(1, len(listofconfigs)):
+                        sconf = merge_dicts(sconf, listofconfigs[c])
+
+                    for a in range(0, len(listoftools)):
+                        subjobs = list()
+                        toolenv, toolbin = map(str, listoftools[a])
+
+                        if subwork == "CIRCS":
+                            if toolenv == "ciri2" and "bwa" not in envs:
+                                log.warning(
+                                    "CIRI2 needs BWA mapped files, will skip input produced otherwise"
+                                )
+                                continue
+
+                        tc = list(condition)
+                        tc.append(toolenv)
+                        sconf[subwork] = merge_dicts(
+                            sconf[subwork], subSetDict(config[subwork], tc)
+                        )
+
+                        if sconf[subwork].get("TOOLS"):
+                            sconf[subwork]["TOOLS"] = subDict(
+                                sconf[subwork]["TOOLS"], [toolenv]
+                            )
+
+                        flowlist.add(subwork)
+                        sconf[subwork + "ENV"] = toolenv
+                        sconf[subwork + "BIN"] = toolbin
+
+                        log.debug(
+                            logid
+                            + "POSTPROCESS: "
+                            + str(subwork)
+                            + " CONDITION: "
+                            + str(condition)
+                            + " TOOL: "
+                            + str(toolenv)
+                        )
+
+                        scombo = str(envlist[i]) if envlist[i] != "" else ""
+                        combo = (
+                            str.join(os.sep, [str(envlist[i]), toolenv])
+                            if envlist[i] != ""
+                            else toolenv
+                        )
+
+                        subconf.update(sconf)
+
+                        subname = toolenv + ".nf"
+                        nfi = os.path.abspath(os.path.join(workflowpath, subname))
+                        with open(nfi, "r") as nf:
+                            for line in nf.readlines():
+                                line = re.sub(condapath, 'conda "' + envpath, line)
+                                if "include: " in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                    )
+                                subjobs.append(line)
+                            subjobs.append("\n\n")
+
+                        tp.append(
+                            nf_tool_params(
+                                subsamples[0],
+                                None,
+                                sconf,
+                                works[j],
+                                toolenv,
+                                toolbin,
+                                None,
+                                condition,
+                            )
+                        )
+
+                        subjobs.append("\n\n" + "workflow {\n")
+                        for w in flowlist:
+                            subjobs.append(" " * 4 + w + "(dummy)\n")
+                        subjobs.append("}\n\n")
+
+                        te = toolenv.split("_")[0] if "_" in toolenv else toolenv
+                        nfo = os.path.abspath(
+                            os.path.join(
+                                subdir,
+                                "_".join(
+                                    [
+                                        "_".join(condition),
+                                        envlist[i],
+                                        subwork,
+                                        te,
+                                        "subflow.nf",
+                                    ]
+                                ),
+                            )
+                        )
+                        if os.path.exists(nfo):
+                            os.rename(nfo, nfo + ".bak")
+                        with open(nfo, "w") as nfout:
+                            nfout.write("".join(add))
+                            nfout.write("".join(subjobs))
+
+                        confo = os.path.abspath(
+                            os.path.join(
+                                subdir,
+                                "_".join(
+                                    [
+                                        "_".join(condition),
+                                        envlist[i],
+                                        subwork,
+                                        te,
+                                        "subconfig.json",
+                                    ]
+                                ),
+                            )
+                        )
+                        if os.path.exists(confo):
+                            os.rename(confo, confo + ".bak")
+                        with open(confo, "w") as confout:
+                            json.dump(subconf, confout)
+
+                        tpl = " ".join(tp)
+                        combi = list((str(envlist[i]), ""))
+                        para = nf_fetch_params(confo, condition, combi)
+
+                        jobs.append([nfo, confo, tpl, para])
+
+    else:
+        subwork = postworkflow
+        add = list()
+
+        for condition in conditions:
+            flowlist = list()
+            subjobs = list()
+            subconf = NestedDefaultDict()
+            tp = list()
+
+            nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
+            with open(nfi, "r") as nf:
+                for line in nf.readlines():
+                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                    line = re.sub(condapath, 'conda "' + envpath, line)
+                    if "include: " in line:
+                        line = fixinclude(
+                            line, loglevel, condapath, envpath, workflowpath, logfix
+                        )
+                    add.append(line)
+                add.append("\n\n")
+
+            listoftools, listofconfigs = create_subworkflow(
+                config, subwork, [condition], stage="POST"
+            )
+
+            if listoftools is None:
+                log.error(
+                    logid + "No entry in config fits processing step" + str(subwork)
+                )
+
+            sconf = listofconfigs[0]
+            sconf.pop("PREDEDUP", None)  # cleanup
+
+            for a in range(0, len(listoftools)):
+                subjobs = list()
+
+                toolenv, toolbin = map(str, listoftools[a])
+                if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
+                    "deseq",
+                    "diego",
+                ]:  # for all other postprocessing tools we have more than one defined subworkflow
+                    toolenv = toolenv + "_" + subwork
+                    log.debug(logid + "toolenv: " + str(toolenv))
+                    flowlist.add(subwork + "_" + toolbin)
+                else:
+                    flowlist.add(subwork)
+
+                sconf[subwork + "ENV"] = toolenv
+                sconf[subwork + "BIN"] = toolbin
+
+                scombo = ""
+                combo = toolenv
+                subconf.update(sconf)
+                subname = toolenv + ".nf"
+                nfi = os.path.abspath(os.path.join(workflowpath, subname))
+                with open(nfi, "r") as nf:
+                    for line in nf.readlines():
+                        line = re.sub(condapath, 'conda "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
+                                logfix,
+                            )
+                        subjobs.append(line)
+                    subjobs.append("\n\n")
+
+                tp.append(
+                    nf_tool_params(
+                        subsamples[0],
+                        None,
+                        sconf,
+                        works[j],
+                        toolenv,
+                        toolbin,
+                        None,
+                        condition,
+                    )
+                )
+
+                subjobs.append("\n\n" + "workflow {\n")
+                for w in flowlist:
+                    subjobs.append(" " * 4 + w + "(dummy)\n")
+                subjobs.append("}\n\n")
+
+                te = toolenv.split("_")[0] if "_" in toolenv else toolenv
+                nfo = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(
+                            [
+                                "_".join(condition),
+                                envlist[i],
+                                subwork,
+                                te,
+                                "subflow.nf",
+                            ]
+                        ),
+                    )
+                )
+                if os.path.exists(nfo):
+                    os.rename(nfo, nfo + ".bak")
+                with open(nfo, "w") as nfout:
+                    nfout.write("".join(add))
+                    nfout.write("".join(subjobs))
+
+                confo = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(
+                            [
+                                "_".join(condition),
+                                envlist[i],
+                                subwork,
+                                te,
+                                "subconfig.json",
+                            ]
+                        ),
+                    )
+                )
+                if os.path.exists(confo):
+                    os.rename(confo, confo + ".bak")
+                with open(confo, "w") as confout:
+                    json.dump(subconf, confout)
+
+                tpl = " ".join(tp)
+                combi = list((str(envlist[i]), ""))
+                para = nf_fetch_params(confo, condition, combi)
+
+                jobs.append([nfo, confo, tpl, para])
+    return jobs
 
 
 @check_run
