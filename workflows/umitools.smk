@@ -3,13 +3,7 @@ DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
 wlparams = tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST')
 
 wildcard_constraints:
-    type = ['sorted', 'sorted_unique']
-#    rawfile = '|'.join(list(SAMPLES)),
-#    read = "R1|R2",
-#    outdir = dedupoutdir
-
-#rule dedupthemall:
-#    input: expand("{outdir}{file}_{read}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_dedup.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config))
+    type = "sorted|sorted_unique"
 
 if paired == 'paired':
     if wlparams:
@@ -93,6 +87,7 @@ if paired == 'paired':
     rule dedupbam:
         input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam"
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
+                bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"
@@ -105,6 +100,7 @@ else:
     rule dedupbam:  
         input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam"
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
+                bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"

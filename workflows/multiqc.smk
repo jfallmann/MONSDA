@@ -11,7 +11,7 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
@@ -30,7 +30,7 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
@@ -52,7 +52,7 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo,type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])  
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo,type=["sorted", "sorted_unique"])  
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
@@ -71,7 +71,7 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique", "sorted_dedup", "sorted_unique_dedup"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
