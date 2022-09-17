@@ -2061,6 +2061,7 @@ def nf_fetch_params(
                 )
                 retconf[x + "IDX"] = INDEX
                 retconf[x + "UIDX"] = UIDX
+                retconf[x + "UIDXNAME"] = UIDXNAME
             retconf[x + "REF"] = REFERENCE
             retconf[x + "REFDIR"] = REFDIR
             retconf[x + "ANNO"] = ANNOTATION
@@ -2094,6 +2095,7 @@ def nf_fetch_params(
                         )
                     )
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
+                    UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
                 INDEX = (
                     str(os.path.abspath(INDICES[0]))
@@ -2102,6 +2104,7 @@ def nf_fetch_params(
                 )
                 retconf[x + "IDX"] = INDEX
                 retconf[x + "UIDX"] = UIDX
+                retconf[x + "UIDXNAME"] = UIDXNAME
         retconf[x + "REF"] = REFERENCE
         retconf[x + "REFDIR"] = REFDIR
         retconf[x + "ANNO"] = ANNOTATION

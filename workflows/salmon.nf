@@ -73,11 +73,11 @@ process salmon_quant{
         r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
-        of = fn+"/COUNT.sf"
-        oz = fn+"/COUNT.sf.gz"
-        ol = fn+"_COUNT.sf.gz"
+        of = fn+"/quant.sf"
+        oz = fn+"/quant.sf.gz"
+        ol = fn+"_counts.sf.gz"
         """
-        $COUNTBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -sf $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && mv -f $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -90,11 +90,11 @@ process salmon_quant{
         read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
-        of = fn+"/COUNT.sf"
-        oz = fn+"/COUNT.sf.gz"
-        ol = fn+"_COUNT.sf.gz"
+        of = fn+"/quant.sf"
+        oz = fn+"/quant.sf.gz"
+        ol = fn+"_counts.sf.gz"
         """
-        $COUNTBIN $COUNTPARAMS COUNT -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -sf $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && mv -f $oz $ol
         """
     }
 }
@@ -109,12 +109,20 @@ workflow COUNTING{
     
     if (checkidx.exists()){
         idxfile = Channel.fromPath(COUNTUIDX)
-        salmon_quant(idxfile.combine(samples_ch))
+        if (PAIRED == 'paired'){
+            salmon_quant(idxfile.combine(samples_ch.collate(2)))
+        } else{
+            salmon_quant(idxfile.combine(samples_ch.collate(1)))
+        }        
     }
     else{
         genomefile = Channel.fromPath(COUNTREF)
         salmon_idx(genomefile)
-        salmon_quant(salmon_idx.out.idx.combine(samples_ch))
+        if (PAIRED == 'paired'){
+            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
+        } else{
+            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+        }
     }
 
     emit:
