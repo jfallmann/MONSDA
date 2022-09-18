@@ -1,10 +1,13 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
+keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
+keydict["REF"] = REF
+unik = get_dict_hash(keydict)
 
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))),
-            idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])), pref = PREFIX),
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=unik),
+            idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref = PREFIX),
             tmp = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"

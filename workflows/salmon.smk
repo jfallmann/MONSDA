@@ -1,4 +1,7 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config,'COUNTING')
+keydict = subDict(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'], ['INDEX'])
+keydict["REF"] = REF
+unik = get_dict_hash(keydict)
 
 rule themall:
     input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", combo=combo, file=samplecond(SAMPLES, config)),
@@ -7,7 +10,7 @@ rule themall:
 rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'], ['INDEX']))))
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik)
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD

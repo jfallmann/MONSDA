@@ -4,6 +4,9 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(conf
 outdir = "DTU/DEXSEQ"
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
+keydict = subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
+keydict["REF"] = REF
+unik = get_dict_hash(keydict)
 
 rule themall:
     input:
@@ -12,7 +15,7 @@ rule themall:
 rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX']))))
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik)
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  "MONSDA/envs/"+COUNTENV+".yaml"
     threads: MAXTHREAD

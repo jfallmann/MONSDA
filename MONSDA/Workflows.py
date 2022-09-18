@@ -1960,12 +1960,12 @@ def nf_fetch_params(
             INDEX = IDX
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
-        unikey = get_dict_hash(
-            subDict(
+        keydict = subDict(
                 tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
                 ["INDEX"],
             )
-        )
+        keydict["REF"] = REF
+        unikey = get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
         INDICES = INDEX.split(",") if INDEX else list(UIDX)
@@ -2045,12 +2045,9 @@ def nf_fetch_params(
                     INDEX = IDX
                 else:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    unikey = get_dict_hash(
-                        subDict(
-                            tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
-                            ["INDEX"],
-                        )
-                    )
+                    keydict = subDict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],["INDEX"],)
+                    keydict["REF"] = REF
+                    unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
@@ -2094,12 +2091,9 @@ def nf_fetch_params(
                     INDEX = IDX
                 if not INDEX:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    unikey = get_dict_hash(
-                        subDict(
-                            tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
-                            ["INDEX"],
-                        )
-                    )
+                    keydict = subDict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],["INDEX"],)
+                    keydict["REF"] = REF
+                    unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)

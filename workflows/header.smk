@@ -122,7 +122,10 @@ if 'MAPPING' in config:
         INDEX = IDX
     if not INDEX:
         INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
-    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])))
+    keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
+    keydict["REF"] = REF
+    unik = get_dict_hash(keydict)
+    UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
     MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
@@ -179,7 +182,10 @@ for x in ['TRACKS', 'COUNTING']:
                 INDEX = IDX
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])))
+                keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                keydict["REF"] = REF
+                unik = get_dict_hash(keydict)
+                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
             INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 
@@ -206,7 +212,10 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
                 INDEX = IDX
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])))
+                keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                keydict["REF"] = REF
+                unik = get_dict_hash(keydict)
+                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
             INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
 

@@ -6,6 +6,10 @@ comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 log.info(logid+"COMPARISON: "+str(comparison))
 
+keydict = subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
+keydict["REF"] = REF
+unik = get_dict_hash(keydict)
+
 rule themall:
     input:  session = expand("DTU/{combo}/DTU_DEXSEQ_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
             res     = expand("DTU/{combo}/Tables/DTU_DEXSEQ_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, scombo=scombo, comparison=compstr),
@@ -17,7 +21,7 @@ rule themall:
 rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=get_dict_hash(subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX']))))
+            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)    
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
