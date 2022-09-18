@@ -200,7 +200,7 @@ def getFromDict(dataDict, mapList):
         log.debug(logid + "k: " + str(k))
         if dataDict.get(k):
             dataDict = dataDict[k]
-            log.debug(logid + "subdict: " + str(dataDict))
+            log.debug(logid + "subDict: " + str(dataDict))
         else:
             return list([])
     if ret != dataDict:

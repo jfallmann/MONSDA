@@ -1,5 +1,5 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config3(config,'MAPPING')
-keydict = subdict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
+keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REF
 unik = get_dict_hash(keydict)
 
@@ -8,7 +8,7 @@ rule generate_index:
     output: idx1 = INDEX,
 	        idx2 = INDEX2,
             uidx1 = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
-            uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs'
+            uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs')
     log:    expand("LOGS/{mape}.idx.log", mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     threads: MAXTHREAD

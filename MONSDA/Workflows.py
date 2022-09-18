@@ -1961,9 +1961,9 @@ def nf_fetch_params(
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         keydict = subDict(
-                tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
-                ["INDEX"],
-            )
+            tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
+            ["INDEX"],
+        )
         keydict["REF"] = REF
         unikey = get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
@@ -2045,7 +2045,12 @@ def nf_fetch_params(
                     INDEX = IDX
                 else:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    keydict = subDict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],["INDEX"],)
+                    keydict = subDict(
+                        tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)[
+                            "OPTIONS"
+                        ],
+                        ["INDEX"],
+                    )
                     keydict["REF"] = REF
                     unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
@@ -2059,11 +2064,11 @@ def nf_fetch_params(
                 retconf[x + "IDX"] = INDEX
                 retconf[x + "UIDX"] = UIDX
                 retconf[x + "UIDXNAME"] = UIDXNAME
-            elif XENV == "featurecounts"
+            elif XBIN == "featurecounts":
                 fdict = XCONF.get("FEATURES")
-                flist = [f"-t {k} -g {v}" for k,v in fdict.items()]
-                retconf[x + "FEATLIST"] = ','.join(flist.keys())
-                retconf[x + "IDLIST"] = ','.join(flist.values())
+                flist = [f"-t {k} -g {v}" for k, v in fdict.items()]
+                retconf[x + "FEATLIST"] = ",".join(flist.keys())
+                retconf[x + "IDLIST"] = ",".join(flist.values())
 
             retconf[x + "REF"] = REFERENCE
             retconf[x + "REFDIR"] = REFDIR
@@ -2091,7 +2096,12 @@ def nf_fetch_params(
                     INDEX = IDX
                 if not INDEX:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    keydict = subDict(tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],["INDEX"],)
+                    keydict = subDict(
+                        tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)[
+                            "OPTIONS"
+                        ],
+                        ["INDEX"],
+                    )
                     keydict["REF"] = REF
                     unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
@@ -3506,16 +3516,16 @@ def nf_make_post(
                     combi = list((str(envlist[i]), ""))
                     para = nf_fetch_params(confo, condition, combi)
 
-                    '''
+                    """
                     NOTE: Workaround for multi-feature featurecount, we can not run for loops for feature lists in nextflow so we need to rerun the jobs for single features and featuremaps (feature->id). This could break reproducibility for manual runs, could be better to loop at generation of nfo and confo and add feature name to output files, but this is inconsistent with snakemake runs so we choose this as workaround
-                    '''
+                    """
 
-                    if para.get("COUNTINGFEATLIST"):  
+                    if para.get("COUNTINGFEATLIST"):
                         fl = para.pop("COUNTINGFEATLIST")
                         il = para.pop("COUNTINGIDLIST")
                         for i in range(len(fl)):
-                            para['COUNTINGFEAT'] = fl[i]
-                            para['COUNTINGMAP'] = f'-f {fl[i]} -g {il[i]}'
+                            para["COUNTINGFEAT"] = fl[i]
+                            para["COUNTINGMAP"] = f"-f {fl[i]} -g {il[i]}"
                         jobs.append([nfo, confo, tpl, para])
                     else:
                         jobs.append([nfo, confo, tpl, para])
@@ -3692,11 +3702,11 @@ def nf_make_post(
                             fl = para.pop("COUNTINGFEATLIST")
                             il = para.pop("COUNTINGIDLIST")
                             for i in range(len(fl)):
-                                para['COUNTINGFEAT'] = fl[i]
-                                para['COUNTINGMAP'] = f'-f {fl[i]} -g {il[i]}'
+                                para["COUNTINGFEAT"] = fl[i]
+                                para["COUNTINGMAP"] = f"-f {fl[i]} -g {il[i]}"
                             jobs.append([nfo, confo, tpl, para])
                         else:
-                            jobs.append([nfo, confo, tpl, para])                        
+                            jobs.append([nfo, confo, tpl, para])
 
     else:
         subwork = postworkflow
@@ -3836,8 +3846,8 @@ def nf_make_post(
                     fl = para.pop("COUNTINGFEATLIST")
                     il = para.pop("COUNTINGIDLIST")
                     for i in range(len(fl)):
-                        para['COUNTINGFEAT'] = fl[i]
-                        para['COUNTINGMAP'] = f'-f {fl[i]} -g {il[i]}'
+                        para["COUNTINGFEAT"] = fl[i]
+                        para["COUNTINGMAP"] = f"-f {fl[i]} -g {il[i]}"
                     jobs.append([nfo, confo, tpl, para])
                 else:
                     jobs.append([nfo, confo, tpl, para])
