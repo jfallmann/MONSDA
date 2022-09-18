@@ -15,14 +15,20 @@ else:
 
 if paired == 'paired':
     rule count_fastq:
-        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{{read}}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = expand("TRIMMED_FASTQ/{combo}/{{file}}_{{read}}_trimmed.fastq.gz", combo=scombo)
-        output: r1 = "COUNTS/{combo}/{file}_raw_{read}_fq.count",
-                r2 = "COUNTS/{combo}/{file}_trimmed_{read}_fq.count"
+        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{{read}}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        output: r1 = "COUNTS/{combo}/{file}_raw_{read}_fq.count"
         log:    "LOGS/{combo}/{file}_{read}/countfastq.log"
         conda:  "base.yaml"
         threads: 1
-        shell:  "arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log} && arr=({input.r2}); orr=({output.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
+        shell:  "arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
+
+    rule count_trimmed_fastq:
+        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_{{read}}_trimmed.fastq.gz", combo=scombo)
+        output: r1 = "COUNTS/{combo}/{file}_trimmed_{read}_fq.count"
+        log:    "LOGS/{combo}/{file}_{read}/count_trimmedfastq.log"
+        conda:  "base.yaml"
+        threads: 1
+        shell:  "arr=({input.r1}); orr=({output.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
 
 else:
     rule count_fastq:
@@ -33,7 +39,15 @@ else:
         log:    "LOGS/{combo}/{file}/countfastq.log"
         conda:  "base.yaml"
         threads: 1
-        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
+        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}"
+
+    rule count_trimmed_fastq:
+        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_trimmed.fastq.gz", combo=scombo)
+        output: r1 = "COUNTS/{combo}/{file}_trimmed_fq.count"
+        log:    "LOGS/{combo}/{file}/countfastq.log"
+        conda:  "base.yaml"
+        threads: 1
+        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}"
 
 rule count_mappers:
     input:  m = expand("MAPPED/{combo}/{{file}}_mapped_sorted.bam", combo=scombo)
