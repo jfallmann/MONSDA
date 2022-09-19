@@ -78,9 +78,9 @@ process count_trimmed_fastq{
         r1 = reads[0]
         r2 = reads[1]
         fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")    
-        oo = fn+"_raw_R1_fq.count"        
+        oo = fn+"_trimmed_R1_fq.count"        
         ft = file(reads[0]).getSimpleName().replaceAll(/\Q_R2_trimmed\E/,"")    
-        ot = ft+"_raw_R2_fq.count"
+        ot = ft+"_trimmed_R2_fq.count"
         ol = fn+".log"
         """
         a=$(zcat $r1|wc -l ); echo $((a/4)) > $oo;done 2>> {log} &&
@@ -88,7 +88,48 @@ process count_trimmed_fastq{
         """
     }else{
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")    
-        oc = fn+"_raw_fq.count"
+        oc = fn+"_trimmed_fq.count"
+        ol = fn+".log"
+        """
+        a=$(zcat $read|wc -l ); echo $((a/4)) > $oc;done 2>> $ol
+        """
+    }
+}
+
+process count_dedup_fastq{
+    conda "base.yaml"
+    cpus THREADS
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".count") > 0)      "COUNTS/$COMBO$CONDITION/${file(filename).getSimpleName()}.count"   
+        else if (filename.indexOf(".log") > 0)        "LOGS/$COMBO$CONDITION/${file(filename).getSimpleName()}/count_dedupreads.log"
+    }
+
+    input:
+    path reads
+
+    output:
+    path "*.count", emit: fqd_cts
+    path "*.log", emit: fqd_log
+
+    script:    
+    if (PAIRED == 'paired'){
+        r1 = reads[0]
+        r2 = reads[1]
+        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R1_dedup\E/,"")    
+        oo = fn+"_dedup_R1_fq.count"        
+        ft = file(reads[0]).getSimpleName().replaceAll(/\Q_R2_dedup\E/,"")    
+        ot = ft+"_dedup_R2_fq.count"
+        ol = fn+".log"
+        """
+        a=$(zcat $r1|wc -l ); echo $((a/4)) > $oo;done 2>> {log} &&
+        a=$(zcat $r2|wc -l ); echo $((a/4)) > $ot;done 2>> {log}
+        """
+    }else{
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_dedup\E/,"")    
+        oc = fn+"_dedup_fq.count"
         ol = fn+".log"
         """
         a=$(zcat $read|wc -l ); echo $((a/4)) > $oc;done 2>> $ol
@@ -112,11 +153,11 @@ process count_mappers{
     path reads
 
     output:
-    path "*.count", emit: fq_cts
+    path "*.count", emit: map_cts
 
     script:        
     fn = file(reads).getSimpleName()
-    oc = fn+"_mapped.count"
+    oc = fn+".count"
     ol = fn+".log"
     sortmem = '30%'
     """
@@ -197,35 +238,57 @@ process summarize_counts{
     """
 }
 
-workflow COUNTING{ //HIER WEITER
+workflow COUNTING{ 
     take: collection
 
     main:
-   
-    checkidx = file(COUNTIDX)
-    collection.filter(~/.fastq.gz/)
-    
-    if (checkidx.exists()){
-        idxfile = Channel.fromPath(COUNTUIDX)
-        if (PAIRED == 'paired'){
-            salmon_quant(idxfile.combine(samples_ch.collate(2)))
-        } else{
-            salmon_quant(idxfile.combine(samples_ch.collate(1)))
-        }        
-    }
-    else{
-        genomefile = Channel.fromPath(COUNTREF)
-        salmon_idx(genomefile)
-        if (PAIRED == 'paired'){
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
-        } else{
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+
+    if (PAIRED == 'paired'){
+        RAWSAMPLES = SAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+        }
+        TRIMSAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+        }
+        DEDUPSAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+        }
+    }else{
+        RAWSAMPLES=RAWSAMPLES.collect{
+            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
+        }
+        TRIMSAMPLES=LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+".*fastq.gz"
+        }
+        DEDUPSAMPLES=LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+".*fastq.gz"
         }
     }
+    MAPPEDSAMPLES=LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/"+element+".*.bam"
+    }
+    rawsamples_ch = Channel.fromPath(RAWSAMPLES)
+    trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
+    dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    annofile = Channel.fromPath(COUNTANNO)
+
+    if (PAIRED == 'paired'){
+        count_fastq(rawsamples_ch.collate(2))
+        count_trimmed_fastq(trimsamples_ch.collate(2))
+        count_dedup_fastq(dedupsamples_ch.collate(2))
+    } else{
+        count_fastq(rawsamples_ch.collate(1))
+        count_trimmed_fastq(trimsamples_ch.collate(1))
+        count_dedup_fastq(dedupsamples_ch.collate(1))
+    }        
+    count_mappers(mapsamples_ch.collate(1))
+    featurecount(annofile, mapsamples_ch.collate(1))
+    summarize_counts(count_fastq.out.fq_cts.combine(count_dedup_fastq.out.fqd_cts.combine(count_trimmed_fastq.out.fqt_cts.combine(count_mappers.out.map_cts.combine(featurecount.out.fc_cts)))).collate(1))
 
     emit:
-    counts = salmon_quant.out.counts
-    logs = salmon_quant.out.logs
+    counts = summarize_counts.out.sum
+    logs = summarize_counts.out.sum_log
 }
 
 //process count_unique_mappers{

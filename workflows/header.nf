@@ -36,13 +36,13 @@ dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
 
 //SAMPLE CHANNELS
 if (PAIRED == 'paired'){
-    SAMPLES = SAMPLES.collect{
+    RSAMPLES = SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
     }
 }else{
-    SAMPLES=SAMPLES.collect{
+    RSAMPLES=SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
     }
 }
 
-samples_ch = Channel.fromPath(SAMPLES)
+samples_ch = Channel.fromPath(RSAMPLES)
