@@ -7,7 +7,7 @@ COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
-COUNTUIDX.replace('.idx','')
+COUNTUIDX?.replace('.idx','') 
 
 COUNTPARAMS = get_always('featurecounts_params_COUNT') ?: ''
 FEAT = get_always('COUNTINGFEAT') ?: ''
@@ -36,21 +36,21 @@ process count_fastq{
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
-        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R1\E/,"")    
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1\E/,"")    
         oo = fn+"_raw_R1_fq.count"        
-        ft = file(reads[0]).getSimpleName().replaceAll(/\Q_R2\E/,"")    
+        ft = file(r2).getSimpleName().replaceAll(/\Q_R2\E/,"")    
         ot = ft+"_raw_R2_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $r1|wc -l ); echo $((a/4)) > $oo;done 2>> {log} &&
-        a=$(zcat $r2|wc -l ); echo $((a/4)) > $ot;done 2>> {log}
+        a=\$(zcat $r1|wc -l ); echo \$((a/4)) > $oo 2>> $ol &&
+        a=\$(zcat $r2|wc -l ); echo \$((a/4)) > $ot 2>> $ol
         """
     }else{
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q\E/,"")    
+        fn = file(reads[0]).getSimpleName().replaceAll(/\Q\E/,"")    
         oc = fn+"_raw_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $read|wc -l ); echo $((a/4)) > $oc;done 2>> $ol
+        a=\$(zcat $reads|wc -l ); echo \$((a/4)) > $oc 2>> $ol
         """
     }
 }
@@ -77,21 +77,21 @@ process count_trimmed_fastq{
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
-        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")    
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")    
         oo = fn+"_trimmed_R1_fq.count"        
-        ft = file(reads[0]).getSimpleName().replaceAll(/\Q_R2_trimmed\E/,"")    
+        ft = file(r2).getSimpleName().replaceAll(/\Q_R2_trimmed\E/,"")    
         ot = ft+"_trimmed_R2_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $r1|wc -l ); echo $((a/4)) > $oo;done 2>> {log} &&
-        a=$(zcat $r2|wc -l ); echo $((a/4)) > $ot;done 2>> {log}
+        a=\$(zcat $r1|wc -l ); echo \$((a/4)) > $oo 2>> $ol &&
+        a=\$(zcat $r2|wc -l ); echo \$((a/4)) > $ot 2>> $ol
         """
     }else{
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")    
+        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")    
         oc = fn+"_trimmed_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $read|wc -l ); echo $((a/4)) > $oc;done 2>> $ol
+        a=\$(zcat $reads|wc -l ); echo \$((a/4)) > $oc 2>> $ol
         """
     }
 }
@@ -118,21 +118,21 @@ process count_dedup_fastq{
     if (PAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
-        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_R1_dedup\E/,"")    
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_dedup\E/,"")    
         oo = fn+"_dedup_R1_fq.count"        
-        ft = file(reads[0]).getSimpleName().replaceAll(/\Q_R2_dedup\E/,"")    
+        ft = file(r2).getSimpleName().replaceAll(/\Q_R2_dedup\E/,"")    
         ot = ft+"_dedup_R2_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $r1|wc -l ); echo $((a/4)) > $oo;done 2>> {log} &&
-        a=$(zcat $r2|wc -l ); echo $((a/4)) > $ot;done 2>> {log}
+        a=\$(zcat $r1|wc -l ); echo \$((a/4)) > $oo 2>> $ol &&
+        a=\$(zcat $r2|wc -l ); echo \$((a/4)) > $ot 2>> $ol
         """
     }else{
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_dedup\E/,"")    
+        fn = file(reads[0]).getSimpleName().replaceAll(/\Q_dedup\E/,"")    
         oc = fn+"_dedup_fq.count"
         ol = fn+".log"
         """
-        a=$(zcat $read|wc -l ); echo $((a/4)) > $oc;done 2>> $ol
+        a=\$(zcat $reads|wc -l ); echo \$((a/4)) > $oc 2>> $ol
         """
     }
 }
@@ -161,7 +161,7 @@ process count_mappers{
     ol = fn+".log"
     sortmem = '30%'
     """
-    export LC_ALL=C; samtools view -F 260 $reads | cut -d$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc;done 2>> $ol
+    export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
     """
 }
 
@@ -207,7 +207,7 @@ process featurecount{
             stranded = ''
     }
     """
-    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTINGMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc && mv tmpcts.summary $os
+    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTINGMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -254,17 +254,17 @@ workflow COUNTING{
             element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+"_{R2,R1}.*fastq.gz"
         }
     }else{
-        RAWSAMPLES=RAWSAMPLES.collect{
+        RAWSAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
-        TRIMSAMPLES=LONGSAMPLES.collect{
+        TRIMSAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+".*fastq.gz"
         }
-        DEDUPSAMPLES=LONGSAMPLES.collect{
+        DEDUPSAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+".*fastq.gz"
         }
     }
-    MAPPEDSAMPLES=LONGSAMPLES.collect{
+    MAPPEDSAMPLES = LONGSAMPLES.collect{
         element -> return "${workflow.workDir}/../MAPPED/"+element+".*.bam"
     }
     rawsamples_ch = Channel.fromPath(RAWSAMPLES)

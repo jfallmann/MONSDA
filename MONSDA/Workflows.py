@@ -2046,9 +2046,7 @@ def nf_fetch_params(
                 else:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
                     keydict = subDict(
-                        tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)[
-                            "OPTIONS"
-                        ],
+                        tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
@@ -2078,6 +2076,7 @@ def nf_fetch_params(
     for x in ["DE", "DEU", "DAS", "DTU"]:
         if x in config:
             XCONF = subDict(config[x], SETUP)
+            XBIN, XENV = env_bin_from_config3(config, x)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
@@ -2097,9 +2096,7 @@ def nf_fetch_params(
                 if not INDEX:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
                     keydict = subDict(
-                        tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)[
-                            "OPTIONS"
-                        ],
+                        tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
@@ -3513,7 +3510,7 @@ def nf_make_post(
                         json.dump(subconf, confout)
 
                     tpl = " ".join(tp)
-                    combi = list((str(envlist[i]), ""))
+                    combi = list((str(envlist[i]), toolenv))                    
                     para = nf_fetch_params(confo, condition, combi)
 
                     """
@@ -3695,7 +3692,7 @@ def nf_make_post(
                             json.dump(subconf, confout)
 
                         tpl = " ".join(tp)
-                        combi = list((str(envlist[i]), ""))
+                        combi = list((str(envlist[i]), toolenv))
                         para = nf_fetch_params(confo, condition, combi)
 
                         if para.get("COUNTINGFEATLIST"):
@@ -3839,7 +3836,7 @@ def nf_make_post(
                     json.dump(subconf, confout)
 
                 tpl = " ".join(tp)
-                combi = list((str(envlist[i]), ""))
+                combi = list((str(envlist[i]), toolenv))
                 para = nf_fetch_params(confo, condition, combi)
 
                 if para.get("COUNTINGFEATLIST"):
