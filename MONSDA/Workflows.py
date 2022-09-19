@@ -1964,7 +1964,7 @@ def nf_fetch_params(
             tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
             ["INDEX"],
         )
-        keydict["REF"] = REF
+        keydict["REF"] = REFERENCE
         unikey = get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
@@ -2051,7 +2051,7 @@ def nf_fetch_params(
                         ],
                         ["INDEX"],
                     )
-                    keydict["REF"] = REF
+                    keydict["REF"] = REFERENCE
                     unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
@@ -2102,7 +2102,7 @@ def nf_fetch_params(
                         ],
                         ["INDEX"],
                     )
-                    keydict["REF"] = REF
+                    keydict["REF"] = REFERENCE
                     unikey = get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"

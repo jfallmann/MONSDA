@@ -123,7 +123,7 @@ if 'MAPPING' in config:
     if not INDEX:
         INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
     keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
-    keydict["REF"] = REF
+    keydict["REF"] = REFERENCE
     unik = get_dict_hash(keydict)
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
@@ -183,7 +183,7 @@ for x in ['TRACKS', 'COUNTING']:
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
                 keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
-                keydict["REF"] = REF
+                keydict["REF"] = REFERENCE
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
@@ -213,7 +213,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
                 keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
-                keydict["REF"] = REF
+                keydict["REF"] = REFERENCE
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)

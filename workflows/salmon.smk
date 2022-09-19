@@ -1,6 +1,6 @@
 COUNTBIN, COUNTENV = env_bin_from_config3(config,'COUNTING')
 keydict = subDict(tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'], ['INDEX'])
-keydict["REF"] = REF
+keydict["REF"] = REFERENCE
 unik = get_dict_hash(keydict)
 
 rule themall:

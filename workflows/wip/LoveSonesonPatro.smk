@@ -7,7 +7,7 @@ comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 log.info(logid+"COMPARISON: "+str(comparison))
 keydict = subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
-keydict["REF"] = REF
+keydict["REF"] = REFERENCE
 unik = get_dict_hash(keydict)
 
 rule themall:

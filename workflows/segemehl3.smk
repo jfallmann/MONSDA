@@ -1,6 +1,6 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
 keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
-keydict["REF"] = REF
+keydict["REF"] = REFERENCE
 unik = get_dict_hash(keydict)
 
 rule generate_index:
