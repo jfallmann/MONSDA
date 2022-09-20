@@ -190,7 +190,7 @@ process featurecount{
     script:        
     fn = file(reads).getSimpleName()
     oc = fn+".counts.gz"
-    oc = fn+".counts.summary"
+    os = fn+".counts.summary"
     ol = fn+".log"
     sortmem = '30%'
     if (PAIRED == 'paired'){
@@ -207,7 +207,7 @@ process featurecount{
             stranded = ''
     }
     """
-    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTINGMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -223,6 +223,7 @@ process summarize_counts{
     }
 
     input:
+    //path '*.count*'// from reads
     path reads
 
     output:
@@ -234,7 +235,7 @@ process summarize_counts{
     oc = fn+".summary"
     ol = fn+".log"
     """
-    echo -ne \"$reads\t\" >> $oc && if [[ -s $reads ]]; then cat $reads >> $oc; else echo '0' >> $oc 2> $ol
+    for i in $reads;do echo -ne \"\$i\t\" >> $oc && if [[ -s \$i ]]; then cat \$i >> $oc; else echo '0' >> $oc 2>> $ol;done
     """
 }
 
@@ -272,6 +273,7 @@ workflow COUNTING{
     trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
     dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
+    mapsamples_ch.subscribe {  println "MAP: $it " }
     annofile = Channel.fromPath(COUNTANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
@@ -287,7 +289,7 @@ workflow COUNTING{
     }        
     count_mappers(mapsamples_ch.collate(1))
     featurecount(annofile, mapsamples_ch.collate(1))
-    summarize_counts(count_fastq.out.fq_cts.combine(count_dedup_fastq.out.fqd_cts.combine(count_trimmed_fastq.out.fqt_cts.combine(count_mappers.out.map_cts.combine(featurecount.out.fc_cts)))).collate(1))
+    summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts.concat(featurecount.out.fc_cts)))).collect())
 
     emit:
     counts = summarize_counts.out.sum

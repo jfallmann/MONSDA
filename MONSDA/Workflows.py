@@ -3688,11 +3688,11 @@ def nf_make_post(
                         """
                         log.debug(logid + f"PARAMS: {para}")
                         if para.get("COUNTINGFEATLIST"):
-                            fl = para.pop("COUNTINGFEATLIST").str.split(",")
-                            il = para.pop("COUNTINGIDLIST").str.split(",")
+                            fl = para.pop("COUNTINGFEATLIST").split(",")
+                            il = para.pop("COUNTINGIDLIST").split(",")
                             for i in range(len(fl)):
                                 para["COUNTINGFEAT"] = fl[i]
-                                para["COUNTINGMAP"] = f"-f {fl[i]} -g {il[i]}"
+                                para["COUNTINGMAP"] = f"'-t {fl[i]} -g {il[i]}'"
                                 log.debug(logid + f"NEWPARAMS: {para}")
                                 jobs.append([nfo, confo, tpl, para])
                         else:
@@ -3836,11 +3836,11 @@ def nf_make_post(
                 """
                 log.debug(logid + f"PARAMS: {para}")
                 if para.get("COUNTINGFEATLIST"):
-                    fl = para.pop("COUNTINGFEATLIST").str.split(",")
-                    il = para.pop("COUNTINGIDLIST").str.split(",")
+                    fl = para.pop("COUNTINGFEATLIST").split(",")
+                    il = para.pop("COUNTINGIDLIST").split(",")
                     for i in range(len(fl)):
                         para["COUNTINGFEAT"] = fl[i]
-                        para["COUNTINGMAP"] = f"-f {fl[i]} -g {il[i]}"
+                        para["COUNTINGMAP"] = f"'-t {fl[i]} -g {il[i]}'"
                         log.debug(logid + f"NEWPARAMS: {para}")
                         jobs.append([nfo, confo, tpl, para])
                 else:
