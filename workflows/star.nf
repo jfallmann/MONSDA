@@ -35,7 +35,7 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/$COMBO$CONDITION/star_index.log"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/star_index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
         else if (filename == "$MAPUIDXNAME")             "$MAPUIDX"
         else                                             "$MAPUIDX/${filename}"
@@ -68,10 +68,10 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q_trimmed.unmapped.out.gz\E/,"")}.fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/$COMBO$CONDITION/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
-        else if (filename.indexOf(".out") >0)        "LOGS/$COMBO$CONDITION/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
-        else if (filename.indexOf(".tab") >0)        "MAPPED/$COMBO$CONDITION/"+"${filename}"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q_trimmed.unmapped.out.gz\E/,"")}.fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)     "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
+        else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
         else null
     }
 

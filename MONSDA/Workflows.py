@@ -1915,7 +1915,9 @@ def nf_fetch_params(
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
         retconf["COMBO"] = combi[0] + os.sep if combi[0] != "" else None
-        retconf["SCOMBO"] = combi[1] if combi[1] else None
+        retconf["SCOMBO"] = (
+            combi[0] + os.sep + combi[1] if combi[0] and combi[1] else None
+        )
 
     sample = SAMPLES[0]
     lsample = LONGSAMPLES[0]
@@ -3510,7 +3512,7 @@ def nf_make_post(
                         json.dump(subconf, confout)
 
                     tpl = " ".join(tp)
-                    combi = list((str(envlist[i]), toolenv))                    
+                    combi = list((str(envlist[i]), toolenv))
                     para = nf_fetch_params(confo, condition, combi)
 
                     """

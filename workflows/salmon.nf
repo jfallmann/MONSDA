@@ -22,7 +22,7 @@ process salmon_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "salmon.idx")            "$COUNTUIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/$COMBO$CONDITION/COUNTING/salmon_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
     }
 
     input:
@@ -46,8 +46,8 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "COUNTS/$COMBO$CONDITION/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/$COMBO$CONDITION/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".sf.gz") >0)            "COUNTS/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else if (filename.indexOf(".log") >0)               "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
         else null
     }
 

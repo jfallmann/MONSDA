@@ -10,8 +10,8 @@ process qc_raw{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
 
@@ -48,8 +48,8 @@ process qc_trimmed{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
 
@@ -86,8 +86,8 @@ process qc_mapped{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
 
@@ -122,8 +122,8 @@ process qc_dedup{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/$COMBO$CONDITION/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
 

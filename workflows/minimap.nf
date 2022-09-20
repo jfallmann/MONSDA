@@ -37,7 +37,7 @@ process minimap_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "minimap.idx")                  "$MAPIDX"
-        else if (filename.indexOf("index.log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/minimap_index.log"
+        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/minimap_index.log"
         else                                            "$MAPUIDX"
     }
 
@@ -64,9 +64,9 @@ process minimap_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/$COMBO$CONDITION/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/$COMBO$CONDITION/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/$COMBO$CONDITION/MAPPING/${file(filename).getName()}"
+        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
         else null
     }
 

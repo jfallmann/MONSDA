@@ -10,10 +10,10 @@ process dedup_bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith("_dedup.bam"))              "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
-        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
-        else if (filename.indexOf("dedup.log") > 0)       "LOGS/$COMBO$CONDITION/DEDUP/${file(filename).getName()}"
-        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/$COMBO$CONDITION/${file(filename).getName()}"
+        if (filename.endsWith("_dedup.bam"))              "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${COMBO}/${CONDITION}/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else null
     }
 
