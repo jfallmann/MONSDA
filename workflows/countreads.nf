@@ -21,8 +21,8 @@ process count_fastq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/countfastq.log"
+        if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/countfastq.log"
     }
 
     input:
@@ -62,8 +62,8 @@ process count_trimmed_fastq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_trimmedreads.log"
+        if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_trimmedreads.log"
     }
 
     input:
@@ -103,8 +103,8 @@ process count_dedup_fastq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_dedupreads.log"
+        if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_dedupreads.log"
     }
 
     input:
@@ -144,8 +144,8 @@ process count_mappers{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_mappers.log"
+        if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_mappers.log"
 
     }
 
@@ -172,9 +172,9 @@ process featurecount{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_$FEAT/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
-        else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_$FEAT/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
+        if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
+        else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
 
     }
 
@@ -218,8 +218,8 @@ process summarize_counts{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".summary") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.summary"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/summarize_counts.log"
+        if (filename.indexOf(".summary") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.summary"   
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/summarize_counts.log"
     }
 
     input:
@@ -248,30 +248,33 @@ workflow COUNTING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}"+element+"_{R2,R1}.*fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}"+element+"_{R2,R1}*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}"+element+"_{R2,R1}.*fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}"+element+"_{R2,R1}*.fastq.gz"
         }
     }else{
         RAWSAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/"+element+".*fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}"+element+"*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/"+element+".*fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}"+element+"*.fastq.gz"
         }
     }
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/"+element+".*.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}"+element+"*.bam"
     }
+
     rawsamples_ch = Channel.fromPath(RAWSAMPLES)
     trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
     dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
     annofile = Channel.fromPath(COUNTANNO)
+    //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
+
 
     if (PAIRED == 'paired'){
         count_fastq(rawsamples_ch.collate(2))
