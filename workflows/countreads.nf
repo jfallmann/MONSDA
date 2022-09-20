@@ -218,8 +218,8 @@ process summarize_counts{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".summary") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.summary"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/summarize_counts.log"
+        if (filename.indexOf("summary") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/summary"   
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
     }
 
     input:
@@ -230,12 +230,9 @@ process summarize_counts{
     path "*.summary", emit: sum
     path "*.log", emit: sum_log
 
-    script:
-    fn = file(reads).getSimpleName()
-    oc = fn+".summary"
-    ol = fn+".log"
+    script:    
     """
-    for i in $reads;do echo -ne \"\$i\t\" >> $oc && if [[ -s \$i ]]; then cat \$i >> $oc; else echo '0' >> $oc 2>> $ol;done
+    for i in $reads;do echo -ne \"\$i\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary 2>> log;done
     """
 }
 
@@ -273,7 +270,6 @@ workflow COUNTING{
     trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
     dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
-    mapsamples_ch.subscribe {  println "MAP: $it " }
     annofile = Channel.fromPath(COUNTANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
