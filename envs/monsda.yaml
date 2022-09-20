@@ -13,7 +13,7 @@ dependencies:
   - mamba=0.22.1
   - more-itertools=8.12.0
   - natsort=8.1.0
-  - nextflow=21.10.6
+  - nextflow=22.04.5
   - perl=5.32.1
   - python=3.9.12
   - python-dateutil=2.8.2
@@ -22,7 +22,7 @@ dependencies:
   - python_abi=3.9
   - pyyaml=6.0
   - readline=8.1
-  - snakemake-minimal=7.3.8
+  - snakemake-minimal=7.14.0
   - twine=4.0.0
   - versioneer=0.22
   - wheel=0.37.1
