@@ -1,5 +1,5 @@
-DTUBIN, DTUENV = env_bin_from_config3(config,'DTU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config3(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DTU/DEXSEQ"
 comparison = comparable_as_string(config,'DTU')

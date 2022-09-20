@@ -1,4 +1,4 @@
-CBIN, CENV = env_bin_from_config3(config, 'CIRCS')
+CBIN, CENV = env_bin_from_config(config, 'CIRCS')
 
 if not 'bwa' in combo or not 'bwa' in scombo:
         log.warning('Ciri2 needs BWA input, can only be used with BWA in mapping step')

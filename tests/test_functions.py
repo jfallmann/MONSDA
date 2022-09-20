@@ -91,7 +91,7 @@ print(logid+'OPTIONS: '+ tool_params(SAMPLES[0], None, config, 'MAPPING')['OPTIO
 
 print(logid+'ANNO: '+str.join(os.sep,[config["REFERENCE"],os.path.dirname(genomepath(SAMPLES[0], config)),tool_params(SAMPLES[0], None, config, 'MAPPING')['ANNOTATION']]))
 
-MAPPERBIN, MAPPERENV = env_bin_from_config2(SAMPLES,config,'MAPPING')
+MAPPERBIN, MAPPERENV = env_bin_from_config(SAMPLES,config,'MAPPING')
 print(logid+'ENV/BIN: '+str([MAPPERENV,MAPPERBIN]))
 print(logid+'GENPATH: '+"{ref}/{dir}/{map}/{extension}/".format(ref=REFERENCE, dir=dir, map=MAPPERENV, extension=check_tool_params(SAMPLES[0], None,config, 'MAPPING','MAP')))
 
@@ -105,7 +105,7 @@ print(logid+'Keysettest: '+str(test))
 #print(keys_from_dict(test))
 print(logid+'Keyset: '+str(keysets_from_dict(test)))
 
-print(logid+'DEBINENV: '+str(env_bin_from_config2(SAMPLES,config,'MAPPING')))
+print(logid+'DEBINENV: '+str(env_bin_from_config(SAMPLES,config,'MAPPING')))
 
 
 

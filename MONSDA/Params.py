@@ -675,16 +675,6 @@ def get_diego_groups(samples, config, analysis):
 
 
 @check_run
-def env_bin_from_config(samples, config, subconf):
-    logid = scriptname + ".Params_env_bin_from_config: "
-    s = samples[0].split(os.sep)[:-1]
-    mb, me = [None, None]
-    for k in getFromDict(config[subconf], s):
-        mb, me = k["BIN"], k["ENV"]
-    return mb, me
-
-
-@check_run
 def env_bin_from_config2(samples, config, subconf):
     logid = scriptname + ".Params_env_bin_from_config2: "
     for s in samples:
@@ -706,8 +696,8 @@ def env_bin_from_config2(samples, config, subconf):
 
 
 @check_run
-def env_bin_from_config3(config, subconf):
-    logid = scriptname + ".Params_env_bin_from_config3: "
+def env_bin_from_config(config, subconf):
+    logid = scriptname + ".Params_env_bin_from_config: "
     envkey = subconf + "ENV"
     binkey = subconf + "BIN"
     me = config[envkey]

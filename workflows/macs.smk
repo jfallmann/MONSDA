@@ -1,4 +1,4 @@
-PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
+PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
 PEAKSAMPLES = set_pairing(SAMPLES, config)
 
 log.info('PEAKSAMPLES: '+str(PEAKSAMPLES))

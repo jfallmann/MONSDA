@@ -1933,7 +1933,7 @@ def nf_fetch_params(
     # MAPPING Variables
     if "MAPPING" in config:
         MAPCONF = subDict(config["MAPPING"], SETUP)
-        MAPPERBIN, MAPPERENV = env_bin_from_config3(config, "MAPPING")
+        MAPPERBIN, MAPPERENV = env_bin_from_config(config, "MAPPING")
         MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
         REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
@@ -2027,7 +2027,7 @@ def nf_fetch_params(
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
         if x in config:
-            XBIN, XENV = env_bin_from_config3(config, x)
+            XBIN, XENV = env_bin_from_config(config, x)
             XCONF = subDict(config[x], SETUP)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
@@ -2065,7 +2065,7 @@ def nf_fetch_params(
                 retconf[x + "UIDX"] = UIDX
                 retconf[x + "UIDXNAME"] = UIDXNAME
             elif XBIN == "featureCounts":
-                fdict = XCONF.get("FEATURES")
+                fdict = config[x].get("FEATURES")
                 # flist = [f"-t {k} -g {v}" for k, v in fdict.items()]
                 retconf[x + "FEATLIST"] = ",".join(fdict.keys())
                 retconf[x + "IDLIST"] = ",".join(fdict.values())
@@ -2078,7 +2078,7 @@ def nf_fetch_params(
     for x in ["DE", "DEU", "DAS", "DTU"]:
         if x in config:
             XCONF = subDict(config[x], SETUP)
-            XBIN, XENV = env_bin_from_config3(config, x)
+            XBIN, XENV = env_bin_from_config(config, x)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")

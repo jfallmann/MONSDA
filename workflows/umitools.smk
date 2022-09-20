@@ -1,4 +1,4 @@
-DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
+DEDUPBIN, DEDUPENV = env_bin_from_config(config, 'DEDUP')
 
 wlparams = tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST')
 

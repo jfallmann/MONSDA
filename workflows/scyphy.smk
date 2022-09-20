@@ -1,4 +1,4 @@
-PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
+PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
 
 if ANNOPEAK is not None:
     if not rundedup:

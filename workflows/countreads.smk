@@ -1,4 +1,4 @@
-COUNTBIN, COUNTENV = env_bin_from_config3(config, 'COUNTING')
+COUNTBIN, COUNTENV = env_bin_from_config(config, 'COUNTING')
 
 if not rundedup:
     rule themall:

@@ -1,4 +1,4 @@
-CALLERBIN, CALLERENV = env_bin_from_config3(config,'BASECALL')
+CALLERBIN, CALLERENV = env_bin_from_config(config,'BASECALL')
 
 wildcard_constraints:
     rawfile = '|'.join(list(SAMPLES))

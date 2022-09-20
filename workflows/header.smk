@@ -105,7 +105,7 @@ if stranded != '':
 
 # MAPPING Variables
 if 'MAPPING' in config:
-    MAPPERBIN, MAPPERENV = env_bin_from_config3(config, 'MAPPING')
+    MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
     MAPCONF = subDict(config['MAPPING'], SETUP)
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
     REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
@@ -146,7 +146,7 @@ if 'MAPPING' in config:
 # Peak Calling Variables
 if 'PEAKS' in config:
     PEAKCONF = subDict(config['PEAKS'], SETUP)
-    PEAKBIN, PEAKENV = env_bin_from_config3(config, 'PEAKS')
+    PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
     REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
     ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
     if REF:
@@ -164,7 +164,7 @@ if 'PEAKS' in config:
 # TRACKS/COUNTING Variables
 for x in ['TRACKS', 'COUNTING']:
     if x in config:
-        XBIN, XENV = env_bin_from_config3(config, x)
+        XBIN, XENV = env_bin_from_config(config, x)
         XCONF = subDict(config[x], SETUP)
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
@@ -194,7 +194,7 @@ for x in ['TRACKS', 'COUNTING']:
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
     if x in config:
         XCONF = subDict(config[x], SETUP)
-        XBIN, XENV = env_bin_from_config3(config, x)
+        XBIN, XENV = env_bin_from_config(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
@@ -222,7 +222,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
 # CIRCS Variables
 if 'CIRCS' in config:
     CIRCCONF = subDict(config['CIRCS'], SETUP)
-    XBIN, XENV = env_bin_from_config3(config, 'CIRCS')
+    XBIN, XENV = env_bin_from_config(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))
     XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION'))

@@ -1,4 +1,4 @@
-TRIMBIN, TRIMENV = env_bin_from_config3(config,'TRIMMING')
+TRIMBIN, TRIMENV = env_bin_from_config(config,'TRIMMING')
 #outdir = 'TRIMMED_FASTQ/'+str(TRIMENV)+'/'
 
 #wildcard_constraints:

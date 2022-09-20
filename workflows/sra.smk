@@ -1,4 +1,4 @@
-FETCHBIN, FETCHENV = env_bin_from_config3(config,'FETCH')
+FETCHBIN, FETCHENV = env_bin_from_config(config,'FETCH')
 
 if paired == 'paired':
     log.info('Downloading paired fastq files from SRA')

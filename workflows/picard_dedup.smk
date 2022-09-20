@@ -1,4 +1,4 @@
-DEDUPBIN, DEDUPENV = env_bin_from_config3(config, 'DEDUP')
+DEDUPBIN, DEDUPENV = env_bin_from_config(config, 'DEDUP')
 
 rule dedupbam:
     input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam"
