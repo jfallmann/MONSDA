@@ -218,8 +218,8 @@ process summarize_counts{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("summary") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/summary"   
-        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
+        if (filename == "summary")      "COUNTS/${SCOMBO}/${CONDITION}/summary"
+        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
     }
 
     input:
@@ -227,12 +227,12 @@ process summarize_counts{
     path reads
 
     output:
-    path "*.summary", emit: sum
-    path "*.log", emit: sum_log
+    path "summary", emit: sum
+    path "log", emit: sum_log
 
     script:    
     """
-    for i in $reads;do echo -ne \"\$i\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary 2>> log;done
+    for i in $reads;do echo -ne \"\$i\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary;fi; done 2>> log
     """
 }
 
@@ -285,7 +285,7 @@ workflow COUNTING{
     }        
     count_mappers(mapsamples_ch.collate(1))
     featurecount(annofile, mapsamples_ch.collate(1))
-    summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts.concat(featurecount.out.fc_cts)))).collect())
+    summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts))).collect())
 
     emit:
     counts = summarize_counts.out.sum
