@@ -1,26 +1,28 @@
+BINS = get_always('BINS')
 DEENV = get_always('DEENV')
 DEBIN = get_always('DEBIN')
 DEREF = get_always('DEREF')
 DEREFDIR = get_always('DEREFDIR')
 DEANNO = get_always('DEANNO')
+COUNTPARAMS = get_always('deseq2_params_COUNT') ?: ''
+DEPARAMS = get_always('deseq2_params_DE') ?: ''
+DEREPS = get_always('DEREPS') ?: ''
+DECOMP = get_always('DECOMP') ?: ''
+DECOMPS = get_always('DECOMPS') ?: ''
+PCOMBO = get_always('COMBO') ?: 'none'
 
-DEPARAMS = get_always('featurecounts_params_COUNT') ?: ''
-FEAT = get_always('DEFEAT') ?: ''
-DEMAP = get_always('DEMAP') ?: ''
-
+COUNTBIN, COUNTENV = ['featureCounts','countreads_de']
 //DE PROCESSES
 
 process featurecount{
-    conda "$COUNTENV"+".yaml"
+    conda "$DEENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
-        else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
-
+        if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
+        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
     }
 
     input:
@@ -52,33 +54,69 @@ process featurecount{
             stranded = ''
     }
     """
-    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
-process summarize_counts{
-    conda "base.yaml"
+process prepare_count_table{
+    conda "$DEENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "summary")      "COUNTS/${SCOMBO}/${CONDITION}/summary"
-        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
+        if (filename == "${COMBO}_COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
+        else if (filename == "${COMBO}_ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
+        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
     }
 
     input:
     //path '*.count*'// from reads
-    path reads
+    path reps
+
+    output: 
+    path "*_COUNTS.gz", emit: counts
+    path "*_ANNOTATION.gz", emit: anno
+    path "log", emit: log
+
+    script:
+    """
+    ${BINS}/Analysis/build_count_table.py $DEREPS --table ${COMBO}_COUNTS.gz --anno ${COMBO}_ANNOTATION.gz 2> log
+    """
+}
+
+process run_deseq2{
+    conda "$DEENV"+".yaml"
+    cpus THREADS
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
+        else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
+        else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                
+        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_deseq2.log"
+    }
+
+    input:
+    //path '*.count*'// from reads
+    path cts
+    path anno
 
     output:
     path "summary", emit: sum
     path "log", emit: sum_log
 
     script:    
+    outdir = "DE"+File.separatorChar+${SCOMBO}
     """
-    for i in $reads;do echo -ne \"\$i\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary;fi; done 2>> log
+    Rscript --no-environ --no-restore --no-save $BINS $anno $cts $DEANNO $outdir $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log
     """
+}
+
+process filter_significant{
+    
 }
 
 workflow DE{ 

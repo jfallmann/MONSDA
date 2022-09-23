@@ -2091,6 +2091,12 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
+            REPS = get_reps(os.sep.join([SETS, "dummyfile"]), config, x)
+            retconf[x + "REPS"] = REPS
+            comparison = comparable_as_string(config,'DE')
+            compstr = [i.split(":")[0] for i in comparison.split(",")]
+            retconf[x + "COMP"] = comparison
+            retconf[x + "COMPS"] = compstr
             if x == "DTU":
                 IDX = XCONF.get("INDEX")
                 if IDX:
@@ -2164,6 +2170,8 @@ def nf_tool_params(
 
     if " " in toolbin:
         toolbin = toolbin.replace(" ", "_")
+    if "_" in toolenv:
+        toolenv = toolenv.split("_")[0]
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
