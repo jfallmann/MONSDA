@@ -576,16 +576,19 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
 
 
 @check_run
-def get_reps(samples, config, analysis):
+def get_reps(samples, config, analysis, process="smk"):
     logid = scriptname + ".Params_get_reps: "
     log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
     for sample in samples:
-        scond = (
-            sample.split(os.sep)[4:-1]
-            if len(sample.split(os.sep)) > 5
-            else sample.split(os.sep)[3:-1]
-        )
+        if process == "smk":
+            scond = (
+                sample.split(os.sep)[4:-1]
+                if len(sample.split(os.sep)) > 5
+                else sample.split(os.sep)[3:-1]
+            )
+        else:
+            scond = sample.split(os.sep)[:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
         partconf = subDict(config["SETTINGS"], scond)
         log.debug(logid + "CONF: " + str(partconf))

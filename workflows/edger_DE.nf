@@ -4,8 +4,8 @@ DEBIN = get_always('DEBIN')
 DEREF = get_always('DEREF')
 DEREFDIR = get_always('DEREFDIR')
 DEANNO = get_always('DEANNO')
-COUNTPARAMS = get_always('deseq2_params_COUNT') ?: ''
-DEPARAMS = get_always('deseq2_params_DE') ?: ''
+COUNTPARAMS = get_always('edger_params_COUNT') ?: ''
+DEPARAMS = get_always('edger_params_DE') ?: ''
 DEREPS = get_always('DEREPS') ?: ''
 DECOMP = get_always('DECOMP') ?: ''
 DECOMPS = get_always('DECOMPS') ?: ''
@@ -18,7 +18,7 @@ COUNTENV = 'countreads_de'
 
 //DE PROCESSES
 
-process featurecount_deseq{
+process featurecount_edger{
     conda "$DEENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -26,7 +26,7 @@ process featurecount_deseq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
     }
 
     input:
@@ -89,7 +89,7 @@ process prepare_count_table{
     """
 }
 
-process run_deseq2{
+process run_edger{
     conda "$DEENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
@@ -99,7 +99,7 @@ process run_deseq2{
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_edger.log"
     }
 
     input:
@@ -128,7 +128,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_edger.log"
     }
 
     input:
@@ -152,7 +152,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_edger.log"
     }
 
     input:
@@ -182,15 +182,15 @@ workflow DE{
     annofile = Channel.fromPath(DEANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
-    featurecount_deseq(annofile, mapsamples_ch.collate(1))
-    prepare_count_table(featurecount_deseq.out.fc_cts)
-    run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno)
-    filter_significant(run_deseq2.out.tbls)
-    create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)))
+    featurecount_edger(annofile, mapsamples_ch.collate(1))
+    prepare_count_table(featurecount_edger.out.fc_cts)
+    run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno)
+    filter_significant(run_edger.out.tbls)
+    create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)))
 
     emit:
-    tbls = run_deseq2.out.tbls
+    tbls = run_edger.out.tbls
     sigtbls = filter_significant.out.sigtbls
-    figs = run_deseq2.out.figs
+    figs = run_edger.out.figs
     snps = create_summary_snippet.out.snps
 }

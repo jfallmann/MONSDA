@@ -2091,12 +2091,16 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            REPS = get_reps(os.sep.join([SETS, "dummyfile"]), config, x)
-            retconf[x + "REPS"] = REPS
-            comparison = comparable_as_string(config,'DE')
+            REPS = get_reps(LONGSAMPLES, config, x, "nf")
+            retconf[x + "REPS"] = f"'{REPS}'"
+            comparison = comparable_as_string(config, "DE")
             compstr = [i.split(":")[0] for i in comparison.split(",")]
             retconf[x + "COMP"] = comparison
             retconf[x + "COMPS"] = compstr
+            pval = get_cutoff_as_string(config, x, "pval")
+            lfc = get_cutoff_as_string(config, x, "lfc")
+            retconf[x + "PVAL"] = pval
+            retconf[x + "LFC"] = lfc
             if x == "DTU":
                 IDX = XCONF.get("INDEX")
                 if IDX:
@@ -3419,9 +3423,8 @@ def nf_make_post(
                         "diego",
                     ]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
                         toolenv = toolenv + "_" + subwork
-                        flowlist.append(subwork + "_" + toolbin)
-                    else:
-                        flowlist.append(subwork)
+
+                    flowlist.append(subwork)
 
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
@@ -3749,10 +3752,8 @@ def nf_make_post(
                 ]:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv + "_" + subwork
                     log.debug(logid + "toolenv: " + str(toolenv))
-                    flowlist.append(subwork + "_" + toolbin)
-                else:
-                    flowlist.append(subwork)
 
+                flowlist.append(subwork)
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
                 subsamples = get_samples(sconf)

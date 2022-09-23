@@ -48,7 +48,12 @@ workflow TRIMMING{
     if ( PREDEDUP == 'enabled' ){
         trim(collection)
     } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
-        trim(samples_ch)
+        if (PAIRED == 'paired'){
+            trim(samples_ch.collate(2))
+        }
+        else{
+            trim(samples_ch.collate(1))
+        }
     } else{
         trim(collection)
     }    
