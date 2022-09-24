@@ -4,8 +4,8 @@ DEBIN = get_always('DEBIN')
 DEREF = get_always('DEREF')
 DEREFDIR = get_always('DEREFDIR')
 DEANNO = get_always('DEANNO')
-COUNTPARAMS = get_always('deseq2_params_COUNT') ?: ''
-DEPARAMS = get_always('deseq2_params_DE') ?: ''
+COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
+DEPARAMS = get_always('deseq2_DE_params_DE') ?: ''
 DEREPS = get_always('DEREPS') ?: ''
 DECOMP = get_always('DECOMP') ?: ''
 DECOMPS = get_always('DECOMPS') ?: ''
@@ -19,7 +19,7 @@ COUNTENV = 'countreads_de'
 //DE PROCESSES
 
 process featurecount_deseq{
-    conda "$DEENV"+".yaml"
+    conda "$COUNTENV"+".yaml"
     cpus THREADS
     //validExitStatus 0,1
 

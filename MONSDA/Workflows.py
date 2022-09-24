@@ -2174,8 +2174,8 @@ def nf_tool_params(
 
     if " " in toolbin:
         toolbin = toolbin.replace(" ", "_")
-    if "_" in toolenv:
-        toolenv = toolenv.split("_")[0]
+    # if "_" in toolenv:
+    #    toolenv = toolenv.split("_")[0]
 
     mp = OrderedDict()
     x = sample.split(os.sep)[:-1]
@@ -2188,7 +2188,7 @@ def nf_tool_params(
 
     if not workflows:
         mp = (
-            subDict(config[subwork], x)[toolenv]["OPTIONS"]
+            subDict(config[subwork], x)[toolenv.split("_")[0]]["OPTIONS"]
             if toolenv
             else subDict(config[subwork], x)["OPTIONS"]
         )
@@ -2208,7 +2208,7 @@ def nf_tool_params(
             if sd.get("ENV") and sd.get("BIN"):
                 toolenv, toolbin = map(str, [sd["ENV"], sd["BIN"]])
 
-            mp = sd[toolenv]["OPTIONS"] if toolenv else sd["OPTIONS"]
+            mp = sd[toolenv.split("_")[0]]["OPTIONS"] if toolenv else sd["OPTIONS"]
             tp.append(
                 "--"
                 + subwork
@@ -3402,6 +3402,7 @@ def nf_make_post(
 
                 for c in range(1, len(listofconfigs)):
                     sconf = merge_dicts(sconf, listofconfigs[c])
+                flowlist.append(subwork)
 
                 for a in range(0, len(listoftools)):
                     subjobs = list()
@@ -3418,14 +3419,7 @@ def nf_make_post(
                             sconf[subwork]["TOOLS"], [toolenv]
                         )
 
-                    if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                        "deseq",
-                        "diego",
-                    ]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
-                        toolenv = toolenv + "_" + subwork
-
-                    flowlist.append(subwork)
-
+                    toolenv = toolenv + "_" + subwork
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
                     subsamples = get_samples(sconf)
@@ -3569,6 +3563,7 @@ def nf_make_post(
 
                     for c in range(1, len(listofconfigs)):
                         sconf = merge_dicts(sconf, listofconfigs[c])
+                    flowlist.append(subwork)
 
                     for a in range(0, len(listoftools)):
                         subjobs = list()
@@ -3592,9 +3587,8 @@ def nf_make_post(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
 
-                        flowlist.append(subwork)
                         subsamples = get_samples(sconf)
-                        sconf[subwork + "ENV"] = toolenv
+                        sconf[subwork + "ENV"] = toolenv + "_" + subwork
                         sconf[subwork + "BIN"] = toolbin
 
                         log.debug(
@@ -3741,19 +3735,21 @@ def nf_make_post(
 
             sconf = listofconfigs[0]
             sconf.pop("PREDEDUP", None)  # cleanup
+            flowlist.append(subwork)
 
             for a in range(0, len(listoftools)):
                 subjobs = list()
 
                 toolenv, toolbin = map(str, listoftools[a])
-                if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                    "deseq",
-                    "diego",
-                ]:  # for all other postprocessing tools we have more than one defined subworkflow
+                if subwork in [
+                    "DE",
+                    "DEU",
+                    "DAS",
+                    "DTU",
+                ]:  # and toolbin not in ["deseq", "diego"]:  # for all other postprocessing tools we have more than one defined subworkflow
                     toolenv = toolenv + "_" + subwork
-                    log.debug(logid + "toolenv: " + str(toolenv))
 
-                flowlist.append(subwork)
+                log.debug(logid + "toolenv: " + str(toolenv))
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
                 subsamples = get_samples(sconf)
