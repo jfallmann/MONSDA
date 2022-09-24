@@ -399,17 +399,18 @@ if __name__ == "__main__":
     logid = scriptname + ".main: "
     try:
         args = parseargs()
-        makelogdir("LOGS")
-        try:
-            log = setup_logger(
-                name=scriptname,
-                log_file="stderr",
-                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-                datefmt="%m-%d %H:%M",
-                level=args.loglevel,
-            )
-        except:
-            log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+        if not log:
+            makelogdir("LOGS")
+            try:
+                log = setup_logger(
+                    name=scriptname,
+                    log_file="stderr",
+                    logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                    datefmt="%m-%d %H:%M",
+                    level=args.loglevel,
+                )
+            except:
+                log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         prepare_table(
             args.conditions,

@@ -30,15 +30,16 @@ process featurecount_deseq{
     }
 
     input:
-    path anno
-    path reads
+    path fls
 
     output:
     path "*.counts.gz", emit: fc_cts
     path "*.summary", emit: fc_summary
     path "*.log", emit: fc_log
 
-    script:        
+    script:      
+    anno = fls[0]
+    reads = fls[1]  
     fn = file(reads).getSimpleName()
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
@@ -69,8 +70,8 @@ process prepare_count_table{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "${COMBO}_COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
-        else if (filename == "${COMBO}_ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
+        if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
+        else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
     }
 
@@ -79,13 +80,13 @@ process prepare_count_table{
     path reps
 
     output: 
-    path "*_COUNTS.gz", emit: counts
-    path "*_ANNOTATION.gz", emit: anno
+    path "*COUNTS.gz", emit: counts
+    path "*ANNOTATION.gz", emit: anno
     path "log", emit: log
 
     script:
     """
-    ${BINS}/Analysis/build_count_table.py $DEREPS --table ${COMBO}_COUNTS.gz --anno ${COMBO}_ANNOTATION.gz 2> log
+    ${BINS}/Analysis/build_count_table.py $DEREPS --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -106,6 +107,7 @@ process run_deseq2{
     //path '*.count*'// from reads
     path cts
     path anno
+    path deanno
 
     output:
     path "*_table*", emit: tbls
@@ -114,9 +116,10 @@ process run_deseq2{
     path "log", emit: log
 
     script:    
-    outdir = "DE"+File.separatorChar+${SCOMBO}
+    outdir = "DE"+File.separatorChar+"${SCOMBO}"
+    bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
-    Rscript --no-environ --no-restore --no-save $BINS $anno $cts $DEANNO . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log
     """
 }
 
@@ -178,13 +181,14 @@ workflow DE{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}"+element+"_mapped_sorted_unique.bam"
     }
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DEANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
-    featurecount_deseq(annofile, mapsamples_ch.collate(1))
-    prepare_count_table(featurecount_deseq.out.fc_cts)
-    run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno)
+    featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
+    prepare_count_table(featurecount_deseq.out.fc_cts.collect())
+    run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
     filter_significant(run_deseq2.out.tbls)
     create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)))
 

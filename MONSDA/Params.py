@@ -596,7 +596,10 @@ def get_reps(samples, config, analysis, process="smk"):
         Ex = config[analysis].get("EXCLUDE")
         if Ex and sample.split(os.sep)[-1] in Ex:
             continue
-        ret["reps"].append(sample)
+        if process == "smk":
+            ret["reps"].append(sample)
+        else:
+            ret["reps"].append(os.path.basename(sample))
         wcfile = sample.split(os.sep)[-1].replace("_mapped_sorted_unique.counts.gz", "")
         idx = partconf["SAMPLES"].index(wcfile)
         scond.append(sample.split(os.sep)[-1])

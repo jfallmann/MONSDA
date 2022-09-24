@@ -2091,7 +2091,12 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            REPS = get_reps(LONGSAMPLES, config, x, "nf")
+            REPS = get_reps(
+                [x + "_mapped_sorted_unique.counts.gz" for x in LONGSAMPLES],
+                config,
+                x,
+                "nf",
+            )
             retconf[x + "REPS"] = f"'{REPS}'"
             comparison = comparable_as_string(config, "DE")
             compstr = [i.split(":")[0] for i in comparison.split(",")]

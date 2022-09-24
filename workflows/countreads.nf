@@ -179,15 +179,16 @@ process featurecount{
     }
 
     input:
-    path anno
-    path reads
+    path fls
 
     output:
     path "*.counts.gz", emit: fc_cts
     path "*.summary", emit: fc_summary
     path "*.log", emit: fc_log
 
-    script:        
+    script:
+    anno = fls[0]
+    reads = fls[1]        
     fn = file(reads).getSimpleName()
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
@@ -284,7 +285,7 @@ workflow COUNTING{
         count_dedup_fastq(dedupsamples_ch.collate(1))
     }        
     count_mappers(mapsamples_ch.collate(1))
-    featurecount(annofile, mapsamples_ch.collate(1))
+    featurecount(annofile.combine(mapsamples_ch.collate(1)))
     summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts))).collect())
 
     emit:
