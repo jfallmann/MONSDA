@@ -65,6 +65,7 @@ def parseargs():
     parser.add_argument("-c", "--comparisons", type=str, default="", help="")
     parser.add_argument("-o", "--outdir", type=str, default="", help="")
     parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
+    parser.add_argument("--nextflow", action="store_true", help="Run in nextflow mode")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -73,14 +74,15 @@ def parseargs():
     return parser.parse_args()
 
 
-def create_tables(annofile, combi, comparisons, outdir):
+def create_tables(annofile, combi, comparisons, outdir, nextflow=None):
     logid = scriptname + ".create_tables: "
 
     if combi == "none":
         combi = ""
 
     comps = comparisons.split(",")
-
+    if nextflow:
+        annofile = os.path.basename(annofile)
     sample_dict = {}
     with open(annofile, "r") as gf:
         for line in gf:
@@ -116,20 +118,31 @@ if __name__ == "__main__":
         print(scriptname)
         print(os.path.basename(inspect.stack()[-1].filename))
         try:
-            makelogdir("LOGS")
-            log = setup_logger(
-                name=scriptname,
-                log_file="LOGS/" + scriptname + ".log",
-                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-                datefmt="%m-%d %H:%M",
-                level=args.loglevel,
-            )
+            if not nextflow:
+                makelogdir("LOGS")
+                log = setup_logger(
+                    name=scriptname,
+                    log_file="LOGS/" + scriptname + ".log",
+                    logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                    datefmt="%m-%d %H:%M",
+                    level=args.loglevel,
+                )
+            else:
+                log = setup_logger(
+                    name=scriptname,
+                    log_file="log",
+                    logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+                    datefmt="%m-%d %H:%M",
+                    level=args.loglevel,
+                )
             log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         log.info("RUNNING!")
-        create_tables(args.annofile, args.combi, args.comparisons, args.outdir)
+        create_tables(
+            args.annofile, args.combi, args.comparisons, args.outdir, args.nextflow
+        )
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

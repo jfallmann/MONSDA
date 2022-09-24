@@ -100,6 +100,9 @@ optParser.add_option(
     default=False,
     help="Use strand in gffparse if stranded sequencing protocol was used.",
 )
+optParser.add_option(
+    "--nextflow", dest="nextflow", action="store_true", help="Run in nextflow mode"
+)
 ##
 
 (opts, args) = optParser.parse_args()

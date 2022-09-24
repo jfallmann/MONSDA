@@ -30,7 +30,10 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    try:
+        handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    except:
+        handler = logging.FileHandler("log", mode="a")
     handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
@@ -115,6 +118,7 @@ def parseargs():
         help="Name of anno to write to",
     )
     parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
+    parser.add_argument("--nextflow", action="store_true", help="Run in nextflow mode")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -147,6 +151,7 @@ def prepare_table(
     anno,
     sample_name=None,
     order=None,
+    nextflow=None,
 ):
     try:
         # slist,
@@ -201,7 +206,7 @@ def prepare_table(
             typ = None
             bat = None
 
-            rep = str(replist[i])
+            rep = str(replist[i]) if not nextflow else str(os.path.basename(replist[i]))
             cond = str(condlist[i])
             typ = str(typelist[i]) if types is not None else None
             bat = str(batchlist[i]) if batches is not None else None
