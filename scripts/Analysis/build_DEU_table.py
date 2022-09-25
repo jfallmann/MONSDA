@@ -351,10 +351,11 @@ def prepare_table(
             t.write(bytes(str(toprint), encoding="UTF8"))
 
         if not sample_name:
+            outfile = table.replace("COUNTS.gz", "SampleDict.gz")
             toprint = ""
             for k, v in sampledict.items():
-                toprint = f"{k}\t{v}\n"
-            with gzip.open("SampleDict", "wb") as s:
+                toprint = toprint + f"{k}\t{v}\n"
+            with gzip.open(outfile, "wb") as s:
                 s.write(bytes(str(toprint), encoding="UTF8"))
 
     except Exception as err:

@@ -368,7 +368,7 @@ def prepare_table(
             t.write(bytes(str(toprint), encoding="UTF8"))
 
         if not sample_name:
-            outfile = table.replace("_COUNTS.gz", "_SampleDict.gz")
+            outfile = table.replace("COUNTS.gz", "SampleDict.gz")
             toprint = ""
             for k, v in sampledict.items():
                 toprint = toprint + f"{k}\t{v}\n"
