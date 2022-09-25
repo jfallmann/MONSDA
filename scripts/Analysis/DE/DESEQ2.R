@@ -45,7 +45,7 @@ BPPARAM <- MulticoreParam(workers = availablecores)
 
 ### SCRIPT
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$batch <- as.factor(sampleData_all$batch)
 sampleData_all$type <- as.factor(sampleData_all$type)
@@ -65,7 +65,7 @@ if (combi == "none") {
 }
 
 ## readin counttable
-countData_all <- as.matrix(read.table(gzfile(countfile), header = T, row.names = 1))
+countData_all <- as.matrix(read.table(gzfile(countfile), header = T, row.names = 1, check.names = FALSE))
 
 # Check if names are consistent
 if (!all(rownames(sampleData_all) %in% colnames(countData_all))) {

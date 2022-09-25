@@ -72,6 +72,7 @@ process prepare_count_table{
     saveAs: {filename ->
         if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
+        else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
         else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
     }
 
@@ -82,6 +83,7 @@ process prepare_count_table{
     output: 
     path "*COUNTS.gz", emit: counts
     path "*ANNOTATION.gz", emit: anno
+    path "*SampleDict.gz", emit: sdict
     path "log", emit: log
 
     script:
