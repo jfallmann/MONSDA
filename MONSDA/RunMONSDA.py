@@ -627,6 +627,7 @@ def run_nextflow(
                     jobstorun.append(
                         f"nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}"
                     )
+                    log.debug(f"{logid} JOBS: {jobstorun}")
 
                 for job in jobstorun:
                     with open("JOBS" + os.sep + scriptname + ".commands", "a") as j:
@@ -672,13 +673,14 @@ def run_nextflow(
                     f"nextflow -log {workdir}/run.log run {nfo} -w {workdir} {rest} {pars} {tp}"
                 )
 
-                for job in jobstorun:
-                    with open("JOBS" + os.sep + scriptname + ".commands", "a") as j:
-                        j.write(job + os.linesep)
-                        if not save:
-                            log.info(logid + "RUNNING " + str(job))
-                            jid = runjob(job)
-                            log.debug(logid + "JOB CODE " + str(jid))
+            log.debug(f"{logid} JOBS: {jobstorun}")
+            for job in jobstorun:
+                with open("JOBS" + os.sep + scriptname + ".commands", "a") as j:
+                    j.write(job + os.linesep)
+                    if not save:
+                        log.info(logid + "RUNNING " + str(job))
+                        jid = runjob(job)
+                        log.debug(logid + "JOB CODE " + str(jid))
 
         else:
             log.warning(

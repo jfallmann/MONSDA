@@ -15,11 +15,11 @@ process sortsam{
     path map
 
     output:
-    path "*_sorted.sam.gz", emit: sam
+    path "*_mapped_sorted.sam.gz", emit: sam
 
     script:
     fn = file(map[0]).getSimpleName()
-    sorted = fn+'_sorted.sam.gz'
+    sorted = fn+'_mapped_sorted.sam.gz'
     //No Maxthread in nextflow 
     sortmem = '30%'
     """
