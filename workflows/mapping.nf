@@ -15,7 +15,7 @@ process sortsam{
     path map
 
     output:
-    path "*_mapped_sorted.sam.gz", emit: sam
+    path "*_mapped_sorted.sam.gz", includeInputs:false, emit: sam
 
     script:
     fn = file(map[0]).getSimpleName()
@@ -72,7 +72,7 @@ process uniqsam{
     path sam
 
     output:
-    path "*_unique.sam.gz", emit: sam
+    path "*_unique.sam.gz", includeInputs:false, emit: sam
     path "*.log", emit: logs
 
     script:

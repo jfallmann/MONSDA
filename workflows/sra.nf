@@ -6,19 +6,6 @@ FETCHPARAMS = get_always('sra_params_DOWNLOAD') ?: ''
 
 //FETCH PROCESSES
 
-process collect_tofetch{
-    input:
-    path check
-
-    output:
-    path "collect.txt", emit: done
-
-    script:
-    """
-    echo "$check Collection successful!" > collect.txt
-    """
-}
-
 process prefetch_sra{
     conda "$FETCHENV"+".yaml"
     cpus THREADS
@@ -31,7 +18,6 @@ process prefetch_sra{
     }
 
     input:
-    val collect
     val reads
 
     output:
@@ -82,8 +68,7 @@ workflow FETCH{
     //SAMPLE CHANNELS
     samples_ch = Channel.of(SHORTSAMPLES)
 
-    collect_tofetch(collection.collect())
-    prefetch_sra(collect_tofetch.out.done, samples_ch)
+    prefetch_sra(samples_ch)
     download_sra(prefetch_sra.out.sra)
 
     emit:
