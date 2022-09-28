@@ -19,7 +19,7 @@ process sortsam{
 
     script:
     fn = file(map[0]).getSimpleName()
-    sorted = fn+'_mapped_sorted.sam.gz'
+    sorted = fn+'_sorted.sam.gz'
     //No Maxthread in nextflow 
     sortmem = '30%'
     """
