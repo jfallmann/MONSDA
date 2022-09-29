@@ -18,6 +18,7 @@ dependencies:
   - libstdcxx-ng=7.2.0
   - ncurses=6.1
   - openssl=1.0.2r
+  - samtools=1.9
   - segemehl=0.3.4
   - tk=8.6.9
   - xz=5.2.4

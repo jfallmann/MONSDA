@@ -72,7 +72,7 @@ process segemehl3_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
-        //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
+        else if (filename.indexOf(".bed") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")}"
         else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
         else null
     }
@@ -83,6 +83,7 @@ process segemehl3_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
+    path "*.bed", includeInputs:false, emit: beds
     path "*.log", emit: logs
 
     script:
@@ -97,7 +98,7 @@ process segemehl3_mapping{
         r1 = reads[2]
         r2 = reads[3]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-        pf = fn+"_mapped.sam"
+        pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
@@ -106,7 +107,7 @@ process segemehl3_mapping{
     }else{
         fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         read = reads[2]
-        pf = fn+"_mapped.sam"
+        pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
