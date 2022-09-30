@@ -25,7 +25,7 @@ dependencies:
   - openmp=8.0.1
   - openssl=1.1.1d
   - perl=5.26.2
-  - pigz=2.3.4
+  - pigz=2.4
   - samtools=1.9
   - tk=8.6.10
   - xz=5.2.4

@@ -5,24 +5,17 @@ channels:
   - defaults
   - r
 dependencies:
-  - conda=4.12.0
-  - graphviz=2.50.0
   - grep=3.4
-  - imagemagick=7.1.0_27
   - isort=5.10.1
   - mamba=0.22.1
   - more-itertools=8.12.0
   - natsort=8.1.0
   - nextflow=22.04.5
   - perl=5.32.1
-  - python=3.9.12
+  - python=3.10.6
   - python-dateutil=2.8.2
   - python-fastjsonschema=2.15.3
   - python-irodsclient=1.1.3
   - python_abi=3.9
   - pyyaml=6.0
-  - readline=8.1
   - snakemake-minimal=7.14.0
-  - twine=4.0.0
-  - versioneer=0.22
-  - wheel=0.37.1
