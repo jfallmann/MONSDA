@@ -6,10 +6,6 @@ channels:
   - r
 dependencies:
   - grep=2.14
-  - _libgcc_mutex=0.1
-  - libgcc=7.2.0
-  - libgcc-ng=9.1.0
-  - libstdcxx-ng=9.1.0
   - perl=5.26.2
   - perl-app-cpanminus=1.7044
   - perl-autoloader=5.74
@@ -61,6 +57,5 @@ dependencies:
   - perl-version=0.9924
   - perl-xsloader=0.24
   - perl-yaml=1.29
-  - pigz=2.3.4
-  - zlib=1.2.11
+  - pigz=2.4
 

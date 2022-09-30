@@ -19,9 +19,9 @@ dependencies:
   - ncurses=6.1
   - openssl=1.0.2p
   - perl=5.26.2
-  - pigz=2.3.4
+  - pigz=2.4
   - pip=18.1
-  - python=3.6.6
+  - python=3.10.6
   - readline=7.0
   - setuptools=40.4.3
   - sqlite=3.25.2
