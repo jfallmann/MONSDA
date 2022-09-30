@@ -8,4 +8,4 @@ dependencies:
   - infernal=1.1.2
   - trnascan-se=2.0
   - perl=5.26.2
-  - pigz=2.3.4
+  - pigz=2.4

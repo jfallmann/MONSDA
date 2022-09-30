@@ -122,7 +122,7 @@ workflow MAPPING{
 
     main:
    
-    checkidx = file(MAPIDX)
+    checkidx = file(MAPUIDX)
     collection.filter(~/.fastq.gz/)
     
     if (checkidx.exists()){

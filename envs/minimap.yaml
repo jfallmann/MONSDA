@@ -36,9 +36,9 @@ dependencies:
   - numpy=1.17.3
   - openssl=1.1.1d
   - pcre=8.43
-  - pigz=2.3.4
+  - pigz=2.4
   - pip=19.3.1
-  - python=3.7.3
+  - python=3.10.6
   - readline=8.0
   - samtools=1.9
   - setuptools=44.0.0

@@ -27,9 +27,9 @@ dependencies:
   - openjdk=11.0.1
   - openssl=1.0.2r
   - perl=5.26.2
-  - pigz=2.3.4
+  - pigz=2.4
   - pip=19.0.3
-  - python=3.7.1
+  - python=3.10.6
   - readline=7.0
   - rename=1.601
   - setuptools=40.8.0

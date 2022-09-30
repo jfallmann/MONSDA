@@ -18,5 +18,5 @@ dependencies:
   - pandoc=2.2.2
   - pango=1.40.14
   - perl=5.26.2
-  - pigz=2.3.4
+  - pigz=2.4
   - pip=19.1.1
