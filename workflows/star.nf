@@ -102,7 +102,7 @@ process star_mapping{
         read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
         of = fn+'Aligned.out.sam'
-        gf = fn+"_mapped.sam.gz"
+        gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
         $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
