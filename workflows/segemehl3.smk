@@ -22,13 +22,16 @@ if paired == 'paired':
                 uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
+                sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
+                txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && mv *.txt {output.txt} && mv *.mult.bed {output.mult} && mv *.sngl.bed {output.sngl}"
 
 else:
     rule mapping:
@@ -36,10 +39,13 @@ else:
                 uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
+                sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
+                txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && mv *.txt {output.txt} && mv *.mult.bed {output.mult} && mv *.sngl.bed {output.sngl}"
