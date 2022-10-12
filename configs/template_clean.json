@@ -200,8 +200,7 @@
           "OPTIONS":
             {
                 "INDEX": "-l A --gencode",
-                "QUANT": "--gcBias",
-                "DTU": ""
+                "QUANT": "--gcBias"
             }
         }
       }

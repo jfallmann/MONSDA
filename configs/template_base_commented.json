@@ -211,7 +211,8 @@
   },
   "COUNTING": {
     "TOOLS": {
-      "countreads": "featureCounts"
+      "countreads": "featureCounts",
+      "salmon": "salmon"
     },
     "ENV" : "",
     "BIN" : "",
@@ -230,14 +231,12 @@
     "salmon": {
       "comment": {
           "INDEX": "salmon index options",
-          "QUANT": "salmon quant options",
-          "DTU": "Ptions for Analysis"
+          "QUANT": "salmon quant options"
       },
       "OPTIONS":
         {
             "INDEX": "-l A --gencode",
-            "QUANT": "--gcBias",
-            "DTU": ""
+            "QUANT": "--gcBias"
         }
     }
   },
