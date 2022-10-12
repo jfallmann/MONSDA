@@ -49,8 +49,8 @@ def generate_datafiles():
         dirlist[os.path.join("share", "MONSDA", os.path.dirname(c))].append(c)
 
     profiles = list()
-    for p in glob("profile_*/*"):
-        confs.append(os.path.relpath(p))  # os.path.join(d, os.path.split(d)[1]))
+    for p in glob("profile_*/**"):
+        profiles.append(os.path.relpath(p))  # os.path.join(d, os.path.split(d)[1]))
     for p in profiles:
         dirlist[os.path.join("share", "MONSDA", os.path.dirname(p))].append(p)
 
