@@ -960,7 +960,7 @@ def assign_samples(only_conditions=None):
             ):
                 continue
             if er == 0:
-                ques = f"enter all sample-numbers according to the displayed condition comma separated"
+                ques = f"enter all sample-numbers according to the displayed condition comma separated or * to select all or define a range - separated"
             if er == 1:
                 guide.clear(guide.toclear + 4)
                 ques = f"ERROR: Its not possible to merge single-end and paired-end samples, try again"
@@ -973,8 +973,22 @@ def assign_samples(only_conditions=None):
             )
 
             check_seq = set()
+            if guide.answer == "*":
+                for num in opts.keys:
+                    check_seq.add(
+                        project.samplesDict[opts[int(num)].split(" ")[0]]["seq"]
+                    )
             for num in guide.answer.split(","):
-                check_seq.add(project.samplesDict[opts[int(num)].split(" ")[0]]["seq"])
+                if "-" in num:
+                    s, e = num.split("-")
+                    for i in range(s, e + 1):
+                        check_seq.add(
+                            project.samplesDict[opts[int(i)].split(" ")[0]]["seq"]
+                        )
+                else:
+                    check_seq.add(
+                        project.samplesDict[opts[int(num)].split(" ")[0]]["seq"]
+                    )
             if len(check_seq) > 1:
                 er = 1
                 break
@@ -1608,7 +1622,7 @@ def finalize():
     final_dict = NestedDefaultDict()
 
     final_dict["WORKFLOWS"] = ",".join(project.workflowsDict.keys())
-    final_dict["BINS"] = "" # project.baseDict["BINS"]
+    final_dict["BINS"] = ""  # project.baseDict["BINS"]
     final_dict["MAXTHREADS"] = project.cores
     final_dict["VERSION"] = __version__
     final_dict["SETTINGS"] = project.settingsDict
