@@ -229,7 +229,6 @@
                                             {
                                                 "INDEX": "-l A --gencode",  # salmon index options
                                                 "QUANT": "--gcBias",  # salmon quant options
-                                                "DTU": ""  # Options for Analysis
                                             }
                                         }
                                     }
