@@ -193,7 +193,9 @@ class GUIDE:
                     self.answer = a
                     break
             else:
-                if any(x not in proof for x in a.split(",")):
+                if any(x not in proof for x in a.split(",")) and not any(
+                    "-" in x for x in a.split(",")
+                ):
                     safe = self.toclear
                     self.clear(2)
                     self.toclear = safe
@@ -969,35 +971,53 @@ def assign_samples(only_conditions=None):
             location(project.settingsDict, [cond_as_list])
 
             guide.display(
-                question=ques, options=opts, proof=[str(i) for i in opts.keys()]
+                question=ques, options=opts, proof=[str(i) for i in opts.keys()] + ["*"]
             )
 
             check_seq = set()
             if guide.answer == "*":
-                for num in opts.keys:
+                for num in [str(i) for i in opts.keys()]:
                     check_seq.add(
                         project.samplesDict[opts[int(num)].split(" ")[0]]["seq"]
                     )
-            for num in guide.answer.split(","):
-                if "-" in num:
-                    s, e = num.split("-")
-                    for i in range(s, e + 1):
+            else:
+                for num in guide.answer.split(","):
+                    if "-" in num:
+                        s, e = map(int, num.split("-"))
+                        for i in range(s, e + 1):
+                            check_seq.add(
+                                project.samplesDict[opts[int(i)].split(" ")[0]]["seq"]
+                            )
+                    else:
                         check_seq.add(
-                            project.samplesDict[opts[int(i)].split(" ")[0]]["seq"]
+                            project.samplesDict[opts[int(num)].split(" ")[0]]["seq"]
                         )
-                else:
-                    check_seq.add(
-                        project.samplesDict[opts[int(num)].split(" ")[0]]["seq"]
-                    )
             if len(check_seq) > 1:
                 er = 1
                 break
             else:
                 er = 0
             samplesInList = []
-            for num in guide.answer.split(","):
-                project.samplesDict[opts[int(num)].split(" ")[0]]["cond"] = condition
-                samplesInList.append(opts[int(num)].split(" ")[0])
+            if guide.answer == "*":
+                for num in [str(i) for i in opts.keys()]:
+                    project.samplesDict[opts[int(num)].split(" ")[0]][
+                        "cond"
+                    ] = condition
+                    samplesInList.append(opts[int(num)].split(" ")[0])
+            else:
+                for num in guide.answer.split(","):
+                    if "-" in num:
+                        s, e = map(int, num.split("-"))
+                        for i in range(s, e + 1):
+                            project.samplesDict[opts[int(i)].split(" ")[0]][
+                                "cond"
+                            ] = condition
+                            samplesInList.append(opts[int(i)].split(" ")[0])
+                    else:
+                        project.samplesDict[opts[int(num)].split(" ")[0]][
+                            "cond"
+                        ] = condition
+                        samplesInList.append(opts[int(num)].split(" ")[0])
             set_by_path(
                 project.settingsDict,
                 cond_as_list,
