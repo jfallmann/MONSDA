@@ -1608,6 +1608,13 @@ def make_post(
                 subname = toolenv + ".smk"
                 smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
+                if toolbin == "salmon" and "TRIMMING" not in config["WORKFLOWS"]:
+                    log.debug(logid + "Simulated read trimming only!")
+                    makeoutdir("TRIMMED_FASTQ")
+                    smkf = (
+                        os.path.abspath(os.path.join(workflowpath, toolenv))
+                        + "_trim.smk"
+                    )
                 with open(smkf, "r") as smk:
                     for line in smk.readlines():
                         line = re.sub(condapath, 'conda: "' + envpath, line)
@@ -1616,28 +1623,6 @@ def make_post(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
                         subjobs.append(line)
-                    subjobs.append("\n\n")
-
-                if toolbin == "salmon" and "TRIMMING" not in config["WORKFLOWS"]:
-                    log.debug(logid + "Simulated read trimming only!")
-                    makeoutdir("TRIMMED_FASTQ")
-                    tsmkf = os.path.abspath(
-                        os.path.join(workflowpath, "simulatetrim.smk")
-                    )
-                    with open(tsmkf, "r") as smk:
-                        for line in smk.readlines():
-                            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                            line = re.sub(condapath, 'conda:  "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                )
-                            subjobs.append(line)
                     subjobs.append("\n\n")
 
                 # Append footer and write out subsnake and subconf per condition
