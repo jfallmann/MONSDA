@@ -582,9 +582,10 @@ def get_reps(samples, config, analysis, process="smk"):
     ret = defaultdict(list)
     for sample in samples:
         if process == "smk":
+            checkid = sample.split(os.sep)[4]
             scond = (
                 sample.split(os.sep)[4:-1]
-                if len(sample.split(os.sep)) > 5
+                if config["SETTINGS"].get(checkid, False)
                 else sample.split(os.sep)[3:-1]
             )
         else:
