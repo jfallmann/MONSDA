@@ -35,6 +35,7 @@ from snakemake import load_configfile
 from snakemake.utils import min_version
 import argparse
 import subprocess
+import shlex
 
 scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
@@ -267,7 +268,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                     )
 
                 for job in jobstorun:
@@ -881,6 +882,8 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
+        log.info(logid + "MONSDA-CLI: " + sys.argv[0] + " " + "{}".format(" ".join([shlex.quote(s) for s in sys.argv[1:]])))
+
         required_version = load_configfile(knownargs.configfile).get("VERSION")
         if not required_version:
             sys.exit(
@@ -915,7 +918,7 @@ def main():
         log.debug(logid + str(log.handlers))
 
         if not knownargs.nextflow:
-            min_version("6.5.3")
+            min_version("7.14.2")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
@@ -929,7 +932,7 @@ def main():
             )
 
         else:
-            nf_min_version = "21.10"
+            nf_min_version = "22.04.5"
             nf_ver = nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(
