@@ -5,5 +5,5 @@ channels:
   - defaults
   - r
 dependencies:
-  - picard=2.25.1
-  - samtools=1.13
+  - picard=2.27.4
+  - samtools=1.16.1

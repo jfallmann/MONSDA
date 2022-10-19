@@ -4,22 +4,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - libdeflate=1.0
-  - samtools=1.9
+  - samtools=1.16.1
   - segemehl=0.2.0
-  - bzip2=1.0.6
-  - ca-certificates=2018.10.15
   - curl=7.62.0
-  - krb5=1.16.2
-  - libcurl=7.62.0
-  - libedit=3.1.20170329
-  - libgcc-ng=7.2.0
-  - libssh2=1.8.0
-  - libstdcxx-ng=7.2.0
-  - ncurses=6.1
-  - openssl=1.0.2p
-  - tk=8.6.8
-  - xz=5.2.4
-  - zlib=1.2.11
   - pigz=2.4
 

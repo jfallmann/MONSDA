@@ -4,9 +4,8 @@ channels:
   - bioconda
   - r
 dependencies:
-  - bzip2=1.0.6
   - grep=2.14
-  - htslib=1.9
-  - samtools=1.9
+  - htslib=1.16
+  - samtools=1.16.1
   - segemehl=0.3.4
   - pigz=2.4

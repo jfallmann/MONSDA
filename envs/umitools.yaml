@@ -5,15 +5,5 @@ channels:
   - defaults
   - r
 dependencies:
-  - htslib=1.13
-  - matplotlib-base=3.2.1
-  - numpy=1.18.4
-  - pandas=1.0.3
-  - pyparsing=2.4.7
-  - pysam=0.17.0
-  - python-dateutil=2.8.1
-  - readline=8.0
-  - regex=2020.5.13
-  - samtools=1.13
-  - scipy=1.4.1
-  - umi_tools=1.0.1
+  - samtools=1.16.1
+  - umi_tools=1.1.2
