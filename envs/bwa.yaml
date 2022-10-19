@@ -6,6 +6,5 @@ channels:
   - r
 dependencies:
   - bwa=0.7.17
-  - pigz=2.4
+  - pigz=2.6
   - samtools=1.16.1
-

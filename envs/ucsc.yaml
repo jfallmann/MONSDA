@@ -10,5 +10,5 @@ dependencies:
   - ucsc-beditemoverlapcount=377
   - ucsc-fatotwobit=377
   - ucsc-twobitinfo=377
-  - pigz=2.4
+  - pigz=2.6
 

@@ -8,5 +8,5 @@ dependencies:
   - bedtools=2.30.0
   - curl=7.71.1
   - grep=3.4
-  - pigz=2.4
+  - pigz=2.6
   - samtools=1.16.1

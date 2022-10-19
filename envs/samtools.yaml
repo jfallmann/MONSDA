@@ -6,4 +6,4 @@ channels:
 dependencies:
   - samtools=1.16.1
   - grep=2.14
-  - pigz=2.4
+  - pigz=2.6

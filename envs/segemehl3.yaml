@@ -8,4 +8,4 @@ dependencies:
   - htslib=1.16
   - samtools=1.16.1
   - segemehl=0.3.4
-  - pigz=2.4
+  - pigz=2.6

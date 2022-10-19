@@ -7,5 +7,5 @@ dependencies:
   - samtools=1.16.1
   - segemehl=0.2.0
   - curl=7.62.0
-  - pigz=2.4
+  - pigz=2.6
 

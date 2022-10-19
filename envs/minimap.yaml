@@ -11,5 +11,5 @@ dependencies:
   - htslib=1.16
   - minimap2=2.17
   - numpy=1.17.3
-  - pigz=2.4
+  - pigz=2.6
   - samtools=1.16.1
