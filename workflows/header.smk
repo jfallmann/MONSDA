@@ -19,7 +19,7 @@ for x in cmd_subfolder:
 
 from MONSDA.Logger import *
 from MONSDA.Params import *
-from MONSDA.Utils import get_dict_hash, subDict
+from MONSDA.Utils import get_dict_hash, subDict, makeoutdir
 
 loglevel="INFO"
 
@@ -53,6 +53,8 @@ except Exception as err:
 
 logid = 'header.smk: '
 
+#Make sure we have a TMP directory
+makeoutdir("TMP")
 
 # Parse SUBCONFIG
 try:
