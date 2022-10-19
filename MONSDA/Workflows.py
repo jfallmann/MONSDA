@@ -80,7 +80,6 @@ import subprocess
 import collections
 from collections import defaultdict, OrderedDict
 from pkg_resources import parse_version
-import six
 import logging
 import hashlib
 from snakemake import load_configfile
