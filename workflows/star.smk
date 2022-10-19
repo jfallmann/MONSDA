@@ -38,7 +38,7 @@ if paired == 'paired':
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
     rule mapping:
@@ -57,4 +57,4 @@ else:
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx 2>> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"

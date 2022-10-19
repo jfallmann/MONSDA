@@ -100,10 +100,11 @@ process hisat2_mapping{
         r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam"
-        uf = fn+"_unmapped.fastq.gz"
+        ufo = fn+"R1_unmapped.fastq.gz"
+        uft = fn+"R2_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz $fn -S $pf &> $lf && gzip $pf && touch $uf && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' $fn\.unmapped.*.gz && touch $ufo $uft &>> $lf
         """
     }else{
         read = reads[1]
@@ -112,7 +113,7 @@ process hisat2_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $read | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && gzip *.sam && touch $uf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $read --un-gz $uf -S $pf &> $lf && gzip $pf && touch $uf &>> $lf
         """
     }
 }
