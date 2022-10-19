@@ -1443,9 +1443,7 @@ def make_post(
                         ):
                             log.debug(logid + "Simulated read trimming only!")
                             makeoutdir("TRIMMED_FASTQ")
-                            smkf = os.path.abspath(
-                                os.path.join(workflowpath, "simulatetrim.smk")
-                            )
+                            smkf = (os.path.abspath(os.path.join(workflowpath, toolenv))+ "_trim.smk")
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(
