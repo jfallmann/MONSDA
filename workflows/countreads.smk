@@ -15,39 +15,41 @@ else:
 
 if paired == 'paired':
     rule count_fastq:
-        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}_{{read}}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
-        output: r1 = "COUNTS/{combo}/{file}_raw_{read}_fq.count"
-        log:    "LOGS/{combo}/{file}_{read}/countfastq.log"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+        output: r1 = "COUNTS/{combo}/{file}_R1_raw_fq.count",
+                r2 = "COUNTS/{combo}/{file}_R2_raw_fq.count"
+        log:    "LOGS/{combo}/{file}/countfastq.log"
+        conda:  "base.yaml"
+        threads: 1
+        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
+
+    rule count_trimmed_fastq:
+        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_R1_trimmed.fastq.gz", combo=scombo),
+                r2 = expand("TRIMMED_FASTQ/{combo}/{{file}}_R2_trimmed.fastq.gz", combo=scombo)
+        output: r1 = "COUNTS/{combo}/{file}_R1_trimmed_fq.count",
+                r2 = "COUNTS/{combo}/{file}_R2_trimmed_fq.count"
+        log:    "LOGS/{combo}/{file}/countfastq.log"
+        conda:  "base.yaml"
+        threads: 1
+        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}; arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
+
+else:
+    rule count_fastq:
+        input:  r1 = lambda wildcards: expand("FASTQ/{rawfile}.fastq.gz", rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        output: r1 = "COUNTS/{combo}/{file}_raw_fq.count"
+        log:    "LOGS/{combo}/{file}/countfastq.log"
         conda:  "base.yaml"
         threads: 1
         shell:  "arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
 
     rule count_trimmed_fastq:
-        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_{{read}}_trimmed.fastq.gz", combo=scombo)
-        output: r1 = "COUNTS/{combo}/{file}_trimmed_{read}_fq.count"
-        log:    "LOGS/{combo}/{file}_{read}/count_trimmedfastq.log"
+        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_trimmed.fastq.gz", combo=scombo)
+        output: r1 = "COUNTS/{combo}/{file}_trimmed_fq.count"
+        log:    "LOGS/{combo}/{file}/count_trimmedfastq.log"
         conda:  "base.yaml"
         threads: 1
         shell:  "arr=({input.r1}); orr=({output.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
-
-else:
-    rule count_fastq:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = expand("TRIMMED_FASTQ/{combo}/{{file}}_trimmed.fastq.gz", combo=scombo)
-        output: r1 = "COUNTS/{combo}/{file}_raw_fq.count",
-                r2 = "COUNTS/{combo}/{file}_trimmed_fq.count"
-        log:    "LOGS/{combo}/{file}/countfastq.log"
-        conda:  "base.yaml"
-        threads: 1
-        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}"
-
-    rule count_trimmed_fastq:
-        input:  r1 = expand("TRIMMED_FASTQ/{combo}/{{file}}_trimmed.fastq.gz", combo=scombo)
-        output: r1 = "COUNTS/{combo}/{file}_trimmed_fq.count"
-        log:    "LOGS/{combo}/{file}/countfastq.log"
-        conda:  "base.yaml"
-        threads: 1
-        shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}"
 
 rule count_mappers:
     input:  m = expand("MAPPED/{combo}/{{file}}_mapped_sorted.bam", combo=scombo)
@@ -147,7 +149,8 @@ rule featurecount_unique_dedup:
 
 if rundedup:
     rule summarize_counts:
-        input:  f = lambda wildcards: expand(rules.count_fastq.output, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0], file=samplecond(SAMPLES, config), read=["R1", "R2"], combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0], file=samplecond(SAMPLES, config), combo=combo),
+        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
+                t = lambda wildcards: expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
                 m = rules.count_mappers.output,
                 u = rules.count_unique_mappers.output,
                 d = rules.count_dedup_mappers.output,
@@ -156,14 +159,15 @@ if rundedup:
         log:    "LOGS/{combo}/{file}/summarize_counts.log"
         conda:  "base.yaml"
         threads: 1
-        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 else:
     rule summarize_counts:
-        input:  f = lambda wildcards: expand(rules.count_fastq.output, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0], file=samplecond(SAMPLES, config), read=["R1", "R2"], combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0], file=samplecond(SAMPLES, config), combo=combo),
+        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
+            t = lambda wildcards: expand(rules.count_trimmed_fastq.output,  file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
                 m = rules.count_mappers.output,
                 u = rules.count_unique_mappers.output
         output: "COUNTS/{combo}/{file}.summary"
         log:    "LOGS/{combo}/{file}/summarize_counts.log"
         conda:  "base.yaml"
         threads: 1
-        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+        shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
