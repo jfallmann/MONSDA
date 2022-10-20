@@ -26,7 +26,7 @@ like so:
 The **envs** directory holds all the environments needed to run the pipelines in the **workflows** directory,
 these will be installed automatically when needed.
 
-For fast resolve of conda packages, we recommend mamba_
+For fast resolve of conda packages, we recommend mamba_ which is currently also the standard conda-frontend for Snakemake_
 
 .. _mamba: https://mamba.readthedocs.io/en/latest/
 
