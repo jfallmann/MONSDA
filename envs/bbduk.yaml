@@ -4,5 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - cutadapt=4.1
+  - bbmap=39.01
 

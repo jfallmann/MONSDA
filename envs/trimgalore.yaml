@@ -2,13 +2,6 @@ name: trimgalore
 channels:
   - conda-forge
   - bioconda
-  - r
   - defaults
 dependencies:
-  - cutadapt=1.18
-  - fastqc=0.11.8
-  - perl=5.26.2
-  - pigz=2.6
-  - readline=7.0
-  - rename=1.601
-  - trim-galore=0.6.3
+  - trim-galore=0.6.7
