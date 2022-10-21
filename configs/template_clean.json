@@ -110,7 +110,7 @@
         "umitools": {
           "OPTIONS":
           {  
-              "WHITELIST" : "--extract-method string --bc-pattern AGANNNNACGT",
+              "WHITELIST" : "--extract-method string --bc-pattern 'XNNNNX'",
               "EXTRACT": "--extract-umi-method read_id",
               "DEDUP": ""
           }

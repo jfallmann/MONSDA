@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, DAS, DTU, COUNTING",
-    "VERSION": "1.0.0",
+    "VERSION": "1.1.0",
     "BINS": "",
     "MAXTHREADS": "16",
     "SETTINGS": {
@@ -150,7 +150,7 @@
                 "umitools":{
                     "OPTIONS":
                     {
-                        "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                        "EXTRACT": "--extract-method string --bc-pattern 'XNNNNX'",
                         "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
                     }
                 },
@@ -167,7 +167,7 @@
                     "umitools": {
                         "OPTIONS":
                         {
-                            "EXTRACT": "--extract-method string --bc-pattern AGANNNNACGT",
+                            "EXTRACT": "--extract-method string --bc-pattern 'XNNNNX'",
                             "DEDUP": "--extract-umi-method read_id"  # umitools dedup options
                         }
                     },
