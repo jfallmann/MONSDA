@@ -1403,7 +1403,7 @@ def make_post(
 
                         sconf[subwork + "ENV"] = toolenv
                         sconf[subwork + "BIN"] = toolbin
-                        
+
                         log.debug(
                             logid
                             + "POSTPROCESS: "
@@ -1443,15 +1443,16 @@ def make_post(
                         ):
                             log.debug(logid + "Simulated read trimming only!")
                             makeoutdir("TRIMMED_FASTQ")
-                            smkf = (os.path.abspath(os.path.join(workflowpath, toolenv))+ "_trim.smk")
+                            smkf = (
+                                os.path.abspath(os.path.join(workflowpath, toolenv))
+                                + "_trim.smk"
+                            )
                         with open(smkf, "r") as smk:
                             for line in smk.readlines():
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
-                                line = re.sub(
-                                    condapath, 'conda:  "' + envpath, line
-                                )
+                                line = re.sub(condapath, 'conda:  "' + envpath, line)
                                 if "include: " in line:
                                     line = fixinclude(
                                         line,
@@ -2121,7 +2122,7 @@ def nf_fetch_params(
             )
             retconf[x + "REPS"] = f"'{REPS}'"
             comparison = comparable_as_string(config, "DE")
-            compstr = [i.split(":")[0] for i in comparison.split(",")]
+            compstr = ",".join([i.split(":")[0] for i in comparison.split(",")])
             retconf[x + "COMP"] = comparison
             retconf[x + "COMPS"] = compstr
             pval = get_cutoff_as_string(config, x, "pval")
