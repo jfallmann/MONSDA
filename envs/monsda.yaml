@@ -5,18 +5,19 @@ channels:
   - defaults
   - r
 dependencies:
-  - grep=3.4
-  - isort=5.10.1
-  - mamba=0.27.0
-  - more-itertools=8.12.0
-  - natsort=8.1.0
-  - nextflow=22.04.5
-  - perl=5.32.1
-  - python=3.10.6
-  - python_abi=3.10
-  - python-dateutil=2.8.2
-  - python-fastjsonschema=2.15.3
-  - python-irodsclient=1.1.3
-  - pyopenssl>=22.0
-  - pyyaml=6.0
-  - snakemake-minimal=7.16.0
+  - conda-libmamba-solver >=22.8.1
+  - grep >=3.4
+  - isort >=5.10.1
+  - mamba >=0.27.0
+  - more-itertools >=8.12.0
+  - natsort >=8.1.0
+  - nextflow =22.04.5
+  - perl =5.32.1
+  - python =3.10.6
+  - python_abi =3.10
+  - python-dateutil =2.8.2
+  - python-fastjsonschema =2.15.3
+  - python-irodsclient =1.1.3
+  - pyopenssl >=22.0
+  - pyyaml =6.0
+  - snakemake-minimal =7.16.1

@@ -14,7 +14,7 @@ For details on ```Snakemake``` and ```Nextflow``` and their features please refe
 In general it is necessary to write a configuration file containing information on paths, files to process and settings beyond default for mapping tools and others.
 The template on which analysis is based can be found in the ```config``` directory.
 
-For MONSDA to be as FAIR as possible, one needs to use ```conda``` or the faster drop-in replacement ```mamba```. For details on either please refer to the corresponding [conda](https://docs.conda.io/en/latest/) or [mamba](https://mamba.readthedocs.io/en/latest/) manual.
+For MONSDA to be as FAIR as possible, one needs to use ```conda``` or the faster drop-in replacement ```mamba``` or ```conda-libmamba-solver``` which is a new (experimental) solver for the conda package manager and speeds up conda without the need to install mamba. For details on either please refer to the corresponding [conda](https://docs.conda.io/en/latest/) or [mamba](https://mamba.readthedocs.io/en/latest/) or [conda-libmamba-solver](https://github.com/conda-incubator/conda-libmamba-solver) manual.
 
 This workflow collection makes heavy use of ```conda``` and especially the [bioconda](https://bioconda.github.io) channel.
 
@@ -23,13 +23,13 @@ This workflow collection makes heavy use of ```conda``` and especially the [bioc
 To install via ```conda/mamba``` simply run
 
 ```
-mamba install -c bioconda -c conda-forge monsda
+conda install -c bioconda -c conda-forge monsda
 ```
 
 To install via ```pip``` you first need to create the ```MONSDA``` environment as found in the ```envs``` directory of this repository like so:
 
 ```
-mamba env create -n monsda -f MONSDA/envs/monsda.yaml
+conda env create -n monsda -f MONSDA/envs/monsda.yaml
 ```
 
 The ```envs``` directory holds all the environments needed to run the pipelines in the ```workflows``` directory, these will be installed automatically alongside ```MONSDA```.
