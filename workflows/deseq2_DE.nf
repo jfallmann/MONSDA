@@ -4,7 +4,6 @@ DEBIN = get_always('DEBIN')
 DEREF = get_always('DEREF')
 DEREFDIR = get_always('DEREFDIR')
 DEANNO = get_always('DEANNO')
-COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
 DEPARAMS = get_always('deseq2_DE_params_DE') ?: ''
 DEREPS = get_always('DEREPS') ?: ''
 DECOMP = get_always('DECOMP') ?: ''
@@ -15,6 +14,7 @@ PCOMBO = get_always('COMBO') ?: 'none'
 
 COUNTBIN = 'featureCounts'
 COUNTENV = 'countreads_de'
+COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
 
 //DE PROCESSES
 
@@ -186,7 +186,6 @@ workflow DE{
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
     mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DEANNO)
-    //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
     featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_deseq.out.fc_cts.collect())
