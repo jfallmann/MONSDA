@@ -33,6 +33,7 @@ process collect_tomap{
 process bwa_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 
@@ -61,6 +62,7 @@ process bwa_idx{
 process bwa_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 

@@ -6,6 +6,7 @@ JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 process dedup_bam{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

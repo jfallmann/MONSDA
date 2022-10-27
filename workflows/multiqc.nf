@@ -5,6 +5,7 @@ QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 process mqc{
     conda "$QCENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

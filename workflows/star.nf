@@ -30,6 +30,7 @@ process collect_tomap{
 process star_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 
@@ -63,6 +64,7 @@ process star_idx{
 process star_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 

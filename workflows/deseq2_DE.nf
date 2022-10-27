@@ -21,6 +21,7 @@ COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
 process featurecount_deseq{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -66,6 +67,7 @@ process featurecount_deseq{
 process prepare_count_table{
     conda "$DEENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -95,6 +97,7 @@ process prepare_count_table{
 process run_deseq2{
     conda "$DEENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -128,6 +131,7 @@ process run_deseq2{
 process filter_significant{
     conda "$DEENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -152,6 +156,7 @@ process filter_significant{
 process create_summary_snippet{
     conda "$DEENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

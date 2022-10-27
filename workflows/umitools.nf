@@ -7,6 +7,7 @@ EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 process whitelist{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -49,6 +50,7 @@ process whitelist{
 process extract_fq{
     conda "$DEDUPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

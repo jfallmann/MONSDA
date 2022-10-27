@@ -4,6 +4,7 @@ T2SAMPLES = null
 process trim{
     //conda "$TOOLENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

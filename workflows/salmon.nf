@@ -17,6 +17,7 @@ COUNTPARAMS = get_always('salmon_params_COUNT') ?: ''
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -42,6 +43,7 @@ process salmon_idx{
 process salmon_quant{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

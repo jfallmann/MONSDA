@@ -34,6 +34,7 @@ process collect_tomap{
 process segemehl3_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 
@@ -66,6 +67,7 @@ process segemehl3_idx{
 process segemehl3_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 
