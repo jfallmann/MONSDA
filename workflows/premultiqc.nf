@@ -20,6 +20,7 @@ process collect_multi{
 process premultiqc{
     conda "$QCENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

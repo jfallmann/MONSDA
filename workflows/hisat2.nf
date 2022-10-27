@@ -30,6 +30,7 @@ process collect_tomap{
 process hisat2_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 
@@ -61,6 +62,7 @@ process hisat2_idx{
 process hisat2_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     label 'big_mem'
     //validExitStatus 0,1
 

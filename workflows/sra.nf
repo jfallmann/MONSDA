@@ -9,6 +9,7 @@ FETCHPARAMS = get_always('sra_params_DOWNLOAD') ?: ''
 process prefetch_sra{
     conda "$FETCHENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -33,6 +34,7 @@ process prefetch_sra{
 process download_sra{
     conda "$FETCHENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

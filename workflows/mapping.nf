@@ -3,6 +3,7 @@
 process sortsam{
     conda "samtools.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -30,6 +31,7 @@ process sortsam{
 process sam2bam{
     conda "samtools.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -59,6 +61,7 @@ process sam2bam{
 process uniqsam{
     conda "samtools.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -86,6 +89,7 @@ process uniqsam{
 process sam2bamuniq{
     conda "samtools.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',

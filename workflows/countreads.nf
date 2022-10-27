@@ -17,6 +17,7 @@ COUNTMAP = get_always('COUNTINGMAP') ?: ''
 process count_fastq{
     conda "base.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -58,6 +59,7 @@ process count_fastq{
 process count_trimmed_fastq{
     conda "base.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -99,6 +101,7 @@ process count_trimmed_fastq{
 process count_dedup_fastq{
     conda "base.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -140,6 +143,7 @@ process count_dedup_fastq{
 process count_mappers{
     conda "samtools.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -168,6 +172,7 @@ process count_mappers{
 process featurecount{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -215,6 +220,7 @@ process featurecount{
 process summarize_counts{
     conda "base.yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -296,6 +302,7 @@ workflow COUNTING{
 //process count_unique_mappers{
 //    conda "samtools.yaml"
 //    cpus THREADS
+	cache 'lenient'
 //    //validExitStatus 0,1
 //
 //    publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -324,6 +331,7 @@ workflow COUNTING{
 //process count_dedup_mappers{
 //    conda "samtools.yaml"
 //    cpus THREADS
+	cache 'lenient'
 //    //validExitStatus 0,1
 //
 //    publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -352,6 +360,7 @@ workflow COUNTING{
 //process count_unique_dedup_mappers{
 //    conda "samtools.yaml"
 //    cpus THREADS
+	cache 'lenient'
 //    //validExitStatus 0,1
 //
 //    publishDir "${workflow.workDir}/../" , mode: 'link',

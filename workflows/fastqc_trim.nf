@@ -6,6 +6,7 @@ QCPARAMS = get_always('fastqc_params_QC') ?: ''
 process qc_raw{
     conda "$QCENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -55,6 +56,7 @@ workflow QC_RAW{
 process qc_trimmed{
     conda "$QCENV"+".yaml"
     cpus THREADS
+	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
