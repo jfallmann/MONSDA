@@ -266,7 +266,7 @@
     },
     "COUNTING": {
         "FEATURES": {
-            "CDS": "gene_id"
+            "CDS": "ID"
         },
         "TOOLS": {
             "countreads": "featureCounts"
