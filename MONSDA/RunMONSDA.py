@@ -463,6 +463,7 @@ def run_snakemake(
 def run_nextflow(
     configfile,
     workdir,
+    useconda,
     procs,
     skeleton,
     loglevel,
@@ -473,6 +474,13 @@ def run_nextflow(
     try:
         logid = scriptname + ".run_nextflow: "
         argslist = list()
+        if useconda:
+            argslist.append("-with-conda true")
+        else:
+            log.warning(
+                logid
+                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call."
+            )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
@@ -495,11 +503,6 @@ def run_nextflow(
                 os.path.abspath(config["BINS"]),
                 os.path.abspath(subdir + os.sep + "bin"),
             )
-
-        argslist = list()
-        if optionalargs and len(optionalargs) > 0:
-            log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
-            argslist.extend(optionalargs)
 
         threads = (
             min(int(config["MAXTHREADS"]), procs) if "MAXTHREADS" in config else procs
@@ -938,6 +941,7 @@ def main():
                 run_nextflow(
                     knownargs.configfile,
                     knownargs.directory,
+                    knownargs.use_conda,
                     knownargs.procs,
                     knownargs.skeleton,
                     knownargs.loglevel,
