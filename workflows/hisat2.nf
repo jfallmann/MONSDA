@@ -106,7 +106,7 @@ process hisat2_mapping{
         uft = fn+"R2_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz $fn -S $pf &> $lf && gzip $pf && touch $uf && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' $fn\.unmapped.*.gz && touch $ufo $uft &>> $lf
+        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz $fn -S $pf &> $lf && gzip $pf && touch $uf && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' ${fn}.unmapped.*.gz && touch $ufo $uft &>> $lf
         """
     }else{
         read = reads[1]
