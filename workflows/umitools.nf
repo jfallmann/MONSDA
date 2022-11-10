@@ -74,7 +74,7 @@ process extract_fq{
         r2 = samples[1]
         outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
         outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
-        if (wl ==~ /\*dummy_whitelist/){
+        if (!!(wl =~ /dummy_whitelist/)){
             """
                 mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2
             """
@@ -87,7 +87,7 @@ process extract_fq{
     }
     else{
         outf = samples.getSimpleName()+"_dedup.fastq.gz"
-        if (wl ==~ 'dummy_whitelist'){
+        if (!!(wl =~ /dummy_whitelist/)){
             """
                 mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$samples --stdout=$outf
             """
