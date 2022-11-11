@@ -5,3 +5,4 @@ channels:
   - defaults
 dependencies:
   - trim-galore=0.6.7
+  - rename=1.601

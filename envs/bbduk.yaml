@@ -5,4 +5,5 @@ channels:
   - defaults
 dependencies:
   - bbmap=39.01
+  - rename=1.601
 
