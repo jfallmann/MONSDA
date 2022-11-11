@@ -921,7 +921,7 @@ def main():
         log.debug(logid + str(log.handlers))
 
         if not knownargs.nextflow:
-            min_version("7.18.1")
+            min_version("7.18.2")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
