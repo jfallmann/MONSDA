@@ -6,6 +6,6 @@ channels:
   - r
 dependencies:
   - perl=5.32.1
-  - sra-tools=2.11.0
-  - rename=1.601
   - pigz=2.6
+  - rename=1.601
+  - sra-tools=2.11.0
