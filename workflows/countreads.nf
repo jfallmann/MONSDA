@@ -165,7 +165,7 @@ process count_mappers{
     ol = fn+".log"
     sortmem = '30%'
     """
-    export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
+    mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
     """
 }
 
@@ -213,7 +213,7 @@ process featurecount{
             stranded = ''
     }
     """
-    $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
