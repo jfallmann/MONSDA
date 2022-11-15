@@ -253,24 +253,24 @@ workflow COUNTING{
             element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
         }
     }else{
         RAWSAMPLES = SAMPLES.collect{
             element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}"+element+"*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}"+element+"*.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"*.fastq.gz"
         }
     }
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}"+element+"*.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*.bam"
     }
 
     rawsamples_ch = Channel.fromPath(RAWSAMPLES)
@@ -298,90 +298,3 @@ workflow COUNTING{
     counts = summarize_counts.out.sum
     logs = summarize_counts.out.sum_log
 }
-
-//process count_unique_mappers{
-//    conda "samtools.yaml"
-//    cpus THREADS
-	cache 'lenient'
-//    //validExitStatus 0,1
-//
-//    publishDir "${workflow.workDir}/../" , mode: 'link',
-//    saveAs: {filename ->
-//        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-//        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_unique_mappers.log"
-//
-//    }
-//
-//    input:
-//    path reads
-//
-//    output:
-//    path "*.count", emit: fq_cts
-//
-//    script:        
-//    fn = file(reads).getSimpleName()
-//    oc = fn+"_mapped_unique.count"
-//    ol = fn+".log"
-//    sortmem = '30%'
-//    """
-//    export LC_ALL=C; samtools view -F 260 $reads | cut -d$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc;done 2>> $ol
-//    """
-//}
-//
-//process count_dedup_mappers{
-//    conda "samtools.yaml"
-//    cpus THREADS
-	cache 'lenient'
-//    //validExitStatus 0,1
-//
-//    publishDir "${workflow.workDir}/../" , mode: 'link',
-//    saveAs: {filename ->
-//        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-//        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_dedup_mappers.log"
-//
-//    }
-//
-//    input:
-//    path reads
-//
-//    output:
-//    path "*.count", emit: fq_cts
-//
-//    script:        
-//    fn = file(reads).getSimpleName()
-//    oc = fn+"_mapped_dedup.count"
-//    ol = fn+".log"
-//    sortmem = '30%'
-//    """
-//    export LC_ALL=C; samtools view -F 260 $reads | cut -d$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc;done 2>> $ol
-//    """
-//}
-//
-//process count_unique_dedup_mappers{
-//    conda "samtools.yaml"
-//    cpus THREADS
-	cache 'lenient'
-//    //validExitStatus 0,1
-//
-//    publishDir "${workflow.workDir}/../" , mode: 'link',
-//    saveAs: {filename ->
-//        if (filename.indexOf(".count") > 0)      "COUNTS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-//        else if (filename.indexOf(".log") > 0)        "LOGS/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_unique_dedup_mappers.log"
-//
-//    }
-//
-//    input:
-//    path reads
-//
-//    output:
-//    path "*.count", emit: fq_cts
-//
-//    script:        
-//    fn = file(reads).getSimpleName()
-//    oc = fn+"_mapped_unique_dedup.count"
-//    ol = fn+".log"
-//    sortmem = '30%'
-//    """
-//    export LC_ALL=C; samtools view -F 260 $reads | cut -d$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc;done 2>> $ol
-//    """
-//}

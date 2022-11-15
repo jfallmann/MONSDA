@@ -26,7 +26,7 @@ process featurecount_deseq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
+        if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
         else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
     }
 
@@ -124,7 +124,8 @@ process run_deseq2{
     outdir = "DE"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log
+    mkdir -p Figures Tables
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log && ln -s Tables/* . && ln -s Figures/* .
     """
 }
 
@@ -149,7 +150,7 @@ process filter_significant{
 
     script:    
     """
-    set +o pipefail; for i in $de; do a=\"\${{de[$i]}}\"; fn=\"\${{a##*/}}\"; if [[ -s \"\$a\" ]];then zcat \$a| head -n1 |gzip > Sig_\$fn;cp -f Sif_\$fn SigUP_\$fn; cp -f Sif_\$fn SigDOWN_\$fn; zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\$fn; else touch Sig_\$fn SigUP\$fn SigDOWN_\$fn; fi;done 2> log
+    set +o pipefail; for i in $de; do a=\"\${{$de[\$i]}}\"; fn=\"\${{a##*/}}\"; if [[ -s \"\$a\" ]];then zcat \$a| head -n1 |gzip > Sig_\$fn;cp -f Sif_\$fn SigUP_\$fn; cp -f Sif_\$fn SigDOWN_\$fn; zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\$fn; else touch Sig_\$fn SigUP\$fn SigDOWN_\$fn; fi;done 2> log
     """
 }
 
@@ -173,7 +174,7 @@ process create_summary_snippet{
     path "log", emit: log
 
     script:
-    inlist = de.collect { $workflow.projectDir += "$it.code,"  }
+    inlist = de.toList().toString()
     """
     python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
     """
@@ -185,7 +186,7 @@ workflow DE{
     main:
     
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}"+element+"_mapped_sorted_unique.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
