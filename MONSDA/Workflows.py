@@ -1937,7 +1937,7 @@ def nf_fetch_params(
     retconf["SHORTSAMPLES"] = str.join(",", SHORTSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
-        retconf["COMBO"] = combi[0] + os.sep if combi[0] != "" else None
+        retconf["COMBO"] = combi[0] if combi[0] != "" else None  # + os.sep if combi[0] != "" else None
         retconf["SCOMBO"] = (
             combi[0] + os.sep + combi[1] if combi[0] and combi[1] else None
         )

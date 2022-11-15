@@ -308,7 +308,7 @@ def get_conditions(config):
     for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):
         ret.append(k)
     log.debug(logid + str(ret))
-    return list(set(ret))
+    return sorted(list(set(ret)))
 
 
 @check_run
