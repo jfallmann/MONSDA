@@ -5,26 +5,27 @@ channels:
   - defaults
   - r
 dependencies:
-  - r-base=4.0.3
+  - r-base=4.2.2
   - r-base64enc=0.1_3
-  - r-bookdown=0.21
-  - r-digest=0.6.27
-  - r-evaluate=0.14
-  - r-glue=1.4.2
+  - r-bookdown=0.30
+  - r-digest=0.6.30
+  - r-evaluate=0.18
+  - r-glue=1.6.2
   - r-highr=0.9
-  - r-htmltools=0.5.1.1
-  - r-jsonlite=1.7.2
-  - r-knitr=1.31
-  - r-magrittr=2.0.1
-  - r-markdown=1.1
-  - r-mime=0.10
-  - r-rlang=0.4.10
-  - r-rmarkdown=2.7
-  - r-rmdformats=1.0.2
-  - r-stringi=1.5.3
-  - r-stringr=1.4.0
-  - r-tinytex=0.31
-  - r-xfun=0.20
-  - r-yaml=2.2.1
-  - readline=8.1
+  - r-htmltools=0.5.3
+  - r-jquerylib=0.1.4
+  - r-jsonlite=1.8.3
+  - r-knitr=1.41
+  - r-magrittr=2.0.3
+  - r-markdown=1.4
+  - r-mime=0.12
+  - r-rlang=1.0.6
+  - r-rmarkdown=2.18
+  - r-rmdformats=1.0.4
+  - r-stringi=1.7.8
+  - r-stringr=1.4.1
+  - r-tinytex=0.42
+  - r-xfun=0.35
+  - r-yaml=2.3.6
+  - readline=8.1.2
   - sed=4.8
