@@ -5,8 +5,7 @@ author: "`r Sys.getenv('LOGNAME')`"
 output:
   rmdformats::readthedown:
     code_folding: show
-    embed_resources: true
-    standalone: true
+    self_contained: false
     thumbnails: false
     lightbox: false
 pkgdown:
