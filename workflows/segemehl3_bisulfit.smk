@@ -36,8 +36,8 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                split = lambda wildcards, output: "mv *.txt "+output.txt+" && mv *.mult.bed "+output.mult+" && mv *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && {params.split}"
+                split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult}; {params.split}"
 
 else:
     rule mapping:
@@ -55,5 +55,5 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                split = lambda wildcards, output: "mv *.txt "+output.txt+" && mv *.mult.bed "+output.mult+" && mv *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && {params.split}"
+                split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 1>/dev/null 2>> {log} && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult}; {params.split}"
