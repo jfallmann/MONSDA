@@ -174,11 +174,27 @@ process create_summary_snippet{
     path "log", emit: log
 
     script:
-    inlist = de.toList().toString()
+    inlist = de.toString()
     """
     touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
     """
 }
+
+process collect_deseq{
+    conda "$DEENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    input:
+    path de
+
+    script:
+    """
+    echo "$de DONE"
+    """
+}
+
 
 workflow DE{ 
     take: collection
@@ -196,8 +212,9 @@ workflow DE{
     featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_deseq.out.fc_cts.collect())
     run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_deseq2.out.tbls.filter(~/table_results/))
-    create_summary_snippet(run_deseq2.out.tbls.filter(~/table_results.tsv.gz/).concat(run_deseq2.out.figs.concat(run_deseq2.out.session)))
+    filter_significant(run_deseq2.out.tbls)
+    create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)).collect())
+    collect_deseq(filter_significant.out.sigtbls.collect())
 
     emit:
     tbls = run_deseq2.out.tbls

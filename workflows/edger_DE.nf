@@ -174,10 +174,25 @@ process create_summary_snippet{
     path "log", emit: log
 
     script:
-    inlist = de.toList().toString()
+    inlist = de.toString()
     // inlist = de.toList()  // { $workflow.projectDir += "$it.code,"  }
     """
     touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
+    """
+}
+
+process collect_edger{
+    conda "$DEENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    input:
+    path de
+
+    script:
+    """
+    echo "$de DONE"
     """
 }
 
@@ -198,8 +213,9 @@ workflow DE{
     featurecount_edger(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_edger.out.fc_cts.collect())
     run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_edger.out.tbls.filter(~/table_results/))
-    create_summary_snippet(run_edger.out.tbls.filter(~/table_results.tsv.gz/).concat(run_edger.out.figs.concat(run_edger.out.session)))
+    filter_significant(run_edger.out.tbls)
+    create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)).collect())
+    collect_edger(filter_significant.out.sigtbls.collect())
 
     emit:
     tbls = run_edger.out.tbls
