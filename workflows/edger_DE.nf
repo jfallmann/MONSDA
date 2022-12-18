@@ -142,14 +142,13 @@ process filter_significant{
     }
 
     input:
-    path de
+    path tabs
 
     output:
     path "*_table*", emit: sigtbls
     path "log", emit: log
 
     script:  
-    tabs = de.filter(~/_results/)
     """
     set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
     """
@@ -199,7 +198,7 @@ workflow DE{
     featurecount_edger(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_edger.out.fc_cts.collect())
     run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_edger.out.tbls)
+    filter_significant(run_edger.out.tbls.filter(~/_results/))
     create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)))
 
     emit:

@@ -11,6 +11,7 @@ import logging
 import traceback as tb
 from collections import defaultdict
 
+
 cmd_subfolder = os.path.join(
     os.path.dirname(
         os.path.realpath(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -322,7 +323,10 @@ if __name__ == "__main__":
             )
             # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
         except:
-            log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+            try:
+                log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+            except:
+                log = logging.getLogger()
 
         log.debug(logid + str(log.handlers))
 
