@@ -302,10 +302,10 @@ def basecall_samples(config):
 
 
 @check_run
-def get_conditions(config):
+def get_conditions(config, stage='SETTINGS'):
     logid = scriptname + ".Params_conditions: "
     ret = list()
-    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):
+    for k in keysets_from_dict(config[stage], "SAMPLES"):
         ret.append(k)
     log.debug(logid + str(ret))
     return sorted(list(set(ret)))
