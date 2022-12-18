@@ -138,7 +138,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
     }
 
     input:
@@ -148,9 +148,10 @@ process filter_significant{
     path "*_table*", emit: sigtbls
     path "log", emit: log
 
-    script:    
+    script:  
+    tabs = de.filter(~/_results/)
     """
-    set +o pipefail; for i in $de; do a=\"\${{$de[\$i]}}\"; fn=\"\${{a##*/}}\"; if [[ -s \"\$a\" ]];then zcat \$a| head -n1 |gzip > Sig_\$fn;cp -f Sif_\$fn SigUP_\$fn; cp -f Sif_\$fn SigDOWN_\$fn; zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\$fn && zcat \$a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\$fn; else touch Sig_\$fn SigUP\$fn SigDOWN_\$fn; fi;done 2> log
+    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
     """
 }
 
