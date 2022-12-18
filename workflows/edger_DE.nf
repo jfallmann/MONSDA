@@ -177,7 +177,7 @@ process create_summary_snippet{
     inlist = de.toList().toString()
     // inlist = de.toList()  // { $workflow.projectDir += "$it.code,"  }
     """
-    python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
+    touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
     """
 }
 

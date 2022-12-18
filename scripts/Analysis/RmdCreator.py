@@ -32,14 +32,25 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
-    handler.setFormatter(
-        logging.Formatter(
-            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
-            datefmt="%m-%d %H:%M",
+    try:
+        handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+        handler.setFormatter(
+            logging.Formatter(
+                fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+                datefmt="%m-%d %H:%M",
+            )
         )
-    )
-    log.addHandler(handler)
+        log.addHandler(handler)
+    except:
+        handler = logging.FileHandler("log", mode="a")
+        handler.setFormatter(
+            logging.Formatter(
+                fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
+                datefmt="%m-%d %H:%M",
+            )
+        )
+        log.addHandler(handler)
+        
     handler = logging.StreamHandler()
     handler.setFormatter(
         logging.Formatter(
