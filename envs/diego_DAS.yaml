@@ -8,7 +8,6 @@ dependencies:
   - bedtools=2.30.0
   - diego=0.1.2
   - graphviz=2.49.1
-  - htslib=1.16.1
   - imagemagick=7.1.0_10
   - matplotlib-base=3.5.1
   - numpy=1.22.3
