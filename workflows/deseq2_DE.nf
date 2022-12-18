@@ -125,7 +125,7 @@ process run_deseq2{
     bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log && ln -s Tables/* . && ln -s Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
     """
 }
 
@@ -196,8 +196,8 @@ workflow DE{
     featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_deseq.out.fc_cts.collect())
     run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_deseq2.out.tbls.filter(~/_results/))
-    create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)))
+    filter_significant(run_deseq2.out.tbls.filter(~/table_results/))
+    create_summary_snippet(run_deseq2.out.tbls.filter(~/table_results.tsv.gz/).concat(run_deseq2.out.figs.concat(run_deseq2.out.session)))
 
     emit:
     tbls = run_deseq2.out.tbls
