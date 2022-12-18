@@ -232,6 +232,8 @@ def create_Rmd(files, output, env):
     logid = scriptname + ".create_Rmd: "
     outdir = os.path.dirname(output)
     makeoutdir(outdir)
+    files = [file for file in files if not 'noshrink' in file and not 'AllConditions' in file and ('results' in file or 'figure_' in file)]
+    log.debug(f'{logid} FILES: {files}')
     workflow = check_workflow(files)
     tree = create_file_tree(files)
     lines = list()
