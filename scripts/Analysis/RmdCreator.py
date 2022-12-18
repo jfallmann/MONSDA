@@ -41,7 +41,7 @@ try:
             )
         )
         log.addHandler(handler)
-    except:
+    except:  # This is not working for nextflow so we just log to a dummy log file and nextflow takes care of the rest
         handler = logging.FileHandler("log", mode="a")
         handler.setFormatter(
             logging.Formatter(
@@ -50,7 +50,7 @@ try:
             )
         )
         log.addHandler(handler)
-        
+
     handler = logging.StreamHandler()
     handler.setFormatter(
         logging.Formatter(
@@ -136,7 +136,7 @@ def check_workflow(files):
     works = set()
     for file in files:
         log.debug(logid + str(file))
-        w = file.split("_")[0]
+        w = file.split("_")[0].replace('[','').replace(']','')
         if w not in ["Sig", "SigDOWN", "SigUP"]:
             works.add(w)
     log.debug(logid + str(works))
