@@ -160,6 +160,7 @@ def check_workflow(files):
 def create_file_tree(files):
     logid = scriptname + ".create_file_tree: "
     tree = NestedDefaultDict()
+    files = [file for file in files if not any(x in file for x in ['noshrink', 'AllConditions', 'DataSet']) and any(x in file for x in ['results', 'figure_'])]
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
         setting = (
@@ -232,7 +233,6 @@ def create_Rmd(files, output, env):
     logid = scriptname + ".create_Rmd: "
     outdir = os.path.dirname(output)
     makeoutdir(outdir)
-    files = [file for file in files if not 'noshrink' in file and not 'AllConditions' in file and ('results' in file or 'figure_' in file)]
     log.debug(f'{logid} FILES: {files}')
     workflow = check_workflow(files)
     tree = create_file_tree(files)
