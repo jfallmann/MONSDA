@@ -33,13 +33,13 @@ rule featurecount_unique:
 
 rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
-    output: smap = "DAS/{combo}/Tables/samplemap.txt",
-            cmap = "DAS/{combo}/Tables/groupings.txt"
-    log:    "LOGS/DAS/{combo}/create_samplemaps.log"
+    output: smap = "DAS/{combo}/Tables/{scombo}_samplemap.txt",
+            cmap = "DAS/{combo}/Tables/{scombo}_groupings.txt"
+    log:    "LOGS/DAS/{combo}/{scombo}_create_samplemaps.log"
     conda:  ""+DASENV+".yaml"
     threads: 1
-    params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config,'DAS'),
-            clist = lambda wildcards, input: get_diego_groups(input.cnd, config,'DAS'),
+    params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config, 'DAS'),
+            clist = lambda wildcards, input: get_diego_groups(input.cnd, config, 'DAS'),
             bins = BINS
     shell:  "echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}"
 
