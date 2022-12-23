@@ -65,8 +65,9 @@ rule run_edger:
             outdir = 'DAS/'+combo,
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
-            ref = ANNOTATION
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log} "
+            ref = ANNOTATION,
+            daspara = lambda wildcards: tool_params(samplecond(SAMPLES, config)[0], None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('DAS', "")
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} {params.daspara} 2> {log} "
 
 rule filter_significant_edger:
     input:  sort = rules.themall.input.resE
