@@ -475,7 +475,7 @@ def run_nextflow(
         logid = scriptname + ".run_nextflow: "
         argslist = list()
         if useconda:
-            argslist.append("-with-conda true")
+            argslist.append("-with-conda")
         else:
             log.warning(
                 logid
@@ -925,7 +925,7 @@ def main():
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
-                knownargs.use_conda,
+                knownargs.use-conda,
                 knownargs.procs,
                 knownargs.skeleton,
                 knownargs.loglevel,
@@ -941,7 +941,7 @@ def main():
                 run_nextflow(
                     knownargs.configfile,
                     knownargs.directory,
-                    knownargs.use_conda,
+                    knownargs.use-conda,
                     knownargs.procs,
                     knownargs.skeleton,
                     knownargs.loglevel,
