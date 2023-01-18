@@ -142,6 +142,6 @@ dependencies:
   - r-xtable=1.8_4
   - r-yaml=2.2.0
   - r-zeallot=0.1.0
-  - readline=8.0
+  - readline=8.2
   - samtools=1.6
   - sed=4.7

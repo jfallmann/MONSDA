@@ -27,5 +27,5 @@ dependencies:
   - r-tinytex=0.42
   - r-xfun=0.35
   - r-yaml=2.3.6
-  - readline=8.1.2
+  - readline=8.2
   - sed=4.8

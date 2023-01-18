@@ -109,5 +109,5 @@ dependencies:
   - r-xml=3.99_0.6
   - r-xtable=1.8_4
   - r-zeallot=0.1.0
-  - readline=8.1
+  - readline=8.2
   - sed=4.8
