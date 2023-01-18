@@ -925,7 +925,7 @@ def main():
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
-                knownargs.use-conda,
+                knownargs.use_conda,
                 knownargs.procs,
                 knownargs.skeleton,
                 knownargs.loglevel,
@@ -941,7 +941,7 @@ def main():
                 run_nextflow(
                     knownargs.configfile,
                     knownargs.directory,
-                    knownargs.use-conda,
+                    knownargs.use_conda,
                     knownargs.procs,
                     knownargs.skeleton,
                     knownargs.loglevel,
