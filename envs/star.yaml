@@ -5,5 +5,5 @@ channels:
   - defaults
   - r
 dependencies:
-  - samtools=1.16.1
+  - samtools=1.16.1=h6899075_1
   - star=2.7.3a

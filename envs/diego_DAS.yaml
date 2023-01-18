@@ -14,5 +14,5 @@ dependencies:
   - perl=5.32.1
   - python-dateutil=2.8.2
   - readline=8.2
-  - samtools=1.16.1
+  - samtools=1.16.1=h6899075_1
   - scipy=1.8.0
