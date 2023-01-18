@@ -8,6 +8,6 @@ dependencies:
   - macs2=2.2.7.1
   - numpy=1.20.2
   - r-base=4.0.3
-  - readline=8.1
+  - readline=8.2
   - samtools=1.16.1
   - sed=4.8

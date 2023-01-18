@@ -55,5 +55,5 @@ dependencies:
   - r-tidyselect=0.2.5
   - r-utf8=1.1.4
   - r-xml=3.99_0.3
-  - readline=8.0
+  - readline=8.2
   - sed=4.7

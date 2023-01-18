@@ -7,4 +7,4 @@ channels:
 dependencies:
   - bamtools=2.5.1
   - piranha=1.2.1
-  - readline=8.0
+  - readline=8.2
