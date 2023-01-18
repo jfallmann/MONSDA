@@ -12,9 +12,9 @@ dependencies:
   - pigz=2.6
   - pyfaidx=0.5.8
   - pyparsing=2.4.6
-  - pysam=0.19.1
+  - pysam=0.20.0
   - python-dateutil=2.8.1
   - readline=8.2
-  - samtools=1.16.1=h6899075_1
+  - samtools=1.16.1
   - simplejson=3.17.0
   - subread=1.6.4
