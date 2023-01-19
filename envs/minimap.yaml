@@ -12,4 +12,5 @@ dependencies:
   - minimap2=2.17
   - numpy=1.17.3
   - pigz=2.6
-  - samtools=1.16.1=h6899075_1
+  - pysam=0.20.0
+  - samtools=1.16.1
