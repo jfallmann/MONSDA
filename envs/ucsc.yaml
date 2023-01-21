@@ -5,10 +5,10 @@ channels:
   - defaults
   - r
 dependencies:
-  - grep=2.14
-  - ucsc-bedgraphtobigwig=377
-  - ucsc-beditemoverlapcount=377
-  - ucsc-fatotwobit=377
-  - ucsc-twobitinfo=377
-  - pigz=2.6
+  - grep =2.14
+  - ucsc-bedgraphtobigwig =377
+  - ucsc-beditemoverlapcount =377
+  - ucsc-fatotwobit =377
+  - ucsc-twobitinfo =377
+  - pigz =2.6
 
