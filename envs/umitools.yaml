@@ -7,3 +7,4 @@ channels:
 dependencies:
   - samtools =1.16.1
   - umi_tools =1.1.2
+  - dateutils =0.6.12
