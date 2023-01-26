@@ -20,5 +20,8 @@
         "MAXTHREADS",
         "subdir",
         "unstranded"
+    ],
+    "cSpell.enableFiletypes": [
+        "snakemake"
     ]
 }
