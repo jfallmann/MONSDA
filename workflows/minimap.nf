@@ -91,7 +91,7 @@ process minimap_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "minimap_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2 2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2 2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && gzip *.sam
         """
     }else{
         read = reads[1]
@@ -100,7 +100,7 @@ process minimap_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "minimap_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads 2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 1>/dev/null 2>> $lf && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads 2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && gzip *.sam
         """
     }
 }
