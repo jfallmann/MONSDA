@@ -26,7 +26,7 @@ if paired == 'paired':
                 uidx = rules.generate_index.output.uidx[0],
                 dummy = rules.generate_index.output.dummy,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
                 unmapped_r2 = "UNMAPPED/{combo}/{file}_unmapped_R2.fastq.gz",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
@@ -38,7 +38,7 @@ if paired == 'paired':
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
     rule mapping:
@@ -46,7 +46,7 @@ else:
                 uidx = rules.generate_index.output.uidx[0],
                 dummy = rules.generate_index.output.dummy,
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/mapping.log"
@@ -57,4 +57,4 @@ else:
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && mv {output.tmp}.Aligned.out.sam {output.mapped} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"

@@ -102,7 +102,7 @@ process segemehl3_mapping{
     }else{
         fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         read = reads[2]
-        pf = fn+"_mapped.sam.gz"
+        pf = fn+"_mapped.sam"
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """

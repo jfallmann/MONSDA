@@ -25,14 +25,15 @@ if paired == 'paired':
                 uidx1 = rules.generate_index.output.uidx[0],
                 uidx2= rules.generate_index.output.uidx2[0],
                 ref = REFERENCE
-        output: mapped = report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING"),
+        output: mapped = report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING"),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} -o {output.mapped} -u {output.unmapped} &> {log}"
+                mapp=MAPPERBIN,
+                muz = lambda wildcards, output: output.mapped.replace('.gz', '')
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} -o {params.muz} -u {output.unmapped} &> {log} && gzip {params.muz}"
 
 else:
     rule mapping:
@@ -40,11 +41,12 @@ else:
                 uidx1 = rules.generate_index.output.uidx[0],
                 uidx2= rules.generate_index.output.uidx2[0],
                 ref = REFERENCE
-        output: mapped = report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING"),
+        output: mapped = report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING"),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} -o {output.mapped} -u {output.unmapped} &> {log}"
+                mapp=MAPPERBIN,
+                muz = lambda wildcards, output: output.mapped.replace('.gz', '')
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} -o {params.muz} -u {output.unmapped} &> {log} && gzip {params.muz}"
