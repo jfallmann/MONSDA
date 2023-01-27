@@ -11,8 +11,8 @@ dependencies:
   - libgomp =9.3.0
   - libiconv =1.16
   - libidn =7.45.0
-  - libidn11=1.34
-  - libidn2=2.3.0
+  - libidn11 =1.34
+  - libidn2 =2.3.0
   - libstdcxx-ng =9.3.0
   - libunistring =0.9.10
 

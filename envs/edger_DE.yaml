@@ -42,7 +42,7 @@ dependencies:
   - r-bh =1.75.0_0
   - r-biocmanager =1.30.10
   - r-bit =4.0.4
-  - r-bit64=4.0.5
+  - r-bit64 =4.0.5
   - r-bitops =1.0_6
   - r-blob =1.2.1
   - r-cachem =1.0.4
@@ -85,10 +85,10 @@ dependencies:
   - r-prettyunits =1.1.1
   - r-progress =1.2.2
   - r-purrr =0.3.4
-  - r-r.methodss3=1.8.1
+  - r-r.methodss3 =1.8.1
   - r-r.oo =1.24.0
   - r-r.utils =2.10.1
-  - r-r6=2.5.0
+  - r-r6 =2.5.0
   - r-rappdirs =0.3.3
   - r-rcolorbrewer =1.1_2
   - r-rcpp =1.0.6
@@ -103,7 +103,7 @@ dependencies:
   - r-sys =3.4
   - r-tibble =3.1.0
   - r-tidyselect =1.1.0
-  - r-utf8=1.2.1
+  - r-utf8 =1.2.1
   - r-vctrs =0.3.6
   - r-withr =2.4.1
   - r-xml =3.99_0.6

@@ -45,7 +45,7 @@ dependencies:
   - perl-constant=1.33
   - perl-convert-binary-c=0.78
   - perl-convert-binhex=1.125
-  - perl-crypt-rc4=2.02
+  - perl-crypt-rc4 =2.02
   - perl-data-dumper=2.173
   - perl-data-optlist=0.110
   - perl-data-stag=0.14
@@ -57,9 +57,9 @@ dependencies:
   - perl-devel-overloadinfo=0.005
   - perl-devel-stacktrace=2.04
   - perl-digest-hmac=1.03
-  - perl-digest-md5=2.55
-  - perl-digest-perl-md5=1.9
-  - perl-digest-sha1=2.13
+  - perl-digest-md5 =2.55
+  - perl-digest-perl-md5 =1.9
+  - perl-digest-sha1 =2.13
   - perl-dist-checkconflicts=0.11
   - perl-dynaloader=1.25
   - perl-email-date-format=1.005
@@ -127,7 +127,7 @@ dependencies:
   - perl-math-random=0.72
   - perl-math-round=0.07
   - perl-math-spline=0.02
-  - perl-mime-base64=3.15
+  - perl-mime-base64 =3.15
   - perl-mime-lite=3.030
   - perl-mime-tools=5.508
   - perl-mime-types=2.17
@@ -151,7 +151,7 @@ dependencies:
   - perl-parent=0.236
   - perl-parse-recdescent=1.967015
   - perl-pathtools=3.75
-  - perl-pdf-api2=2.035
+  - perl-pdf-api2 =2.035
   - perl-perlio-gzip=0.20
   - perl-pod-escapes=1.07
   - perl-pod-usage=1.69

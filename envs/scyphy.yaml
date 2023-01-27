@@ -5,7 +5,7 @@ channels:
   - defaults
   - r
 dependencies:
-  - bzip2=1.0.8
+  - bzip2 =1.0.8
   - piranha =1.2.1
   - pyfaidx =0.7.1
   - pysam =0.19.1
