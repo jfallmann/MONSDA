@@ -88,20 +88,20 @@ process bwa_mapping{
         r1 = reads[1]
         r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-        pf = fn+"_mapped.sam"
+        pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }else{
         read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-        pf = fn+"_mapped.sam"
+        pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read  2> lf|tee >(samtools view -h -F 4 > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && gzip *.sam
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read  2> lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }

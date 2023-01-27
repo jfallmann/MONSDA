@@ -21,7 +21,7 @@ if paired == 'paired':
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
                 mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
                 sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
@@ -32,14 +32,14 @@ if paired == 'paired':
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
+        shell: "set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n -| pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
 
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
                 ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam", category="MAPPING")),
+        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
                 mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
                 sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
@@ -50,4 +50,4 @@ else:
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
+        shell: "set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
