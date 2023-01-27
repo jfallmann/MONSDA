@@ -37,7 +37,7 @@ if paired == 'paired':
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
 
 else:
     rule mapping:
@@ -56,4 +56,4 @@ else:
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 split = lambda wildcards, output: "&& mv -f *.txt "+output.txt+" && mv -f *.mult.bed "+output.mult+" && mv -f *.sngl.bed "+output.sngl if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
