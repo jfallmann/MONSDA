@@ -17,14 +17,14 @@ rule generate_index:
             tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
             pref = PREFIX,
             lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.dummy}\" ]]; then touch {output.dummy} && ln -fs {output.dummy} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {params.tmpidx}/star_ref.fa && zcat {params.anno} > {params.tmpidx}/star_ref.anno && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.tmpidx}/star --genomeDir {output.uidx} --genomeFastaFiles {params.tmpidx}/star_ref.fa --sjdbGTFfile {params.tmpidx}/star_ref.anno &> {log} && touch {output.dummy} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log} && rm -rf {params.tmpidx};fi"
+    shell:  "if [[ -f \"{output.dummy}\" ]]; then touch {output.dummy} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {params.tmpidx}/star_ref.fa && zcat {params.anno} > {params.tmpidx}/star_ref.anno && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.tmpidx}/star --genomeDir {output.uidx} --genomeFastaFiles {params.tmpidx}/star_ref.fa --sjdbGTFfile {params.tmpidx}/star_ref.anno &> {log} && touch {output.dummy} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log} && rm -rf {params.tmpidx};fi"
 
 if paired == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
-                dummy = rules.generate_index.output.dummy,
+                dummy = rules.generate_index.output.dummy[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
@@ -44,7 +44,7 @@ else:
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
-                dummy = rules.generate_index.output.dummy,
+                dummy = rules.generate_index.output.dummy[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
