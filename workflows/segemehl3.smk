@@ -31,7 +31,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                split = lambda wildcards, output: f"&& mv -f {{os.path.filename(output.txt)}} {{os.path.basename{output.txt}}} && mv -f {{os.path.filename(output.mult)}} {{os.path.basename(output.mult)}} && mv -f {{os.path.filename(output.sngl)}} {{os.path.filename(output.sngl)}}" if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
+                split = lambda wildcards, output: f"&& mv -f {os.path.basename(output.txt).replace('.trns.txt', '*.trns.txt')} {output.txt} && mv -f {os.path.basename(output.mult).replace('.mult.bed', '*.mult.bed')} {output.mult} && mv -f {os.path.basename(output.sngl).replace('.sngl.bed', '*.sngl.bed')} {output.sngl}" if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
         shell: "set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n -| pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
 
 else:
@@ -49,5 +49,5 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                split = lambda wildcards, output: f"&& mv -f {{os.path.filename(output.txt)}} {{os.path.basename{output.txt}}} && mv -f {{os.path.filename(output.mult)}} {{os.path.basename(output.mult)}} && mv -f {{os.path.filename(output.sngl)}} {{os.path.filename(output.sngl)}}" if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
+                split = lambda wildcards, output: f"&& mv -f {os.path.basename(output.txt).replace('.trns.txt', '*.trns.txt')} {output.txt} && mv -f {os.path.basename(output.mult).replace('.mult.bed', '*.mult.bed')} {output.mult} && mv -f {os.path.basename(output.sngl).replace('.sngl.bed', '*.sngl.bed')} {output.sngl}" if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''  
         shell: "set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
