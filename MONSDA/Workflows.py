@@ -1931,6 +1931,7 @@ def nf_fetch_params(
     retconf["BINS"] = BINS
     retconf["MAXTHREAD"] = MAXTHREAD
     retconf["SAMPLES"] = str.join(",", SAMPLES)
+    retconf["SETS"] = SETS
     LONGSAMPLES = samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(",", LONGSAMPLES)
     SHORTSAMPLES = [os.path.basename(x) for x in SAMPLES]

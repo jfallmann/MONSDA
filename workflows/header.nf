@@ -31,6 +31,7 @@ SCOMBO = get_always('SCOMBO') ?: ''
 SAMPLES = get_always('SAMPLES').split(',') ?: null
 LONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
 SHORTSAMPLES = get_always('SHORTSAMPLES').split(',') ?: null
+SETS = get_always('SETS') ?: null
 //dummy
 dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
 
