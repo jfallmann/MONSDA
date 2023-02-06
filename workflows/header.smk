@@ -17,9 +17,9 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 
-from MONSDA.Logger import *
-from MONSDA.Params import *
-from MONSDA.Utils import get_dict_hash, subDict, makeoutdir
+from MONSDA.Logger import makelogdir, setup_logger
+from MONSDA.Params import checkpaired, checkstranded, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly
+from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir,  keysets_from_dict
 
 loglevel="INFO"
 
@@ -75,7 +75,7 @@ if len(SAMPLES) < 1:
 
 SETUP = keysets_from_dict(config['SETTINGS'], 'SAMPLES')[0]
 SETS = os.sep.join(SETUP)
-SETTINGS = subDict(config['SETTINGS'], SETUP)
+SETTINGS = sub_dict(config['SETTINGS'], SETUP)
 
 
 # Parse SETTINGS
@@ -108,7 +108,7 @@ if stranded != '':
 # MAPPING Variables
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
-    MAPCONF = subDict(config['MAPPING'], SETUP)
+    MAPCONF = sub_dict(config['MAPPING'], SETUP)
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
     REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
     MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
@@ -124,7 +124,7 @@ if 'MAPPING' in config:
         INDEX = IDX
     if not INDEX:
         INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
-    keydict = subDict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
+    keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
     keydict["REF"] = REFERENCE
     unik = get_dict_hash(keydict)
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
@@ -147,7 +147,7 @@ if 'MAPPING' in config:
 
 # Peak Calling Variables
 if 'PEAKS' in config:
-    PEAKCONF = subDict(config['PEAKS'], SETUP)
+    PEAKCONF = sub_dict(config['PEAKS'], SETUP)
     PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
     REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
     ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
@@ -167,7 +167,7 @@ if 'PEAKS' in config:
 for x in ['TRACKS', 'COUNTING']:
     if x in config:
         XBIN, XENV = env_bin_from_config(config, x)
-        XCONF = subDict(config[x], SETUP)
+        XCONF = sub_dict(config[x], SETUP)
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
         XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
@@ -184,7 +184,7 @@ for x in ['TRACKS', 'COUNTING']:
                 INDEX = IDX
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
                 keydict["REF"] = REFERENCE
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=unik)
@@ -195,7 +195,7 @@ for x in ['TRACKS', 'COUNTING']:
 # DE/DEU/DAS/DTU Variables
 for x in ['DE', 'DEU', 'DAS', 'DTU']:
     if x in config:
-        XCONF = subDict(config[x], SETUP)
+        XCONF = sub_dict(config[x], SETUP)
         XBIN, XENV = env_bin_from_config(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
@@ -214,7 +214,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
                 INDEX = IDX
             if not INDEX:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                keydict = subDict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
                 keydict["REF"] = REFERENCE
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
@@ -223,7 +223,7 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
 
 # CIRCS Variables
 if 'CIRCS' in config:
-    CIRCCONF = subDict(config['CIRCS'], SETUP)
+    CIRCCONF = sub_dict(config['CIRCS'], SETUP)
     XBIN, XENV = env_bin_from_config(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))

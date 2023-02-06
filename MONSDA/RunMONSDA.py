@@ -142,7 +142,7 @@ def run_snakemake(
         logid = scriptname + ".run_snakemake: "
         config = load_configfile(configfile)
         subdir = "SubSnakes"
-        create_skeleton(subdir, skeleton)
+        mp.create_skeleton(subdir, skeleton)
 
         argslist = list()
         if useconda:
@@ -156,7 +156,7 @@ def run_snakemake(
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
             if "--profile" in optionalargs and "MONSDA/slurm" in optionalargs:
-                makeoutdir("LOGS/SLURM")
+                mu.makeoutdir("LOGS/SLURM")
 
         threads = (
             min(int(config["MAXTHREADS"]), procs) if "MAXTHREADS" in config else procs
@@ -173,7 +173,7 @@ def run_snakemake(
                     "share",
                 )
             except:
-                installpath = os.path.cwd()
+                installpath = os.getcwd()
 
             workflowpath = os.path.join(installpath, "MONSDA", "workflows")
             log.info(logid + "Unlocking directory")
@@ -187,8 +187,8 @@ def run_snakemake(
             log.debug(logid + "JOB CODE " + str(job))
 
         # Get processes to work on
-        preprocess, subworkflows, postprocess = get_processes(config)
-        conditions = get_conditions(config)
+        preprocess, subworkflows, postprocess = mw.get_processes(config)
+        conditions = mp.get_conditions(config)
 
         """
         START TO PREPROCESS
@@ -206,26 +206,28 @@ def run_snakemake(
                         + proc
                         + " for file download found. Nothing to do!"
                     )
-                makeoutdir("FASTQ")
-                makeoutdir("TMP")
+                mu.makeoutdir("FASTQ")
+                mu.makeoutdir("TMP")
 
                 if proc == "FETCH":
-                    SAMPLES = download_samples(config)
+                    SAMPLES = mp.download_samples(config)
                     preprocess.remove(proc)
                 elif proc == "BASECALL":
-                    SAMPLES = basecall_samples(config)
+                    SAMPLES = mp.basecall_samples(config)
                     preprocess.remove(proc)
                 else:
                     continue  # We only want download/basecall here
 
                 log.debug(logid + "PRESAMPLES: " + str(SAMPLES))
                 combinations = (
-                    get_combo(preprocess, config, conditions) if subworkflows else None
+                    mw.get_combo(preprocess, config, conditions)
+                    if subworkflows
+                    else None
                 )
 
                 subwork = proc
 
-                jobs = make_pre(
+                jobs = mw.make_pre(
                     subwork,
                     config,
                     SAMPLES,
@@ -255,22 +257,22 @@ def run_snakemake(
         """
         ONCE FILES ARE DOWNLOADED WE CAN START OTHER PREPROCESSING STEPS
         """
-        makeoutdir("TMP")
-        SAMPLES = get_samples(config)
+        mu.makeoutdir("TMP")
+        SAMPLES = mp.get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
 
         if preprocess:
             log.info(logid + "STARTING PREPROCESSING")
             if "QC" in preprocess and "QC" in config:
-                makeoutdir("QC")
+                mu.makeoutdir("QC")
 
                 for subwork in preprocess:
                     combinations = (
-                        get_combo(subworkflows, config, conditions)
+                        mw.get_combo(subworkflows, config, conditions)
                         if subworkflows
                         else None
                     )
-                    jobs = make_pre(
+                    jobs = mw.make_pre(
                         subwork,
                         config,
                         SAMPLES,
@@ -307,12 +309,12 @@ def run_snakemake(
         """
         END OF PREPROCESSING, START OF PROCESSING
         """
-        makeoutdir("TMP")
+        mu.makeoutdir("TMP")
         if subworkflows:
             combinations = (
-                get_combo(subworkflows, config, conditions) if subworkflows else None
+                mw.get_combo(subworkflows, config, conditions) if subworkflows else None
             )
-            jobs = make_sub(
+            jobs = mw.make_sub(
                 subworkflows,
                 config,
                 SAMPLES,
@@ -349,19 +351,19 @@ def run_snakemake(
         """
         END OF PROCESSING, START OF POSTPROCESSING
         """
-        makeoutdir("TMP")
+        mu.makeoutdir("TMP")
         if postprocess:
             for subwork in postprocess:
 
-                SAMPLES = get_samples_postprocess(config, subwork)
+                SAMPLES = mp.get_samples_postprocess(config, subwork)
                 log.info(logid + f"POSTPROCESSING {subwork} with SAMPLES: {SAMPLES}")
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
 
-                jobs = make_post(
+                jobs = mw.make_post(
                     subwork,
                     config,
                     SAMPLES,
@@ -393,11 +395,13 @@ def run_snakemake(
             ):
                 # SUMMARY RUN
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
-                jobs = make_summary(config, subdir, loglevel, combinations=combinations)
+                jobs = mw.make_summary(
+                    config, subdir, loglevel, combinations=combinations
+                )
                 jobstorun = list()
 
                 for job in jobs:
@@ -470,7 +474,7 @@ def run_nextflow(
         config = load_configfile(configfile)
         workdir = os.path.abspath(str.join(os.sep, [workdir, "NextFlowWork"]))
         subdir = "SubFlows"
-        create_skeleton(subdir, skeleton)
+        mp.create_skeleton(subdir, skeleton)
         if not os.path.exists(os.path.abspath(subdir + os.sep + "bin")):
             os.symlink(
                 os.path.abspath(config["BINS"]),
@@ -483,8 +487,8 @@ def run_nextflow(
         config["MAXTHREADS"] = threads
 
         # Get processes to work on
-        preprocess, subworkflows, postprocess = nf_get_processes(config)
-        conditions = get_conditions(config)
+        preprocess, subworkflows, postprocess = mw.nf_get_processes(config)
+        conditions = mp.get_conditions(config)
 
         """
         START TO PROCESS
@@ -503,18 +507,18 @@ def run_nextflow(
                         + proc
                         + " for file download found. Nothing to do!"
                     )
-                makeoutdir("FASTQ")
-                makeoutdir("TMP")
+                mu.makeoutdir("FASTQ")
+                mu.makeoutdir("TMP")
 
                 if proc == "FETCH":
-                    if check_samples(config) is True:
+                    if mp.check_samples(config) is True:
                         preprocess.remove(proc)
                         SAMPLES = None
                     else:
-                        SAMPLES = download_samples(config)
+                        SAMPLES = mp.download_samples(config)
                         preprocess.remove(proc)
                 elif proc == "BASECALL":
-                    SAMPLES = basecall_samples(config)
+                    SAMPLES = mp.basecall_samples(config)
                     preprocess.remove(proc)
                 else:
                     continue
@@ -526,12 +530,14 @@ def run_nextflow(
 
                 log.debug(logid + "PRESAMPLES: " + str(SAMPLES))
                 combinations = (
-                    get_combo(preprocess, config, conditions) if subworkflows else None
+                    mw.get_combo(preprocess, config, conditions)
+                    if subworkflows
+                    else None
                 )
 
                 subwork = proc
 
-                jobs = nf_make_pre(
+                jobs = mw.nf_make_pre(
                     subwork,
                     config,
                     SAMPLES,
@@ -565,24 +571,24 @@ def run_nextflow(
         """
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
         """
-        makeoutdir("TMP")
-        SAMPLES = get_samples(config)
+        mu.makeoutdir("TMP")
+        SAMPLES = mp.get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
-        conditions = get_conditions(config)
+        conditions = mp.get_conditions(config)
         log.info(logid + "CONDITIONS: " + str(conditions))
 
         if preprocess:
             log.info(logid + "STARTING PREPROCESSING")
             if "QC" in preprocess and "QC" in config:
-                makeoutdir("QC")
+                mu.makeoutdir("QC")
 
             for subwork in preprocess:
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
-                jobs = nf_make_pre(
+                jobs = mw.nf_make_pre(
                     subwork,
                     config,
                     SAMPLES,
@@ -622,12 +628,12 @@ def run_nextflow(
         """
         END OF PREPROCESSING, START OF PROCESSING
         """
-        makeoutdir("TMP")
+        mu.makeoutdir("TMP")
         if subworkflows:
             combinations = (
-                get_combo(subworkflows, config, conditions) if subworkflows else None
+                mw.get_combo(subworkflows, config, conditions) if subworkflows else None
             )
-            jobs = nf_make_sub(
+            jobs = mw.nf_make_sub(
                 subworkflows,
                 config,
                 SAMPLES,
@@ -668,7 +674,7 @@ def run_nextflow(
         """
         END OF PROCESSING, START OF POSTPROCESSING
         """
-        makeoutdir("TMP")
+        mu.makeoutdir("TMP")
         if postprocess:
             # log.error(
             #    "At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!"
@@ -678,16 +684,16 @@ def run_nextflow(
             ## Once postprocessing is enabled, here comes a framework that should work
             for subwork in postprocess:
 
-                SAMPLES = get_samples_postprocess(config, subwork)
+                SAMPLES = mp.get_samples_postprocess(config, subwork)
                 log.info(logid + "POSTPROCESSING SAMPLES: " + str(SAMPLES))
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
                 log.debug(logid + "POSTPROCESSING WITH COMBOS: " + str(combinations))
 
-                jobs = nf_make_post(
+                jobs = mw.nf_make_post(
                     subwork,
                     config,
                     SAMPLES,
@@ -723,11 +729,11 @@ def run_nextflow(
             ):
                 # SUMMARY RUN
                 combinations = (
-                    get_combo(subworkflows, config, conditions)
+                    mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
                 )
-                jobs = nf_make_summary(
+                jobs = mw.nf_make_summary(
                     config, subdir, loglevel, combinations=combinations
                 )  # Not implemented yet
                 jobstorun = list()
@@ -872,7 +878,7 @@ def main():
                 "Can not check version needed, please add VERSION key to config file"
             )
 
-        if monsda_check_version(__version__, required_version) is not True:
+        if mw.monsda_check_version(__version__, required_version) is not True:
             log.error(
                 "Version required in config file "
                 + str(required_version)
@@ -915,7 +921,7 @@ def main():
 
         else:
             nf_min_version = "22.10.4"
-            nf_ver = nf_check_version(nf_min_version)
+            nf_ver = mw.nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(
                     knownargs.configfile,
