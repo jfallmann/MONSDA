@@ -3,7 +3,7 @@ rule UnzipGenome:
     output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '')),
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    log:    expand("LOGS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
@@ -15,7 +15,7 @@ rule UnzipGenome_no_us:
     output: fa = expand("{ref}_us.fa", ref=REFERENCE.replace('.fa.gz', '')),
             fai = expand("{ref}_us.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
             fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    log:    expand("LOGS/{combo}/indexfa_us.log", combo=combo)
     conda:  "samtools.yaml"
     threads: 1
     params: bins = BINS
