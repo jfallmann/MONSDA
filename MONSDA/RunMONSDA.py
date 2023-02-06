@@ -12,7 +12,7 @@ import shlex
 
 scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
-from MONSDA.Logger import *
+from MONSDA.Logger import makelogdir, setup_logger
 from . import _version
 
 __version__ = _version.get_versions()["version"]
@@ -47,7 +47,9 @@ log = setup_logger(
     datefmt="%m-%d %H:%M",
 )
 
-import MONSDA.Workflows
+import MONSDA.Workflows as mw
+import MONSDA.Params as mp
+import MONSDA.Utils as mu
 
 # CODE
 def parseargs():

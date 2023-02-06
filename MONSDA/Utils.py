@@ -165,17 +165,6 @@ def rmempty(check):
     return ret
 
 
-@check_run
-def monsda_check_version(v, r):
-    logid = scriptname + ".MONSDA_check_version: "
-
-    if parse_version(v) < parse_version(check):
-        log.debug(logid + check)
-        return True
-    else:
-        return shutil.which("MONSDA")
-
-
 ##############################
 #########Python Subs##########
 ##############################
