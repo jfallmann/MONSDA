@@ -5,9 +5,6 @@ REF = get_always('REF')
 REFDIR = get_always('REFDIR')
 ANNO = get_always('ANNO')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
-TRACKSCOMP = get_always('TRACKSCOMP') ?: ''
-TRACKSCOMPS = get_always('TRACKSCOMPS') ?: ''
-PCOMBO = get_always('COMBO') ?: 'none'
 
 TRACKBIN = 'ucsc'
 TRACKENV = 'ucsc'
@@ -115,7 +112,7 @@ process NormalizeBedg{
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
+    fn = file(bedgf).getSimpleName()
     fw = fn+'.norm.fw.bedg.gz'
     fr = fn+'.norm.re.bedg.gz'
     ol = fn+".log"
@@ -149,11 +146,10 @@ process BedgToTRACKS{
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
+    fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
     ol = fn+".log"
-    sortmem = '30%'
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgf > tmp && bedGraphToBigWig tmp $sizes $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgr > tmp && bedGraphToBigWig tmp $sizes $fr 2>> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
@@ -168,29 +164,25 @@ process GenerateTrack{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".track") > 0)      "TRACKS/${SCOMBO}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_bedgtoucsc.log"
+        if (filename.indexOf(".txt") > 0)      "TRACKS/${file(filename).getName()}"
+        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_track.log"
     }
 
     input:
-    path bedgf
-    path bedgr
-    path sizes
+    path bwf
+    path bwr
 
     output:
-    path "*.fw.bw", emit: bwf
-    path "*.re.bw", emit: bwr
+    path "*.txt", emit: trackdb
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
-    fw = fn+'.fw.bw'
-    fr = fn+'.re.bw'
+    fn = file(bwf).getSimpleName()
     ol = fn+".log"
-    sortmem = '30%'
+    src='TRACKS'+os.sep+$SETS.replace(os.sep, '_')
     
     """
-    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgf > tmp && bedGraphToBigWig tmp $sizes $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat $bedgr > tmp && bedGraphToBigWig tmp $sizes $fr 2>> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
+    echo -e \"$bwf\\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $SETS -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
     """
 }
 
