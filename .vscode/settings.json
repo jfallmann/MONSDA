@@ -23,5 +23,6 @@
     ],
     "cSpell.enableFiletypes": [
         "snakemake"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }

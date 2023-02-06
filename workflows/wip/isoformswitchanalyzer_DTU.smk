@@ -4,7 +4,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(confi
 outdir = "DTU/DEXSEQ"
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
-keydict = subDict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
+keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 unik = get_dict_hash(keydict)
 

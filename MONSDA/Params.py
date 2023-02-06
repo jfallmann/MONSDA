@@ -93,7 +93,8 @@ import datetime
 # if x not in sys.path:
 #        sys.path.insert(0, x)
 
-from MONSDA.Utils import *
+import MONSDA.Utils as mu
+from MONSDA.Utils import check_run as check_run
 
 try:
     scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
@@ -189,7 +190,7 @@ def get_samples_postprocess(config, subwork):
     SAMPLES = [
         os.path.join(x)
         for x in sampleslong(config)
-        if len(getFromDict(config[subwork], conditiononly(x, config))) > 0
+        if len(mu.get_from_dict(config[subwork], conditiononly(x, config))) > 0
         and (
             not config[subwork].get("EXCLUDE")
             or os.path.basename(x) not in config[subwork]["EXCLUDE"]
@@ -302,10 +303,10 @@ def basecall_samples(config):
 
 
 @check_run
-def get_conditions(config, stage='SETTINGS'):
+def get_conditions(config, stage="SETTINGS"):
     logid = scriptname + ".Params_conditions: "
     ret = list()
-    for k in keysets_from_dict(config[stage], "SAMPLES"):
+    for k in mu.keysets_from_dict(config[stage], "SAMPLES"):
         ret.append(k)
     log.debug(logid + str(ret))
     return sorted(list(set(ret)))
@@ -316,7 +317,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
     logid = scriptname + ".Params_get_samples_from_dir: "
     samples = [
         x.replace(" ", "")
-        for x in list(set(getFromDict(config["SETTINGS"], search)[0]["SAMPLES"]))
+        for x in list(set(mu.get_from_dict(config["SETTINGS"], search)[0]["SAMPLES"]))
     ]
     log.debug(logid + f"Samples: {samples}, Search: {search}, Check: {nocheck}")
     if nocheck is not None:
@@ -441,7 +442,7 @@ def sampleslong(config, nocheck=None):
     log.debug(logid + f"Check: {nocheck}")
     tosearch = list()
     ret = list()
-    for k in keysets_from_dict(config["SETTINGS"], "SAMPLES"):
+    for k in mu.keysets_from_dict(config["SETTINGS"], "SAMPLES"):
         tosearch.append(list(k))
     log.debug(logid + "tosearch: " + str(tosearch))
     for search in tosearch:
@@ -505,13 +506,13 @@ def create_skeleton(runner, skeleton=None):
     logid = scriptname + ".Params_create_skeleton: "
     if skeleton:
         for subdir in ["SubSnakes", "RAW", "FASTQ", "LOGS", "TMP", "JOB"]:
-            makeoutdir(subdir)
+            mu.makeoutdir(subdir)
             sys.exit(
                 "Skeleton directories created, please add files and rerun without --skeleton option"
             )
     else:
         for subdir in [runner, "LOGS", "TMP", "JOBS"]:
-            makeoutdir(subdir)
+            mu.makeoutdir(subdir)
         if os.path.isfile(os.path.abspath("JOBS" + os.sep + scriptname + ".commands")):
             ts = str(
                 datetime.datetime.fromtimestamp(
@@ -540,7 +541,7 @@ def tool_params(sample, runstate, config, subconf, tool=None):
     log.debug(logid + str([sample, runstate, subconf, x]))
     if "_" in tool:
         tool = tool.split("_")[0]
-    mp = subDict(config[subconf], x)[tool] if tool else subDict(config[subconf], x)
+    mp = mu.sub_dict(config[subconf], x)[tool] if tool else mu.sub_dict(config[subconf], x)
     log.debug(logid + "DONE: " + str(mp))
     return mp
 
@@ -555,7 +556,7 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
         runstate = runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
-    subsetting = subDict(config["SETTINGS"], x).get(setting)
+    subsetting = mu.sub_dict(config["SETTINGS"], x).get(setting)
 
     if setting == "ANNOTATION":  # Special case is annotation
         subsetting = subsetting.get(
@@ -566,7 +567,7 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
         subset = (
             config[subconf].get(setting)
             if config[subconf].get(setting)
-            else subDict(config[subconf], x).get(setting)
+            else mu.sub_dict(config[subconf], x).get(setting)
         )
 
     # Define which final setting is returned
@@ -591,7 +592,7 @@ def get_reps(samples, config, analysis, process="smk"):
         else:
             scond = sample.split(os.sep)[:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
-        partconf = subDict(config["SETTINGS"], scond)
+        partconf = mu.sub_dict(config["SETTINGS"], scond)
         log.debug(logid + "CONF: " + str(partconf))
 
         Ex = config[analysis].get("EXCLUDE")
@@ -633,7 +634,7 @@ def get_diego_samples(samples, config, analysis):
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
-        partconf = subDict(config[analysis], scond)
+        partconf = mu.sub_dict(config[analysis], scond)
         log.debug(logid + "CONF: " + str(partconf))
         wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
             "_mapped_sorted_unique.counts.gz", ""
@@ -660,7 +661,7 @@ def get_diego_groups(samples, config, analysis):
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
-        partconf = subDict(config[analysis], scond)
+        partconf = mu.sub_dict(config[analysis], scond)
         log.debug(logid + "CONF: " + str(partconf))
         wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
             "_mapped_sorted_unique.counts.gz", ""
@@ -689,7 +690,7 @@ def env_bin_from_config2(samples, config, subconf):
         log.debug(logid + "C: " + str(conditiononly(s, config)))
         check = conditiononly(s, config)
 
-        for k in getFromDict(config[subconf], check):
+        for k in mu.get_from_dict(config[subconf], check):
             if "BIN" in k:
                 mb = k["BIN"]
             else:
@@ -726,22 +727,22 @@ def runstate_from_sample(sample, config):
     for s in sample:
         if len(s.split(os.sep)) < 2:
             s = samplecond(s, config)
-        if len(getFromDict(config["SETTINGS"], s.split(os.sep))) < 1:
+        if len(mu.get_from_dict(config["SETTINGS"], s.split(os.sep))) < 1:
             s = os.path.dirname(s)
             n = s.split(os.sep)[-1]
         log.debug(logid + "SAMPLE: " + s)
         try:
-            c = getFromDict(config["SETTINGS"], s.split(os.sep))[0]
+            c = mu.get_from_dict(config["SETTINGS"], s.split(os.sep))[0]
         except:
             c = None
         log.debug(logid + "SETTINGS: " + str(c))
-        if dict_inst(c):
+        if mu.dict_inst(c):
             if not c.get("SAMPLES"):
                 for k, v in c.items():
                     log.debug(
                         logid + "k: " + str(k) + ", v: " + str(v) + " c: " + str(c)
                     )
-                    if dict_inst(v) and v.get("SAMPLES"):
+                    if mu.dict_inst(v) and v.get("SAMPLES"):
                         if k not in ret:
                             ret.append(k)
             else:
@@ -773,11 +774,11 @@ def samplecond(
             if r not in tmplist:
                 tmp = check[:-1]
                 tmp.append(r)
-                if sname in getFromDict(config["SETTINGS"], tmp)[0].get("SAMPLES"):
+                if sname in mu.get_from_dict(config["SETTINGS"], tmp)[0].get("SAMPLES"):
                     tmplist.append(r)
         log.debug(logid + "TMPLIST: " + str(tmplist))
         paired = checkpaired([s], config)
-        if "paired" in paired:  # subDict(config['SETTINGS'], tmplist)['SEQUENCING']:
+        if "paired" in paired:  # sub_dict(config['SETTINGS'], tmplist)['SEQUENCING']:
             s = re.sub(r"_[r|R|][1|2]\.", "", s)
         r = os.sep.join(tmplist)
         if r not in s:
@@ -806,9 +807,9 @@ def conditiononly(sample, config):
             )  # this will take only the first occurence of sample in settings, should anyways never happen to have the same sample in different subsettings with differing pairedness
             tmp.append(r)
             log.debug(logid + "tmp: " + str(tmp))
-            if len(getFromDict(config["SETTINGS"], tmp)) > 0 and sname in getFromDict(
-                config["SETTINGS"], tmp
-            )[0].get("SAMPLES"):
+            if len(
+                mu.get_from_dict(config["SETTINGS"], tmp)
+            ) > 0 and sname in mu.get_from_dict(config["SETTINGS"], tmp)[0].get("SAMPLES"):
                 ret.append(r)
     log.debug(logid + "ret: " + str(ret))
     return ret
@@ -822,7 +823,7 @@ def checkpaired(sample, config):
         log.debug(logid + "SAMPLE: " + str(s))
         check = conditiononly(s, config)
         log.debug(logid + "CHECK: " + str(check))
-        p = subDict(config["SETTINGS"], check)
+        p = mu.sub_dict(config["SETTINGS"], check)
         if p:
             paired = p.get("SEQUENCING")
             paired = paired.split(",")[0] if "," in paired else paired
@@ -844,7 +845,7 @@ def checkpaired_rep(sample, config):
     ret = list()
     for s in sample:
         check = conditiononly(s, config)
-        p = subDict(config["SETTINGS"], check)
+        p = mu.sub_dict(config["SETTINGS"], check)
         paired = p.get("SEQUENCING")
         # Per sample paired, not implemented yet
         # pairedlist = p.get('SEQUENCING')
@@ -864,7 +865,7 @@ def checkstranded(sample, config):
     for s in sample:
         check = conditiononly(s, config)
         log.debug(logid + "check: " + str(check))
-        p = subDict(config["SETTINGS"], check)
+        p = mu.sub_dict(config["SETTINGS"], check)
         log.debug(logid + "P: " + str(p))
         paired = p.get("SEQUENCING")
         # Per sample paired, not implemented yet
@@ -882,7 +883,7 @@ def set_pairing(samples, config):
     logid = scriptname + ".Params_set_pairing: "
     ret = list()
     cond = conditiononly(samples[0], config)
-    pconf = subDict(config["PEAKS"], cond)
+    pconf = mu.sub_dict(config["PEAKS"], cond)
     log.debug(logid + "SAMPLES: " + str(samples))
     pairlist = pconf.get("COMPARABLE", config["PEAKS"].get("COMPARABLE"))
     log.debug(logid + "PAIRLIST: " + str(pairlist))
@@ -901,7 +902,7 @@ def set_pairing(samples, config):
 def get_pairing(sample, stype, config, samples, scombo=""):
     logid = scriptname + ".Params_get_pairing: "
     cond = conditiononly(sample, config)
-    pconf = subDict(config["PEAKS"], cond)
+    pconf = mu.sub_dict(config["PEAKS"], cond)
     pairlist = pconf.get("COMPARABLE", config["PEAKS"].get("COMPARABLE"))
     matching = ""
     log.debug(
@@ -958,7 +959,7 @@ def post_checkpaired(sample, config):
     for s in sample:
         log.debug(logid + "SAMPLE: " + str(sample))
         check = conditiononly(sample, config)
-        p = subDict(config["SETTINGS"], check)
+        p = mu.sub_dict(config["SETTINGS"], check)
         log.debug(logid + "P: " + str(p))
         paired = p.get("SEQUENCING").split(",")[0]
     log.debug(logid + "PAIRED: " + str(paired))
@@ -978,7 +979,7 @@ def check_IP(sample, config):
             if r not in tmplist:
                 tmplist.extend(r)
         log.debug(logid + "TMP: " + str(tmplist))
-        check = getFromDict(config["PEAKS"], tmplist)[0]
+        check = mu.get_from_dict(config["PEAKS"], tmplist)[0]
         log.debug(logid + "CHECK: " + str(check))
         if "IP" in check:
             ip = check["IP"]
@@ -1028,7 +1029,7 @@ def comparable_as_string(config, subwork):
         log.warning(
             logid + "no comparables found in " + subwork + ". Compare All vs. All."
         )
-        groups_by_condition = list(yield_from_dict("GROUPS", config))
+        groups_by_condition = list(mu.yield_from_dict("GROUPS", config))
         flattened = sorted(
             set(val for sublist in groups_by_condition for val in sublist)
         )
@@ -1043,7 +1044,7 @@ def comparable_as_string(config, subwork):
 @check_run
 def get_combo_name(combinations):
     logid = scriptname + ".Params_get_combo_name: "
-    combname = NestedDefaultDict()
+    combname = mu.NestedDefaultDict()
 
     for condition in combinations:
         log.debug(logid + "CONDITION: " + str(condition))

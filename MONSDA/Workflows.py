@@ -86,8 +86,9 @@ from snakemake import load_configfile
 import functools
 import datetime
 
-from MONSDA.Utils import *
-from MONSDA.Params import *
+import MONSDA.Utils as mu
+import MONSDA.Params as mp
+from MONSDA.Utils import check_run as check_run
 
 try:
     pythonversion = f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
@@ -95,7 +96,7 @@ try:
         os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
 except:
-    installpath = os.path.cwd()
+    installpath = os.getcwd()
 
 workflowpath = os.path.join(installpath, "MONSDA", "workflows")
 envpath = os.path.join(installpath, "MONSDA", "envs") + os.sep
@@ -163,7 +164,7 @@ def monsda_check_version(v, r):
 def get_combo(wfs, config, conditions):
     logid = scriptname + ".Params_get_combo: "
     log.debug(logid + str(wfs) + str(conditions))
-    combos = NestedDefaultDict()
+    combos = mu.NestedDefaultDict()
 
     if wfs is None or len(wfs) < 1:
         return None
@@ -318,7 +319,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
 
     for condition in conditions:
         try:
-            env = str(subDict(config[subwork], condition)[stage + "ENV"])
+            env = str(mu.sub_dict(config[subwork], condition)[stage + "ENV"])
         except:
             if "TOOLS" not in config[subwork]:
                 log.error(
@@ -330,7 +331,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                 )
             env = ""
         try:
-            exe = str(subDict(config[subwork], condition)[stage + "BIN"])
+            exe = str(mu.sub_dict(config[subwork], condition)[stage + "BIN"])
         except:
             if "TOOLS" not in config[subwork]:
                 log.error(
@@ -342,7 +343,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                 )
             exe = ""
 
-        tempconf = NestedDefaultDict()
+        tempconf = mu.NestedDefaultDict()
         if env != "" and exe != "":
             toollist.append([env, exe])
             tempconf[subwork + "ENV"] = env
@@ -363,7 +364,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
             log.error("".join(tbe.format()))
         try:
             for key in ["SETTINGS", subwork]:
-                if len(getFromDict(config[subwork], condition)) < 1:
+                if len(mu.get_from_dict(config[subwork], condition)) < 1:
                     if any(
                         [subwork == x for x in ["QC", "DEDUP", "TRIMMING", "MAPPING"]]
                     ):
@@ -387,14 +388,14 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                         configs.append(None)
                 else:
                     if key == "SETTINGS":
-                        tempconf[key] = subSetDict(config[key], condition)
+                        tempconf[key] = mu.subset_dict(config[key], condition)
                         if (
                             config.get("DEDUP") and "DEDUP" in config["WORKFLOWS"]
                         ) or config.get("RUNDEDUP"):
                             tempconf["RUNDEDUP"] = "enabled"
                         continue
                     if ("TOOLS" in config[key] and env == "" and exe == "") and len(
-                        getFromDict(config[key], condition)
+                        mu.get_from_dict(config[key], condition)
                     ) != 0:  # env and exe overrule TOOLS
                         for k, v in config[key][
                             "TOOLS"
@@ -404,19 +405,19 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 tempconf[key]["TOOLS"][k] = config[key]["TOOLS"][k]
                                 tc = list(condition)
                                 tc.append(k)
-                                tempconf[key].merge(subSetDict(config[key], tc))
+                                tempconf[key].merge(mu.subset_dict(config[key], tc))
                             elif not envs:
                                 toollist.append([k, v])
-                                tempconf[key] = subSetDict(config[key], condition)
+                                tempconf[key] = mu.subset_dict(config[key], condition)
                     else:
-                        tempconf[key] = subSetDict(config[key], condition)
+                        tempconf[key] = mu.subset_dict(config[key], condition)
 
                     if stage and stage == "POST":
-                        tempconf["SAMPLES"] = get_samples_postprocess(config, key)
+                        tempconf["SAMPLES"] = mp.get_samples_postprocess(config, key)
                     else:
-                        tempconf["SAMPLES"] = subDict(config["SETTINGS"], condition)[
-                            "SAMPLES"
-                        ]
+                        tempconf["SAMPLES"] = mu.sub_dict(
+                            config["SETTINGS"], condition
+                        )["SAMPLES"]
 
                     if any(
                         [
@@ -434,22 +435,26 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                         ]
                     ):
                         if not config[subwork].get("TOOLS"):
-                            tempconf[subwork] = subSetDict(config[subwork], condition)
+                            tempconf[subwork] = mu.subset_dict(
+                                config[subwork], condition
+                            )
                         if config[subwork].get("CUTOFFS"):
                             tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
                         if subwork == "COUNTING":
                             tempconf["COUNTING"]["FEATURES"] = (
                                 config["COUNTING"]["FEATURES"]
                                 if config["COUNTING"].get("FEATURES")
-                                else subSetDict(config[subwork], condition)["FEATURES"]
-                                if subSetDict(config[subwork], condition).get(
+                                else mu.subset_dict(config[subwork], condition)[
+                                    "FEATURES"
+                                ]
+                                if mu.subset_dict(config[subwork], condition).get(
                                     "FEATURES"
                                 )
                                 else ""
                             )
                         if "COMPARABLE" in config[
                             subwork
-                        ] or "COMPARABLE" in subSetDict(config[subwork], condition):
+                        ] or "COMPARABLE" in mu.subset_dict(config[subwork], condition):
                             tempconf[subwork]["COMPARABLE"] = config[subwork][
                                 "COMPARABLE"
                             ]
@@ -493,11 +498,11 @@ def make_pre(
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         for condition in combname:
             worklist = combname[condition].get("works")
             envlist = combname[condition].get("envs")
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
@@ -690,7 +695,7 @@ def make_pre(
                 log.debug(logid + f"Env:{toolenv}, Bin:{toolbin}")
                 if toolenv is None or toolbin is None:
                     continue
-                subconf = NestedDefaultDict()
+                subconf = mu.NestedDefaultDict()
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
                 subconf.update(sconf)
@@ -801,11 +806,11 @@ def make_sub(
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         for condition in combname:
             worklist = combname[condition].get("works")
             envlist = combname[condition].get("envs")
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
@@ -1033,7 +1038,7 @@ def make_sub(
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
                         continue
-                    subconf = NestedDefaultDict()
+                    subconf = mu.NestedDefaultDict()
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
                     subconf.update(sconf)
@@ -1170,14 +1175,14 @@ def make_post(
     summary_tools_dict = dict()
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
             condition = list(combname.keys())[0]
             envlist = combname[condition].get("envs")
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
@@ -1207,7 +1212,7 @@ def make_post(
                 sconf.pop("PREDEDUP", None)  # cleanup
 
                 for c in range(1, len(listofconfigs)):
-                    sconf = merge_dicts(sconf, listofconfigs[c])
+                    sconf = mu.merge_dicts(sconf, listofconfigs[c])
 
                 for a in range(0, len(listoftools)):
                     subjobs = list()
@@ -1215,12 +1220,12 @@ def make_post(
                     for cond in combname.keys():
                         tc = list(cond)
                         tc.append(toolenv)
-                        sconf[subwork] = merge_dicts(
-                            sconf[subwork], subSetDict(config[subwork], tc)
+                        sconf[subwork] = mu.merge_dicts(
+                            sconf[subwork], mu.subset_dict(config[subwork], tc)
                         )
 
                     if sconf[subwork].get("TOOLS"):
-                        sconf[subwork]["TOOLS"] = subDict(
+                        sconf[subwork]["TOOLS"] = mu.sub_dict(
                             sconf[subwork]["TOOLS"], [toolenv]
                         )
                     if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
@@ -1344,7 +1349,7 @@ def make_post(
                 envlist = combname[condition].get("envs")
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
-                subconf = NestedDefaultDict()
+                subconf = mu.NestedDefaultDict()
                 add = list()
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
@@ -1379,7 +1384,7 @@ def make_post(
                     sconf.pop("PREDEDUP", None)  # cleanup
 
                     for c in range(1, len(listofconfigs)):
-                        sconf = merge_dicts(sconf, listofconfigs[c])
+                        sconf = mu.merge_dicts(sconf, listofconfigs[c])
 
                     for a in range(0, len(listoftools)):
                         subjobs = list()
@@ -1394,10 +1399,10 @@ def make_post(
 
                         tc = list(condition)
                         tc.append(toolenv)
-                        sconf[subwork].update(subSetDict(config[subwork], tc))
+                        sconf[subwork].update(mu.subset_dict(config[subwork], tc))
 
                         if sconf[subwork].get("TOOLS"):
-                            sconf[subwork]["TOOLS"] = subDict(
+                            sconf[subwork]["TOOLS"] = mu.sub_dict(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
 
@@ -1442,7 +1447,7 @@ def make_post(
                             and "TRIMMING" not in config["WORKFLOWS"]
                         ):
                             log.debug(logid + "Simulated read trimming only!")
-                            makeoutdir("TRIMMED_FASTQ")
+                            mu.makeoutdir("TRIMMED_FASTQ")
                             smkf = (
                                 os.path.abspath(os.path.join(workflowpath, toolenv))
                                 + "_trim.smk"
@@ -1531,7 +1536,7 @@ def make_post(
         add = list()
 
         for condition in conditions:
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
                 for line in smk.readlines():
@@ -1595,7 +1600,7 @@ def make_post(
 
                 if toolbin == "salmon" and "TRIMMING" not in config["WORKFLOWS"]:
                     log.debug(logid + "Simulated read trimming only!")
-                    makeoutdir("TRIMMED_FASTQ")
+                    mu.makeoutdir("TRIMMED_FASTQ")
                     smkf = (
                         os.path.abspath(os.path.join(workflowpath, toolenv))
                         + "_trim.smk"
@@ -1665,7 +1670,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
     envlist = list()
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         for condition in combname:
             envlist = combname[condition]["envs"]
 
@@ -1735,7 +1740,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
         smkout.write("".join(subjobs))
         smkout.write("\n\n")
 
-    subconf = NestedDefaultDict()
+    subconf = mu.NestedDefaultDict()
     for key in ["BINS", "MAXTHREADS", "SETTINGS"]:
         subconf[key] = config[key]
 
@@ -1770,7 +1775,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
     todos = list()
 
     if "QC" in subworkflows and "QC" in config:
-        makeoutdir("QC")
+        mu.makeoutdir("QC")
         if "MAPPING" in subworkflows:
             todos.append(allmap + ",\n\t\t" + allqc + "\n\n")
         else:
@@ -1789,7 +1794,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
 
     if "MAPPING" in subworkflows and "TRIMMING" not in subworkflows:
         log.debug(logid + "Simulated read trimming only!")
-        makeoutdir("TRIMMED_FASTQ")
+        mu.makeoutdir("TRIMMED_FASTQ")
         smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
         with open(smkf, "r") as smk:
             for line in smk.readlines():
@@ -1886,19 +1891,19 @@ def nf_fetch_params(
 
     MAXTHREAD = int(config["MAXTHREADS"])
     SAMPLES = (
-        [os.path.join(x) for x in sampleslong(config)]
+        [os.path.join(x) for x in mp.sampleslong(config)]
         if not config.get("FETCH", False)
-        else [os.path.join(x) for x in download_samples(config)]
+        else [os.path.join(x) for x in mp.download_samples(config)]
         if not config.get("BASECALL", False)
-        else [os.path.join(x) for x in basecall_samples(config)]
+        else [os.path.join(x) for x in mp.basecall_samples(config)]
     )
     if len(SAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
         sys.exit(logid + "ERROR: No samples found, please check config file")
 
-    SETUP = keysets_from_dict(config["SETTINGS"], "SAMPLES")[0]
+    SETUP = mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")[0]
     SETS = os.sep.join(SETUP)
-    SETTINGS = subDict(config["SETTINGS"], SETUP)
+    SETTINGS = mu.sub_dict(config["SETTINGS"], SETUP)
 
     # Parse SETTINGS
     REFERENCE = SETTINGS.get("REFERENCE")
@@ -1919,11 +1924,11 @@ def nf_fetch_params(
         else:
             log.debug("DEDUPLICATION ENABLED")
 
-    paired = checkpaired([SAMPLES[0]], config)
+    paired = mp.checkpaired([SAMPLES[0]], config)
     if paired == "paired":
         log.debug("RUNNING NEXTFLOW IN PAIRED READ MODE")
 
-    stranded = checkstranded([SAMPLES[0]], config)
+    stranded = mp.checkstranded([SAMPLES[0]], config)
     if stranded != "":
         log.debug("RUNNING NEXTFLOW WITH STRANDEDNESS " + str(stranded))
 
@@ -1932,13 +1937,15 @@ def nf_fetch_params(
     retconf["MAXTHREAD"] = MAXTHREAD
     retconf["SAMPLES"] = str.join(",", SAMPLES)
     retconf["SETS"] = SETS
-    LONGSAMPLES = samplecond(SAMPLES, config)
+    LONGSAMPLES = mp.samplecond(SAMPLES, config)
     retconf["LONGSAMPLES"] = str.join(",", LONGSAMPLES)
     SHORTSAMPLES = [os.path.basename(x) for x in SAMPLES]
     retconf["SHORTSAMPLES"] = str.join(",", SHORTSAMPLES)
     retconf["CONDITION"] = os.sep.join(condition) if condition else SETS
     if combi:
-        retconf["COMBO"] = combi[0] if combi[0] != "" else None  # + os.sep if combi[0] != "" else None
+        retconf["COMBO"] = (
+            combi[0] if combi[0] != "" else None
+        )  # + os.sep if combi[0] != "" else None
         retconf["SCOMBO"] = (
             combi[0] + os.sep + combi[1] if combi[0] and combi[1] else None
         )
@@ -1956,8 +1963,8 @@ def nf_fetch_params(
 
     # MAPPING Variables
     if "MAPPING" in config:
-        MAPCONF = subDict(config["MAPPING"], SETUP)
-        MAPPERBIN, MAPPERENV = env_bin_from_config(config, "MAPPING")
+        MAPCONF = mu.sub_dict(config["MAPPING"], SETUP)
+        MAPPERBIN, MAPPERENV = mp.env_bin_from_config(config, "MAPPING")
         MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
         REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
@@ -1986,12 +1993,12 @@ def nf_fetch_params(
             INDEX = IDX
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
-        keydict = subDict(
-            tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
+        keydict = mu.sub_dict(
+            mp.tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
             ["INDEX"],
         )
         keydict["REF"] = REFERENCE
-        unikey = get_dict_hash(keydict)
+        unikey = mu.get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
         INDICES = INDEX.split(",") if INDEX else list(UIDX)
@@ -2027,7 +2034,7 @@ def nf_fetch_params(
 
     # Peak Calling Variables
     if "PEAKS" in config:
-        PEAKCONF = subDict(config["PEAKS"], SETUP)
+        PEAKCONF = mu.sub_dict(config["PEAKS"], SETUP)
         REF = PEAKCONF.get("REFERENCE")
         if REF:
             REFERENCE = REF
@@ -2040,7 +2047,7 @@ def nf_fetch_params(
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF forma
         if not IP:
-            IP = check_IP(SAMPLES, config)
+            IP = mp.check_IP(SAMPLES, config)
         log.debug(logid + "Running Peak finding for " + IP + " protocol")
 
         retconf["PEAKREF"] = REFERENCE
@@ -2051,8 +2058,8 @@ def nf_fetch_params(
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
         if x in config:
-            XBIN, XENV = env_bin_from_config(config, x)
-            XCONF = subDict(config[x], SETUP)
+            XBIN, XENV = mp.env_bin_from_config(config, x)
+            XCONF = mu.sub_dict(config[x], SETUP)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
@@ -2071,12 +2078,12 @@ def nf_fetch_params(
                     INDEX = IDX
                 else:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    keydict = subDict(
-                        tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
+                    keydict = mu.sub_dict(
+                        mp.tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
-                    unikey = get_dict_hash(keydict)
+                    unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
@@ -2101,8 +2108,8 @@ def nf_fetch_params(
     # DE/DEU/DAS/DTU Variables
     for x in ["DE", "DEU", "DAS", "DTU"]:
         if x in config:
-            XCONF = subDict(config[x], SETUP)
-            XBIN, XENV = env_bin_from_config(config, x)
+            XCONF = mu.sub_dict(config[x], SETUP)
+            XBIN, XENV = mp.env_bin_from_config(config, x)
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
@@ -2115,19 +2122,19 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            REPS = get_reps(
+            REPS = mp.get_reps(
                 [x + "_mapped_sorted_unique.counts.gz" for x in LONGSAMPLES],
                 config,
                 x,
                 "nf",
             )
             retconf[x + "REPS"] = f"'{REPS}'"
-            comparison = comparable_as_string(config, "DE")
+            comparison = mp.comparable_as_string(config, "DE")
             compstr = ",".join([i.split(":")[0] for i in comparison.split(",")])
             retconf[x + "COMP"] = comparison
             retconf[x + "COMPS"] = compstr
-            pval = get_cutoff_as_string(config, x, "pval")
-            lfc = get_cutoff_as_string(config, x, "lfc")
+            pval = mp.get_cutoff_as_string(config, x, "pval")
+            lfc = mp.get_cutoff_as_string(config, x, "lfc")
             retconf[x + "PVAL"] = pval
             retconf[x + "LFC"] = lfc
             if x == "DTU":
@@ -2136,12 +2143,12 @@ def nf_fetch_params(
                     INDEX = IDX
                 if not INDEX:
                     INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    keydict = subDict(
-                        tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
+                    keydict = mu.sub_dict(
+                        mp.tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
-                    unikey = get_dict_hash(keydict)
+                    unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
                 INDICES = INDEX.split(",") if INDEX else list(UIDX)
@@ -2159,7 +2166,7 @@ def nf_fetch_params(
 
     # CIRCS Variables
     if "CIRCS" in config:
-        CIRCCONF = subDict(config["CIRCS"], SETUP)
+        CIRCCONF = mu.sub_dict(config["CIRCS"], SETUP)
         log.debug(logid + "CIRCCONFIG: " + str(SETUP) + "\t" + str(CIRCCONF))
         REF = CIRCCONF.get("REFERENCE")
         if REF:
@@ -2206,38 +2213,38 @@ def nf_tool_params(
     # if "_" in toolenv:
     #    toolenv = toolenv.split("_")[0]
 
-    mp = OrderedDict()
+    np = OrderedDict()
     x = sample.split(os.sep)[:-1]
     if runstate is None:
-        runstate = runstate_from_sample([sample], config)[0]
+        runstate = mp.runstate_from_sample([sample], config)[0]
     if runstate not in x:
         x.append(runstate)
 
     tp = list()
 
     if not workflows:
-        mp = (
-            subDict(config[subwork], x)[toolenv.split("_")[0]]["OPTIONS"]
+        np = (
+            mu.sub_dict(config[subwork], x)[toolenv.split("_")[0]]["OPTIONS"]
             if toolenv
-            else subDict(config[subwork], x)["OPTIONS"]
+            else mu.sub_dict(config[subwork], x)["OPTIONS"]
         )
         tp.append(
             "--" + subwork + "ENV " + toolenv + " --" + subwork + "BIN " + toolbin + " "
         )
 
         toolpar = list()
-        for key, val in mp.items():
+        for key, val in np.items():
             pars = val if val and val != "" else None
             if pars:
                 tp.append("--" + toolenv + "_params_" + str(key) + " '" + pars + " '")
     else:
         for subwork in workflows:
-            sd = subDict(config[subwork], condition)
+            sd = mu.sub_dict(config[subwork], condition)
             log.debug(logid + "SD: " + str(sd))
             if sd.get("ENV") and sd.get("BIN"):
                 toolenv, toolbin = map(str, [sd["ENV"], sd["BIN"]])
 
-            mp = sd[toolenv.split("_")[0]]["OPTIONS"] if toolenv else sd["OPTIONS"]
+            np = sd[toolenv.split("_")[0]]["OPTIONS"] if toolenv else sd["OPTIONS"]
             tp.append(
                 "--"
                 + subwork
@@ -2251,7 +2258,7 @@ def nf_tool_params(
             )
 
             toolpar = list()
-            for key, val in mp.items():
+            for key, val in np.items():
                 pars = val if val and val != "" else None
                 if pars:
                     tp.append(
@@ -2379,7 +2386,7 @@ def nf_make_pre(
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
 
         for condition in combname:
             worklist = combname[condition].get("works")
@@ -2407,7 +2414,7 @@ def nf_make_pre(
                 flowlist = list()
                 tp = list()
                 subjobs = list()
-                subconf = NestedDefaultDict()
+                subconf = mu.NestedDefaultDict()
 
                 for j in range(len(works)):
                     listoftools, listofconfigs = create_subworkflow(
@@ -2431,14 +2438,14 @@ def nf_make_pre(
                         if toolenv != envs[j] or toolbin is None:
                             continue
 
-                        subsamples = get_samples(sconf)
+                        subsamples = mp.get_samples(sconf)
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
                         subconf.merge(sconf)
 
-                        subconf[works[j]] = add_to_innermost_key_by_list(
+                        subconf[works[j]] = mu.add_to_innermost_key_by_list(
                             subconf[works[j]],
-                            subDict(config[works[j]], condition)[toolenv],
+                            mu.sub_dict(config[works[j]], condition)[toolenv],
                             condition,
                         )
 
@@ -2571,7 +2578,7 @@ def nf_make_pre(
         for condition in conditions:
             flowlist = list()
             subjobs = list()
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             tp = list()
 
             log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
@@ -2603,11 +2610,11 @@ def nf_make_pre(
 
             sconf = listofconfigs[0]
             if subwork == "QC":
-                subsamples = get_samples(sconf)
+                subsamples = mp.get_samples(sconf)
             elif subwork == "FETCH":
-                subsamples = download_samples(sconf)
+                subsamples = mp.download_samples(sconf)
             elif subwork == "BASECALL":
-                subsamples = basecall_samples(sconf)
+                subsamples = mp.basecall_samples(sconf)
             log.debug(logid + f"Running {subwork} for SAMPLES {subsamples}")
 
             for i in range(0, len(listoftools)):
@@ -2618,9 +2625,9 @@ def nf_make_pre(
                 sconf[subwork + "BIN"] = toolbin
                 subconf.merge(sconf)
 
-                subconf[subwork] = add_to_innermost_key_by_list(
+                subconf[subwork] = mu.add_to_innermost_key_by_list(
                     subconf[subwork],
-                    subDict(config[subwork], condition)[toolenv],
+                    mu.sub_dict(config[subwork], condition)[toolenv],
                     condition,
                 )
 
@@ -2750,7 +2757,7 @@ def nf_make_sub(
     logfix = re.compile(r'loglevel="INFO"')
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
 
         for condition in combname:
             worklist = combname[condition].get("works")
@@ -2778,7 +2785,7 @@ def nf_make_sub(
                 flowlist = list()
                 tp = list()
                 subjobs = list()
-                subconf = NestedDefaultDict()
+                subconf = mu.NestedDefaultDict()
                 deduptool = None
 
                 for j in range(len(works)):
@@ -2803,14 +2810,14 @@ def nf_make_sub(
                         if toolenv != envs[j] or toolbin is None:
                             continue
 
-                        subsamples = get_samples(sconf)
+                        subsamples = mp.get_samples(sconf)
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
                         subconf.merge(sconf)
 
-                        subconf[works[j]] = add_to_innermost_key_by_list(
+                        subconf[works[j]] = mu.add_to_innermost_key_by_list(
                             subconf[works[j]],
-                            subDict(config[works[j]], condition)[toolenv],
+                            mu.sub_dict(config[works[j]], condition)[toolenv],
                             condition,
                         )
 
@@ -3133,7 +3140,7 @@ def nf_make_sub(
         for condition in conditions:
             flowlist = list()
             subjobs = list()
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             tp = list()
 
             for subwork in subworkflows:
@@ -3152,7 +3159,7 @@ def nf_make_sub(
                     return None
 
                 sconf = listofconfigs[0]
-                subsamples = get_samples(sconf)
+                subsamples = mp.get_samples(sconf)
                 for i in range(0, len(listoftools)):
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
@@ -3161,9 +3168,9 @@ def nf_make_sub(
                     sconf[subwork + "BIN"] = toolbin
                     subconf.merge(sconf)
 
-                    subconf[subwork] = add_to_innermost_key_by_list(
+                    subconf[subwork] = mu.add_to_innermost_key_by_list(
                         subconf[subwork],
-                        subDict(config[subwork], condition)[toolenv],
+                        mu.sub_dict(config[subwork], condition)[toolenv],
                         condition,
                     )
 
@@ -3388,7 +3395,7 @@ def nf_make_post(
     summary_tools_dict = dict()
 
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
@@ -3396,7 +3403,7 @@ def nf_make_post(
             condition = list(combname.keys())[0]
             worklist = combname[condition].get("works")
             envlist = combname[condition].get("envs")
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             add = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
@@ -3430,7 +3437,7 @@ def nf_make_post(
                 sconf.pop("PREDEDUP", None)  # cleanup
 
                 for c in range(1, len(listofconfigs)):
-                    sconf = merge_dicts(sconf, listofconfigs[c])
+                    sconf = mu.merge_dicts(sconf, listofconfigs[c])
                 flowlist.append(subwork)
 
                 for a in range(0, len(listoftools)):
@@ -3439,19 +3446,19 @@ def nf_make_post(
                     for cond in combname.keys():
                         tc = list(cond)
                         tc.append(toolenv)
-                        sconf[subwork] = merge_dicts(
-                            sconf[subwork], subSetDict(config[subwork], tc)
+                        sconf[subwork] = mu.merge_dicts(
+                            sconf[subwork], mu.subset_dict(config[subwork], tc)
                         )
 
                     if sconf[subwork].get("TOOLS"):
-                        sconf[subwork]["TOOLS"] = subDict(
+                        sconf[subwork]["TOOLS"] = mu.sub_dict(
                             sconf[subwork]["TOOLS"], [toolenv]
                         )
 
                     toolenv = toolenv + "_" + subwork
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
-                    subsamples = get_samples(sconf)
+                    subsamples = mp.get_samples(sconf)
 
                     log.debug(
                         logid
@@ -3555,7 +3562,7 @@ def nf_make_post(
                 envlist = combname[condition].get("envs")
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
-                subconf = NestedDefaultDict()
+                subconf = mu.NestedDefaultDict()
                 add = list()
 
                 nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
@@ -3591,7 +3598,7 @@ def nf_make_post(
                     sconf.pop("PREDEDUP", None)  # cleanup
 
                     for c in range(1, len(listofconfigs)):
-                        sconf = merge_dicts(sconf, listofconfigs[c])
+                        sconf = mu.merge_dicts(sconf, listofconfigs[c])
                     flowlist.append(subwork)
 
                     for a in range(0, len(listoftools)):
@@ -3607,16 +3614,16 @@ def nf_make_post(
 
                         tc = list(condition)
                         tc.append(toolenv)
-                        sconf[subwork] = merge_dicts(
-                            sconf[subwork], subSetDict(config[subwork], tc)
+                        sconf[subwork] = mu.merge_dicts(
+                            sconf[subwork], mu.subset_dict(config[subwork], tc)
                         )
 
                         if sconf[subwork].get("TOOLS"):
-                            sconf[subwork]["TOOLS"] = subDict(
+                            sconf[subwork]["TOOLS"] = mu.sub_dict(
                                 sconf[subwork]["TOOLS"], [toolenv]
                             )
 
-                        subsamples = get_samples(sconf)
+                        subsamples = mp.get_samples(sconf)
                         sconf[subwork + "ENV"] = toolenv + "_" + subwork
                         sconf[subwork + "BIN"] = toolbin
 
@@ -3738,7 +3745,7 @@ def nf_make_post(
         for condition in conditions:
             flowlist = list()
             subjobs = list()
-            subconf = NestedDefaultDict()
+            subconf = mu.NestedDefaultDict()
             tp = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
@@ -3781,7 +3788,7 @@ def nf_make_post(
                 log.debug(logid + "toolenv: " + str(toolenv))
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
-                subsamples = get_samples(sconf)
+                subsamples = mp.get_samples(sconf)
 
                 scombo = ""
                 combo = toolenv
@@ -3895,7 +3902,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
 
     envlist = list()
     if combinations:
-        combname = get_combo_name(combinations)
+        combname = mp.get_combo_name(combinations)
         for condition in combname:
             envlist = combname[condition]["envs"]
 
@@ -3965,7 +3972,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
         smkout.write("".join(subjobs))
         smkout.write("\n\n")
 
-    subconf = NestedDefaultDict()
+    subconf = mu.NestedDefaultDict()
     for key in ["BINS", "MAXTHREADS", "SETTINGS"]:
         subconf[key] = config[key]
 

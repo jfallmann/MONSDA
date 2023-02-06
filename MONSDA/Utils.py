@@ -181,15 +181,15 @@ def dict_inst(d):
 
 
 @check_run
-def getFromDict(dataDict, mapList):
-    logid = scriptname + ".Collection_getFromDict: "
+def get_from_dict(dataDict, mapList):
+    logid = scriptname + ".Collection_get_from_dict: "
     log.debug(logid + "MAPLIST: " + str(mapList) + "\tDict: " + str(dataDict))
     ret = dataDict
     for k in mapList:
         log.debug(logid + "k: " + str(k))
         if dataDict.get(k):
             dataDict = dataDict[k]
-            log.debug(logid + "subDict: " + str(dataDict))
+            log.debug(logid + "sub_dict: " + str(dataDict))
         else:
             return list([])
     if ret != dataDict:
@@ -216,8 +216,8 @@ def yield_from_dict(key, dictionary):
 
 
 @check_run
-def subDict(dataDict, mapList):
-    logid = scriptname + ".Collection_subDict: "
+def sub_dict(dataDict, mapList):
+    logid = scriptname + ".Collection_sub_dict: "
     log.debug(logid + str(mapList))
     ret = dataDict
     for k in mapList:
@@ -233,10 +233,10 @@ def subDict(dataDict, mapList):
 
 
 @check_run
-def subSetDict(dataDict, mapList):
-    logid = scriptname + ".Collection_subSetDict: "
+def subset_dict(dataDict, mapList):
+    logid = scriptname + ".Collection_subset_dict: "
     log.debug(logid + str(mapList))
-    parse = subDict(dataDict, mapList)
+    parse = sub_dict(dataDict, mapList)
     ret = {}
     nested_set(ret, mapList, parse)
     log.debug(logid + str(ret))
@@ -288,15 +288,15 @@ def keysets_from_dict(
         log.debug(logid + "cs:" + str(combis))
         ret = list()
         for combi in combis:
-            # if len(getFromDict(dictionary, combi)) >= 1:
-            check = subDict(dictionary, combi)
+            check = sub_dict(dictionary, combi)
             log.debug(logid + "checking: " + str(check))
-            if isvalid(check):
-                if (isinstance(check, dict) and check.get("SAMPLES")) or isinstance(
-                    check, str
-                ):
-                    log.debug(logid + "found: " + str(combi))
-                    ret.append(combi)
+            if (
+                isvalid(check)
+                and (isinstance(check, dict) and check.get("SAMPLES"))
+                or isinstance(check, str)
+            ):
+                log.debug(logid + "found: " + str(combi))
+                ret.append(combi)
         return ret
     else:
         return keylist
@@ -354,11 +354,9 @@ def list_all_values_of_dict(dictionary):
     if dict_inst(dictionary):
         for key, value in dictionary.items():
             if dict_inst(value):
-                # yield (key, value)
                 yield from list_all_values_of_dict(value)
             else:
                 yield (key, value)
-                # yield ('last','value')
     else:
         yield dictionary
 
