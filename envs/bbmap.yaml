@@ -1,0 +1,9 @@
+name: bbmap
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bbmap =39.01
+  - rename =1.601
+
