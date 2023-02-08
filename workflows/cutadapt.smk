@@ -1,13 +1,4 @@
 TRIMBIN, TRIMENV = env_bin_from_config(config,'TRIMMING')
-#outdir = 'TRIMMED_FASTQ/'+str(TRIMENV)+'/'
-
-#wildcard_constraints:
-#    file = '|'.join(list(samplecond(SAMPLES, config))),
-#    read = "R1|R2"
-#    outdir = outdir
-
-#rule trimthemall:
-#    input: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config))
 
 if paired == 'paired':
     rule cutadapt_trim:
