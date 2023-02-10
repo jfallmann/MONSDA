@@ -18,7 +18,7 @@ for x in cmd_subfolder:
         sys.path.insert(0, x)
 
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string
+from MONSDA.Params import checkpaired, checkstranded, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir,  keysets_from_dict
 
 loglevel="INFO"
