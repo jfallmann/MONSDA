@@ -9,7 +9,7 @@ TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
 TRACKBIN = 'ucsc'
 TRACKENV = 'ucsc'
 
-include { UnzipGenome; UnzipGenome_no_us } from './manipulate_genome.nf'
+include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
 process BamToBed{
     conda "bedtools.yaml"
@@ -38,7 +38,7 @@ process BamToBed{
     
     if (STRANDED == 'rf' || STRANDED == 'ISR'){
         """
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F\'\\t\' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/1\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=$THREADS -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |gzip > $fo 2> $ol"
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F\'\\t\' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/1\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=$THREADS -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }else{
         """
