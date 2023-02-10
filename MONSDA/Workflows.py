@@ -2398,7 +2398,7 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include: " in line:
+                    if "include {" in line:
                         line = fixinclude(
                             line, loglevel, condapath, envpath, workflowpath, logfix
                         )
@@ -2469,7 +2469,7 @@ def nf_make_pre(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
                                 line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include: " in line:
+                                if "include {" in line:
                                     line = fixinclude(
                                         line,
                                         loglevel,
@@ -2491,7 +2491,7 @@ def nf_make_pre(
                                         logfix, "loglevel='" + loglevel + "'", line
                                     )
                                     line = re.sub(condapath, 'conda "' + envpath, line)
-                                    if "include: " in line:
+                                    if "include {" in line:
                                         line = fixinclude(
                                             line,
                                             loglevel,
@@ -2588,7 +2588,7 @@ def nf_make_pre(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include: " in line:
+                    if "include {" in line:
                         line = fixinclude(
                             line, loglevel, condapath, envpath, workflowpath, logfix
                         )
@@ -2654,7 +2654,7 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
@@ -2679,7 +2679,7 @@ def nf_make_pre(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
@@ -2769,7 +2769,7 @@ def nf_make_sub(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include: " in line:
+                    if "include {" in line:
                         line = fixinclude(
                             line, loglevel, condapath, envpath, workflowpath, logfix
                         )
@@ -2876,7 +2876,7 @@ def nf_make_sub(
                                         line = re.sub(
                                             condapath, 'conda "' + envpath, line
                                         )
-                                        if "include: " in line:
+                                        if "include {" in line:
                                             line = fixinclude(
                                                 line,
                                                 loglevel,
@@ -2906,7 +2906,7 @@ def nf_make_sub(
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include: " in line:
+                                if "include {" in line:
                                     line = fixinclude(
                                         line,
                                         loglevel,
@@ -2948,7 +2948,7 @@ def nf_make_sub(
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include: " in line:
+                                if "include {" in line:
                                     line = fixinclude(
                                         line,
                                         loglevel,
@@ -2966,7 +2966,7 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include: " in line:
+                            if "include {" in line:
                                 line = fixinclude(
                                     line,
                                     loglevel,
@@ -2987,7 +2987,7 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include: " in line:
+                            if "include {" in line:
                                 line = fixinclude(
                                     line,
                                     loglevel,
@@ -3227,7 +3227,7 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include: " in line:
+                            if "include {" in line:
                                 line = fixinclude(
                                     line,
                                     loglevel,
@@ -3262,7 +3262,7 @@ def nf_make_sub(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include: " in line:
+                            if "include {" in line:
                                 line = fixinclude(
                                     line,
                                     loglevel,
@@ -3280,7 +3280,7 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
@@ -3293,7 +3293,7 @@ def nf_make_sub(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
@@ -3411,7 +3411,7 @@ def nf_make_post(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include: " in line:
+                    if "include {" in line:
                         line = fixinclude(
                             line, loglevel, condapath, envpath, workflowpath, logfix
                         )
@@ -3482,7 +3482,7 @@ def nf_make_post(
                     with open(nfi, "r") as nf:
                         for line in nf.readlines():
                             line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include: " in line:
+                            if "include {" in line:
                                 line = fixinclude(
                                     line,
                                     loglevel,
@@ -3570,7 +3570,7 @@ def nf_make_post(
                     for line in nf.readlines():
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line, loglevel, condapath, envpath, workflowpath, logfix
                             )
@@ -3651,7 +3651,7 @@ def nf_make_post(
                         with open(nfi, "r") as nf:
                             for line in nf.readlines():
                                 line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include: " in line:
+                                if "include {" in line:
                                     line = fixinclude(
                                         line,
                                         loglevel,
@@ -3753,7 +3753,7 @@ def nf_make_post(
                 for line in nf.readlines():
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include: " in line:
+                    if "include {" in line:
                         line = fixinclude(
                             line, loglevel, condapath, envpath, workflowpath, logfix
                         )
@@ -3798,7 +3798,7 @@ def nf_make_post(
                 with open(nfi, "r") as nf:
                     for line in nf.readlines():
                         line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include: " in line:
+                        if "include {" in line:
                             line = fixinclude(
                                 line,
                                 loglevel,
@@ -3952,7 +3952,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
         for line in smk.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
             line = re.sub(condapath, 'conda: "' + envpath, line)
-            if "include: " in line:
+            if "include {" in line:
                 line = fixinclude(
                     line, loglevel, condapath, envpath, workflowpath, logfix
                 )
