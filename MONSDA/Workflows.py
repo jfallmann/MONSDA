@@ -2866,30 +2866,23 @@ def nf_make_sub(
 
                         if works[j] == "QC":
                             if "TRIMMING" in works:
-                                #subname = toolenv + "_trim.nf"
                                 flowlist.append("QC_RAW")
                                 flowlist.append("TRIMMING")
                                 flowlist.append("QC_TRIMMING")
                                 if "MAPPING" in works:
-                                    #subname = toolenv + "_trim_map.nf"
                                     flowlist.append("QC_MAPPING")
                             else:
                                 if "DEDUP" in subworkflows:
-                                    #subname = toolenv + "_dedup.nf"
                                     flowlist.append("QC_RAW")
                                     if toolenv == "umitools":
                                         flowlist.append("DEDUPEXTRACT")
                                     if "MAPPING" in works:
-                                        #subname = toolenv + "_dedup_map.nf"
                                         flowlist.append("QC_MAPPING")
                                 else:
-                                    #subname = toolenv + "_raw.nf"
                                     flowlist.append("QC_RAW")
                                     if "MAPPING" in works:
-                                        #subname = toolenv + ".nf"
                                         flowlist.append("QC_MAPPING")
                             subname = toolenv + ".nf"
-                            #flowlist.append("QC_MAPPING")
 
                         if works[j] == "TRIMMING" and "TRIMMING" not in flowlist:
                             subname = toolenv + ".nf"
@@ -3224,39 +3217,30 @@ def nf_make_sub(
                     if subwork == "QC":
                         if "TRIMMING" in subworkflows:
                             if "DEDUP" in subworkflows:
-                                #subname = toolenv + "_dedup_trim.nf"
                                 flowlist.append("QC_RAW")
                                 flowlist.append("DEDUP_TRIM")
                                 flowlist.append("QC_DEDUP_TRIM")
                                 if "MAPPING" in subworkflows:
-                                    #subname = toolenv + "_dedup_trim_map.nf"
                                     flowlist.append("QC_MAPPING")
                             else:
-                                #subname = toolenv + "_trim.nf"
                                 flowlist.append("QC_RAW")
                                 flowlist.append("TRIMMING")
                                 flowlist.append("QC_TRIMMING")
                                 if "MAPPING" in subworkflows:
-                                    #subname = toolenv + "_trim_map.nf"
                                     flowlist.append("QC_MAPPING")
                         else:
                             if "DEDUP" in subworkflows:
-                                #subname = toolenv + "_dedup.nf"
                                 flowlist.append("QC_RAW")
                                 flowlist.append("DEDUP")
                                 flowlist.append("QC_DEDUP")
                                 if "MAPPING" in subworkflows:
-                                    #subname = toolenv + "_dedup_map.nf"
                                     flowlist.append("QC_MAPPING")
                             else:
-                                #subname = toolenv + "_raw.nf"
                                 flowlist.append("QC_RAW")
                                 if "MAPPING" in subworkflows:
-                                    #subname = toolenv + ".nf"
                                     flowlist.append("QC_MAPPING")
 
                         subname = toolenv + ".nf"
-                        #flowlist.append("QC_MAPPING")
 
                     # Picard tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
