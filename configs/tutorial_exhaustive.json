@@ -384,14 +384,14 @@
                     "dexseq": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "COUNT": "-f -O -t exon -g exon",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DEU Analysis
                         }
                     },
                     "edger": {
                         "OPTIONS":
                         {
-                            "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                            "COUNT": "-f -O -t exon -g exon",  # Options for read counting, independent of COUNTS workflows
                             "DEU": ""  # Options for DEU Analysis
                         }
                     }
@@ -401,14 +401,14 @@
                 "dexseq": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "COUNT": "-f -O -t exon -g exon",  # Options for read counting, independent of COUNTS workflows
                         "DEU": ""  # Options for DEU Analysis
                     }
                 },
                 "edger": {
                     "OPTIONS":
                     {
-                        "COUNT": "-f -O -t CDS -g gene_id",  # Options for read counting, independent of COUNTS workflows
+                        "COUNT": "-f -O -t exon -g exon",  # Options for read counting, independent of COUNTS workflows
                         "DEU": ""  # Options for DEU Analysis
                     }
                 }
