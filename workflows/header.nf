@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 //includes
-//include {} from '../MONSDA/lib/Collection.groovy'
+//include {} from "../lib/Collection.groovy"
 
 //Version Check
 nextflowVersion = '>=20.01.0.5264'
