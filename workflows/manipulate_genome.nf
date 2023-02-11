@@ -27,7 +27,7 @@ process UnzipGenome{
     cs = ref.getSimpleName()+".chrom.sizes"
 
     """
-    zcat $ref |perl -F\'\\t\' -wane 'if(\$_ =~ /^>/){{chomp(\$F[0]);print \"\\n\".\$F[0].\"\\n\"}} else{{(\$line=\$_)=~s/\\r[\\n]*/\\n/gm; chomp(\$line=\$_); print \$line}}' |tail -n+2 > $fn && $BINS/Preprocessing/indexfa.sh $fa 2> log && cut -f1,2 $fai > $cs
+    zcat $ref |perl -F'\t' -wane 'if(\$_ =~ /^>/){{chomp(\$F[0]);print \"\n\".\$F[0].\"\n\"}} else{{(\$line=\$_)=~s/\r[\n]*/\n/gm; chomp(\$line=\$_); print \$line}}' |tail -n+2 > $fn && $BINS/Preprocessing/indexfa.sh $fa 2> log && cut -f1,2 $fai > $cs
     """
 }
 
@@ -61,6 +61,6 @@ process UnzipGenome_no_us{
     cs = ref.getSimpleName()+"_us.chrom.sizes"
     
     """
-    zcat $ref |perl -F\'\\t\' -wane 'if(\$_ =~ /^>/){{\$F[0] = \$F[0] =~ /^>chr/ ? \$F[0] : \">chr\".substr(\$F[0],1) =~ s/\\_/\./g;chomp(\$F[0]);print \"\\n\".\$F[0].\"\\n\"}} else{{(\$line=\$_)=~s/\\r[\\n]*/\\n/gm; chomp(\$line=\$_); print \$line}}' |tail -n+2 > $fn && $BINS/Preprocessing/indexfa.sh $fa 2> log && cut -f1,2 $fai > $cs
+    zcat $ref |perl -F'\t' -wane 'if(\$_ =~ /^>/){{\$F[0] = \$F[0] =~ /^>chr/ ? \$F[0] : \">chr\".substr(\$F[0],1) =~ s/_/./g;chomp(\$F[0]);print \"\n\".\$F[0].\"\n\"}} else{{(\$line=\$_)=~s/\r[\n]*/\n/gm; chomp(\$line=\$_); print \$line}}' |tail -n+2 > $fn && $BINS/Preprocessing/indexfa.sh $fa 2> log && cut -f1,2 $fai > $cs
     """
 }   
