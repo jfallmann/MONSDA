@@ -2132,7 +2132,7 @@ def nf_fetch_params(
                 "nf",
             )
             retconf[x + "REPS"] = f"'{REPS}'"
-            comparison = mp.comparable_as_string(config, "DE")
+            comparison = mp.comparable_as_string(config, x)
             compstr = ",".join([i.split(":")[0] for i in comparison.split(",")])
             retconf[x + "COMP"] = comparison
             retconf[x + "COMPS"] = compstr
