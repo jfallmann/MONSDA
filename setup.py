@@ -19,6 +19,13 @@ def generate_datafiles():
     df = list()
     dirlist = defaultdict(list)
 
+    libs = list()
+    for l in glob("MONSDA/lib/**", recursive=True):
+        if any(x in l for x in [".pl", ".pm", ".py", ".sh", ".R", ".groovy"]):
+            libs.append(os.path.relpath(l))
+    for l in libs:
+        dirlist[str(os.path.join("share", os.path.dirname(l)))].append(l)
+
     scripts = list()
     for s in glob("scripts/**", recursive=True):
         if any(x in s for x in [".pl", ".pm", ".py", ".sh", ".R"]):
