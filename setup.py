@@ -20,7 +20,7 @@ def generate_datafiles():
     dirlist = defaultdict(list)
 
     libs = list()
-    for l in glob("MONSDA/lib/**", recursive=True):
+    for l in glob("MONSDA/lib/*"):
         if any(x in l for x in [".pl", ".pm", ".py", ".sh", ".R", ".groovy"]):
             libs.append(os.path.relpath(l))
     for l in libs:
