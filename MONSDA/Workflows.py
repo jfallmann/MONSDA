@@ -1842,12 +1842,13 @@ def fixinclude(
 
     linelist = list()
     includeline = 'include: ' if not nfmode else 'include {'
+    condaline = 'conda:  "' if not nfmode else 'conda "'
     toinclude = str.split(line)[-1].replace('"', "")
     toinclude = str.join(os.sep, [workflowpath, toinclude])
     with open(toinclude, "r") as incl:
         for line in incl.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-            line = re.sub(condapath, 'conda:  "' + envpath, line)
+            line = re.sub(condapath, condaline + envpath, line)
             if includeline in line:
                 line = fixinclude(
                     line, loglevel, condapath, envpath, workflowpath, logfix
