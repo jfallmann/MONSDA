@@ -35,13 +35,13 @@ else:
     )
 
 log = setup_logger(
-    name=scriptname,
+    name=scriptname.lower(),
     log_file="LOGS" + os.sep + scriptname + ".log",
     logformat="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
     datefmt="%m-%d %H:%M",
 )
 log = setup_logger(
-    name=scriptname,
+    name=scriptname.lower(),
     log_file="stderr",
     logformat="%(asctime)s %(levelname)-8s %(message)s",
     datefmt="%m-%d %H:%M",
@@ -361,7 +361,7 @@ def run_snakemake(
                     mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
-                )
+                )                
 
                 jobs = mw.make_post(
                     subwork,
@@ -863,6 +863,8 @@ def main():
             sys.exit("MONSDA version " + __version__)
 
         log.setLevel(knownargs.loglevel)
+
+        print(f'MAIN:{scriptname}, {log}, {log.level}')
 
         log.info(
             logid

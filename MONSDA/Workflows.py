@@ -105,14 +105,13 @@ condapath = re.compile(r'conda:\s+"')
 logfix = re.compile(r'loglevel="INFO"')
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
     log = logging.getLogger(scriptname)
-
+    
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
-
     handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(
@@ -138,7 +137,7 @@ except Exception:
         exc_value,
         exc_tb,
     )
-    print("".join(tbe.format()), file=sys.stderr)
+    sys.exit("".join(tbe.format()), file=sys.stderr)
 
 
 # Code:All subs from here on
@@ -169,7 +168,7 @@ def get_combo(wfs, config, conditions):
     if wfs is None or len(wfs) < 1:
         return None
 
-    for condition in conditions:
+    for condition in list(set(conditions)):
         ret = list()
         for subwork in wfs:
             listoftools, listofconfigs = create_subworkflow(
@@ -199,6 +198,7 @@ def get_combo(wfs, config, conditions):
                 )
             ret.append(tools)
 
+        log.debug(f'{logid} Itertools {ret}')
         combos[condition] = itertools.product(*ret)
 
     # no debug log here or iterator will be consumed
@@ -222,9 +222,8 @@ def get_processes(config):
         "DEU",
         "DAS",
         "DTU",
-        "CIRCS",
-        "ANNOTATE",
-    ]
+        "CIRCS"
+       ]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -241,7 +240,6 @@ def get_processes(config):
             + str(post)
         )
         subworkflows = [str(x) for x in wfs if x in sub]
-        log.debug(logid + "Sub: " + str(subworkflows))
         if len(subworkflows) == 0 or subworkflows[0] == "":
             subworkflows = []
         preprocess = [x for x in wfs if x in pre]
@@ -317,7 +315,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
     toollist = list()
     configs = list()
 
-    for condition in conditions:
+    for condition in list(set(conditions)):
         try:
             env = str(mu.sub_dict(config[subwork], condition)[stage + "ENV"])
         except:
@@ -474,7 +472,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
 
     log.debug(logid + str([toollist, configs]))
 
-    return toollist, configs
+    return [list(x) for x in set(tuple(x) for x in toollist)], configs
 
 
 @check_run
@@ -1176,12 +1174,13 @@ def make_post(
 
     if combinations:
         combname = mp.get_combo_name(combinations)
+        log.debug(f'{logid} COMBINATIONS: {combname}')
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
-            condition = list(combname.keys())[0]
-            envlist = combname[condition].get("envs")
+            condition = list(set(combname.keys()))[0]
+            envlist = list(set(combname[condition].get("envs")))
             subconf = mu.NestedDefaultDict()
             add = list()
 
@@ -1197,8 +1196,6 @@ def make_post(
                     add.append(line)
 
             for i in range(len(envlist)):
-                envs = envlist[i].split("-")
-
                 listoftools, listofconfigs = create_subworkflow(
                     config, subwork, combname, stage="POST"
                 )
@@ -1346,7 +1343,7 @@ def make_post(
 
         else:
             for condition in combname:
-                envlist = combname[condition].get("envs")
+                envlist = list(set(combname[condition].get("envs")))
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
                 subconf = mu.NestedDefaultDict()
@@ -3434,13 +3431,14 @@ def nf_make_post(
 
     if combinations:
         combname = mp.get_combo_name(combinations)
+        log.debug(f'{logid} COMBINATIONS: {combname}')
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
-            condition = list(combname.keys())[0]
-            worklist = combname[condition].get("works")
-            envlist = combname[condition].get("envs")
+            condition = list(set(combname.keys()))[0]
+            worklist = list(set(combname[condition].get("works")))
+            envlist = list(set(combname[condition].get("envs")))
             subconf = mu.NestedDefaultDict()
             add = list()
 
@@ -3463,8 +3461,6 @@ def nf_make_post(
                 add.append("\n\n")
 
             for i in range(len(envlist)):
-                envs = envlist[i].split("-")
-                works = worklist[i].split("-")
                 flowlist = list()
                 tp = list()
 
@@ -3603,8 +3599,8 @@ def nf_make_post(
                     jobs.append([nfo, confo, tpl, para])
         else:
             for condition in combname:
-                worklist = combname[condition].get("works")
-                envlist = combname[condition].get("envs")
+                worklist = list(set(combname[condition].get("works")))
+                envlist = list(set(combname[condition].get("envs")))
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
                 subconf = mu.NestedDefaultDict()
@@ -3630,7 +3626,6 @@ def nf_make_post(
 
                 for i in range(len(envlist)):
                     envs = envlist[i].split("-")
-                    works = worklist[i].split("-")
                     flowlist = list()
                     tp = list()
 
