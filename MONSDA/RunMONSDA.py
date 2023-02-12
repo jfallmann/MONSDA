@@ -907,6 +907,18 @@ def main():
         )
         log.debug(logid + str(log.handlers))
 
+        commandfile = "JOBS" + os.sep + scriptname + ".commands"
+        if os.path.exists(commandfile):
+            ts = '_'+str(
+               datetime.datetime.fromtimestamp(
+                    os.path.getmtime(os.path.abspath(commandfile))
+                ).strftime("%Y%m%d_%H_%M_%S")
+            )
+            shutil.copy2(
+                commandfile,
+                commandfile + ts,
+            )
+
         if not knownargs.nextflow:
             min_version("7.20.0")
             run_snakemake(

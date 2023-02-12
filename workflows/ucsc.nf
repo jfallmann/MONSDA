@@ -190,9 +190,9 @@ workflow TRACKS{
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
     mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
-    
+
     BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed)
+    BedToBedg(BamToBed.out.bed, UnzipGenome.out.index, UnzipGenome.out.chromsize)
     NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
     BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr)
     GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())

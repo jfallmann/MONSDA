@@ -1179,8 +1179,8 @@ def make_post(
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
-            condition = list(set(combname.keys()))[0]
-            envlist = list(set(combname[condition].get("envs")))
+            condition = list(combname.keys())[0]
+            envlist = list(combname[condition].get("envs"))
             subconf = mu.NestedDefaultDict()
             add = list()
 
@@ -1343,7 +1343,7 @@ def make_post(
 
         else:
             for condition in combname:
-                envlist = list(set(combname[condition].get("envs")))
+                envlist = list(combname[condition].get("envs"))
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
                 subconf = mu.NestedDefaultDict()
@@ -3598,8 +3598,7 @@ def nf_make_post(
                     jobs.append([nfo, confo, tpl, para])
         else:
             for condition in combname:
-                worklist = list(set(combname[condition].get("works")))
-                envlist = list(set(combname[condition].get("envs")))
+                envlist = list(combname[condition].get("envs"))
                 log.debug(logid + f"POSTLISTS:{condition}, {subwork}, {envlist}")
 
                 subconf = mu.NestedDefaultDict()
