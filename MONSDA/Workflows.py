@@ -3436,9 +3436,8 @@ def nf_make_post(
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
 
-            condition = list(set(combname.keys()))[0]
-            worklist = list(set(combname[condition].get("works")))
-            envlist = list(set(combname[condition].get("envs")))
+            condition = list(combname.keys())[0]
+            envlist = combname[condition].get("envs")
             subconf = mu.NestedDefaultDict()
             add = list()
 
