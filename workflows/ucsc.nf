@@ -1,7 +1,7 @@
 BINS = get_always('BINS')
 TRACKSENV = get_always('TRACKSENV')
 TRACKSBIN = get_always('TRACKSBIN')
-REF = get_always('REF')
+REF = get_always('REFERENCE')
 REFDIR = get_always('REFDIR')
 ANNO = get_always('ANNO')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
@@ -190,11 +190,13 @@ workflow TRACKS{
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
     mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
+    genomefile = Channel.fromPath(REF)
 
+    UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
     BedToBedg(BamToBed.out.bed, UnzipGenome.out.index, UnzipGenome.out.chromsize)
     NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
-    BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr)
+    BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr, UnzipGenome.out.chromsize)
     GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
 
     emit:
