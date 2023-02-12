@@ -3,7 +3,7 @@ TRACKSENV = get_always('TRACKSENV')
 TRACKSBIN = get_always('TRACKSBIN')
 REF = get_always('REFERENCE')
 REFDIR = get_always('REFDIR')
-ANNO = get_always('ANNO')
+SETS = get_always('SETS')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
 
 TRACKBIN = 'ucsc'
@@ -61,9 +61,7 @@ process BedToBedg{
     }
 
     input:
-    path bed
-    path fai
-    path sizes
+    path in
 
     output:
     path "*fw.bedg.gz", emit: bedgf
@@ -71,6 +69,10 @@ process BedToBedg{
     path "*.log", emit: log
 
     script: 
+    bed = in[0]
+    fai = in[1]
+    sizes = in[2]
+
     fn = file(bed).getSimpleName()
     fw = fn+'.fw.bedg.gz'
     fr = fn+'.re.bedg.gz'
@@ -106,13 +108,13 @@ process NormalizeBedg{
 
     script: 
     fn = file(bedgf).getSimpleName()
-    fw = fn+'.norm.fw.bedg.gz'
-    fr = fn+'.norm.re.bedg.gz'
+    fw = fn+'.fw.norm.bedg.gz'
+    fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
     
     """
-    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n|gzip > $bedgr 2> $ol; else gzip < /dev/null > $bedgr; echo \"File $bedgr empty\" >> $ol; fi
+    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
     """
 }
 
@@ -172,7 +174,7 @@ process GenerateTrack{
     script: 
     fn = file(bwf).getSimpleName()
     ol = fn+".log"
-    src='TRACKS'+os.sep+$SETS.replace(os.sep, '_')
+    src='TRACKS'+File.pathSeparator+$SETS.replace(File.pathSeparator, '_')
     
     """
     echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $SETS -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
@@ -194,9 +196,9 @@ workflow TRACKS{
 
     UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed, UnzipGenome.out.index, UnzipGenome.out.chromsize)
-    NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
-    BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr, UnzipGenome.out.chromsize)
+    BedToBedg(BamToBed.out.bed.collate(1).combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
+    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1).combine(NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize)))
     GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
 
     emit:
