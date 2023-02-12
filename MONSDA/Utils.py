@@ -88,14 +88,13 @@ import functools
 import datetime
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
     log = logging.getLogger(scriptname)
 
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
-
     handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(
@@ -113,7 +112,7 @@ try:
     )
     log.addHandler(handler)
     log.setLevel(lvl)
-
+    
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(

@@ -97,14 +97,13 @@ import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace(".py", "")
+    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
     log = logging.getLogger(scriptname)
 
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
-
     handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(
@@ -209,22 +208,24 @@ def get_samples_postprocess(config, subwork):
         f = glob.glob(s)
         log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
-            f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
+            f = sorted(list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f])))
             if "paired" in paired:
                 RETSAMPLES.extend(
-                    list(
-                        set(
-                            [
-                                os.path.join(
-                                    os.path.dirname(s),
-                                    re.sub(
-                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
-                                        "",
-                                        os.path.basename(s),
-                                    ),
-                                )
-                                for s in f
-                            ]
+                    sorted(
+                        list(
+                            set(
+                                [
+                                    os.path.join(
+                                        os.path.dirname(s),
+                                        re.sub(
+                                            r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
+                                            "",
+                                            os.path.basename(s),
+                                        ),
+                                    )
+                                    for s in f
+                                ]
+                            )
                         )
                     )
                 )
@@ -1059,9 +1060,13 @@ def get_combo_name(combinations):
                 for work, env in step.items():
                     envs.append(env)
                     works.append(work)
+            envs = list(set(envs))
+            works = list(set(works))
             combname[condition]["envs"].append(str.join("-", envs))
             combname[condition]["works"].append(str.join("-", works))
 
+        combname[condition]["envs"] = list(set(combname[condition]["envs"]))
+        combname[condition]["works"] = list(set(combname[condition]["works"]))
     log.debug(logid + "ComboName: " + str(combname))
     return combname
 
