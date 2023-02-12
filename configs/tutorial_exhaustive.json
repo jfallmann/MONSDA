@@ -370,7 +370,7 @@
     "DEU": {
         "TOOLS" :
         {
-            "dexseq" : "Analysis/DEU/DEXSEQ.R",
+            #"dexseq" : "Analysis/DEU/DEXSEQ.R",  # Very specific, needs more tweaking for test data
             "edger" : "Analysis/DEU/EDGER.R"
         },
         "COMPARABLE" :
