@@ -1060,13 +1060,9 @@ def get_combo_name(combinations):
                 for work, env in step.items():
                     envs.append(env)
                     works.append(work)
-            envs = list(set(envs))
-            works = list(set(works))
             combname[condition]["envs"].append(str.join("-", envs))
             combname[condition]["works"].append(str.join("-", works))
 
-        combname[condition]["envs"] = list(set(combname[condition]["envs"]))
-        combname[condition]["works"] = list(set(combname[condition]["works"]))
     log.debug(logid + "ComboName: " + str(combname))
     return combname
 
