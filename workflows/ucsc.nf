@@ -131,16 +131,17 @@ process BedgToTRACKS{
     }
 
     input:
-    path bedgf
-    path bedgr
-    path sizes
-
+    path in
+    
     output:
     path "*.fw.bw", emit: bwf
     path "*.re.bw", emit: bwr
     path "*.log", emit: log
 
     script: 
+    bedgf = in[0]
+    bedgr = in[1]
+    sizes = in[2]
     fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
@@ -196,9 +197,9 @@ workflow TRACKS{
 
     UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed.collate(1).combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)).collate(3))
     NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
-    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1).combine(NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize)))
+    BedgToTRACKS(NormalizeBedg.out.bedgf.combine(NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize)).collate(3))
     GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
 
     emit:
