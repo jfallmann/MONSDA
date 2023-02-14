@@ -200,7 +200,7 @@ workflow TRACKS{
     BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
     BedgToTRACKS(NormalizeBedg.out.bedgf.combine(NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize)))
-    GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
+    GenerateTrack(BedgToTRACKS.out.bwf.unique(), BedgToTRACKS.out.bwr.unique())
 
     emit:
     trackdb = GenerateTrack.out.trackdb
