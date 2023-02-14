@@ -361,7 +361,7 @@ def run_snakemake(
                     mw.get_combo(subworkflows, config, conditions)
                     if subworkflows
                     else None
-                )                
+                )
 
                 jobs = mw.make_post(
                     subwork,
@@ -475,9 +475,10 @@ def run_nextflow(
         workdir = os.path.abspath(str.join(os.sep, [workdir, "NextFlowWork"]))
         subdir = "SubFlows"
         mp.create_skeleton(subdir, skeleton)
+
         if not os.path.exists(os.path.abspath(subdir + os.sep + "bin")):
             os.symlink(
-                os.path.abspath(config["BINS"]),
+                os.path.abspath(config.get("BINS", "")),
                 os.path.abspath(subdir + os.sep + "bin"),
             )
 
@@ -864,7 +865,7 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
-        print(f'MAIN:{scriptname}, {log}, {log.level}')
+        print(f"MAIN:{scriptname}, {log}, {log.level}")
 
         log.info(
             logid
@@ -909,8 +910,8 @@ def main():
 
         commandfile = "JOBS" + os.sep + scriptname + ".commands"
         if os.path.exists(commandfile):
-            ts = '_'+str(
-               datetime.datetime.fromtimestamp(
+            ts = "_" + str(
+                datetime.datetime.fromtimestamp(
                     os.path.getmtime(os.path.abspath(commandfile))
                 ).strftime("%Y%m%d_%H_%M_%S")
             )
@@ -934,7 +935,7 @@ def main():
             )
 
         else:
-            nf_min_version = "22.10.4"
+            nf_min_version = "22.10.6"
             nf_ver = mw.nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(
