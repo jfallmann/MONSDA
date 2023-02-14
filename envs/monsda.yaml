@@ -11,7 +11,7 @@ dependencies:
   - mamba >=1.0.0
   - more-itertools >=8.12.0
   - natsort >=8.1.0
-  - nextflow =22.10.4
+  - nextflow =22.10.6
   - perl =5.32.1
   - python =3.10.6
   - python_abi =3.10
