@@ -370,7 +370,7 @@
     "DEU": {
         "TOOLS" :
         {
-            #"dexseq" : "Analysis/DEU/DEXSEQ.R",  # Very specific, needs more tweaking for test data
+            "dexseq" : "Analysis/DEU/DEXSEQ.R",  # Very specific, needs more tweaking for test data
             "edger" : "Analysis/DEU/EDGER.R"
         },
         "COMPARABLE" :
@@ -493,7 +493,7 @@
                         "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                         "OPTIONS":
                         {
-                            "INDEX": "",
+                            "INDEX": "-d GENOMES/Ecoli/salmon_decoy",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
                             "DTU": ""  # Options for DE Analysis
                         }
@@ -516,8 +516,8 @@
                     "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
                     "OPTIONS":
                     {
-                        "INDEX": "",  # Options for read counting, independent of COUNTS workflows
-                        "QUANT": "",
+                        "INDEX": "-d GENOMES/Ecoli/salmon_decoy",  
+                        "QUANT": "", # Options for read counting, independent of COUNTS workflows
                         "DTU": ""  # Options for DE Analysis
                     }
                 }

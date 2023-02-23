@@ -159,9 +159,11 @@ From this gtf we can now create a FASTA file by writing a helper BED file and us
     
     zcat Ecoli_trans_fix.gtf.gz|grep -P '\ttranscript\t'|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
     bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
-    perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa|gzip > Ecoli_trans.fa.gz
+    perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa |gzip > tmp.gz;cat tmp.gz ecoli.fa.gz > Ecoli_trans.fa.gz && rm -f tmp.gz
+    zcat ecoli.fa.gz|grep -P '^>'|cut -d " " -f1 > salmon_decoy
+    sed -i.bak -e 's/>//g' salmon_decoy
 
-With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files we can now also run the DTU workflow. The config file for the exhaustive run looks as follows:
+With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files and the corresponding salmon decoy file we can now also run the DTU workflow. The config file for the exhaustive run looks as follows:
 
 .. literalinclude:: ../../configs/tutorial_exhaustive.json
     :language: json
