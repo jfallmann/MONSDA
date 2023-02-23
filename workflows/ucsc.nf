@@ -2,7 +2,7 @@ BINS = get_always('BINS')
 TRACKSENV = get_always('TRACKSENV')
 TRACKSBIN = get_always('TRACKSBIN')
 REF = get_always('REFERENCE')
-REFDIR = get_always('REFDIR')
+REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 SETS = get_always('SETS')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
 
@@ -61,7 +61,7 @@ process BedToBedg{
     }
 
     input:
-    path in
+    path bedf
 
     output:
     path "*fw.bedg.gz", emit: bedgf
@@ -69,9 +69,9 @@ process BedToBedg{
     path "*.log", emit: log
 
     script: 
-    bed = in[0]
-    fai = in[1]
-    sizes = in[2]
+    bed = bedf[0]
+    fai = bedf[1]
+    sizes = bedf[2]
 
     fn = file(bed).getSimpleName()
     fw = fn+'.fw.bedg.gz'
@@ -131,7 +131,7 @@ process BedgToTRACKS{
     }
 
     input:
-    path in
+    path inp
     
     output:
     path "*.fw.bw", emit: bwf
@@ -139,9 +139,9 @@ process BedgToTRACKS{
     path "*.log", emit: log
 
     script: 
-    bedgf = in[0]
-    bedgr = in[1]
-    sizes = in[2]
+    bedgf = inp[0]
+    bedgr = inp[1]
+    sizes = inp[2]
     fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
@@ -175,10 +175,10 @@ process GenerateTrack{
     script: 
     fn = file(bwf).getSimpleName()
     ol = fn+".log"
-    src='TRACKS'+File.pathSeparator+$SETS.replace(File.pathSeparator, '_')
+    uid= SETS.replace(File.pathSeparator, '_')
     
     """
-    echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $SETS -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
+    mkdir -p LOGS;touch LOGS/MONSDA.log; echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
     """
 }
 
