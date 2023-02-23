@@ -175,7 +175,7 @@ process GenerateTrack{
     script: 
     fn = file(bwf).getSimpleName()
     ol = fn+".log"
-    uid= SETS.replace(File.pathSeparator, '_')
+    uid= SETS.replace(File.separator, "_")
     
     """
     mkdir -p LOGS;touch LOGS/MONSDA.log; echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
@@ -200,7 +200,7 @@ workflow TRACKS{
     BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
     BedgToTRACKS(NormalizeBedg.out.bedgf.combine(NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize)))
-    GenerateTrack(BedgToTRACKS.out.bwf.unique(), BedgToTRACKS.out.bwr.unique())
+    GenerateTrack(BedgToTRACKS.out.bwf.collect().unique(), BedgToTRACKS.out.bwr.collect().unique())
 
     emit:
     trackdb = GenerateTrack.out.trackdb

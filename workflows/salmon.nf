@@ -4,7 +4,7 @@ COUNTIDX = get_always('COUNTINGIDX')
 COUNTUIDX = get_always('COUNTINGUIDX')
 COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
 COUNTREF = get_always('COUNTINGREF')
-COUNTREFDIR = get_always('COUNTINGREFDIR')
+COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 COUNTUIDX.replace('.idx','')
