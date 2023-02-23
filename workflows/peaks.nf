@@ -2,7 +2,7 @@ BINS = get_always('BINS')
 TRACKSENV = get_always('TRACKSENV')
 TRACKSBIN = get_always('TRACKSBIN')
 REF = get_always('REF')
-REFDIR = get_always('REFDIR')
+REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 ANNO = get_always('ANNO')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
 
