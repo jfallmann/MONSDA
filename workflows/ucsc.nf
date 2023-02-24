@@ -131,7 +131,8 @@ process BedgToTRACKS{
     }
 
     input:
-    path inp
+    path bedgf
+    path rest
     
     output:
     path "*.fw.bw", emit: bwf
@@ -139,9 +140,8 @@ process BedgToTRACKS{
     path "*.log", emit: log
 
     script: 
-    bedgf = inp[0]
-    bedgr = inp[1]
-    sizes = inp[2]
+    bedgr = rest[0]
+    sizes = rest[1]
     fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
@@ -161,7 +161,7 @@ process GenerateTrack{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".txt") > 0)      "TRACKS/${file(filename).getName()}"
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_track.log"
+        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}"
     }
 
     input:
@@ -173,12 +173,10 @@ process GenerateTrack{
     path "*.log", emit: log
 
     script: 
-    fn = file(bwf).getSimpleName()
-    ol = fn+".log"
     uid= SETS.replace(File.separator, "_")
-    
+    ol = uid+"_GenerateTrack.log"
     """
-    mkdir -p LOGS;touch LOGS/MONSDA.log; echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
+    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
     """
 }
 
@@ -192,15 +190,14 @@ workflow TRACKS{
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
-    mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
     BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
-    BedgToTRACKS(NormalizeBedg.out.bedgf.combine(NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize)))
-    GenerateTrack(BedgToTRACKS.out.bwf.collect().unique(), BedgToTRACKS.out.bwr.collect().unique())
+    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))
+    GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
 
     emit:
     trackdb = GenerateTrack.out.trackdb
