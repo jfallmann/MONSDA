@@ -69,7 +69,7 @@ rule run_dexseq:
             session = rules.themall.input.session
     log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DEUENV+".yaml"
-    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    threads: 1  # Due to BPPARAM errors, else int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
             outdir = 'DEU/'+combo,
             compare = comparison,
