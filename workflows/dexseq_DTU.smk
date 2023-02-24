@@ -101,7 +101,7 @@ rule run_DTU:
             res = rules.themall.input.res
     log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  ""+DTUENV+".yaml"
-    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    threads: 1  # Due to BPPARAM errors, else int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
