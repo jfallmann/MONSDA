@@ -188,8 +188,10 @@ for(contrast in comparisons[[1]]){
         print(plotMA( dxr1, cex=0.8))
         dev.off()
 
-        out <- paste('Tables/DEU','DEXSEQ',combi,contrast_name,'table','results.tsv.gz', sep='_')
-        write.table(as.data.frame(dxr1), gzfile(out), sep="\t", row.names=FALSE, quote=F)
+        toprint <- as.data.frame(dxr1)
+        toprint$transcripts <- vapply(toprint$transcripts, paste, collapse = ", ", character(1L))
+        write.table(toprint, gzfile(paste('Tables/DEU','DEXSEQ',combi,contrast_name,'table','results.tsv.gz', sep='_')), sep="\t", row.names=FALSE, quote=F)
+
 
         htmlout <- paste('DEXSeq_',combi,'_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
@@ -217,7 +219,7 @@ for(contrast in comparisons[[1]]){
         write.table(figures, paste("Figures/DEU","DEXSEQ",combi,contrast_name, "list","sigGroupsFigures.tsv", sep="_"), sep="\t", quote=F, row.names=FALSE, col.names=TRUE)
 
         # cleanup
-        rm(dxdpair, dxr1)
+        rm(dxdpair, dxr1, toprint)
         print(paste('cleanup done for ', contrast_name, sep=''))
     })
 }

@@ -168,9 +168,11 @@ for(contrast in comparisons[[1]]){
 
     dxr$Gene  <- lapply(dxr$groupID, function(x){get_gene_name(x,gtf.df)})
     dxr <- dxr[,c(1,2,5,3,4)]
-    dxr <- apply(dxr,2,as.character)
+    toprint <- as.data.frame(dxr1)
+    toprint$transcripts <- vapply(toprint$transcripts, paste, collapse = ", ", character(1L))
+    #dxr <- apply(dxr, 2, as.character)
 
-    write.table(as.data.frame(dxr), gzfile(paste("Tables/DTU","DEXSEQ",combi,contrast_name,"table","results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
+    write.table(toprint, gzfile(paste("Tables/DTU","DEXSEQ",combi,contrast_name,"table","results.tsv.gz",sep="_")), sep="\t", quote=F, row.names=FALSE)
     
     # # stageR following DEXSeq
     # strp <- function(x) substr(x,1,15)

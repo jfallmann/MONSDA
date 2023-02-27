@@ -1,9 +1,9 @@
 BINS = get_always('BINS')
 TRACKSENV = get_always('TRACKSENV')
 TRACKSBIN = get_always('TRACKSBIN')
-REF = get_always('REF')
+REF = get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
-ANNO = get_always('ANNO')
+SETS = get_always('SETS')
 TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
 
 TRACKBIN = 'ucsc'
@@ -61,9 +61,7 @@ process BedToBedg{
     }
 
     input:
-    path bed
-    path fai
-    path sizes
+    path bedf
 
     output:
     path "*fw.bedg.gz", emit: bedgf
@@ -71,6 +69,10 @@ process BedToBedg{
     path "*.log", emit: log
 
     script: 
+    bed = bedf[0]
+    fai = bedf[1]
+    sizes = bedf[2]
+
     fn = file(bed).getSimpleName()
     fw = fn+'.fw.bedg.gz'
     fr = fn+'.re.bedg.gz'
@@ -106,13 +108,13 @@ process NormalizeBedg{
 
     script: 
     fn = file(bedgf).getSimpleName()
-    fw = fn+'.norm.fw.bedg.gz'
-    fr = fn+'.norm.re.bedg.gz'
+    fw = fn+'.fw.norm.bedg.gz'
+    fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
     
     """
-    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n|gzip > $bedgr 2> $ol; else gzip < /dev/null > $bedgr; echo \"File $bedgr empty\" >> $ol; fi
+    export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\t\",@F[0..\$#F-1]),\"\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
     """
 }
 
@@ -130,15 +132,16 @@ process BedgToTRACKS{
 
     input:
     path bedgf
-    path bedgr
-    path sizes
-
+    path rest
+    
     output:
     path "*.fw.bw", emit: bwf
     path "*.re.bw", emit: bwr
     path "*.log", emit: log
 
     script: 
+    bedgr = rest[0]
+    sizes = rest[1]
     fn = file(bedgf).getSimpleName()
     fw = fn+'.fw.bw'
     fr = fn+'.re.bw'
@@ -158,7 +161,7 @@ process GenerateTrack{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".txt") > 0)      "TRACKS/${file(filename).getName()}"
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_track.log"
+        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}"
     }
 
     input:
@@ -170,12 +173,10 @@ process GenerateTrack{
     path "*.log", emit: log
 
     script: 
-    fn = file(bwf).getSimpleName()
-    ol = fn+".log"
-    src='TRACKS'+os.sep+$SETS.replace(os.sep, '_')
-    
+    uid= SETS.replace(File.separator, "_")
+    ol = uid+"_GenerateTrack.log"
     """
-    echo -e \"$bwf\n$bwr\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $SETS -e 1 -f STDIN -u '' -g $REFDIR $TRACKSPARAMS 2> $ol
+    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
     """
 }
 
@@ -189,12 +190,13 @@ workflow TRACKS{
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
-    mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
-    
+    genomefile = Channel.fromPath(REF)
+
+    UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed)
-    NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
-    BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr)
+    BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
+    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))
     GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
 
     emit:
