@@ -29,8 +29,9 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                muz = lambda wildcards, output: output.mapped.replace('.gz', '')
-        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} -o {params.muz} -u {output.unmapped} &> {log} && gzip {params.muz}"
+                muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
+                uuz = lambda wildcards, output: output.unmapped.replace('.gz', '')
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} -o {params.muz} -u {params.uuz} &> {log} && gzip {params.muz} && gzip {params.uuz}"
 
 else:
     rule mapping:
@@ -44,5 +45,6 @@ else:
         threads: MAXTHREAD
         params:  mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                muz = lambda wildcards, output: output.mapped.replace('.gz', '')
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} -o {params.muz} -u {output.unmapped} &> {log} && gzip {params.muz}"
+                muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
+                uuz = lambda wildcards, output: output.unmapped.replace('.gz', '')
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} -o {params.muz} -u {params.uuz} &> {log} && gzip {params.muz} && gzip {params.uuz}"
