@@ -198,7 +198,7 @@ for (contrast in comparisons[[1]]) {
         } else {
             print("There are no significant results in the test... nothing to report")
             dir.create(pathout)
-            cat(NULL, file = paste0(pathout, htmlout))
+            cat(NULL, file = paste(pathout, htmlout, sep = file.sep))
         }
 
         figures <- data.frame("geneID" = character(), "dxr1ID" = character(), "file" = character(), stringsAsFactors = FALSE)
