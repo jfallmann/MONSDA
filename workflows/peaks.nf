@@ -328,7 +328,7 @@ workflow PEAKS{
 
     UnzipGenome(genomefile)
     BamToBed(mapsamples_ch.collate(1))    
-    if (IP == 'iCLIP' or IP == 'revCLIP'){
+    if (IP == 'iCLIP' || IP == 'revCLIP'){
         ExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
         BedToBedg(ExtendBed.out.bedext.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     } else {
