@@ -73,7 +73,7 @@ process ExtendBed{
     ol = fn+".log"
     sortmem = '30%'
 
-    if (IP == 'ICLIP'){
+    if (IP == 'iCLIP'){
         of = fn+'_extended.bed.gz'    
         opt = '-u 1'
         
@@ -177,7 +177,7 @@ process FindPeaks{
     sortmem = '30%'
 
     """        
-    perl $BINS/Analysis/FindPeaks.pl $PEAKPARAMS -p <(zcat $bed) 2> $ol | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $of 2>> $ol
+    perl $BINS/Analysis/FindPeaks.pl $PEAKSPARAMS -p <(zcat $bed) 2> $ol | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $of 2>> $ol
     """    
 }
 
