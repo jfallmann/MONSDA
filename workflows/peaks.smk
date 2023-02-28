@@ -222,7 +222,7 @@ rule NormalizeBedg:
             re = rules.PeakToBedg.output.re
     output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.norm.bedg.gz",
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
-    log:    "LOGS/PEAKS/{combo}/{file}ucscpeaknormalizebedgraph_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_peaknormalizebedgraph_{type}.log"
     conda:  "perl.yaml"
     threads: 1
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -238,7 +238,7 @@ rule PeakToTRACKS:
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
-    log:    "LOGS/PEAKS/{combo}/{file}peak2ucsc_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_peaktoucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
     shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}"
@@ -248,7 +248,7 @@ rule GenerateTrack:
             re = rules.PeakToTRACKS.output.re
     output: "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw.trackdone",
             "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
-    log:    "LOGS/PEAKS/{combo}/{file}generatetrack_{type}_peak.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_generatetrack_{type}_peak.log"
     conda:  "base.yaml"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "TRACKS/PEAKS/{combo}/{src}".format(combo=combo, src=SETS),

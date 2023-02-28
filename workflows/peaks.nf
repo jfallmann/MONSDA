@@ -1,13 +1,12 @@
 BINS = get_always('BINS')
-TRACKSENV = get_always('TRACKSENV')
-TRACKSBIN = get_always('TRACKSBIN')
+PEAKSENV = get_always('PEAKSENV')
+PEAKSBIN = get_always('PEAKSBIN')
 REF = get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 SETS = get_always('SETS')
-TRACKSPARAMS = get_always('ucsc_TRACKS_params_UCSC') ?: ''
-
-TRACKBIN = 'ucsc'
-TRACKENV = 'ucsc'
+IP = get_always('IP')
+PREPARAMS = get_always('peaks_PEAKS_params_PREPROCESS') ?: ''
+PEAKSPARAMS = get_always('peaks_PEAKS_params_FINDPEAKS') ?: ''
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
@@ -20,7 +19,7 @@ process BamToBed{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_bam2bed.log"
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${file(filename).getName()}_bam2bed.log"
     }
 
     input:
@@ -47,6 +46,46 @@ process BamToBed{
     }
 }
 
+process ExtendBed{
+    conda "perl.yaml"
+    cpus 1
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${file(filename).getName()}_bam2bed.log"
+    }
+
+    input:
+    path bedf
+
+    output:
+    path "*d.bed.gz", emit: bedext
+    path "*.log", emit: log
+
+    script: 
+    bed = bedf[0]
+    sizes = bedf[1]
+
+    fn = file(bed).getSimpleName()
+    ol = fn+".log"
+    sortmem = '30%'
+
+    if (IP == 'ICLIP'){
+        of = fn+'_extended.bed.gz'    
+        opt = '-u 1'
+        
+    } else if (IP == 'revCLIP'){
+        of = fn+'_revtrimmed.bed.gz'    
+        opt = '-d 1'
+    }     
+
+    """        
+    $BINS/Universal/ExtendBed.pl $opt -b $bed -o $of -g $sizes 2> $ol
+    """    
+}
 
 process BedToBedg{
     conda "bedtools.yaml"
@@ -57,7 +96,102 @@ process BedToBedg{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bedg.gz") > 0)      "TRACKS/${SCOMBO}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_ucscbedtobedgraph.log"
+        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_bedtobedgraph.log"
+    }
+
+    input:
+    path bedf
+
+    output:
+    path "*.bedg.gz", emit: bedg
+    path "*.log", emit: log
+
+    script: 
+    bed = bedf[0]
+    fai = bedf[1]
+    sizes = bedf[2]
+
+    fn = file(bed).getSimpleName()
+    of = fn+'.bedg.gz'
+    ol = fn+".log"
+    sortmem = '30%'
+
+    """
+    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | perl -wlane 'print join(\"\t\",@F[0..2],\".\",\$F[3],\"+\")' > tosrt 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes | perl -wlane 'print join(\"\t\",@F[0..2],\".\",\$F[3],\"-\")' >> tosrt 2>> $ol && cat tosrt | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $of 2>> $ol
+    """
+}
+
+process PreprocessPeaks{
+    conda "perl.yaml"
+    cpus 1
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".bed.gz") > 0)      "PEAKS/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/prepeak_${file(filename).getName()}.log"
+    }
+
+    input:
+    path bed
+
+    output:
+    path "*_prepeak.bed.gz", emit: prepeak
+    path "*.log", emit: log
+
+    script: 
+    fn = file(bed).getSimpleName()
+    of = fn+"_prepeak.bed.gz"
+    ol = fn+".log"
+    sortmem = '30%'
+
+    """        
+    perl $BINS/Analysis/PreprocessPeaks.pl -p <(zcat $bed) $PREPARAMS | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k3,3n -k2,2n -k6,6 |gzip > $of 2> $ol
+    """    
+}
+
+process FindPeaks{
+    conda "perl.yaml"
+    cpus 1
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".bed.gz") > 0)      "PEAKS/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/findpeaks_${file(filename).getName()}.log"
+    }
+
+    input:
+    path bed
+
+    output:
+    path "*_peak.bed.gz", emit: peak
+    path "*.log", emit: log
+
+    script: 
+    fn = file(bed).getSimpleName()
+    of = fn+"_peak.bed.gz"
+    ol = fn+".log"
+    sortmem = '30%'
+
+    """        
+    perl $BINS/Analysis/FindPeaks.pl $PEAKPARAMS -p <(zcat $bed) 2> $ol | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $of 2>> $ol
+    """    
+}
+
+
+process PeakToBedg{
+    conda "perl.yaml"
+    cpus 1
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".bedg.gz") > 0)      "PEAKS/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${file(filename).getName()}_peaktobedgraph.log"
     }
 
     input:
@@ -70,17 +204,16 @@ process BedToBedg{
 
     script: 
     bed = bedf[0]
-    fai = bedf[1]
-    sizes = bedf[2]
+    sizes = bedf[1]
 
     fn = file(bed).getSimpleName()
-    fw = fn+'.fw.bedg.gz'
-    fr = fn+'.re.bedg.gz'
+    fw = fn+'_peak.fw.bedg.gz'
+    fr = fn+'_peak.re.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
 
     """
-    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
+    perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP -t\$'\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
     """
 }
 
@@ -93,8 +226,8 @@ process NormalizeBedg{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".norm.bedg.gz") > 0)      "TRACKS/${SCOMBO}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_ucscnormalizebedgraph.log"
+        if (filename.indexOf(".norm.bedg.gz") > 0)      "PEAKS/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${file(filename).getName()}_ucscpeaknormalizebedgraph.log"
     }
 
     input:
@@ -118,7 +251,7 @@ process NormalizeBedg{
     """
 }
 
-process BedgToTRACKS{
+process PeakToTRACKS{
     conda "ucsc.yaml"
     cpus 1
 	cache 'lenient'
@@ -126,8 +259,8 @@ process BedgToTRACKS{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bw") > 0)      "TRACKS/${SCOMBO}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}_bedgtoucsc.log"
+        if (filename.indexOf(".bw") > 0)      "TRACKS/PEAKS/${SCOMBO}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/TRACKS/PEAKS/${SCOMBO}/${file(filename).getName()}_peaktoucsc.log"
     }
 
     input:
@@ -160,8 +293,8 @@ process GenerateTrack{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".txt") > 0)      "TRACKS/${file(filename).getName()}"
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${file(filename).getName()}"
+        if (filename.indexOf(".txt") > 0)      "TRACKS/PEAKS/${file(filename).getName()}"
+        else if (filename == ".log")        "LOGS/TRACKS/PEAKS/${SCOMBO}/${file(filename).getName()}"
     }
 
     input:
@@ -174,13 +307,14 @@ process GenerateTrack{
 
     script: 
     uid= SETS.replace(File.separator, "_")
-    ol = uid+"_GenerateTrack.log"
+    ol = uid+"_GenerateTrack_peaks.log"
     """
     mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
     """
 }
 
-workflow TRACKS{ 
+
+workflow PEAKS{ 
     take: collection
 
     main:
@@ -193,11 +327,19 @@ workflow TRACKS{
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
-    BamToBed(mapsamples_ch.collate(1))
-    BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
-    NormalizeBedg(BedToBedg.out.bedgf.collate(1), BedToBedg.out.bedgr.collate(1))
-    BedgToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))
-    GenerateTrack(BedgToTRACKS.out.bwf.collect(), BedgToTRACKS.out.bwr.collect())
+    BamToBed(mapsamples_ch.collate(1))    
+    if (IP == 'iCLIP' or IP == 'revCLIP'){
+        ExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
+        BedToBedg(ExtendBed.out.bedext.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    } else {
+        BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))    
+    }
+    PreprocessPeaks(BedToBedg.out.bedg)
+    FindPeaks(PreprocessPeaks.out.prepeak)
+    PeakToBedg(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
+    NormalizeBedg(PeakToBedg.out.bedgf.collate(1), PeakToBedg.out.bedgr.collate(1))
+    PeakToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))
+    GenerateTrack(PeakToTRACKS.out.bwf.collect(), PeakToTRACKS.out.bwr.collect())
 
     emit:
     trackdb = GenerateTrack.out.trackdb
