@@ -195,7 +195,13 @@ for(contrast in comparisons[[1]]){
 
         htmlout <- paste('DEXSeq_',combi,'_',contrast_name,'.html', sep='')
         pathout <- paste('DEXSeqReport',combi,contrast_name,sep='_')
-        DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
+        check <- as.character(unique(dxr1$groupID[which(dxr1$padj < 0.1)]))
+        if(length(check)>0){ 
+              DEXSeqHTML( dxr1, FDR=0.1, color=c("#FF000080", "#0000FF80"), path=pathout, file=htmlout, BPPARAM=BPPARAM)
+        } else {
+            print("There are no significant results in the test... nothing to report")
+            touch(paste0(pathout,htmlout))
+        }
 
         figures <- data.frame("geneID" = character(), "dxr1ID" = character(), "file"=character(),stringsAsFactors=FALSE)
         sigs <- as.data.frame(which(dxr1$padj < 0.01))
