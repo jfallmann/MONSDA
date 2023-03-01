@@ -188,7 +188,7 @@ process PreprocessPeaks{
 }
 
 process FindPeaks{
-    conda "$PEAKENV"+".yaml"
+    conda "$PEAKSENV"+".yaml"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
