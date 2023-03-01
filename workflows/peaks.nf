@@ -308,8 +308,9 @@ process GenerateTrack{
     script: 
     uid= SETS.replace(File.separator, "_")
     ol = uid+"_GenerateTrack_peaks.log"
+    opt = '-n Peaks_'+"$PEAKSENV"+' -s peaks -l TRACKS_peaks_'+"$PEAKSENV"+' -b TRACKS_'+"$PEAKSENV"
     """
-    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $TRACKSPARAMS 2>> $ol;done
+    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $opt 2>> $ol;done
     """
 }
 
