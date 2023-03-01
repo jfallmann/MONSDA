@@ -197,7 +197,7 @@ for (contrast in comparisons[[1]]) {
             DEXSeqHTML(dxr1, FDR = 0.1, color = c("#FF000080", "#0000FF80"), path = pathout, file = htmlout, BPPARAM = BPPARAM)
         } else {
             print("There are no significant results in the test... nothing to report")
-            dir.create(pathout)
+            dir.create(pathout, showWarnings = FALSE)
             cat(NULL, file = paste(pathout, htmlout, sep = file.sep))
         }
 
