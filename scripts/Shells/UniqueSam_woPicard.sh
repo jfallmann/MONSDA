@@ -3,6 +3,7 @@
 in=$1
 out=$2
 threads=$3
+bwa="${4:-}"
 
 if [[ "$1" == *.gz* ]]
 then
@@ -17,7 +18,7 @@ else
     samtools view -H <(cat $in)|grep '@PG' | pigz -p $threads -f >> $out
 fi
 
-if [[ "$1" == *-bwa* ]]
+if [[ "$1" == *-bwa* ]] || [[ -n "$bwa" ]]
 then
     if [[ "$1" == *.gz* ]]
     then

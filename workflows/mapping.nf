@@ -81,8 +81,13 @@ process uniqsam{
     script:
     fn = file(sam[0]).getSimpleName()
     uniq = fn+'_unique.sam.gz'
+    if (COMBO.indexOf('-bwa') > 0){
+        bwa = 'bwa'
+    } else{
+        bwa = ''
+    }
     """
-    $BINS/Shells/UniqueSam_woPicard.sh $sam $uniq $THREADS 2> uniq.log
+    $BINS/Shells/UniqueSam_woPicard.sh $sam $uniq $THREADS $bwa 2> uniq.log
     """
 }
 
