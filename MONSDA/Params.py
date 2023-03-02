@@ -97,7 +97,11 @@ import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
+    scriptname = (
+        os.path.basename(inspect.stack()[-1].filename)
+        .replace("Run", "")
+        .replace(".py", "")
+    )
     log = logging.getLogger(scriptname)
 
     lvl = log.level if log.level else "INFO"
@@ -542,7 +546,11 @@ def tool_params(sample, runstate, config, subconf, tool=None):
     log.debug(logid + str([sample, runstate, subconf, x]))
     if "_" in tool:
         tool = tool.split("_")[0]
-    mp = mu.sub_dict(config[subconf], x)[tool] if tool else mu.sub_dict(config[subconf], x)
+    mp = (
+        mu.sub_dict(config[subconf], x)[tool]
+        if tool
+        else mu.sub_dict(config[subconf], x)
+    )
     log.debug(logid + "DONE: " + str(mp))
     return mp
 
@@ -635,8 +643,6 @@ def get_diego_samples(samples, config, analysis):
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
-        partconf = mu.sub_dict(config[analysis], scond)
-        log.debug(logid + "CONF: " + str(partconf))
         wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
             "_mapped_sorted_unique.counts.gz", ""
         )
@@ -662,7 +668,7 @@ def get_diego_groups(samples, config, analysis):
     for sample in samples:
         scond = sample.split(os.sep)[4:-1]
         log.debug(logid + "WORKING ON: " + str(sample) + " CONDITION: " + str(scond))
-        partconf = mu.sub_dict(config[analysis], scond)
+        partconf = mu.sub_dict(config["SETTINGS"], scond)
         log.debug(logid + "CONF: " + str(partconf))
         wcfile = str.join("-", sample.split(os.sep)[-4:]).replace(
             "_mapped_sorted_unique.counts.gz", ""
@@ -670,7 +676,7 @@ def get_diego_groups(samples, config, analysis):
         checkfile = sample.split(os.sep)[-1].replace(
             "_mapped_sorted_unique.counts.gz", ""
         )
-        idx = partconf["REPLICATES"].index(checkfile)
+        idx = partconf["SAMPLES"].index(checkfile)
         cond = partconf["GROUPS"][idx]
         ret[cond].append(wcfile)
 
@@ -810,7 +816,9 @@ def conditiononly(sample, config):
             log.debug(logid + "tmp: " + str(tmp))
             if len(
                 mu.get_from_dict(config["SETTINGS"], tmp)
-            ) > 0 and sname in mu.get_from_dict(config["SETTINGS"], tmp)[0].get("SAMPLES"):
+            ) > 0 and sname in mu.get_from_dict(config["SETTINGS"], tmp)[0].get(
+                "SAMPLES"
+            ):
                 ret.append(r)
     log.debug(logid + "ret: " + str(ret))
     return ret
