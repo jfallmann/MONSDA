@@ -32,8 +32,8 @@ rule featurecount_unique:
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
-            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
-            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
+            tmph = temp("DEU/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc = temp("DEU/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
     conda:  ""+COUNTENV+".yaml"
