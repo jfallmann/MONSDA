@@ -1,24 +1,23 @@
 BINS = get_always('BINS')
-DEENV = get_always('DEENV')
-DEBIN = get_always('DEBIN')
-DEREF = get_always('DEREF')
-DEREFDIR = "${workflow.workDir}/../"+get_always('DEREFDIR')
-DEANNO = get_always('DEANNO')
-DEPARAMS = get_always('deseq2_DE_params_DE') ?: ''
-DEREPS = get_always('DEREPS') ?: ''
-DECOMP = get_always('DECOMP') ?: ''
-DECOMPS = get_always('DECOMPS') ?: ''
-PVAL = get_always('DEPVAL') ?: ''
-LFC = get_always('DELFC') ?: ''
+DEUENV = get_always('DEUENV')
+DEUBIN = get_always('DEUBIN')
+DEUREF = get_always('DEUREF')
+DEUREFDIR = "${workflow.workDir}/../"+get_always('DEUREFDIR')
+DEUANNO = get_always('DEUANNO')
+COUNTPARAMS = get_always('dexseq_DEU_params_COUNT') ?: ''
+DEUPARAMS = get_always('dexseq_DEU_params_DEU') ?: ''
+DEUREPS = get_always('DEUREPS') ?: ''
+DEUCOMP = get_always('DEUCOMP') ?: ''
+DEUCOMPS = get_always('DEUCOMPS') ?: ''
+PVAL = get_always('DEUPVAL') ?: ''
+LFC = get_always('DEULFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
 
 COUNTBIN = 'featureCounts'
 COUNTENV = 'countreads_de'
-COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
 
-//DE PROCESSES
-
-process featurecount_deseq{
+//DEU PROCESSES
+process prepare_deu_annotation{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -26,8 +25,45 @@ process featurecount_deseq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
+        if (filename.indexOf(".gtf") > 0)      "${DEUREFDIR}/${file(filename).getName()}"                
+        else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/featurecount_dexseq_annotation.log"
+    }
+
+    input:
+    path anno
+
+    output:
+    path "*.gtf", emit: gtf
+    path "*.log", emit: log
+
+    script:     
+    fn = file(anno).getSimpleName()
+    ca = fn+"_fc_dexseq.gtf"
+    da = fn+"_dexseq.gtf"
+    ol = "featurecount_dexseq_annotation.log"
+    sortmem = '30%'
+    if (STRANDED == 'fr' || STRANDED == 'ISF'){
+            stranded = '-s'
+        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+            stranded = '-s'
+        }else{
+            stranded = ''
+    }
+    """
+    mkdir -p TMP; $BINS/Analysis/DEU/prepare_deu_annotation.py -f $ca $stranded $anno $da 2>> $ol
+    """
+}
+
+process featurecount_dexseq{
+    conda "$COUNTENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".count") > 0)      "DEU/${SCOMBO}/Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
+        else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_dexseq_unique.log"
     }
 
     input:
@@ -38,9 +74,9 @@ process featurecount_deseq{
     path "*.summary", emit: fc_summary
     path "*.log", emit: fc_log
 
-    script:      
+    script: 
     anno = fls[0]
-    reads = fls[1]  
+    reads = fls[1]       
     fn = file(reads).getSimpleName()
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
@@ -65,17 +101,17 @@ process featurecount_deseq{
 }
 
 process prepare_count_table{
-    conda "$DEENV"+".yaml"
+    conda "$DEUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
-        else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
-        else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        if (filename == "COUNTS.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
+        else if (filename == "ANNOTATION.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
+        else if (filename == "SampleDict.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
+        else if (filename == "log")      "LOGS/DEU/${SCOMBO}/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -90,55 +126,59 @@ process prepare_count_table{
 
     script:
     """
-    ${BINS}/Analysis/build_count_table.py $DEREPS --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $DEUREPS --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
-process run_deseq2{
-    conda "$DEENV"+".yaml"
+process run_dexseq{
+    conda "$DEUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
-        else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
-        else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_deseq2.log"
+        if (filename.indexOf("_table") > 0)      "DEU/${SCOMBO}/Tables/${file(filename).getName()}"                
+        else if (filename.indexOf("_figure") > 0)      "DEU/${SCOMBO}/Figures/${file(filename).getName()}" 
+        else if (filename.indexOf(".html") > 0)      "DEU/${SCOMBO}/DEXSeqReport_${COMBO}_${DEUCOMP}/${file(filename).getName()}"
+        else if (filename.indexOf("SESSION") > 0)      "DEU/${SCOMBO}/${file(filename).getName()}"                     
+        else if (filename.indexOf("log") > 0)        "LOGS/DEU/${SCOMBO}/run_dexseq.log"
     }
 
     input:
-    //path '*.count*'// from reads
     path cts
     path anno
+    path ref
     path deanno
 
     output:
     path "*_table*", emit: tbls
     path "*_figure*", emit: figs
+    path "*.html", emit: html
     path "*SESSION.gz", emit: session
     path "log", emit: log
 
     script:    
-    outdir = "DE"+File.separatorChar+"${SCOMBO}"
-    bin = "${BINS}"+File.separatorChar+"${DEBIN}"
+    outdir = "DEU"+File.separatorChar+"${SCOMBO}"
+    bin = "${BINS}"+File.separatorChar+"${DEUBIN}"
+
     """
-    mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
+    mkdir -p Figures Tables DEXSeqReport_${COMBO}_${DEUCOMP}
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $ref $deanno . $DEUCOMP $PCOMBO $THREADS $DEUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
+
     """
 }
 
 process filter_significant{
-    conda "$DEENV"+".yaml"
+    conda "$DEUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        if (filename.indexOf("_table") > 0)      "DEU/${SCOMBO}/Tables/${file(filename).getName()}"                                
+        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_deseq2.log"
     }
 
     input:
@@ -150,12 +190,12 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \$i| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \$i| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \$i| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
+    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
     """
 }
 
 process create_summary_snippet{
-    conda "$DEENV"+".yaml"
+    conda "$DEUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -163,7 +203,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_dexseq.log"
     }
 
     input:
@@ -175,13 +215,14 @@ process create_summary_snippet{
 
     script:
     inlist = de.toString()
+    // inlist = de.toList()  // { $workflow.projectDir += "$it.code,"  }
     """
-    touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEENV --loglevel DEBUG 2>> log
+    touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DEUENV --loglevel DEBUG 2>> log
     """
 }
 
-process collect_deseq{
-    conda "$DEENV"+".yaml"
+process collect_dexseq{
+    conda "$DEUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -195,8 +236,7 @@ process collect_deseq{
     """
 }
 
-
-workflow DE{ 
+workflow DEU{ 
     take: collection
 
     main:
@@ -207,18 +247,19 @@ workflow DE{
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
     mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
-    annofile = Channel.fromPath(DEANNO)
+    annofile = Channel.fromPath(DEUANNO)
+    //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
-    featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_count_table(featurecount_deseq.out.fc_cts.collect())
-    run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_deseq2.out.tbls)
-    create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)).collect())
-    collect_deseq(filter_significant.out.sigtbls.collect())
+    featurecount_dexseq(annofile.combine(mapsamples_ch.collate(1)))
+    prepare_count_table(featurecount_dexseq.out.fc_cts.collect())
+    run_dexseq(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
+    filter_significant(run_dexseq.out.tbls)
+    create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
+    collect_dexseq(filter_significant.out.sigtbls.collect())
 
     emit:
-    tbls = run_deseq2.out.tbls
+    tbls = run_dexseq.out.tbls
     sigtbls = filter_significant.out.sigtbls
-    figs = run_deseq2.out.figs
+    figs = run_dexseq.out.figs
     snps = create_summary_snippet.out.snps
 }
