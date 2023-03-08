@@ -11,12 +11,14 @@ options(echo=TRUE)
 
 ### ARGS
 args <- commandArgs(trailingOnly = TRUE)
+argsLen <- length(args)
 anname  <- args[1]
 gtf     <- args[2]
 outdir  <- args[3]
 combi   <- args[4]
 cmp     <- args[5]
 cores   <- as.integer(args[6])
+filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = n.small, min_feature_expr = 10, min_samps_feature_prop = n.small, min_feature_prop = 0.1, min_samps_gene_expr = n, min_gene_expr = 10"
 print(args)
 
 
