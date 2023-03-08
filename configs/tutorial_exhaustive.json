@@ -485,7 +485,7 @@
                         {
                             "INDEX": "",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": ""  # Options for DE Analysis
+                            "DTU": "min_samps_feature_expr = n.small, min_feature_expr = 1, min_samps_feature_prop = n.small, min_feature_prop = 0.1, min_samps_gene_expr = n, min_gene_expr = 1"  # Options for DE Analysis
                         }
                     },
                     "drimseq": {
@@ -495,7 +495,7 @@
                         {
                             "INDEX": "-d GENOMES/Ecoli/salmon_decoy",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": ""  # Options for DE Analysis
+                            "DTU": "min_samps_feature_expr = n.small, min_feature_expr = 1, min_samps_feature_prop = n.small, min_feature_prop = 0.1, min_samps_gene_expr = n, min_gene_expr = 1"  # Options for DE Analysis
                         }
                     }
                 }
