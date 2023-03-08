@@ -6,35 +6,39 @@ suppressPackageStartupMessages({
     library(rtracklayer)
 })
 
-options(echo=TRUE)
+options(echo = TRUE)
 
 ## ARGS
 args <- commandArgs(trailingOnly = TRUE)
-anname          <- args[1]
-countfile       <- args[2]
-gtf             <- args[3]
-outdir          <- args[4]
-combi           <- args[5]
-cmp             <- args[6]
-availablecores  <- as.integer(args[7])
+argsLen <- length(args)
+anname <- args[1]
+countfile <- args[2]
+gtf <- args[3]
+outdir <- args[4]
+cmp <- args[5]
+combi <- args[6]
+availablecores <- as.integer(args[7])
+spike <- if (argsLen > 7) args[8] else ""
+
 print(args)
 
 ### FUNCS
-get_gene_name <- function(id, df){
-    name_list <- df$gene_name[df['gene_id'] == id]
-    if(length(unique(name_list)) == 1){
+get_gene_name <- function(id, df) {
+    name_list <- df$gene_name[df["gene_id"] == id]
+    if (length(unique(name_list)) == 1) {
         return(name_list[1])
-    }else{
+    } else {
         message(paste("WARNING: ambigous gene id: ", id))
-        return (paste(unique(name_list), sep="|"))
+        return(paste(unique(name_list), sep = "|"))
     }
 }
 
-### SCRIPT
-print(paste('Will run EdgeR DEU with ',availablecores,' cores',sep=''))
 
-## set thread-usage
-BPPARAM = MulticoreParam(workers=availablecores)
+### SCRIPT
+print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
+
+# set thread-usage
+BPPARAM <- MulticoreParam(workers = availablecores)
 
 # load gtf
 gtf.rtl <- rtracklayer::import(gtf)
@@ -42,7 +46,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names=1))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$condition <- as.factor(sampleData_all$condition)
 sampleData_all$batch <- as.factor(sampleData_all$batch)
@@ -50,18 +54,18 @@ sampleData_all$type <- as.factor(sampleData_all$type)
 samples <- rownames(sampleData_all)
 
 ## Combinations of conditions
-comparisons <- strsplit(cmp, ",")
+comparison <- strsplit(cmp, ",")
 
 ## check combi
-if (combi == "none"){
-    combi <- ''
+if (combi == "none") {
+    combi <- ""
 }
 
 ## readin counttable
-countData_all <- read.table(countfile, header = TRUE, row.names=1)
+countData_all <- read.table(countfile, header = TRUE, row.names = 1, check.names = FALSE)
 
-#Check if names are consistent
-if (!all(rownames(sampleData_all) %in% colnames(countData_all))){
+# Check if names are consistent
+if (!all(rownames(sampleData_all) %in% colnames(countData_all))) {
     stop("Count file does not correspond to the annotation file")
 }
 
