@@ -20,7 +20,6 @@ from . import _version
 
 __version__ = _version.get_versions()["version"]
 
-
 try:
     pythonversion = f"python{str(sys.version_info.major)}.{str(sys.version_info.minor)}"
     installpath = os.path.dirname(__file__).replace(
@@ -36,7 +35,7 @@ os.chdir(dir_path)
 
 template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
 none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
-comparable_workflows = ["DE", "DEU", "DAS", "DTU"]
+comparable_workflows = ["DE", "DEU", "DAS", "DTU", "PEAKS"]
 IP_workflows = ["PEAKS"]
 index_prefix_workflows = ["MAPPING"]
 
@@ -853,7 +852,9 @@ def add_sample_dirs(only_conditions=None):
                         elif "_R2" in filename:
                             name = name.replace("_R2", "")
                         else:
-                            continue
+                            prPurple(
+                                f"{filename} does not follow naming convention. Please make sure all files have _R1 or respectively _R2 in their name."
+                            )
                     project.samplesDict[name] = {
                         "file": filename,
                         "dir": dirpath,
@@ -1069,10 +1070,7 @@ def set_settings():
             settings_to_make = ["REFERENCE", "GTF", "GFF"]
             if list(set(project.workflowsDict.keys()) & set(IP_workflows)):
                 settings_to_make = settings_to_make + ["IP"]
-            if list(
-                set(project.workflowsDict.keys())
-                & set(comparable_workflows + ["PEAKS"])
-            ):
+            if list(set(project.workflowsDict.keys()) & set(comparable_workflows)):
                 settings_to_make = settings_to_make + ["GROUPS", "TYPES", "BATCHES"]
             if list(set(project.workflowsDict.keys()) & set(index_prefix_workflows)):
                 settings_to_make = settings_to_make + ["INDEX", "PREFIX"]
@@ -1100,6 +1098,10 @@ def set_settings():
                         p = None
                     else:
                         p = "end_exist_.gz"
+                elif key in ["GROUPS", "TYPES", "BATCHES"]:
+                    print(
+                        "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank."
+                    )
                 else:
                     p = None
                     s = None
@@ -1116,6 +1118,12 @@ def set_settings():
                         project.settingsDict,
                         maplist + ["ANNOTATION", key],
                         guide.answer,
+                    )
+                elif key in ["GROUPS", "TYPES", "BATCHES"]:
+                    setInDict(
+                        project.settingsDict,
+                        maplist + [key],
+                        [f'"{x}"' for x in str.split(",", guide.answer)],
                     )
                 else:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
