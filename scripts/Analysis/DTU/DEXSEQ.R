@@ -18,7 +18,7 @@ outdir <- args[3]
 combi <- args[4]
 cmp <- args[5]
 cores <- as.integer(args[6])
-filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = n.small, min_feature_expr = 10, min_samps_feature_prop = n.small, min_feature_prop = 0.1, min_samps_gene_expr = n, min_gene_expr = 10"
+filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"
 print(args)
 
 
@@ -87,7 +87,7 @@ d <- dmDSdata(counts = counts, samples = samps)
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
 n <- nrow(samps)
 n.small <- n / length(levels(samps$condition)) # its not really the smallest group, needs to be improved
-d <- dmFilter(d, filter)
+eval(parse(text = paste('d <- dmFilter(d,', filter, ')', sep='')))
 
 ## shows how many of the remaining genes have N isoforms
 # table(table(counts(d)$gene_id))
