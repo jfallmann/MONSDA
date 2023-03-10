@@ -921,7 +921,7 @@ def main():
             )
 
         if not knownargs.nextflow:
-            min_version("7.20.0")
+            min_version("7.24.0")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
