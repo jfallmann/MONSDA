@@ -144,21 +144,29 @@ You will see here that for DTU workflows we will need an additional FASTA and GT
 Creating a transcript gtf file from the downloaded gtf by subsetting for gene features:
 
 .. code-block:: bash
-
-    zcat ecoli.gtf.gz |head -n+3 > bla; zcat ecoli.gtf.gz|grep -P '\tgene\t' >> bla;cat bla|gzip > Ecoli_trans.gtf.gz;rm -f bla
+    
+    zcat ecoli.gtf.gz |head -n+3 > bla; zcat ecoli.gtf.gz|grep -P '\tgene\t|\tCDS\t' >> bla;cat bla|gzip > Ecoli_trans.gtf.gz;rm -f bla
 
 We now fix the empty transcript-id tag by replacing it with the gene-id followed by "_1":abbr:
 
 .. code-block:: bash
     
-    zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|perl -F'\t' -wlane 'print $_;if($_ !~/^#/){print join("\t",@F[0..1])."\ttranscript\t".join("\t",@F[3..$#F])}'|gzip > Ecoli_trans_fix.gtf.gz
+    zcat Ecoli_trans.gtf.gz |perl -wlane 'BEGIN{%ids}{if($_=~/^#/){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|perl -F'\t' -wlane 'print $_;if($_ !~/^#/){$start=$F[3];$end=$F[4];$dist=int(($end-$start)/5); $start+=$dist;$end-=$dist;print join("\t",@F[0..1])."\ttranscript\t$start\t$end\t".join("\t",@F[5..$#F])}'|sed 's/CDS/transcript/g'|gzip > Ecoli_trans_fix.gtf.gz
 
-From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. We then only need to clean up the name tag as follows:
+From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. You may have ti install bedtools first, best do so in a dedicated conda environment via
+
+.. code-block:: bash
+
+    conda create -n bedtools bedtools
+
+We then only need to clean up the name tag as follows:
 
 .. code-block:: bash
     
     zcat Ecoli_trans_fix.gtf.gz|grep -P '\ttranscript\t'|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
+    conda activate bedtools
     bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
+    conda deactivate
     perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa |gzip > tmp.gz;cat tmp.gz ecoli.fa.gz > Ecoli_trans.fa.gz && rm -f tmp.gz
     zcat ecoli.fa.gz|grep -P '^>'|cut -d " " -f1 > salmon_decoy
     sed -i.bak -e 's/>//g' salmon_decoy
