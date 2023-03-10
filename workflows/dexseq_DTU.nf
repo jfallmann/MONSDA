@@ -4,6 +4,7 @@ DTUBIN = get_always('DTUBIN')
 DTUREF = get_always('DTUREF')
 DTUREFDIR = "${workflow.workDir}/../"+get_always('DTUREFDIR')
 DTUANNO = get_always('DTUANNO')
+IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
 DTUREPS = get_always('DTUREPS') ?: ''
@@ -13,10 +14,97 @@ PVAL = get_always('DTUPVAL') ?: ''
 LFC = get_always('DTULFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
 
-COUNTBIN = 'featureCounts'
-COUNTENV = 'countreads_de'
+COUNTBIN = 'salmon'
+COUNTENV = 'salmon'
 
 //DTU PROCESSES
+process salmon_idx{
+    conda "$COUNTENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    saveAs: {filename ->
+        if (filename == "salmon.idx")            "$COUNTUIDX"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
+    }
+
+    input:
+    path genome
+
+    output:
+    path "salmon.idx", emit: idx
+
+    script:    
+    gen =  genome.getName()
+    """
+    $COUNTBIN index $IDXPARAMS -p $THREADS -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
+    """
+
+}
+
+process salmon_quant{
+    conda "$COUNTENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".sf.gz") >0)            "COUNTS/${SCOMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else null
+    }
+
+    input:
+    path reads
+
+    output:
+    path "*.sf.gz", emit: counts
+    path "*.log", emit: logs
+
+    script:
+
+    idx = reads[0]
+    if (PAIRED == 'paired'){
+        if (STRANDED == 'fr' || STRANDED == 'ISF'){
+            stranded = '-l ISF'
+        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+            stranded = '-l ISR'
+        }else{
+            stranded = '-l IU'
+        }
+        r1 = reads[1]
+        r2 = reads[2]
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        lf = "salmon_"+fn+".log"
+        of = fn+"/quant.sf"
+        oz = fn+"/quant.sf.gz"
+        ol = fn+"_counts.sf.gz"
+        """
+        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && mv -f $oz $ol
+        """
+    }else{
+        if (STRANDED == 'fr' || STRANDED == 'SF'){
+            stranded = '-l SF'
+        }else if (STRANDED == 'rf' || STRANDED == 'SR'){
+            stranded = '-l SR'
+        }else{
+            stranded = '-l U'
+        }
+        read = reads[1]
+        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        lf = "salmon_"+fn+".log"
+        of = fn+"/quant.sf"
+        oz = fn+"/quant.sf.gz"
+        ol = fn+"_counts.sf.gz"
+        """
+        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && mv -f $oz $ol
+        """
+    }
+}
+
 process prepare_dtu_annotation{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
@@ -248,7 +336,26 @@ workflow DTU{
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
     mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DTUANNO)
+    checkidx = file(COUNTIDX)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
+
+    if (checkidx.exists()){
+        idxfile = Channel.fromPath(COUNTUIDX)
+        if (PAIRED == 'paired'){
+            salmon_quant(idxfile.combine(samples_ch.collate(2)))
+        } else{
+            salmon_quant(idxfile.combine(samples_ch.collate(1)))
+        }        
+    }
+    else{
+        genomefile = Channel.fromPath(COUNTREF)
+        salmon_idx(genomefile)
+        if (PAIRED == 'paired'){
+            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
+        } else{
+            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+        }
+    }
 
     featurecount_dexseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_dtu_annotation(annofile)
