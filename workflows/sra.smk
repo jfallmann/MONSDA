@@ -35,7 +35,8 @@ else:
         output: prefetch = temp("TMP/{srafile}.sra")
         log:    "LOGS/FETCH/prefetch_{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
-        params: fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
+        params: ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES]),
+                fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
         shell: "arr=({params.ids}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do prefetch ${{arr[$i]}} -o {output.prefetch} {params.fpara} &> {log};done"
 
     rule get_from_sra:
