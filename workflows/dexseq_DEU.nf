@@ -251,7 +251,7 @@ workflow DEU{
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
     featurecount_dexseq(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_deu_annotation(annotfile)
+    prepare_deu_annotation(annofile)
     prepare_count_table(featurecount_dexseq.out.fc_cts.collect())
     run_dexseq(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile, prepare_deu_annotation.out.gtf)
     filter_significant(run_dexseq.out.tbls)
