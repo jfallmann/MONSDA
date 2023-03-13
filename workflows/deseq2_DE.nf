@@ -206,7 +206,7 @@ workflow DE{
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
-    mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
+    //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DEANNO)
 
     featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
