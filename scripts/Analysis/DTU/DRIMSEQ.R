@@ -245,78 +245,102 @@ for (contrast in comparisons[[1]]) {
         limit <- 10
         counter <- 1
         message("create proportions plots")
-        for (gene in sigs) {
-            if (counter > limit) {
-                break
-            }
-            if (is.na(gene)) {
-                next
-            }
-            name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "plotProportions", "props.png", sep = "_")
-            png(name1)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
-            dev.off()
-
-            name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "lineplot.png", sep = "_")
-            png(name2)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
-            dev.off()
-
-            name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "ribbonplot.png", sep = "_")
-            png(name3)
-            print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
-            dev.off()
-
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name1, sep = "/")))
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name2, sep = "/")))
-            figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name3, sep = "/")))
-
-            counter <- counter + 1
+    for (gene in sigs) {
+        if (counter > limit) {
+            break
         }
-        colnames(figures) <- c("geneID", "geneName", "file")
-        write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGeneFigures.tsv", sep = "_"), sep = "\t", quote = F, row.names = FALSE, col.names = TRUE)
-
-        sigt <- which(res.txp$adj_pvalue < 0.05)
-        figures <- data.frame()
-        limit <- 10
-        counter <- 1
-        message("create proportions plots for transcripts")
-        for (trans in sigt) {
-            if (counter > limit) {
-                break
-            }
-            if (is.na(trans)) {
-                next
-            }
-            name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "plotProportions_transcript", "props.png", sep = "_")
-            png(name1)
-            print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition"))
-            dev.off()
-
-            name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "lineplot_transcript.png", sep = "_")
-            png(name2)
-            print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "lineplot"))
-            dev.off()
-
-            name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "ribbonplot_transcript.png", sep = "_")
-            png(name3)
-            print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "ribbonplot"))
-            dev.off()
-
-            figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name1, sep = "/")))
-            figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name2, sep = "/")))
-            figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name3, sep = "/")))
-
-            counter <- counter + 1
+        if (is.na(gene)) {
+            next
         }
-        colnames(figures) <- c("transcriptID", "geneName", "file")
-        write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigTranscriptFigures.tsv", sep = "_"), sep = "\t", quote = F, row.names = FALSE, col.names = TRUE)
+        name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "plotProportions", "props.png", sep = "_")
+        png(name1)
+        print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
+        dev.off()
+        
+        name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "lineplot.png", sep = "_")
+        png(name2)
+        print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
+        dev.off()
+        
+        name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "ribbonplot.png", sep = "_")
+        png(name3)
+        print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
+        dev.off()
+        
+        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name1, sep = "/")))
+        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name2, sep = "/")))
+        figures <- rbind(figures, c(res$gene_id[gene], res$Gene[gene], paste(outdir, name3, sep = "/")))
+        
+        counter <- counter + 1
+    }
+    tryCatch(
+        {
+            colnames(figures) <- c("geneID", "geneName", "file")
+            write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGeneFigures.tsv", sep = "_"), sep = "\t", quote = F, row.names = FALSE, col.names = TRUE)
+        },
+        warning = function(w) {
+            file.create(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGeneFigures.tsv", sep = "_"))
+            message("Caught a warning!")
+            print(w)
+        },
+        error = function(e) {
+            file.create(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigGeneFigures.tsv", sep = "_"))
+        }
+    )
+    
+    sigt <- which(res.txp$adj_pvalue < 0.05)
+    figures <- data.frame()
+    limit <- 10
+    counter <- 1
+    message("create proportions plots for transcripts")
+    for (trans in sigt) {
+        if (counter > limit) {
+            break
+        }
+        if (is.na(trans)) {
+            next
+        }
+        name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "plotProportions_transcript", "props.png", sep = "_")
+        png(name1)
+        print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition"))
+        dev.off()
+        
+        name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "lineplot_transcript.png", sep = "_")
+        png(name2)
+        print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "lineplot"))
+        dev.off()
+        
+        name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "ribbonplot_transcript.png", sep = "_")
+        png(name3)
+        print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "ribbonplot"))
+        dev.off()
+        
+        figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name1, sep = "/")))
+        figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name2, sep = "/")))
+        figures <- rbind(figures, c(res.txp$feature_id[trans], res.txp$Gene[trans], paste(outdir, name3, sep = "/")))
+        
+        counter <- counter + 1
+    }
+    tryCatch(
+        {
+            colnames(figures) <- c("transcriptID", "geneName", "file")
+            write.table(figures, paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigTranscriptFigures.tsv", sep = "_"), sep = "\t", quote = F, row.names = FALSE, col.names = TRUE)
+            
+        },
+        warning = function(w) {
+            file.create(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigTranscriptFigures.tsv", sep = "_"))
+            message("Caught a warning!")
+            print(w)
+        },
+        error = function(e) {
+            file.create(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "list", "sigTranscriptFigures.tsv", sep = "_"))
+        }
+    )
 
         # cleanup
         rm(res, res.txp, proportions)
         print(paste("cleanup done for ", contrast_name, sep = ""))
     })
 }
-
 
 save.image(file = paste("DTU_DRIMSEQ", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
