@@ -170,7 +170,7 @@ for (contrast in comparisons[[1]]) {
         get_gene_name(x, gtf.df)
     })
     dxr <- dxr[, c(1, 2, 5, 3, 4)]
-    toprint <- as.data.frame(dxr1)
+    toprint <- as.data.frame(dxr)
     toprint$transcripts <- vapply(toprint$transcripts, paste, collapse = ", ", character(1L))
     # dxr <- apply(dxr, 2, as.character)
 
