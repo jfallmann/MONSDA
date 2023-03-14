@@ -58,11 +58,6 @@ if (combi == "none") {
     combi <- ""
 }
 
-txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = "scaledTPM")
-cts <- txi$counts
-cts <- cts[rowSums(cts) > 0, ]
-cts.original <- cts
-rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # Transcript-to-gene mapping
 txdb.filename <- file.path(paste(gtf, "sqlite", sep = "."))
@@ -70,6 +65,13 @@ txdb <- makeTxDbFromGFF(gtf, format = "gtf")
 txdf <- select(txdb, keys(txdb, "GENEID"), "TXNAME", "GENEID")
 tab <- table(txdf$GENEID)
 txdf$ntx <- tab[match(txdf$GENEID, names(tab))]
+
+# get counts
+txi <- tximport(files, type = "salmon", txOut = TRUE, countsFromAbundance = "scaledTPM")
+cts <- txi$counts[rownames(txi$counts) %in% txdf$TXNAME, ] # We have to assume salmon was run with a decoy and do not want that in our cts table
+cts <- cts[rowSums(cts) > 0, ]
+cts.original <- cts
+rownames(cts) <- sub("\\|.*", "", rownames(cts))
 
 # DRIMSEQ
 # check for integrity -> define exception..
