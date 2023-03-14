@@ -1098,10 +1098,6 @@ def set_settings():
                         p = None
                     else:
                         p = "end_exist_.gz"
-                elif key in ["GROUPS", "TYPES", "BATCHES"]:
-                    print(
-                        "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank."
-                    )
                 else:
                     p = None
                     s = None
@@ -1119,11 +1115,9 @@ def set_settings():
                         maplist + ["ANNOTATION", key],
                         guide.answer,
                     )
-                elif key in ["GROUPS", "TYPES", "BATCHES"]:
+                elif key in ["GROUPS", "TYPES", "BATCHES"] and guide.answer:
                     setInDict(
-                        project.settingsDict,
-                        maplist + [key],
-                        [f'"{x}"' for x in str.split(",", guide.answer)],
+                        project.settingsDict, maplist + [key], guide.answer.split(",")
                     )
                 else:
                     setInDict(project.settingsDict, maplist + [key], guide.answer)
@@ -1396,7 +1390,7 @@ def select_conditioning():
                 "In the following steps you will make different settings for each condition.\nTo avoid repetitions, specify which conditions should get the same settings\nYou will set all conditions with the same number at once afterwards"
             )
             guide.display(
-                question="To loop through the possible selections press enter\nFinally enter 'ok' to make the settings",
+                question="To loop through the possible selections press enter\n Type 'ok' to accept your settings",
                 proof=["ok", ""],
             )
             guide.toclear += 6
@@ -1529,7 +1523,7 @@ def set_workflows(wf=None):
                 groups = set()
                 conditions = get_conditions_from_dict(project.conditionsDict)
                 for condition in conditions:
-                    groups.add(
+                    groups.update(
                         get_by_path(
                             project.settingsDict, condition.split(":") + ["GROUPS"]
                         )
@@ -1543,7 +1537,7 @@ def set_workflows(wf=None):
                 else:
                     while True:
                         guide.display(
-                            question="Press enter to add a differential contrast or type 'ok'",
+                            question="Press enter to add another differential contrast or type 'ok' to accept",
                             proof=["", "ok"],
                         )
                         if guide.answer == "ok":

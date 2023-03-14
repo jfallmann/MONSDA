@@ -1,9 +1,9 @@
 {
   "comment":{
-    "WORKFLOWS": "which workflows do you want to run: MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, ANNOTATE, DE, DEU, DAS, DTU, CIRCS",
-    "BINS": "where to find the scripts used in the workflow, per default the scripts directory that comes with the snakes repository",
-    "MAXTHREADS": "maximum number of cores to use, make sure this fits your needs",
-    "VERSION": "version number of pip installation"
+    "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS",
+    "BINS": "Where to find the scripts used in the workflow, per default the scripts directory that comes with MONSDA. ONLY CHANGE IF YOU KNOW WHAT YOU ARE DOING!",
+    "MAXTHREADS": "Maximum number of cores to use, make sure this fits your needs, acts as upper cap.",
+    "VERSION": "Version of MONSDA to use, needs to match installed version"
   },
   "WORKFLOWS": "",
   "BINS": "MONSDA/scripts",
@@ -11,9 +11,9 @@
   "VERSION": "",
   "SETTINGS": {
     "comment": {
-      "GROUPS": "???",
-      "TYPES": "???",
-      "BATCHES": "???",
+      "GROUPS": "Please enter a comma separated list of the groups your samples belong to. This does not have to be in any relation with the condition-tree but is used solely to establish contrasts for differential analysis. Each sample needs a matching entry. Can be left blank to run all-vs-all comparison.",
+      "TYPES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
+      "BATCHES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
       "SEQUENCING": "single or paired and stranded info comma separated",
       "REFERENCE": "set path to reference, '.fa.gz' ending expected",
       "INDEX": "set path to index, default index to use for mapping with this settings",
@@ -92,7 +92,7 @@
     "BIN" : "",
     "trimgalore": {
       "comment": {
-        "TRIM": "trimming options here, --paired is not required, will be resolved by rules"
+        "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
@@ -100,7 +100,7 @@
     },
     "cutadapt": {
       "comment": {
-        "TRIM": "trimming options here, --paired is not required, will be resolved by rules"
+        "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
@@ -115,9 +115,9 @@
     "BIN" : "",
     "umitools": {
       "comment": {
-          "WHITELIST" : "umitools whitelist options",
-          "EXTRACT": "umitools extract options",
-          "DEDUP": "umitools dedup options"
+          "WHITELIST" : "umi_tools whitelist options",
+          "EXTRACT": "umi_tools extract options",
+          "DEDUP": "umi_tools dedup options"
       },
       "OPTIONS": {
           "WHITELIST" : "--extract-method string --bc-pattern 'XNNNNX'",
@@ -128,8 +128,8 @@
     "picard":{
       "comment":
         {
-            "JAVA" : "options",
-            "DEDUP": "dedup options"
+            "JAVA" : "Options for JRE",
+            "DEDUP": "Dedup options"
         },
         "OPTIONS":
         {
@@ -150,9 +150,9 @@
     "BIN" : "",
     "star": {
       "comment": {
-          "INDEX" : "indexing options",
-          "MAP": "mapping options",
-          "EXTENSION" : "???"
+          "INDEX" : "Indexing options",
+          "MAP": "Mapping options",
+          "EXTENSION" : "Prefix for index name, can be left empy."
       },
       "OPTIONS": {
           "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
@@ -162,9 +162,9 @@
     },
     "segemehl3": {
       "comment": {
-        "INDEX" : "indexing options",
-        "MAP": "mapping options",
-        "EXTENSION" : "???"
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
       },
       "OPTIONS": {
           "INDEX" : "",
@@ -174,9 +174,9 @@
     },
     "hisat2": {
       "comment": {
-        "INDEX" : "indexing options",
-        "MAP": "mapping options",
-        "EXTENSION" : "???"
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
       },
       "OPTIONS": {
           "INDEX" : "",
@@ -186,9 +186,9 @@
     },
     "bwa": {
       "comment": {
-        "INDEX" : "indexing options",
-        "MAP": "mapping options",
-        "EXTENSION" : "???"
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
       },
       "OPTIONS": {
           "INDEX" : "",
@@ -198,9 +198,9 @@
     },
     "minimap": {
       "comment": {
-        "INDEX" : "indexing options",
-        "MAP": "mapping options",
-        "EXTENSION" : "???"
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
       },
       "OPTIONS": {
           "INDEX" : "",
@@ -222,7 +222,7 @@
     },
     "countreads": {
       "comment": {
-          "COUNT": "counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input"
+          "COUNT": "Counting options here, --paired is not required, will be resolved by rules, annotation is resolved from Annotation options, make sure you use correct options depending on gff/gtf input"
       },
       "OPTIONS": {
           "COUNT": "-f --fraction -O -M"
@@ -264,7 +264,7 @@
     "BIN" : "",
     "ucsc": {
       "comment": {
-        "TRACKS":"???"
+        "TRACKS":"Set options for naming of tracks"
       },
       "OPTIONS":
         {
@@ -290,7 +290,7 @@
     "macs": {
       "CLIP": "",
       "comment": {
-          "FINDPEAKS": "???"
+          "FINDPEAKS": "Set options for peak finding procedure"
       },
       "OPTIONS": {
           "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"
@@ -338,21 +338,21 @@
     },
     "deseq2": {
       "comment": {
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DE": "Options for DE Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DE": "Options for DE Analysis, e.g. path to spike-in"
       },
       "OPTIONS": {
-          "COUNT": "-t gene -g gene_id -f --fraction -O",
+          "COUNT": "-t gene -g gene_id --fraction -O",
           "DE": "controlgenes=spike-in.list"
       }
     },
     "edger": {
       "comment": {
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DE": "Options for DE Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DE": "Options for DE Analysis, e.g. path to spike-in"
       },
       "OPTIONS": {
-          "COUNT": "-t gene -g gene_id -f --fraction -O",
+          "COUNT": "-t gene -g gene_id --fraction -O",
           "DE": "controlgenes=spike-in.list"
       }
     }
@@ -376,8 +376,8 @@
     },
     "dexseq": {
       "comment": {
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DEU": "Options for DE Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNT": "-t exon -g gene_id -f --fraction -O",
@@ -386,8 +386,8 @@
     },
     "edger": {
       "comment": {
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DEU": "Options for DE Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNT": "-t exon -g gene_id -f --fraction -O",
@@ -414,8 +414,8 @@
     },
     "diego": {
       "comment":{
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DAS": "Options for Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DAS": "Options for DAS Analysis"
       },
       "OPTIONS": {
           "COUNT": "-t exon -g gene_id -f --fraction -O",
@@ -424,8 +424,8 @@
     },
     "edger": {
       "comment": {
-          "COUNT": "Options for read counting, independent of COUNTS workflows",
-          "DAS": "Options for DE Analysis"
+          "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "DAS": "Options for DAS Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
           "COUNT": "-t exon -g gene_id -f --fraction -O",
@@ -452,24 +452,24 @@
     },
     "drimseq": {
       "comment": {
-          "INDEX": "salmon index options",
+          "INDEX": "salmon index options, e.g. path to decoy file",
           "QUANT": "salmon quant options",
-          "DTU": "Options for Analysis"
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
       },
       "OPTIONS": {
-          "INDEX": "-l A --gencode",
+          "INDEX": "-l A --gencode -d GENOMES/salmon_decoy",
           "QUANT": "--gcBias",
           "DTU": ""
       }
     },
     "dexseq": {
       "comment": {
-          "INDEX": "salmon index options",
+          "INDEX": "salmon index options, e.g. path to decoy file",
           "QUANT": "salmon quant options",
-          "DTU": "Options for Analysis"
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
       },
       "OPTIONS": {
-          "INDEX": "-l A --gencode",
+          "INDEX": "-l A --gencode -d GENOMES/salmon_decoy",
           "QUANT": "--gcBias",
           "DTU": ""
       }
