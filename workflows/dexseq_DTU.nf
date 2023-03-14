@@ -159,9 +159,10 @@ process run_dexseq{
     script:    
     outdir = "DTU"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DTUBIN}"
+    comp = "${DEUCOMP}".split(':')[0]
 
     """
-    mkdir -p Figures Tables DEXSeqReport_${COMBO}_${DTUCOMP}
+    mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp
     Rscript --no-environ --no-restore --no-save $bin $anno $ref . $PCOMBO $DTUCOMP $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
     """
 }
