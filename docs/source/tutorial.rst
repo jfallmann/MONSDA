@@ -151,7 +151,7 @@ We now fix the empty transcript-id tag by replacing it with the gene-id followed
 
 .. code-block:: bash
     
-    zcat Ecoli_trans.gtf.gz |perl -F'\t' -wlane 'print $_;if($_ !~/^#/){$start=$F[3];$end=$F[4];$dist=int(($end-$start)/5); $start+=$dist;$end-=$dist;print join("\t",@F[0..1])."\ttranscript\t$start\t$end\t".join("\t",@F[5..$#F])}'|perl -wlane 'BEGIN{%ids}{if($_=~/^#/ or $F[2] eq "gene"){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|sed 's/CDS/transcript/g'|gzip > Ecoli_trans_fix.gtf.gz
+    zcat Ecoli_trans.gtf.gz |perl -F'\t' -wlane 'print $_;if($_ !~/^#/){$start=$F[3];$end=$F[4];$dist=int(($end-$start)/5); $start+=$dist;$end-=$dist;print join("\t",@F[0..1])."\ttranscript\t$start\t$end\t".join("\t",@F[5..$#F])}'|perl -wlane 'BEGIN{%ids}{if($_=~/^#/ or $F[2] eq "gene"){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|sed -e 's/CDS/transcript/g' -e 's/gene_synonym/gene_name/g'|gzip > Ecoli_trans_fix.gtf.gz
 
 From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. You may have ti install bedtools first, best do so in a dedicated conda environment via
 

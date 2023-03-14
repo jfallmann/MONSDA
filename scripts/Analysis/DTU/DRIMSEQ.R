@@ -27,7 +27,7 @@ get_gene_name <- function(id, df) {
         return(name_list[1])
     } else {
         message(paste("WARNING: ambigous gene id: ", id))
-        return(paste("ambigous", id, sep = "_"))
+        return(name_list[1])
     }
 }
 

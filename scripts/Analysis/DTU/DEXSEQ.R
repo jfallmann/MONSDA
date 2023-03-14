@@ -29,7 +29,7 @@ get_gene_name <- function(id, df) {
         return(name_list[1])
     } else {
         message(paste("WARNING: ambigous gene id: ", id))
-        return(paste("ambigous", id, sep = "_"))
+        return(name_list[1])
     }
 }
 
@@ -171,7 +171,7 @@ for (contrast in comparisons[[1]]) {
     })
     dxr <- dxr[, c(1, 2, 5, 3, 4)]
     toprint <- as.data.frame(dxr)
-    toprint$transcripts <- vapply(toprint$transcripts, paste, collapse = ", ", character(1L))
+    toprint$transcripts <- vapply(toprint$featureID, paste, collapse = ", ", character(1L))
     # dxr <- apply(dxr, 2, as.character)
 
     write.table(toprint, gzfile(paste("Tables/DTU", "DEXSEQ", combi, contrast_name, "table", "results.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
