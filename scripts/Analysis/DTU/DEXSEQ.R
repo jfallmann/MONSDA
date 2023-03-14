@@ -79,6 +79,7 @@ txdf <- txdf[match(rownames(cts), txdf$TXNAME), ]
 all(rownames(cts) == txdf$TXNAME)
 
 counts <- data.frame(gene_id = txdf$GENEID, feature_id = txdf$TXNAME, cts, check.names = FALSE)
+counts <- counts[!is.na(counts$gene_id), ]
 d <- dmDSdata(counts = counts, samples = samps)
 
 # Filter before running procedures:
@@ -87,7 +88,7 @@ d <- dmDSdata(counts = counts, samples = samps)
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
 n <- nrow(samps)
 n.small <- n / length(levels(samps$condition)) # its not really the smallest group, needs to be improved
-eval(parse(text = paste('d <- dmFilter(d,', filter, ')', sep='')))
+eval(parse(text = paste("d <- dmFilter(d,", filter, ")", sep = "")))
 
 ## shows how many of the remaining genes have N isoforms
 # table(table(counts(d)$gene_id))
