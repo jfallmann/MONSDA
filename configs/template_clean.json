@@ -206,22 +206,6 @@
       }
     }
   },
-  "ANNOTATE": {
-    "TOOLS": {
-      "annotatebed": "annotate"
-    },
-    "id": {
-      "condition": {
-        "annotatebed": {
-          "ANNOFEATURE": "gene",
-          "OPTIONS":
-          {
-              "ANNOTATE": "-w ON"
-          }
-        }
-      }
-    }
-  },
   "TRACKS": {
     "TOOLS": {
       "ucsc": "ucsc"
