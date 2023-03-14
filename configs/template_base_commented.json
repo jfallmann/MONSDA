@@ -240,22 +240,6 @@
         }
     }
   },
-  "ANNOTATE": {
-    "TOOLS": {
-      "annotatebed": "annotate"
-    },
-    "ENV" : "",
-    "BIN" : "",
-    "annotatebed": {
-      "ANNOFEATURE": "gene",
-      "comment": {
-          "ANNOTATE": "-w ON enables one line per feature annotation, including start/end of the feature, output can become quite large, disable by adding empty string ('') as value or removing this line"
-      },
-      "OPTIONS": {
-          "ANNOTATE": "-w ON"
-      }
-    }
-  },
   "TRACKS": {
     "TOOLS": {
       "ucsc": "ucsc"
