@@ -6,9 +6,9 @@ DASREFDIR = "${workflow.workDir}/../"+get_always('DASREFDIR')
 DASANNO = get_always('DASANNO')
 COUNTPARAMS = get_always('edger_DAS_params_COUNT') ?: ''
 DASPARAMS = get_always('edger_DAS_params_DAS') ?: ''
-DASREPS = get_always('DASREPS') ?: ''
 DASSAMPLES = get_always('DASREPS') ?: ''
 DASGROUPS = get_always('DASREPS') ?: ''
+DASREPS = get_always('DASREPS') ?: ''
 DASCOMP = get_always('DASCOMP') ?: ''
 DASCOMPS = get_always('DASCOMPS') ?: ''
 PVAL = get_always('DASPVAL') ?: ''
@@ -80,11 +80,6 @@ process create_samplemaps{
         else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_create_samplemaps.log"
     }
 
-    input:
-    //path '*.count*'// from reads
-    path samples
-    path groups
-
     output: 
     path "samplemap.txt", emit: smap
     path "groupings.txt", emit: groups
@@ -92,7 +87,7 @@ process create_samplemaps{
 
     script:
     """
-    echo $samples 1> samplemap.txt 2>> log && echo $groups 1> groupings.txt 2>> log
+    echo $DASSAMPLES 1> samplemap.txt 2>> log && echo $DASGROUPS 1> groupings.txt 2>> log
     """
 }
 
@@ -139,8 +134,7 @@ process create_contrast_files{
     }
 
     input:
-    //path '*.count*'// from reads
-    path jtab
+    path anno
 
     output: 
     path "contrast.txt", emit: contrast
@@ -149,7 +143,7 @@ process create_contrast_files{
 
     script:
     """
-    ${BINS}/Analysis/DAS/diego_contrast_files.py  -a <(zcat $jtab) -b $DASCOMP -c $DASCOMPS -o . 2> log
+    ${BINS}/Analysis/DAS/diego_contrast_files.py  -a <(zcat $anno) -b $DASCOMP -c $DASCOMPS -o . 2> log
     """
 }
 
@@ -167,23 +161,20 @@ process run_diego{
     }
 
     input:
-    //path '*.count*'// from reads
-    path cts
-    path anno
-    path deanno
+    path tbl
+    path contrast
 
     output:
-    path "*_table*", emit: tbls
-    path "*_figure*", emit: figs
-    path "*SESSION.gz", emit: session
+    path "*.pdf", emit: dendrogram
+    path "*.csv", emit: table
     path "log", emit: log
 
     script:    
     outdir = "DAS"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DASBIN}"
-    """
-    mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DASCOMP $PCOMBO $THREADS $DASPARAMS 2> log && mv Tables/* . && mv Figures/* .
+    
+    """    
+    set +euo pipefail; arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond -e -f DAS_DIEGO_${SCOMBO}_\${outcond}_figure_dendrogram &> log;done && arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> DAS_DIEGO_${SCOMBO}_\${outcond}_table_results.csv 2>> log;done
     """
 }
 
@@ -208,9 +199,34 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
+    set +o pipefail; arr=($tabs); for i in \${!arr[@]}; do a=\${arr[\$i]}; fn=\${a##*/}; if [[ -s \"\$a\" ]];then cat \$a|head -n1 > Sig_\$a; cat \$a| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[10]);if (\$F[10] eq \"yes\") {print}' >> Sig_\$a &>> log; else touch \${orr[\$i]}; fi; done
     """
 }
+
+process convertPDF{
+    conda "$DASENV"+".yaml"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("dendrogram") > 0)      "DAS/${SCOMBO}/Figures/${file(filename).getName()}"                               
+    }
+
+    input:
+    path pdf
+
+    output:
+    path "*.png", emit: png
+
+    script:
+    
+    """
+    for pdfile in $pdf ; do convert -verbose -density 500 -resize '800' \$pdfile \${pdfile%pdf}png; done
+    """
+}
+
 
 process create_summary_snippet{
     conda "$DASENV"+".yaml"
@@ -239,7 +255,7 @@ process create_summary_snippet{
     """
 }
 
-process collect_edger{
+process collect_diego{
     conda "$DASENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -264,20 +280,21 @@ workflow DAS{
     }
 
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
-    //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DASANNO)
-    //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
-
-    featurecount_edger(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_count_table(featurecount_edger.out.fc_cts.collect())
-    run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_edger.out.tbls)
-    create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)).collect())
-    collect_edger(filter_significant.out.sigtbls.collect())
+    
+    featurecount_diego(annofile.combine(mapsamples_ch.collate(1)))
+    create_samplemaps()
+    prepare_junction_usage_matrix(create_samplemaps.out.smap, featurecount_diego.out.fc_cts)
+    create_contrast_files(annofile)
+    run_diego(prepare_junction_usage_matrix.out.jtab,create_contrast_files.out.contrast)
+    filter_significant(run_diego.out.table)
+    convertPDF(run_diego.out.dendrogram)
+    create_summary_snippet(run_diego.out.table.concat(run_diego.out.dendrogram.concat(convertPDF.out.png)).collect())
+    collect_diego(filter_significant.out.sigtbls.collect())
 
     emit:
-    tbls = run_edger.out.tbls
+    tbls = run_diego.out.table
     sigtbls = filter_significant.out.sigtbls
-    figs = run_edger.out.figs
+    figs = run_diego.out.dendrogram
     snps = create_summary_snippet.out.snps
 }

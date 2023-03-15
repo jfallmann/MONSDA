@@ -105,9 +105,13 @@ condapath = re.compile(r'conda:\s+"')
 logfix = re.compile(r'loglevel="INFO"')
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
+    scriptname = (
+        os.path.basename(inspect.stack()[-1].filename)
+        .replace("Run", "")
+        .replace(".py", "")
+    )
     log = logging.getLogger(scriptname)
-    
+
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
@@ -198,7 +202,7 @@ def get_combo(wfs, config, conditions):
                 )
             ret.append(tools)
 
-        log.debug(f'{logid} Itertools {ret}')
+        log.debug(f"{logid} Itertools {ret}")
         combos[condition] = itertools.product(*ret)
 
     # no debug log here or iterator will be consumed
@@ -214,16 +218,7 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = [
-        "COUNTING",
-        "TRACKS",
-        "PEAKS",
-        "DE",
-        "DEU",
-        "DAS",
-        "DTU",
-        "CIRCS"
-       ]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -1174,7 +1169,7 @@ def make_post(
 
     if combinations:
         combname = mp.get_combo_name(combinations)
-        log.debug(f'{logid} COMBINATIONS: {combname}')
+        log.debug(f"{logid} COMBINATIONS: {combname}")
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
@@ -1832,13 +1827,13 @@ def fixinclude(
     envpath=envpath,
     workflowpath=workflowpath,
     logfix=logfix,
-    nfmode=None
+    nfmode=None,
 ):
 
     logid = scriptname + ".Workflows_fixinclude: "
 
     linelist = list()
-    includeline = 'include: ' if not nfmode else 'include {'
+    includeline = "include: " if not nfmode else "include {"
     condaline = 'conda:  "' if not nfmode else 'conda "'
     toinclude = str.split(line)[-1].replace('"', "")
     toinclude = str.join(os.sep, [workflowpath, toinclude])
@@ -1851,7 +1846,7 @@ def fixinclude(
                     line, loglevel, condapath, envpath, workflowpath, logfix
                 )
             linelist.append(line)
-    
+
     toinclude = str.join("", linelist)
     return toinclude
 
@@ -2161,6 +2156,10 @@ def nf_fetch_params(
                 retconf[x + "IDX"] = INDEX
                 retconf[x + "UIDX"] = UIDX
                 retconf[x + "UIDXNAME"] = UIDXNAME
+            elif x == "DAS" and XBIN == "diego.py":
+                cnd = [os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x) + "_mapped_sorted_unique.counts.gz" for x in LONGSAMPLES]
+                retconf[x + "SAMPLES"] = mp.get_diego_samples(cnd, config, x)
+                retconf[x + "GROUPS"] = mp.get_diego_groups(cnd, config, x)
         retconf[x + "REF"] = REFERENCE
         retconf[x + "REFDIR"] = REFDIR
         retconf[x + "ANNO"] = ANNOTATION
@@ -2407,7 +2406,7 @@ def nf_make_pre(
                             envpath,
                             workflowpath,
                             logfix,
-                            "nfmode"
+                            "nfmode",
                         )
                     add.append(line)
                 add.append("\n\n")
@@ -2484,7 +2483,7 @@ def nf_make_pre(
                                         envpath,
                                         workflowpath,
                                         logfix,
-                                        "nfmode"
+                                        "nfmode",
                                     )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -2507,7 +2506,7 @@ def nf_make_pre(
                                             envpath,
                                             workflowpath,
                                             logfix,
-                                            "nfmode"
+                                            "nfmode",
                                         )
                                     subjobs.append(line)
                                 subjobs.append("\n\n")
@@ -2599,13 +2598,13 @@ def nf_make_pre(
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
                         line = fixinclude(
-                            line, 
-                            loglevel, 
-                            condapath, 
-                            envpath, 
-                            workflowpath, 
-                            logfix, 
-                            "nfmode"
+                            line,
+                            loglevel,
+                            condapath,
+                            envpath,
+                            workflowpath,
+                            logfix,
+                            "nfmode",
                         )
                     subjobs.append(line)
                 subjobs.append("\n\n")
@@ -2662,8 +2661,8 @@ def nf_make_pre(
                     flowlist.append("FETCH")
                 elif subwork == "BASECALL":
                     sys.exit("BASECALLING NOT YET IMPLEMENTED FOR NEXTFLOW")
-                    #subname = toolenv + ".nf" # To implement
-                    #flowlist.append("BASECALL")  # To implement
+                    # subname = toolenv + ".nf" # To implement
+                    # flowlist.append("BASECALL")  # To implement
 
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
@@ -2671,13 +2670,13 @@ def nf_make_pre(
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
-                                line, 
-                                loglevel, 
-                                condapath, 
-                                envpath, 
-                                workflowpath, 
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         subjobs.append(line)
                     subjobs.append("\n\n")
@@ -2702,13 +2701,13 @@ def nf_make_pre(
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
-                                line, 
-                                loglevel, 
-                                condapath, 
-                                envpath, 
-                                workflowpath, 
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         subjobs.append(line)
                     subjobs.append("\n\n")
@@ -2798,13 +2797,13 @@ def nf_make_sub(
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
                         line = fixinclude(
-                            line, 
-                            loglevel, 
-                            condapath, 
-                            envpath, 
-                            workflowpath, 
+                            line,
+                            loglevel,
+                            condapath,
+                            envpath,
+                            workflowpath,
                             logfix,
-                            "nfmode"
+                            "nfmode",
                         )
                     add.append(line)
                 add.append("\n\n")
@@ -2909,7 +2908,7 @@ def nf_make_sub(
                                                 envpath,
                                                 workflowpath,
                                                 logfix,
-                                                "nfmode"
+                                                "nfmode",
                                             )
                                         subjobs.append(line)
                                     subjobs.append("\n\n")
@@ -2940,7 +2939,7 @@ def nf_make_sub(
                                         envpath,
                                         workflowpath,
                                         logfix,
-                                        "nfmode"
+                                        "nfmode",
                                     )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -2983,7 +2982,7 @@ def nf_make_sub(
                                         envpath,
                                         workflowpath,
                                         logfix,
-                                        "nfmode"
+                                        "nfmode",
                                     )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -3001,8 +3000,8 @@ def nf_make_sub(
                                     condapath,
                                     envpath,
                                     workflowpath,
-                                    logfix,        
-                                    "nfmode"
+                                    logfix,
+                                    "nfmode",
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -3024,7 +3023,7 @@ def nf_make_sub(
                                     envpath,
                                     workflowpath,
                                     logfix,
-                                    "nfmode"
+                                    "nfmode",
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -3256,7 +3255,7 @@ def nf_make_sub(
                                     envpath,
                                     workflowpath,
                                     logfix,
-                                    "nfmode"
+                                    "nfmode",
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -3292,7 +3291,7 @@ def nf_make_sub(
                                     envpath,
                                     workflowpath,
                                     logfix,
-                                    "nfmode"
+                                    "nfmode",
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -3305,13 +3304,13 @@ def nf_make_sub(
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
-                                line, 
-                                loglevel, 
-                                condapath, 
-                                envpath, 
-                                workflowpath, 
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         subjobs.append(line)
                     subjobs.append("\n\n")
@@ -3324,13 +3323,13 @@ def nf_make_sub(
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
-                                line, 
-                                loglevel, 
-                                condapath, 
-                                envpath, 
-                                workflowpath, 
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         subjobs.append(line)
                     subjobs.append("\n\n")
@@ -3431,7 +3430,7 @@ def nf_make_post(
 
     if combinations:
         combname = mp.get_combo_name(combinations)
-        log.debug(f'{logid} COMBINATIONS: {combname}')
+        log.debug(f"{logid} COMBINATIONS: {combname}")
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
@@ -3448,13 +3447,13 @@ def nf_make_post(
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
                         line = fixinclude(
-                            line, 
-                            loglevel, 
-                            condapath, 
-                            envpath, 
-                            workflowpath, 
+                            line,
+                            loglevel,
+                            condapath,
+                            envpath,
+                            workflowpath,
                             logfix,
-                            "nfmode"
+                            "nfmode",
                         )
                     add.append(line)
                 add.append("\n\n")
@@ -3529,7 +3528,7 @@ def nf_make_post(
                                     envpath,
                                     workflowpath,
                                     logfix,
-                                    "nfmode"
+                                    "nfmode",
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
@@ -3611,13 +3610,13 @@ def nf_make_post(
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
-                                line, 
-                                loglevel, 
-                                condapath, 
-                                envpath, 
-                                workflowpath, 
+                                line,
+                                loglevel,
+                                condapath,
+                                envpath,
+                                workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         add.append(line)
                     add.append("\n\n")
@@ -3703,7 +3702,7 @@ def nf_make_post(
                                         envpath,
                                         workflowpath,
                                         logfix,
-                                        "nfmode"
+                                        "nfmode",
                                     )
                                 subjobs.append(line)
                             subjobs.append("\n\n")
@@ -3800,13 +3799,13 @@ def nf_make_post(
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
                         line = fixinclude(
-                            line, 
-                            loglevel, 
-                            condapath, 
-                            envpath, 
-                            workflowpath, 
+                            line,
+                            loglevel,
+                            condapath,
+                            envpath,
+                            workflowpath,
                             logfix,
-                            "nfmode"
+                            "nfmode",
                         )
                     add.append(line)
                 add.append("\n\n")
@@ -3857,7 +3856,7 @@ def nf_make_post(
                                 envpath,
                                 workflowpath,
                                 logfix,
-                                "nfmode"
+                                "nfmode",
                             )
                         subjobs.append(line)
                     subjobs.append("\n\n")
@@ -4006,13 +4005,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
             line = re.sub(condapath, 'conda: "' + envpath, line)
             if "include {" in line:
                 line = fixinclude(
-                    line, 
-                    loglevel, 
-                    condapath, 
-                    envpath,
-                    workflowpath, 
-                    logfix,
-                    "nfmode"
+                    line, loglevel, condapath, envpath, workflowpath, logfix, "nfmode"
                 )
             subjobs.append(line)
         subjobs.append("\n\n")
