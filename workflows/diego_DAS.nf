@@ -7,6 +7,8 @@ DASANNO = get_always('DASANNO')
 COUNTPARAMS = get_always('edger_DAS_params_COUNT') ?: ''
 DASPARAMS = get_always('edger_DAS_params_DAS') ?: ''
 DASREPS = get_always('DASREPS') ?: ''
+DASSAMPLES = get_always('DASREPS') ?: ''
+DASGROUPS = get_always('DASREPS') ?: ''
 DASCOMP = get_always('DASCOMP') ?: ''
 DASCOMPS = get_always('DASCOMPS') ?: ''
 PVAL = get_always('DASPVAL') ?: ''
@@ -18,7 +20,7 @@ COUNTENV = 'countreads_de'
 
 //DAS PROCESSES
 
-process featurecount_edger{
+process featurecount_diego{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
