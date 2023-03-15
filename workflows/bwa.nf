@@ -92,7 +92,7 @@ process bwa_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }else{
         read = reads[1]
@@ -101,7 +101,7 @@ process bwa_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read  2> lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }
