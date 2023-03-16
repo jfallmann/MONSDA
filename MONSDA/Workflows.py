@@ -2050,6 +2050,28 @@ def nf_fetch_params(
         retconf["PEAKREFDIR"] = REFDIR
         retconf["PEAKANNO"] = ANNOTATION
         retconf["PEAKIP"] = IP
+        PEAKSBIN, PEAKSENV = mp.env_bin_from_config(config, "PEAKS")
+        if XENV == "macs":
+            PEAKSAMPLES = mp.set_pairing(SAMPLES, config)
+            postsamples = mp.get_samples_postprocess(config, "PEAKS")
+            pairsamples = config.get("SAMPLES", postsamples)
+            if "DEDUP" in config:
+                stypes = [
+                    "sorted",
+                    "sorted_unique",
+                    "sorted_dedup",
+                    "sorted_unique_dedup",
+                ]
+            else:
+                stypes = ["sorted", "sorted_unique"]
+            pairing = [
+                x
+                for x in mp.get_pairing(
+                    y, stypes, config, pairsamples, SETUP, mode="nf"
+                )
+                for y in mp.samplecond(PEAKSAMPLES, config)
+            ]
+            retconf["PEAKSAMPLES"] = ','.join(pairing)
 
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
@@ -2157,7 +2179,11 @@ def nf_fetch_params(
                 retconf[x + "UIDX"] = UIDX
                 retconf[x + "UIDXNAME"] = UIDXNAME
             elif x == "DAS" and XBIN == "diego.py":
-                cnd = [os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x) + "_mapped_sorted_unique.counts.gz" for x in LONGSAMPLES]
+                cnd = [
+                    os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x)
+                    + "_mapped_sorted_unique.counts.gz"
+                    for x in LONGSAMPLES
+                ]
                 retconf[x + "SAMPLES"] = mp.get_diego_samples(cnd, config, x)
                 retconf[x + "GROUPS"] = mp.get_diego_groups(cnd, config, x)
         retconf[x + "REF"] = REFERENCE

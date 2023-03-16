@@ -908,7 +908,7 @@ def set_pairing(samples, config):
 
 
 @check_run
-def get_pairing(sample, stype, config, samples, scombo=""):
+def get_pairing(sample, stype, config, samples, scombo="", mode="smk"):
     logid = scriptname + ".Params_get_pairing: "
     cond = conditiononly(sample, config)
     pconf = mu.sub_dict(config["PEAKS"], cond)
@@ -942,16 +942,12 @@ def get_pairing(sample, stype, config, samples, scombo=""):
                 + f"COMPARABLE set in config but no fitting pair could be found for sample {sample} in {pairlist}. Please check config."
             )
         else:
-            retstr = (
-                "-c MAPPED"
-                + os.sep
-                + str(scombo)
-                + os.sep
-                + str(matching)
-                + "_mapped_"
-                + str(stype)
-                + ".bam"
-            )
+            if mode == "smk":
+                retstr = (
+                    f"-c {os.sep.join(['MAPPED', scombo, matching])}_mapped_{stype}.bam"
+                )
+            else:
+                retstr = f"{os.sep.join(['MAPPED', scombo, sample])}_mapped_{stype}.bam, {os.sep.join(['MAPPED', scombo, matching])}_mapped_{stype}.bam"
 
             log.debug(logid + retstr)
             return retstr
