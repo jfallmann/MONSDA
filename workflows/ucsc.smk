@@ -74,13 +74,13 @@ rule BedgToTRACKS:
             sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bw",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.bw",
-            t1 = temp("TRACKS/{combo}/{file}_mapped_{type}.fw.tmp"),
-            t2 = temp("TRACKS/{combo}/{file}_mapped_{type}.re.tmp")
+            tfw = temp("TRACKS/{combo}/{file}_mapped_{type}.fw.tmp"),
+            tre = temp("TRACKS/{combo}/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/TRACKS/{combo}/{file}_{type}_bedgtoucsc.log"
     conda:  "ucsc.yaml"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
-    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.t1} && bedGraphToBigWig {output.t1} {input.sizes} {output.fw} 2> {log}; else touch {output.t1}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.t2} && bedGraphToBigWig {output.t2} {input.sizes} {output.re} 2>> {log}; else touch {output.t2}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
     input:  fw = rules.BedgToTRACKS.output.fw,

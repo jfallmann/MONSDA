@@ -238,10 +238,10 @@ rule PeakToTRACKS:
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
-    log:    "LOGS/PEAKS/{combo}/{file}_peaktoucsc_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     threads: 1
-    shell:  "zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}"
+    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 rule GenerateTrack:
     input:  fw = rules.PeakToTRACKS.output.fw,
