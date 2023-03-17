@@ -5,3 +5,4 @@ channels:
 dependencies:
 - multiqc =1.14
 - fastqc =0.11.9
+- python =3.9
