@@ -136,7 +136,7 @@ def check_workflow(files):
     works = set()
     for file in files:
         log.debug(logid + str(file))
-        w = file.split("_")[0].replace('[','').replace(']','')
+        w = file.split("_")[0].replace("[", "").replace("]", "")
         if w not in ["Sig", "SigDOWN", "SigUP"]:
             works.add(w)
     log.debug(logid + str(works))
@@ -160,7 +160,12 @@ def check_workflow(files):
 def create_file_tree(files):
     logid = scriptname + ".create_file_tree: "
     tree = NestedDefaultDict()
-    files = [file for file in files if not any(x in file for x in ['noshrink', 'AllConditions', 'DataSet']) and any(x in file for x in ['results', 'figure_'])]
+    files = [
+        file
+        for file in files
+        if not any(x in file for x in ["noshrink", "AllConditions", "DataSet"])
+        and any(x in file for x in ["results", "figure_"])
+    ]
     for file in files:
         setting = os.path.basename(file).split(".", 1)[0]
         setting = (
@@ -205,7 +210,7 @@ def integrate_figures(files, islist=False):
             listlines.append(f"fig.{counter} <- '{f}'")
         img.append(f"path.expand(fig.{counter})")
         counter += 1
-    listlines.append(f"knitr::include_graphics(c({','.join(img)}))")
+    listlines.append(f"knitr::include_graphics(c({','.join(img)}), rel_path=FALSE)")
     listlines.append("```\n\n")
     listlines.append(f"\n***\n")
     return "\n".join(listlines)
@@ -233,7 +238,7 @@ def create_Rmd(files, output, env):
     logid = scriptname + ".create_Rmd: "
     outdir = os.path.dirname(output)
     makeoutdir(outdir)
-    log.debug(f'{logid} FILES: {files}')
+    log.debug(f"{logid} FILES: {files}")
     workflow = check_workflow(files)
     tree = create_file_tree(files)
     lines = list()
