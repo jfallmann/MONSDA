@@ -5,6 +5,8 @@ channels:
   - defaults
   - r
 dependencies:
+  - binutils_impl_linux-64=2.36.1
+  - binutils_linux-64=2.36
   - bioconductor-annotate=1.70.0
   - bioconductor-annotationdbi=1.54.0
   - bioconductor-apeglm=1.14.0

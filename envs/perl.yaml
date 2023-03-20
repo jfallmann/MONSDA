@@ -58,4 +58,3 @@ dependencies:
   - perl-xsloader=0.24
   - perl-yaml=1.29
   - pigz=2.4
-
