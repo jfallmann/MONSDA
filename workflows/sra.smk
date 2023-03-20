@@ -9,9 +9,9 @@ if paired == 'paired':
         output: prefetch = temp("TMP/{srafile}.sra")
         log:    "LOGS/FETCH/prefetch_{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
-        params: ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES]),
+        params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
-        shell: "arr=({params.ids}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do prefetch ${{arr[$i]}} -o {output.prefetch} {params.fpara} &> {log};done"
+        shell: "prefetch {params.ids} -o {output.prefetch} {params.fpara} &> {log}"
 
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
@@ -35,9 +35,9 @@ else:
         output: prefetch = temp("TMP/{srafile}.sra")
         log:    "LOGS/FETCH/prefetch_{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
-        params: ids = lambda w: expand("{accession}", accession = [os.path.basename(x) for x in SAMPLES]),
+        params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
-        shell: "arr=({params.ids}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do prefetch ${{arr[$i]}} -o {output.prefetch} {params.fpara} &> {log};done"
+        shell: "prefetch {params.ids} -o {output.prefetch} {params.fpara} &> {log}"
 
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
