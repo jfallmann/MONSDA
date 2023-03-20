@@ -45,7 +45,7 @@ dependencies:
   - r-pkgconfig =2.0.2
   - r-plogr =0.2.0
   - r-purrr =0.3.2
-  - r-r6=2.4.0
+  - r-r6 =2.4.0
   - r-rcpp =1.0.3
   - r-rcurl =1.98_1.1
   - r-rlang =0.3.4
@@ -53,7 +53,7 @@ dependencies:
   - r-statmod =1.4.33
   - r-tibble =2.1.1
   - r-tidyselect =0.2.5
-  - r-utf8=1.1.4
+  - r-utf8 =1.1.4
   - r-xml =3.99_0.3
   - readline =8.2
   - sed =4.7

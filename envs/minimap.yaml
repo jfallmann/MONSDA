@@ -5,13 +5,11 @@ channels:
   - defaults
   - r
 dependencies:
-  - biopython =1.73
-  - h5py =2.9.0
-  - hdf5=1.10.4
-  - htslib =1.16
-  - minimap2=2.17
-  - numpy =1.17.3
+  - biopython =1.8
+  - minimap2 =2.24
+  - numpy =1.24.1
   - pigz =2.6
-  - pysam =0.19.1
+  - pyfaidx =0.5.9
+  - pysam =0.20.0
   - python =3.9
   - samtools =1.16.1
