@@ -4,5 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - pigz=2.6
-  - zlib=1.2.11
+  - pigz =2.6
+  - zlib =1.2.11

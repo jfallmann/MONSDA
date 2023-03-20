@@ -5,15 +5,16 @@ channels:
   - defaults
   - r
 dependencies:
-  - bedtools=2.30.0
-  - diego=0.1.2
-  - graphviz=2.49.1
-  - imagemagick=7.1.0_10
-  - matplotlib-base=3.5.1
-  - numpy=1.22.3
-  - perl=5.32.1
-  - python-dateutil=2.8.2
-  - pysam=0.20.0
-  - readline=8.2
-  - samtools=1.16.1
-  - scipy=1.8.0
+  - bedtools =2.30.0
+  - diego =0.1.2
+  - graphviz =2.49.1
+  - imagemagick =7.1.0_10
+  - matplotlib-base =3.5.1
+  - numpy =1.22.3
+  - perl =5.32.1
+  - python-dateutil =2.8.2
+  - pysam =0.19.1
+  - python =3.9
+  - readline =8.2
+  - samtools =1.16.1
+  - scipy =1.8.0

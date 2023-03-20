@@ -1,16 +1,10 @@
-name: trimm
+name: trimmomatic
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bbmap=38.22
-  - cutadapt=1.18
-  - fastqc=0.11.8
-  - trim-galore=0.5.0
-  - perl=5.26.2
-  - pigz=2.6
-  - pip=18.1
-  - python=3.10.6
-  - rename=1.601
-
+  - trimmomatic =0.39
+  - python =3.11.0
+  - fastqc =0.11.8
+  - rename =1.601

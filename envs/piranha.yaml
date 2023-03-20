@@ -5,6 +5,6 @@ channels:
   - defaults
   - r
 dependencies:
-  - bamtools=2.5.1
-  - piranha=1.2.1
-  - readline=8.2
+  - bamtools =2.5.1
+  - piranha =1.2.1
+  - readline =8.2

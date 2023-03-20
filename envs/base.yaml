@@ -4,12 +4,13 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - grep=3.4
-  - picard=2.27.4
-  - pyfaidx=0.5.9
-  - pysam=0.20.0
-  - samtools=1.16.1
-  - snakemake-minimal=7.18.2
-  - natsort=8.1.0
-  - perl=5.26.2
-  - pigz=2.6
+  - grep =3.4
+  - picard =2.27.4
+  - pyfaidx =0.5.9
+  - pysam =0.20.0
+  - samtools =1.16.1
+  - snakemake-minimal =7.18.2
+  - natsort =8.1.0
+  - perl =5.26.2
+  - python =3.9
+  - pigz =2.6
