@@ -8,7 +8,7 @@ dependencies:
   - picard=2.27.4
   - pyfaidx=0.5.9
   - pysam=0.19.1
-  - samtools=1.16.1
+  - samtools=1.16.1=h6899075_1
   - snakemake-minimal=7.18.2
   - natsort=8.1.0
   - perl=5.26.2

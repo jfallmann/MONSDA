@@ -5,6 +5,6 @@ channels:
   - r
 dependencies:
   - grep=2.14
-  - samtools=1.16.1
+  - samtools=1.16.1=h6899075_1
   - segemehl=0.3.4
   - pigz=2.6
