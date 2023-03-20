@@ -164,7 +164,7 @@ process run_dexseq{
     comp = "${DEUCOMP}".split(':')[0]
 
     """
-    mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp
+    mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp;
     Rscript --no-environ --no-restore --no-save $bin $anno $cts $ref $deanno . $DEUCOMP $PCOMBO $THREADS $DEUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
 
     """
