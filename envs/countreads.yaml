@@ -9,7 +9,7 @@ dependencies:
   - gffutils=0.11.1
   - grep=2.14
   - htseq=2.0.2
-  - pigz=2.4
+  - pigz=2.6
   - pyfaidx=0.5.8
   - pyparsing=2.4.6
   - pysam=0.19.1

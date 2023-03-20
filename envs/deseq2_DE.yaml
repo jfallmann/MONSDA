@@ -42,7 +42,7 @@ dependencies:
   - bioconductor-summarizedexperiment=1.22.0
   - bioconductor-xvector=0.32.0
   - bioconductor-zlibbioc=1.38.0
-  - pigz=2.4
+  - pigz=2.6
   - r-acepack=1.4.1
   - r-askpass=1.1
   - r-assertthat=0.2.1

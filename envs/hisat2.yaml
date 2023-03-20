@@ -8,4 +8,4 @@ dependencies:
   - hisat2=2.2.1
   - perl=5.26.2
   - samtools=1.16.1
-  - pigz=2.4
+  - pigz=2.6

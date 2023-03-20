@@ -19,7 +19,7 @@ dependencies:
   - ncurses=6.1
   - openssl=1.0.2p
   - perl=5.26.2
-  - pigz=2.4
+  - pigz=2.6
   - pip=18.1
   - python=3.10.6
   - readline=7.0
