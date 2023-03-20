@@ -4,8 +4,6 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - samtools=1.9
-  - bzip2=1.0.6
+  - samtools=1.16.1
   - grep=2.14
-  - zlib=1.2.11
   - pigz=2.4

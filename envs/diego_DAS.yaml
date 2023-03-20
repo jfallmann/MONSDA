@@ -8,12 +8,12 @@ dependencies:
   - bedtools=2.30.0
   - diego=0.1.2
   - graphviz=2.49.1
-  - htslib=1.15.1
+  - htslib=1.16.1
   - imagemagick=7.1.0_10
   - matplotlib-base=3.5.1
   - numpy=1.22.3
   - perl=5.32.1
   - python-dateutil=2.8.2
   - readline=8.1.2
-  - samtools=1.15.1
+  - samtools=1.16.1
   - scipy=1.8.0

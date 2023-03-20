@@ -5,25 +5,16 @@ channels:
   - defaults
   - r
 dependencies:
-  - bcftools=1.10.2
-  - bzip2=1.0.8
-  - gffutils=0.10.1
-  - glib=2.65.0
-  - grep=3.4
-  - htseq=0.12.4
-  - htslib=1.10.2
-  - matplotlib=3.3.0
-  - matplotlib-base=3.3.0
-  - numpy=1.19.1
-  - perl=5.26.2
+  - bcftools=1.8
+  - gffutils=0.11.1
+  - grep=2.14
+  - htseq=2.0.2
   - pigz=2.4
-  - pyfaidx=0.5.9
-  - pyparsing=2.4.7
-  - pysam=0.16.0.1
+  - pyfaidx=0.5.8
+  - pyparsing=2.4.6
+  - pysam=0.19.1
   - python-dateutil=2.8.1
   - readline=8.0
-  - samtools=1.7
-  - simplejson=3.17.2
-  - sqlite=3.32.3
-  - subread=2.0.1
-
+  - samtools=1.16.1
+  - simplejson=3.17.0
+  - subread=1.6.4
