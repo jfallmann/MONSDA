@@ -6,4 +6,4 @@ channels:
   - r
 dependencies:
   - picard=2.27.4
-  - samtools=1.16.1=h6899075_1
+  - samtools=1.16.1

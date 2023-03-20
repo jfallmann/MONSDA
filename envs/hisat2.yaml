@@ -6,6 +6,7 @@ channels:
   - r
 dependencies:
   - hisat2=2.2.1
-  - samtools=1.16.1=h6899075_1
+  - samtools=1.16.1
   - pigz=2.6
+  - pysam=0.20.0
   - rename=1.601

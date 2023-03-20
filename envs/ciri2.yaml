@@ -6,4 +6,4 @@ channels:
   - r
 dependencies:
   - perl=5.32.0
-  - samtools=1.16.1=h6899075_1
+  - samtools=1.16.1
