@@ -164,6 +164,7 @@ We then only need to clean up the name tag as follows:
 .. code-block:: bash
     
     zcat Ecoli_trans_fix.gtf.gz|grep -P '\ttranscript\t'|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
+    zcat ecoli.fa.gz > ecoli.fa
     conda activate bedtools
     bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
     conda deactivate
