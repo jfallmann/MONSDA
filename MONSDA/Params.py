@@ -616,11 +616,19 @@ def get_reps(samples, config, analysis, process="smk"):
         scond.append(sample.split(os.sep)[-1])
         ret["pairs"].append(checkpaired_rep([str.join(os.sep, scond)], config))
         ret["conds"].append(partconf["GROUPS"][idx])
-        if "BATCHES" in partconf and len(partconf["BATCHES"]) >= idx:
+        if (
+            "BATCHES" in partconf
+            and len(partconf["BATCHES"]) >= idx
+            and partconf.get("BATCHES") != ""
+        ):
             ret["batches"].append(str(partconf["BATCHES"][idx]).replace(",", "_"))
         else:
             ret["batches"].append("1")
-        if "TYPES" in partconf and len(partconf["TYPES"]) >= idx:
+        if (
+            "TYPES" in partconf
+            and len(partconf["TYPES"]) >= idx
+            and partconf.get("TYPE") != ""
+        ):
             ret["types"].append(str(partconf["TYPES"][idx]).replace(",", "_"))
         else:
             ret["types"].append("std")
