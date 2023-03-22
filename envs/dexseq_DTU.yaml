@@ -1,4 +1,4 @@
-name: testdexseq
+name: dexseq
 channels:
   - conda-forge
   - bioconda
