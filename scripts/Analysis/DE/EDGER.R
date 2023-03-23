@@ -26,7 +26,7 @@ print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df) {
-    name_list <- df$gene_name[df["type"] == 'gene' & df["gene_id"] == id]
+    name_list <- df$gene_name[df["type"] == "gene" & df["gene_id"] == id]
     if (length(unique(name_list)) == 1) {
         return(name_list[1])
     } else {
@@ -88,7 +88,7 @@ for (contrast in comparison[[1]]) {
     B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)
 
     # subset Datasets for pairwise comparison
-    countData <- cbind(countData_all[, grepl(paste(B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste(A, "_", sep = ""), colnames(countData_all))])
+    countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
     sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
     sampleData$condition <- relevel(sampleData$condition, ref = B)
 
