@@ -78,7 +78,7 @@ rule run_diego:
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DASENV+".yaml"
     threads: MAXTHREAD
-    params: bins   = DASBIN,
+    params: bins   = str.join(os.sep, [BINS, DASBIN]),
             dpara = lambda x: tool_params(samplecond(SAMPLES, config)[0], None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('DAS', ""),
             compare = compstr,
             outfile = [i.replace(".pdf","") for i in expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr)]
