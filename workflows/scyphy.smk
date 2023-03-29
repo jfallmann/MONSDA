@@ -304,10 +304,6 @@ rule PeakToTRACKS:
     threads: 1
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && zcat {input.map_fw} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw} 2>> {log} && zcat {input.map_re} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re} 2>> {log} && zcat {input.map_fw_ext} > {output.tmapfw_ext} 2>> {log} && bedGraphToBigWig {output.tmapfw_ext} {input.fas} {output.map_fw_ext} 2>> {log} && zcat {input.map_re_ext} > {output.tmapre_ext} 2>> {log} && bedGraphToBigWig {output.tmapre_ext} {input.fas} {output.map_re_ext} 2>> {log} && zcat {input.map_fw_rev} > {output.tmapfw_rev} 2>> {log} && bedGraphToBigWig {output.tmapfw_rev} {input.fas} {output.map_fw_rev} 2>> {log} && zcat {input.map_re_rev} > {output.tmapre_rev} 2>> {log} && bedGraphToBigWig {output.tmapre_rev} {input.fas} {output.map_re_rev} 2>> {log}"
 
-    
-    shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
-
-
 rule GenerateTrack:
     input:  fw = rules.PeakToTRACKS.output.fw,
             re = rules.PeakToTRACKS.output.re,
