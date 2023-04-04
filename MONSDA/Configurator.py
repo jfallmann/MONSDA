@@ -48,7 +48,7 @@ parser.add_argument(
     "--test",
     action="store_true",
     default=False,
-    help="runnign in test-mode for showing interim results to copy",
+    help="running in test-mode for showing interim results to copy",
 )
 
 parser.add_argument(
