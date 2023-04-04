@@ -1,4 +1,4 @@
-DASBIN, DASENV = env_bin_from_config(config,'DAS')
+DASBIN, DASENV = env_bin_from_config(config, 'DAS')
 COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 comparison = comparable_as_string(config,'DAS')
