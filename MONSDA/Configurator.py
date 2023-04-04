@@ -1093,11 +1093,11 @@ def set_settings():
                     else:
                         s = last_answer
                     if key in ["GTF", "GFF"]:
-                        p = f"end_exist_.{key.lower()}.*.gz"
+                        p = f"end_exist_.*{key.lower()}.gz"
                     elif key == "IP":
                         p = None
                     else:
-                        p = "end_exist_.gz"
+                        p = "end_exist_.fa.gz"
                 else:
                     p = None
                     s = None
