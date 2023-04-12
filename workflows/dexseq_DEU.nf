@@ -25,7 +25,7 @@ process prepare_deu_annotation{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".gtf") > 0)      "${DEUREFDIR}/${file(filename).getName()}"                
+        if (filename.indexOf(".gtf.gz") > 0)      "${DEUREFDIR}/${file(filename).getName().replaceAll(/\Qdexseqflat\E/,"dexseq")}"
         else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/featurecount_dexseq_annotation.log"
     }
 
@@ -33,13 +33,14 @@ process prepare_deu_annotation{
     path anno
 
     output:
-    path "*.gtf", emit: gtf
+    path "*_fc_dexseq.gtf.gz", emit: fc_gtf
+    path "*_dexseqflat.gtf.gz", emit: f_gtf
     path "*.log", emit: log
 
     script:     
     fn = file(anno).getSimpleName()
-    ca = fn+"_fc_dexseq.gtf"
-    da = fn+"_dexseq.gtf"
+    ca = fn+"_fc_dexseq.gtf.gz"
+    da = fn+"_dexseqflat.gtf.gz"
     ol = "featurecount_dexseq_annotation.log"
     sortmem = '30%'
     if (STRANDED == 'fr' || STRANDED == 'ISF'){
@@ -50,7 +51,7 @@ process prepare_deu_annotation{
             stranded = ''
     }
     """
-    mkdir -p TMP; $BINS/Analysis/DEU/prepare_deu_annotation.py -f $ca $stranded $anno $da 2>> $ol
+    mkdir -p TMP; $BINS/Analysis/DEU/prepare_deu_annotation.py --nextflow -f $ca $stranded $anno $da 2>> $ol
     """
 }
 
@@ -76,7 +77,7 @@ process featurecount_dexseq{
     path "*.log", emit: fc_log
 
     script: 
-    anno = fls[0]
+    fcanno = fls[0]
     reads = fls[1]       
     fn = file(reads).getSimpleName()
     oc = fn+".counts.gz"
@@ -97,7 +98,7 @@ process featurecount_dexseq{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded -a <(zcat $fcanno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -149,7 +150,7 @@ process run_dexseq{
     input:
     path cts
     path anno
-    path ref
+    path refan
     path deanno
 
     output:
@@ -166,7 +167,7 @@ process run_dexseq{
 
     """
     mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp;
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DEUCOMP $PCOMBO $THREADS $DEUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $refan $deanno . $DEUCOMP $PCOMBO $THREADS $DEUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
 
     """
 }
@@ -252,10 +253,10 @@ workflow DEU{
     annofile = Channel.fromPath(DEUANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
-    featurecount_dexseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_deu_annotation(annofile)
+    featurecount_dexseq(prepare_deu_annotation.out.fc_gtf.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_dexseq.out.fc_cts.collect())
-    run_dexseq(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile, prepare_deu_annotation.out.gtf)
+    run_dexseq(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile, prepare_deu_annotation.out.f_gtf)
     filter_significant(run_dexseq.out.tbls)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
     collect_dexseq(filter_significant.out.sigtbls.collect())
