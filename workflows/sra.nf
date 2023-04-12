@@ -28,7 +28,7 @@ process prefetch_sra{
     script:
         fn = reads+".sra"
         """
-        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
+        export NCBI_SETTINGS=\"$FETCHPARAMS\"
         prefetch $reads -o $fn &> prefetch.log
         """
 }
@@ -55,13 +55,13 @@ process download_sra{
     script:
     if (PAIRED == 'paired'){        
         """
-        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
+        export NCBI_SETTINGS=\"$FETCHPARAMS\"
         fasterq-dump -e $THREADS $DOWNPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{
         """
-        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
+        export NCBI_SETTINGS=\"$FETCHPARAMS\"
         fasterq-dump -e $THREADS $DOWNPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq ; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }

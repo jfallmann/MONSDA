@@ -421,7 +421,7 @@
     "DAS": {
         "TOOLS" :
         {
-            "diego" : "diego.py",
+            "diego" : "Analysis/DAS/diego.py",
             "edger" : "Analysis/DAS/EDGER.R"
         },
         "COMPARABLE" :

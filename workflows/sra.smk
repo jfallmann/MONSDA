@@ -11,7 +11,7 @@ if paired == 'paired':
         conda:  ""+FETCHENV+".yaml"
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
-        shell: "export NCBI_SETTINGS=\"$PWD/{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}"
+        shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}"
 
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
@@ -25,7 +25,7 @@ if paired == 'paired':
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
                 wd = lambda wildcards: os.getcwd()+os.sep,
                 sra = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0]
-        shell: "set +euo pipefail; export NCBI_SETTINGS=\"$PWD/{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq;do gzip $i &>> {params.wd}{log};done ; exit 0"
+        shell: "set +euo pipefail; export NCBI_SETTINGS=\"{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq;do gzip $i &>> {params.wd}{log};done ; exit 0"
 
 else:
     log.info('Downloading single-end fastq files from SRA')
@@ -38,7 +38,7 @@ else:
         conda:  ""+FETCHENV+".yaml"
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
-        shell: "export NCBI_SETTINGS=\"$PWD/{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} {params.fpara} &> {log}"
+        shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} {params.fpara} &> {log}"
 
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
@@ -52,4 +52,4 @@ else:
                 spara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('DOWNLOAD', ""),
                 wd = lambda wildcards: os.getcwd()+os.sep,
                 sra = lambda wildcards:  os.path.splitext(os.path.basename(wildcards.srafile))[0]
-        shell: "set +euo pipefail; export NCBI_SETTINGS=\"$PWD/{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq; do gzip $i &>> {params.wd}{log};done ; exit 0"
+        shell: "set +euo pipefail; export NCBI_SETTINGS=\"{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq; do gzip $i &>> {params.wd}{log};done ; exit 0"
