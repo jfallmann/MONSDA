@@ -1,7 +1,8 @@
 FETCHENV=get_always('FETCHENV')
 FETCHBIN=get_always('FETCHBIN')
 
-FETCHPARAMS = get_always('sra_params_DOWNLOAD') ?: ''
+FETCHPARAMS = get_always('sra_params_PREFETCH') ?: ''
+DOWNPARAMS = get_always('sra_params_DOWNLOAD') ?: ''
 
 
 //FETCH PROCESSES
@@ -27,6 +28,7 @@ process prefetch_sra{
     script:
         fn = reads+".sra"
         """
+        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
         prefetch $reads -o $fn &> prefetch.log
         """
 }
@@ -53,12 +55,14 @@ process download_sra{
     script:
     if (PAIRED == 'paired'){        
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq; for i in *.fastq;do pigz -p $THREADS \$i;done
+        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
+        fasterq-dump -e $THREADS $DOWNPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
     else{
         """
-        fasterq-dump -e $THREADS $FETCHPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq ; for i in *.fastq;do pigz -p $THREADS \$i;done
+        export NCBI_SETTINGS="\$PWD/${FETCHPARAMS}"
+        fasterq-dump -e $THREADS $DOWNPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq ; for i in *.fastq;do pigz -p $THREADS \$i;done
         """
     }
 }
