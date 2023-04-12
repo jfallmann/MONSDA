@@ -166,7 +166,7 @@ We then only need to clean up the name tag as follows:
     zcat Ecoli_trans_fix.gtf.gz|grep -P '\ttranscript\t'|perl -wlane 'next if($_=~/^#/);($name=(split(/;/,$F[11]))[0])=~s/\"//g;print join("\t",$F[0],$F[3]-1,$F[4],$name,100,$F[6])' > Ecoli_trans.bed
     zcat ecoli.fa.gz > ecoli.fa
     conda activate bedtools
-    bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -nameOnly -s
+    bedtools getfasta -fi ecoli.fa -bed Ecoli_trans.bed -fo Ecoli_trans.fa -name -s
     conda deactivate
     perl -wlane 'if($_=~/^>/){$_=~s/\(|\+|\-|\)//g;}print' Ecoli_trans.fa |gzip > tmp.gz;cat tmp.gz ecoli.fa.gz > Ecoli_trans.fa.gz && rm -f tmp.gz
     zcat ecoli.fa.gz|grep -P '^>'|cut -d " " -f1 > salmon_decoy
