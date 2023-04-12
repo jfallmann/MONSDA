@@ -26,7 +26,8 @@ process featurecount_edger{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
+        if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getName()}"
+        else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getName()}"               
         else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
     }
 

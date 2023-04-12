@@ -69,7 +69,7 @@ process star_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q_trimmed.unmapped.out.gz\E/,"")}.fastq.gz"
+        if (filename.indexOf("Unmapped.out") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q.Unmapped.out\E/,"").replaceAll(/\Q.gz\E/,"")}.fastq.gz"
         //else if (filename.indexOf(".sam.gz") >0)     "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
         else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
         else if (filename.indexOf(".tab") >0)        "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
@@ -96,7 +96,7 @@ process star_mapping{
         of = fn+'Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/.mate([1|2]).gz/_R\\1.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
     else{
@@ -105,7 +105,7 @@ process star_mapping{
         of = fn+'Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed 's/.mate[1|2].gz/.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/.mate([1|2]).gz/_R\\1.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
 }

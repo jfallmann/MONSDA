@@ -7,7 +7,7 @@ process trim{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'link',
+    publishDir "${workflow.workDir}/../" , mode: 'copy',
     saveAs: {filename ->
         if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.fastq.gz"
         else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/${COMBO}/${CONDITION}/Trimming_report.txt"

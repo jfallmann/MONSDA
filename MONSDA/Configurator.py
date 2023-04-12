@@ -48,7 +48,7 @@ parser.add_argument(
     "--test",
     action="store_true",
     default=False,
-    help="runnign in test-mode for showing interim results to copy",
+    help="running in test-mode for showing interim results to copy",
 )
 
 parser.add_argument(
@@ -1093,11 +1093,11 @@ def set_settings():
                     else:
                         s = last_answer
                     if key in ["GTF", "GFF"]:
-                        p = f"end_exist_.{key.lower()}.*.gz"
+                        p = f"end_exist_.*{key.lower()}.gz"
                     elif key == "IP":
                         p = None
                     else:
-                        p = "end_exist_.gz"
+                        p = "end_exist_.fa.gz"
                 else:
                     p = None
                     s = None
@@ -1153,7 +1153,7 @@ def modify(config=None):
     er = 0
     while True:
         if er == 0:
-            ques = "Enter the absolut path of the config file to be modified"
+            ques = "Enter the absolute path of the config file to be modified"
         if er == 1:
             ques = "couldn't find the file"
             config = None
@@ -1531,9 +1531,7 @@ def set_workflows(wf=None):
                 if len(groups) < 2:
                     guide.clear(2)
                     prCyan(f"      Comparables: No Groups found\n")
-                    comp_name = "empty"
-                    contrast = [[], []]
-                    project.workflowsDict[workflow]["COMPARABLE"][comp_name] = contrast
+                    project.workflowsDict[workflow]["COMPARABLE"] = ""
                 else:
                     while True:
                         guide.display(
@@ -1757,7 +1755,7 @@ def create_project(final_dict):
                             os.path.join(gen, os.path.basename(ref)),
                         )
                     f = os.path.join(gen, os.path.basename(ref))
-                    rel = os.path.os.path.relpath(f, start=project.path)
+                    rel = os.path.relpath(f, start=project.path)
                     setInDict(project.settingsDict, condition + ["REFERENCE"], rel)
                 else:
                     prRed(
