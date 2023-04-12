@@ -62,7 +62,8 @@ process featurecount_dexseq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "DEU/${SCOMBO}/Featurecounts/${file(filename).getSimpleName()}.counts.gz"                
+        if (filename.indexOf(".counts.gz") > 0)      "DEU/${SCOMBO}/Featurecounts/${file(filename).getName()}"
+        else if (filename.indexOf(".counts.summary") > 0)      "DEU/${SCOMBO}/Featurecounts/${file(filename).getName()}"                
         else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_dexseq_unique.log"
     }
 
