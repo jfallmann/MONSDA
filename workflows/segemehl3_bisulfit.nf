@@ -73,7 +73,7 @@ process segemehl3_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getSimpleName().replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".bed") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
         else if (filename.indexOf(".txt") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
         else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
@@ -102,15 +102,16 @@ process segemehl3_mapping{
         r2 = reads[3]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
-        uf = fn+"_unmapped.fastq.gz"
+        uf1 = fn+"_R1_unmapped.fastq.gz"
+        uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $r1 -p $r2 2> $lf | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $r1 -p $r2 2> $lf | tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2
         """
     }else{
         fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         read = reads[2]
-        pf = fn+"_mapped.sam"
+        pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
