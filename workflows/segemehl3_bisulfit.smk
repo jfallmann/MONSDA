@@ -27,7 +27,8 @@ if paired == 'paired':
                 uidx2= rules.generate_index.output.uidx2[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                 mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
                 sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
                 txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
@@ -37,7 +38,7 @@ if paired == 'paired':
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
                 split = lambda wildcards, output: f"&& mv -f {os.path.basename(output.txt).replace('.trns.txt', '*.trns.txt')} {output.txt} && mv -f {os.path.basename(output.mult).replace('.mult.bed', '*.mult.bed')} {output.mult} && mv -f {os.path.basename(output.sngl).replace('.sngl.bed', '*.sngl.bed')} {output.sngl}" if any( x in tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', "") for x in ['-S', '--split']) else ''
-        shell: "set +o pipefail;{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
+        shell: "set +o pipefail;{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2} && touch {output.txt} {output.sngl} {output.mult} {params.split}"
 
 else:
     rule mapping:

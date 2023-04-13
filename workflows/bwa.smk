@@ -26,14 +26,15 @@ if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
                     index = rules.generate_index.output.uidx,
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                    unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                    unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
                     mapp = MAPPERBIN
                     #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-            shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
     else:
         rule mapping:
@@ -59,14 +60,15 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             output: sai1 = report("MAPPED/{combo}/{file}_mapped.R1.sai", category="MAPPING"),
                     sai2 = report("MAPPED/{combo}/{file}_mapped.R2.sai", category="MAPPING"),
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                    unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                    unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN,
                     mapp1 = MAPPERBIN.split(' ')[0]
-            shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
 #            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
@@ -136,14 +138,15 @@ elif bwaalg == 'sampe':
         output: sai1 = report("MAPPED/{combo}/{file}_mapped.R1.sai", category="MAPPING"),
                 sai2 = report("MAPPED/{combo}/{file}_mapped.R2.sai", category="MAPPING"),
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
                 mapp1 = MAPPERBIN.split(' ')[0]
-        shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 elif bwaalg == 'bwasw':
     if paired == 'paired':
@@ -152,13 +155,14 @@ elif bwaalg == 'bwasw':
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                    unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                    unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN
-            shell: "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell: "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
     else:
         rule mapping:

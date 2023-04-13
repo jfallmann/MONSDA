@@ -23,15 +23,14 @@ if paired == 'paired':
                 uidx = rules.generate_index.output.uidx[0],
                 fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+                unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN,
-                muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
-                uuz = lambda wildcards, output: output.unmapped.replace('.gz', '')
-        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} -o {params.muz} -u {params.uuz} &> {log} && gzip {params.muz} && gzip {params.uuz}"
+                mapp=MAPPERBIN
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
@@ -44,7 +43,5 @@ else:
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params:  mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN,
-                muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
-                uuz = lambda wildcards, output: output.unmapped.replace('.gz', '')
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} -o {params.muz} -u {params.uuz} &> {log} && gzip {params.muz} && gzip {params.uuz}"
+                mapp=MAPPERBIN
+        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"

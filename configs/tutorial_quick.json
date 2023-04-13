@@ -25,6 +25,7 @@
             "sra": {
                 "OPTIONS":
                 {
+                    "PREFETCH": "${HOME}/.ncbi/user-settings.mkfg",
                     "DOWNLOAD": ""
                 }
             }

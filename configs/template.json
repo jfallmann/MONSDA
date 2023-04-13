@@ -35,7 +35,8 @@
                                    "sra": { # for which tool environment these settings work
                                        "OPTIONS":
                                        {
-                                           "DOWNLOAD": ""  #FETCH options here if any, paired is not required, will be resolved by rules
+                                            "PREFETCH": "${HOME}/.ncbi/user-settings.mkfg",  # PATH to vdb-config file
+                                            "DOWNLOAD": ""  #FETCH options here if any, paired is not required, will be resolved by rules
 
                                        }
                                    }

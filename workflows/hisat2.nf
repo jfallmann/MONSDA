@@ -68,7 +68,7 @@ process hisat2_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_unmapped.fastq.gz") > 0)     "UNMAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/unmapped.fastq.gz/,"")}fastq.gz"
+        if (filename.indexOf("_unmapped.fastq.gz") > 0)     "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getName()}"
         else if (filename.indexOf(".summary") >0)            "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
         else if (filename.indexOf(".log") >0)               "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
         else null
@@ -102,8 +102,8 @@ process hisat2_mapping{
         r2 = reads[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam"
-        ufo = fn+"R1_unmapped.fastq.gz"
-        uft = fn+"R2_unmapped.fastq.gz"
+        ufo = fn+"_R1_unmapped.fastq.gz"
+        uft = fn+"_R2_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
         $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz ${fn}.unmapped -S $pf &> $lf && gzip $pf && touch $ufo $uft && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' ${fn}.unmapped.*.gz  &>> $lf

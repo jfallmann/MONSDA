@@ -27,8 +27,8 @@ if paired == 'paired':
                 dummy = rules.generate_index.output.dummy[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped_r1 = "UNMAPPED/{combo}/{file}_unmapped_R1.fastq.gz",
-                unmapped_r2 = "UNMAPPED/{combo}/{file}_unmapped_R2.fastq.gz",
+                unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
