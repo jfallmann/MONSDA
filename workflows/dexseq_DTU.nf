@@ -4,6 +4,9 @@ DTUBIN = get_always('DTUBIN')
 DTUREF = get_always('DTUREF')
 DTUREFDIR = "${workflow.workDir}/../"+get_always('DTUREFDIR')
 DTUANNO = get_always('DTUANNO')
+DTUIDX = get_always('DTUIDX')
+DTUUIDX = get_always('DTUUIDX')
+DTUUIDXNAME = get_always('DTUUIDXNAME')
 IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
@@ -40,7 +43,7 @@ process salmon_idx{
     script:    
     gen =  genome.getName()
     """
-    $COUNTBIN index $IDXPARAMS -p $THREADS -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME salmon.idx
     """
 
 }
@@ -107,7 +110,7 @@ process salmon_quant{
 }
 
 process prepare_dtu_annotation{
-    conda "$COUNTENV"+".yaml"
+    conda "$DTUENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -126,7 +129,7 @@ process prepare_dtu_annotation{
     ca = COMBO+"_ANNOTATION.gz"
     ol = "create_DTU_table.log"
     """
-    mkdir -p TMP; $BINS/Analysis/DTU/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG 2>> $ol
+    mkdir -p TMP; $BINS/Analysis/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG 2>> $ol
     """
 }
 
@@ -220,10 +223,10 @@ workflow DTU{
 
     trimsamples_ch =  Channel.fromPath(TRIMSAMPLES)
     annofile = Channel.fromPath(DTUANNO)
-    checkidx = file(COUNTIDX)
+    checkidx = file(DTUIDX)
     
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(COUNTUIDX)
+        idxfile = Channel.fromPath(DTUUIDX)
         if (PAIRED == 'paired'){
             salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
         } else{
@@ -231,7 +234,7 @@ workflow DTU{
         }        
     }
     else{
-        genomefile = Channel.fromPath(COUNTREF)
+        genomefile = Channel.fromPath(DTUREF)
         salmon_idx(genomefile)
         if (PAIRED == 'paired'){
             salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
@@ -243,11 +246,10 @@ workflow DTU{
     prepare_dtu_annotation()
     run_dexseq(prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
-    collect_dexseq(filter_significant.out.sigtbls.collect())
+    collect_dexseq(run_dexseq.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 
     emit:
     tbls = run_dexseq.out.tbls
-    sigtbls = filter_significant.out.sigtbls
     figs = run_dexseq.out.figs
     snps = create_summary_snippet.out.snps
 }
