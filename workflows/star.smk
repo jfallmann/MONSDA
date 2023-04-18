@@ -41,7 +41,8 @@ if paired == 'paired':
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
-    rule mapping:
+    if paired != 'singlecell':
+        rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
                 dummy = rules.generate_index.output.dummy[0],
@@ -53,8 +54,27 @@ else:
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN,
+                mapp = MAPPERBIN,
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+    else:
+        rule mapping:
+            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+                    umi = lambda wildcards: "FASTQ/{rawfile}_umi.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                    uidx = rules.generate_index.output.uidx[0],
+                    dummy = rules.generate_index.output.dummy[0],
+                    ref = REFERENCE
+            output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
+                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                    tmp = temp("TMP/STAROUT/{combo}/{file}")
+            log:    "LOGS/{combo}/{file}/mapping.log"
+            conda:  ""+MAPPERENV+".yaml"
+            threads: MAXTHREAD
+            params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
+                    mapp = MAPPERBIN,
+                    anno = ANNOTATION,
+                    pref = PREFIX,
+                    tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
+            shell: "{params.mapp} --soloType CB_UMI_Simple {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.umi} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
