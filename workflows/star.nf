@@ -111,8 +111,8 @@ process star_mapping{
         }
         else{
             read = reads[1]
-            umis = reads[2]
             fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
+            umis = "../../../FASTQ/"+SCOMBO+"/"+file(reads[1]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R1")
             of = fn+'Aligned.out.sam'
             gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
             """
@@ -131,23 +131,13 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        if (PAIRED != 'singlecell'){ 
-            star_mapping(idxfile.combine(collection))
-        }
-        else{
-            star_mapping(idxfile.combine(collection.concat(umi)))
-        }
+        star_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
         star_idx(genomefile, annofile)
-        if (PAIRED != 'singlecell'){
-            star_mapping(star_idx.out.idx.combine(collection))
-        }
-        else{
-            star_mapping(idxfile.combine(collection.concat(umi)))
-        }
+        star_mapping(star_idx.out.idx.combine(collection))
     }
 
 
