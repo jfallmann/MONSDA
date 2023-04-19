@@ -100,13 +100,25 @@ process star_mapping{
         """
     }
     else{
-        read = reads[1]
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
-        of = fn+'Aligned.out.sam'
-        gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
-        """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
-        """
+        if (PAIRED != 'singlecell'){
+            read = reads[1]
+            fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
+            of = fn+'Aligned.out.sam'
+            gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
+            """
+            $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+            """
+        }
+        else{
+            read = reads[1]
+            umis = reads[2]
+            fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")+"."
+            of = fn+'Aligned.out.sam'
+            gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
+            """
+            $MAPBIN --soloType CB_UMI_Simple $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+            """
+        }
     }
 }
 
@@ -119,13 +131,23 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        star_mapping(idxfile.combine(collection))
+        if (PAIRED != 'singlecell'){ 
+            star_mapping(idxfile.combine(collection))
+        }
+        else{
+            star_mapping(idxfile.combine(collection.concat(umi)))
+        }
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
         annofile = Channel.fromPath(MAPANNO)
         star_idx(genomefile, annofile)
-        star_mapping(star_idx.out.idx.combine(collection))
+        if (PAIRED != 'singlecell'){
+            star_mapping(star_idx.out.idx.combine(collection))
+        }
+        else{
+            star_mapping(idxfile.combine(collection.concat(umi)))
+        }
     }
 
 
