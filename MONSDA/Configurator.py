@@ -836,7 +836,7 @@ def add_sample_dirs(only_conditions=None):
         seq = opts[guide.answer]
         print("")
 
-        opts = {"1": "unstranded", "2": "rf", "3": "fr"}
+        opts = {"1": "unstranded", "2": "rf", "3": "fr", "4": "ff"}
         guide.display(question="Specify strandedness", options=opts, proof=opts.keys())
         stranded = opts[guide.answer]
 

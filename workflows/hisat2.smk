@@ -36,7 +36,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
+                stranded = lambda x: '--rna-strandness FR --fr' if stranded == 'fr' else '--rna-strandness RF --rf' if stranded == 'rf' else '--ff' if stranded == 'ff' else '',
                 um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz'),
                 umn = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', ''),
                 muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
