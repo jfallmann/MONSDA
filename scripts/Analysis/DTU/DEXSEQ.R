@@ -24,7 +24,7 @@ print(args)
 
 ### FUNCS
 get_gene_name <- function(id, df) {
-    name_list <- df$gene_name[df["type"] == "gene" & df["gene_id"] == id]
+    name_list <- df$gene[df["type"] == "gene" & df["gene_id"] == id]
     if (length(unique(name_list)) == 1) {
         return(name_list[1])
     } else {

@@ -890,7 +890,7 @@ def checkstranded(sample, config):
         # samplelist = p.get('SAMPLES')
         # x = samplelist.index(s.split(os.sep)[-1])
         # paired = pairedlist[x]
-        stranded = paired.split(",")[1] if len(paired.split(",")) > 1 else ""
+        stranded = paired.split(",")[1] if len(paired.split(",")) > 1 and paired.split(",")[1] != "unstranded" else ""
     log.debug(logid + "STRANDEDNESS: " + str(stranded))
     return stranded
 

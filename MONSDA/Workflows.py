@@ -2051,7 +2051,7 @@ def nf_fetch_params(
         retconf["PEAKANNO"] = ANNOTATION
         retconf["PEAKIP"] = IP
         PEAKSBIN, PEAKSENV = mp.env_bin_from_config(config, "PEAKS")
-        if XENV == "macs":
+        if PEAKSENV == "macs":
             PEAKSAMPLES = mp.set_pairing(SAMPLES, config)
             postsamples = mp.get_samples_postprocess(config, "PEAKS")
             pairsamples = config.get("SAMPLES", postsamples)
@@ -2071,7 +2071,7 @@ def nf_fetch_params(
                 )
                 for y in mp.samplecond(PEAKSAMPLES, config)
             ]
-            retconf["PEAKSAMPLES"] = ','.join(pairing)
+            retconf["PEAKSAMPLES"] = ",".join(pairing)
 
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
@@ -2184,8 +2184,20 @@ def nf_fetch_params(
                     + "_mapped_sorted_unique.counts.gz"
                     for x in LONGSAMPLES
                 ]
-                retconf[x + "SAMPLES"] = mp.get_diego_samples(cnd, config, x)
-                retconf[x + "GROUPS"] = mp.get_diego_groups(cnd, config, x)
+                retconf[x + "SAMPLES"] = (
+                    "'"
+                    + mp.get_diego_samples(cnd, config, x)
+                    .replace(os.linesep, "|")
+                    .replace("\t", ":")
+                    + "'"
+                )
+                retconf[x + "GROUPS"] = (
+                    "'"
+                    + mp.get_diego_groups(cnd, config, x)
+                    .replace(os.linesep, "|")
+                    .replace("\t", ":")
+                    + "'"
+                )
         retconf[x + "REF"] = REFERENCE
         retconf[x + "REFDIR"] = REFDIR
         retconf[x + "ANNO"] = ANNOTATION

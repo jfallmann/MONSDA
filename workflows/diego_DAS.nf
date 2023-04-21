@@ -4,9 +4,9 @@ DASBIN = get_always('DASBIN')
 DASREF = get_always('DASREF')
 DASREFDIR = "${workflow.workDir}/../"+get_always('DASREFDIR')
 DASANNO = get_always('DASANNO')
-COUNTPARAMS = get_always('edger_DAS_params_COUNT') ?: ''
-DASPARAMS = get_always('edger_DAS_params_DAS') ?: ''
-DASSAMPLES = get_always('DASREPS') ?: ''
+COUNTPARAMS = get_always('diego_DAS_params_COUNT') ?: ''
+DASPARAMS = get_always('diego_DAS_params_DAS') ?: ''
+DASSAMPLES = get_always('DASSAMPLES') ?: ''
 DASGROUPS = get_always('DASREPS') ?: ''
 DASREPS = get_always('DASREPS') ?: ''
 DASCOMP = get_always('DASCOMP') ?: ''
@@ -30,7 +30,7 @@ process featurecount_diego{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)     "DAS/${SCOMBO}/Featurecounts/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DAS/${SCOMBO}/Featurecounts/${file(filename).getName()}"             
-        else if (filename.indexOf(".log") > 0)        "LOGS/DAS/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/DAS/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_diego_unique.log"
     }
 
     input:
@@ -88,7 +88,7 @@ process create_samplemaps{
 
     script:
     """
-    echo $DASSAMPLES 1> samplemap.txt 2>> log && echo $DASGROUPS 1> groupings.txt 2>> log
+    echo $DASSAMPLES|sed -e 's/:/\\t/' -e 's/\\|/\\n/' 1> samplemap.txt 2>> log && echo $DASGROUPS|sed -e 's/:/\\t/' -e 's/\\|/\\n/' 1> groupings.txt 2>> log
     """
 }
 
@@ -118,7 +118,7 @@ process prepare_junction_usage_matrix{
 
     script:
     """
-    ${BINS}/Analysis/DAS/FeatureCounts2DIEGO.py $DASREPS --table junction_table.txt.gz --anno ANNOTATION.gz 2> log
+    python ${BINS}/Analysis/DAS/FeatureCounts2DIEGO.py $DASREPS --table junction_table.txt.gz --anno ANNOTATION.gz 2> log
     """
 }
 
@@ -130,7 +130,7 @@ process create_contrast_files{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "contrast.txt")      "DAS/${SCOMBO}/Tables/${COMBO}_contrast.txt"
+        if (filename.indexOf("contrast.txt") > 0 )      "DAS/${SCOMBO}/Tables/${COMBO}_contrast.txt"
         else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_create_contrast_files.log"
     }
 
@@ -138,13 +138,12 @@ process create_contrast_files{
     path anno
 
     output: 
-    path "contrast.txt", emit: contrast
-    path "*ANNOTATION.gz", emit: anno
+    path "*contrast.txt", emit: contrast
     path "log", emit: log
 
     script:
     """
-    ${BINS}/Analysis/DAS/diego_contrast_files.py  -a <(zcat $anno) -b $DASCOMP -c $DASCOMPS -o . 2> log
+    python ${BINS}/Analysis/DAS/diego_contrast_files.py  -a <(zcat $anno) -b $DASCOMPS -c $DASCOMP -o . 2> log
     """
 }
 
@@ -238,7 +237,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_diego.log"
     }
 
     input:
@@ -285,8 +284,8 @@ workflow DAS{
     
     featurecount_diego(annofile.combine(mapsamples_ch.collate(1)))
     create_samplemaps()
-    prepare_junction_usage_matrix(create_samplemaps.out.smap, featurecount_diego.out.fc_cts)
-    create_contrast_files(annofile)
+    prepare_junction_usage_matrix(create_samplemaps.out.smap, featurecount_diego.out.fc_cts.collect())
+    create_contrast_files(prepare_junction_usage_matrix.output.anno)
     run_diego(prepare_junction_usage_matrix.out.jtab,create_contrast_files.out.contrast)
     filter_significant(run_diego.out.table)
     convertPDF(run_diego.out.dendrogram)

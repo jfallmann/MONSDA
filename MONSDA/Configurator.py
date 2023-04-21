@@ -828,7 +828,7 @@ def add_sample_dirs(only_conditions=None):
         else:
             guide.clear(3)
         print(f"         {dir}\n")
-        opts = {"1": "single", "2": "paired"}
+        opts = {"1": "single", "2": "paired", "3": "singlecell"}
         # print('\n')
         guide.display(
             question="Specify sequencing method", options=opts, proof=opts.keys()
@@ -836,7 +836,7 @@ def add_sample_dirs(only_conditions=None):
         seq = opts[guide.answer]
         print("")
 
-        opts = {"1": "unstranded", "2": "rf", "3": "fr"}
+        opts = {"1": "unstranded", "2": "rf", "3": "fr", "4": "ff"}
         guide.display(question="Specify strandedness", options=opts, proof=opts.keys())
         stranded = opts[guide.answer]
 
@@ -1093,7 +1093,7 @@ def set_settings():
                     else:
                         s = last_answer
                     if key in ["GTF", "GFF"]:
-                        p = f"end_exist_.*{key.lower()}.gz"
+                        p = f"end_exist_.{key.lower()}.gz"
                     elif key == "IP":
                         p = None
                     else:

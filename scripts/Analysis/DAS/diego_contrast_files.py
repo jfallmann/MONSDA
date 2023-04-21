@@ -30,7 +30,11 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    try:
+        handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    except:
+        handler = logging.FileHandler("log", mode="a")
+
     handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
@@ -92,6 +96,7 @@ def create_tables(annofile, combi, comparisons, outdir, nextflow=None):
             sample_dict[l.split("\t")[0]] = l.split("\t")[1]
 
     for c in comps:
+        log.debug(f"{logid}COMPS: {c}")
         contrast_name = c.split(":")[0]
         contrast_group1 = [i for i in c.split(":")[1].split("-vs-")[0].split("+")]
         contrast_group2 = [i for i in c.split(":")[1].split("-vs-")[1].split("+")]
@@ -115,8 +120,7 @@ if __name__ == "__main__":
     logid = scriptname + ".main: "
     try:
         args = parseargs()
-        print(scriptname)
-        print(os.path.basename(inspect.stack()[-1].filename))
+
         try:
             if not nextflow:
                 makelogdir("LOGS")

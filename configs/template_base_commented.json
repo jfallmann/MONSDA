@@ -14,7 +14,7 @@
       "GROUPS": "Please enter a comma separated list of the groups your samples belong to. This does not have to be in any relation with the condition-tree but is used solely to establish contrasts for differential analysis. Each sample needs a matching entry. Can be left blank to run all-vs-all comparison.",
       "TYPES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
       "BATCHES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
-      "SEQUENCING": "single or paired and stranded info comma separated",
+      "SEQUENCING": "single or paired or singlecell and stranded info [rf,fr,ff,unstranded (or empty)] comma separated",
       "REFERENCE": "set path to reference, '.fa.gz' ending expected",
       "INDEX": "set path to index, default index to use for mapping with this settings",
       "PREFIX": "if needed, prefix for mapping software can be set here",
