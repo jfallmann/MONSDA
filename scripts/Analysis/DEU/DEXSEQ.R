@@ -22,8 +22,8 @@ countfile <- args[2]
 gtf <- args[3]
 flatanno <- args[4]
 outdir <- args[5]
-combi <- args[6]
-cmp <- args[7]
+cmp <- args[6]
+combi <- args[7]
 availablecores <- as.integer(args[8])
 print(args)
 
@@ -158,7 +158,6 @@ for (contrast in comparisons[[1]]) {
     dxr1 <- ""
 
     tryCatch({
-
         # determine contrast
         A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names = FALSE)
         B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)

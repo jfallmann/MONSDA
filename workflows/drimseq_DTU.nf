@@ -165,7 +165,7 @@ process run_drimseq{
 
     """
     mkdir -p Figures Tables drimseqReport_${COMBO}_${DTUCOMP}
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $PCOMBO $DTUCOMP $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv drimseqReport_*/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv drimseqReport_*/* .
     """
 }
 

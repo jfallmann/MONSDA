@@ -124,7 +124,7 @@ rule run_DTU:
             outdir = 'DTU/'+combo,
             ref = os.path.abspath(ANNOTATION),
             dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', "")
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.pcombo} {params.compare} {threads} {params.dtuopt} 2> {log}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.dtuopt} 2> {log}"
 
 rule filter_significant_drimseq:
     input:  res_g = rules.themall.input.res_g,

@@ -75,7 +75,7 @@ rule run_dexseq:
             compare = comparison,
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {input.flat} {params.outdir} {params.pcombo} {params.compare} {threads} 2> {log}"
+    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {input.flat} {params.outdir} {params.compare} {params.pcombo} {threads} 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.themall.input.tbl

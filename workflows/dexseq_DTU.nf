@@ -166,7 +166,7 @@ process run_dexseq{
 
     """
     mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $PCOMBO $DTUCOMP $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
     """
 }
 
