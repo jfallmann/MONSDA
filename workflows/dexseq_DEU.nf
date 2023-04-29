@@ -134,7 +134,7 @@ process prepare_count_table{
 
 process run_dexseq{
     conda "$DEUENV"+".yaml"
-    cpus THREADS
+    cpus 1 // THREADS Not possible due to BPParam Error
 	cache 'lenient'
     //validExitStatus 0,1
 
