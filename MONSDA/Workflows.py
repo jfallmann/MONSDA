@@ -146,6 +146,7 @@ except Exception:
 
 # Code:All subs from here on
 
+
 ###Check MONSDA version
 @check_run
 def monsda_check_version(v, r):
@@ -1173,7 +1174,6 @@ def make_post(
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
-
             condition = list(combname.keys())[0]
             envlist = list(combname[condition].get("envs"))
             subconf = mu.NestedDefaultDict()
@@ -1220,10 +1220,12 @@ def make_post(
                         sconf[subwork]["TOOLS"] = mu.sub_dict(
                             sconf[subwork]["TOOLS"], [toolenv]
                         )
-                    if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                        "deseq",
-                        "diego",
-                    ]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
+                    if subwork in [
+                        "DE",
+                        "DEU",
+                        "DAS",
+                        "DTU",
+                    ]:  # and toolbin not in ["deseq", "diego"]:  # for all other postprocessing tools we have     more than     one         defined subworkflow
                         toolenv = toolenv + "_" + subwork
 
                     sconf[subwork + "ENV"] = toolenv
@@ -1829,7 +1831,6 @@ def fixinclude(
     logfix=logfix,
     nfmode=None,
 ):
-
     logid = scriptname + ".Workflows_fixinclude: "
 
     linelist = list()
@@ -2178,7 +2179,7 @@ def nf_fetch_params(
                 retconf[x + "IDX"] = INDEX
                 retconf[x + "UIDX"] = UIDX
                 retconf[x + "UIDXNAME"] = UIDXNAME
-            elif x == "DAS" and XBIN == "diego.py":
+            elif x == "DAS" and XBIN == "DIEGO.py":
                 cnd = [
                     os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x)
                     + "_mapped_sorted_unique.counts.gz"
@@ -3472,7 +3473,6 @@ def nf_make_post(
         subwork = postworkflow
 
         if subwork in ["DE", "DEU", "DAS", "DTU"]:
-
             condition = list(combname.keys())[0]
             envlist = combname[condition].get("envs")
             subconf = mu.NestedDefaultDict()
