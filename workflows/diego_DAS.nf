@@ -170,11 +170,11 @@ process run_diego{
     path "log", emit: log
 
     script:    
-    outdir = "DAS"+File.separatorChar+"${SCOMBO}"
+    //outdir = "DAS"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DASBIN}"
     
     """    
-    set +euo pipefail; arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond -e -f DAS_DIEGO_${SCOMBO}_\${outcond}_figure_dendrogram &> log;done && arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> DAS_DIEGO_${SCOMBO}_\${outcond}_table_results.csv 2>> log;done
+    set +euo pipefail; arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond -e -f \${outcond}_figure_dendrogram &> log;done && arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> \${outcond}_table_results.csv 2>> log;done
     """
 }
 
