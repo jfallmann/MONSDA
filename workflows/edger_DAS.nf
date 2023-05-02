@@ -116,6 +116,7 @@ process run_edger{
     path deanno
 
     output:
+    path "*_DataSet_*", emit: datasets
     path "*_table*", emit: tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
@@ -220,6 +221,7 @@ workflow DAS{
 
     emit:
     tbls = run_edger.out.tbls
+    datasets = run_edger.out.datasets
     sigtbls = filter_significant.out.sigtbls
     figs = run_edger.out.figs
     snps = create_summary_snippet.out.snps
