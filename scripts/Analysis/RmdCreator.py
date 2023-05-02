@@ -327,24 +327,23 @@ def create_Rmd(files, output, env):
 ####################
 
 if __name__ == "__main__":
-
     logid = scriptname + ".main: "
     try:
         args = parseargs()
-        try:
-            log = setup_logger(
-                name=scriptname,
-                log_file="stderr",
-                logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-                datefmt="%m-%d %H:%M",
-                level=args.loglevel,
-            )
-            # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
-        except:
-            try:
-                log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
-            except:
-                log = logging.getLogger()
+        # try:
+        #    log = setup_logger(
+        #        name=scriptname,
+        #        log_file="stderr",
+        #        logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+        #        datefmt="%m-%d %H:%M",
+        #        level=args.loglevel,
+        #    )
+        #    # log.addHandler(logging.StreamHandler(sys.stderr))  # streamlog
+        # except:
+        #    try:
+        #        log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
+        #    except:
+        #        log = logging.getLogger()
 
         log.debug(logid + str(log.handlers))
 

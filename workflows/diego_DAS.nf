@@ -288,9 +288,10 @@ workflow DAS{
     create_contrast_files(prepare_junction_usage_matrix.output.anno)
     run_diego(prepare_junction_usage_matrix.out.jtab,create_contrast_files.out.contrast)
     filter_significant(run_diego.out.table)
-    convertPDF(run_diego.out.dendrogram)
-    create_summary_snippet(run_diego.out.table.concat(run_diego.out.dendrogram.concat(convertPDF.out.png)).collect())
     collect_diego(filter_significant.out.sigtbls.collect())
+    convertPDF(run_diego.out.dendrogram)
+    create_summary_snippet(run_diego.out.table.concat(filter_significant.out.sigtbls.concat(run_diego.out.dendrogram.concat(convertPDF.out.png))).collect())
+    
 
     emit:
     tbls = run_diego.out.table
