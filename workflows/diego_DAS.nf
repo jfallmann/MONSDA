@@ -174,7 +174,7 @@ process run_diego{
     bin = "${BINS}"+File.separatorChar+"${DASBIN}"
     
     """    
-    set +euo pipefail; arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond -e -f \${outcond}_figure_dendrogram &> log;done && arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/_*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> \${outcond}_table_results.csv 2>> log;done
+    set +euo pipefail; arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \${basecond}|sed 's/\_\*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \${basecond} -e -f DAS_DIEGO_${COMBO}_\${outcond}_figure_dendrogram &> log;done && arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \$basecond|sed 's/\_\*//g'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> DAS_DIEGO_${COMBO}_\${outcond}_table_results.csv 2>> log;done
     """
 }
 
@@ -199,7 +199,7 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; arr=($tabs); for i in \${!arr[@]}; do a=\${arr[\$i]}; fn=\${a##*/}; if [[ -s \"\$a\" ]];then cat \$a|head -n1 > Sig_\$a; cat \$a| tail -n+2 |grep -v -w 'NA'|perl -F'\t' -wlane 'next if (!\$F[10]);if (\$F[10] eq \"yes\") {print}' >> Sig_\$a &>> log; else touch \${orr[\$i]}; fi; done
+    set +o pipefail; arr=($tabs); for i in \${!arr[@]}; do a=\${arr[\$i]}; fn=\${a##*/}; if [[ -s \"\$a\" ]];then cat \$a|head -n1 > Sig_\$a; cat \$a| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[10]);if (\$F[10] eq \"yes\") {print}' >> Sig_\$a &>> log; else touch \${orr[\$i]}; fi; done
     """
 }
 
