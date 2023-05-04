@@ -11,41 +11,6 @@ PEAKSPARAMS = get_always('peaks_PEAKS_params_FINDPEAKS') ?: ''
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
-process RemoveSoftclip{
-    conda "bedtools.yaml"
-    cpus THREADS
-	cache 'lenient'
-    //validExitStatus 0,1
-
-    publishDir "${workflow.workDir}/../" , mode: 'link',
-    saveAs: {filename ->
-        if (filename.indexOf(".bam.bai") > 0)      "MAPPED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename.indexOf(".bam") > 0)      "MAPPED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
-    }
-
-    input:
-    path bam
-    
-    output:
-    path "*.bam", emit: bams
-    path "*.bai", emit: bai
-    path "*.log", emit: log
-    
-    script: 
-    fn = file(bam).getSimpleName()
-    fo = fn+'_nosoftclip.bam'
-    fi = fn+'_nosoftclip.bam.bai'
-    ol = fn+".log"
-    sortmem = '30%'
-    
-    """
-    python $BINS/Analysis/RemoveSoftClip.py -f $REF -b $bam $SOFTPARAMS -o \'-\' | samtools sort -T TMP -o $fo --threads $THREADS \'-\' 2>> $ol && samtools index $fo 2>> $ol && rm -rf TMP
-    """
-    
-}
-
-
 process BamToBed{
     conda "bedtools.yaml"
     cpus THREADS
@@ -173,13 +138,12 @@ process PreprocessPeaks{
     path bed
 
     output:
-    path "*_prepeak.bed.gz", emit: prepeak
+    path "*_prepeak*.bed.gz", emit: prepeak
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
-    of = fn+"_prepeak.bed.gz"
-    ol = fn+".log"
+    of = file(bed).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak")+".bed.gz"
+    ol = file(bed).getSimpleName()+".log"
     sortmem = '30%'
 
     """        
@@ -203,17 +167,16 @@ process FindPeaks{
     path bed
 
     output:
-    path "*_peak.bed.gz", emit: peak
+    path "*_peak*.bed.gz", emit: peak
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
-    of = fn+"_peak.bed.gz"
-    ol = fn+".log"
+    of = file(bed).getName().replaceAll(/\Q_prepeak\E/,"_peak")
+    ol = file(bed).getSimpleName()+".log"
     sortmem = '30%'
 
     """  
-    export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=$THREADS -S $sortmem -T TMP -t\$\'\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
+    export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=$THREADS -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
     """    
 }
 
@@ -243,8 +206,8 @@ process PeakToBedg{
     sizes = bedf[1]
 
     fn = file(bed).getSimpleName()
-    fw = fn+'_peak.fw.bedg.gz'
-    fr = fn+'_peak.re.bedg.gz'
+    fw = fn+'.fw.bedg.gz'
+    fr = fn+'.re.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
 

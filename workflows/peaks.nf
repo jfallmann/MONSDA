@@ -137,13 +137,12 @@ process PreprocessPeaks{
     path bed
 
     output:
-    path "*_prepeak.bed.gz", emit: prepeak
+    path "*_prepeak*.bed.gz", emit: prepeak
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
-    of = fn+"_prepeak.bed.gz"
-    ol = fn+".log"
+    of = file(bed).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak")+".bed.gz"
+    ol = file(bed).getSimpleName()+".log"
     sortmem = '30%'
 
     """        
@@ -167,13 +166,12 @@ process FindPeaks{
     path bed
 
     output:
-    path "*_peak.bed.gz", emit: peak
+    path "*_peak*.bed.gz", emit: peak
     path "*.log", emit: log
 
     script: 
-    fn = file(bed).getSimpleName()
-    of = fn+"_peak.bed.gz"
-    ol = fn+".log"
+    of = file(bed).getName().replaceAll(/\Q_prepeak\E/,"_peak")
+    ol = file(bed).getSimpleName()+".log"
     sortmem = '30%'
 
     """        
@@ -207,8 +205,8 @@ process PeakToBedg{
     sizes = bedf[1]
 
     fn = file(bed).getSimpleName()
-    fw = fn+'_peak.fw.bedg.gz'
-    fr = fn+'_peak.re.bedg.gz'
+    fw = fn+'.fw.bedg.gz'
+    fr = fn+'.re.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
 
