@@ -19,9 +19,9 @@ process RemoveSoftclip{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bam.bai") > 0)      "MAPPED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename.indexOf(".bam") > 0)      "MAPPED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".bam.bai") > 0)      "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"                
+        else if (filename.indexOf(".bam") > 0)      "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"                
+        else if (filename == ".log")        "LOGS/PEAKS/${COMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
