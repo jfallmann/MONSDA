@@ -239,7 +239,7 @@ process summarize_counts{
 
     script:    
     """
-    for i in $reads;do echo -ne \"\$i\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary;fi; done 2>> log
+    for i in $reads;do echo -ne \"\$i\\t\" >> summary && if [[ -s \$i ]]; then cat \$i >> summary; else echo '0' >> summary;fi; done 2>> log
     """
 }
 
