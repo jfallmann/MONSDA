@@ -165,7 +165,7 @@ process count_mappers{
     ol = fn+".log"
     sortmem = '30%'
     """
-    mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
+    mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
     """
 }
 
