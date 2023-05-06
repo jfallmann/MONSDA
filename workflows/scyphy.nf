@@ -90,7 +90,7 @@ process BamToBed{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
+        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_ext.bed.gz\E/,".bed.gz")}"                
         else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
     }
 
@@ -291,8 +291,8 @@ process BedToBedg{
     path bedf
 
     output:
-    path "*nosoftclip*fw.bedg.gz", emit: nobedgf
-    path "*nosoftclip*re.bedg.gz", emit: nobedgr
+    path "*nosoftclip*fw.bedg.gz", emit: nobedgf, optional: true
+    path "*nosoftclip*re.bedg.gz", emit: nobedgr, optional: true
     path "*fw.bedg.gz", emit: bedgf
     path "*re.bedg.gz", emit: bedgr
     path "*.log", emit: log
