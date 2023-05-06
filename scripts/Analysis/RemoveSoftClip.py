@@ -86,7 +86,10 @@ try:
         handler.close()
         log.removeHandler(handler)
 
-    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    try:
+        handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
+    except:
+        handler = logging.FileHandler("log", mode="a")
     handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
@@ -146,7 +149,6 @@ def parseargs():
 
 
 def process(fasta, bams, outname, cluster=None):
-
     outdir = os.path.dirname(outname) if outname else None
     if outdir:
         print("Checking or creating outdir " + str(outdir))
@@ -176,7 +178,6 @@ def process(fasta, bams, outname, cluster=None):
 
 
 def remove_clip(bam, fasta, out, cluster=None):
-
     samfile = parse_bam(bam)
     header = samfile.header
 
@@ -186,7 +187,6 @@ def remove_clip(bam, fasta, out, cluster=None):
     #        k = chrom
 
     with pysam.Samfile(out, "wb", template=samfile) as bamout:
-
         for read in samfile.fetch():
             # newread = pysam.AlignedSegment(header)
             # if not read.is_unmapped:
