@@ -160,7 +160,7 @@ rule BedToBedg:
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}"
 
-if IP in ['iCLIP', 'CLIP']:
+if any(x == IP for x in ['iCLIP', 'CLIP']):
     rule PreprocessPeaks:
         input:  bedg = rules.BedToBedg_ext.output.concat
         output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"

@@ -52,7 +52,7 @@ process BamToBed{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_ext.bed.gz\E/,".bed.gz")}"                
+        if (filename.indexOf(".bed.gz") > 0)      "BED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_ext.bed.gz\E/,".bed.gz")}"                
         else if (filename.indexOf(".log") > 0)        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
     }
 
@@ -91,7 +91,7 @@ process ExtendBed{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
+        if (filename.indexOf(".bed.gz") > 0)      "BED/${COMBO}/${CONDITION}/${file(filename).getName()}"                
         else if (filename.indexOf(".log") > 0)        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
     }
 
@@ -110,7 +110,7 @@ process ExtendBed{
     
     fn = file(bed).getSimpleName().replaceAll(/\Q_mapped\E/,"_mapped_extended")
     of = fn+'.bed.gz'    
-    opt = '-u 1'
+    opt = '-u 0'
     ol = fn+".log"
     sortmem = '30%'
 
@@ -127,7 +127,7 @@ process RevExtendBed{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
+        if (filename.indexOf(".bed.gz") > 0)      "BED/${COMBO}/${CONDITION}/${file(filename).getName()}"                
         else if (filename.indexOf(".log") > 0)        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
     }
 
@@ -146,7 +146,7 @@ process RevExtendBed{
     
     fn = file(bed).getSimpleName().replaceAll(/\Q_mapped\E/,"_mapped_revtrimmed")
     of = fn+'.bed.gz'    
-    opt = '-d 1'
+    opt = '-d 0'
     ol = fn+".log"
     sortmem = '30%'
 
@@ -532,11 +532,13 @@ workflow PEAKS{
 
     //mapsamples_ch.subscribe {  println "BAM: $it"  }
     UnzipGenome(genomefile)
-    RemoveSoftclip(mapsamples_ch)  
+    RemoveSoftclip(mapsamples_ch)
     BamToBed(mapsamples_ch.concat(RemoveSoftclip.out.bams))
+    //BamToBed(RemoveSoftclip.out.bams)
     ExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
     RevExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
-    BedToBedg(ExtendBed.out.bedext.concat(RevExtendBed.out.bedrev)combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
+    BedToBedg(ExtendBed.out.bedext.concat(RevExtendBed.out.bedrev).concat(BamToBed.out.bed).combine(UnzipGenome.out.index).combine(UnzipGenome.out.chromsize))
+    //BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
     BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize))
     
