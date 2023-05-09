@@ -5,9 +5,9 @@ REF = get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 SETS = get_always('SETS')
 IP = get_always('IP')
-SOFTPARAMS = get_always('peaks_PEAKS_params_SOFTCLIP') ?: ''
-PREPARAMS = get_always('peaks_PEAKS_params_PREPROCESS') ?: ''
-PEAKSPARAMS = get_always('peaks_PEAKS_params_FINDPEAKS') ?: ''
+SOFTPARAMS = get_always('scyphy_PEAKS_params_SOFTCLIP') ?: ''
+PREPARAMS = get_always('scyphy_PEAKS_params_PREPROCESS') ?: ''
+PEAKSPARAMS = get_always('scyphy_PEAKS_params_FINDPEAKS') ?: ''
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
@@ -276,7 +276,7 @@ process PreprocessPeaks{
     path "*.log", emit: log
 
     script: 
-    of = file(bedgf).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak").replaceAll(/\Q_rev$\E/,"").replaceAll(/\Q_ext$\E/,"")+".bed.gz"
+    of = file(bedgf).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak").replaceAll(/\Q_rev\E/,"").replaceAll(/\Q_ext\E/,"")+".bed.gz"
     ol = file(bedgf).getSimpleName()+".log"
     sortmem = '30%'
 
@@ -314,6 +314,36 @@ process FindPeaks{
     """    
 }
 
+process AddSequenceToPeak{
+    conda "bedtools.yaml"
+    cpus 1
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".bed.gz") > 0)      "PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
+        else if (filename.indexOf(".log") > 0)        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/findpeaks_${file(filename).getName()}.log"
+    }
+
+    input:
+    path bed
+
+    output:
+    path "*_peak_seq*.bed.gz", includeInputs:false, emit: peak
+    path "*.log", emit: log
+
+    script: 
+    pk = bed[0]
+    fa = bed[1]
+    of = file(pk).getName().replaceAll(/\Q_peak\E/,"_peak_seq")
+    ol = file(pk).getSimpleName()+".log"
+    sortmem = '30%'
+
+    """  
+    export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; fi
+    """    
+}
 
 process PeakToBedg{
     conda "perl.yaml"
@@ -499,8 +529,8 @@ process GenerateTrack{
     }
 
     input:
-    path bwf
-    path bwr
+    path pkbw
+    path mapbw
 
     output:
     path "*.txt", emit: trackdb
@@ -511,7 +541,7 @@ process GenerateTrack{
     ol = uid+"_GenerateTrack_peaks.log"
     opt = '-n Peaks_'+"$PEAKSENV"+' -s peaks -l TRACKS_peaks_'+"$PEAKSENV"+' -b TRACKS_'+"$PEAKSENV"
     """
-    mkdir -p LOGS;touch LOGS/MONSDA.log; bf=($bwf); br=($bwr); blen=\${#bf[@]}; for i in \"\${!bf[@]}\";do f=\${bf[\$i]}; r=\${br[\$i]}; echo -e \"\$f\\n\$r\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"TRACKS/$SETS\" -g $REFDIR $opt 2>> $ol;done
+    bf=($pkbw[0]); br=($pkbw[1]); mf=($mapbw[0]); mr=($mapbw[1]); for i in \"\${!bf[@]}\";do fp=\${bf[\$i]}; rp=\${br[\$i]}; fm=\${mf[\$i]}; rm=\${mr[\$i]}; echo -e \"\$fp\\n\$rp\\n\$fm\\n\$rm\"|python3 $BINS/Analysis/GenerateTrackDb.py -i $uid -e 1 -f STDIN -u \"\" -g $REFDIR $opt 2>> $ol;done
     """
 }
 
@@ -552,11 +582,13 @@ workflow PEAKS{
     }
     PreprocessPeaks(BedToBedgPeak.out.bedgf, BedToBedgPeak.out.bedgr)
     FindPeaks(PreprocessPeaks.out.prepeak)
+    AddSequenceToPeak(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
     PeakToBedg(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
     NormalizePeakBedg(PeakToBedg.out.bedgf, PeakToBedg.out.bedgr)
     PeakToTRACKS(NormalizePeakBedg.out.bedgf, NormalizePeakBedg.out.bedgr.combine(UnzipGenome.out.chromsize))
     
-    GenerateTrack(BedgToTRACKS.out.bwf.collect().concat(PeakToTRACKS.out.bwf.collect()), BedgToTRACKS.out.bwr.collect().concat(PeakToTRACKS.out.bwr.collect()))
+    //GenerateTrack(BedgToTRACKS.out.bwf.collect().concat(PeakToTRACKS.out.bwf.collect()), BedgToTRACKS.out.bwr.collect().concat(PeakToTRACKS.out.bwr.collect()))
+    GenerateTrack(PeakToTRACKS.out.bwf.merge(PeakToTRACKS.out.bwr).collect(), BedgToTRACKS.out.bwf.merge(BedgToTRACKS.out.bwr).collect())
 
     emit:
     trackdb = GenerateTrack.out.trackdb
