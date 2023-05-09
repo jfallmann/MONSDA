@@ -5,9 +5,9 @@ REF = get_always('REFERENCE')
 REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
 SETS = get_always('SETS')
 IP = get_always('IP')
-SOFTPARAMS = get_always('scyphy_PEAKS_params_SOFTCLIP') ?: ''
-PREPARAMS = get_always('scyphy_PEAKS_params_PREPROCESS') ?: ''
-PEAKSPARAMS = get_always('scyphy_PEAKS_params_FINDPEAKS') ?: ''
+SOFTPARAMS = get_always('scyphy_params_SOFTCLIP') ?: ''
+PREPARAMS = get_always('scyphy_params_PREPROCESS') ?: ''
+PEAKSPARAMS = get_always('scyphy_params_FINDPEAKS') ?: ''
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
