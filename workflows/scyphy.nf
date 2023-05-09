@@ -306,7 +306,7 @@ process FindPeaks{
 
     script: 
     of = file(bed).getName().replaceAll(/\Q_prepeak\E/,"_peak").replaceAll(/\Q_nosoftclip\E/,"").replaceAll(/\Q_rev.bed.gz\E/,".bed.gz").replaceAll(/\Q_ext.bed.gz\E/,".bed.gz")
-    ol = file(bed).getSimpleName()+".log"
+    ol = file(of).getSimpleName()+".log"
     sortmem = '30%'
 
     """  
