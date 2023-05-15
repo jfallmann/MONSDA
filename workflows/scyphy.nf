@@ -341,7 +341,7 @@ process AddSequenceToPeak{
     sortmem = '30%'
 
     """  
-    export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; fi
+    export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; echo \"File $pk empty\" >> $ol; fi
     """    
 }
 
