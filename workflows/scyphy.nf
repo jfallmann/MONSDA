@@ -28,7 +28,7 @@ process RemoveSoftclip{
     path bam
     
     output:
-    path "*.bam", includeInputs:false, emit: bams
+    path "*_nosoftclip.bam", includeInputs:false, emit: bams
     path "*_nosoftclip.bam.bai", includeInputs:false, emit: bais
     path "*.log", emit: log
     
@@ -552,23 +552,22 @@ workflow PEAKS{
     main:
     
     MAPPEDSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted*.bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted*.bam" 
     }
-    BAMINDICES = MAPPEDSAMPLES*.replaceAll(/.bam$/, ".bam.bai")
+    //MAPPEDSAMPLES = MAPPEDSAMPLES*.removeIf({it -> it ~= /nosoftclip/})
+    //BAMINDICES = MAPPEDSAMPLES*.replaceAll(/.bam$/, ".bam.bai")
 
-
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
     genomefile = Channel.fromPath(REF)
 
-    //mapsamples_ch.subscribe {  println "BAM: $it"  }
+    mapsamples_ch.subscribe {  println "BAM: $it"  }
+    
     UnzipGenome(genomefile)
     RemoveSoftclip(mapsamples_ch)
     BamToBed(mapsamples_ch.concat(RemoveSoftclip.out.bams))
-    //BamToBed(RemoveSoftclip.out.bams)
     ExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
     RevExtendBed(BamToBed.out.bed.combine(UnzipGenome.out.chromsize))
     BedToBedg(ExtendBed.out.bedext.concat(RevExtendBed.out.bedrev).concat(BamToBed.out.bed).combine(UnzipGenome.out.index).combine(UnzipGenome.out.chromsize))
-    //BedToBedg(BamToBed.out.bed.combine(UnzipGenome.out.index.combine(UnzipGenome.out.chromsize)))
     NormalizeBedg(BedToBedg.out.bedgf, BedToBedg.out.bedgr)
     BedgToTRACKS(NormalizeBedg.out.bedgf, NormalizeBedg.out.bedgr.combine(UnzipGenome.out.chromsize))
     
@@ -586,8 +585,7 @@ workflow PEAKS{
     PeakToBedg(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
     NormalizePeakBedg(PeakToBedg.out.bedgf, PeakToBedg.out.bedgr)
     PeakToTRACKS(NormalizePeakBedg.out.bedgf, NormalizePeakBedg.out.bedgr.combine(UnzipGenome.out.chromsize))
-    
-    //GenerateTrack(BedgToTRACKS.out.bwf.collect().concat(PeakToTRACKS.out.bwf.collect()), BedgToTRACKS.out.bwr.collect().concat(PeakToTRACKS.out.bwr.collect()))
+
     GenerateTrack(PeakToTRACKS.out.bwf.merge(PeakToTRACKS.out.bwr).collect(), BedgToTRACKS.out.bwf.merge(BedgToTRACKS.out.bwr).collect())
 
     emit:
