@@ -175,9 +175,13 @@ def create_file_tree(files):
             WF, TOOL, COMBI, NAME = setting.split("_")
             tree[WF][TOOL][COMBI]["DataSet"][NAME] = file
             continue
-        WF, TOOL, COMBI, COMP, RES, NAME = setting.split("_")
-        EXT = os.path.basename(file).split(".", 1)[1]
-        tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
+        filename = setting.split("_")
+        if len(filename) < 7:
+            WF, TOOL, COMBI, COMP, RES, NAME = setting.split("_")
+            EXT = os.path.basename(file).split(".", 1)[1]
+            tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
+        else:
+            continue
     log.debug(logid + "FILE-TREE: " + str(pretty(tree)))
     return tree
 
