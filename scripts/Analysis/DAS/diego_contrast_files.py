@@ -78,15 +78,13 @@ def parseargs():
     return parser.parse_args()
 
 
-def create_tables(annofile, combi, comparisons, outdir, nextflow=None):
+def create_tables(annofile, combi, comparisons, outdir):
     logid = scriptname + ".create_tables: "
 
     if combi == "none":
         combi = ""
 
     comps = comparisons.split(",")
-    if nextflow:
-        annofile = os.path.basename(annofile)
     sample_dict = {}
     with open(annofile, "r") as gf:
         for line in gf:
@@ -116,13 +114,12 @@ def create_tables(annofile, combi, comparisons, outdir, nextflow=None):
 ####################
 
 if __name__ == "__main__":
-
     logid = scriptname + ".main: "
     try:
         args = parseargs()
 
         try:
-            if not nextflow:
+            if not args.nextflow:
                 makelogdir("LOGS")
                 log = setup_logger(
                     name=scriptname,
@@ -144,9 +141,7 @@ if __name__ == "__main__":
             log = logging.getLogger(os.path.basename(inspect.stack()[-1].filename))
 
         log.info("RUNNING!")
-        create_tables(
-            args.annofile, args.combi, args.comparisons, args.outdir, args.nextflow
-        )
+        create_tables(args.annofile, args.combi, args.comparisons, args.outdir)
 
     except Exception as err:
         exc_type, exc_value, exc_tb = sys.exc_info()

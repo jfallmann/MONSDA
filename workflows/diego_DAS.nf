@@ -143,7 +143,7 @@ process create_contrast_files{
 
     script:
     """
-    python ${BINS}/Analysis/DAS/diego_contrast_files.py  -a <(zcat $anno) -b $DASCOMPS -c $COMBO -o . 2> log
+    python ${BINS}/Analysis/DAS/diego_contrast_files.py -- -a <(zcat $anno) -b $DASCOMPS -c $DASCOMP -o . 2> log
     """
 }
 
