@@ -172,7 +172,7 @@ process run_diego{
     script:    
     //outdir = "DAS"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DASBIN}"
-    outcomb = "DAS_DIEGO_"+"${SCOMBO}"
+    outcomb = "DAS_DIEGO_"+"${COMBO}"
     """    
     arr=($contrast); for i in \${!arr[@]}; do basecond=\$(head -n 1 \${arr[\$i]} | awk \'{print \$1}\'); outcond=\$(echo \${basecond}|sed \'s/_[0-9]+//g\'); $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \${basecond} -e -f ${outcomb}_\${outcond}_figure_dendrogram &> log; $bin -a <(zcat $tbl) -b \${arr[\$i]} -x \$basecond $DASPARAMS 1> ${outcomb}_\${outcond}_table_results.csv 2>> log;done
     """
