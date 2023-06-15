@@ -85,6 +85,7 @@ REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
+DECOY = SETTINGS.get("DECOY")
 IP = SETTINGS.get('IP')
 rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
@@ -112,6 +113,7 @@ if 'MAPPING' in config:
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
     REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
     MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
+    MDECOY = MAPCONF.get("DECOY", MAPCONF[MAPPERENV].get("DECOY"))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -119,6 +121,10 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
+    if MDECOY:
+        DECOY = MDECOY
+    elif DECOY:
+        DECOY = DECOY.get(MAPPERENV)
     IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
     if IDX:
         INDEX = IDX
@@ -171,10 +177,15 @@ for x in ['TRACKS', 'COUNTING']:
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
         XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
+        XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
+        if XDECOY:
+            DECOY = XDECOY
+        elif DECOY:
+            DECOY = DECOY.get(XENV)
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -201,10 +212,15 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
         XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
+        XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
+        if XDECOY:
+            DECOY = XDECOY
+        elif DECOY:
+            DECOY = DECOY.get(XENV)
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))

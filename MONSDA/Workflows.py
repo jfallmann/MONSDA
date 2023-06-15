@@ -1910,6 +1910,7 @@ def nf_fetch_params(
     PREFIX = SETTINGS.get("PREFIX")
     ANNO = SETTINGS.get("ANNOTATION")
     ANNOTATION = ANNO.get("GTF") if ANNO else ""
+    DECOY = SETTINGS.get("DECOY")
     IP = SETTINGS.get("IP")
 
     rundedup = config.get("RUNDEDUP")
@@ -1966,6 +1967,7 @@ def nf_fetch_params(
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
         REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
         MANNO = MAPCONF.get("ANNOTATION", MAPCONF[MAPPERENV].get("ANNOTATION"))
+        MDECOY = MAPCONF.get("DECOY", MAPCONF[MAPPERENV].get("DECOY"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -1977,6 +1979,10 @@ def nf_fetch_params(
                 if "GTF" in ANNO and ANNO.get("GTF") != ""
                 else ANNO.get("GFF")
             )  # by default GTF format will be used
+        if MDECOY:
+            DECOY = os.path.abspath(MDECOY)
+        elif DECOY:
+            DECOY = os.path.abspath(DECOY.get(MAPPERENV))
         PRE = MAPCONF.get(
             "PREFIX",
             MAPCONF.get("EXTENSION", MAPOPT.get("PREFIX", MAPOPT.get("EXTENSION"))),
@@ -1995,6 +2001,7 @@ def nf_fetch_params(
             ["INDEX"],
         )
         keydict["REF"] = REFERENCE
+        keydict["DECOY"] = DECOY
         unikey = mu.get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
@@ -2021,6 +2028,7 @@ def nf_fetch_params(
         retconf["MAPPINGREF"] = REFERENCE
         retconf["MAPPINGREFDIR"] = REFDIR
         retconf["MAPPINGANNO"] = ANNOTATION
+        retconf["MAPPINGDECOY"] = DECOY
         retconf["MAPPINGIDX"] = INDEX
         retconf["MAPPINGIDX2"] = INDEX2
         retconf["MAPPINGUIDX"] = UIDX
@@ -2082,12 +2090,17 @@ def nf_fetch_params(
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
+            XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
             if XANNO:
                 ANNOTATION = XANNO
             else:
                 ANNOTATION = (
                     ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
-                )  # by default GTF forma
+                )  # by default GTF format
+            if XDECOY:
+                DECOY = os.path.abspath(XDECOY)
+            elif DECOY:
+                DECOY = os.path.abspath(DECOY.get(XENV))
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
@@ -2102,6 +2115,7 @@ def nf_fetch_params(
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
+                    keydict["DECOY"] = DECOY
                     unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
@@ -2123,6 +2137,7 @@ def nf_fetch_params(
             retconf[x + "REF"] = REFERENCE
             retconf[x + "REFDIR"] = REFDIR
             retconf[x + "ANNO"] = ANNOTATION
+            retconf[x + "DECOY"] = DECOY
 
     # DE/DEU/DAS/DTU Variables
     for x in ["DE", "DEU", "DAS", "DTU"]:
@@ -2132,12 +2147,17 @@ def nf_fetch_params(
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
+            XDECOY = XCONF.get("DECOY", XCONF[XENV.split("_")[0]].get("DECOY"))
             if XANNO:
                 ANNOTATION = XANNO
             else:
                 ANNOTATION = (
                     ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
-                )  # by default GTF forma
+                )  # by default GTF format
+            if XDECOY:
+                DECOY = os.path.abspath(XDECOY)
+            elif DECOY:
+                DECOY = os.path.abspath(DECOY.get(XENV))
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
@@ -2167,6 +2187,7 @@ def nf_fetch_params(
                         ["INDEX"],
                     )
                     keydict["REF"] = REFERENCE
+                    keydict["DECOY"] = DECOY
                     unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
@@ -2202,6 +2223,7 @@ def nf_fetch_params(
         retconf[x + "REF"] = REFERENCE
         retconf[x + "REFDIR"] = REFDIR
         retconf[x + "ANNO"] = ANNOTATION
+        retconf[x + "DECOY"] = DECOY
 
     # CIRCS Variables
     if "CIRCS" in config:

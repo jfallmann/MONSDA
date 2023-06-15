@@ -9,6 +9,7 @@ log.info(logid+"COMPARISON: "+str(comparison))
 
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
+keydict["DECOY"] = DECOY
 unik = get_dict_hash(keydict)
 
 rule themall:
@@ -38,8 +39,9 @@ rule salmon_index:
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
+            decoy = f"-d {os.path.abspath(DECOY)}" if DECOY else '',
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "set +euo pipefail; {params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
+    shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 
 if paired == 'paired':
     rule simulate_trim:
