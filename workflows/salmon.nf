@@ -6,6 +6,7 @@ COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
+COUNTDECOY = get_always('COUNTINDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 COUNTUIDX.replace('.idx','')
 
@@ -73,8 +74,13 @@ process salmon_idx{
 
     script:    
     gen =  genome.getName()
+    if (${COUNTINGDECOY}){
+        decoy = "-d "+"${COUNTINGDECOY}" 
+    }else{
+        decoy = ''
+    }
     """
-    $COUNTBIN index $IDXPARAMS -p $THREADS -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
     """
 
 }

@@ -4,6 +4,7 @@ DTUBIN = get_always('DTUBIN')
 DTUREF = get_always('DTUREF')
 DTUREFDIR = "${workflow.workDir}/../"+get_always('DTUREFDIR')
 DTUANNO = get_always('DTUANNO')
+DTUDECOY = get_always('DTUDECOY')
 DTUIDX = get_always('DTUIDX')
 DTUUIDX = get_always('DTUUIDX')
 DTUUIDXNAME = get_always('DTUUIDXNAME')
@@ -42,8 +43,13 @@ process salmon_idx{
 
     script:    
     gen =  genome.getName()
+    if (DTUDECOY){
+        decoy = "-d "+"${DTUDECOY}" 
+    }else{
+        decoy = ''
+    }
     """
-    $COUNTBIN index $IDXPARAMS -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME salmon.idx
     """
 
 }

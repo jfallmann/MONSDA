@@ -23,6 +23,9 @@
                         "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                         "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
                     },
+                    "DECOY": {
+                        "salmon": "GENOMES/Ecoli/salmon_decoy"
+                    },
                     "IP": "CLIP"
                 }
             },
@@ -42,6 +45,9 @@
                 "ANNOTATION": {
                     "GFF": "GENOMES/Ecoli/ecoli.gff.gz",
                     "GTF": "GENOMES/Ecoli/ecoli.gtf.gz"
+                },
+                "DECOY": {
+                    "salmon": "GENOMES/Ecoli/salmon_decoy"
                 },
                 "IP": "CLIP"
             }
@@ -483,9 +489,10 @@
                     "dexseq": {
                         "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                         "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                        "DECOY": "GENOMES/Ecoli/salmon_decoy",
                         "OPTIONS":
                         {
-                            "INDEX": "-d GENOMES/Ecoli/salmon_decoy",
+                            "INDEX": "",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
                             "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
                         }
@@ -493,9 +500,10 @@
                     "drimseq": {
                         "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                         "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                        "DECOY": "GENOMES/Ecoli/salmon_decoy",
                         "OPTIONS":
                         {
-                            "INDEX": "-d GENOMES/Ecoli/salmon_decoy",
+                            "INDEX": "",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
                             "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
                         }
@@ -506,9 +514,10 @@
                 "dexseq": {
                     "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                     "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                    "DECOY": "GENOMES/Ecoli/salmon_decoy",
                     "OPTIONS":
                     {
-                        "INDEX": "-d GENOMES/Ecoli/salmon_decoy",
+                        "INDEX": "",
                         "QUANT": "",  # Options for read counting, independent of COUNTS workflows
                         "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
                     }
@@ -516,9 +525,10 @@
                 "drimseq": {
                     "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
                     "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                    "DECOY": "GENOMES/Ecoli/salmon_decoy",
                     "OPTIONS":
                     {
-                        "INDEX": "-d GENOMES/Ecoli/salmon_decoy",  
+                        "INDEX": "",  
                         "QUANT": "", # Options for read counting, independent of COUNTS workflows
                         "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
                     }
