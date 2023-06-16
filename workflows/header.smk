@@ -123,8 +123,10 @@ if 'MAPPING' in config:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
     if MDECOY:
         DECOY = MDECOY
-    elif DECOY.get(MAPPERENV):
+    elif DECOY and DECOY.get(MAPPERENV):
         DECOY = DECOY.get(MAPPERENV)
+    else:
+        DECOY = None
     IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
     if IDX:
         INDEX = IDX
@@ -184,8 +186,10 @@ for x in ['TRACKS', 'COUNTING']:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if XDECOY:
             DECOY = XDECOY
-        elif DECOY.get(XENV):
+        elif DECOY and DECOY.get(XENV):
             DECOY = DECOY.get(XENV)
+        else:
+            DECOY = None
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -219,8 +223,10 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if XDECOY:
             DECOY = XDECOY
-        elif DECOY.get(XENV):
+        elif DECOY and DECOY.get(XENV):
             DECOY = DECOY.get(XENV)
+        else:
+            DECOY = None
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))

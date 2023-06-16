@@ -1981,8 +1981,10 @@ def nf_fetch_params(
             )  # by default GTF format will be used
         if MDECOY:
             DECOY = os.path.abspath(MDECOY)
-        elif DECOY.get(MAPPERENV):
+        elif DECOY and DECOY.get(MAPPERENV):
             DECOY = os.path.abspath(DECOY.get(MAPPERENV))
+        else:
+            DECOY = None
         PRE = MAPCONF.get(
             "PREFIX",
             MAPCONF.get("EXTENSION", MAPOPT.get("PREFIX", MAPOPT.get("EXTENSION"))),
@@ -2099,8 +2101,10 @@ def nf_fetch_params(
                 )  # by default GTF format
             if XDECOY:
                 DECOY = os.path.abspath(XDECOY)
-            elif DECOY.get(XENV):
+            elif DECOY and DECOY.get(XENV):
                 DECOY = os.path.abspath(DECOY.get(XENV))
+            else:
+                DECOY = None
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
@@ -2156,8 +2160,10 @@ def nf_fetch_params(
                 )  # by default GTF format
             if XDECOY:
                 DECOY = os.path.abspath(XDECOY)
-            elif DECOY.get(XENV):
+            elif DECOY and DECOY.get(XENV):
                 DECOY = os.path.abspath(DECOY.get(XENV))
+            else:
+                DECOY = None
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
