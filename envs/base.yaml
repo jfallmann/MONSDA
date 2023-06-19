@@ -9,7 +9,7 @@ dependencies:
   - pyfaidx =0.5.9
   - pysam =0.20.0
   - samtools =1.16.1
-  - snakemake-minimal =7.24.0
+  - snakemake-minimal =7.28.2
   - natsort =8.1.0
   - perl =5.26.2
   - python =3.9

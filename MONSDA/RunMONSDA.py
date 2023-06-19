@@ -51,6 +51,7 @@ import MONSDA.Workflows as mw
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
 
+
 # CODE
 def parseargs():
     parser = argparse.ArgumentParser(
@@ -354,7 +355,6 @@ def run_snakemake(
         mu.makeoutdir("TMP")
         if postprocess:
             for subwork in postprocess:
-
                 SAMPLES = mp.get_samples_postprocess(config, subwork)
                 log.info(logid + f"POSTPROCESSING {subwork} with SAMPLES: {SAMPLES}")
                 combinations = (
@@ -684,7 +684,6 @@ def run_nextflow(
 
             ## Once postprocessing is enabled, here comes a framework that should work
             for subwork in postprocess:
-
                 SAMPLES = mp.get_samples_postprocess(config, subwork)
                 log.info(logid + "POSTPROCESSING SAMPLES: " + str(SAMPLES))
                 combinations = (
@@ -921,7 +920,7 @@ def main():
             )
 
         if not knownargs.nextflow:
-            min_version("7.24.0")
+            min_version("7.28.2")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
@@ -935,7 +934,7 @@ def main():
             )
 
         else:
-            nf_min_version = "22.10.6"
+            nf_min_version = "23.04.1"
             nf_ver = mw.nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(
@@ -974,7 +973,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logid = scriptname + ".main: "
     try:
         main()

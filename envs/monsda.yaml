@@ -11,7 +11,7 @@ dependencies:
   - mamba >=1.0.0
   - more-itertools >=8.12.0
   - natsort >=8.1.0
-  - nextflow =22.10.6
+  - nextflow =23.04.1
   - perl =5.32.1
   - python =3.10.6
   - python_abi =3.10
@@ -20,4 +20,4 @@ dependencies:
   - python-irodsclient =1.1.3
   - pyopenssl >=22.0
   - pyyaml =6.0
-  - snakemake-minimal =7.24.0
+  - snakemake-minimal =7.28.2
