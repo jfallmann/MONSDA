@@ -110,6 +110,7 @@ if stranded != '':
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
     MAPCONF = sub_dict(config['MAPPING'], SETUP)
+    MAPPERENV = MAPPERENV.split('_')[0]
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
     REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
     MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
@@ -176,6 +177,7 @@ for x in ['TRACKS', 'COUNTING']:
     if x in config:
         XBIN, XENV = env_bin_from_config(config, x)
         XCONF = sub_dict(config[x], SETUP)
+        XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
         REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
         XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))

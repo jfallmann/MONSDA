@@ -1963,6 +1963,7 @@ def nf_fetch_params(
     if "MAPPING" in config:
         MAPCONF = mu.sub_dict(config["MAPPING"], SETUP)
         MAPPERBIN, MAPPERENV = mp.env_bin_from_config(config, "MAPPING")
+        MAPPERENV = MAPPERENV.split("_")[0]
         MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
         REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
@@ -2089,6 +2090,7 @@ def nf_fetch_params(
         if x in config:
             XBIN, XENV = mp.env_bin_from_config(config, x)
             XCONF = mu.sub_dict(config[x], SETUP)
+            XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
@@ -2148,10 +2150,11 @@ def nf_fetch_params(
         if x in config:
             XCONF = mu.sub_dict(config[x], SETUP)
             XBIN, XENV = mp.env_bin_from_config(config, x)
+            XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
             REF = XCONF.get("REFERENCE")
             XANNO = XCONF.get("ANNOTATION")
-            XDECOY = XCONF.get("DECOY", XCONF[XENV.split("_")[0]].get("DECOY"))
+            XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
             if XANNO:
                 ANNOTATION = XANNO
             else:
