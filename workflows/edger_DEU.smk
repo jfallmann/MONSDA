@@ -21,8 +21,8 @@ rule themall:
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
-            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
-            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
+            tmph = temp("DEU/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc = temp("DEU/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
