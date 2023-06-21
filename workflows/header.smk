@@ -19,7 +19,7 @@ for x in cmd_subfolder:
 
 from MONSDA.Logger import makelogdir, setup_logger
 from MONSDA.Params import checkpaired, checkstranded, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess
-from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict
+from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 
 loglevel="INFO"
 
@@ -112,9 +112,9 @@ if 'MAPPING' in config:
     MAPCONF = sub_dict(config['MAPPING'], SETUP)
     MAPPERENV = MAPPERENV.split('_')[0]
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    REF = MAPCONF.get('REFERENCE', MAPCONF[MAPPERENV].get('REFERENCE'))
-    MANNO = MAPCONF.get('ANNOTATION', MAPCONF[MAPPERENV].get('ANNOTATION'))
-    MDECOY = MAPCONF.get("DECOY", MAPCONF[MAPPERENV].get("DECOY"))
+    REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE"))
+    MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION"))
+    MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY"))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -122,10 +122,10 @@ if 'MAPPING' in config:
         ANNOTATION = MANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-    if MDECOY:
-        DECOY = MDECOY
-    elif DECOY and DECOY.get(MAPPERENV):
-        DECOY = DECOY.get(MAPPERENV)
+    if MDECOY and not dict_inst(MDECOY):
+            DECOY = os.path.abspath(MDECOY)
+    elif dict_inst(DECOY) and DECOY.get(MAPPERENV):
+            DECOY = os.path.abspath(DECOY.get(MAPPERENV))
     else:
         DECOY = None
     IDX = MAPCONF.get('INDEX', MAPCONF[MAPPERENV].get('INDEX'))
@@ -179,16 +179,16 @@ for x in ['TRACKS', 'COUNTING']:
         XCONF = sub_dict(config[x], SETUP)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
-        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
-        XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
+        REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE'))
+        XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION'))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-        if XDECOY:
+        if XDECOY and not dict_inst(XDECOY):
             DECOY = XDECOY
-        elif DECOY and DECOY.get(XENV):
+        elif dict_inst(DECOY) and DECOY.get(XENV):
             DECOY = DECOY.get(XENV)
         else:
             DECOY = None
@@ -216,16 +216,16 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         XBIN, XENV = env_bin_from_config(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF.get('REFERENCE', XCONF[XENV].get('REFERENCE'))
-        XANNO = XCONF.get('ANNOTATION', XCONF[XENV].get('ANNOTATION'))
-        XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
+        REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
+        XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
-        if XDECOY:
+        if XDECOY and not dict_inst(XDECOY):
             DECOY = XDECOY
-        elif DECOY and DECOY.get(XENV):
+        elif dict_inst(DECOY) and DECOY.get(XENV):
             DECOY = DECOY.get(XENV)
         else:
             DECOY = None

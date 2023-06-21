@@ -1966,9 +1966,9 @@ def nf_fetch_params(
         MAPPERENV = MAPPERENV.split("_")[0]
         MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF.get("REFERENCE", MAPCONF[MAPPERENV].get("REFERENCE"))
-        MANNO = MAPCONF.get("ANNOTATION", MAPCONF[MAPPERENV].get("ANNOTATION"))
-        MDECOY = MAPCONF.get("DECOY", MAPCONF[MAPPERENV].get("DECOY"))
+        REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE"))
+        MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION"))
+        MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -1980,9 +1980,9 @@ def nf_fetch_params(
                 if "GTF" in ANNO and ANNO.get("GTF") != ""
                 else ANNO.get("GFF")
             )  # by default GTF format will be used
-        if MDECOY:
+        if MDECOY and not mu.dict_inst(MDECOY):
             DECOY = os.path.abspath(MDECOY)
-        elif DECOY and DECOY.get(MAPPERENV):
+        elif mu.dict_inst(DECOY) and DECOY.get(MAPPERENV):
             DECOY = os.path.abspath(DECOY.get(MAPPERENV))
         else:
             DECOY = None
@@ -2092,18 +2092,18 @@ def nf_fetch_params(
             XCONF = mu.sub_dict(config[x], SETUP)
             XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
-            REF = XCONF.get("REFERENCE")
-            XANNO = XCONF.get("ANNOTATION")
-            XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
+            REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
+            XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
+            XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
             if XANNO:
                 ANNOTATION = XANNO
             else:
                 ANNOTATION = (
                     ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
                 )  # by default GTF format
-            if XDECOY:
+            if XDECOY and not mu.dict_inst(XDECOY):
                 DECOY = os.path.abspath(XDECOY)
-            elif DECOY and DECOY.get(XENV):
+            elif mu.dict_inst(DECOY) and DECOY.get(XENV):
                 DECOY = os.path.abspath(DECOY.get(XENV))
             else:
                 DECOY = None
@@ -2152,18 +2152,18 @@ def nf_fetch_params(
             XBIN, XENV = mp.env_bin_from_config(config, x)
             XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
-            REF = XCONF.get("REFERENCE")
-            XANNO = XCONF.get("ANNOTATION")
-            XDECOY = XCONF.get("DECOY", XCONF[XENV].get("DECOY"))
+            REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
+            XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
+            XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
             if XANNO:
                 ANNOTATION = XANNO
             else:
                 ANNOTATION = (
                     ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
                 )  # by default GTF format
-            if XDECOY:
+            if XDECOY and not mu.dict_inst(XDECOY):
                 DECOY = os.path.abspath(XDECOY)
-            elif DECOY and DECOY.get(XENV):
+            elif mu.dict_inst(DECOY) and DECOY.get(XENV):
                 DECOY = os.path.abspath(DECOY.get(XENV))
             else:
                 DECOY = None
