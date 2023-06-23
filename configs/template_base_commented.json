@@ -16,6 +16,7 @@
       "BATCHES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
       "SEQUENCING": "single or paired or singlecell and stranded info [rf,fr,ff,unstranded (or empty)] comma separated",
       "REFERENCE": "set path to reference, '.fa.gz' ending expected",
+      "DECOY": "set path to decoy file if tool for mapping/counting needs decoys, like e.g. salmon",
       "INDEX": "set path to index, default index to use for mapping with this settings",
       "PREFIX": "if needed, prefix for mapping software can be set here",
       "GTF": "set path to gtf, '.gtf.gz' ending expected, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
@@ -33,6 +34,8 @@
     "ANNOTATION": {
       "GTF": "",
       "GFF": ""
+    },
+    "DECOY": {
     },
     "IP": ""
   },
