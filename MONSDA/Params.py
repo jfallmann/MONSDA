@@ -348,7 +348,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
                 for s in samples:
                     log.debug(logid + "x: " + str(x))
                     log.debug(logid + "sample: " + str(s))
-                    if s + "_R" in x or s + ".fastq.gz" == x:
+                    if re.match(f"^{s}_R", x) or x == s + ".fastq.gz":
                         log.debug(
                             logid
                             + "FOUND: "
@@ -890,7 +890,11 @@ def checkstranded(sample, config):
         # samplelist = p.get('SAMPLES')
         # x = samplelist.index(s.split(os.sep)[-1])
         # paired = pairedlist[x]
-        stranded = paired.split(",")[1] if len(paired.split(",")) > 1 and paired.split(",")[1] != "unstranded" else ""
+        stranded = (
+            paired.split(",")[1]
+            if len(paired.split(",")) > 1 and paired.split(",")[1] != "unstranded"
+            else ""
+        )
     log.debug(logid + "STRANDEDNESS: " + str(stranded))
     return stranded
 
