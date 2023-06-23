@@ -2167,6 +2167,10 @@ def nf_fetch_params(
                 DECOY = os.path.abspath(DECOY.get(XENV))
             else:
                 DECOY = None
+            log.debug(
+                logid
+                + f"SETUP: {SETUP}\tREF: {REF}\tXANNO: {XANNO}\tXDECOY: {XDECOY}\tDECOY: {DECOY}"
+            )
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
