@@ -150,8 +150,10 @@
                  "TOOLS": {
                      "star": "STAR",
                      "segemehl3": "segemehl.x",
+                     "segemehl": "segemehl.x",
                      "hisat2": "hisat2",
                      "bwa": "bwa mem",
+                     "bwameth": "bwameth",
                      "minimap": "minimap2"
                  },
                  "id": {

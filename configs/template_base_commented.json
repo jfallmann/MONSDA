@@ -146,8 +146,10 @@
     "TOOLS": {
       "star": "STAR",
       "segemehl3": "segemehl.x",
+      "segemehl": "segemehl.x",
       "hisat2": "hisat2",
       "bwa": "bwa mem",
+      "bwameth": "bwameth.py",
       "minimap": "minimap2"
     },
     "ENV" : "",
@@ -165,6 +167,18 @@
       }
     },
     "segemehl3": {
+      "comment": {
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
+    },
+    "segemehl": {
       "comment": {
         "INDEX" : "Indexing options",
         "MAP": "Mapping options",
@@ -200,6 +214,18 @@
           "EXTENSION" : ""
       }
     },
+    "bwameth": {
+      "comment": {
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty."
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
+    },
     "minimap": {
       "comment": {
         "INDEX" : "Indexing options",
@@ -211,7 +237,7 @@
           "MAP": "",
           "EXTENSION" : ""
       }
-    }
+    },
   },
   "COUNTING": {
     "TOOLS": {
