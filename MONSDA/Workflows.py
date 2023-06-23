@@ -2492,7 +2492,6 @@ def nf_make_pre(
                 works = worklist[i].split("-")
                 envs = envlist[i].split("-")
                 flowlist = list()
-                tp = list()
                 subjobs = list()
                 subconf = mu.NestedDefaultDict()
 
@@ -2513,6 +2512,7 @@ def nf_make_pre(
 
                     sconf = listofconfigs[0]
                     for a in range(0, len(listoftools)):
+                        tp = list()
                         toolenv, toolbin = map(str, listoftools[a])
 
                         if toolenv != envs[j] or toolbin is None:
@@ -2661,7 +2661,6 @@ def nf_make_pre(
             flowlist = list()
             subjobs = list()
             subconf = mu.NestedDefaultDict()
-            tp = list()
 
             log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
 
@@ -2706,6 +2705,7 @@ def nf_make_pre(
             log.debug(logid + f"Running {subwork} for SAMPLES {subsamples}")
 
             for i in range(0, len(listoftools)):
+                tp = list()
                 toolenv, toolbin = map(str, listoftools[i])
                 if toolenv is None or toolbin is None:
                     continue
@@ -2767,72 +2767,77 @@ def nf_make_pre(
                         condition,
                     )
                 )
-            if subwork == "QC":
-                flowlist.append("MULTIQC")
-                nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
-                with open(nfi, "r") as nf:
-                    for line in nf.readlines():
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include {" in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                                "nfmode",
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                if subwork == "QC":
+                    flowlist.append("MULTIQC")
+                    nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
+                    with open(nfi, "r") as nf:
+                        for line in nf.readlines():
+                            line = re.sub(condapath, 'conda "' + envpath, line)
+                            if "include {" in line:
+                                line = fixinclude(
+                                    line,
+                                    loglevel,
+                                    condapath,
+                                    envpath,
+                                    workflowpath,
+                                    logfix,
+                                    "nfmode",
+                                )
+                            subjobs.append(line)
+                        subjobs.append("\n\n")
 
-            # workflow merger
-            log.debug("FLOWLIST: " + str(flowlist))
+                # workflow merger
+                log.debug("FLOWLIST: " + str(flowlist))
 
-            subjobs.append("\n\n" + "workflow {\n")
-            for w in ["QC_RAW", "FETCH", "BASECALL"]:
-                if w in flowlist:
-                    subjobs.append(" " * 4 + w + "(dummy)\n")
-            if "MULTIQC" in flowlist:
-                subjobs.append(" " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n")
-            subjobs.append("}\n\n")
+                subjobs.append("\n\n" + "workflow {\n")
+                for w in ["QC_RAW", "FETCH", "BASECALL"]:
+                    if w in flowlist:
+                        subjobs.append(" " * 4 + w + "(dummy)\n")
+                if "MULTIQC" in flowlist:
+                    subjobs.append(" " * 4 + "MULTIQC(QC_RAW.out.qc.collect())\n")
+                subjobs.append("}\n\n")
 
-            nfo = os.path.abspath(
-                os.path.join(
-                    subdir,
-                    "_".join(
-                        ["_".join(condition), state + subwork, toolenv, "subflow.nf"]
-                    ),
+                nfo = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(
+                            [
+                                "_".join(condition),
+                                state + subwork,
+                                toolenv,
+                                "subflow.nf",
+                            ]
+                        ),
+                    )
                 )
-            )
-            if os.path.exists(nfo):
-                os.rename(nfo, nfo + ".bak")
-            with open(nfo, "w") as nfout:
-                nfout.write("".join(subjobs))
+                if os.path.exists(nfo):
+                    os.rename(nfo, nfo + ".bak")
+                with open(nfo, "w") as nfout:
+                    nfout.write("".join(subjobs))
 
-            confo = os.path.abspath(
-                os.path.join(
-                    subdir,
-                    "_".join(
-                        [
-                            "_".join(condition),
-                            state + subwork,
-                            toolenv,
-                            "subconfig.json",
-                        ]
-                    ),
+                confo = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(
+                            [
+                                "_".join(condition),
+                                state + subwork,
+                                toolenv,
+                                "subconfig.json",
+                            ]
+                        ),
+                    )
                 )
-            )
-            if os.path.exists(confo):
-                os.rename(confo, confo + ".bak")
-            with open(confo, "w") as confout:
-                json.dump(subconf, confout)
+                if os.path.exists(confo):
+                    os.rename(confo, confo + ".bak")
+                with open(confo, "w") as confout:
+                    json.dump(subconf, confout)
 
-            tpl = " ".join(tp)
-            combi = None
-            para = nf_fetch_params(confo, condition, combi)
+                tpl = " ".join(tp)
+                combi = None
+                para = nf_fetch_params(confo, condition, combi)
 
-            jobs.append([nfo, confo, tpl, para])
+                jobs.append([nfo, confo, tpl, para])
 
     return jobs
 
@@ -2987,18 +2992,6 @@ def nf_make_sub(
                                         subjobs.append(line)
                                     subjobs.append("\n\n")
 
-                                tp.append(
-                                    nf_tool_params(
-                                        subsamples[0],
-                                        None,
-                                        sconf,
-                                        works[j],
-                                        toolenv,
-                                        toolbin,
-                                        None,
-                                        condition,
-                                    )
-                                )
                             subname = toolenv + "_dedup.nf"
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
@@ -3414,34 +3407,86 @@ def nf_make_sub(
             subjobs.append("\n\n" + "workflow {\n")
             for w in [
                 "QC_RAW",
+                "PREDEDUP",
+                "QC_DEDUP",
                 "TRIMMING",
                 "QC_TRIMMING",
                 "MAPPING",
+                "DEDUPBAM",
                 "QC_MAPPING",
                 "MULTIQC",
-            ]:  # So far DEDUP is missing
+            ]:
                 if w in flowlist:
                     if w == "QC_RAW":
                         subjobs.append(" " * 4 + w + "(dummy)\n")
+                    elif w == "PREDEDUP":
+                        subjobs.append(" " * 4 + "DEDUPEXTRACT" + "(dummy)\n")
+                    elif w == "QC_DEDUP":
+                        subjobs.append(" " * 4 + w + "(DEDUPEXTRACT.out.extract)\n")
                     elif w == "TRIMMING":
-                        if "QC_RAW" not in flowlist:
-                            subjobs.append(" " * 4 + "TRIMMING" + "()\n")
+                        if "PREDEDUP" in flowlist:
+                            subjobs.append(
+                                " " * 4 + "TRIMMING" + "(DEDUPEXTRACT.out.extract)\n"
+                            )
                         else:
-                            subjobs.append(" " * 4 + "TRIMMING" + "(QC_RAW.out.qc)\n")
+                            subjobs.append(" " * 4 + "TRIMMING" + "(dummy)\n")
                     elif w == "QC_TRIMMING":
                         subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                     elif w == "MAPPING":
                         subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         subjobs.append(" " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n")
+                    elif w == "DEDUPBAM":
+                        subjobs.append(
+                            " " * 4
+                            + w
+                            + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
+                        )
                     elif w == "QC_MAPPING":
-                        subjobs.append(" " * 4 + w + "(POSTMAPPING.out.postmapuni)\n")
-                    elif w == "MULTIQC":
-                        if "MAPPING" in flowlist:
-                            subjobs.append(" " * 4 + w + "(QC_MAPPING.out.qc)\n")
-                        elif "TRIMMING" in flowlist:
-                            subjobs.append(" " * 4 + w + "(QC_TRIMMING.out.qc)\n")
+                        if "DEDUPBAM" in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
+                            )
                         else:
-                            subjobs.append(" " * 4 + w + "(QC_RAW.out.qc)\n")
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                            )
+                    elif w == "MULTIQC":
+                        if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs))).collect())\n"
+                            )
+                        elif "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs)).collect())\n"
+                            )
+                        elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))).collect())\n"
+                            )
+                        elif "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni)).collect())\n"
+                            )
+                        elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc).collect())\n"
+                            )
+                        else:
+                            subjobs.append(" " * 4 + w + "(QC_RAW.out.qc.collect())\n")
                     else:
                         subjobs.append(" " * 4 + w + "(dummy)\n")
             subjobs.append("}\n\n")
@@ -3533,8 +3578,6 @@ def nf_make_post(
 
             for i in range(len(envlist)):
                 flowlist = list()
-                tp = list()
-
                 listoftools, listofconfigs = create_subworkflow(
                     config, subwork, combname, stage="POST"
                 )
@@ -3552,6 +3595,7 @@ def nf_make_post(
                 flowlist.append(subwork)
 
                 for a in range(0, len(listoftools)):
+                    tp = list()
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
                     for cond in combname.keys():
@@ -3697,8 +3741,6 @@ def nf_make_post(
                 for i in range(len(envlist)):
                     envs = envlist[i].split("-")
                     flowlist = list()
-                    tp = list()
-
                     listoftools, listofconfigs = create_subworkflow(
                         config, subwork, [condition], stage="POST"
                     )
@@ -3718,6 +3760,7 @@ def nf_make_post(
                     flowlist.append(subwork)
 
                     for a in range(0, len(listoftools)):
+                        tp = list()
                         subjobs = list()
                         toolenv, toolbin = map(str, listoftools[a])
 
@@ -3863,7 +3906,6 @@ def nf_make_post(
             flowlist = list()
             subjobs = list()
             subconf = mu.NestedDefaultDict()
-            tp = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
@@ -3897,6 +3939,7 @@ def nf_make_post(
             flowlist.append(subwork)
 
             for a in range(0, len(listoftools)):
+                tp = list()
                 subjobs = list()
 
                 toolenv, toolbin = map(str, listoftools[a])
