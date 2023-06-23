@@ -2233,10 +2233,10 @@ def nf_fetch_params(
                     .replace("\t", ":")
                     + "'"
                 )
-        retconf[x + "REF"] = REFERENCE
-        retconf[x + "REFDIR"] = REFDIR
-        retconf[x + "ANNO"] = ANNOTATION
-        retconf[x + "DECOY"] = DECOY
+            retconf[x + "REF"] = REFERENCE
+            retconf[x + "REFDIR"] = REFDIR
+            retconf[x + "ANNO"] = ANNOTATION
+            retconf[x + "DECOY"] = DECOY
 
     # CIRCS Variables
     if "CIRCS" in config:
