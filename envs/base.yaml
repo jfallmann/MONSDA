@@ -11,7 +11,7 @@ dependencies:
   - perl =5.26.2
   - picard =2.27.4
   - pigz =2.6
-  - python =3.11.0
-  - python_abi =3.11
+  - python =3.10.0
+  - python_abi =3.10
   - pyfaidx =0.5.9
   - pysam =0.20.0
