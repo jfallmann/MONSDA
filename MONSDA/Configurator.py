@@ -160,7 +160,7 @@ class GUIDE:
                 safe = self.toclear
                 self.clear(2)
                 self.toclear = safe
-                prRed("You used unallowed letters, try again")
+                prRed("You used forbidden letters, try again")
                 continue
 
             if proof == None:

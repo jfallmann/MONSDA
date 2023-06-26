@@ -83,7 +83,8 @@
   "TRIMMING": {
     "TOOLS": {
       "trimgalore": "trim_galore",
-      "cutadapt": "cutadapt"
+      "cutadapt": "cutadapt",
+      "bbduk": "bbmap"
     },
     "id": {
       "condition": {
@@ -98,6 +99,11 @@
             {
               "TRIM": "-q 15 --length 8 -e 0.15"
             }
+        },
+        "bbduk": {          
+          "OPTIONS": {
+            "TRIM": ""
+          }
         }
       }
     }
@@ -154,6 +160,14 @@
               "EXTENSION" : ""
           }
         },
+        "segemehl": {
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
+        },
         "hisat2": {
           "OPTIONS":  
           {  
@@ -163,6 +177,14 @@
           }
         },
         "bwa": {
+          "OPTIONS":  
+          {  
+              "INDEX" : "",
+              "MAP": "",
+              "EXTENSION" : ""
+          }
+        },
+        "bwameth": {
           "OPTIONS":  
           {  
               "INDEX" : "",
