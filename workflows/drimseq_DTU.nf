@@ -155,6 +155,7 @@ process run_drimseq{
     }
 
     input:
+    path counts
     path anno
     path ref
 
@@ -249,7 +250,7 @@ workflow DTU{
     }
 
     prepare_dtu_annotation()
-    run_drimseq(prepare_dtu_annotation.out.anno, annofile)
+    run_drimseq(salmon_quant.out.counts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_drimseq.out.tbls.concat(run_drimseq.out.figs.concat(run_drimseq.out.session)).collect())
     collect_drimseq(run_drimseq.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 

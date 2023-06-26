@@ -154,7 +154,7 @@ process run_dexseq{
         else if (filename.indexOf("log") > 0)        "LOGS/DTU/${SCOMBO}/run_dexseq.log"
     }
 
-    input:
+    input:path counts
     path anno
     path ref
 
@@ -250,7 +250,7 @@ workflow DTU{
     }
 
     prepare_dtu_annotation()
-    run_dexseq(prepare_dtu_annotation.out.anno, annofile)
+    run_dexseq(salmon_quant.out.counts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
     collect_dexseq(run_dexseq.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 
