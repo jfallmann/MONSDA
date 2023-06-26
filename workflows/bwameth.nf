@@ -12,7 +12,7 @@ MAPUIDX.replace('.idx','')
 IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
 MAPPARAMS = get_always('bwa_params_MAP') ?: ''
 
-IDXBIN = MAPBIN.split('_')[0]
+IDXBIN = 'bwa-mem2' //MAPBIN.split('_')[0]
 MAPBIN = MAPBIN.replace('_', ' ')
 
 //MAPPING PROCESSES

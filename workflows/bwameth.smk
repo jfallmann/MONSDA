@@ -10,7 +10,7 @@ rule generate_index:
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     threads: 1
-    params: indexer = 'bwa-mem2' 
+    params: indexer = 'bwa-mem2',
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
             linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0]))),
             tolink = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.idx).split(os.sep)[:-1])))
