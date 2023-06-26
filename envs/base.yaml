@@ -5,12 +5,13 @@ channels:
   - defaults
 dependencies:
   - grep =3.4
-  - picard =2.27.4
-  - pyfaidx =0.5.9
-  - pysam =0.20.0
   - samtools =1.16.1
-  - snakemake-minimal =7.28.2
+  - snakemake =7.29.0
   - natsort =8.1.0
   - perl =5.26.2
-  - python =3.9
+  - picard =2.27.4
   - pigz =2.6
+  - python =3.11.0
+  - python_abi =3.11
+  - pyfaidx =0.5.9
+  - pysam =0.20.0
