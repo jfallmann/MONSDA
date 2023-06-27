@@ -6,7 +6,6 @@ channels:
 dependencies:
   - grep >=3.4
   - samtools =1.16.1
-  - snakemake =7.29.0
   - natsort >=8.1.0
   - perl =5.32.1
   - picard =2.27.4
@@ -15,4 +14,3 @@ dependencies:
   - python_abi =3.10
   - pyfaidx =0.5.9
   - pysam =0.20.0
-  - toposort >=1.10
