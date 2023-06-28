@@ -12,7 +12,7 @@ MAPUIDX.replace('.idx','')
 IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
 MAPPARAMS = get_always('bwa_params_MAP') ?: ''
 
-IDXBIN = 'bwa-mem2' //MAPBIN.split('_')[0]
+IDXBIN = 'bwameth.py index-mem2' //MAPBIN.split('_')[0]
 MAPBIN = MAPBIN.replace('_', ' ')
 
 //MAPPING PROCESSES
@@ -53,8 +53,9 @@ process bwa_idx{
 
     script:
     gen =  genome.getName()
+    genfa = genome.getName().replace('.gz', '')
     """
-    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
+    mkdir -p $MAPUIDXNAME && zcat $gen > $genfa && $IDXBIN tmp.fa && mv $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
     """
 
 }
