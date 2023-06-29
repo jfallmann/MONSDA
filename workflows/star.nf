@@ -38,8 +38,7 @@ process star_idx{
     saveAs: {filename ->
         if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/star_index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
-        else if (filename == "$MAPUIDXNAME")             "$MAPUIDX"
-        else                                             "$MAPUIDX/${filename}"
+        else                                             "$MAPUIDX"
     }
 
     input:
@@ -56,7 +55,7 @@ process star_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -s $MAPUIDXNAME/* . && cat $MAPUIDXNAME/*Log.out > Log.out
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* . && cat $MAPUIDXNAME/*Log.out > Log.out
     """
 }
 

@@ -30,7 +30,7 @@ process collect_tomap{
     """
 }
 
-process bwa_idx{
+process bwameth_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -39,28 +39,29 @@ process bwa_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename == "bwa.idx")                          "$MAPIDX"
-        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa_index.log"
-        else                                                "$MAPUIDX"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/bwameth_index.log"
+        else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
+        else                                             "$MAPUIDX"
     }
 
     input:
     path genome
 
     output:
-    path "bwa.idx", emit: idx
-    path "bwa_*", emit: bwidx
+    path "$MAPUIDXNAME", emit: idx
+    path "*bwameth*", emit: bwidx
+    path "*.idx", emit: tmpidx
 
     script:
     gen =  genome.getName()
-    genfa = genome.getName().replace('.gz', '')
+    genfa = $MAPBIN+genome.getName().replace('.gz', '')
     """
-    mkdir -p $MAPUIDXNAME && zcat $gen > $genfa && $IDXBIN tmp.fa && mv $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
+    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $IDXPARAMS --threads $THREADS $MAPUIDXNAME/$genfa &> Log.out && ln -s $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
     """
 
 }
 
-process bwa_mapping{
+process bwameth_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -118,15 +119,15 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        bwa_mapping(idxfile.combine(collection))
+        bwameth_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        bwa_idx(genomefile)
-        bwa_mapping(bwa_idx.out.bwidx.combine(collection))
+        bwameth_idx(genomefile)
+        bwameth_mapping(bwameth_idx.out.bwidx.combine(collection))
     }
 
     emit:
-    mapped  = bwa_mapping.out.maps
-    logs = bwa_mapping.out.logs
+    mapped  = bwameth_mapping.out.maps
+    logs = bwameth_mapping.out.logs
 }
