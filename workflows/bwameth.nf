@@ -41,7 +41,7 @@ process bwameth_idx{
     saveAs: {filename ->
         if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/bwameth_index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
-        else                                             "$MAPUIDX"
+        else                                             "$MAPUIDX/${filename}"
     }
 
     input:
@@ -49,14 +49,15 @@ process bwameth_idx{
 
     output:
     path "$MAPUIDXNAME", emit: idx
-    path "*bwameth*", emit: bwidx
+    //path "$MAPPREFIX*.*", emit: bwidx
+    path "*.out", emit: idxlog
     path "*.idx", emit: tmpidx
 
     script:
     gen =  genome.getName()
-    genfa = $MAPBIN+genome.getName().replace('.gz', '')
+    genfa = MAPPREFIX+genome.getName().replace('.gz', '')
     """
-    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $IDXPARAMS --threads $THREADS $MAPUIDXNAME/$genfa &> Log.out && ln -s $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
+    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $MAPUIDXNAME/$genfa $IDXPARAMS &> Log.out && ln -s $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
     """
 
 }
@@ -95,7 +96,7 @@ process bwameth_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        $MAPBIN $MAPPARAMS --threads $THREADS --reference $idx $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
@@ -104,7 +105,7 @@ process bwameth_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $read  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS --threads $THREADS --reference $idx $read  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }
@@ -124,7 +125,7 @@ workflow MAPPING{
     else{
         genomefile = Channel.fromPath(MAPREF)
         bwameth_idx(genomefile)
-        bwameth_mapping(bwameth_idx.out.bwidx.combine(collection))
+        bwameth_mapping(bwameth_idx.out.idx.combine(collection))
     }
 
     emit:
