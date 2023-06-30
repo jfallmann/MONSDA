@@ -118,7 +118,7 @@ workflow MAPPING{
     collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPUIDX+"\*")
+        idxfile = Channel.fromPath(MAPUIDX.collect{element -> return element+File.separator+"*"})
         bwameth_mapping(idxfile.combine(collection))
     }
     else{
