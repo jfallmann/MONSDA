@@ -49,14 +49,14 @@ process bwameth_idx{
 
     output:
     path "$MAPUIDXNAME", emit: idx
-    path "*.out", emit: idxlog
+    path "Log.out", emit: idxlog
     path "*.idx", emit: tmpidx
 
     script:
     gen =  genome.getName()
     genfa = MAPPREFIX+genome.getName().replace('.gz', '')
     """
-    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $MAPUIDXNAME/$genfa $IDXPARAMS &> Log.out && ln -s $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
+    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $MAPUIDXNAME/$genfa $IDXPARAMS &> Log.out && ln -fs $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
     """
 
 }
@@ -114,11 +114,11 @@ workflow MAPPING{
 
     main:
     
-    checkidx = file(MAPUIDXNAME)
+    checkidx = file(MAPUIDX)
     collection.filter(~/.fastq.gz/)
 
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPUIDXNAME)
+        idxfile = Channel.fromPath(MAPUIDX+"\*")
         bwameth_mapping(idxfile.combine(collection))
     }
     else{
