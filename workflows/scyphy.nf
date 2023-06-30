@@ -560,7 +560,7 @@ workflow PEAKS{
     mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort()).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
     genomefile = Channel.fromPath(REF)
 
-    mapsamples_ch.subscribe {  println "BAM: $it"  }
+    //mapsamples_ch.subscribe {  println "BAM: $it"  }
     
     UnzipGenome(genomefile)
     RemoveSoftclip(mapsamples_ch)
