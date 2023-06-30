@@ -95,7 +95,7 @@ process bwameth_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "bwameth_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS --reference ${idx}/*.fa $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        $MAPBIN $MAPPARAMS --threads $THREADS --reference ${idx}/*.fa $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
