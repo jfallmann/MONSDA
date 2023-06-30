@@ -30,7 +30,7 @@ process collect_tomap{
     """
 }
 
-process bwa_idx{
+process bwa2_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -39,8 +39,8 @@ process bwa_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename == "bwa.idx")                          "$MAPIDX"
-        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa_index.log"
+        if (filename == "bwa2.idx")                          "$MAPIDX"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa2_index.log"
         else                                                "$MAPUIDX"
     }
 
@@ -48,18 +48,18 @@ process bwa_idx{
     path genome
 
     output:
-    path "bwa.idx", emit: idx
-    path "bwa_*", emit: bwidx
+    path "bwa2.idx", emit: idx
+    path "bwa2_*", emit: bwidx
 
     script:
     gen =  genome.getName()
     """
-    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa.idx
+    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa2.idx
     """
 
 }
 
-process bwa_mapping{
+process bwa2_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -117,15 +117,15 @@ workflow MAPPING{
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(MAPUIDX)
-        bwa_mapping(idxfile.combine(collection))
+        bwa2_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        bwa_idx(genomefile)
-        bwa_mapping(bwa_idx.out.bwidx.combine(collection))
+        bwa2_idx(genomefile)
+        bwa2_mapping(bwa2_idx.out.bwidx.combine(collection))
     }
 
     emit:
-    mapped  = bwa_mapping.out.maps
-    logs = bwa_mapping.out.logs
+    mapped  = bwa2_mapping.out.maps
+    logs = bwa2_mapping.out.logs
 }
