@@ -227,7 +227,7 @@ workflow DTU{
             element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}.*fastq.gz"
         }
 
-    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES)
+    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
     annofile = Channel.fromPath(DTUANNO)
     checkidx = file(DTUIDX)
     
