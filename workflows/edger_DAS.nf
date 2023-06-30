@@ -207,7 +207,7 @@ workflow DAS{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
     }
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DASANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }

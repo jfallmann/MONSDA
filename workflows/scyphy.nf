@@ -557,7 +557,7 @@ workflow PEAKS{
     //MAPPEDSAMPLES = MAPPEDSAMPLES*.removeIf({it -> it ~= /nosoftclip/})
     //BAMINDICES = MAPPEDSAMPLES*.replaceAll(/.bam$/, ".bam.bai")
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort()).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
     genomefile = Channel.fromPath(REF)
 
     mapsamples_ch.subscribe {  println "BAM: $it"  }

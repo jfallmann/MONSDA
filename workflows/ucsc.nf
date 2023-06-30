@@ -189,7 +189,7 @@ workflow TRACKS{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_*.bam"
     }
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)

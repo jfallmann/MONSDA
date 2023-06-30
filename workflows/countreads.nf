@@ -273,10 +273,10 @@ workflow COUNTING{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*.bam"
     }
 
-    rawsamples_ch = Channel.fromPath(RAWSAMPLES)
-    trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
-    dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
+    rawsamples_ch = Channel.fromPath(RAWSAMPLES.sort())
+    trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
+    dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES.sort())
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())  
     annofile = Channel.fromPath(COUNTANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 

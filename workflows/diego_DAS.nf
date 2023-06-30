@@ -279,7 +279,7 @@ workflow DAS{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
     }
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     annofile = Channel.fromPath(DASANNO)
     
     featurecount_diego(annofile.combine(mapsamples_ch.collate(1)))

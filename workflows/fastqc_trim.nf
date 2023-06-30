@@ -43,7 +43,7 @@ workflow QC_RAW{
         }
     }
 
-    samples_ch = Channel.fromPath(SAMPLES)
+    samples_ch = Channel.fromPath(SAMPLES.sort())
 
     qc_raw(samples_ch.collect())
 

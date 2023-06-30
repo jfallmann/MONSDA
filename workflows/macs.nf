@@ -192,7 +192,7 @@ workflow PEAKS{
         element -> return "${workflow.workDir}/../"+element+".bam"
     }
 
-    peaksamples_ch = Channel.fromPath(PAIRSAMPLES)
+    peaksamples_ch = Channel.fromPath(PAIRSAMPLES.sort())
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
