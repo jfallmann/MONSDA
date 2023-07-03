@@ -56,7 +56,7 @@ process bwameth_idx{
     gen =  genome.getName()
     genfa = MAPPREFIX+genome.getName().replace('.gz', '')
     """
-    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $MAPUIDXNAME/$genfa $IDXPARAMS &> Log.out && ln -fs $MAPUIDXNAME/* . && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
+    mkdir -p $MAPUIDXNAME && zcat $gen > $MAPUIDXNAME/$genfa && $IDXBIN $MAPUIDXNAME/$genfa $IDXPARAMS &> Log.out && ln -fs $MAPUIDXNAME/$genfa bwameth.idx
     """
 
 }
