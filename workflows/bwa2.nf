@@ -12,8 +12,8 @@ MAPUIDX.replace('.idx','')
 IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
 MAPPARAMS = get_always('bwa_params_MAP') ?: ''
 
-IDXBIN = MAPBIN.split('_')[0]
-MAPBIN = MAPBIN.replace('_', ' ')
+IDXBIN = MAPBIN
+MAPBIN = MAPBIN
 
 //MAPPING PROCESSES
 
@@ -93,7 +93,7 @@ process bwa2_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        $MAPBIN mem $MAPPARAMS -t $THREADS ${idx}/${MAPPREFIX} $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
