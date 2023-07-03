@@ -90,7 +90,7 @@ setup(
     # install_requires=requires,
     install_requires=[
         "biopython>=1.78",
-        "snakemake>=7.29.0",
+        "snakemake>=7.30.1",
         "black>=21.5b2",
         "flake8>=3.8.3",
         "isort>=5.9.2",
