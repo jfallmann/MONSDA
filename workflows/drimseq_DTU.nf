@@ -62,8 +62,8 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
         else null
     }
 

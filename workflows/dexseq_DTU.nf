@@ -62,8 +62,8 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
         else null
     }
 
@@ -168,7 +168,7 @@ process run_dexseq{
     script:    
     outdir = "DTU"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DTUBIN}"
-    comp = "${DEUCOMP}".split(':')[0]
+    comp = "${DTUCOMP}".split(':')[0]
 
     """
     mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp
