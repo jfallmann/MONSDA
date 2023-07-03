@@ -31,7 +31,7 @@ process collect_tomap{
     """
 }
 
-process segemehl3_idx{
+process segemehl_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -64,7 +64,7 @@ process segemehl3_idx{
 
 }
 
-process segemehl3_mapping{
+process segemehl_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -132,15 +132,15 @@ workflow MAPPING{
         idxfile = Channel.fromPath(MAPUIDX)
         idxfile2 = Channel.fromPath(MAPUIDX2)
         genomefile = Channel.fromPath(MAPREF)
-        segemehl3_mapping(genomefile.combine(idxfile.combine(collection)))
+        segemehl_mapping(genomefile.combine(idxfile.combine(collection)))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        segemehl3_idx(genomefile)
-        segemehl3_mapping(genomefile.combine(segemehl3_idx.out.idx.combine(collection)))
+        segemehl_idx(genomefile)
+        segemehl_mapping(genomefile.combine(segemehl_idx.out.idx.combine(collection)))
     }
 
     emit:
-    mapped  = segemehl3_mapping.out.maps
-    logs = segemehl3_mapping.out.logs
+    mapped  = segemehl_mapping.out.maps
+    logs = segemehl_mapping.out.logs
 }

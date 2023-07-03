@@ -2,11 +2,12 @@ MAPPERBIN, MAPPERENV = env_bin_from_config(config,'MAPPING')
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 unik = get_dict_hash(keydict)
+MAPPERBIN = MAPPERBIN.split('_')[0]
 
 rule generate_index:
     input:  fa = expand("{ref}/{{dir}}/{{gen}}{{name}}.fa.gz", ref=REFERENCE)
     output: idx1 = INDEX,
-	        idx2 = INDEX2,
+	    idx2 = INDEX2,
             uidx1 = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
             uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs')
     log:    expand("LOGS/{mape}.idx.log", mape=MAPPERENV)
