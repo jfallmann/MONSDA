@@ -5,7 +5,7 @@ BISIDX = get_always('MAPPINGIDX2')
 MAPUIDX = get_always('MAPPINGUIDX')
 MAPUIDX2 = get_always('MAPPINGUIDX2')
 MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
-MAPUIDXNAME2 = get_always('MAPPINGUIDXNAME2')
+MAPUIDX2NAME = get_always('MAPPINGUIDX2NAME')
 MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
 MAPANNO = get_always('MAPPINGANNO')
@@ -43,7 +43,7 @@ process segemehl_idx{
         if (filename == "segemehl3.idx")                  "$MAPIDX"
         else if (filename == "segemehl3_bs.idx")          "$BISIDX"
         else if (filename.indexOf(".log") >0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
-        else if (filename == "$MAPUIDXNAME2")             "$MAPUIDX2"
+        else if (filename == "$MAPUIDX2NAME")             "$MAPUIDX2"
         else                                              "$MAPUIDX"
         
     }
@@ -54,12 +54,12 @@ process segemehl_idx{
     output:
     path "*.idx", emit: idx
     path "$MAPUIDXNAME", emit: uidx
-    path "$MAPUIDXNAME2", emit: uidx2
+    path "$MAPUIDX2NAME", emit: uidx2
 
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME -y $MAPUIDXNAME2 &> index.log && ln -s $MAPUIDXNAME segemehl3.idx && ln -s $MAPUIDXNAME2 segemehl3_bs.idx
+    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME -y $MAPUIDX2NAME &> index.log && ln -s $MAPUIDXNAME segemehl3.idx && ln -s $MAPUIDX2NAME segemehl3_bs.idx
     """
 
 }

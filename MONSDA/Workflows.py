@@ -1917,6 +1917,7 @@ def nf_fetch_params(
     REFERENCE = SETTINGS.get("REFERENCE")
     REFDIR = str(os.path.dirname(REFERENCE))
     INDEX = SETTINGS.get("INDEX")
+    INDEX2 = SETTINGS.get("INDEX2")
     UIDX = SETTINGS.get("UIDX")
     PREFIX = SETTINGS.get("PREFIX")
     ANNO = SETTINGS.get("ANNOTATION")
@@ -2025,15 +2026,27 @@ def nf_fetch_params(
             if str(os.path.abspath(INDICES[0])) not in UIDX
             else str(os.path.abspath(INDICES[0])) + "_idx"
         )
-        if len(INDICES) > 1:
-            if str(os.path.abspath(INDICES[1])) not in UIDX:
-                INDEX2 = str(os.path.abspath(INDICES[1]))
-                UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
-                UIDXNAME2 = f"{MAPPERENV}_{unikey}_bs"
+        IDX2 = MAPCONF.get("INDEX2", MAPCONF[MAPPERENV].get("INDEX2"))
+        if IDX2:
+            INDEX2 = IDX2
+        if not INDEX2 and ("segemehl" in MAPPERENV and "bisulfite" in MAPPERENV):
+            if len(INDICES) > 1:
+                UIDX2 = expand(
+                    "{refd}/INDICES/{mape}/{unikey}.idx2",
+                    refd=REFDIR,
+                    mape=MAPPERENV,
+                    unikey=unik,
+                )
+                UIDX2NAME = f"{MAPPERENV}_{unikey}_bs"
+                INDEX2 = (
+                    str(os.path.abspath(INDICES[1]))
+                    if str(os.path.abspath(INDICES[1])) not in UIDX2
+                    else str(os.path.abspath(INDICES[1])) + "_idx2"
+                )
             else:
-                INDEX2 = str(os.path.abspath(INDICES[1])) + "_idx"
                 UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
-                UIDXNAME2 = f"{MAPPERENV}_{unikey}_bs"
+                UIDX2NAME = f"{MAPPERENV}_{unikey}_bs"
+                INDEX2 = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx2"
         else:
             INDEX2 = None
             UIDX2 = None
@@ -2048,7 +2061,7 @@ def nf_fetch_params(
         retconf["MAPPINGUIDX"] = UIDX
         retconf["MAPPINGUIDX2"] = UIDX2
         retconf["MAPPINGUIDXNAME"] = UIDXNAME
-        retconf["MAPPINGUIDXNAME2"] = UIDXNAME2
+        retconf["MAPPINGUIDX2NAME"] = UIDX2NAME
         retconf["MAPPINGPREFIX"] = PREFIX
 
     # Peak Calling Variables

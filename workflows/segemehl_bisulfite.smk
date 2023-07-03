@@ -6,10 +6,10 @@ unik = get_dict_hash(keydict)
 rule generate_index:
     input:  fa = REFERENCE
     output: idx1 = INDEX,
-	    idx2 = INDEX2,
+            idx2 = INDEX2,
             uidx1 = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik),
             uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs')
-    log:    expand("LOGS/{mape}.idx.log", mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
@@ -23,8 +23,8 @@ if paired == 'paired':
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                 uidx1 = rules.generate_index.output.uidx1[0],
-                uidx2= rules.generate_index.output.uidx2[0],
-                ref = REFERENCE
+                uidx2 = rules.generate_index.output.uidx2[0],
+                fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
@@ -33,14 +33,14 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 uidx1 = rules.generate_index.output.uidx1[0],
-                uidx2= rules.generate_index.output.uidx2[0],
-                ref = REFERENCE
+                uidx2 = rules.generate_index.output.uidx2[0],
+                fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
@@ -48,4 +48,4 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
