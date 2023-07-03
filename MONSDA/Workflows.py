@@ -868,11 +868,18 @@ def make_sub(
                         toolenv, toolbin = map(str, listoftools[a])
                         if toolenv != envs[j] or toolbin is None:
                             continue
+                        subname = toolenv + ".smk"
+                        if (
+                            "segemehl" in toolenv and "bisulfite" in toolenv
+                        ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
+                            subname = (
+                                toolenv.replace("bisulfite", "_bisulfite") + ".smk"
+                            )
+
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
 
                         subconf.update(sconf)
-                        subname = toolenv + ".smk"
                         log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
                         if (
                             works[j] == "QC"
@@ -1032,11 +1039,15 @@ def make_sub(
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
                         continue
+                    subname = toolenv + ".smk"
+                    if (
+                        "segemehl" in toolenv and "bisulfite" in toolenv
+                    ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
+                        subname = toolenv.replace("bisulfite", "_bisulfite") + ".smk"
                     subconf = mu.NestedDefaultDict()
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
                     subconf.update(sconf)
-                    subname = toolenv + ".smk"
 
                     if (
                         subwork == "QC"
@@ -2920,7 +2931,11 @@ def nf_make_sub(
 
                         if toolenv != envs[j] or toolbin is None:
                             continue
-
+                        subname = toolenv + ".nf"
+                        if (
+                            "segemehl" in toolenv and "bisulfite" in toolenv
+                        ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
+                            subname = toolenv.replace("bisulfite", "_bisulfite") + ".nf"
                         subsamples = mp.get_samples(sconf)
                         sconf[works[j] + "ENV"] = toolenv
                         sconf[works[j] + "BIN"] = toolbin
@@ -2932,7 +2947,6 @@ def nf_make_sub(
                             condition,
                         )
 
-                        subname = toolenv + ".nf"
                         log.debug(
                             logid
                             + str(works[j])
@@ -3260,6 +3274,12 @@ def nf_make_sub(
                     toolenv, toolbin = map(str, listoftools[i])
                     if toolenv is None or toolbin is None:
                         continue
+                    subname = toolenv + ".nf"
+                    if (
+                        "segemehl" in toolenv and "bisulfite" in toolenv
+                    ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
+                        subname = toolenv.replace("bisulfite", "_bisulfite") + ".nf"
+
                     sconf[subwork + "ENV"] = toolenv
                     sconf[subwork + "BIN"] = toolbin
                     subconf.merge(sconf)
@@ -3270,7 +3290,6 @@ def nf_make_sub(
                         condition,
                     )
 
-                    subname = toolenv + ".nf"
                     log.debug(
                         logid
                         + str(subwork)
