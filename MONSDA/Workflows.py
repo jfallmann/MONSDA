@@ -2027,9 +2027,14 @@ def nf_fetch_params(
             if str(os.path.abspath(INDICES[0])) not in UIDX
             else str(os.path.abspath(INDICES[0])) + "_idx"
         )
+        INDEX2 = None
+        UIDX2 = None
+        UIDX2NAME = None
         IDX2 = MAPCONF.get("INDEX2", MAPCONF[MAPPERENV].get("INDEX2"))
         if IDX2:
             INDEX2 = IDX2
+            UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
+            UIDX2NAME = f"{MAPPERENV}_{unikey}_bs"
         if not INDEX2 and ("segemehl" in MAPPERENV and "bisulfite" in MAPPERENV):
             if len(INDICES) > 1:
                 UIDX2 = expand(
@@ -2048,10 +2053,6 @@ def nf_fetch_params(
                 UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
                 UIDX2NAME = f"{MAPPERENV}_{unikey}_bs"
                 INDEX2 = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx2"
-        else:
-            INDEX2 = None
-            UIDX2 = None
-            UIDXNAME2 = None
 
         retconf["MAPPINGREF"] = REFERENCE
         retconf["MAPPINGREFDIR"] = REFDIR
