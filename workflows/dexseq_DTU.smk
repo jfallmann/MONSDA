@@ -9,6 +9,7 @@ log.info(logid+"COMPARISON: "+str(comparison))
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 keydict["DECOY"] = DECOY
+keydict["ENV"] = DTUENV
 unik = get_dict_hash(keydict)
 
 rule themall:

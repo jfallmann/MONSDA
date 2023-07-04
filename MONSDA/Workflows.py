@@ -2017,6 +2017,7 @@ def nf_fetch_params(
         )
         keydict["REF"] = REFERENCE
         keydict["DECOY"] = DECOY
+        keydict["ENV"] = MAPPERENV
         unikey = mu.get_dict_hash(keydict)
         UIDX = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}"
         UIDXNAME = f"{MAPPERENV}_{unikey}"
@@ -2146,6 +2147,7 @@ def nf_fetch_params(
                     )
                     keydict["REF"] = REFERENCE
                     keydict["DECOY"] = DECOY
+                    keydict["ENV"] = XENV
                     unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
@@ -2225,6 +2227,7 @@ def nf_fetch_params(
                     )
                     keydict["REF"] = REFERENCE
                     keydict["DECOY"] = DECOY
+                    keydict["ENV"] = XENV
                     unikey = mu.get_dict_hash(keydict)
                     UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
                     UIDXNAME = f"{XENV}_{unikey}"
