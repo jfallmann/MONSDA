@@ -12,9 +12,9 @@ MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX')
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = get_always('segemehl3_params_INDEX') ?: ''
-MAPPARAMS = get_always('segemehl3_params_MAP') ?: ''
-
+IDXPARAMS = get_always('segemehl3bisulfite_params_INDEX') ?: ''
+MAPPARAMS = get_always('segemehl3bisulfite_params_MAP') ?: ''
+MAPENV = "${MAPENV}".replace('bisulfite', '')
 
 //MAPPING PROCESSES
 
@@ -74,8 +74,6 @@ process segemehl3_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".bed") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
-        else if (filename.indexOf(".txt") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
         else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
         else null
     }
@@ -86,7 +84,6 @@ process segemehl3_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
-    path "*.bed", includeInputs:false, emit: beds
     path "*.log", emit: logs
 
     script:
@@ -115,7 +112,7 @@ process segemehl3_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $read  2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $read 2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }
