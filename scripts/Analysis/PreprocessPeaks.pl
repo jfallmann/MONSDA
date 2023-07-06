@@ -51,7 +51,7 @@ foreach my $pk (keys %{$unique}){
 	my @tempuni = split(/\_/,$pk);
 	push @tempuni , split(/\_/,$unique->{$pk});
 	(my $chromosome = $tempuni[0])=~ s/=/\_/g;
-	$chromosome =~ s/:/ /g;
+	$chromosome =~ s/(:)+/_/g;
 	my $start      = $tempuni[1];
 	my $end        = $tempuni[2];
 	my $strand     = $tempuni[3];
