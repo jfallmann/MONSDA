@@ -1,7 +1,7 @@
 MAPENV = get_always('MAPPINGENV')
 MAPBIN = get_always('MAPPINGBIN')
 MAPIDX = get_always('MAPPINGIDX')
-MAPUIDX = get_always('MAPPINGUIDX')
+MAPUIDX = get_always('MAPPINGUIDX')+'.idx'
 MAPUIDXNAME = get_always('MAPPINGUIDXNAME')+'.idx'
 MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
@@ -46,7 +46,7 @@ process segemehl3_idx{
     path genome
 
     output:
-    path "*.idx", emit: idx
+    path "segemehl3.idx", emit: idx
     path "$MAPUIDXNAME", emit: uidx
 
     script:
@@ -79,8 +79,8 @@ process segemehl3_mapping{
     output:
     path "*.sam.gz", emit: maps
     path "*fastq.gz", includeInputs:false, emit: unmapped
-    path "*.bed", includeInputs:false, emit: beds
-    path "*.txt", includeInputs:false, emit: txts
+    path "*.bed", includeInputs:false, optional: true, emit: beds
+    path "*.txt", includeInputs:false, optional: true, emit: txts
     path "*.log", emit: logs
 
     script:
@@ -96,7 +96,7 @@ process segemehl3_mapping{
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"
         uf2 = fn+"_R2_unmapped.fastq.gz"
-        lf = "segemehl_"+fn+".log"
+        lf = "segemehl3_"+fn+".log"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $r1 -p $r2  2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2
         """
@@ -105,7 +105,7 @@ process segemehl3_mapping{
         read = reads[2]
         pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
-        lf = "segemehl_"+fn+".log"
+        lf = "segemehl3_"+fn+".log"
         """
         $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -d $gen -q $read 2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """

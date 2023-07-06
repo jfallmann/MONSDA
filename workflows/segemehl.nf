@@ -1,7 +1,7 @@
 MAPENV = get_always('MAPPINGENV')
 MAPBIN = get_always('MAPPINGBIN')
 MAPIDX = get_always('MAPPINGIDX')
-MAPUIDX = get_always('MAPPINGUIDX')
+MAPUIDX = get_always('MAPPINGUIDX')+'.idx'
 MAPUIDXNAME = get_always('MAPPINGUIDXNAME')+'.idx'
 MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
@@ -46,7 +46,7 @@ process segemehl_idx{
     path genome
 
     output:
-    path "*.idx", emit: idx
+    path "segemehl.idx", emit: idx
     path "$MAPUIDXNAME", emit: uidx
 
     script:
@@ -124,7 +124,7 @@ workflow MAPPING{
     else{
         genomefile = Channel.fromPath(MAPREF)
         segemehl_idx(genomefile)
-        segemehl_mapping(genomefile.combine(segemehl3idx.out.idx.combine(collection)))
+        segemehl_mapping(genomefile.combine(segemehl_idx.out.idx.combine(collection)))
     }
 
     emit:
