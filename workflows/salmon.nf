@@ -102,7 +102,7 @@ process salmon_quant{
     path reads
 
     output:
-    path "*.sf.gz", emit: counts
+    path "*.gz", emit: counts
     path "*.log", emit: logs
 
     script:
@@ -123,7 +123,7 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
@@ -140,7 +140,7 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """

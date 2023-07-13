@@ -91,7 +91,7 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_mapped_sorted_unique_counts.gz"
+        ol = fn+"_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
@@ -108,7 +108,7 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_mapped_sorted_unique_counts.gz"
+        ol = fn+"_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """

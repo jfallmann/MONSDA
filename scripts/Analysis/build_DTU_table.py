@@ -128,10 +128,10 @@ def parseargs():
 
 
 class Sample_list(object):
-
     group_name = ""
     replicate_names = []
     replicate_paths = []
+
     # the class constructor
     def __init__(self, group_name):
         self.group_name = group_name
@@ -206,7 +206,13 @@ def prepare_table(
             typ = None
             bat = None
 
-            rep = str(replist[i]) if not nextflow else str(os.path.basename(replist[i]))
+            rep = (
+                str(replist[i])
+                if not nextflow
+                else str(
+                    os.path.basename(replist[i]).replace("_mapped_sorted_unique", "")
+                )
+            )
             cond = str(condlist[i])
             typ = str(typelist[i]) if types is not None else None
             bat = str(batchlist[i]) if batches is not None else None
@@ -313,7 +319,6 @@ def make_sample_list(group_name):
 ####################
 
 if __name__ == "__main__":
-
     logid = scriptname + ".main: "
     try:
         args = parseargs()
