@@ -37,8 +37,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rs = reads[1..2].sort()
+        r1 = rs[1]
+        r2 = rs[2]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
@@ -116,8 +117,9 @@ process salmon_quant{
         }else{
             stranded = '-l IU'
         }
-        r1 = reads[1]
-        r2 = reads[2]
+        rs = reads[1..2].sort()
+        r1 = rs[1]
+        r2 = rs[2]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
