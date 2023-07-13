@@ -31,15 +31,18 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "salmon.idx")            "$DTUUIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/dexseq_index.log"
+        else if (filename == "dexseq.idx")            "$DTUIDX"
+        else                                          "$DTUUIDX"
     }
 
     input:
     path genome
 
     output:
-    path "salmon.idx", emit: idx
+     path "$DTUUIDXNAME", emit: idx
+    path "*.log", emit: idxlog
+    path "*.idx", emit: tmpidx
 
     script:    
     gen =  genome.getName()
@@ -49,7 +52,7 @@ process salmon_idx{
         decoy = ''
     }
     """
-    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME dexseq.idx
     """
 
 }
@@ -135,7 +138,7 @@ process prepare_dtu_annotation{
     ca = COMBO+"_ANNOTATION.gz"
     ol = "create_DTU_table.log"
     """
-    mkdir -p TMP; $BINS/Analysis/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG 2>> $ol
+    mkdir -p TMP; $BINS/Analysis/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG --nextflow 2>> $ol
     """
 }
 
