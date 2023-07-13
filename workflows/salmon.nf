@@ -118,8 +118,8 @@ process salmon_quant{
             stranded = '-l IU'
         }
         rs = reads[1..2].sort()
-        r1 = rs[1]
-        r2 = rs[2]
+        r1 = rs.find { file(it).getSimpleName() ==~ /\Q_R1_trimmed\E/ }
+        r2 = rs.find { file(it).getSimpleName() ==~ /\Q_R2_trimmed\E/ }
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
