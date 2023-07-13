@@ -46,4 +46,4 @@ if (PAIRED == 'paired'){
     }
 }
 
-samples_ch = Channel.fromPath(RSAMPLES.sort())
+samples_ch = Channel.fromPath(RSAMPLES)
