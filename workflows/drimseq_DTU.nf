@@ -62,16 +62,15 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else null
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
     input:
     path reads
 
     output:
-    path "*.sf.gz", emit: counts
+    path "*.gz", emit: counts
     path "*.log", emit: logs
 
     script:
@@ -85,14 +84,14 @@ process salmon_quant{
         }else{
             stranded = '-l IU'
         }
-        rs = reads[1..2].sort()
-        r1 = rs.find { file(it).getSimpleName() ==~ /\Q_R1_trimmed\E/ }
-        r2 = rs.find { file(it).getSimpleName() ==~ /\Q_R2_trimmed\E/ }
+        rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
+        r1 = rs[0]
+        r2 = rs[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_mapped_sorted_unique_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && mv -f $oz $ol
         """
@@ -109,7 +108,7 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_mapped_sorted_unique_counts.gz"
         """
         $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && mv -f $oz $ol
         """
