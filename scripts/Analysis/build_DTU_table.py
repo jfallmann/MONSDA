@@ -209,10 +209,8 @@ def prepare_table(
             rep = (
                 str(replist[i])
                 if not nextflow
-                else str(
-                    os.path.abspath(os.path.basename(replist[i])).replace(
-                        "_mapped_sorted_unique.counts.gz", ""
-                    )
+                else str(os.path.basename(replist[i])).replace(
+                    "_mapped_sorted_unique", ""
                 )
             )
             cond = str(condlist[i])

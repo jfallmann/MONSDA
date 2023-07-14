@@ -41,15 +41,19 @@ gtf.df <- as.data.frame(gtf.rtl)
 BPPARAM <- MulticoreParam(workers = cores)
 
 # Importing counts
-samps <- read.table(file = gzfile(anname), header = TRUE, row.names = NULL)
-samps$sample_id <- paste(samps$sample_id, samps$condition, sep = "_")
-samps$condition <- factor(samps$condition)
-files <- file.path(samps$path, "quant.sf.gz")
-names(files) <- samps$sample_id
+sampleData <- read.table(file = gzfile(anname), header = TRUE, row.names = NULL)
+sampleData$sample_id <- paste(sampleData$sample_id, sampleData$condition, sep = "_")
+sampleData$condition <- factor(sampleData$condition)
+if (file_test("-d", sampleData$path[1])) {
+    files <- file.path(sampleData$path, "quant.sf.gz")
+} else {
+    files <- sampleData$path
+}
+names(files) <- sampleData$sample_id
 
-groups <- factor(samps$condition)
-types <- factor(samps$type)
-batches <- factor(samps$batch)
+groups <- factor(sampleData$condition)
+types <- factor(sampleData$type)
+batches <- factor(sampleData$batch)
 
 ## Combinations of conditions
 comparisons <- strsplit(cmp, ",")
@@ -80,14 +84,14 @@ all(rownames(cts) == txdf$TXNAME)
 
 counts <- data.frame(gene_id = txdf$GENEID, feature_id = txdf$TXNAME, cts, check.names = FALSE)
 counts <- counts[!is.na(counts$gene_id), ]
-d <- dmDSdata(counts = counts, samples = samps)
+d <- dmDSdata(counts = counts, samples = sampleData)
 
 # Filter before running procedures:
 #   (1) it has a count of at least 10 in at least n.small samples
 #   (2) it has a relative abundance proportion of at least 0.1 in at least n.small samples
 #   (3) the total count of the corresponding gene is at least 10 in all n samples
-n <- nrow(samps)
-n.small <- n / length(levels(samps$condition)) # its not really the smallest group, needs to be improved
+n <- nrow(sampleData)
+n.small <- n / length(levels(sampleData$condition)) # its not really the smallest group, needs to be improved
 eval(parse(text = paste("d <- dmFilter(d,", filter, ")", sep = "")))
 
 ## shows how many of the remaining genes have N isoforms
@@ -104,18 +108,18 @@ design <- model.matrix(~groups, data = DRIMSeq::samples(d))
 ## Create design-table considering different types (paired, unpaired) and batches
 # if (length(levels(types)) > 1){
 #    if (length(levels(batches)) > 1){
-#        design <- model.matrix(~0+groups+types+batches, data=samps)
+#        design <- model.matrix(~0+groups+types+batches, data=sampleData)
 #        colnames(design) <- c(levels(groups),tl,bl)
 #    } else{
-#        design <- model.matrix(~0+groups+types, data=samps)
+#        design <- model.matrix(~0+groups+types, data=sampleData)
 #        colnames(design) <- c(levels(groups),tl)
 #    }
 # } else{
 #    if (length(levels(batches)) > 1){
-#        design <- model.matrix(~0+groups+batches, data=samps)
+#        design <- model.matrix(~0+groups+batches, data=sampleData)
 #        colnames(design) <- c(levels(groups),bl)
 #    } else{
-#        design <- model.matrix(~0+groups, data=samps)
+#        design <- model.matrix(~0+groups, data=sampleData)
 #        colnames(design) <- levels(groups)
 #    }
 # }
