@@ -1,7 +1,7 @@
 COUNTENV = get_always('COUNTINGENV')
 COUNTBIN = get_always('COUNTINGBIN')
 COUNTIDX = get_always('COUNTINGIDX')
-COUNTUIDX = get_always('COUNTINGUIDX')+'.idx'
+COUNTUIDX = get_always('COUNTINGUIDX')
 COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')+'.idx'
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
