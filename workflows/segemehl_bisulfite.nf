@@ -60,7 +60,7 @@ process segemehl_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN $IDXPARAMS --threads $THREADS -d $gen -x $MAPUIDXNAME -y $MAPUIDX2NAME &> index.log && ln -s $MAPUIDXNAME segemehlbisulfite.idx && ln -s $MAPUIDX2NAME segemehlbisulfite_bs.idx2
+    $MAPBIN $IDXPARAMS --threads ${task.cpus} -d $gen -x $MAPUIDXNAME -y $MAPUIDX2NAME &> index.log && ln -s $MAPUIDXNAME segemehlbisulfite.idx && ln -s $MAPUIDX2NAME segemehlbisulfite_bs.idx2
     """
 
 }
@@ -104,7 +104,7 @@ process segemehl_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $r1 -p $r2 -o tmp.sam 2> $lf && cat tmp.sam| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 && rm -f tmp.sam
+        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -j $idx2 -d $gen -q $r1 -p $r2 -o tmp.sam 2> $lf && cat tmp.sam| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 && rm -f tmp.sam
         """
     }else{
         fn = file(reads[3]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
@@ -113,7 +113,7 @@ process segemehl_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads $THREADS -i $idx -j $idx2 -d $gen -q $read -o tmp.sam 2> $lf && cat tmp.sam| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && rm -f tmp.sam
+        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -j $idx2 -d $gen -q $read -o tmp.sam 2> $lf && cat tmp.sam| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf && rm -f tmp.sam
         """
     }
 }

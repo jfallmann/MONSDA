@@ -24,7 +24,7 @@ process sortsam{
     //No Maxthread in nextflow 
     sortmem = '30%'
     """
-    set +o pipefail; mkdir -p TMP; samtools view -H $map|grep -P '^@HD' |pigz -p $THREADS -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\\t' -k1,1 -k2,2V |pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p $THREADS -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p $THREADS -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k3,3V -k4,4n - |pigz -p $THREADS -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}/$map
+    set +o pipefail; mkdir -p TMP; samtools view -H $map|grep -P '^@HD' |pigz -p ${task.cpus} -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\\t' -k1,1 -k2,2V |pigz -p ${task.cpus} -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p ${task.cpus} -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p ${task.cpus} -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k3,3V -k4,4n - |pigz -p ${task.cpus} -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}/$map
     """
 }
 
@@ -54,7 +54,7 @@ process sam2bam{
     fn = file(sam[0]).getSimpleName()
     bam = fn+".bam"
     """
-    zcat $sam | samtools view -bS - | samtools sort -T $fn -o $bam --threads $THREADS && samtools index $bam 2> sam2bam.log
+    zcat $sam | samtools view -bS - | samtools sort -T $fn -o $bam --threads ${task.cpus} && samtools index $bam 2> sam2bam.log
     """
 }
 
@@ -87,7 +87,7 @@ process uniqsam{
         bwa = ''
     }
     """
-    $BINS/Shells/UniqueSam_woPicard.sh $sam $uniq $THREADS $bwa 2> uniq.log
+    $BINS/Shells/UniqueSam_woPicard.sh $sam $uniq ${task.cpus} $bwa 2> uniq.log
     """
 }
 
@@ -117,7 +117,7 @@ process sam2bamuniq{
     fn = file(sam[0]).getSimpleName()
     bam = fn+'.bam'
     """
-    zcat $sam | samtools view -bS - | samtools sort -T $fn -o $bam --threads $THREADS && samtools index $bam 2> uniquebam.log
+    zcat $sam | samtools view -bS - | samtools sort -T $fn -o $bam --threads ${task.cpus} && samtools index $bam 2> uniquebam.log
     """
 }
 

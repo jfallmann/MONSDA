@@ -33,14 +33,14 @@ process trim{
         p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o -p $p $r1 $r2 &> $r
+        $TRIMBIN --cores ${task.cpus} $TRIMPARAMS -o $o -p $p $r1 $r2 &> $r
         """
     }
     else{
         o = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN --cores $THREADS $TRIMPARAMS -o $o $reads &> $r
+        $TRIMBIN --cores ${task.cpus} $TRIMPARAMS -o $o $reads &> $r
         """
     }
 }

@@ -52,7 +52,7 @@ process minimap_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -t $THREADS -d $MAPUIDXNAME $IDXPARAMS $gen &> index.log && ln -fs $MAPUIDXNAME minimap.idx
+    $MAPBIN -t ${task.cpus} -d $MAPUIDXNAME $IDXPARAMS $gen &> index.log && ln -fs $MAPUIDXNAME minimap.idx
     """
 
 }
@@ -92,7 +92,7 @@ process minimap_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "minimap_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
@@ -101,7 +101,7 @@ process minimap_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "minimap_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t $THREADS $idx $reads 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $reads 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }

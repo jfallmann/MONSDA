@@ -61,7 +61,7 @@ process featurecount_deseq{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -126,7 +126,7 @@ process run_deseq2{
     bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO $THREADS $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO ${task.cpus} $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
     """
 }
 

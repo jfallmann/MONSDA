@@ -52,7 +52,7 @@ process salmon_idx{
         decoy = ''
     }
     """
-    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME drimseq.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p ${task.cpus} -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME drimseq.idx
     """
 
 }
@@ -96,7 +96,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -113,7 +113,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }
@@ -177,7 +177,7 @@ process run_drimseq{
 
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $params 2> log && ln -fs Tables/\* . && ln -fs Figures/\* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $params 2> log && ln -fs Tables/\* . && ln -fs Figures/\* .
     """
 }
 

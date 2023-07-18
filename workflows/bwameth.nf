@@ -95,7 +95,7 @@ process bwameth_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "bwameth_"+fn+".log"
         """
-        touch ${idx}/${MAPPREFIX}*c2t*; $MAPBIN $MAPPARAMS --threads $THREADS --reference ${idx}/${MAPPREFIX}*.fa $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        touch ${idx}/${MAPPREFIX}*c2t*; $MAPBIN $MAPPARAMS --threads ${task.cpus} --reference ${idx}/${MAPPREFIX}*.fa $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
@@ -104,7 +104,7 @@ process bwameth_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "bwameth_"+fn+".log"
         """
-        touch ${idx}/${MAPPREFIX}*c2t*; $MAPBIN $MAPPARAMS --threads $THREADS --reference ${idx}/${MAPPREFIX}*.fa $read 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        touch ${idx}/${MAPPREFIX}*c2t*; $MAPBIN $MAPPARAMS --threads ${task.cpus} --reference ${idx}/${MAPPREFIX}*.fa $read 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }

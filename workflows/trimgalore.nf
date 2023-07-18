@@ -30,12 +30,12 @@ process trim{
         r1 = reads[0]
         r2 = reads[1]
         """
-        $TRIMBIN --cores $THREADS --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        $TRIMBIN --cores ${task.cpus} --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
     else{
         """
-        $TRIMBIN --cores $THREADS --gzip $TRIMPARAMS $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        $TRIMBIN --cores ${task.cpus} --gzip $TRIMPARAMS $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
 }
