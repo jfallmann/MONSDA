@@ -65,7 +65,7 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/DTU/${file(filename).getName()}"
         else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
@@ -172,10 +172,12 @@ process run_drimseq{
     script:    
     outdir = "DTU"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DTUBIN}"
+    comp = "${DTUCOMP}".split(':')[0]
+    params = "'${DTUPARAMS}'"
 
     """
-    mkdir -p Figures Tables drimseqReport_${COMBO}_${DTUCOMP}
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv drimseqReport_*/* .
+    mkdir -p Figures Tables
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $params 2> log && ln -fs Tables/\* . && ln -fs Figures/\* .
     """
 }
 
