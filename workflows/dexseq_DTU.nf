@@ -148,7 +148,7 @@ process run_dexseq{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'link',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DTU/${SCOMBO}/Figures/${file(filename).getName()}" 
@@ -163,8 +163,8 @@ process run_dexseq{
 
     output:
     path "*_table*", emit: tbls
-    path "*_figure*", emit: figs
-    path "*.html", emit: html
+    path "*_figure*", emit: figs, optional:true
+    path "*.html", emit: html, optional:true
     path "*SESSION.gz", emit: session
     path "log", emit: log
 
@@ -172,11 +172,11 @@ process run_dexseq{
     outdir = "DTU"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DTUBIN}"
     comp = "${DTUCOMP}".split(':')[0]
-    params = "'${DTUPARAMS}'"
+    dparams = "'${DTUPARAMS}'"
 
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $params 2> log && ln -fs Tables/\* . && ln -fs Figures/\* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -fs Tables/* . && ln -fs Figures/* .
     """
 }
 
