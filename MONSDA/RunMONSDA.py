@@ -739,6 +739,7 @@ def run_nextflow(
                 jobstorun = list()
 
                 for job in jobs:
+                    log.debug(f"{logid}JOB: {job}")
                     nfo, confo, tp, params = job
                     pars = " ".join(
                         "--{!s} {!s}".format(key, val) for (key, val) in params.items()

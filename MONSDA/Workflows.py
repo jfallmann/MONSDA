@@ -4100,7 +4100,8 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
     output = "REPORTS/SUMMARY/summary.Rmd"
     jobs = list()
     lines = list()
-    condapath = re.compile(r'conda:\s+"')
+    condapath = re.compile(r'conda\s+"')
+    includepath = re.compile(r'include:\s+"')
     logfix = re.compile(r'loglevel="INFO"')
 
     envlist = list()
@@ -4144,36 +4145,47 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
 
     subjobs = list()
 
-    smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-    with open(smkf, "r") as smk:
-        for line in smk.readlines():
-            subjobs.append(line)
-        subjobs.append("\n\n")
-
-    smkf = os.path.abspath(os.path.join(workflowpath, "summary.smk"))
-    with open(smkf, "r") as smk:
-        for line in smk.readlines():
+    nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
+    with open(nfi, "r") as nf:
+        for line in nf.readlines():
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-            line = re.sub(condapath, 'conda: "' + envpath, line)
+            line = re.sub(condapath, 'conda "' + envpath, line)
             if "include {" in line:
                 line = fixinclude(
-                    line, loglevel, condapath, envpath, workflowpath, logfix, "nfmode"
+                    line,
+                    loglevel,
+                    condapath,
+                    envpath,
+                    workflowpath,
+                    logfix,
+                    "nfmode",
                 )
             subjobs.append(line)
         subjobs.append("\n\n")
 
-    smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-    with open(smkf, "r") as smk:
-        for line in smk.readlines():
+    nfi = os.path.abspath(os.path.join(workflowpath, "summary.nf"))
+    with open(nfi, "r") as nf:
+        for line in nf.readlines():
+            line = re.sub(condapath, 'conda "' + envpath, line)
+            if "include {" in line:
+                line = fixinclude(
+                    line,
+                    loglevel,
+                    condapath,
+                    envpath,
+                    workflowpath,
+                    logfix,
+                    "nfmode",
+                )
             subjobs.append(line)
         subjobs.append("\n\n")
 
-    smko = os.path.abspath(os.path.join(subdir, "summary_subsnake.smk"))
-    if os.path.exists(smko):
-        os.rename(smko, smko + ".bak")
-    with open(smko, "a") as smkout:
-        smkout.write("".join(subjobs))
-        smkout.write("\n\n")
+    nfo = os.path.abspath(os.path.join(subdir, "summary_subflow.nf"))
+    if os.path.exists(nfo):
+        os.rename(nfo, nfo + ".bak")
+    with open(nfo, "a") as nfout:
+        nfout.write("".join(subjobs))
+        nfout.write("\n\n")
 
     subconf = mu.NestedDefaultDict()
     for key in ["BINS", "MAXTHREADS", "SETTINGS"]:
@@ -4185,7 +4197,9 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
     with open(confo, "a") as confout:
         json.dump(subconf, confout)
 
-    jobs.append([smko, confo])
+    para = nf_fetch_params(confo)
+
+    jobs.append([nfo, confo, str(), para])
 
     return jobs
 
