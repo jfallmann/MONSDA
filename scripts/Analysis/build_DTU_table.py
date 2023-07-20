@@ -207,7 +207,7 @@ def prepare_table(
             bat = None
 
             rep = (
-                str(replist[i])
+                str(os.path.abspath(replist[i]))
                 if not nextflow
                 else str(os.path.basename(replist[i])).replace(
                     "_mapped_sorted_unique.counts", "_counts"
