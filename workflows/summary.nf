@@ -12,6 +12,8 @@ process make_rmd{
 
     input:
     path snippets
+    path figs
+    path tables
 
     output:
     path "*.html", emit: report
@@ -31,7 +33,12 @@ workflow SUMMARY{
     main:
 
     sum_ch =  Channel.fromPath("${projectDir}/../REPORTS/SUMMARY/summary.Rmd")
-    make_rmd(sum_ch)
+    png_ch =  Channel.fromPath("${projectDir}/../{DE,DEU,DAS,DTU}/**/Figures/*.png")
+    tab_ch =  Channel.fromPath("${projectDir}/../{DE,DEU,DAS,DTU}/**/Tables/*.tsv.gz")
+    //png_ch.subscribe {  println "PNG: $it"  }
+    //tab_ch.subscribe {  println "TABLE: $it"  }
+
+    make_rmd(sum_ch, png_ch, tab_ch)
     
     emit:
     rmds = make_rmd.out.report

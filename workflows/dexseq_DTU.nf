@@ -148,7 +148,7 @@ process run_dexseq{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DTU/${SCOMBO}/Figures/${file(filename).getName()}" 

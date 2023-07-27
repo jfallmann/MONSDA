@@ -4108,7 +4108,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
     if combinations:
         combname = mp.get_combo_name(combinations)
         for condition in combname:
-            envlist = combname[condition]["envs"]
+            envlist.append(combname[condition]["envs"])
 
     # Add Header
     sum_path = os.path.join(installpath, "MONSDA", "scripts", "Analysis", "SUMMARY")
