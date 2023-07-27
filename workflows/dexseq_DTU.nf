@@ -176,7 +176,7 @@ process run_dexseq{
 
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -fs Tables/* . && ln -fs Figures/* .
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
     """
 }
 
