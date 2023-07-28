@@ -677,12 +677,6 @@ def run_nextflow(
         """
         mu.makeoutdir("TMP")
         if postprocess:
-            # log.error(
-            #    "At the moment we have no postprocessing steps implemented in nextflow, please either use snakemake for postprocessing or get in contact with the developers with specifics for your postprocessing workflows of interest!"
-            # )
-            # sys.exit()
-
-            ## Once postprocessing is enabled, here comes a framework that should work
             for subwork in postprocess:
                 SAMPLES = mp.get_samples_postprocess(config, subwork)
                 log.info(logid + "POSTPROCESSING SAMPLES: " + str(SAMPLES))
@@ -735,11 +729,10 @@ def run_nextflow(
                 )
                 jobs = mw.nf_make_summary(
                     config, subdir, loglevel, combinations=combinations
-                )  # Not implemented yet
+                )
                 jobstorun = list()
 
                 for job in jobs:
-                    log.debug(f"{logid}JOB: {job}")
                     nfo, confo, tp, params = job
                     pars = " ".join(
                         "--{!s} {!s}".format(key, val) for (key, val) in params.items()
@@ -760,6 +753,11 @@ def run_nextflow(
 
         else:
             log.warning(logid + "No postprocessing steps defined! Nothing to do!")
+
+        if save:
+            log.info(
+                f"{logid} All CLI calls have been saved to monsda.commands in directory JOBS"
+            )
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()

@@ -1677,8 +1677,8 @@ def make_summary(config, subdir, loglevel, combinations=None):
     if combinations:
         combname = mp.get_combo_name(combinations)
         for condition in combname:
-            envlist = combname[condition]["envs"]
-
+            envlist.extend(combname[condition]["envs"])
+    envlist = list(set(envlist))
     # Add Header
     sum_path = os.path.join(installpath, "MONSDA", "scripts", "Analysis", "SUMMARY")
     rmd_header = os.path.abspath(os.path.join(sum_path, "header_summary.Rmd"))
@@ -4107,8 +4107,11 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
     envlist = list()
     if combinations:
         combname = mp.get_combo_name(combinations)
+        log.debug(f"{logid} COMBIS: {combname}")
         for condition in combname:
-            envlist.append(combname[condition]["envs"])
+            envlist.extend(combname[condition]["envs"])
+    envlist = list(set(envlist))
+    log.debug(f"{logid} ENVS: {envlist}")
 
     # Add Header
     sum_path = os.path.join(installpath, "MONSDA", "scripts", "Analysis", "SUMMARY")

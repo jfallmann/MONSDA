@@ -6,12 +6,11 @@ process make_rmd{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/SUMMARY.html"                               
+        if (filename == 'SUMMARY.html')         "REPORTS/SUMMARY/SUMMARY.html"                               
         else if (filename.indexOf("log") > 0)        "LOGS/REPORTS/SUMMARY/make_rmd.log"
     }
 
     input:
-    path snippets
     path figs
     path tables
 
@@ -20,25 +19,25 @@ process make_rmd{
     path "log", emit: log
 
     script:
-    inlist = snippets.toString()
     """
-    touch log; Rscript --vanilla -e \"rmarkdown::render('$inlist', params=list(root='${workflow.workDir}/../'), output_file='SUMMARY.html', quiet=TRUE)\" 2> log
+    ln -f \"${projectDir}/../REPORTS/SUMMARY/summary.Rmd\" .;
+    touch log;
+    Rscript --vanilla -e \"rmarkdown::render('summary.Rmd', params=list(root='.'), output_file='SUMMARY.html', quiet=TRUE)\" 2> log
     """
 }
 
 
-workflow SUMMARY{ 
+workflow SUMMARY{
     take: collection
 
     main:
 
-    sum_ch =  Channel.fromPath("${projectDir}/../REPORTS/SUMMARY/summary.Rmd")
-    png_ch =  Channel.fromPath("${projectDir}/../{DE,DEU,DAS,DTU}/**/Figures/*.png")
-    tab_ch =  Channel.fromPath("${projectDir}/../{DE,DEU,DAS,DTU}/**/Tables/*.tsv.gz")
+    png_ch =  Channel.fromPath("${projectDir}/../D{E,EU,AS,TU}/**/Figures/*.png")
+    tab_ch =  Channel.fromPath("${projectDir}/../D{E,EU,AS,TU}/**/Tables/*.tsv.gz")
     //png_ch.subscribe {  println "PNG: $it"  }
     //tab_ch.subscribe {  println "TABLE: $it"  }
 
-    make_rmd(sum_ch, png_ch, tab_ch)
+    make_rmd(png_ch.collect(), tab_ch.collect())
     
     emit:
     rmds = make_rmd.out.report
