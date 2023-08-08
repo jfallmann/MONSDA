@@ -1,7 +1,8 @@
 MAPPERBIN, MAPPERENV = env_bin_from_config(config,'MAPPING')
-MAPPERBIN, MAPPERENV = env_bin_from_config(config,'MAPPING')
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
+keydict["DECOY"] = DECOY
+keydict["ENV"] = MAPPERENV
 unik = get_dict_hash(keydict)
 
 rule generate_index:
@@ -36,12 +37,12 @@ else:
     rule mapping:
         input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                 uidx = rules.generate_index.output.uidx[0],
-                ref = REFERENCE
+                fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
-        params:  mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
+        params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"

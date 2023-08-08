@@ -16,6 +16,9 @@
                         "GTF": "GENOMES/Dm6/dm6.gtf.gz",  #default annotation in GTF format, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE
                         "GFF": "GENOMES/Dm6/dm6.gff3.gz"  #default annotation in GFF format
                     },
+                    "DECOY": {
+                        "salmon": "GENOMES/Ecoli/salmon_decoy"
+                    }, # OPTIONAL if tool for mapping/counting needs decoys, like e.g. salmon
                     "IP": "iCLIP" # OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol, options are CLIP, iCLIP, revCLIP
                 }
             }
@@ -147,8 +150,10 @@
                  "TOOLS": {
                      "star": "STAR",
                      "segemehl3": "segemehl.x",
+                     "segemehl": "segemehl.x",
                      "hisat2": "hisat2",
                      "bwa": "bwa mem",
+                     "bwameth": "bwameth",
                      "minimap": "minimap2"
                  },
                  "id": {

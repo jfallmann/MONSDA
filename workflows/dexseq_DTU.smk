@@ -9,6 +9,7 @@ log.info(logid+"COMPARISON: "+str(comparison))
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 keydict["DECOY"] = DECOY
+keydict["ENV"] = DTUENV
 unik = get_dict_hash(keydict)
 
 rule themall:
@@ -112,7 +113,7 @@ rule run_DTU:
             dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', "")
             # pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
             # lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.dtuopt} 2> {log}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}"
 
 # rule filter_significant:
 #     input:  res = rules.run_DTU.output.res

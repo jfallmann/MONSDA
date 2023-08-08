@@ -1,11 +1,13 @@
 DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 outdir = "DTU/DEXSEQ"
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
+keydict["DECOY"] = DECOY
+keydict["ENV"] = DTUENV
 unik = get_dict_hash(keydict)
 
 rule themall:

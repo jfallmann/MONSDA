@@ -47,7 +47,11 @@ sampleData$condition <- as.factor(sampleData$condition)
 sampleData$type <- as.factor(sampleData$type)
 sampleData$batch <- as.factor(sampleData$batch)
 
-files <- file.path(sampleData$path, "quant.sf.gz")
+if (file_test("-d", sampleData$path[1])) {
+    files <- file.path(sampleData$path, "quant.sf.gz")
+} else {
+    files <- sampleData$path
+}
 names(files) <- sampleData$sample_id
 
 ## Combinations of conditions

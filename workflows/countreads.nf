@@ -165,7 +165,7 @@ process count_mappers{
     ol = fn+".log"
     sortmem = '30%'
     """
-    mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\\t' -f1|sort --parallel=$THREADS -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
+    mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\\t' -f1|sort --parallel=${task.cpus} -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
     """
 }
 
@@ -213,7 +213,7 @@ process featurecount{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -273,10 +273,10 @@ workflow COUNTING{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"*.bam"
     }
 
-    rawsamples_ch = Channel.fromPath(RAWSAMPLES)
-    trimsamples_ch = Channel.fromPath(TRIMSAMPLES)
-    dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES)
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)  
+    rawsamples_ch = Channel.fromPath(RAWSAMPLES.sort())
+    trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
+    dedupsamples_ch = Channel.fromPath(DEDUPSAMPLES.sort())
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())  
     annofile = Channel.fromPath(COUNTANNO)
     //annofile.subscribe {  println "ANNO: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 

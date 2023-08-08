@@ -40,7 +40,7 @@ process RemoveSoftclip{
     sortmem = '30%'
     
     """
-    mkdir -p TMP/$fn; p=\$( dirname \$(realpath \"$bam\") ); ln -s \${p}/${fn}.bam.bai .; python $BINS/Analysis/RemoveSoftClip.py -f $REF -b $bam $SOFTPARAMS -o \'-\' | samtools sort -T TMP/$fn -o $fo --threads $THREADS \'-\' 2>> $ol && samtools index $fo 2>> $ol && mv $ol ${fn}.log; rm -rf TMP/$fn
+    mkdir -p TMP/$fn; p=\$( dirname \$(realpath \"$bam\") ); ln -s \${p}/${fn}.bam.bai .; python $BINS/Analysis/RemoveSoftClip.py -f $REF -b $bam $SOFTPARAMS -o \'-\' | samtools sort -T TMP/$fn -o $fo --threads ${task.cpus} \'-\' 2>> $ol && samtools index $fo 2>> $ol && mv $ol ${fn}.log; rm -rf TMP/$fn
     """
 }
 
@@ -72,12 +72,12 @@ process BamToBed{
     if (STRANDED == 'rf' || STRANDED == 'ISR'){
         """
         p=\$( dirname \$(realpath \"$bam\") ); ln -s \${p}/${fn}.bam.bai .;
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/1\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/1\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }else{
         """
         p=\$( dirname \$(realpath \"$bam\") ); ln -s \${p}/${fn}.bam.bai .;
-        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/2\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
+        bedtools bamtobed -split -i $bam | sed 's/ /_/g' | perl -wl -a -F'\\t' -n -e '\$F[0] =~ s/\\s/_/g;if(\$F[3]=~/\\/2\$/){{if (\$F[5] eq \"+\"){{\$F[5] = \"-\"}}elsif(\$F[5] eq \"-\"){{\$F[5] = \"+\"}}}} print join(\"\\t\",@F[0..\$#F])' | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fo 2> $ol
         """
     }
 }
@@ -202,7 +202,7 @@ process BedToBedg{
     sortmem = '30%'
 
     """
-    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
+    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
     """
 }
 
@@ -251,7 +251,7 @@ process BedToBedgPeak{
     sortmem = '30%'
 
     """
-    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"+\")' > tosrt && cat tosrt| sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"-\")' > tosrt && cat tosrt|sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
+    export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"+\")' > tosrt && cat tosrt| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"-\")' > tosrt && cat tosrt|sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
     """
 }
 
@@ -281,7 +281,7 @@ process PreprocessPeaks{
     sortmem = '30%'
 
     """        
-    perl $BINS/Analysis/PreprocessPeaks.pl -p <(zcat $bedgf $bedgr| sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6) $PREPARAMS | sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6 |gzip > $of 2> $ol
+    perl $BINS/Analysis/PreprocessPeaks.pl -p <(zcat $bedgf $bedgr| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6) $PREPARAMS | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6 |gzip > $of 2> $ol
     """    
 }
 
@@ -310,7 +310,7 @@ process FindPeaks{
     sortmem = '30%'
 
     """  
-    export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=$THREADS -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
+    export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
     """    
 }
 
@@ -341,7 +341,7 @@ process AddSequenceToPeak{
     sortmem = '30%'
 
     """  
-    export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=$THREADS -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; echo \"File $pk empty\" >> $ol; fi
+    export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; echo \"File $pk empty\" >> $ol; fi
     """    
 }
 
@@ -376,7 +376,7 @@ process PeakToBedg{
     sortmem = '30%'
 
     """
-    mkdir -p TMP/fw TMP/re ; perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=$THREADS -S $sortmem -T TMP/fw -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP/re -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
+    mkdir -p TMP/fw TMP/re ; perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=${task.cpus} -S $sortmem -T TMP/fw -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP/re -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
     """
 }
 
@@ -557,10 +557,10 @@ workflow PEAKS{
     //MAPPEDSAMPLES = MAPPEDSAMPLES*.removeIf({it -> it ~= /nosoftclip/})
     //BAMINDICES = MAPPEDSAMPLES*.replaceAll(/.bam$/, ".bam.bai")
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort()).filter({ it=~/sorted.bam$|sorted_unique.bam$|sorted_dedup.bam$|sorted_unique_dedup.bam$/ })
     genomefile = Channel.fromPath(REF)
 
-    mapsamples_ch.subscribe {  println "BAM: $it"  }
+    //mapsamples_ch.subscribe {  println "BAM: $it"  }
     
     UnzipGenome(genomefile)
     RemoveSoftclip(mapsamples_ch)

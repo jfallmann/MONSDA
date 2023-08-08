@@ -1,0 +1,11 @@
+name: bwameth
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - bwameth =0.2.7
+  - bwa-mem2 =2.2.1
+  - pigz =2.6
+  - samtools =1.16.1

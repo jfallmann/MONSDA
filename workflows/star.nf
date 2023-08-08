@@ -38,8 +38,7 @@ process star_idx{
     saveAs: {filename ->
         if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/star_index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
-        else if (filename == "$MAPUIDXNAME")             "$MAPUIDX"
-        else                                             "$MAPUIDX/${filename}"
+        else                                             "$MAPUIDX"
     }
 
     input:
@@ -56,7 +55,7 @@ process star_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN $THREADS --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -s $MAPUIDXNAME/* . && cat $MAPUIDXNAME/*Log.out > Log.out
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa --sjdbGTFfile tmp_anno && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* .
     """
 }
 
@@ -96,7 +95,7 @@ process star_mapping{
         of = fn+'Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/.mate([1|2]).gz/_R\\1.gz/'| sed -r 's/\\.Unmapped.out_R([1|2]).gz/_R\\1_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/.mate([1|2]).gz/_R\\1.gz/'| sed -r 's/\\.Unmapped.out_R([1|2]).gz/_R\\1_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
     else{
@@ -106,7 +105,7 @@ process star_mapping{
             of = fn+'Aligned.out.sam'
             gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
             """
-            $MAPBIN $MAPPARAMS --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+            $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
             """
         }
         else{
@@ -126,7 +125,7 @@ process star_mapping{
             od = "${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}"
 
             """
-            $MAPBIN --soloType CB_UMI_Simple $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN $THREADS --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of ; paste <(cat ${fn}.Unmapped.out.mate1 | paste - - - -) <(cat ${fn}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > ${uf} && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done && mkdir -p $od && rsync -auv ${fn}.Solo.out $od
+            $MAPBIN --soloType CB_UMI_Simple $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of ; paste <(cat ${fn}.Unmapped.out.mate1 | paste - - - -) <(cat ${fn}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > ${uf} && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done && mkdir -p $od && rsync -auv ${fn}.Solo.out $od
             """
         }
     }

@@ -54,7 +54,7 @@ process hisat2_idx{
     indexbin=MAPBIN.split(' ')[0]+'-build'
     gen =  genome.getName()
     """
-    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p $THREADS tmp.fa $MAPUIDXNAME/$MAPPREFIX  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
+    zcat $gen > tmp.fa && mkdir -p $MAPUIDXNAME && $indexbin $IDXPARAMS -p ${task.cpus} tmp.fa $MAPUIDXNAME/$MAPPREFIX  &> index.log && ln -fs $MAPUIDXNAME hisat2.idx
     """
 
 }
@@ -109,7 +109,7 @@ process hisat2_mapping{
         uft = fn+"_R2_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz ${fn}.unmapped -S $pf &> $lf && gzip $pf && touch $ufo $uft && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' ${fn}.unmapped.*.gz  &>> $lf
+        $MAPBIN $MAPPARAMS $stranded -p ${task.cpus} -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz ${fn}.unmapped -S $pf &> $lf && gzip $pf && touch $ufo $uft && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' ${fn}.unmapped.*.gz  &>> $lf
         """
     }else{
         if (STRANDED == 'fr'){
@@ -125,7 +125,7 @@ process hisat2_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS $stranded -p $THREADS -x ${idx}/${MAPPREFIX} -U $read --un-gz $uf -S $pf &> $lf && gzip $pf && touch $uf &>> $lf
+        $MAPBIN $MAPPARAMS $stranded -p ${task.cpus} -x ${idx}/${MAPPREFIX} -U $read --un-gz $uf -S $pf &> $lf && gzip $pf && touch $uf &>> $lf
         """
     }
 }

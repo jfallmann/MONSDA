@@ -1,0 +1,10 @@
+name: bwa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - bwa-mem2 =2.2.1
+  - pigz =2.6
+  - samtools =1.16.1

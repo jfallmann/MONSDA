@@ -494,7 +494,7 @@
                         {
                             "INDEX": "",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
+                            "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1, min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
                         }
                     },
                     "drimseq": {
@@ -505,7 +505,7 @@
                         {
                             "INDEX": "",
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                            "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
+                            "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
                         }
                     }
                 }
@@ -519,7 +519,7 @@
                     {
                         "INDEX": "",
                         "QUANT": "",  # Options for read counting, independent of COUNTS workflows
-                        "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
+                        "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
                     }
                 },
                 "drimseq": {
@@ -530,7 +530,7 @@
                     {
                         "INDEX": "",  
                         "QUANT": "", # Options for read counting, independent of COUNTS workflows
-                        "DTU": "'min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1'"  # Options for DE Analysis
+                        "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
                     }
                 }
             }

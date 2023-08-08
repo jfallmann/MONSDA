@@ -1,16 +1,16 @@
-name: snakemake
+name: base
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - grep =3.4
+  - grep >=3.4
+  - samtools =1.16.1
+  - natsort >=8.1.0
+  - perl =5.32.1
   - picard =2.27.4
+  - pigz =2.6
+  - python =3.10.4
+  - python_abi =3.10
   - pyfaidx =0.5.9
   - pysam =0.20.0
-  - samtools =1.16.1
-  - snakemake-minimal =7.28.2
-  - natsort =8.1.0
-  - perl =5.26.2
-  - python =3.9
-  - pigz =2.6

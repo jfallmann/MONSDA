@@ -24,7 +24,7 @@ process qc_raw{
 
     script:
     """
-    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
     """
 }
 
@@ -43,7 +43,7 @@ workflow QC_RAW{
         }
     }
 
-    samples_ch = Channel.fromPath(SAMPLES)
+    samples_ch = Channel.fromPath(SAMPLES.sort())
 
     qc_raw(samples_ch.collect())
 
@@ -75,7 +75,7 @@ process qc_trimmed{
 
     script:
     """
-    fastqc --quiet -t $THREADS $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
     """
 }
 

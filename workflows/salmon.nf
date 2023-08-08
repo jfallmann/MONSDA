@@ -2,7 +2,7 @@ COUNTENV = get_always('COUNTINGENV')
 COUNTBIN = get_always('COUNTINGBIN')
 COUNTIDX = get_always('COUNTINGIDX')
 COUNTUIDX = get_always('COUNTINGUIDX')
-COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
+COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')+'.idx'
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
@@ -37,8 +37,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rs = reads[1..2].sort()
+        r1 = rs[1]
+        r2 = rs[2]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
@@ -80,7 +81,7 @@ process salmon_idx{
         decoy = ''
     }
     """
-    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p ${task.cpus} -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
     """
 
 }
@@ -91,18 +92,17 @@ process salmon_quant{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'link',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "COUNTS/${SCOMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else null
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
     input:
     path reads
 
     output:
-    path "*.sf.gz", emit: counts
+    path "*.gz", emit: counts
     path "*.log", emit: logs
 
     script:
@@ -116,15 +116,16 @@ process salmon_quant{
         }else{
             stranded = '-l IU'
         }
-        r1 = reads[1]
-        r2 = reads[2]
+        rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
+        r1 = rs[0]
+        r2 = rs[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && mv -f $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -139,9 +140,9 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && mv -f $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }

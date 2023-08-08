@@ -56,13 +56,13 @@ process download_sra{
     if (PAIRED == 'paired'){        
         """
         export NCBI_SETTINGS=\"$FETCHPARAMS\"
-        fasterq-dump -e $THREADS $DOWNPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq; for i in *.fastq;do pigz -p $THREADS \$i;done
+        fasterq-dump -e ${task.cpus} $DOWNPARAMS --split-files $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq; for i in *.fastq;do pigz -p ${task.cpus} \$i;done
         """
     }
     else{
         """
         export NCBI_SETTINGS=\"$FETCHPARAMS\"
-        fasterq-dump -e $THREADS $DOWNPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq ; for i in *.fastq;do pigz -p $THREADS \$i;done
+        fasterq-dump -e ${task.cpus} $DOWNPARAMS $sras &> sra.log ; rename 's/(.sra)*_([1|2])/_R\$2/' *.fastq ; for i in *.fastq;do pigz -p ${task.cpus} \$i;done
         """
     }
 }

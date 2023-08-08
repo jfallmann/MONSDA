@@ -7,7 +7,7 @@ DTUANNO = get_always('DTUANNO')
 DTUDECOY = get_always('DTUDECOY')
 DTUIDX = get_always('DTUIDX')
 DTUUIDX = get_always('DTUUIDX')
-DTUUIDXNAME = get_always('DTUUIDXNAME')
+DTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
 IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
@@ -31,15 +31,18 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "salmon.idx")            "$DTUUIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/dexseq_index.log"
+        else if (filename == "dexseq.idx")            "$DTUIDX"
+        else                                          "$DTUUIDX"
     }
 
     input:
     path genome
 
     output:
-    path "salmon.idx", emit: idx
+     path "$DTUUIDXNAME", emit: idx
+    path "*.log", emit: idxlog
+    path "*.idx", emit: tmpidx
 
     script:    
     gen =  genome.getName()
@@ -49,7 +52,7 @@ process salmon_idx{
         decoy = ''
     }
     """
-    $COUNTBIN index $IDXPARAMS $decoy -p $THREADS -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -p ${task.cpus} -t $gen -i $DTUUIDXNAME &> index.log && ln -fs $DTUUIDXNAME dexseq.idx
     """
 
 }
@@ -60,18 +63,17 @@ process salmon_quant{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'link',
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".sf.gz") >0)            "DTU/${SCOMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${SCOMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else null
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/DTU/${file(filename).getName()}"
+        else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
     input:
     path reads
 
     output:
-    path "*.sf.gz", emit: counts
+    path "*.gz", emit: counts
     path "*.log", emit: logs
 
     script:
@@ -85,15 +87,16 @@ process salmon_quant{
         }else{
             stranded = '-l IU'
         }
-        r1 = reads[1]
-        r2 = reads[2]
+        rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
+        r1 = rs[0]
+        r2 = rs[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && mv -f $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -108,9 +111,9 @@ process salmon_quant{
         lf = "salmon_"+fn+".log"
         of = fn+"/quant.sf"
         oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.sf.gz"
+        ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p $THREADS -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && mv -f $oz $ol
+        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }
@@ -135,7 +138,7 @@ process prepare_dtu_annotation{
     ca = COMBO+"_ANNOTATION.gz"
     ol = "create_DTU_table.log"
     """
-    mkdir -p TMP; $BINS/Analysis/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG 2>> $ol
+    mkdir -p TMP; $BINS/Analysis/build_DTU_table.py $DTUREPS --anno $ca --loglevel DEBUG --nextflow 2>> $ol
     """
 }
 
@@ -154,25 +157,26 @@ process run_dexseq{
         else if (filename.indexOf("log") > 0)        "LOGS/DTU/${SCOMBO}/run_dexseq.log"
     }
 
-    input:
+    input:path counts
     path anno
     path ref
 
     output:
     path "*_table*", emit: tbls
-    path "*_figure*", emit: figs
-    path "*.html", emit: html
+    path "*_figure*", emit: figs, optional:true
+    path "*.html", emit: html, optional:true
     path "*SESSION.gz", emit: session
     path "log", emit: log
 
     script:    
     outdir = "DTU"+File.separatorChar+"${SCOMBO}"
     bin = "${BINS}"+File.separatorChar+"${DTUBIN}"
-    comp = "${DEUCOMP}".split(':')[0]
+    comp = "${DTUCOMP}".split(':')[0]
+    dparams = "'${DTUPARAMS}'"
 
     """
-    mkdir -p Figures Tables DEXSeqReport_${COMBO}_$comp
-    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO $THREADS $DTUPARAMS 2> log && mv Tables/* . && mv Figures/* . && mv DEXSeqReport_*/* .
+    mkdir -p Figures Tables
+    Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
     """
 }
 
@@ -227,7 +231,7 @@ workflow DTU{
             element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
         }
 
-    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES)
+    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
     annofile = Channel.fromPath(DTUANNO)
     checkidx = file(DTUIDX)
     
@@ -250,7 +254,7 @@ workflow DTU{
     }
 
     prepare_dtu_annotation()
-    run_dexseq(prepare_dtu_annotation.out.anno, annofile)
+    run_dexseq(salmon_quant.out.counts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
     collect_dexseq(run_dexseq.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 

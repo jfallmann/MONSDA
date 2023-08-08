@@ -63,7 +63,7 @@ process featurecount_diego{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T $THREADS $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=$THREADS -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -279,7 +279,7 @@ workflow DAS{
         element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
     }
 
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES)
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
     annofile = Channel.fromPath(DASANNO)
     
     featurecount_diego(annofile.combine(mapsamples_ch.collate(1)))

@@ -160,7 +160,7 @@ class GUIDE:
                 safe = self.toclear
                 self.clear(2)
                 self.toclear = safe
-                prRed("You used unallowed letters, try again")
+                prRed("You used forbidden letters, try again")
                 continue
 
             if proof == None:
@@ -793,7 +793,6 @@ def add_sample_dirs(only_conditions=None):
     path_to_samples_dict = NestedDefaultDict()
     er = 0
     while True:
-
         if er == 0:
             ques = "Enter an absolute path where samples are stored"
             sp = current_path
@@ -1067,7 +1066,7 @@ def set_settings():
                 except:
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
-            settings_to_make = ["REFERENCE", "GTF", "GFF"]
+            settings_to_make = ["REFERENCE", "DECOY", "GTF", "GFF"]
             if list(set(project.workflowsDict.keys()) & set(IP_workflows)):
                 settings_to_make = settings_to_make + ["IP"]
             if list(set(project.workflowsDict.keys()) & set(comparable_workflows)):
@@ -1079,7 +1078,7 @@ def set_settings():
                 if key in project.finished_set_keys:
                     continue
                 print(f"   {key}:")
-                if key in ["REFERENCE", "GTF", "GFF", "IP"]:
+                if key in ["REFERENCE", "DECOY", "GTF", "GFF", "IP"]:
                     if previous_maplist:
                         if key in ["GTF", "GFF"]:
                             s = get_by_path(
@@ -1492,7 +1491,6 @@ def set_workflows(wf=None):
                 prRed(f"\n   Settings for differential Analyses:\n")
 
             if "CUTOFFS" in project.baseDict[workflow].keys() and not wf:
-
                 project.workflowsDict[workflow].update({"CUTOFFS": {}})
                 project.workflowsDict[workflow]["CUTOFFS"].update(
                     project.baseDict[workflow]["CUTOFFS"]
@@ -1701,7 +1699,6 @@ def finalize():
 
 def create_project(final_dict):
     if project.mode == "project":
-
         # create Project Folder
         cwd = os.getcwd()
         if not os.path.exists(project.path):
@@ -1762,6 +1759,22 @@ def create_project(final_dict):
                         f"WARNING: reference path at {condition} is not correct, could not symlink, please do by hand"
                     )
                     setInDict(project.settingsDict, condition + ["REFERENCE"], "")
+
+                decoy = get_by_path(project.settingsDict, condition + ["DECOY"])
+                if os.path.isfile(decoy):
+                    if not os.path.exists(os.path.join(gen, os.path.basename(decoy))):
+                        os.symlink(
+                            os.path.realpath(decoy),
+                            os.path.join(gen, os.path.basename(decoy)),
+                        )
+                    f = os.path.join(gen, os.path.basename(decoy))
+                    rel = os.path.relpath(f, start=project.path)
+                    setInDict(project.settingsDict, condition + ["DECOY"], rel)
+                else:
+                    prRed(
+                        f"WARNING: decoy path at {condition} is not correct, could not symlink, please do by hand if needed"
+                    )
+                    setInDict(project.settingsDict, condition + ["DECOY"], "")
 
                 gtf = get_by_path(
                     project.settingsDict, condition + ["ANNOTATION", "GTF"]

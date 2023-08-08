@@ -15,7 +15,7 @@ dependencies:
   - r-htmltools =0.5.3
   - r-jquerylib =0.1.4
   - r-jsonlite =1.8.3
-  - r-knitr =1.41
+  - r-knitr =1.40
   - r-magrittr =2.0.3
   - r-markdown =1.4
   - r-mime =0.12

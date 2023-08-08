@@ -83,6 +83,7 @@ SEQUENCING = SETTINGS.get('SEQUENCING')
 REFERENCE = SETTINGS.get('REFERENCE')
 REFDIR = str(os.path.dirname(REFERENCE))
 INDEX = SETTINGS.get('INDEX')
+INDEX2 = SETTINGS.get('INDEX2')
 PREFIX = SETTINGS.get('PREFIX')
 ANNO = SETTINGS.get('ANNOTATION')
 DECOY = SETTINGS.get("DECOY")
@@ -135,23 +136,30 @@ if 'MAPPING' in config:
         INDEX = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx'
     keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
     keydict["REF"] = REFERENCE
+    keydict["DECOY"] = DECOY
+    keydict["ENV"] = MAPPERENV
     unik = get_dict_hash(keydict)
     UIDX = expand("{refd}/INDICES/{mape}/{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
     INDICES = INDEX.split(',') if INDEX else list(UIDX)
     INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+    IDX2 = MAPCONF.get('INDEX2', MAPCONF[MAPPERENV].get('INDEX2'))
+    if IDX2:
+        INDEX2 = IDX2
+    if not INDEX2 and ('segemehl' in MAPPERENV and 'bisulfite' in MAPPERENV):
+        if len(INDICES) > 1:
+            UIDX2 = expand("{refd}/INDICES/{mape}/{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik)
+            INDEX2 = str(os.path.abspath(INDICES[1])) if str(os.path.abspath(INDICES[1])) not in UIDX2 else str(os.path.abspath(INDICES[1]))+'_idx2'
+        else:
+            INDEX2 = str.join(os.sep, [REFDIR, 'INDICES', MAPPERENV])+'.idx2'
+    else:
+        INDEX2 = None
+        UIDX2 = None
     MAPOPT = MAPCONF.get(MAPPERENV).get('OPTIONS')
     PRE = MAPCONF.get('PREFIX', MAPCONF.get('EXTENSION', MAPOPT.get('PREFIX', MAPOPT.get('EXTENSION'))))
     if PRE and PRE is not None:
         PREFIX = PRE
     if not PREFIX or PREFIX is None:
         PREFIX = MAPPERENV
-    if len(INDICES) > 1:
-        if str(os.path.abspath(INDICES[1])) not in UIDX:
-            INDEX2 = str(os.path.abspath(INDICES[1]))
-        else:
-            INDEX2 = str(os.path.abspath(INDICES[1]))+'_idx'
-    else:
-        INDEX2 = ''
 
 
 # Peak Calling Variables
@@ -203,6 +211,8 @@ for x in ['TRACKS', 'COUNTING']:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
                 keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
                 keydict["REF"] = REFERENCE
+                keydict["DECOY"] = DECOY
+                keydict["ENV"] = XENV
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=XENV, unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)
@@ -240,6 +250,8 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
                 INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
                 keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
                 keydict["REF"] = REFERENCE
+                keydict["DECOY"] = DECOY
+                keydict["ENV"] = XENV
                 unik = get_dict_hash(keydict)
                 UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
             INDICES = INDEX.split(',') if INDEX else list(UIDX)

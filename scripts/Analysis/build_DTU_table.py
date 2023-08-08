@@ -128,10 +128,10 @@ def parseargs():
 
 
 class Sample_list(object):
-
     group_name = ""
     replicate_names = []
     replicate_paths = []
+
     # the class constructor
     def __init__(self, group_name):
         self.group_name = group_name
@@ -206,7 +206,13 @@ def prepare_table(
             typ = None
             bat = None
 
-            rep = str(replist[i]) if not nextflow else str(os.path.basename(replist[i]))
+            rep = (
+                str(os.path.abspath(replist[i]))
+                if not nextflow
+                else str(os.path.basename(replist[i])).replace(
+                    "_mapped_sorted_unique.counts", "_counts"
+                )
+            )
             cond = str(condlist[i])
             typ = str(typelist[i]) if types is not None else None
             bat = str(batchlist[i]) if batches is not None else None
@@ -221,7 +227,9 @@ def prepare_table(
             if cond in my_groups:
                 my_groups[cond].replicate_paths.append(rep)
                 my_groups[cond].replicate_names.append(
-                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                    os.path.basename(rep)
+                    .split("_mapped_sorted_unique.count")[0]
+                    .split("_count")[0]
                 )
                 if typ is not None:
                     my_groups[cond].replicate_types.append(typ)
@@ -231,7 +239,9 @@ def prepare_table(
                 my_groups[cond] = make_sample_list(cond)
                 my_groups[cond].replicate_paths.append(rep)
                 my_groups[cond].replicate_names.append(
-                    os.path.basename(rep).split("_mapped_sorted_unique.count")[0]
+                    os.path.basename(rep)
+                    .split("_mapped_sorted_unique.count")[0]
+                    .split("_count")[0]
                 )
                 # my_groups[cond].replicate_names.append(str.split(os.sep,rep)[-1])
                 if typ is not None:
@@ -313,7 +323,6 @@ def make_sample_list(group_name):
 ####################
 
 if __name__ == "__main__":
-
     logid = scriptname + ".main: "
     try:
         args = parseargs()

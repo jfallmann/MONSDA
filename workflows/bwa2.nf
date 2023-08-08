@@ -9,9 +9,11 @@ MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX')
 MAPUIDX.replace('.idx','')
 
-IDXPARAMS = get_always('minimap_params_INDEX') ?: ''
-MAPPARAMS = get_always('minimap_params_MAP') ?: ''
+IDXPARAMS = get_always('bwa_params_INDEX') ?: ''
+MAPPARAMS = get_always('bwa_params_MAP') ?: ''
 
+IDXBIN = MAPBIN
+MAPBIN = MAPBIN
 
 //MAPPING PROCESSES
 
@@ -28,7 +30,7 @@ process collect_tomap{
     """
 }
 
-process minimap_idx{
+process bwa2_idx{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -37,27 +39,27 @@ process minimap_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename == "minimap.idx")                  "$MAPIDX"
-        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/minimap_index.log"
-        else                                            "$MAPUIDX"
+        if (filename == "bwa2.idx")                          "$MAPIDX"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa2_index.log"
+        else                                                "$MAPUIDX"
     }
 
     input:
     path genome
 
     output:
-    path "*.idx", emit: idx
-    path "$MAPUIDXNAME", emit: uidx
+    path "bwa2.idx", emit: idx
+    path "bwa2_*", emit: bwidx
 
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -t ${task.cpus} -d $MAPUIDXNAME $IDXPARAMS $gen &> index.log && ln -fs $MAPUIDXNAME minimap.idx
+    mkdir -p $MAPUIDXNAME && $IDXBIN index -p $MAPUIDXNAME/$MAPPREFIX $IDXPARAMS $gen &> Log.out && ln -fs $MAPUIDXNAME bwa2.idx
     """
 
 }
 
-process minimap_mapping{
+process bwa2_mapping{
     conda "$MAPENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -67,7 +69,7 @@ process minimap_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
+        //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/_trimmed/,"")}"
         else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
         else null
     }
@@ -80,9 +82,8 @@ process minimap_mapping{
     path "*fastq.gz", includeInputs:false, emit: unmapped
     path "*.log", emit: logs
 
-    script:    
-    idxfile = reads[0]
-    idx = idxfile.getName()
+    script:
+    idx = reads[0]
     if (PAIRED == 'paired'){
         r1 = reads[1]
         r2 = reads[2]
@@ -90,18 +91,18 @@ process minimap_mapping{
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"
         uf2 = fn+"_R2_unmapped.fastq.gz"
-        lf = "minimap_"+fn+".log"
+        lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $r1 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
+        $MAPBIN mem $MAPPARAMS -t ${task.cpus} ${idx}/${MAPPREFIX} $r1 $r2  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> {log} &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
         read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf = fn+"_unmapped.fastq.gz"
-        lf = "minimap_"+fn+".log"
+        lf = "bwa_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $reads 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN mem $MAPPARAMS -t ${task.cpus} ${idx}/${MAPPREFIX} $read  2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }
@@ -110,22 +111,21 @@ workflow MAPPING{
     take: collection
 
     main:
- 
+    
     checkidx = file(MAPUIDX)
     collection.filter(~/.fastq.gz/)
-    
+
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPUIDX)       
-        minimap_mapping(idxfile.combine(collection))
+        idxfile = Channel.fromPath(MAPUIDX)
+        bwa2_mapping(idxfile.combine(collection))
     }
     else{
         genomefile = Channel.fromPath(MAPREF)
-        minimap_idx(genomefile)        
-        minimap_mapping(minimap_idx.out.idx.combine(collection))
+        bwa2_idx(genomefile)
+        bwa2_mapping(bwa2_idx.out.bwidx.combine(collection))
     }
 
-
     emit:
-    mapped  = minimap_mapping.out.maps
-    logs = minimap_mapping.out.logs
+    mapped  = bwa2_mapping.out.maps
+    logs = bwa2_mapping.out.logs
 }
