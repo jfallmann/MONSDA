@@ -26,8 +26,8 @@ process featurecount_deseq{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getName()}"
-        else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${file(filename).getName()}"              
+        if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"              
         else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
     }
 

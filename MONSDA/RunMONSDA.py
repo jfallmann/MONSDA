@@ -897,7 +897,7 @@ def main():
         else:
             log.info("Running MONSDA version " + __version__ + " as configured")
 
-        MIN_PYTHON = (3, 7)
+        MIN_PYTHON = (3, 11)
         if sys.version_info < MIN_PYTHON:
             log.error("This script requires Python version >= 3.7")
             sys.exit("This script requires Python version >= 3.7")
@@ -919,7 +919,7 @@ def main():
             )
 
         if not knownargs.nextflow:
-            min_version("7.28.2")
+            min_version("7.32.3")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,

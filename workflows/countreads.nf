@@ -177,8 +177,8 @@ process featurecount{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
-        else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_$FEAT/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
+        if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
+        else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
         else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
 
     }
