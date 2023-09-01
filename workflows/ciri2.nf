@@ -16,8 +16,8 @@ process ciri2{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_circs") > 0)      "CIRCS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}_circs"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.log"
+        if (filename.indexOf("_circs") > 0)      "CIRCS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}"        
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}"
     }
 
     input:
