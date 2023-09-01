@@ -2269,6 +2269,7 @@ def nf_fetch_params(
     # CIRCS Variables
     if "CIRCS" in config:
         CIRCCONF = mu.sub_dict(config["CIRCS"], SETUP)
+        CIRCBIN, CIRCENV = mp.env_bin_from_config(config, "CIRCS")
         log.debug(logid + "CIRCCONFIG: " + str(SETUP) + "\t" + str(CIRCCONF))
         REF = CIRCCONF.get("REFERENCE")
         if REF:
@@ -2281,9 +2282,10 @@ def nf_fetch_params(
             ANNOTATION = (
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF format will be used
-        retconf["CIRCREF"] = REFERENCE
-        retconf["CIRCREFDIR"] = REFDIR
-        retconf["CIRCANNO"] = ANNOTATION
+
+        retconf["CIRCSREF"] = REFERENCE
+        retconf["CIRCSREFDIR"] = REFDIR
+        retconf["CIRCSANNO"] = ANNOTATION
 
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
@@ -2380,7 +2382,7 @@ def nf_get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH"]  # , 'BASECALL']
     sub = ["TRIMMING", "MAPPING", "QC", "DEDUP"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
