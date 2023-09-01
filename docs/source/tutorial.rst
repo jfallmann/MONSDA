@@ -21,8 +21,6 @@ Ideally you download those files into a sub-directory of your workspace named "G
 
 All config files this tutorial is based on can be found in **envs/monsda/share/MONSDA/configs** of your local **conda** installation or the "configs" directory of the **MONSDA** repository.
 
-Please be aware that we are currently working on the implementation of postprocessing workflows for Nextflow, so at the moment you can only run the *quick* and *toolmix* tutorial in Nextflow mode, but this will change soon.
-
 A quick run
 #############
 
@@ -34,14 +32,14 @@ The corresponding config file looks as follows:
     :language: json
 
 
-This tells **MONSDA** version "1.0.0" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
+This tells **MONSDA** version "1.1.0" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
 
 "FETCH" will activate the environment "sra" and run the binary "fasterq-dump" with no extra options to fetch the sample from SRA.
 
 "MAPPING" will then run the executable "STAR" in environment "star" on the downloaded FASTQ file. First it will check for existence of the needed INDEX file, and as no INDEX file is defined in the config it will try to generate one. For that it will use the REFERENCE "GENOMES/Ecoli/ecoli.fa.gz" as well as the ANNOTATION GTF "GENOMES/Ecoli/ecoli.gtf.gz". GTF is always selected first and GFF is used as a fallback if no GTF is found. 
 After successfully building the *STAR* index, **MONSDA** will start mapping with *STAR* in "paired" mode and applying a set of options as can be seen under the "MAP" key in section "MAPPING"->"SIMPLE"->"star"->"OPTIONS". We do not define a pre- or suffix for output files, so "EXTENSION" can be skipped or left blank.
 
-Starting the run with 4 cores (defining more will be capped by the config file as MAXTHREADS is set to 4)
+Starting the run with 4 cores (defining more will be capped by the config file as MAXTHREADS is set to 4 but you are free to change that accordingly)
 
 .. code-block:: bash
 
@@ -70,13 +68,13 @@ The more complex config for this analysis follows
     :language: json
 
 
-Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
+Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12, again you can change that accordingly)
 
 .. code-block:: bash
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_toolmix.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from EDGER and DESeq2. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and the "JOBS" directory with all command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all *fastqc* reports and *multiqc* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from *EdgeR* and *DESeq2*. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and the "JOBS" directory with all command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error' at the end.
 
@@ -104,21 +102,20 @@ Note that "SETTINGS" now also contain "GROUPS" which hold identifiers for the DE
 
 Same as for the more complex run we can see that "SETTINGS" contains "GROUPS" which hold identifiers for the DE/DEU/DAS/DTU stages that will be used to define "COMPARABLES" that tell **MONSDA** which samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition, as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE/DEU/DAS steps. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly. Another addition to the "SETTINGS" key is the "IP" (ImmunoPrecipitation, aka enrichment) part. This is intended to be combined with the *PEAKS* workflow and tools that have certain preprocessing step requirements dependent on the way reads where enriched. For example our novel "scyphy" (Software for cyPhyRNA-Seq) workflow can work on 5-prime and 3-prime end enriched data, which can be indicated as "iCLIP" and "revCLIP" respectively. For this tutorial we will simulate standard "CLIP" and set the corresponding key.
 
-Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
+Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12, you already know the drill, change accordingly)
 
 .. code-block:: bash
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_postprocess.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU" directories will be created which will hold output from counting with FeatureCounts and DE/DEU input and output from EDGER and DESeq2 respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for *salmon* later on, a "QC" directory containing all *FastQC* reports and *MultiQC* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU" directories will be created which will hold output from counting with FeatureCounts and DE/DEU input and output from *EdgeR* and *DESeq2* respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error'. Be aware that this is indeed an exhaustive workflow and will require a decent amount of disk-space, memory and compute-time, depending on the hardware at your disposal.
 
 
-Coming soon
-############
+Exhaustive run############
 
-We are working on implementing this exhaustive tutorial, but running analysis steps like DTU or DAS requires more complex datasets and thus more time to test.
+We implemented an exhaustive tutorial, but running analysis steps like DTU or DAS requires more complex datasets and thus more preparation.
 
 This exhaustive use case involves multiple input files, two conditions (WT/KO) and almost all workflows available. We also include a "dummylevel" that is a placeholder for settings or other subdivisions of the WT level, to demonstrate that **MONSDA** can work on condition-trees of differing depth. 
 
@@ -153,7 +150,7 @@ We now fix the empty transcript-id tag by replacing it with the gene-id followed
     
     zcat Ecoli_trans.gtf.gz |perl -F'\t' -wlane 'print $_;if($_ !~/^#/){$start=$F[3];$end=$F[4];$dist=int(($end-$start)/5); $start+=$dist;$end-=$dist;print join("\t",@F[0..1])."\ttranscript\t$start\t$end\t".join("\t",@F[5..$#F])}'|perl -wlane 'BEGIN{%ids}{if($_=~/^#/ or $F[2] eq "gene"){print}else{$n=$F[9];$ids{$n}++;$F[11]=substr($n,0,-2)."_".$ids{$n}."\";";print join("\t",@F[0..7],join(" ",@F[8..$#F]))}}'|sed -e 's/CDS/transcript/g' -e 's/gene_synonym/gene_name/g'|gzip > Ecoli_trans_fix.gtf.gz
 
-From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. You may have ti install bedtools first, best do so in a dedicated conda environment via
+From this gtf we can now create a FASTA file by writing a helper BED file and using *BEDtools* to extract sequences from our genome FASTA file in strand specific manner. You may have to install *BEDtools* first, best do so in a dedicated conda environment via
 
 .. code-block:: bash
 
@@ -172,6 +169,8 @@ We then only need to clean up the name tag as follows:
     zcat ecoli.fa.gz|grep -P '^>'|cut -d " " -f1 > salmon_decoy
     sed -i.bak -e 's/>//g' salmon_decoy
 
+Should you encounter problems with you preinstalled versiond of grep, perl or sed, please try to also install them in a dedicated conda environment and activate/deactivate them accordingly.
+
 With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files and the corresponding salmon decoy file we can now also run the DTU workflow. The config file for the exhaustive run looks as follows:
 
 .. literalinclude:: ../../configs/tutorial_exhaustive.json
@@ -179,9 +178,9 @@ With these "Ecoli_trans.fa.gz" and "Ecoli_trans_fix.gtf.gz" files and the corres
 
 Note that "SETTINGS" now contains "GROUPS" which hold identifiers for the DE/DEU/DAS/DTU stages that will be used to define "COMPARABLES" that tell **MONSDA** which samples should be treated as replicates and compared to which other samples. By default this will make an all-vs-all comparison, in our case ctrl-vs-ko. Keeping this "GROUPS" setting separated from the condition-tree makes it possible to mix samples for different conditions for all pre- and processing steps and separating them for postprocessing without further struggle. This means that in this simple case we could have mixed all samples under one condition, as all other tool options stay the same and reference and annotation do not differ and would still be able to split by "GROUPS" for the DE/DEU/DAS steps. However, sometimes we need to compare data that has to be processed differently, e.g. mixing paired and single-ended reads, so we can apply different settings as needed for all workflow steps by simply splitting our condition-tree accordingly. Another addition to the "SETTINGS" key is the "IP" part. This is intended to be combined with the *PEAKS* workflow and tools that have certain preprocessing step requirements. For example our novel "scyphy" (Software for cyPhyRNA-Seq) workflow can work on 5-prime and 3-prime end enriched data, which can be indicated as "iCLIP" and "revCLIP" respectively. For this tutorial we will simulate "iCLIP" and set the corresponding key.
 
-Somewhat special is the DTU step. Here we use the pseudo-mapper salmon to quantify expression of transcripts. These transcripts are first defined in the preprocessing part of this tutorial chapter. As we can see the REFERENCE and ANNOTATION differ from what is listed in SETTINGS, so we make use of the ability of **MONSDA** to define those settings on a per-workflow basis. This will ALWAYS over-rule the settings made in SETTINGS. So we simply define the REFERENCE and ANNOTATION key for each tool within the regular tool setting part of the config and this will make sure that these files are used instead of the globally defined ones.
+Somewhat special is the DTU step. Here we use the pseudo-mapper *salmon* to quantify expression of transcripts. These transcripts are first defined in the preprocessing part of this tutorial chapter. As we can see the REFERENCE and ANNOTATION differ from what is listed in SETTINGS, so we make use of the ability of **MONSDA** to define those settings on a per-workflow basis. This will ALWAYS over-rule the settings made in SETTINGS. So we simply define the REFERENCE and ANNOTATION key for each tool within the regular tool setting part of the config and this will make sure that these files are used instead of the globally defined ones.
 
-Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12)
+Starting the run with 12 cores (defining more will be capped by the config file as MAXTHREADS is set to 12, I don't have to tell you that you can change that accordingly)
 
 .. code-block:: bash
 

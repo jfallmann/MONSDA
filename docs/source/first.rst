@@ -12,7 +12,7 @@ To successfully run an analysis pipeline, a few steps have to be followed:
 
 In general it is necessary to write a configuration file containing
 information on paths, files to process and settings beyond default for
-mapping tools and others.  The template on which analysis is based can
+mapping tools and others.  The template on which analysis is based on can
 be found in the **config** directory and will be explained in detail later.
 
 To create a working environment for this repository please install the

@@ -34,7 +34,7 @@ Run the Configurator with
 
  monsda_configure
 
-To see further options run the Configurator with the - -help flag
+To see further options run the *Configurator* with the - -help flag
 
 .. code-block::
 
@@ -60,7 +60,7 @@ Create a new project or config-file
 | **SET THREADS**                                                                                                           |
 +---------------------------------------------------------------------------------------------------------------------------+
 
-To create a new project or a new config-file, the Configurator will take you through all necessary steps. You will have to choose a working directory. Note, that your project folder will grow with your results, so choose a place with enough space.
+To create a new project or a new config-file, the *Configurator* will take you through all necessary steps. You will have to choose a working directory. Note, that your project folder will grow with your results, so choose a place with enough space.
 
 
 Modify an existing config-file
@@ -77,7 +77,7 @@ Modify an existing config-file
 | **SET WORKFLOWS**                                                                  |
 +------------------------------------------------------------------------------------+
 
-Select workflows not activated in an existing config-file. The Configurator will
+Select workflows not activated in an existing config-file. The *Configurator* will
 expand each condition. Afterwards you have to define settings for the new workflows.
 
 2. Remove workflows
@@ -89,7 +89,7 @@ expand each condition. Afterwards you have to define settings for the new workfl
 | **SELECT REMOVABLE WORKFLOWS**                                                     |
 +------------------------------------------------------------------------------------+
 
-The Configurator will show you all established workflows. After selecting the ones
+The *Configurator* will show you all established workflows. After selecting the ones
 to be removed it will delete them from the config-file for each condition.
 
 3. Add conditions
@@ -105,7 +105,7 @@ to be removed it will delete them from the config-file for each condition.
 | **SET WORKFLOWS**                                                                                   |
 +-----------------------------------------------------------------------------------------------------+
 
-You can add conditions in a similar way you created the condition-tree. But note, that you can't add sub-conditions to existing leafs. The configurator will expand the condition-tree for the settings-block and each workflow. Because now you have new option fields in the config-file the Configurator will ask you for copying existing workflow settings or to make new ones.
+You can add conditions in a similar way you created the condition-tree. But note, that you can't add sub-conditions to existing leafs. The *Configurator* will expand the condition-tree for the settings-block and each workflow. Because now you have new option fields in the config-file the *Configurator* will ask you to copy existing workflow settings or to make new ones.
 
 4. Remove conditions
 ********************
@@ -116,15 +116,15 @@ You can add conditions in a similar way you created the condition-tree. But note
 | **SELECT REMOVABLE CONDITIONS**                                               |
 +-------------------------------------------------------------------------------+
 
-The Configurator will offer you all conditions the condition-tree represents. After selecting one or several to be removed it will delete them in the settings-block and for each condition.
+The *Configurator* will offer you all conditions the condition-tree represents. After selecting one or several to be removed it will delete them in the settings-block and for each condition.
 
 ----
 
 Interrupt Configuration
 =======================
 
-It can happen, that the Configurator asks for entries, you haven't thought about yet.
-In this case you can interrupt the configuration and the **Configurator** will cache your entries.
+It can happen, that the *Configurator* asks for entries, you haven't thought about yet.
+In this case you can interrupt the configuration and the *Configurator* will cache your entries.
 A temporary backup file called **unfinished_config.pkl** is created for that. 
 
 In most cases you can even just abort the script, but to guarantee clean re-entry you should type
@@ -133,10 +133,10 @@ In most cases you can even just abort the script, but to guarantee clean re-entr
 
     exit
 
-When you start the Configurator again later and it finds the **unfinished_config.pkl** in the current directory, it will provide the option to continue the session.
+When you start the *Configurator* again later and it finds the **unfinished_config.pkl** in the current directory, it will provide the option to continue the session.
 
 Note, that the **unfinished_config.pkl** will always be overwritten. To avoid this, you can rename the file.
-You can than continue with the --session flag. Run the Configurator like this:
+You can than continue with the --session flag. Run the *Configurator* like this:
 
 .. code-block:: bash
 
@@ -170,9 +170,9 @@ Create Condition-Tree
   ============================================================
 
 MONSDA understands your experimental design by creating a condition-tree.
-The Configurator helps you to create it. To do this, the Configurator points to a condition in which you are allowed to add further sub-conditions.
+The *Configurator* helps you to create it. To do this, the *Configurator* points to a condition in which you are allowed to add further sub-conditions.
 In this way you can create a nested condition-tree.
-Note that each leaf of this tree represents a separate condition. later you will define the workflow settings for each of these conditions.
+Note that each leaf of this tree represents a separate condition, later you will define the workflow settings for each of these conditions.
 
 
 Sample Assignment:
@@ -212,8 +212,8 @@ Sample Assignment:
        7  >  Sample_c     in  path/to/wild-type/samples
        8  >  Sample_d     in  path/to/wild-type/samples
 
-The Configurator helps you to assign samples to conditions. If you have activated the FETCH workflow, it will ask you for SRA Accession Numbers.
-Otherwise you have to add paths where your samples are stored. The Configurator finds every file with ".fastq.gz" ending and presents it for assignment.
+The *Configurator* helps you to assign samples to conditions. If you have activated the **FETCH** workflow, it will ask you for SRA Accession Numbers.
+Otherwise you have to add paths where your samples are stored. The *Configurator* finds every file with ".fastq.gz" ending and presents it for assignment.
 At the same time, the condition-Tree is displayed with an arrow indicating the condition to which samples are assigned.
 
 
@@ -245,7 +245,7 @@ Make Settings for Conditions
 MONSDA can run the same workflow with different settings, differentiated by conditions.
 Therefore the config-file needs workflow settings for each condition you created.
 However you will often set the same settings. To avoid these repetitions during config-creation
-the configurator offers you to set several conditions at once.
+the *Configurator* offers you to set several conditions at once.
 In the example shown above, you would go through two setting loops.
 All sub-conditions of both "wild-type" and "knockout" are assigned the same settings.
 To change the conditions set simultaneously, you can loop through the possible selections by pressing enter.
