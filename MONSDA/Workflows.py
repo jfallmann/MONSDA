@@ -2764,9 +2764,8 @@ def nf_make_pre(
                     subname = toolenv + ".nf"
                     flowlist.append("FETCH")
                 elif subwork == "BASECALL":
-                    sys.exit("BASECALLING NOT YET IMPLEMENTED FOR NEXTFLOW")
-                    # subname = toolenv + ".nf" # To implement
-                    # flowlist.append("BASECALL")  # To implement
+                    subname = toolenv + ".nf"
+                    flowlist.append("BASECALL")
 
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
