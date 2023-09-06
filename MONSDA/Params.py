@@ -284,7 +284,7 @@ def download_samples(config):
 @check_run
 def basecall_samples(config):
     logid = scriptname + ".Params_basecall_samples: "
-    SAMPLES = [os.path.join(x) for x in sampleslong(config)]
+    SAMPLES = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
     log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
     check = [
         os.path.join("RAW", str(x).replace(".fast5", "") + "*.fast5") for x in SAMPLES
