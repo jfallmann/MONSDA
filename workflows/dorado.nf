@@ -1,7 +1,8 @@
 CALLERENV = get_always('CALLERENV')
 CALLERBIN = get_always('CALLERBIN')
 
-CALLERPARAMS = get_always('guppy_params_CALLER') ?: ''
+CALLERPARAMS = get_always('dorado_params_CALLER') ?: ''
+MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
 
 //CALLERS PROCESSES
 
@@ -35,7 +36,7 @@ process guppy{
     sortmem = '30%'
     
     """
-    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS --cpu_threads_per_caller ${task.cpus} --num_callers ${task.cpus} --compress_fastq -i TMP --input_file_list f5list -s . 2> $ol && cat TMP/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
+    mkdir -p TMP; ln -s *.pod5 TMP/. && $CALLERBIN download $MODELPARAMS && $CALLERBIN basecaller $CALLERPARAMS TMP/ 2> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP && rm -rf tmp.bam
     """
 }
 
@@ -44,13 +45,13 @@ workflow CALLERS{
 
     main:
 
-    F5SAMPLES = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../RAW/"+element+"*.fast5"
+    P5SAMPLES = SAMPLES.collect{
+        element -> return "${workflow.workDir}/../RAW/"+element+"*.pod5"
     }
 
-    f5samples_ch = Channel.fromPath(F5SAMPLES.sort())  
+    p5samples_ch = Channel.fromPath(P5SAMPLES.sort())  
     
-    guppy(f5samples_ch.collate(1))
+    dorado(p5samples_ch.collate(1))
 
     emit:
     fastq = guppy.out.fastq

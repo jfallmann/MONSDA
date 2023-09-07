@@ -289,6 +289,9 @@ def basecall_samples(config):
     check = [
         os.path.join("RAW", str(x).replace(".fast5", "") + "*.fast5") for x in SAMPLES
     ]
+    check.extend(
+        [os.path.join("RAW", str(x).replace(".pod5", "") + "*.pod5") for x in SAMPLES]
+    )
     RETSAMPLES = list()
     for i in range(len(check)):
         s = check[i]
@@ -297,14 +300,14 @@ def basecall_samples(config):
         log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
-            RETSAMPLES.extend([x.replace(".fast5", "") for x in f])
+            RETSAMPLES.extend([x.replace(".fast5", "").replace(".pod5", "") for x in f])
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
         sys.exit()
 
     log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
-    return RETSAMPLES
+    return list(set(RETSAMPLES))
 
 
 @check_run
