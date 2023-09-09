@@ -36,7 +36,7 @@ process guppy{
     sortmem = '30%'
     
     """
-    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS  -c $MODELPARAMS --compress_fastq -i TMP --input_file_list f5list -s . 2> $ol && cat TMP/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
+    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS  -c $MODELPARAMS --compress_fastq -i . --input_file_list f5list -s TMP 2> $ol && cat TMP/pass/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
     """
 }
 
