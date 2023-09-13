@@ -643,7 +643,6 @@ def make_pre(
 
     else:
         for condition in conditions:
-            subjobs = list()
             add = list()
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
@@ -685,6 +684,7 @@ def make_pre(
             if sconf is None:
                 continue
             for i in range(0, len(listoftools)):
+                subjobs = list()
                 toolenv, toolbin = map(str, listoftools[i])
                 log.debug(logid + f"Env:{toolenv}, Bin:{toolbin}")
                 if toolenv is None or toolbin is None:
@@ -699,7 +699,7 @@ def make_pre(
                     subname = toolenv + "_raw.smk"
 
                 # Add rulethemall based on chosen workflows
-                add.append(
+                subjobs.append(
                     "".join(
                         rulethemall(
                             subwork,
@@ -2380,7 +2380,7 @@ def nf_get_processes(config):
     preprocess = subworkflows = postprocess = []
 
     # Define workflow stages
-    pre = ["QC", "FETCH"]  # , 'BASECALL']
+    pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "QC", "DEDUP"]
     post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS"]
 

@@ -1,5 +1,5 @@
-CALLERENV = get_always('CALLERENV')
-CALLERBIN = get_always('CALLERBIN')
+CALLERENV = get_always('BASECALLENV')
+CALLERBIN = get_always('BASECALLBIN')
 
 CALLERPARAMS = get_always('dorado_params_CALLER') ?: ''
 MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
@@ -36,11 +36,11 @@ process guppy{
     sortmem = '30%'
     
     """
-    mkdir -p TMP; ln -s *.pod5 TMP/. && $CALLERBIN download $MODELPARAMS && $CALLERBIN basecaller $CALLERPARAMS TMP/ 2> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP && rm -rf tmp.bam
+    mkdir -p TMP; ln -s *.pod5 TMP/. && $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS TMP/ 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP && rm -rf tmp.bam
     """
 }
 
-workflow CALLERS{ 
+workflow BASECALL{ 
     take: collection
 
     main:

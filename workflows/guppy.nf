@@ -1,5 +1,5 @@
-CALLERENV = get_always('CALLERENV')
-CALLERBIN = get_always('CALLERBIN')
+CALLERENV = get_always('BASECALLENV')
+CALLERBIN = get_always('BASECALLBIN')
 
 CALLERPARAMS = get_always('guppy_params_BASECALL') ?: ''
 MODELPARAMS = get_always('guppy_params_MODEL') ?: ''
@@ -40,7 +40,7 @@ process guppy{
     """
 }
 
-workflow CALLERS{ 
+workflow BASECALL{ 
     take: collection
 
     main:
