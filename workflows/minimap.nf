@@ -101,7 +101,7 @@ process minimap_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "minimap_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $reads 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS -t ${task.cpus} $idx $read 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
         """
     }
 }

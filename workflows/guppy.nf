@@ -1,7 +1,8 @@
-CALLERENV = get_always('CALLERENV')
-CALLERBIN = get_always('CALLERBIN')
+CALLERENV = get_always('BASECALLENV')
+CALLERBIN = get_always('BASECALLBIN')
 
-CALLERPARAMS = get_always('guppy_params_CALLER') ?: ''
+CALLERPARAMS = get_always('guppy_params_BASECALL') ?: ''
+MODELPARAMS = get_always('guppy_params_MODEL') ?: ''
 
 //CALLERS PROCESSES
 
@@ -35,11 +36,11 @@ process guppy{
     sortmem = '30%'
     
     """
-    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS --cpu_threads_per_caller ${task.cpus} --num_callers ${task.cpus} --compress_fastq -i TMP --input_file_list f5list -s . 2> $ol && cat TMP/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
+    mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS  -c $MODELPARAMS --compress_fastq -i . --input_file_list f5list -s TMP 2> $ol && cat TMP/pass/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP
     """
 }
 
-workflow CALLERS{ 
+workflow BASECALL{ 
     take: collection
 
     main:

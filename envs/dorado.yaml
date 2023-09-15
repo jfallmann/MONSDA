@@ -1,0 +1,9 @@
+name: dorado
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - samtools =1.16.1
+  - pigz =2.6

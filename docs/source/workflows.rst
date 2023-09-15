@@ -6,7 +6,7 @@ Available Workflows
 
 FETCH -> Download from SRA
 
-BASECALL -> Call bases from FAST5
+BASECALL -> Call bases from FAST5 or POD5
 
 QC -> Quality Control of FASTQ/BAM files
 
@@ -65,6 +65,8 @@ Creates FASTQ files from ONT FAST5, Guppy needs to be installed locally
   | TOOL  | DESCRIPTION                                                                                                                                                                                                                                                                | ENV    | BIN                 | LINK                                                                   | INPUT  | OUTPUT  |
   +=======+============================================================================================================================================================================================================================================================================+========+=====================+========================================================================+========+=========+
   | Guppy | Data processing toolkit that contains Oxford Nanopore’s basecalling algorithms, and several bioinformatic post-processing features, such as barcoding/demultiplexing, adapter trimming, and alignment. Needs to be installed locally as no **conda** version is available  | guppy  | $PATH_TO_LOCAL_BIN  | `guppy <https://nanoporetech.com/nanopore-sequencing-data-analysis>`_  | FAST5  | FASTQ   |
+  +-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------+---------------------+------------------------------------------------------------------------+--------+---------+
+  | Dorado | Dorado is a high-performance, easy-to-use, open source basecaller for Oxford Nanopore reads. Needs to be installed locally as no **conda** version is available  | dorado  | $PATH_TO_LOCAL_BIN  | `dorado <https://github.com/nanoporetech/dorado>`_  | POD5  | FASTQ   |
   +-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------+---------------------+------------------------------------------------------------------------+--------+---------+
   
 
@@ -146,6 +148,8 @@ Maps sequences to reference genomes or transcriptomes
   | Segemehl2|3 bisulfite | Segemehl is a software to map short sequencer reads to reference genomes. This is the bisulfite mapping mode                                                  | segemehl2bisulfite/segemehl3bisulfite  | segemehl.x  | `segemehl <https://www.bioinf.uni-leipzig.de/Software/segemehl/>`_  | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | BWA          | BWA is a software package for mapping low-divergent sequences against a large reference genome                             | bwa                  | bwa mem     | `bwa <http://bio-bwa.sourceforge.net/>`_                            | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
+  +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+  | BWA2          | BWA is a software package for mapping low-divergent sequences against a large reference genome                             | bwa2                  | bwa2-mem     | `bwa2 <https://github.com/bwa-mem2/bwa-mem2>`_                            | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | BWA-Meth          | BWA-meth, Fast and accurante alignment of BS-Seq reads.                             | bwameth               | bwameth.py     | `bwa-meth <https://github.com/brentp/bwa-meth>`_                            | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+

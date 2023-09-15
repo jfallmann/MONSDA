@@ -19,33 +19,33 @@ rule generate_index:
     shell:  "if [[ -f \"{output.uidx}\/*\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\" ; else {params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"
 
 if paired == 'paired':
-rule mapping:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                index = rules.generate_index.output.uidx,
-                ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
-                unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  ""+MAPPERENV+".yaml"
-        threads: MAXTHREAD
-        params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
-                mapp = MAPPERBIN
-                #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-        shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+	rule mapping:
+		input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
+				r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
+				index = rules.generate_index.output.uidx,
+				ref = REFERENCE
+		output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
+				unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+				unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
+		log:    "LOGS/{combo}/{file}/mapping.log"
+		conda:  ""+MAPPERENV+".yaml"
+		threads: MAXTHREAD
+		params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
+				mapp = MAPPERBIN
+				#idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
+		shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
-rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                uidx = rules.generate_index.output.uidx[0],
-                ref = REFERENCE
-        output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
-        conda:  ""+MAPPERENV+".yaml"
-        threads: MAXTHREAD
-        params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp = MAPPERBIN
-                #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-        shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+	rule mapping:
+		input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+				uidx = rules.generate_index.output.uidx[0],
+				ref = REFERENCE
+		output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
+				unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
+		log:    "LOGS/{combo}/{file}/mapping.log"
+		conda:  ""+MAPPERENV+".yaml"
+		threads: MAXTHREAD
+		params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
+				mapp = MAPPERBIN
+				#idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
+		shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
