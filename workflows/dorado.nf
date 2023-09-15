@@ -6,7 +6,7 @@ MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
 
 //CALLERS PROCESSES
 
-process guppy{
+process dorado{
     conda "$CALLERENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -15,8 +15,6 @@ process guppy{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("_summary.txt") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("_telemetry.js") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".log") > 0)        "LOGS/BASECALL/${CONDITION}/${file(filename).getName()}"
     }
 
@@ -24,9 +22,7 @@ process guppy{
     path f5
 
     output:
-    path ".fastq.gz", emit: fastq
-    path "*_telemetry.js", emit: telemetry
-    path "*_summary.txt", emit: summary
+    path "*.fastq.gz", emit: fastq
     path "*.log", emit: log
 
     script:
@@ -36,7 +32,7 @@ process guppy{
     sortmem = '30%'
     
     """
-    mkdir -p TMP; ln -s *.pod5 TMP/. && $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS TMP/ 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP && rm -rf tmp.bam
+    $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS $MODELPARAMS . 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz 1> $oc 2>> $ol && rm -rf tmp.bam
     """
 }
 
@@ -54,6 +50,6 @@ workflow BASECALL{
     dorado(p5samples_ch.collate(1))
 
     emit:
-    fastq = guppy.out.fastq
-    logs = guppy.out.log
+    fastq = dorado.out.fastq
+    logs = dorado.out.log
 }
