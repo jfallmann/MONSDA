@@ -1,6 +1,6 @@
 # MONSDA
 
-[![Documentation Status](https://readthedocs.org/projects/monsda/badge/?version=latest)](https://monsda.readthedocs.io/en/latest/?badge=latest) [![Conda Install](https://anaconda.org/bioconda/monsda/badges/installer/conda.svg)](https://anaconda.org/bioconda/monsda/badges/installer/conda.svg) [![PyPI Latest Release](https://img.shields.io/pypi/v/MONSDA.svg)](https://pypi.org/project/MONSDA/) [![PRs](https://img.shields.io/badge/PRs-welcome-blue)](https://github.com/jfallmann/RNAmediator/pulls) [![DOI](https://zenodo.org/badge/185782433.svg)](https://zenodo.org/badge/latestdoi/185782433)
+[![Documentation Status](https://readthedocs.org/projects/monsda/badge/?version=latest)](https://monsda.readthedocs.io/en/latest/?badge=latest) [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/monsda/README.html) [![PyPI Latest Release](https://img.shields.io/pypi/v/MONSDA.svg)](https://pypi.org/project/MONSDA/) [![PRs](https://img.shields.io/badge/PRs-welcome-blue)](https://github.com/jfallmann/MONSDA/pulls) [![DOI](https://zenodo.org/badge/185782433.svg)](https://zenodo.org/badge/latestdoi/185782433)
 
 Welcome to MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis
 
