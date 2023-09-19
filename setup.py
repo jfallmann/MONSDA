@@ -96,7 +96,7 @@ setup(
         "isort>=5.9.2",
         "sphinx>=4.1.0",
     ],
-    python_requires=">=3.10.6",
+    python_requires=">=3.11",
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,
