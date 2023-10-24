@@ -61,40 +61,41 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import os
-import sys
-import re
-import glob
-import shutil
-import json
-import numpy as np
-import heapq
-import itertools
-from operator import itemgetter
-from natsort import natsorted
-import traceback as tb
-from io import StringIO
-from Bio import SeqIO
-import gzip
-import inspect
-import subprocess
 import collections
-from collections import defaultdict, OrderedDict
-import six
-import logging
-import hashlib
-from snakemake import load_configfile
-import functools
 import datetime
+import functools
+import glob
+import gzip
+import hashlib
+import heapq
+import inspect
+import itertools
+import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import traceback as tb
+from collections import OrderedDict, defaultdict
+from io import StringIO
+from operator import itemgetter
 
+import numpy as np
+import six
+from Bio import SeqIO
+from natsort import natsorted
+from snakemake import load_configfile
+
+import MONSDA.Utils as mu
+from MONSDA.Utils import check_run as check_run
 
 # cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 # for x in cmd_subfolder:
 # if x not in sys.path:
 #        sys.path.insert(0, x)
 
-import MONSDA.Utils as mu
-from MONSDA.Utils import check_run as check_run
 
 try:
     scriptname = (

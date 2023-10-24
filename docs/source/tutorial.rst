@@ -32,7 +32,7 @@ The corresponding config file looks as follows:
     :language: json
 
 
-This tells **MONSDA** version "1.1.0" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
+This tells **MONSDA** version "1.1.1" to run the workflows "FETCH" and "MAPPING" on the sample "SRR16324019". 
 
 "FETCH" will activate the environment "sra" and run the binary "fasterq-dump" with no extra options to fetch the sample from SRA.
 

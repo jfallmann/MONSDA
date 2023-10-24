@@ -1,21 +1,23 @@
 #! /usr/bin/env python3
 
-import os
-import sys
-import json
-import copy
-import readline
-import glob
-import re
-from snakemake import load_configfile
-from collections import defaultdict
 import argparse
-from functools import reduce
-import operator
+import copy
 import datetime
+import glob
+import json
+import operator
+import os
 import pickle
+import re
+import readline
+import sys
+from collections import defaultdict
+from functools import reduce
+
+from snakemake import load_configfile
 
 from MONSDA.Logger import *
+
 from . import _version
 
 __version__ = _version.get_versions()["version"]

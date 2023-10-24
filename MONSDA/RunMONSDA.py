@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
-import sys
+import shlex
 import shutil
+import subprocess
+import sys
 import traceback as tb
+
 from snakemake import load_configfile
 from snakemake.utils import min_version
-import argparse
-import subprocess
-import shlex
 
 scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
 from MONSDA.Logger import makelogdir, setup_logger
+
 from . import _version
 
 __version__ = _version.get_versions()["version"]
@@ -47,9 +49,9 @@ log = setup_logger(
     datefmt="%m-%d %H:%M",
 )
 
-import MONSDA.Workflows as mw
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
+import MONSDA.Workflows as mw
 
 
 # CODE
