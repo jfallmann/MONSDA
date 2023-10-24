@@ -47,7 +47,8 @@
     "BIN" : "",
     "sra": {
       "comment": {
-        "SRA":"SRA options here if any, paired is not required, will be resolved by rules. With the release of version 2.10.3 of sra-toolkit one has to configure to tool before running. Please do so and set the path to your config file as PREFETCH value. See https://github.com/ncbi/sra-tools/issues/291 for more info."
+        "PREFETCH":"SRA options here if any, paired is not required, will be resolved by rules. With the release of version 2.10.3 of sra-toolkit one has to configure to tool before running. Please do so and set the path to your config file as PREFETCH value. See https://github.com/ncbi/sra-tools/issues/291 for more info.",
+        "DOWNLOAD": "Additional options regarding download of SRA files, optional"
       },
       "OPTIONS": {
         "PREFETCH": "${HOME}/.ncbi/user-settings.mkfg",
