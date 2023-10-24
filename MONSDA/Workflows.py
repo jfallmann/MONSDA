@@ -61,33 +61,34 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import os
-import sys
-import re
-import glob
-import shutil
-import json
-import numpy as np
-import heapq
-import itertools
-from operator import itemgetter
-import traceback as tb
-from io import StringIO
-from Bio import SeqIO
-import gzip
-import inspect
-import subprocess
 import collections
-from collections import defaultdict, OrderedDict
-from pkg_resources import parse_version
-import logging
-import hashlib
-from snakemake import load_configfile
-import functools
 import datetime
+import functools
+import glob
+import gzip
+import hashlib
+import heapq
+import inspect
+import itertools
+import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import traceback as tb
+from collections import OrderedDict, defaultdict
+from io import StringIO
+from operator import itemgetter
 
-import MONSDA.Utils as mu
+import numpy as np
+from Bio import SeqIO
+from pkg_resources import parse_version
+from snakemake import load_configfile
+
 import MONSDA.Params as mp
+import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
 
 try:
@@ -522,7 +523,7 @@ def make_pre(
                 subjobs.append(
                     "\ncombo = '"
                     + str(envlist[i])
-                    + "'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = '|'.join(list(SAMPLES)),\n\tfile = '|'.join(list(samplecond(SAMPLES, config))),\n\tread = \"R1|R2\"\n"
+                    + "'\n\nwildcard_constraints:\n    combo = combo,\n    rawfile = '|'.join(list(SAMPLES)),\n    file = '|'.join(list(samplecond(SAMPLES, config))),\n    read = \"R1|R2\"\n"
                 )
                 subjobs.append("\n\n")
 
@@ -660,7 +661,7 @@ def make_pre(
             add.append(
                 'combo="'
                 + os.sep
-                + "\"\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = '|'.join(list(SAMPLES)),\n\tfile = '|'.join(list(samplecond(SAMPLES, config))),\n\tread = \"R1|R2\"\n"
+                + "\"\n\nwildcard_constraints:\n    combo = combo,\n    rawfile = '|'.join(list(SAMPLES)),\n    file = '|'.join(list(samplecond(SAMPLES, config))),\n    read = \"R1|R2\"\n"
             )
             add.append("\n\n")
 
@@ -830,7 +831,7 @@ def make_sub(
                 subjobs.append(
                     "\ncombo = '"
                     + str(envlist[i])
-                    + "'\n\nwildcard_constraints:\n\tcombo = combo,\n \trawfile = '|'.join(list(SAMPLES)),\n\tfile = '|'.join(list(samplecond(SAMPLES, config))),\n\tread = \"R1|R2\"\n"
+                    + "'\n\nwildcard_constraints:\n    combo = combo,\n    rawfile = '|'.join(list(SAMPLES)),\n    file = '|'.join(list(samplecond(SAMPLES, config))),\n    read = \"R1|R2\"\n"
                 )
                 subjobs.append("\n\n")
 
@@ -1013,7 +1014,7 @@ def make_sub(
 
             # Add variable for combination string
             add.append(
-                "wildcard_constraints:\n\tcombo = combo,\n \trawfile = '|'.join(list(SAMPLES)),\n\tfile = '|'.join(list(samplecond(SAMPLES, config))),\n\tread = \"R1|R2\"\n"
+                "wildcard_constraints:\n    combo = combo,\n    rawfile = '|'.join(list(SAMPLES)),\n    file = '|'.join(list(samplecond(SAMPLES, config))),\n    read = \"R1|R2\"\n"
             )
             add.append("\n\n")
 
@@ -1265,7 +1266,7 @@ def make_post(
                         + "\nscombo =      '"
                         + scombo
                         + "'\n"
-                        + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
+                        + '\nwildcard_constraints:\n    combo = combo,\n    scombo = scombo,\n    read = "R1|R2",\n    type = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                     )
                     subjobs.append("\n\n")
                     subconf.update(sconf)
@@ -1439,7 +1440,7 @@ def make_post(
                             + "\nscombo = '"
                             + scombo
                             + "'\n"
-                            + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
+                            + '\nwildcard_constraints:\n    combo = combo,\n    scombo = scombo,\n    read = "R1|R2",\n    type = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                         )
                         subjobs.append("\n\n")
                         subconf.update(sconf)
@@ -1595,7 +1596,7 @@ def make_post(
                     + "\nscombo = '"
                     + scombo
                     + "'\n"
-                    + '\nwildcard_constraints:\n\tcombo = combo,\n\tscombo = scombo,\n\tread = "R1|R2",\n\ttype = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
+                    + '\nwildcard_constraints:\n    combo = combo,\n    scombo = scombo,\n    read = "R1|R2",\n    type = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                 )
                 subjobs.append("\n\n")
                 subconf.update(sconf)
