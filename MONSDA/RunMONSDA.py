@@ -865,8 +865,6 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
-        print(f"MAIN:{scriptname}, {log}, {log.level}")
-
         log.info(
             logid
             + "MONSDA-CLI: "
