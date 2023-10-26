@@ -58,15 +58,25 @@ def makelogdir(logdir):
     return logdir
 
 
-def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, level='WARNING', delay=False):
+def setup_logger(
+    name,
+    log_file,
+    filemode="w",
+    logformat=None,
+    datefmt=None,
+    level="WARNING",
+    delay=False,
+):
     """Function setup as many loggers as you want"""
 
     logger = logging.getLogger(name)
-    if log_file != 'stdout' and log_file != 'stderr':
+    if log_file != "stdout" and log_file != "stderr":
         makelogdir(os.path.dirname(log_file))
         if not os.path.isfile(os.path.abspath(log_file)):
-            open(os.path.abspath(log_file), 'a').close()
-        handler = logging.FileHandler(os.path.abspath(log_file), mode=filemode, delay=delay)
+            open(os.path.abspath(log_file), "a").close()
+        handler = logging.FileHandler(
+            os.path.abspath(log_file), mode=filemode, delay=delay
+        )
     else:
         handler = logging.StreamHandler()
 
@@ -78,15 +88,15 @@ def setup_logger(name, log_file, filemode='w', logformat=None, datefmt=None, lev
     return logger
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         # set up logging to file
         log = setup_logger(
-            name='',
-            log_file='stderr',
-            logformat='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-            datefmt='%m-%d %H:%M',
-            level='WARNING',
+            name="",
+            log_file="stderr",
+            logformat="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+            datefmt="%m-%d %H:%M",
+            level="WARNING",
         )
 
     except Exception:
@@ -96,7 +106,7 @@ if __name__ == '__main__':
             exc_value,
             exc_tb,
         )
-        logging.error(''.join(tbe.format()))
+        logging.error("".join(tbe.format()))
 
 
 # Logger.py ends here

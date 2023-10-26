@@ -8,7 +8,6 @@ dependencies:
   - conda-libmamba-solver >=23.5.0
   - grep >=3.4
   - isort >=5.10.1
-  - mamba >=1.0.0
   - more-itertools >=8.12.0
   - natsort >=8.1.0
   - nextflow >=23.04.1

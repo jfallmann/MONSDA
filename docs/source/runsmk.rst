@@ -24,11 +24,13 @@ To start a job with **Snakemake**, which is the default, run
 
 
 or add additional arguments for **Snakemake** as you see fit,
-we currently recommend to set mamba as conda frontend and set a fixed directory to store environments (here conda_envs). However, using conda-libmamba-solver, the conda frontend can lead to an even better and more stable experience.
+**Snakemake** currently defaults to mamba as conda frontend. Please be aware that for that to work one should follow the recommendations at MAMBA_. However, using conda-libmamba-solver, the conda frontend can lead to an even better and more stable experience. We currently recommend to set a fixed directory to store environments (here conda_envs) and run the conda frontend.  
+
+.. _MAMBA: https://mamba.readthedocs.io/en/latest/mamba-installation.html
 
 .. code-block::
     
-    --conda-frontend mamba --conda-prefix path_to_conda_envs
+    --conda-frontend conda --conda-prefix path_to_conda_envs
 
 
 Nextflow

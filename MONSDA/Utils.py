@@ -61,34 +61,39 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import os
-import sys
-import re
-import glob
-import shutil
-import json
-import numpy as np
-import heapq
-import itertools
-from operator import itemgetter
-from natsort import natsorted
-import traceback as tb
-from io import StringIO
-from Bio import SeqIO
-import gzip
-import inspect
-import subprocess
 import collections
-from collections import defaultdict, OrderedDict
-import six
-import logging
-import hashlib
-from snakemake import load_configfile
-import functools
 import datetime
+import functools
+import glob
+import gzip
+import hashlib
+import heapq
+import inspect
+import itertools
+import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import traceback as tb
+from collections import OrderedDict, defaultdict
+from io import StringIO
+from operator import itemgetter
+
+import numpy as np
+import six
+from Bio import SeqIO
+from natsort import natsorted
+from snakemake import load_configfile
 
 try:
-    scriptname = os.path.basename(inspect.stack()[-1].filename).replace("Run", "").replace(".py", "")
+    scriptname = (
+        os.path.basename(inspect.stack()[-1].filename)
+        .replace("Run", "")
+        .replace(".py", "")
+    )
     log = logging.getLogger(scriptname)
 
     lvl = log.level if log.level else "INFO"
@@ -112,7 +117,7 @@ try:
     )
     log.addHandler(handler)
     log.setLevel(lvl)
-    
+
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -162,6 +167,24 @@ def rmempty(check):
         if os.path.isfile(f):
             ret.append(f)
     return ret
+
+
+@check_run
+def comment_remover(
+    textlist,
+):  # inspired by https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
+    def replacer(match):
+        s = match.group(0)
+        if s.startswith("/"):
+            pass  # Do nothing
+        else:
+            return s
+
+    pattern = re.compile(
+        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        re.DOTALL | re.MULTILINE,
+    )
+    return [re.sub(pattern, replacer, x) for x in textlist]
 
 
 ##############################
@@ -508,7 +531,6 @@ def isvalid(x=None):
 
 @check_run
 def isinvalid(x=None):
-
     if x:
         if x in ("None", "nan", "none", "NA", "NAN") or x is None or x is np.nan:
             return True
@@ -520,7 +542,6 @@ def isinvalid(x=None):
 
 @check_run
 def makeoutdir(outdir):
-
     if not os.path.isabs(outdir):
         outdir = os.path.abspath(outdir)
     if not os.path.exists(outdir):

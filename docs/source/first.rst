@@ -26,7 +26,7 @@ like so:
 The **envs** directory holds all the environments needed to run the pipelines in the **workflows** directory,
 these will be installed automatically when needed.
 
-For fast resolve of conda packages, we recommend mamba_ which is currently also the standard conda-frontend for Snakemake_. Alternatively **MONSDA** ships with conda-libmamba-solver_ which is a new (experimental) solver for the conda package manager and speeds up conda without the need to install mamba.
+For fast resolve of conda packages, we recommend conda-libmamba-solver_ which is a new solver for the conda package manager and speeds up conda without the need to install mamba  and is shipped with **MONSDA**. However, the user if free to use mamba_ which is currently also the standard conda-frontend for Snakemake_. 
 
 .. _mamba: https://mamba.readthedocs.io/en/latest/
 .. _conda-libmamba-solver: https://github.com/conda-incubator/conda-libmamba-solver
