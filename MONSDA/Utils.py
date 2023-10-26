@@ -169,6 +169,24 @@ def rmempty(check):
     return ret
 
 
+@check_run
+def comment_remover(
+    textlist,
+):  # inspired by https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
+    def replacer(match):
+        s = match.group(0)
+        if s.startswith("/"):
+            pass  # Do nothing
+        else:
+            return s
+
+    pattern = re.compile(
+        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        re.DOTALL | re.MULTILINE,
+    )
+    return [re.sub(pattern, replacer, x) for x in textlist]
+
+
 ##############################
 #########Python Subs##########
 ##############################

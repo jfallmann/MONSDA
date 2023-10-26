@@ -502,7 +502,7 @@ def make_pre(
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda:  "' + envpath, line)
                     if "include: " in line:
@@ -574,7 +574,7 @@ def make_pre(
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
-                            for line in smk.readlines():
+                            for line in mu.comment_remover(smk.readlines()):
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
@@ -593,7 +593,7 @@ def make_pre(
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
@@ -647,7 +647,7 @@ def make_pre(
             add = list()
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -715,7 +715,7 @@ def make_pre(
 
                 smkf = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
@@ -727,7 +727,7 @@ def make_pre(
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
@@ -810,7 +810,7 @@ def make_sub(
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -911,7 +911,7 @@ def make_sub(
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(smkf, "r") as smk:
-                            for line in smk.readlines():
+                            for line in mu.comment_remover(smk.readlines()):
                                 line = re.sub(condapath, 'conda: "' + envpath, line)
                                 if "include: " in line:
                                     line = fixinclude(
@@ -928,7 +928,7 @@ def make_sub(
                 if "MAPPING" in works:
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -944,7 +944,7 @@ def make_sub(
                 if "QC" in subworkflows:
                     smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -961,7 +961,7 @@ def make_sub(
                 # Append footer and write out subsnake and subconf per condition
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
                             line = fixinclude(
@@ -1002,7 +1002,7 @@ def make_sub(
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -1084,7 +1084,7 @@ def make_sub(
 
                     smkf = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -1101,7 +1101,7 @@ def make_sub(
             if "MAPPING" in subworkflows:
                 smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
                             line = fixinclude(
@@ -1112,7 +1112,7 @@ def make_sub(
                 if "QC" in subworkflows:
                     smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -1128,7 +1128,7 @@ def make_sub(
 
             smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -1193,7 +1193,7 @@ def make_post(
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -1275,7 +1275,7 @@ def make_post(
                     smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -1292,7 +1292,7 @@ def make_post(
                     # Append footer and write out subsnake and subconf per condition
                     smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                     with open(smkf, "r") as smk:
-                        for line in smk.readlines():
+                        for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
                             if "include: " in line:
                                 line = fixinclude(
@@ -1360,7 +1360,7 @@ def make_post(
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
@@ -1459,7 +1459,7 @@ def make_post(
                                 + "_trim.smk"
                             )
                         with open(smkf, "r") as smk:
-                            for line in smk.readlines():
+                            for line in mu.comment_remover(smk.readlines()):
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
@@ -1479,7 +1479,7 @@ def make_post(
                         # Append footer and write out subsnake and subconf per condition
                         smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                         with open(smkf, "r") as smk:
-                            for line in smk.readlines():
+                            for line in mu.comment_remover(smk.readlines()):
                                 line = re.sub(condapath, 'conda: "../', line)
                                 if "include: " in line:
                                     line = fixinclude(
@@ -1545,7 +1545,7 @@ def make_post(
             subconf = mu.NestedDefaultDict()
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
             with open(smkf, "r") as smk:
-                for line in smk.readlines():
+                for line in mu.comment_remover(smk.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda: "' + envpath, line)
                     if "include: " in line:
@@ -1612,7 +1612,7 @@ def make_post(
                         + "_trim.smk"
                     )
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
                             line = fixinclude(
@@ -1624,7 +1624,7 @@ def make_post(
                 # Append footer and write out subsnake and subconf per condition
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
                 with open(smkf, "r") as smk:
-                    for line in smk.readlines():
+                    for line in mu.comment_remover(smk.readlines()):
                         line = re.sub(condapath, 'conda: "' + envpath, line)
                         if "include: " in line:
                             line = fixinclude(
@@ -1717,13 +1717,13 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
     smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
     with open(smkf, "r") as smk:
-        for line in smk.readlines():
+        for line in mu.comment_remover(smk.readlines()):
             subjobs.append(line)
         subjobs.append("\n\n")
 
     smkf = os.path.abspath(os.path.join(workflowpath, "summary.smk"))
     with open(smkf, "r") as smk:
-        for line in smk.readlines():
+        for line in mu.comment_remover(smk.readlines()):
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
             line = re.sub(condapath, 'conda: "' + envpath, line)
             if "include: " in line:
@@ -1735,7 +1735,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
     smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
     with open(smkf, "r") as smk:
-        for line in smk.readlines():
+        for line in mu.comment_remover(smk.readlines()):
             subjobs.append(line)
         subjobs.append("\n\n")
 
@@ -1803,7 +1803,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         mu.makeoutdir("TRIMMED_FASTQ")
         smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
         with open(smkf, "r") as smk:
-            for line in smk.readlines():
+            for line in mu.comment_remover(smk.readlines()):
                 line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                 line = re.sub(condapath, 'conda:  "' + envpath, line)
                 if "include: " in line:
@@ -2501,7 +2501,7 @@ def nf_make_pre(
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
-                for line in nf.readlines():
+                for line in mu.comment_remover(nf.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
@@ -2576,7 +2576,7 @@ def nf_make_pre(
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
-                            for line in nf.readlines():
+                            for line in mu.comment_remover(nf.readlines()):
                                 line = re.sub(
                                     logfix, "loglevel='" + loglevel + "'", line
                                 )
@@ -2599,7 +2599,7 @@ def nf_make_pre(
                                 os.path.join(workflowpath, "multiqc.nf")
                             )
                             with open(nfi, "r") as nf:
-                                for line in nf.readlines():
+                                for line in mu.comment_remover(nf.readlines()):
                                     line = re.sub(
                                         logfix, "loglevel='" + loglevel + "'", line
                                     )
@@ -2628,7 +2628,7 @@ def nf_make_pre(
 
                         # nfi = os.path.abspath(os.path.join('MONSDA', 'workflows', 'footer.nf'))
                         # with open(nfi, 'r') as nf:
-                        #    for line in nf.readlines():
+                        #    for line in mu.comment_remover(nf.readlines()):
                         #        line = re.sub(logfix, 'loglevel=\''+loglevel+'\'', line)
                         #        line = re.sub(condapath, 'conda: "' + envpath, line)
                         #        subjobs.append(line)
@@ -2698,7 +2698,7 @@ def nf_make_pre(
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
-                for line in nf.readlines():
+                for line in mu.comment_remover(nf.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
@@ -2771,7 +2771,7 @@ def nf_make_pre(
 
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
-                    for line in nf.readlines():
+                    for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
@@ -2802,7 +2802,7 @@ def nf_make_pre(
                     flowlist.append("MULTIQC")
                     nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -2902,7 +2902,7 @@ def nf_make_sub(
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
-                for line in nf.readlines():
+                for line in mu.comment_remover(nf.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
@@ -3009,7 +3009,7 @@ def nf_make_sub(
                                     os.path.join(workflowpath, subname)
                                 )
                                 with open(nfi, "r") as nf:
-                                    for line in nf.readlines():
+                                    for line in mu.comment_remover(nf.readlines()):
                                         line = re.sub(
                                             condapath, 'conda "' + envpath, line
                                         )
@@ -3030,7 +3030,7 @@ def nf_make_sub(
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
-                            for line in nf.readlines():
+                            for line in mu.comment_remover(nf.readlines()):
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 if "include {" in line:
                                     line = fixinclude(
@@ -3073,7 +3073,7 @@ def nf_make_sub(
                             )
                         )
                         with open(nfi, "r") as nf:
-                            for line in nf.readlines():
+                            for line in mu.comment_remover(nf.readlines()):
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 if "include {" in line:
                                     line = fixinclude(
@@ -3092,7 +3092,7 @@ def nf_make_sub(
 
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -3114,7 +3114,7 @@ def nf_make_sub(
                     flowlist.append("MULTIQC")
                     nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -3232,7 +3232,7 @@ def nf_make_sub(
                 # Append footer and write out subflow and subconf per condition
                 # nfi = os.path.abspath(os.path.join(installpath, 'MONSDA', 'workflows', 'footer.nf'))
                 # with open(nfi,'r') as nf:
-                #    for line in nf.readlines():
+                #    for line in mu.comment_remover(nf.readlines()):
                 #        line = re.sub(condapath,'conda  "../', line)
                 #        subjobs.append(line)
                 #    subjobs.append('\n\n')
@@ -3351,7 +3351,7 @@ def nf_make_sub(
 
                     nfi = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -3387,7 +3387,7 @@ def nf_make_sub(
                     flowlist.append("TRIMMING")
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -3406,7 +3406,7 @@ def nf_make_sub(
 
                 nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                 with open(nfi, "r") as nf:
-                    for line in nf.readlines():
+                    for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
@@ -3425,7 +3425,7 @@ def nf_make_sub(
                 flowlist.append("MULTIQC")
                 nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
                 with open(nfi, "r") as nf:
-                    for line in nf.readlines():
+                    for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
@@ -3533,7 +3533,7 @@ def nf_make_sub(
             # SKIP as nextflow exits too soon otherwise: Append footer and write out subflow and subconf per condition
             # nfi = os.path.abspath(os.path.join(installpath, 'MONSDA', 'workflows', 'footer.nf'))
             # with open(nfi,'r') as nf:
-            #    for line in nf.readlines():
+            #    for line in mu.comment_remover(nf.readlines()):
             #        line = re.sub(condapath,'conda  "../', line)
             #        subjobs.append(line)
             #    subjobs.append('\n\n')
@@ -3599,7 +3599,7 @@ def nf_make_post(
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
-                for line in nf.readlines():
+                for line in mu.comment_remover(nf.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
@@ -3674,7 +3674,7 @@ def nf_make_post(
                     subname = toolenv + ".nf"
                     nfi = os.path.abspath(os.path.join(workflowpath, subname))
                     with open(nfi, "r") as nf:
-                        for line in nf.readlines():
+                        for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
                             if "include {" in line:
                                 line = fixinclude(
@@ -3761,7 +3761,7 @@ def nf_make_post(
 
                 nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
                 with open(nfi, "r") as nf:
-                    for line in nf.readlines():
+                    for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
@@ -3847,7 +3847,7 @@ def nf_make_post(
                         subname = toolenv + ".nf"
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
                         with open(nfi, "r") as nf:
-                            for line in nf.readlines():
+                            for line in mu.comment_remover(nf.readlines()):
                                 line = re.sub(condapath, 'conda "' + envpath, line)
                                 if "include {" in line:
                                     line = fixinclude(
@@ -3948,7 +3948,7 @@ def nf_make_post(
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
             with open(nfi, "r") as nf:
-                for line in nf.readlines():
+                for line in mu.comment_remover(nf.readlines()):
                     line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                     line = re.sub(condapath, 'conda "' + envpath, line)
                     if "include {" in line:
@@ -4001,7 +4001,7 @@ def nf_make_post(
                 subname = toolenv + ".nf"
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
                 with open(nfi, "r") as nf:
-                    for line in nf.readlines():
+                    for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(condapath, 'conda "' + envpath, line)
                         if "include {" in line:
                             line = fixinclude(
@@ -4153,7 +4153,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
 
     nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
     with open(nfi, "r") as nf:
-        for line in nf.readlines():
+        for line in mu.comment_remover(nf.readlines()):
             line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
             line = re.sub(condapath, 'conda "' + envpath, line)
             if "include {" in line:
@@ -4171,7 +4171,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
 
     nfi = os.path.abspath(os.path.join(workflowpath, "summary.nf"))
     with open(nfi, "r") as nf:
-        for line in nf.readlines():
+        for line in mu.comment_remover(nf.readlines()):
             line = re.sub(condapath, 'conda "' + envpath, line)
             if "include {" in line:
                 line = fixinclude(
