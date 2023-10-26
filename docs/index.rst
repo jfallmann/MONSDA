@@ -72,7 +72,7 @@ For details on **Snakemake** and **Nextflow** and their features please refer to
 In general it is necessary to write a configuration file containing workflows to execute, information on paths, files to process and settings beyond default for mapping tools and others.
 The template on which **MONSDA** is based on can be found in the **config** directory.
 
-For **MONSDA** to be as FAIR as possible, one needs to use **conda** or the faster drop-in replacement **mamba**. For details on either please refer to the corresponding conda_ or mamba_ manual.
+For **MONSDA** to be as FAIR as possible, one needs to use **conda** or the alternative **mamba**. For details on either please refer to the corresponding conda_ or mamba_ manual.
 
 .. _conda: https://docs.conda.io/en/latest/
 .. _mamba: https://mamba.readthedocs.io/en/latest/
