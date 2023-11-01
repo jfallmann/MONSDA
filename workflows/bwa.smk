@@ -20,7 +20,7 @@ rule generate_index:
 
 bwaalg = MAPPERBIN.split(' ')[1]
 
-if bwaalg == 'mem' or MAPPERBIN == 'bwa-mem2':
+if bwaalg == 'mem':
     if paired == 'paired':
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",

@@ -33,7 +33,7 @@ if paired == 'paired':
 		params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
 				mapp = MAPPERBIN
 				#idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-		shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+		shell: "{params.mapp} mem {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
 	rule mapping:
@@ -48,4 +48,4 @@ else:
 		params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
 				mapp = MAPPERBIN
 				#idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-		shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+		shell:  "{params.mapp} mem {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
