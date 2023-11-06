@@ -38,7 +38,7 @@ else:
         conda:  ""+FETCHENV+".yaml"
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
-        shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} {params.fpara} &> {log}"
+        shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}"
 
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
