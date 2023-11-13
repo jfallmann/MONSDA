@@ -29,7 +29,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('DEU', ""),
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
