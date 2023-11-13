@@ -1,11 +1,11 @@
 logid = 'drimseq_DTU.smk '
 DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
-log.info(logid+"DTUENV: "+str(DTUENV))
+log.debug(logid+"DTUENV: "+str(DTUENV))
 COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config(SAMPLES, config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
-log.info(logid+"COMPARISON: "+str(comparison))
+log.debug(logid+"COMPARISON: "+str(comparison))
 
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
