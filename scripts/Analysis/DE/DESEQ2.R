@@ -30,7 +30,8 @@ spike <- if (argsLen > 7) args[8] else ""
 print(args)
 
 ## FUNCS
-source("../../lib/_lib.R")
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ## set thread-usage
 BPPARAM <- MulticoreParam(workers = availablecores)

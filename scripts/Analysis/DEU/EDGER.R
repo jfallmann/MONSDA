@@ -1,4 +1,3 @@
-
 suppressPackageStartupMessages({
     require(BiocParallel)
     require(dplyr)
@@ -23,7 +22,8 @@ spike <- if (argsLen > 7) args[8] else ""
 print(args)
 
 ## FUNCS
-source("../../lib/_lib.R")
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
@@ -166,7 +166,6 @@ for (compare in comparisons[[1]]) {
     dev.off()
 
     tryCatch({
-
         # # determine contrast
         # A <- strsplit(contrast_groups[[1]][1], "\\+")
         # B <- strsplit(contrast_groups[[1]][2], "\\+")

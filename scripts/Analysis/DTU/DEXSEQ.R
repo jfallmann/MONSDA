@@ -23,7 +23,8 @@ print(args)
 
 
 ## FUNCS
-source("../../lib/_lib.R")
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ### SCRIPT
 # load gtf

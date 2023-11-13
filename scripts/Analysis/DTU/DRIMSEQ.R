@@ -21,7 +21,8 @@ filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = 1, min_feature
 print(args)
 
 ## FUNCS
-source("../../lib/_lib.R")
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ### SCRIPT
 # load gtf
@@ -131,7 +132,6 @@ for (contrast in comparisons[[1]]) {
 
     print(paste("Comparing ", contrast_name, sep = ""))
     tryCatch({
-
         # determine contrast
         A <- strsplit(contrast_groups[[1]][1], "\\+")
         B <- strsplit(contrast_groups[[1]][2], "\\+")
