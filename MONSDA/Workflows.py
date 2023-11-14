@@ -1571,6 +1571,8 @@ def make_post(
             sconf = listofconfigs[0]
             sconf.pop("PREDEDUP", None)  # cleanup
 
+            ###Here we need to merge sconf and listoftools and later process as one
+
             for a in range(0, len(listoftools)):
                 subjobs = list()
 
