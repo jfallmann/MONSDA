@@ -29,7 +29,7 @@ rule featurecount_unique:
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
-            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('DEU', ""),
+            cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -66,7 +66,7 @@ rule run_edger:
             compare = comparison,
             ref = ANNOTATION,
             deupara = lambda wildcards: tool_params(samplecond(SAMPLES, config)[0], None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('DEU', "")
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} {params.deupara} 2> {log}"
+    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.deupara}\' 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.themall.input.res

@@ -1,4 +1,3 @@
-
 suppressPackageStartupMessages({
     require(BiocParallel)
     require(dplyr)
@@ -22,17 +21,9 @@ spike <- if (argsLen > 7) args[8] else ""
 
 print(args)
 
-### FUNCS
-get_gene_name <- function(id, df) {
-    name_list <- df$gene[df["type"] == "gene" & df["gene_id"] == id]
-    if (length(unique(name_list)) == 1) {
-        return(name_list[1])
-    } else {
-        message(paste("WARNING: ambigous gene id: ", id))
-        return(paste(unique(name_list), sep = "|"))
-    }
-}
-
+## FUNCS
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
@@ -175,7 +166,6 @@ for (compare in comparisons[[1]]) {
     dev.off()
 
     tryCatch({
-
         # # determine contrast
         # A <- strsplit(contrast_groups[[1]][1], "\\+")
         # B <- strsplit(contrast_groups[[1]][2], "\\+")

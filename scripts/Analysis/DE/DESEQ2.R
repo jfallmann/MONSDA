@@ -29,16 +29,9 @@ spike <- if (argsLen > 7) args[8] else ""
 
 print(args)
 
-### FUNCS
-get_gene_name <- function(id, df) {
-    name_list <- df$gene[df["type"] == "gene" & df["gene_id"] == id]
-    if (length(unique(name_list)) == 1) {
-        return(name_list[1])
-    } else {
-        message(paste("WARNING: ambigous gene id: ", id))
-        return(paste(unique(name_list), sep = "|"))
-    }
-}
+## FUNCS
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ## set thread-usage
 BPPARAM <- MulticoreParam(workers = availablecores)
@@ -178,11 +171,11 @@ for (contrast in comparison[[1]]) {
     write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 
     tryCatch({
-
         # initialize empty objects
         res <- ""
         resOrdered <- ""
         res <- results(dds, contrast = c("condition", A, B), parallel = TRUE, BPPARAM = BPPARAM)
+        resn <- res
         res_shrink <- lfcShrink(dds = dds, coef = paste("condition", A, "vs", B, sep = "_"), res = res, type = "apeglm")
 
         # add comp object to list for image
@@ -203,13 +196,13 @@ for (contrast in comparison[[1]]) {
         write.table(as.data.frame(resOrdered), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
         # sort and output
-        res <- res[order(res$log2FoldChange), ]
+        res <- resn[order(resn$log2FoldChange), ]
 
         res$Gene <- lapply(rownames(res), function(x) {
             get_gene_name(x, gtf_gene)
         })
         res$Gene_ID <- rownames(res)
-        res <- res[, c(7, 6, 1, 2, 3, 4, 5)]
+        res <- res[, c(8, 7, 1, 2, 3, 5, 6)]
         res <- as.data.frame(apply(res, 2, as.character))
 
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
@@ -225,6 +218,7 @@ for (contrast in comparison[[1]]) {
             res <- ""
             resOrdered <- ""
             res <- results(dds_norm, contrast = c("condition", A, B), parallel = TRUE, BPPARAM = BPPARAM)
+            resn <- res
             res_shrink <- lfcShrink(dds = dds_norm, coef = paste("condition", A, "vs", B, sep = "_"), res = res, type = "apeglm")
 
             # add comp object to list for image
@@ -247,7 +241,7 @@ for (contrast in comparison[[1]]) {
 
 
             # sort and output
-            res <- res[order(res$log2FoldChange), ]
+            res <- resn[order(resn$log2FoldChange), ]
 
             res$Gene <- lapply(rownames(res), function(x) {
                 get_gene_name(x, gtf_gene)

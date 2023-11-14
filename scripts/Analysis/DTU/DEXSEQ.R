@@ -22,16 +22,9 @@ filter <- if (argsLen > 6) args[7] else "min_samps_feature_expr = 1, min_feature
 print(args)
 
 
-### FUNCS
-get_gene_name <- function(id, df) {
-    name_list <- df$gene[df["type"] == "gene" & df["gene_id"] == id]
-    if (length(unique(name_list)) == 1) {
-        return(name_list[1])
-    } else {
-        message(paste("WARNING: ambigous gene id: ", id))
-        return(paste(unique(name_list), sep = "|"))
-    }
-}
+## FUNCS
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+source(libp)
 
 ### SCRIPT
 # load gtf

@@ -18,7 +18,7 @@ else
     samtools view -H <(cat $in)|grep '@PG' | pigz -p $threads -f >> $out
 fi
 
-if [[ "$1" == *-bwa* ]] || [[ -n "$bwa" ]]
+if [[ "$1" == *bwa* ]] || [[ -n "$bwa" ]]
 then
     if [[ "$1" == *.gz* ]]
     then
