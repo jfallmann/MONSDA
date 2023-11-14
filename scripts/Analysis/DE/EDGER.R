@@ -25,7 +25,7 @@ spike <- if (argsLen > 7) args[8] else ""
 print(args)
 
 ## FUNCS
-libp <- paste0(gsub('/bin/conda', '/envs/monsda', Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
 source(libp)
 
 ### SCRIPT
@@ -220,7 +220,6 @@ for (contrast in comparison[[1]]) {
     dev.off()
 
     tryCatch({
-
         # determine contrast, only for complex cases, not needed for our pairwise comparisons now
         # A <- strsplit(contrast_groups[[1]][1], "\\+")
         # B <- strsplit(contrast_groups[[1]][2], "\\+")
@@ -247,7 +246,8 @@ for (contrast in comparison[[1]]) {
             get_gene_name(x, gtf_gene)
         })
         qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
+        res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
+        res$FDR <- p.adjust(res$PValue, method = "BH")
         res <- as.data.frame(apply(res, 2, as.character))
 
         # create results table
@@ -255,12 +255,12 @@ for (contrast in comparison[[1]]) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 

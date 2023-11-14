@@ -202,7 +202,7 @@ for (contrast in comparison[[1]]) {
             get_gene_name(x, gtf_gene)
         })
         res$Gene_ID <- rownames(res)
-        res <- res[, c(7, 6, 1, 2, 3, 4, 5)]
+        res <- res[, c(8, 7, 1, 2, 3, 5, 6)]
         res <- as.data.frame(apply(res, 2, as.character))
 
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
