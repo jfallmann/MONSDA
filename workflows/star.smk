@@ -64,7 +64,6 @@ else:
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                    #umi = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.dummy[0],
                     ref = REFERENCE
