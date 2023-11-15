@@ -91,11 +91,11 @@ process star_mapping{
         r1 = reads[1]
         r2 = reads[2]
         a = "Trimming_report.txt"
-        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")+"."
-        of = fn+'Aligned.out.sam'
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        of = fn+'.Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && at ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && cat ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
         """
     }
     else{
