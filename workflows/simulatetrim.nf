@@ -22,7 +22,7 @@ process trim{
     path "Trimming_report.txt", emit: rep
 
     script:
-    if (PAIRED == 'paired'){
+    if (PAIRED == 'paired' or PAIRED == 'singlecell'){
         r1 = reads[0]
         r2 = reads[1]
         a="Trimming_report.txt"
