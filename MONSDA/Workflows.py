@@ -1943,6 +1943,8 @@ def nf_fetch_params(
     paired = mp.checkpaired([SAMPLES[0]], config)
     if paired == "paired":
         log.debug("RUNNING NEXTFLOW IN PAIRED READ MODE")
+    elif paired == "singlecell":
+        log.debug("RUNNING NEXTFLOW IN Singlecell MODE")
 
     stranded = mp.checkstranded([SAMPLES[0]], config)
     if stranded != "":

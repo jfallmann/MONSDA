@@ -797,7 +797,7 @@ def samplecond(
                     tmplist.append(r)
         log.debug(logid + "TMPLIST: " + str(tmplist))
         paired = checkpaired([s], config)
-        if "paired" in paired:  # sub_dict(config['SETTINGS'], tmplist)['SEQUENCING']:
+        if any(p in paired for p in ["paired", "singlecell"]):
             s = re.sub(r"_[r|R|][1|2]\.", "", s)
         r = os.sep.join(tmplist)
         if r not in s:
