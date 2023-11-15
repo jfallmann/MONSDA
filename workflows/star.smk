@@ -29,7 +29,8 @@ if paired == 'paired':
                 dummy = rules.generate_index.output.dummy[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
@@ -39,7 +40,7 @@ if paired == 'paired':
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && paste <(cat {output.tmp}.Unmapped.out.mate1 | paste - - - -) <(cat {output.tmp}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > {output.unmapped} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
     if paired != 'singlecell':
@@ -68,7 +69,8 @@ else:
                     dummy = rules.generate_index.output.dummy[0],
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
+                    unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
+                    unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                     tmp = temp("TMP/STAROUT/{combo}/{file}")
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
@@ -81,4 +83,4 @@ else:
                     r1 = lambda wildcards, input: input.r1 if not '--soloBarcodeMate 1' in params.mpara else input.r2.replace('TRIMMED_','').replace('_trimmed.fastq', '.fastq'),
                     r2 = lambda wildcards, input: input.r2 if not '--soloBarcodeMate 1' in params.mpara else input.r1.replace('TRIMMED_','').replace('_trimmed.fastq', '.fastq').replace({combo}, ''),
                     tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-            shell: "{params.mapp} {params.stranded} {params.mpara} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {params.r1} {params.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && paste <(cat {output.tmp}.Unmapped.out.mate1 | paste - - - -) <(cat {output.tmp}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+            shell: "{params.mapp} {params.mpara} {params.stranded} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {params.r1} {params.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}""
