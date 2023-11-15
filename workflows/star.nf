@@ -118,14 +118,14 @@ process star_mapping{
             }
             read = reads[1]
             fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-            umis = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[1]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R1.fastq.gz")
+            umis = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
             of = fn+'.Aligned.sortedByCoord.out.bam'
             gf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_mapped.sam.gz")
             uf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_unmapped.fastq.gz")
             od = "${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}"
 
             """
-            $MAPBIN --soloType CB_UMI_Simple $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of ; paste <(cat ${fn}.Unmapped.out.mate1 | paste - - - -) <(cat ${fn}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > ${uf} && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done && mkdir -p $od && rsync -auv ${fn}.Solo.out $od
+            $MAPBIN $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of ; paste <(cat ${fn}.Unmapped.out.mate1 | paste - - - -) <(cat ${fn}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > ${uf} && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done && mkdir -p $od && rsync -auv ${fn}.Solo.out $od
             """
         }
     }

@@ -29,8 +29,7 @@ if paired == 'paired':
                 dummy = rules.generate_index.output.dummy[0],
                 ref = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
-                unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
-                unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
+                unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
@@ -40,7 +39,7 @@ if paired == 'paired':
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && gzip {output.tmp}.Unmapped.out.mate1 && mv {output.tmp}.Unmapped.out.mate1.gz {output.unmapped_r1} 2>> {log} && gzip {output.tmp}.Unmapped.out.mate2 && mv {output.tmp}.Unmapped.out.mate2.gz {output.unmapped_r2} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
+        shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && paste <(cat {output.tmp}.Unmapped.out.mate1 | paste - - - -) <(cat {output.tmp}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > {output.unmapped} && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp}"
 
 else:
     if paired != 'singlecell':
@@ -64,7 +63,7 @@ else:
     else:
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
-                    umi = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x.replace('R2','R1') for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                    umi = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x.replace('R2','R1') for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.dummy[0],
                     ref = REFERENCE
