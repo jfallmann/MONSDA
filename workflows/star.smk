@@ -64,7 +64,7 @@ else:
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
-                    umi = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                    #umi = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.dummy[0],
                     ref = REFERENCE
@@ -79,5 +79,7 @@ else:
                     mapp = MAPPERBIN,
                     anno = ANNOTATION,
                     pref = PREFIX,
+                    r1 = lambda wildcards, input: input.r1 if not '--soloBarcodeMate 1' in params.mpara else input.r2.replace('TRIMMED_','').replace('_trimmed.fastq', '.fastq')
+                    r2 = lambda wildcards, input: input.r2 if not '--soloBarcodeMate 1' in params.mpara else input.r1.replace('TRIMMED_','').replace('_trimmed.fastq', '.fastq').replace({combo}, '')
                     tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
-            shell: "{params.mapp} {params.stranded} {params.mpara} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.umi} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && paste <(cat {output.tmp}.Unmapped.out.mate1 | paste - - - -) <(cat {output.tmp}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
+            shell: "{params.mapp} {params.stranded} {params.mpara} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {params.r1} {params.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 && touch {output.tmp}.Unmapped.out.mate2 && paste <(cat {output.tmp}.Unmapped.out.mate1 | paste - - - -) <(cat {output.tmp}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
