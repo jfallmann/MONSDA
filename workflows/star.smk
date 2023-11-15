@@ -62,7 +62,7 @@ else:
             shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} touch {output.tmp}.Unmapped.out.mate && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}"
     else:
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     umi = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x.replace('R2','R1') for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.dummy[0],
