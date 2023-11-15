@@ -370,7 +370,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
             paired = checkpaired(
                 [os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config
             )
-            if paired is not None and "paired" in paired:
+            if paired is not None and "paired" in paired or "singlecell" in paired:
                 log.debug(
                     logid
                     + "SEARCHING: "
