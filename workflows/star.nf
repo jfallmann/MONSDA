@@ -116,9 +116,14 @@ process star_mapping{
             }else{
                 stranded = '--soloStrand Unstranded'
             }
-            read = reads[1]
-            fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-            umis = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
+            r1 = reads[1]
+            fn = file(r1).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+            r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
+            if (MAPPARAMS.contains('--soloBarcodeMate 1')){
+                t = r2
+                r2 = r1
+                r1 = t
+            }
             of = fn+'.Aligned.sortedByCoord.out.bam'
             gf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_mapped.sam.gz")
             uf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_unmapped.fastq.gz")
