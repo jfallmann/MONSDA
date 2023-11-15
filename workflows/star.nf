@@ -118,7 +118,7 @@ process star_mapping{
                 stranded = '--soloStrand Unstranded'
             }
             r1 = reads[1]
-            fn = file(r1).getSimpleName().replaceAll(/\QR1_trimmed\E/,"")
+            fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
             r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
             if (MAPPARAMS.contains('--soloBarcodeMate 1')){
                 t = r2
