@@ -107,7 +107,8 @@ log.info(logid+'Working on SAMPLES: '+str(SAMPLES))
 paired = checkpaired([SAMPLES[0]], config)
 if paired == 'paired':
     log.info('RUNNING SNAKEMAKE IN PAIRED READ MODE')
-
+elif paired == 'singlecell':
+    log.info('RUNNING SNAKEMAKE IN Singlecell MODE')
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))

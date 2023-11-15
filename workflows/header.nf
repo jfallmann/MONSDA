@@ -39,7 +39,7 @@ SETS = get_always('SETS') ?: null
 dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
 
 //SAMPLE CHANNELS
-if (PAIRED == 'paired'){
+if (PAIRED == 'paired' || PAIRED == 'singlecell'){
     RSAMPLES = SAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
     }

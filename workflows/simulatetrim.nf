@@ -22,7 +22,7 @@ process trim{
     path "Trimming_report.txt", emit: rep
 
     script:
-    if (PAIRED == 'paired'){
+    if (PAIRED == 'paired' || PAIRED == 'singlecell'){
         r1 = reads[0]
         r2 = reads[1]
         a="Trimming_report.txt"
@@ -49,7 +49,7 @@ workflow TRIMMING{
     if ( PREDEDUP == 'enabled' ){
         trim(collection)
     } else if ( collection.toList().contains('MONSDA.log') || collection.isEmpty()){
-        if (PAIRED == 'paired'){
+        if (PAIRED == 'paired' || PAIRED == 'singlecell'){
             trim(samples_ch.collate(2))
         }
         else{

@@ -370,7 +370,7 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
             paired = checkpaired(
                 [os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config
             )
-            if paired is not None and "paired" in paired:
+            if paired is not None and "paired" in paired or "singlecell" in paired:
                 log.debug(
                     logid
                     + "SEARCHING: "
@@ -797,7 +797,7 @@ def samplecond(
                     tmplist.append(r)
         log.debug(logid + "TMPLIST: " + str(tmplist))
         paired = checkpaired([s], config)
-        if "paired" in paired:  # sub_dict(config['SETTINGS'], tmplist)['SEQUENCING']:
+        if any(p in paired for p in ["paired", "singlecell"]):
             s = re.sub(r"_[r|R|][1|2]\.", "", s)
         r = os.sep.join(tmplist)
         if r not in s:

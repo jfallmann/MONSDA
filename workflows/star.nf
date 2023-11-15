@@ -70,9 +70,9 @@ process star_mapping{
     saveAs: {filename ->
         if (filename.indexOf("_unmapped") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)     "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
-        else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
+        else if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${filename.replaceAll(/\Q.out\E/,"")}.log"
         else if (filename.indexOf(".tab") >0)        "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
-        else null
+        else                                         "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
     }
 
     input:
@@ -80,7 +80,8 @@ process star_mapping{
 
     output:
     path "*_mapped.sam.gz", emit: maps
-    path "*.out", emit: logs
+    path "*.out", emit: outs
+    path "*.log", emit: logs
     path "*.tab", emit: sjtab
     path "*_unmapped.fastq.gz", includeInputs:false, emit: unmapped
 
@@ -91,11 +92,11 @@ process star_mapping{
         r1 = reads[1]
         r2 = reads[2]
         a = "Trimming_report.txt"
-        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")+"."
-        of = fn+'Aligned.out.sam'
+        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        of = fn+'.Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/.mate([1|2]).gz/_R\\1.gz/'| sed -r 's/\\.Unmapped.out_R([1|2]).gz/_R\\1_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && cat ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && for f in *.Log.*.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.*.out/.log/')"; done
         """
     }
     else{
@@ -105,7 +106,7 @@ process star_mapping{
             of = fn+'Aligned.out.sam'
             gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
             """
-            $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done
+            $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && for f in *.Log.*.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.*.out/.log/')"; done
             """
         }
         else{
@@ -116,16 +117,19 @@ process star_mapping{
             }else{
                 stranded = '--soloStrand Unstranded'
             }
-            read = reads[1]
-            fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-            umis = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[1]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R1.fastq.gz")
+            r1 = reads[1]
+            fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+            r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
+            if (MAPPARAMS.contains('--soloBarcodeMate 1')){
+                t = r2
+                r2 = r1
+                r1 = t
+            }
             of = fn+'.Aligned.sortedByCoord.out.bam'
             gf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_mapped.sam.gz")
-            uf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_unmapped.fastq.gz")
-            od = "${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}"
 
             """
-            $MAPBIN --soloType CB_UMI_Simple $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read $umis --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of ; paste <(cat ${fn}.Unmapped.out.mate1 | paste - - - -) <(cat ${fn}.Unmapped.out.mate2| paste - - - -) |tr \"\\t\" \"\\n\"| gzip > ${uf} && for f in *.Log.final.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.final.out/.out/')"; done && mkdir -p $od && rsync -auv ${fn}.Solo.out $od
+            $MAPBIN $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2  --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && at ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && for f in *.Log.*.out; do mv "\$f" "\$(echo "\$f" | sed 's/.Log.*.out/.log/')"; done
             """
         }
     }
