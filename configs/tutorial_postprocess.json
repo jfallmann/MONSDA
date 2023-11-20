@@ -1,6 +1,6 @@
 {
     "WORKFLOWS": "FETCH, QC, TRIMMING, MAPPING, DEDUP, TRACKS, PEAKS, DE, DEU, COUNTING",
-    "VERSION": "1.2.0",
+    "VERSION": "1.2.1",
     "BINS": "",
     "MAXTHREADS": "16",
     "SETTINGS": {
