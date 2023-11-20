@@ -80,7 +80,7 @@ and add additional arguments for ```Snakemake``` as you see fit.
 
 For a ```Nextflow``` run use
 ```
-monsda --Nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
+monsda --nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
 ```
 and add additional arguments for ```Nextflow``` as you see fit.
 
@@ -98,7 +98,7 @@ monsda -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD} --conda-fron
 ```
 or
 ```
-export NXF_EXECUTOR=slurm; monsda --Nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
+export NXF_EXECUTOR=slurm; monsda --nextflow -j ${THREADS} --configfile ${CONFIG}.json --directory ${PWD}
 ```
 respectively.
 
