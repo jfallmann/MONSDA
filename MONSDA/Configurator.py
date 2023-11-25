@@ -38,6 +38,7 @@ os.chdir(dir_path)
 template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
 none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
 comparable_workflows = ["DE", "DEU", "DAS", "DTU", "PEAKS"]
+quantifying_workflows = ["COUNTING"]
 IP_workflows = ["PEAKS"]
 index_prefix_workflows = ["MAPPING"]
 
@@ -1452,6 +1453,7 @@ def set_workflows(wf=None):
             prGreen(f"\nMAKE SETTINGS FOR {workflow}\n")
             opt_dict = NestedDefaultDict()
             tools_to_use = NestedDefaultDict()
+            features_to_use = NestedDefaultDict()
             #
             if (
                 "TOOLS" in project.baseDict[workflow].keys()
@@ -1484,6 +1486,38 @@ def set_workflows(wf=None):
                         "TOOLS"
                     ][opt_dict[int(1)]]
                     prCyan(f"   Tool: {', '.join(tools_to_use.keys())}")
+
+            if (
+                "FEATURES" in project.baseDict[workflow].keys()
+                and project.workflowsDict[workflow]["FEATURES"]
+            ):
+                features_to_use = project.workflowsDict[workflow]["FEATURES"]
+            if (
+                "FEATURES" in project.baseDict[workflow].keys()
+                and not project.workflowsDict[workflow]["FEATURES"]
+            ):
+                number = 1
+                for k in project.baseDict[workflow]["FEATURES"].keys():
+                    opt_dict[number] = k
+                    number += 1
+                if number > 2:
+                    print(f"   FEATURES:\n")
+                    guide.display(
+                        question='Select from these available FEATURES comma separated. Defines FEATURES that are used to count as key and their identifiers in the corresponding annotation as value, e.g "gene":"gene_id". IFF other features than those preselected are needed or they do not map to the standard identifiers (gene_id for exon and gene, please change them manually after config was created.)',
+                        options=opt_dict,
+                        proof=[str(i) for i in opt_dict.keys()],
+                    )
+                    guide.clear(len(opt_dict) + 5)
+                    for number in guide.answer.split(","):
+                        features_to_use[opt_dict[int(number)]] = project.baseDict[
+                            workflow
+                        ]["FEATURES"][opt_dict[int(number)]]
+                    prCyan(f"   FEATURES: {', '.join(features_to_use.keys())}")
+                else:
+                    features_to_use[opt_dict[int(1)]] = project.baseDict[workflow][
+                        "FEATURES"
+                    ][opt_dict[int(1)]]
+                    prCyan(f"   FEATURE: {', '.join(features_to_use.keys())}")
 
             if (
                 workflow == "PEAKS"
@@ -1612,6 +1646,8 @@ def set_workflows(wf=None):
                         project.finished_maplists.append(maplist)
                         guide.clear(4)
                         prCyan(f"      {option}:  {guide.answer}")
+                for feat, fid in features_to_use.items():
+                    project.workflowsDict[workflow]["FEATURES"][feat] = fid
                 project.finished_settings.append(setting)
                 project.finished_maplists = []
             project.finished_settings = []

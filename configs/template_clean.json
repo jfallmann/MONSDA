@@ -210,7 +210,7 @@
     },
     "FEATURES": {
       "exon": "Parent",
-      "gene": "ID"
+      "gene": "gene_id"
     },
     "id": {
       "condition": {

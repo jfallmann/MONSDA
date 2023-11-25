@@ -20,7 +20,7 @@
       "INDEX": "set path to index, default index to use for mapping with this settings",
       "PREFIX": "if needed, prefix for mapping software can be set here",
       "GTF": "set path to gtf, '.gtf.gz' ending expected, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
-      "GFF": "set path to gff, '.gff.gz' ending expected. THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
+      "GFF": "set path to gff, '.gff.gz' ending expected. THIS WILL BE USED WHEN GTF IS NOT AVAILABLE BUT ANNOTATION IS REQUIRED OR IF TOOL REQUIRES GFF FORMAT",
       "IP": "OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol"
     },
     "SAMPLES": [],
@@ -257,8 +257,8 @@
     "ENV" : "",
     "BIN" : "",
     "FEATURES": {
-      "exon": "Parent",
-      "gene": "ID"
+      "exon": "gene_id",
+      "gene": "gene_id"
     },
     "countreads": {
       "comment": {
