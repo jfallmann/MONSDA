@@ -85,7 +85,7 @@ from operator import itemgetter
 import numpy as np
 from Bio import SeqIO
 from pkg_resources import parse_version
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 import MONSDA.Params as mp
 import MONSDA.Utils as mu

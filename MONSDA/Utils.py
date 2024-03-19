@@ -86,7 +86,7 @@ import numpy as np
 import six
 from Bio import SeqIO
 from natsort import natsorted
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 try:
     scriptname = (
