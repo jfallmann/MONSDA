@@ -9,7 +9,8 @@ import sys
 import traceback as tb
 
 from snakemake import load_configfile
-from snakemake.utils import min_version
+
+# from snakemake.utils import min_version
 
 scriptname = os.path.basename(__file__).replace("Run", "").replace(".py", "")
 
@@ -919,7 +920,7 @@ def main():
             )
 
         if not knownargs.nextflow:
-            min_version("7.32.3")
+            mw.sm_check_version("8.9.0")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
@@ -933,7 +934,7 @@ def main():
             )
 
         else:
-            nf_min_version = "23.04.1"
+            nf_min_version = "23.10.1"
             nf_ver = mw.nf_check_version(nf_min_version)
             if nf_ver:
                 run_nextflow(

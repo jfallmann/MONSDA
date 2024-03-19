@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
-from glob import glob
-from collections import defaultdict
 import os
-import versioneer
+from collections import defaultdict
+from glob import glob
 
+from setuptools import find_packages, setup
+
+import versioneer
 
 NAME = "MONSDA"
 DESCRIPTION = (
-    "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
+    "MONSDA, Modular Organizer of Nextflow and Snakemake driven HTS Data Analysis"
 )
 # Set __version__ done by versioneer
 # exec(open("MONSDA/__init__.py").read())
@@ -90,13 +91,13 @@ setup(
     # install_requires=requires,
     install_requires=[
         "biopython>=1.78",
-        "snakemake>=7.32.3",
+        "snakemake>=8.9.0",
         "black>=21.5b2",
         "flake8>=3.8.3",
         "isort>=5.9.2",
         "sphinx>=4.1.0",
     ],
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,

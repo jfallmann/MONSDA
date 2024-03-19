@@ -439,13 +439,15 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                             tempconf["COUNTING"]["FEATURES"] = (
                                 config["COUNTING"]["FEATURES"]
                                 if config["COUNTING"].get("FEATURES")
-                                else mu.subset_dict(config[subwork], condition)[
-                                    "FEATURES"
-                                ]
-                                if mu.subset_dict(config[subwork], condition).get(
-                                    "FEATURES"
+                                else (
+                                    mu.subset_dict(config[subwork], condition)[
+                                        "FEATURES"
+                                    ]
+                                    if mu.subset_dict(config[subwork], condition).get(
+                                        "FEATURES"
+                                    )
+                                    else ""
                                 )
-                                else ""
                             )
                         if "COMPARABLE" in config[
                             subwork
@@ -463,8 +465,10 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
             )
             log.error("".join(tbe.format()))
 
-        configs.append(tempconf) if tempconf.get("SETTINGS", False) else configs.append(
-            None
+        (
+            configs.append(tempconf)
+            if tempconf.get("SETTINGS", False)
+            else configs.append(None)
         )
 
     log.debug(logid + str([toollist, configs]))
@@ -1890,6 +1894,21 @@ def nf_check_version(v):
 
 
 @check_run
+def sm_check_version(v):
+    logid = scriptname + ".sm_check_version: "
+
+    if shutil.which("snakemake"):
+        jobtorun = ["snakemake", "-v"]
+        out = subprocess.run(jobtorun, stdout=subprocess.PIPE)
+        check = out.stdout.decode("utf-8").split(" ")[-1]
+        if parse_version(v) < parse_version(check):
+            log.debug(logid + check)
+            return True
+    else:
+        return shutil.which("snakemake")
+
+
+@check_run
 def nf_fetch_params(
     configfile, condition=None, combi=None
 ):  # replaces header.smk for nextflow workflows
@@ -1907,9 +1926,11 @@ def nf_fetch_params(
     SAMPLES = (
         [os.path.join(x) for x in mp.sampleslong(config)]
         if not config.get("FETCH", False)
-        else [os.path.join(x) for x in mp.download_samples(config)]
-        if not config.get("BASECALL", False)
-        else [os.path.join(x) for x in mp.basecall_samples(config)]
+        else (
+            [os.path.join(x) for x in mp.download_samples(config)]
+            if not config.get("BASECALL", False)
+            else [os.path.join(x) for x in mp.basecall_samples(config)]
+        )
     )
     if len(SAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
