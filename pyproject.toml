@@ -1,10 +1,22 @@
 [project]
 name = "MONSDA"
 description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
+readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
-  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann".
+  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann",
   },
 ]
+maintainers = [
+  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann",
+  },
+]
+
+[project.urls]
+Homepage = "https://github.com/jfallmann/MONSDA"
+Documentation = "https://monsda.readthedocs.io/en/latest"
+Repository = "https://github.com/jfallmann/MONSDA"
+Issues = "https://github.com/jfallmann/MONSDA/issues"
 
 [build-system]
 build-backend = "setuptools.build_meta"
