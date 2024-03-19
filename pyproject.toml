@@ -1,7 +1,10 @@
 [project]
 name = "MONSDA"
 description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
-authors = ["Joerg Fallmann <fall@bioinf.uni-leipzig.de>"]
+authors = [
+  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann".
+  },
+]
 
 [build-system]
 build-backend = "setuptools.build_meta"
