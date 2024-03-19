@@ -1,5 +1,6 @@
 [project]
 name = "MONSDA"
+version = "0.0.0"
 description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
 readme = "README.md"
 license = { file = "LICENSE" }
