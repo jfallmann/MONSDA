@@ -6,6 +6,8 @@ readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
 maintainers = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
+dynamic = ["scripts", "dependencies", "requires-python"]
+
 
 [project.urls]
 Homepage = "https://github.com/jfallmann/MONSDA"
