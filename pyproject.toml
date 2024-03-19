@@ -7,13 +7,14 @@ authors = ["Joerg Fallmann <fall@bioinf.uni-leipzig.de>"]
 build-backend = "setuptools.build_meta"
 requires = [
   "setuptools>=42",
-  'tomli; python_version > "3.11"',
+  'tomli; python_version > "3.12"',
   "biopython>=1.78",
   "snakemake>=8.9.0",
   "black>=21.5b2",
   "flake8>=3.8.3",
   "isort>=5.9.2",
   "sphinx>=4.1.0",
+  "versioneer>=0.18",
 ] 
 
 [tool.versioneer]
