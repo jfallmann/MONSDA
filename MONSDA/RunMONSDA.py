@@ -8,7 +8,7 @@ import subprocess
 import sys
 import traceback as tb
 
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 # from snakemake.utils import min_version
 
@@ -68,7 +68,7 @@ def parseargs():
     )
     parser.add_argument(
         "-u",
-        "--use-conda",
+        "--software-deployment-method conda",
         action="store_true",
         default=True,
         help="Should conda be used, default True",
@@ -150,11 +150,11 @@ def run_snakemake(
 
         argslist = list()
         if useconda:
-            argslist.append("--use-conda")
+            argslist.append("--software-deployment-method conda")
         else:
             log.warning(
                 logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --use-conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
+                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --software-deployment-method conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
             )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
@@ -294,7 +294,7 @@ def run_snakemake(
                         rest = " ".join(argslist)
 
                         jobstorun.append(
-                            f"snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                            f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                         )
 
                     for job in jobstorun:
@@ -335,7 +335,7 @@ def run_snakemake(
                 rest = " ".join(argslist)
 
                 jobstorun.append(
-                    f"snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                    f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                 )
 
             for job in jobstorun:
@@ -381,7 +381,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                     )
 
                 for job in jobstorun:
@@ -411,7 +411,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} --use-conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                     )
 
                 for job in jobstorun:
@@ -459,7 +459,7 @@ def run_nextflow(
         else:
             log.warning(
                 logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call."
+                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --software-deployment-method conda option to your commandline call."
             )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))

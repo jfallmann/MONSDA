@@ -1,6 +1,6 @@
 import glob, os, sys, inspect, snakemake #, datetime
 
-###snakemake -n -j 20 --use-conda -s Workflow/workflows/mapping_dedup.smk --configfile Workflow/config_compare.json --directory ${PWD} --printshellcmds 2> run.log
+###snakemake -n -j 20 --software-deployment-method conda -s Workflow/workflows/mapping_dedup.smk --configfile Workflow/config_compare.json --directory ${PWD} --printshellcmds 2> run.log
 
 cmd_subfolder = os.path.join(os.path.dirname(os.path.realpath(os.path.abspath( inspect.getfile( inspect.currentframe() )) )),"../lib")
 if cmd_subfolder not in sys.path:
