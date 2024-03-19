@@ -4,11 +4,11 @@ description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Da
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
-  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann",
+  {name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com", github = "jfallmann"
   },
 ]
 maintainers = [
-  {name = "Joerg Fallmann", email="fallmann.joerg@gmail.com", github="jfallmann",
+  {name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com", github = "jfallmann",
   },
 ]
 
