@@ -1,12 +1,11 @@
 [project]
 name = "MONSDA"
-version = "0.0.0"
 description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
 maintainers = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
-dynamic = ["scripts", "dependencies", "requires-python"]
+dynamic = ["scripts", "dependencies", "requires-python", "version"]
 
 
 [project.urls]
