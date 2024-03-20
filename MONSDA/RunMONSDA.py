@@ -68,7 +68,7 @@ def parseargs():
     )
     parser.add_argument(
         "-u",
-        "--software-deployment-method conda",
+        "--use-conda",
         action="store_true",
         default=True,
         help="Should conda be used, default True",
