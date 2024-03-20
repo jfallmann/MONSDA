@@ -150,11 +150,11 @@ def run_snakemake(
 
         argslist = list()
         if useconda:
-            argslist.append("--software-deployment-method conda")
+            argslist.append("--conda-frontend conda --software-deployment-method conda")
         else:
             log.warning(
                 logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --software-deployment-method conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
+                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
             )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
