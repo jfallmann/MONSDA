@@ -14,7 +14,7 @@ import sys
 from collections import defaultdict
 from functools import reduce
 
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 from MONSDA.Logger import *
 

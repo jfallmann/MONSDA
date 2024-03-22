@@ -53,8 +53,8 @@ import json
 import shutil
 from collections import defaultdict
 import traceback as tb
-from snakemake import load_configfile
-from snakemake.utils import validate, min_version
+from snakemake.common.configfile import load_configfile
+from snakemake.utils import validate
 import argparse
 import subprocess
 import re

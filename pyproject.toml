@@ -1,0 +1,44 @@
+[project]
+name = "MONSDA"
+description = "MONSDA, Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
+maintainers = [{name = "Joerg Fallmann", email = "fallmann.joerg@gmail.com"}]
+dynamic = ["scripts", "dependencies", "requires-python", "version"]
+
+
+[project.urls]
+Homepage = "https://github.com/jfallmann/MONSDA"
+Documentation = "https://monsda.readthedocs.io/en/latest"
+Repository = "https://github.com/jfallmann/MONSDA"
+Issues = "https://github.com/jfallmann/MONSDA/issues"
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  'tomli; python_version >= "3.12.0"',
+  "biopython>=1.78",
+  "snakemake>=8.9.0",
+  "black>=21.5b2",
+  "flake8>=3.8.3",
+  "isort>=5.9.2",
+  "sphinx>=4.1.0",
+  "versioneer>=0.18",
+] 
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+tag_prefix = "v"
+versionfile_build = "MONSDA/_version.py"
+versionfile_source = "MONSDA/_version.py"
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git,*.pdf,*.svg,versioneer.py,*.css,test_*'
+check-hidden = true
+ignore-regex = '^\s*"image/\S+": ".*|\b[Mm]anuel[. ][Hh]oltgrewe\b'
+ignore-words-list = 'testin'
+

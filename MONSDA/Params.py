@@ -86,7 +86,7 @@ import numpy as np
 import six
 from Bio import SeqIO
 from natsort import natsorted
-from snakemake import load_configfile
+from snakemake.common.configfile import load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
@@ -477,9 +477,7 @@ def get_cutoff_as_string(config, subwork, cf):
     cutoff = (
         str(config[subwork]["CUTOFFS"].get(cf))
         if config[subwork].get("CUTOFFS")
-        else ".05"
-        if cf == "pval"
-        else "1.5"
+        else ".05" if cf == "pval" else "1.5"
     )
     log.info(logid + "CUTOFFS: " + str(cf) + ":" + cutoff)
     return cutoff
