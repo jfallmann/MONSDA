@@ -869,7 +869,7 @@ def main():
         knownargs.configfile = knownargs.config[0]
 
         if optionalconfig:
-            optionalargs.append(f"-c {optionalconfig}")
+            optionalargs += optionalconfig
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
