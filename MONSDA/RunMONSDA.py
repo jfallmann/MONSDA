@@ -871,13 +871,7 @@ def main():
         log.setLevel(knownargs.loglevel)
 
         log.debug(
-            logid
-            + f"KNOWNARGS: 
-             {knownargs}
-             {type(knownargs)}
-             OPTIONALARGS: 
-             {optionalargs}
-             {type(optionalargs)}"
+            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
         )
 
         if optionalconfig:
