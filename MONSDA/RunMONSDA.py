@@ -865,10 +865,15 @@ def main():
         args = parseargs()
         knownargs = args[0]
         optionalargs = args[1:]
+        log.debug(
+            logid
+            + "KNOWNARGS: "
+            + str(knownargs)
+            + " OPTIONALARGS: "
+            + str(optionalargs)
+        )
         optionalconfig = knownargs.config[1]
-        knownargs.configfile = knownargs.config[0]
-
-        print(optionalargs)
+        knownargs.configfile = str(knownargs.config[0])
 
         if optionalconfig:
             optionalargs[0].append(f"-c {optionalconfig}")
