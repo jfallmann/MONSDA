@@ -60,7 +60,13 @@ def parseargs():
     parser = argparse.ArgumentParser(
         description="Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
     )
-    parser.add_argument("-c", "--config", type=str, nargs='+', help="Configuration json to read and optional config for nextflow")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        nargs="+",
+        help="Configuration json to read and optional config for nextflow",
+    )
     parser.add_argument(
         "-d", "--directory", type=str, default="", help="Working Directory"
     )
@@ -461,7 +467,6 @@ def run_nextflow(
             )
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
-            if 
             argslist.extend(optionalargs)
 
         if clean:
@@ -864,7 +869,7 @@ def main():
 
         if optionalconfig:
             optionalargs.append(f"-c {optionalconfig}")
-            
+
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
 
