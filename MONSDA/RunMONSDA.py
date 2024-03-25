@@ -870,15 +870,15 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
-        log.debug(
-            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
-        )
-
         if optionalconfig:
-            tuple(list(optionalargs[0].append(f"-c={optionalconfig}")))
+            optionalargs.__add__(optionalconfig)
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
+
+        log.debug(
+            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
+        )
 
         log.info(
             logid
