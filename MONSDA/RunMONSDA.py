@@ -872,12 +872,12 @@ def main():
 
         log.debug(
             logid
-            + "KNOWNARGS: "
-            + str(knownargs)
-            + type(knownargs)
-            + " OPTIONALARGS: "
-            + str(optionalargs)
-            + type(optionalargs)
+            + f"KNOWNARGS: 
+             {knownargs}
+             {type(knownargs)}
+             OPTIONALARGS: 
+             {optionalargs}
+             {type(optionalargs)}"
         )
 
         if optionalconfig:
