@@ -865,6 +865,9 @@ def main():
         args = parseargs()
         knownargs = args[0]
         optionalargs = args[1:]
+
+        log.setLevel(knownargs.loglevel)
+
         log.debug(
             logid
             + "KNOWNARGS: "
@@ -880,8 +883,6 @@ def main():
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
-
-        log.setLevel(knownargs.loglevel)
 
         log.info(
             logid
