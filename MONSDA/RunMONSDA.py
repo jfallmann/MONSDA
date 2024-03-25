@@ -65,6 +65,7 @@ def parseargs():
         "--config",
         type=str,
         nargs="+",
+        action="append",
         help="Configuration json to read and optional config for nextflow",
     )
     parser.add_argument(
