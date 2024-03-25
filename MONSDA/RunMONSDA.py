@@ -866,7 +866,7 @@ def main():
         knownargs = args[0]
         optionalargs = args[1:]
         optionalconfig = tuple(knownargs.config[1])
-        knownargs.configfile = str(knownargs.config[0])
+        knownargs.configfile = str(knownargs.config[0].pop())
 
         log.setLevel(knownargs.loglevel)
 
