@@ -19,6 +19,7 @@ dependencies:
   - scipy=1.12.0
   - snakemake=8.9.0
   - snakemake-executor-plugin-slurm=0.4.2
+  - snakemake-executor-plugin-cluster-generic=1.0.9
   - snakemake-interface-common=1.17.1
   - snakemake-interface-executor-plugins=9.0.0
   - snakemake-interface-report-plugins=1.0.0
