@@ -870,7 +870,7 @@ def main():
 
         knownargs.configfile = str(knownargs.config[0].pop())
 
-        if knownargs.config[1]:
+        if len(knownargs.config) > 0:
             optionalargs[0].extend(list(["-c", str(knownargs.config[1].pop())]))
 
         log.debug(
