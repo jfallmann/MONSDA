@@ -875,7 +875,7 @@ def main():
 
         if knownargs.config[1]:
             oa = list(("config", str(knownargs.config[1].pop())))
-            log.debug(logid + "OA: " + str(oa)
+            log.debug(f"{logid} OA: {str(oa)}")
             optionalargs = tuple((list(optionalargs).append(oa)))
 
         if knownargs.version:
