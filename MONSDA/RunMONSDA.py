@@ -61,7 +61,12 @@ def parseargs():
         description="Modular Organizer of Nextflow and Snakemake driven hts Data Analysis"
     )
     parser.add_argument(
-        "-c", "--configfile", type=str, help="Configuration json to read"
+        "-c",
+        "--config",
+        type=str,
+        nargs="+",
+        action="append",
+        help="Configuration json to read and optional config for nextflow",
     )
     parser.add_argument(
         "-d", "--directory", type=str, default="", help="Working Directory"
@@ -861,10 +866,19 @@ def main():
         knownargs = args[0]
         optionalargs = args[1:]
 
+        log.setLevel(knownargs.loglevel)
+
+        knownargs.configfile = str(knownargs.config[0].pop())
+
+        if knownargs.config[1]:
+            optionalargs[0].extend(list(["-c", str(knownargs.config[1].pop())]))
+
+        log.debug(
+            f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
+        )
+
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
-
-        log.setLevel(knownargs.loglevel)
 
         log.info(
             logid
