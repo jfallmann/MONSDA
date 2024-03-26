@@ -865,13 +865,12 @@ def main():
         args = parseargs()
         knownargs = args[0]
         optionalargs = args[1:]
-        optionalconfig = tuple(knownargs.config[1])
         knownargs.configfile = str(knownargs.config[0].pop())
 
         log.setLevel(knownargs.loglevel)
 
-        if optionalconfig:
-            optionalargs.__add__(optionalconfig)
+        if knownargs.config[0]:
+            optionalargs.__add__(knownargs.config[0].pop())
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
