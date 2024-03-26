@@ -934,7 +934,7 @@ def main():
             )
 
         if not knownargs.nextflow:
-            mw.sm_check_version("8.9.0")
+            mw.sm_check_version("8.10.0")
             run_snakemake(
                 knownargs.configfile,
                 knownargs.directory,
