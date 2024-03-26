@@ -865,20 +865,20 @@ def main():
         args = parseargs()
         knownargs = args[0]
         optionalargs = args[1:]
-        knownargs.configfile = str(knownargs.config[0].pop())
 
         log.setLevel(knownargs.loglevel)
-
-        if knownargs.config[1]:
-            oa = tuple(("config", str(knownargs.config[1].pop())))
-            tuple((list(optionalargs).append(oa)))
-
-        if knownargs.version:
-            sys.exit("MONSDA version " + __version__)
-
         log.debug(
             f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
         )
+
+        knownargs.configfile = str(knownargs.config[0].pop())
+
+        if knownargs.config[1]:
+            oa = tuple(("config", str(knownargs.config[1].pop())))
+            optionalargs.append(oa)
+
+        if knownargs.version:
+            sys.exit("MONSDA version " + __version__)
 
         log.info(
             logid
