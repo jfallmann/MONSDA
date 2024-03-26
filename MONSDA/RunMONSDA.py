@@ -869,8 +869,8 @@ def main():
 
         log.setLevel(knownargs.loglevel)
 
-        if knownargs.config[0]:
-            optionalargs.__add__(knownargs.config[0].pop())
+        if knownargs.config[1]:
+            optionalargs.__add__(knownargs.config[1].pop())
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
