@@ -875,7 +875,7 @@ def main():
 
         if knownargs.config[1]:
             oa = list(("config", str(knownargs.config[1].pop())))
-            tuple((list(optionalargs).append(oa)))
+            optionalargs = tuple((list(optionalargs).append(oa)))
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
