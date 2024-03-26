@@ -871,7 +871,7 @@ def main():
         knownargs.configfile = str(knownargs.config[0].pop())
 
         if knownargs.config[1]:
-            oa = tuple(("config", str(knownargs.config[1].pop())))
+            oa = tuple((["-c", str(knownargs.config[1].pop())]))
             log.debug(f"{logid} OA: {str(oa)}")
             optionalargs += oa
 
