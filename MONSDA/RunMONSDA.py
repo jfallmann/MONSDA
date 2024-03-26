@@ -871,12 +871,14 @@ def main():
         knownargs.configfile = str(knownargs.config[0].pop())
 
         if knownargs.config[1]:
-            oa = tuple((["-c", str(knownargs.config[1].pop())]))
+            oa = tuple(
+                list("-c", str(knownargs.config[1].pop())),
+            )
             log.debug(f"{logid} OA: {str(oa)}")
             optionalargs += oa
 
         log.debug(
-            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
+            f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
         )
 
         if knownargs.version:
