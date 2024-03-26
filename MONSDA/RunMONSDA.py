@@ -874,8 +874,8 @@ def main():
         knownargs.configfile = str(knownargs.config[0].pop())
 
         if knownargs.config[1]:
-            oa = tuple(("config", str(knownargs.config[1].pop())))
-            optionalargs.append(oa)
+            oa = list("config", str(knownargs.config[1].pop()))
+            tuple((list(optionalargs).append(oa)))
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
