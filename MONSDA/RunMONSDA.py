@@ -867,9 +867,6 @@ def main():
         optionalargs = args[1:]
 
         log.setLevel(knownargs.loglevel)
-        log.debug(
-            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
-        )
 
         knownargs.configfile = str(knownargs.config[0].pop())
 
@@ -877,6 +874,10 @@ def main():
             oa = tuple(("config", str(knownargs.config[1].pop())))
             log.debug(f"{logid} OA: {str(oa)}")
             optionalargs += oa
+
+        log.debug(
+            f"{logid} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
+        )
 
         if knownargs.version:
             sys.exit("MONSDA version " + __version__)
