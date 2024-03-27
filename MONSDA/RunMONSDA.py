@@ -871,7 +871,8 @@ def main():
         knownargs.configfile = str(knownargs.config[0].pop())
 
         if len(knownargs.config) > 1:
-            optionalargs[0].extend(list(["-c", str(knownargs.config[1].pop())]))
+            for i in range(1, len(knownargs.config)):
+                optionalargs[0].extend(list(["-c", str(knownargs.config[i].pop())]))
 
         log.debug(
             f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
