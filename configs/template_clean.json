@@ -2,7 +2,7 @@
   "WORKFLOWS": "",
   "BINS": "",
   "MAXTHREADS": "20",
-  "VERSION": "1.2.3",
+  "VERSION": "1.2.3.1",
   "SETTINGS": {
     "id": {
       "condition": {
