@@ -27,7 +27,7 @@ my ( @dirs, @beds );
 BEGIN{
 	$VERBOSE=0;
 	$eversion = "V79";
-	$pversion = "1.2.3.1";
+	$pversion = "1.2.4";
 	$dversion = "79";
 
 	pod2usage(-verbose => 0)

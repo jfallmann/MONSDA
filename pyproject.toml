@@ -25,7 +25,7 @@ requires = [
   "flake8>=3.8.3",
   "isort>=5.9.2",
   "sphinx>=4.1.0",
-  "versioneer>=0.18",
+  "versioneer>=0.20",
 ] 
 
 [tool.versioneer]
