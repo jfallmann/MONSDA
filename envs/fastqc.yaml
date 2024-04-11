@@ -3,6 +3,5 @@ channels:
 - bioconda
 - conda-forge
 dependencies:
-- multiqc =1.14
-- fastqc =0.11.9
-- python =3.9
+- multiqc =1.21
+- fastqc =0.12.1
