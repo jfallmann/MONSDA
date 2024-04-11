@@ -3,7 +3,7 @@
 in=$1
 out=$2
 threads=$3
-bwa="${4:-}"
+specialmappers="${4:-}"
 
 if [[ "$1" == *.gz* ]]
 then
@@ -18,13 +18,21 @@ else
     samtools view -H <(cat $in)|grep '@PG' | pigz -p $threads -f >> $out
 fi
 
-if [[ "$1" == *bwa* ]] || [[ -n "$bwa" ]]
+if [[ "$1" == *bwa* ]] || [[ "$specialmappers" == *bwa* ]]
 then
     if [[ "$1" == *.gz* ]]
     then
         zcat $in | grep -v "^@"| grep -v -e $'\t''XA:Z:' -e $'\t''SA:Z:' | pigz -p $threads -f >> $out
     else
         cat $in | grep -v "^@"| grep -v -e $'\t''XA:Z:' -e $'\t''SA:Z:' | pigz -p $threads -f >> $out
+    fi
+elif [[ "$1" == *minimap* ]] || [[ "$specialmappers" == *minimap* ]]
+then
+    if [[ "$1" == *.gz* ]]
+    then
+        zcat $in | grep -v "^@"| perl -wlane 'print if $F[4] >=60'| pigz -p $threads -f >> $out
+    else
+        cat $in | grep -v "^@"| perl -wlane 'print if $F[4] >=60' | pigz -p $threads -f >> $out
     fi
 else
     if [[ "$1" == *.gz* ]]
