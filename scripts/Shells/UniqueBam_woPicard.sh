@@ -11,12 +11,12 @@ samtools view -H ${in} | grep '@RG' >> ${in}_head
 samtools view -H ${in} | grep '@PG' >> ${in}_head
 
 
-if [[ "${in}" == *bwa* ]] || [[ "$specialmappers" == *bwa* ]]
+if [[ "$1" == *bwa* ]] || [[ "$specialmappers" == *bwa* ]]
 then
     cat ${in}_head <(samtools view --threads ${threads} -F 4 ${in} | grep -v "^@"| grep -v -e $'\t''XA:Z:' -e $'\t''SA:Z:') | samtools view --threads ${threads} -hb - > ${out}
 elif [[ "$1" == *minimap* ]] || [[ "$specialmappers" == *minimap* ]]
 then
-    cat ${in}_head <(samtools view --threads ${threads} -F 4 ${in} | grep -v "^@" | perl -wlane 'print if $F[4] >=60' | samtools view --threads ${threads} -hb - > ${out}
+    cat ${in}_head <(samtools view --threads ${threads} -F 4 ${in} | grep -v "^@" | perl -wlane 'print if $F[4] >=60') | samtools view --threads ${threads} -hb - > ${out}
 else
     cat ${in}_head <(samtools view --threads ${threads} -F 4 ${in} | grep -v "^@" | grep -w -P "NH:i:1|tp:A:P") | samtools view --threads ${threads} -hb - > ${out}
 fi
