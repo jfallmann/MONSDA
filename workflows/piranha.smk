@@ -48,8 +48,8 @@ for file in samplecond(SAMPLES, config):
 if not all(checklist):
     if not stranded or (stranded == 'fr' or stranded == 'ISF'):
         rule BamToBed:
-            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bam", scombo=scombo)
-            output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
+            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             threads: 1
@@ -58,8 +58,8 @@ if not all(checklist):
 
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
-            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bam", scombo=scombo)
-            output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
+            input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
+            output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             threads: 1
