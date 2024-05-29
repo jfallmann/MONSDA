@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
     require(dplyr)
     require(GenomeInfoDb)
     require(apeglm)
+    require(EnhancedVolcano)
 })
 
 options(echo = TRUE)
@@ -212,6 +213,32 @@ for (contrast in comparison[[1]]) {
         DESeq2::plotMA(res_shrink)
         dev.off()
 
+        # plotVolcano
+        pdf(
+            file = paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure_Volcano.pdf", sep = "_"), width = 15, height = 10
+        )
+        print(EnhancedVolcano(res,
+            lab = rownames(res),
+            x = "log2FoldChange",
+            y = "padj",
+            title = paste0(contrast_name, "_p", opt$pcut, "_lfc", opt$fcut, sep = ""),
+            pCutoff = 0.01,
+            FCcutoff = 1.5,
+            pointSize = 3.0,
+            labSize = 5.0,
+            colAlpha = .3,
+            legendLabels = c(
+                "Not sig.", "Log (base 2) FC", "p-value",
+                "p-value & Log (base 2) FC"
+            ),
+            legendPosition = "right",
+            legendLabSize = 10,
+            legendIconSize = 5.0,
+            drawConnectors = TRUE,
+            widthConnectors = 0.75
+        ))
+        dev.off()
+
         if (spike != "") { # DE run for spike-in normalized data
 
             # initialize empty objects
@@ -255,6 +282,31 @@ for (contrast in comparison[[1]]) {
             # plotMA
             png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep = "_"))
             DESeq2::plotMA(res)
+            dev.off()
+            # plot Volcano
+            pdf(
+                file = paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
+            )
+            print(EnhancedVolcano(res,
+                lab = rownames(res),
+                x = "log2FoldChange",
+                y = "padj",
+                title = paste0(contrast_name, "_p", opt$pcut, "_lfc", opt$fcut, sep = ""),
+                pCutoff = 0.01,
+                FCcutoff = 1.5,
+                pointSize = 3.0,
+                labSize = 5.0,
+                colAlpha = .3,
+                legendLabels = c(
+                    "Not sig.", "Log (base 2) FC", "p-value",
+                    "p-value & Log (base 2) FC"
+                ),
+                legendPosition = "right",
+                legendLabSize = 10,
+                legendIconSize = 5.0,
+                drawConnectors = TRUE,
+                widthConnectors = 0.75
+            ))
             dev.off()
         }
 

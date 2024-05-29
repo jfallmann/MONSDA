@@ -4,7 +4,7 @@ get_gene_name <- function(id, df) {
         message("WARNING: gene_id not found as colname, will be replaced by first match of colname with ID")
         colnames(df)[grepl("id$", names(df), ignore.case = TRUE)][1] <- "gene_id"
     }
-    name_list <- df$gene[df["type"] == "gene" & df["gene_id"] == id]
+    name_list <- df$gene_name[df["type"] == "gene" & df["gene_id"] == id]
     if (length(unique(name_list)) == 1) {
         return(name_list[1])
     } else {
@@ -19,7 +19,7 @@ get_exon_name <- function(id, df) {
         message("WARNING: gene_id not found as colname, will be replaced by first match of colname with ID")
         colnames(df)[grepl("id$", names(df), ignore.case = TRUE)][1] <- "gene_id"
     }
-    name_list <- df$gene[df["type"] == "exon" & df["gene_id"] == id]
+    name_list <- df$gene_name[df["type"] == "exon" & df["gene_id"] == id]
     if (length(unique(name_list)) == 1) {
         return(name_list[1])
     } else {

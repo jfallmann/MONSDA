@@ -38,6 +38,7 @@ dependencies:
   - bioconductor-s4vectors =0.30.0
   - bioconductor-shortread =1.50.0
   - bioconductor-summarizedexperiment =1.22.0
+  - bioconductor-enhancedvolcano =1.20.0
   - bioconductor-xvector =0.32.0
   - bioconductor-zlibbioc =1.38.0
   - pigz =2.6
