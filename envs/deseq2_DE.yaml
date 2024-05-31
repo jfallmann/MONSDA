@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
   - defaults
-  - r
 dependencies:
   - bioconductor-annotate =1.70.0
   - bioconductor-annotationdbi =1.54.0
@@ -38,7 +37,7 @@ dependencies:
   - bioconductor-s4vectors =0.30.0
   - bioconductor-shortread =1.50.0
   - bioconductor-summarizedexperiment =1.22.0
-  - bioconductor-enhancedvolcano =1.20.0
+  - bioconductor-enhancedvolcano 
   - bioconductor-xvector =0.32.0
   - bioconductor-zlibbioc =1.38.0
   - pigz =2.6

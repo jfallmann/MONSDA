@@ -23,8 +23,8 @@ rule themall:
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
     output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
-            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
-            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
+            tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
     conda:  ""+COUNTENV+".yaml"
@@ -52,14 +52,15 @@ rule run_deseq2:
     input:  cnt  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
             anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo),
     output: session = rules.themall.input.session,
-            pca  = rules.themall.input.pca,
-            rld  = rules.themall.input.rld,
-            vsd  = rules.themall.input.vsd,
-            tbl  = rules.themall.input.tbl,
-            plot = rules.themall.input.plot,
-            vst  = rules.themall.input.vst,
-            heat = rules.themall.input.heat,
-            heats = rules.themall.input.heats
+            pca    = rules.themall.input.pca,
+            rld    = rules.themall.input.rld,
+            vsd    = rules.themall.input.vsd,
+            tbl    = rules.themall.input.tbl,
+            plot   = rules.themall.input.plot,
+            vulcan = rules.themall.input.vulcan,
+            vst    = rules.themall.input.vst,
+            heat   = rules.themall.input.heat,
+            heats  = rules.themall.input.heats
     log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

@@ -243,12 +243,40 @@ for (contrast in comparison[[1]]) {
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
-        qlf$table$Gene <- lapply(rownames(qlf$table), function(x) {
+        qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
             get_gene_name(x, gtf_gene)
-        })
+        }))
         qlf$table$Gene_ID <- rownames(qlf$table)
         res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
+        rownames(res) <- res$Gene
+
+        # plotVolcano
+        pdf(
+            file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano.pdf", sep = "_"), width = 15, height = 10
+        )
+        print(EnhancedVolcano(res,
+            lab = rownames(res),
+            x = "logFC",
+            y = "FDR",
+            title = paste0(contrast_name, "_p005_lfc15", sep = ""),
+            pCutoff = 0.05,
+            FCcutoff = 1.5,
+            pointSize = 3.0,
+            labSize = 5.0,
+            colAlpha = .3,
+            legendLabels = c(
+                "Not sig.", "Log (base 2) FC", "p-value",
+                "p-value & Log (base 2) FC"
+            ),
+            legendPosition = "right",
+            legendLabSize = 10,
+            legendIconSize = 5.0,
+            drawConnectors = TRUE,
+            widthConnectors = 0.75
+        ))
+        dev.off()
+
         res <- as.data.frame(apply(res, 2, as.character))
 
         # create results table
@@ -270,32 +298,6 @@ for (contrast in comparison[[1]]) {
         png(out)
         plotMD(qlf, main = contrast_name)
         abline(h = c(-1, 1), col = "blue")
-        dev.off()
-
-        # plotVolcano
-        pdf(
-            file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano.pdf", sep = "_"), width = 15, height = 10
-        )
-        print(EnhancedVolcano(res,
-            lab = rownames(res),
-            x = "logFC",
-            y = "FDR",
-            title = paste0(contrast_name, "_p", opt$pcut, "_lfc", opt$fcut, sep = ""),
-            pCutoff = 0.01,
-            FCcutoff = 1.5,
-            pointSize = 3.0,
-            labSize = 5.0,
-            colAlpha = .3,
-            legendLabels = c(
-                "Not sig.", "Log (base 2) FC", "p-value",
-                "p-value & Log (base 2) FC"
-            ),
-            legendPosition = "right",
-            legendLabSize = 10,
-            legendIconSize = 5.0,
-            drawConnectors = TRUE,
-            widthConnectors = 0.75
-        ))
         dev.off()
 
         if (spike != "") { # Same for spike-in normalized
@@ -323,11 +325,40 @@ for (contrast in comparison[[1]]) {
             comparison_objs <- append(comparison_objs, qlf)
 
             # # Add gene names  (check how gene_id col is named )
-            qlf$table$Gene <- lapply(rownames(qlf$table), function(x) {
+            qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
                 get_gene_name(x, gtf_gene)
-            })
+            }))
             qlf$table$Gene_ID <- rownames(qlf$table)
             res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
+            res$FDR <- p.adjust(res$PValue, method = "BH")
+            rownames(res) <- res$Gene
+
+            # plotVolcano
+            pdf(
+                file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
+            )
+            print(EnhancedVolcano(res,
+                lab = rownames(res),
+                x = as.numeric("logFC"),
+                y = as.numeric("FDR"),
+                title = paste0(contrast_name, "_p005_lfc15", sep = ""),
+                pCutoff = 0.05,
+                FCcutoff = 1.5,
+                pointSize = 3.0,
+                labSize = 5.0,
+                colAlpha = .3,
+                legendLabels = c(
+                    "Not sig.", "Log (base 2) FC", "p-value",
+                    "p-value & Log (base 2) FC"
+                ),
+                legendPosition = "right",
+                legendLabSize = 10,
+                legendIconSize = 5.0,
+                drawConnectors = TRUE,
+                widthConnectors = 0.75
+            ))
+            dev.off()
+
             res <- as.data.frame(apply(res, 2, as.character))
 
             # create results table
@@ -350,32 +381,6 @@ for (contrast in comparison[[1]]) {
             plotMD(qlf, main = contrast_name)
             abline(h = c(-1, 1), col = "blue")
             dev.off()
-            # plotVolcano
-            pdf(
-                file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
-            )
-            print(EnhancedVolcano(res,
-                lab = rownames(res),
-                x = "logFC",
-                y = "FDR",
-                title = paste0(contrast_name, "_p", opt$pcut, "_lfc", opt$fcut, sep = ""),
-                pCutoff = 0.01,
-                FCcutoff = 1.5,
-                pointSize = 3.0,
-                labSize = 5.0,
-                colAlpha = .3,
-                legendLabels = c(
-                    "Not sig.", "Log (base 2) FC", "p-value",
-                    "p-value & Log (base 2) FC"
-                ),
-                legendPosition = "right",
-                legendLabSize = 10,
-                legendIconSize = 5.0,
-                drawConnectors = TRUE,
-                widthConnectors = 0.75
-            ))
-            dev.off()
-
         }
 
         # cleanup

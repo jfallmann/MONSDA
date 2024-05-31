@@ -22,8 +22,8 @@ rule themall:
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
     output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
-            tmph = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
-            tmpc = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
+            tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
+            tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
@@ -48,13 +48,14 @@ rule prepare_count_table:
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 rule run_edger:
-    input:  tbl = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
+    input:  tbl  = expand(rules.prepare_count_table.output.tbl, combo=combo, scombo=scombo),
             anno = expand(rules.prepare_count_table.output.anno, combo=combo, scombo=scombo)
     output: session = rules.themall.input.session,
             allM    = rules.themall.input.allM,
             allBCV  = rules.themall.input.allBCV,
             allQLD  = rules.themall.input.allQLD,
             MDplot  = rules.themall.input.MDplot,
+            vulcan  = rules.themall.input.vulcan,
             allN    = rules.themall.input.allN,
             res     = rules.themall.input.res,
             sort    = rules.themall.input.sort
