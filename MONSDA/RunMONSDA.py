@@ -299,7 +299,7 @@ def run_snakemake(
                         rest = " ".join(argslist)
 
                         jobstorun.append(
-                            f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                            f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                         )
 
                     for job in jobstorun:
@@ -340,7 +340,7 @@ def run_snakemake(
                 rest = " ".join(argslist)
 
                 jobstorun.append(
-                    f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                    f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                 )
 
             for job in jobstorun:
@@ -386,7 +386,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                     )
 
                 for job in jobstorun:
@@ -416,7 +416,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} --software-deployment-method conda -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
                     )
 
                 for job in jobstorun:
