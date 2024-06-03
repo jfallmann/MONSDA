@@ -32,7 +32,7 @@ workflow SUMMARY{
 
     main:
 
-    png_ch =  Channel.fromPath("${projectDir}/../D{E,EU,AS,TU}/**/Figures/*.png")
+    png_ch =  Channel.fromPath("${projectDir}/../D{E,EU,AS,TU}/**/Figures/*.{png,pdf}")
     tab_ch =  Channel.fromPath("${projectDir}/../D{E,EU,AS,TU}/**/Tables/*.tsv.gz")
     //png_ch.subscribe {  println "PNG: $it"  }
     //tab_ch.subscribe {  println "TABLE: $it"  }
