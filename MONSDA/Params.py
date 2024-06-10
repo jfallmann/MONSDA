@@ -1055,7 +1055,7 @@ def comparable_as_string(config, subwork):
         combined = list(set(itertools.combinations(flattened, 2)))
         complist = []
         for key, value in combined:
-            complist.append(f"{key}vs{value}:{key}-vs-{value}")
+            complist.append(f"{key}-vs-{value}:{key}-vs-{value}")
         compstr = ",".join(complist)
         return compstr
 
