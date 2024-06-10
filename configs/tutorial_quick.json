@@ -2,7 +2,7 @@
     "WORKFLOWS": "FETCH,MAPPING",
     "BINS": "",
     "MAXTHREADS": "4",
-    "VERSION": "1.2.7",
+    "VERSION": "1.2.8",
     "SETTINGS": {
         "SIMPLE": {
             "SAMPLES": [

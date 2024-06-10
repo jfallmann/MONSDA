@@ -7,7 +7,7 @@ dependencies:
   - biopython=1.83
   - grep >=3.4
   - isort=5.13.2
-  - monsda=1.2.7
+  - monsda=1.2.8
   - natsort=8.4.0
   - nextflow=24.04.2
   - numpy=1.26.4
