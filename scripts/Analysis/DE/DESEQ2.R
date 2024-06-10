@@ -197,7 +197,7 @@ for (contrast in comparison[[1]]) {
             file = paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure_Volcano.pdf", sep = "_"), width = 15, height = 10
         )
         print(EnhancedVolcano(resOrdered,
-            lab = rownames(resOrdered),
+            lab = resOrdered$Gene,
             x = "log2FoldChange",
             y = "padj",
             title = paste0(contrast_name, "_p005_lfc15", sep = ""),
@@ -268,7 +268,7 @@ for (contrast in comparison[[1]]) {
                 file = paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
             )
             print(EnhancedVolcano(resOrdered,
-                lab = rownames(resOrdered),
+                lab = resOrdered$Gene,
                 x = "log2FoldChange",
                 y = "padj",
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),

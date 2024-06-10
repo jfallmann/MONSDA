@@ -249,14 +249,13 @@ for (contrast in comparison[[1]]) {
         qlf$table$Gene_ID <- rownames(qlf$table)
         res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
-        rownames(res) <- res$Gene
 
         # plotVolcano
         pdf(
             file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano.pdf", sep = "_"), width = 15, height = 10
         )
         print(EnhancedVolcano(res,
-            lab = rownames(res),
+            lab = res$Gene,
             x = "logFC",
             y = "FDR",
             title = paste0(contrast_name, "_p005_lfc15", sep = ""),
@@ -331,14 +330,13 @@ for (contrast in comparison[[1]]) {
             qlf$table$Gene_ID <- rownames(qlf$table)
             res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
             res$FDR <- p.adjust(res$PValue, method = "BH")
-            rownames(res) <- res$Gene
 
             # plotVolcano
             pdf(
                 file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
             )
             print(EnhancedVolcano(res,
-                lab = rownames(res),
+                lab = res$Gene,
                 x = as.numeric("logFC"),
                 y = as.numeric("FDR"),
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),
