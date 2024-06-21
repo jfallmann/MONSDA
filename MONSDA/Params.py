@@ -138,7 +138,19 @@ except Exception:
 
 
 @check_run
-def get_samples(config):
+def get_samples(config: dict) -> list():
+    """Check and return samples according to sample list on config.json
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of samples found and checked
+    """
     logid = scriptname + ".Params_get_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]
     log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
@@ -189,7 +201,21 @@ def get_samples(config):
 
 
 @check_run
-def get_samples_postprocess(config, subwork):
+def get_samples_postprocess(config: dict, subwork: str) -> list:
+    """Check and return samples according to sample list on config.json
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subwork : str
+        subworkflow to check
+
+    Returns
+    -------
+    list
+        list of samples found and checked
+    """
     logid = scriptname + ".Params_get_samples_postprocess: "
     SAMPLES = [
         os.path.join(x)
@@ -254,7 +280,18 @@ def get_samples_postprocess(config, subwork):
 
 
 @check_run
-def check_samples(config):
+def check_samples(config: dict) -> bool:
+    """Check if all samples are available in FASTQ folder
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    bool
+    """
     logid = scriptname + ".Params_check_samples: "
     tocheck = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
     log.debug(logid + "SEARCHING: " + str(tocheck))
@@ -275,7 +312,20 @@ def check_samples(config):
 
 
 @check_run
-def download_samples(config):
+def download_samples(config: dict) -> list:
+    """Download samples from config file
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of samples found and checked
+    """
+
     logid = scriptname + ".Params_download_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
     log.debug(logid + "DOWNLOAD_SAMPLES_LONG: " + str(SAMPLES))
@@ -283,7 +333,19 @@ def download_samples(config):
 
 
 @check_run
-def basecall_samples(config):
+def basecall_samples(config: dict) -> list:
+    """Check and return samples according to sample list on config.json
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of samples found and checked
+    """
     logid = scriptname + ".Params_basecall_samples: "
     SAMPLES = [os.path.join(x) for x in sampleslong(config, nocheck=True)]
     log.debug(logid + "SAMPLES_LONG: " + str(SAMPLES))
@@ -312,7 +374,22 @@ def basecall_samples(config):
 
 
 @check_run
-def get_conditions(config, stage="SETTINGS"):
+def get_conditions(config: dict, stage: str = "SETTINGS") -> list:
+    """Get conditions from config file based on stage
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    stage : str
+        stage to check
+
+    Returns
+    -------
+    list
+        list of conditions configured in config file
+    """
+
     logid = scriptname + ".Params_conditions: "
     ret = list()
     for k in mu.keysets_from_dict(config[stage], "SAMPLES"):
@@ -322,7 +399,23 @@ def get_conditions(config, stage="SETTINGS"):
 
 
 @check_run
-def get_samples_from_dir(search, config, nocheck=None):  # CHECK
+def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list:  # type: ignore
+    """Get samples from directory based on search string
+
+    Parameters
+    ----------
+    search : str
+        search string
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    nocheck : str, default=None
+        nocheck string
+
+    Returns
+    -------
+    list
+        list of samples found
+    """
     logid = scriptname + ".Params_get_samples_from_dir: "
     samples = [
         x.replace(" ", "")
@@ -446,7 +539,19 @@ def get_samples_from_dir(search, config, nocheck=None):  # CHECK
 
 
 @check_run
-def sampleslong(config, nocheck=None):
+def sampleslong(config: dict, nocheck: str = None) -> list:  # type: ignore
+    """Get samples from config file with condition and sample name
+
+    Parameters
+    ----------
+    config : dict, optional
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of samples found
+    """
     logid = scriptname + ".Params_sampleslong: "
     log.debug(logid + f"Check: {nocheck}")
     tosearch = list()
@@ -461,7 +566,19 @@ def sampleslong(config, nocheck=None):
 
 
 @check_run
-def get_placeholder(config):
+def get_placeholder(config: dict) -> list:
+    """Get placeholder from config file
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of placeholders found
+    """
     ret = list()
     if "PH" in (config):
         for x in config["PH"]:
@@ -472,7 +589,23 @@ def get_placeholder(config):
 
 
 @check_run
-def get_cutoff_as_string(config, subwork, cf):
+def get_cutoff_as_string(config: dict, subwork: str, cf: str) -> str:
+    """Get cutoff as string from config file
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subwork : str
+        workflow part
+    cf : str
+        cutoff
+
+    Returns
+    -------
+    str
+        configured cutoffs or defaults
+    """
     logid = scriptname + ".get_cutoff: "
     cutoff = (
         str(config[subwork]["CUTOFFS"].get(cf))
@@ -484,7 +617,19 @@ def get_cutoff_as_string(config, subwork, cf):
 
 
 @check_run
-def get_summary_dirs(config):
+def get_summary_dirs(config: dict) -> list:
+    """Get summary directories from config file
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of summary directories
+    """
     logid = scriptname + ".get_summary_dirs: "
     ret = list()
     for work, tools in config["WORKFLOWS"].items():
@@ -495,7 +640,19 @@ def get_summary_dirs(config):
 
 
 @check_run
-def get_summary_files(config):
+def get_summary_files(config: dict) -> list:
+    """Get summary files from config file
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        list of summary files
+    """
     logid = scriptname + ".get_summary_files: "
     ret = list()
     for work, tools in config["WORKFLOWS"].items():
@@ -509,7 +666,16 @@ def get_summary_files(config):
 
 
 @check_run
-def create_skeleton(runner, skeleton=None):
+def create_skeleton(runner: str, skeleton: str = None) -> None:
+    """Create skeleton directories
+
+    Parameters
+    ----------
+    runner : str
+        workflow part
+    skeleton : str, optional
+        set to create skeleton directories, by default None
+    """
     logid = scriptname + ".Params_create_skeleton: "
     if skeleton:
         for subdir in ["SubSnakes", "RAW", "FASTQ", "LOGS", "TMP", "JOB"]:
@@ -536,7 +702,27 @@ def create_skeleton(runner, skeleton=None):
 
 
 @check_run
-def tool_params(sample, runstate, config, subconf, tool=None):
+def tool_params(sample: str, runstate: str, config: dict, subconf: dict, tool: str = None) -> dict:  # type: ignore
+    """Get tool parameters from config file for a specific sample
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    runstate : str
+        part of workflow
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subconf : dict
+        subconfig
+    tool : str, optional
+        tool name, by default None
+
+    Returns
+    -------
+    dict
+        tool parameters
+    """
     logid = scriptname + ".Params_tool_params: "
     log.debug(logid + "Samples: " + str(sample))
     mp = OrderedDict()
@@ -558,10 +744,30 @@ def tool_params(sample, runstate, config, subconf, tool=None):
 
 
 @check_run
-def setting_per_sample(sample, runstate, config, setting, subconf=None):
+def setting_per_sample(sample: str, runstate: str, config: dict, setting: str, subconf: str = None) -> str:  # type: ignore
+    """Set parameters per sample
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    runstate : str
+        condition tree part
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    setting : str
+        workflow part
+    subconf : str, optional
+        subconfig, by default None
+
+    Returns
+    -------
+    str
+        setting per sample
+    """
     logid = scriptname + ".Params_setting_per_sample: "
     log.debug(logid + "Samples: " + str(sample))
-    set = None
+    sets = None
     x = sample.split(os.sep)[2:-1]
     if runstate is None:
         runstate = runstate_from_sample([sample], config)[0]
@@ -582,13 +788,31 @@ def setting_per_sample(sample, runstate, config, setting, subconf=None):
         )
 
     # Define which final setting is returned
-    set = subset if subset else setting
+    sets = subset if subset else setting
 
-    return set
+    return sets
 
 
 @check_run
-def get_reps(samples, config, analysis, process="smk"):
+def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -> str:
+    """get reps from samples
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    analysis : str
+        workflow part
+    process : str, optional
+        snakemake or nextflow process, by default "smk"
+
+    Returns
+    -------
+    str
+        condition string for differential analysis per sample
+    """
     logid = scriptname + ".Params_get_reps: "
     log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
@@ -646,7 +870,23 @@ def get_reps(samples, config, analysis, process="smk"):
 
 
 @check_run
-def get_diego_samples(samples, config, analysis):
+def get_diego_samples(samples: list, config: dict, analysis: str) -> str:
+    """samples for diego analysis
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    analysis : str
+        workflow part
+
+    Returns
+    -------
+    str
+        samples for diego analysis
+    """
     logid = scriptname + ".Params_get_diego_samples: "
     log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
@@ -671,7 +911,23 @@ def get_diego_samples(samples, config, analysis):
 
 
 @check_run
-def get_diego_groups(samples, config, analysis):
+def get_diego_groups(samples: list, config: dict, analysis: str) -> str:
+    """get diego groups
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    analysis : str
+        workflow part
+
+    Returns
+    -------
+    str
+        groups for diego analysis
+    """
     logid = scriptname + ".Params_get_diego_groups: "
     log.debug(logid + "Samples: " + str(samples))
     ret = defaultdict(list)
@@ -700,7 +956,23 @@ def get_diego_groups(samples, config, analysis):
 
 
 @check_run
-def env_bin_from_config2(samples, config, subconf):
+def env_bin_from_config2(samples: list, config: dict, subconf: str) -> tuple:
+    """get env and bin from config
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subconf : str
+        part of config
+
+    Returns
+    -------
+    tuple
+        env and bin for workflow part and tool
+    """
     logid = scriptname + ".Params_env_bin_from_config2: "
     for s in samples:
         log.debug(logid + "S: " + str(s))
@@ -721,7 +993,21 @@ def env_bin_from_config2(samples, config, subconf):
 
 
 @check_run
-def env_bin_from_config(config, subconf):
+def env_bin_from_config(config: dict, subconf: str) -> tuple:
+    """env and bin from config
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subconf : str
+        workflow part
+
+    Returns
+    -------
+    tuple
+        env and bin for workflow part and tool
+    """
     logid = scriptname + ".Params_env_bin_from_config: "
     envkey = subconf + "ENV"
     binkey = subconf + "BIN"
@@ -732,13 +1018,39 @@ def env_bin_from_config(config, subconf):
 
 
 @check_run
-def sample_from_path(path):
+def sample_from_path(path: str) -> str:
+    """sample from path
+
+    Parameters
+    ----------
+    path : str
+        path to sample in workdir
+
+    Returns
+    -------
+    str
+        sample name
+    """
     ret = str(os.path.join(os.path.split(str(path))[-1]))
     return ret
 
 
 @check_run
-def runstate_from_sample(sample, config):
+def runstate_from_sample(sample: str, config: dict) -> list:
+    """all runstates for sample in config
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        all runstates for sample
+    """
     logid = scriptname + ".Params_runstate_from_sample: "
     ret = list()
     for s in sample:
@@ -774,9 +1086,21 @@ def runstate_from_sample(sample, config):
 
 
 @check_run
-def samplecond(
-    sample, config
-):  # takes list of sample names (including .fastq.gz) and returns a list with their conditions as directory path without fastq.gz ( ["condition/of/sample", ... ])
+def samplecond(sample: str, config: dict) -> list:
+    """condition for sample based on config
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        condition for sample
+    """
     logid = scriptname + ".Params_samplecond: "
     ret = list()
     for s in sample:
@@ -807,7 +1131,21 @@ def samplecond(
 
 
 @check_run
-def conditiononly(sample, config):
+def conditiononly(sample: str, config: dict) -> list:
+    """only condition for sample
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        only condition for sample
+    """
     logid = scriptname + ".Params_conditiononly: "
     ret = list()
     check = sample.split(os.sep)
@@ -835,7 +1173,21 @@ def conditiononly(sample, config):
 
 
 @check_run
-def checkpaired(sample, config):
+def checkpaired(sample: list, config: dict) -> str:
+    """check if sample is paired
+
+    Parameters
+    ----------
+    sample : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    str
+        pairedness of sample
+    """
     logid = scriptname + ".Params_checkpaired: "
     paired = ""
     for s in sample:
@@ -858,7 +1210,21 @@ def checkpaired(sample, config):
 
 
 @check_run
-def checkpaired_rep(sample, config):
+def checkpaired_rep(sample: list, config: dict) -> str:
+    """check replicates for pairedness
+
+    Parameters
+    ----------
+    sample : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    str
+        pairedness of replicates
+    """
     logid = scriptname + ".Params_checkpaired_rep: "
     log.debug(logid + "SAMPLE: " + str(sample))
     ret = list()
@@ -877,7 +1243,21 @@ def checkpaired_rep(sample, config):
 
 
 @check_run
-def checkstranded(sample, config):
+def checkstranded(sample: list, config: dict) -> str:
+    """check strandedness of sample
+
+    Parameters
+    ----------
+    sample : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    str
+        strandedness of sample
+    """
     logid = scriptname + ".Params_checkstranded: "
     ret = list()
     stranded = ""
@@ -902,7 +1282,21 @@ def checkstranded(sample, config):
 
 
 @check_run
-def set_pairing(samples, config):
+def set_pairing(samples: list, config: dict) -> list:
+    """get pairs of samples
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    list
+        pairs of samples
+    """
     logid = scriptname + ".Params_set_pairing: "
     ret = list()
     cond = conditiononly(samples[0], config)
@@ -922,7 +1316,36 @@ def set_pairing(samples, config):
 
 
 @check_run
-def get_pairing(sample, stype, config, samples, scombo="", mode="smk"):
+def get_pairing(
+    sample: str,
+    stype: str,
+    config: dict,
+    samples: list,
+    scombo: str = "",
+    mode: str = "smk",
+) -> str:
+    """get pairs of samples
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    stype : str
+        unique or sorted
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    samples : list
+        samples
+    scombo : str, optional
+        condition and tools to work on, by default ""
+    mode : str, optional
+        snakemake or nextflow mode, by default "smk"
+
+    Returns
+    -------
+    str
+        pairs of samples
+    """
     logid = scriptname + ".Params_get_pairing: "
     cond = conditiononly(sample, config)
     pconf = mu.sub_dict(config["PEAKS"], cond)
@@ -971,7 +1394,21 @@ def get_pairing(sample, stype, config, samples, scombo="", mode="smk"):
 
 
 @check_run
-def post_checkpaired(sample, config):
+def post_checkpaired(sample: list, config: dict) -> str:
+    """check if sample is paired
+
+    Parameters
+    ----------
+    sample : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    str
+        pairedness of sample
+    """
     logid = scriptname + ".Params_checkpaired: "
     ret = list()
     paired = ""
@@ -986,7 +1423,21 @@ def post_checkpaired(sample, config):
 
 
 @check_run
-def check_IP(sample, config):
+def check_IP(sample: list, config: dict) -> str:
+    """get IP information from config
+
+    Parameters
+    ----------
+    sample : list
+        samples
+    config : dict
+        config json file parsed by snakemake.common.configfile
+
+    Returns
+    -------
+    str
+        IP information
+    """
     logid = scriptname + ".Params_check_IP: "
     ret = list()
     ip = ""
@@ -1009,7 +1460,29 @@ def check_IP(sample, config):
 
 
 @check_run
-def check_tool_params(sample, runstate, config, subconf, idx):
+def check_tool_params(
+    sample: str, runstate: str, config: dict, subconf: str, idx: str
+) -> str:
+    """check if tool parameters are set in config
+
+    Parameters
+    ----------
+    sample : str
+        sample name
+    runstate : str
+        condition tree part
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subconf : str
+        part of config
+    idx : str
+        tool step
+
+    Returns
+    -------
+    str
+        tool and sample specific parameters
+    """
     try:
         par = tool_params(sample, runstate, config, subconf)["OPTIONS"][idx]
         if par != "":
@@ -1026,7 +1499,21 @@ def check_tool_params(sample, runstate, config, subconf, idx):
 
 
 @check_run
-def comparable_as_string(config, subwork):
+def comparable_as_string(config: dict, subwork: str) -> str:
+    """get comparables as string from config
+
+    Parameters
+    ----------
+    config : dict
+        config json file parsed by snakemake.common.configfile
+    subwork : str
+        workflow part
+
+    Returns
+    -------
+    str
+        DE comparables
+    """
     logid = scriptname + ".comparable_as_string: "
     log.debug(logid + "this is the config: " + str(config))
     check = config[subwork].get("COMPARABLE")
@@ -1061,7 +1548,19 @@ def comparable_as_string(config, subwork):
 
 
 @check_run
-def get_combo_name(combinations):
+def get_combo_name(combinations: list) -> mu.NestedDefaultDict:
+    """get combination of environments and tools
+
+    Parameters
+    ----------
+    combinations : list
+        list of conditions
+
+    Returns
+    -------
+    mu.NestedDefaultDict
+        dict of environments and tools per condition
+    """
     logid = scriptname + ".Params_get_combo_name: "
     combname = mu.NestedDefaultDict()
 
