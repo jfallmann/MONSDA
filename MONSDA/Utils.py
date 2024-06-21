@@ -129,7 +129,19 @@ except Exception:
 
 
 #  NestedDefaultDict
-class NestedDefaultDict(defaultdict):
+class NestedDefaultDict(defaultdict:collections.defaultdict) -> NestedDefaultDict:
+    """NestedDefaultDict.
+
+    Parameters
+    ----------
+    defaultdict : collections.defaultdict
+        collections.defaultdict
+
+    Returns
+    -------
+    NestedDefaultDict
+        NestedDefaultDict
+    """
     def __init__(self, *args, **kwargs):
         super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
 
@@ -141,7 +153,19 @@ class NestedDefaultDict(defaultdict):
 
 
 # Wrapper
-def check_run(func):
+def check_run(func: callable) -> callable:
+    """check_run.
+
+    Parameters
+    ----------
+    func : callable
+        function to wrap
+
+    Returns
+    -------
+    callable
+        function wrapper
+    """
     @functools.wraps(func)
     def func_wrapper(*args, **kwargs):
         logid = scriptname + ".Collection_func_wrapper: "
@@ -161,7 +185,19 @@ def check_run(func):
 
 
 @check_run
-def rmempty(check):
+def rmempty(check: list) -> list:
+    """remove empty files from list.
+
+    Parameters
+    ----------
+    check : list
+        files to check
+
+    Returns
+    -------
+    list
+        list of non-empty files
+    """
     ret = list()
     for f in check:
         if os.path.isfile(f):
@@ -171,8 +207,20 @@ def rmempty(check):
 
 @check_run
 def comment_remover(
-    textlist,
-):  # inspired by https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
+    textlist: list,
+) -> list:  # inspired by https://stackoverflow.com/questions/241327/remove-c-and-c-comments-using-python
+    """remove comments from list of strings
+
+    Parameters
+    ----------
+    textlist : list
+        list of strings to remove comments from 
+
+    Returns
+    -------
+    list
+        list of strings without comments
+    """
     def replacer(match):
         s = match.group(0)
         if s.startswith("/"):
@@ -191,7 +239,19 @@ def comment_remover(
 #########Python Subs##########
 ##############################
 @check_run
-def dict_inst(d):
+def dict_inst(d: object) -> bool:
+    """check if instance is a dictionary.
+
+    Parameters
+    ----------
+    d : object
+        object to check
+
+    Returns
+    -------
+    bool
+        object is a dictionary or not
+    """
     logid = scriptname + ".Collection_dict_inst: "
     if (
         isinstance(d, dict)
@@ -203,7 +263,21 @@ def dict_inst(d):
 
 
 @check_run
-def get_from_dict(dataDict, mapList):
+def get_from_dict(dataDict:dict, mapList:list) -> list:
+    """get value from dictionary by list of keys
+
+    Parameters
+    ----------
+    dataDict : dict
+        dictionary to search
+    mapList : list
+        list of keys to search for
+
+    Returns
+    -------
+    list
+        list of values
+    """
     logid = scriptname + ".Collection_get_from_dict: "
     log.debug(logid + "MAPLIST: " + str(mapList) + "\tDict: " + str(dataDict))
     ret = dataDict
@@ -223,7 +297,26 @@ def get_from_dict(dataDict, mapList):
 
 
 @check_run
-def yield_from_dict(key, dictionary):
+def yield_from_dict(key:str, dictionary:dict) -> dict.values:
+    """yield values from dictionary by key
+
+    Parameters
+    ----------
+    key : str
+        key to search for
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.values
+        values from dictionary
+
+    Yields
+    ------
+    Iterator[dict.values]
+        values from dictionary
+    """
     for k, v in dictionary.items():
         if k == key:
             yield v
@@ -238,7 +331,21 @@ def yield_from_dict(key, dictionary):
 
 
 @check_run
-def sub_dict(dataDict, mapList):
+def sub_dict(dataDict:dict, mapList:list) -> dict:
+    """get sub dictionary from dictionary by list of keys
+
+    Parameters
+    ----------
+    dataDict : dict
+        dictionary to search
+    mapList : list
+        list of keys to search for
+
+    Returns
+    -------
+    dict
+        sub dictionary
+    """
     logid = scriptname + ".Collection_sub_dict: "
     log.debug(logid + str(mapList))
     ret = dataDict
@@ -255,7 +362,21 @@ def sub_dict(dataDict, mapList):
 
 
 @check_run
-def subset_dict(dataDict, mapList):
+def subset_dict(dataDict:dict, mapList:list) -> dict:
+    """subset dictionary by list of keys
+
+    Parameters
+    ----------
+    dataDict : dict
+        dictionary to search
+    mapList : list
+        list of keys to search for
+
+    Returns
+    -------
+    dict
+        subset dictionary
+    """
     logid = scriptname + ".Collection_subset_dict: "
     log.debug(logid + str(mapList))
     parse = sub_dict(dataDict, mapList)
@@ -266,14 +387,44 @@ def subset_dict(dataDict, mapList):
 
 
 @check_run
-def nested_set(dic, keys, value):
+def nested_set(dic:dict, keys:str, value:str) -> dict:
+    """create nested dictionary
+
+    Parameters
+    ----------
+    dic : dict
+        dictionary to create
+    keys : str
+        keys to create
+    value : str
+        value to set
+
+    Returns
+    -------
+    dict
+        nested dictionary
+    """
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
     dic[keys[-1]] = value
 
 
 @check_run
-def merge_dicts(d, u):
+def merge_dicts(d:dict, u:dict) -> dict:
+    """merge two dictionaries
+
+    Parameters
+    ----------
+    d : dict
+        dictionary to merge
+    u : dict
+        dictionary to merge
+
+    Returns
+    -------
+    dict
+        merged dictionary
+    """
     # https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     # python 3.8+ compatibility
     try:
@@ -294,8 +445,21 @@ def merge_dicts(d, u):
 
 @check_run
 def keysets_from_dict(
-    dictionary, search=None, original=None
-):  # Only works for equal depth keysets, needs tweaking for other use cases
+    dictionary:dict, search:str=None) -> list:  # Only works for equal depth keysets, needs tweaking for other use cases
+    """create keysets from dictionary
+
+    Parameters
+    ----------
+    dictionary : dict
+        dictionary to search
+    search : str, optional
+        key to search for, by default None
+    
+    Returns
+    -------
+    list
+        list of keysets
+    """
     logid = scriptname + ".Collection_keysets_from_dict: "
 
     keylist = list()
@@ -325,7 +489,27 @@ def keysets_from_dict(
 
 
 @check_run
-def keys_from_dict(dictionary, search=None, save=None, first=True, lvl=0):
+def keys_from_dict(dictionary:dict, search:str=None, save:str=None, first:bool=True, lvl:int=0) -> collections.defaultdict(list): # type: ignore
+    """get keys from dictionary
+
+    Parameters
+    ----------
+    dictionary : dict, optional
+        dictionary to search        
+    search : str, optional
+        key to search, by default None
+    save:str, optional
+        save keys, by default None
+    first:bool
+        first run, by default True
+    lvl:int
+        level of dictionary, by default 0
+
+    Returns
+    -------
+    collections.defaultdict[list]
+        dictionary of keys
+    """
     logid = scriptname + ".Collection_keys_from_dict: "
 
     if first:
@@ -354,14 +538,43 @@ def keys_from_dict(dictionary, search=None, save=None, first=True, lvl=0):
 
 
 @check_run
-def depth(d):
+def depth(d:dict) -> int:
+    """get depth of dictionary
+
+    Parameters
+    ----------
+    d : dict
+        dictionary to check
+
+    Returns
+    -------
+    int
+        depth of dictionary
+    """
     if dict_inst(d):
         return 1 + (max(map(depth, d.values())) if d else 0)
     return 0
 
 
 @check_run
-def list_all_keys_of_dict(dictionary):
+def list_all_keys_of_dict(dictionary:dict) -> dict.keys:
+    """list all keys of dictionary
+
+    Parameters
+    ----------
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.keys
+        keys of dictionary
+
+    Yields
+    ------
+    Iterator[dict.keys]
+        keys of dictionary
+    """
     logid = scriptname + ".Collection_list_all_keys_of_dict: "
     for key, value in dictionary.items():
         if type(value) is dict:
@@ -372,7 +585,24 @@ def list_all_keys_of_dict(dictionary):
 
 
 @check_run
-def list_all_values_of_dict(dictionary):
+def list_all_values_of_dict(dictionary:dict) -> dict.values:
+    """list all values of dictionary
+
+    Parameters
+    ----------
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.values
+        values of dictionary
+
+    Yields
+    ------
+    Iterator[dict.values]
+        values of dictionary
+    """
     if dict_inst(dictionary):
         for key, value in dictionary.items():
             if dict_inst(value):
@@ -384,7 +614,26 @@ def list_all_values_of_dict(dictionary):
 
 
 @check_run
-def find_all_values_on_key(key, dictionary):
+def find_all_values_on_key(key:str, dictionary:dict) -> dict.values:
+    """find all values on key
+
+    Parameters
+    ----------
+    key : str
+        key to search for
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.values
+        values of dictionary
+
+    Yields
+    ------
+    Iterator[dict.values]
+        values of dictionary
+    """
     if dict_inst(dictionary):
         for k, v in dictionary.items():
             if dict_inst(v):
@@ -397,7 +646,26 @@ def find_all_values_on_key(key, dictionary):
 
 
 @check_run
-def find_key_for_value(val, dictionary):
+def find_key_for_value(val:str, dictionary:dict) -> dict.keys:
+    """get key for value
+
+    Parameters
+    ----------
+    val : str
+        value to search for
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.keys
+        keys of dictionary
+
+    Yields
+    ------
+    Iterator[dict.keys]
+        keys of dictionary
+    """
     logid = scriptname + ".Collection_find_key_for_value: "
     log.debug(logid + "VAL: " + str(val) + " Dict: " + str(dictionary))
     if dict_inst(dictionary):
@@ -413,7 +681,26 @@ def find_key_for_value(val, dictionary):
 
 
 @check_run
-def value_extract(key, var):
+def value_extract(key:str, var:object) -> dict.values:
+    """extract values from dictionary
+
+    Parameters
+    ----------
+    key : str
+        key to search for
+    var : object
+        object to search
+
+    Returns
+    -------
+    dict.values
+        values of dictionary
+
+    Yields
+    ------
+    Iterator[dict.values]
+        values of dictionary
+    """
     logid = scriptname + ".Collection_value_extract: "
     log.debug(logid + str(var))
     if hasattr(var, "items"):
@@ -430,7 +717,19 @@ def value_extract(key, var):
 
 
 @check_run
-def find_innermost_value_from_dict(dictionary):
+def find_innermost_value_from_dict(dictionary:dict) -> dict.values:
+    """get innermost value from dictionary
+
+    Parameters
+    ----------
+    dictionary : dict
+        dictionary to search
+
+    Returns
+    -------
+    dict.values
+        innermost value of dictionary
+    """
     logid = scriptname + ".Collection_find_innermost_value_from_dict: "
     if dict_inst(dictionary):
         for k, v in dictionary.items():
@@ -443,7 +742,21 @@ def find_innermost_value_from_dict(dictionary):
 
 
 @check_run
-def removekey(d, key):
+def removekey(d:dict, key:str) -> dict:
+    """remove key from dictionary
+
+    Parameters
+    ----------
+    d : dict
+        dictionary to remove key from
+    key : str
+        key to remove
+
+    Returns
+    -------
+    dict
+        dictionary without key
+    """
     logid = scriptname + ".Collection_removekey: "
     r = dict(d)
     del r[key]
@@ -451,7 +764,21 @@ def removekey(d, key):
 
 
 @check_run
-def getlowest_list(a, n):
+def getlowest_list(a:list, n:int) -> list:
+    """get lowest values from list
+
+    Parameters
+    ----------
+    a : list
+        list to search
+    n : int
+        value to compare to
+
+    Returns
+    -------
+    list
+        np.partition of list
+    """
     if n > len(a) - 1:
         b = len(a) - 1
     else:
@@ -463,7 +790,21 @@ def getlowest_list(a, n):
 
 
 @check_run
-def gethighest_list(a, n):
+def gethighest_list(a:list, n:int) -> list:
+    """get highest values from list
+
+    Parameters
+    ----------
+    a : list
+        list to search
+    n : int
+        value to compare to
+
+    Returns
+    -------
+    list
+        np.partition of list
+    """
     if len(a) - n < 0:
         b = len(a) - 1
     else:
@@ -475,7 +816,21 @@ def gethighest_list(a, n):
 
 
 @check_run
-def getlowest_dict(a, n):
+def getlowest_dict(a:dict, n:int) -> dict:
+    """get lowest values from dictionary
+
+    Parameters
+    ----------
+    a : dict
+        dictionary to search
+    n : int
+        value to compare to
+
+    Returns
+    -------
+    dict
+        dictionary of lowest values
+    """
     if n > len(a):
         b = len(a)
     else:
@@ -487,7 +842,21 @@ def getlowest_dict(a, n):
 
 
 @check_run
-def gethighest_dict(a, n):
+def gethighest_dict(a:dict, n:int) -> dict:
+    """get highest values from dictionary
+
+    Parameters
+    ----------
+    a : dict
+        dictionary to search
+    n : int
+        value to compare to   
+
+    Returns
+    -------
+    dict
+        dictionary of highest values
+    """
     if n > len(a):
         b = len(a)
     else:
@@ -499,7 +868,21 @@ def gethighest_dict(a, n):
 
 
 @check_run
-def toarray(file, ulim):
+def toarray(file:str, ulim:int) -> np.array:
+    """convert file to np.array
+
+    Parameters
+    ----------
+    file : str
+        file to convert
+    ulim : int
+        column to convert           
+
+    Returns
+    -------
+    np.array
+        array of file
+    """
     x = np.loadtxt(
         str(file),
         usecols=(ulim),
@@ -511,7 +894,19 @@ def toarray(file, ulim):
 
 
 @check_run
-def convertcol(entry):
+def convertcol(entry:str) -> float:
+    """convert column to float
+
+    Parameters
+    ----------
+    entry : str
+        entry to convert
+
+    Returns
+    -------
+    float
+        converted entry
+    """
     if isinvalid(entry):
         return np.nan
     else:
@@ -519,7 +914,19 @@ def convertcol(entry):
 
 
 @check_run
-def isvalid(x=None):
+def isvalid(x:str=None) -> bool: # type: ignore
+    """check if value is valid
+
+    Parameters
+    ----------
+    x : str, optional
+        value to check, by default None
+
+    Returns
+    -------
+    bool
+        check if value is valid
+    """
     if x:
         if x in ("None", "nan", "none", "NA", "NAN") or x is None or x is np.nan:
             return False
@@ -530,7 +937,19 @@ def isvalid(x=None):
 
 
 @check_run
-def isinvalid(x=None):
+def isinvalid(x:str=None) -> bool: # type: ignore
+    """check if value is invalid
+
+    Parameters
+    ----------
+    x : str, optional
+        value to check, by default None
+
+    Returns
+    -------
+    bool
+        check if value is invalid
+    """
     if x:
         if x in ("None", "nan", "none", "NA", "NAN") or x is None or x is np.nan:
             return True
@@ -541,7 +960,19 @@ def isinvalid(x=None):
 
 
 @check_run
-def makeoutdir(outdir):
+def makeoutdir(outdir:str) -> str:
+    """make output directory
+
+    Parameters
+    ----------
+    outdir : str
+        directory to create
+
+    Returns
+    -------
+    str
+        directory
+    """
     if not os.path.isabs(outdir):
         outdir = os.path.abspath(outdir)
     if not os.path.exists(outdir):
@@ -550,7 +981,19 @@ def makeoutdir(outdir):
 
 
 @check_run
-def parseseq(sequence):
+def parseseq(sequence:str) -> StringIO:
+    """parse sequence
+
+    Parameters
+    ----------
+    sequence : str
+        string to parse
+
+    Returns
+    -------
+    StringIO
+        StringIO object of sequence
+    """
     if isinstance(sequence, StringIO):
         seq = sequence
 
@@ -568,7 +1011,22 @@ def parseseq(sequence):
 
 
 @check_run
-def npprint(a, o=None):  # , format_string ='{0:.2f}'):
+def npprint(a:np.array, o:str=None) -> str:  # type: ignore  # , format_string ='{0:.2f}'):
+    """print np.array
+
+    Parameters
+    ----------
+    a : _type_, optional
+        np.array
+        
+    o : str, optional
+        output file, by default None    
+
+    Returns
+    -------
+    str
+        output string
+    """
     out = ""
     it = np.nditer(a, flags=["f_index"])
     while not it.finished:
@@ -581,7 +1039,19 @@ def npprint(a, o=None):  # , format_string ='{0:.2f}'):
 
 
 @check_run
-def idfromfa(id):
+def idfromfa(id:str) -> list:
+    """get id from fasta
+
+    Parameters
+    ----------
+    id : str
+        header of fasta
+
+    Returns
+    -------
+    list
+        list of id values
+    """
     goi, chrom, strand = [None, None, None]
     try:
         goi, chrom = id.split(":")[::2]
@@ -602,7 +1072,19 @@ def idfromfa(id):
 
 
 @check_run
-def cluster2trna(seqs):
+def cluster2trna(seqs:str) -> collections.OrderedDict:
+    """convert cluster to tRNA
+
+    Parameters
+    ----------
+    seqs : str
+        sequences to convert
+
+    Returns
+    -------
+    collections.OrderedDict
+        dictionary of clusters and tRNAs
+    """
     translater = collections.OrderedDict()
     translater["cluster"] = collections.OrderedDict()
     translater["tRNA"] = collections.OrderedDict()
@@ -637,7 +1119,19 @@ def cluster2trna(seqs):
 
 
 @check_run
-def check_ref(reference):
+def check_ref(reference:str) -> str:
+    """check reference
+
+    Parameters
+    ----------
+    reference : str
+        reference to check
+
+    Returns
+    -------
+    str
+        checked reference
+    """
     if os.path.exists(os.path.abspath(reference)):
         return reference
     elif os.path.exists(os.path.abspath(reference + ".gz")):
@@ -645,7 +1139,21 @@ def check_ref(reference):
 
 
 @check_run
-def multi_replace(repl, text):
+def multi_replace(repl:str, text:str) -> str:
+    """replace multiple strings
+
+    Parameters
+    ----------
+    repl : str
+        replacement string
+    text : str
+        string to replace
+
+    Returns
+    -------
+    str
+        string with replacements
+    """
     print("MULTI: " + str(repl) + str(text))
     # Create a regular expression  from the dictionary keys
     regex = re.compile("(%s)" % "|".join(map(re.escape, repl.keys())))
@@ -655,7 +1163,19 @@ def multi_replace(repl, text):
 
 
 @check_run
-def makelogdir(logdir):
+def makelogdir(logdir:str) -> str:
+    """make log directory
+
+    Parameters
+    ----------
+    logdir : str
+        directory to create
+
+    Returns
+    -------
+    str
+        directory
+    """
     if not os.path.isabs(logdir):
         logdir = os.path.abspath(logdir)
     if not os.path.exists(logdir):
@@ -664,7 +1184,19 @@ def makelogdir(logdir):
 
 
 @check_run
-def get_dict_hash(d):
+def get_dict_hash(d:dict) -> str:
+    """get hash of dictionary
+
+    Parameters
+    ----------
+    d : dict
+        dictionary to hash
+
+    Returns
+    -------
+    str
+        hash of dictionary
+    """
     logid = scriptname + ".get_dict_hash: "
     log.debug(logid + "INPUT DICT: " + str(d))
     ret = str(hashlib.sha256(bytes(str(sorted(d.items())), "utf-8")).hexdigest())
@@ -673,7 +1205,23 @@ def get_dict_hash(d):
 
 
 @check_run
-def add_to_innermost_key_by_list(addto, toadd, keylist):
+def add_to_innermost_key_by_list(addto:dict, toadd:str, keylist:list) -> dict:
+    """add to innermost key by list
+
+    Parameters
+    ----------
+    addto : dict
+        dictionary to add to
+    toadd : str
+        what to add
+    keylist : list
+        list of keys to add to
+
+    Returns
+    -------
+    dict
+        dictionary with added values
+    """
     logid = scriptname + ".add_to_innermost_key_by_list: "
     log.debug(logid + str(addto) + ", " + str(toadd))
 
