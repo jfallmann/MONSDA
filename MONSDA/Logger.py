@@ -50,7 +50,19 @@ import sys
 import traceback as tb
 
 
-def makelogdir(logdir):
+def makelogdir(logdir: str) -> str:
+    """create log directory if it does not exist
+
+    Parameters
+    ----------
+    logdir : str
+        directory to create
+
+    Returns
+    -------
+    str
+        directory path
+    """
     if not os.path.isabs(logdir):
         logdir = os.path.abspath(logdir)
     if not os.path.exists(logdir):
@@ -59,15 +71,38 @@ def makelogdir(logdir):
 
 
 def setup_logger(
-    name,
-    log_file,
-    filemode="w",
-    logformat=None,
-    datefmt=None,
-    level="WARNING",
-    delay=False,
-):
-    """Function setup as many loggers as you want"""
+    name: str,
+    log_file: str,
+    filemode: str = "w",
+    logformat: str = None,
+    datefmt: str = None,
+    level: str = "WARNING",
+    delay: bool = False,
+) -> logging.Logger:  # pragma: no cover
+    """set up a logger
+
+    Parameters
+    ----------
+    name : str
+        name of the logger
+    log_file : str
+        file to log to
+    filemode : str, optional
+        mode, by default "w"
+    logformat : str, optional
+        format, by default None
+    datefmt : str, optional
+        dateformat, by default None
+    level : str, optional
+        loglevel, by default "WARNING"
+    delay : bool, optional
+        delay logging, by default False
+
+    Returns
+    -------
+    logging.Logger
+        logger instance
+    """
 
     logger = logging.getLogger(name)
     if log_file != "stdout" and log_file != "stderr":
