@@ -3,6 +3,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(confi
 
 comparison = comparable_as_string(config,'DAS')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
+usededup = config.get('RUNDEDUP', False)
 
 rule themall:
     input:  dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.pdf", combo=combo, scombo=scombo, comparison=compstr),
@@ -14,7 +15,7 @@ rule themall:
 
 
 rule featurecount_unique:
-    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
     output: tmp   = temp("DAS/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph = temp("DAS/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DAS/{combo}/Featurecounts/{file}_tmp.count.gz"),

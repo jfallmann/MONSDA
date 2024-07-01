@@ -3,6 +3,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(confi
 
 comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
+usededup = config.get('RUNDEDUP', False)
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_DESEQ2_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -21,7 +22,7 @@ rule themall:
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
-    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
     output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),

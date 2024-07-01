@@ -3,6 +3,7 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(confi
 
 comparison = comparable_as_string(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
+usededup = config.get('RUNDEDUP', False)
 
 rule themall:
     input:  session = expand("DEU/{combo}/DEU_DEXSEQ_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -28,7 +29,7 @@ rule prepare_deu_annotation:
     shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
 
 rule featurecount_unique:
-    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo),
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo),
             countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
             deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
