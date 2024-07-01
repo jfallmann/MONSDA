@@ -129,7 +129,7 @@ except Exception:
 
 
 #  NestedDefaultDict
-class NestedDefaultDict(collections.defaultdict: collections.defaultdict) -> NestedDefaultDict:
+class NestedDefaultDict(collections.defaultdict):
     """NestedDefaultDict.
 
     Parameters
