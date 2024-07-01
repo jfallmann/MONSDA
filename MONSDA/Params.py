@@ -837,7 +837,11 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
             ret["reps"].append(sample)
         else:
             ret["reps"].append(os.path.basename(sample))
-        wcfile = sample.split(os.sep)[-1].replace("_mapped_sorted_unique.counts.gz", "")
+        wcfile = (
+            sample.split(os.sep)[-1]
+            .replace("_mapped_sorted_unique.counts.gz", "")
+            .replace("_mapped_sorted_unique_dedup.counts.gz", "")
+        )
         idx = partconf["SAMPLES"].index(wcfile)
         scond.append(sample.split(os.sep)[-1])
         ret["pairs"].append(checkpaired_rep([str.join(os.sep, scond)], config))

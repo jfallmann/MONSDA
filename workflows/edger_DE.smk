@@ -21,11 +21,11 @@ rule themall:
             Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
-    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
+    input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
     output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
-            cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz"
+            cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
     threads: MAXTHREAD
