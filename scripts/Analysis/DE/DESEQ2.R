@@ -337,7 +337,7 @@ rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
 png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"))
-DESeq2::plotPCA(testrld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5)
+DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5)
 dev.off()
 
 # We also write the normalized counts to file
