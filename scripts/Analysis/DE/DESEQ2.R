@@ -71,6 +71,96 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
+#### Now plot and print over-all comparisons
+
+## Create design-table considering different types (paired, unpaired) and batches
+design <- ~ 0 + condition
+print(design)
+
+# Create DESeqDataSet
+dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
+
+# filter low counts
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep, ]
+
+# run for each pair of conditions
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
+
+rld <- rlogTransformation(dds, blind = FALSE)
+vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
+
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"))
+DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5)
+dev.off()
+
+# We also write the normalized counts to file
+write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+
+
+# Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
+
+par(mai = ifelse(1:4 <= 2, par("mai"), 0))
+px <- counts(dds)[, 1] / sizeFactors(dds)[1]
+ord <- order(px)
+ord <- ord[px[ord] < 150]
+ord <- ord[seq(1, length(ord), length = 50)]
+last <- ord[length(ord)]
+vstcol <- c("blue", "black")
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "VST-and-log2.png", sep = "_"))
+matplot(px[ord], cbind(assay(vsd)[, 1], log2(px))[ord, ], type = "l", lty = 1, col = vstcol, xlab = "n", ylab = "f(n)")
+legend("bottomright", legend = c(expression("variance stabilizing transformation"), expression(log[2](n / s[1]))), fill = vstcol)
+dev.off()
+
+##############################
+library("RColorBrewer")
+library("gplots")
+select <- order(rowMeans(counts(dds, normalized = TRUE)), decreasing = TRUE)[1:30]
+hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width = 800, height = 750)
+heatmap.2(counts(dds, normalized = TRUE)[select, ],
+    col = hmcol,
+    Rowv = FALSE, Colv = FALSE, scale = "none",
+    dendrogram = "none", trace = "none", margin = c(12, 8)
+)
+dev.off()
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width = 800, height = 750)
+heatmap.2(assay(rld)[select, ],
+    col = hmcol,
+    Rowv = FALSE, Colv = FALSE, scale = "none",
+    dendrogram = "none", trace = "none", margin = c(12, 8)
+)
+dev.off()
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width = 800, height = 750)
+heatmap.2(assay(vsd)[select, ],
+    col = hmcol,
+    Rowv = FALSE, Colv = FALSE, scale = "none",
+    dendrogram = "none", trace = "none", margin = c(12, 8)
+)
+dev.off()
+
+# The above shows heatmaps for 30 most highly expressed genes (not necessarily the biggest fold change). The data is of raw counts (left), regularized log transformation (center) and from variance stabilizing transformation (right) and you can clearly see the effect of the transformation has by shrinking the variance so that we don’t get the squish effect shown in the left hand graph.
+##############################
+# Now we calculate sample to sample distances so we can make a dendrogram to look at the clustering of samples.
+distsRL <- dist(t(assay(rld)))
+mat <- as.matrix(distsRL)
+rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
+# updated in latest vignette (See comment by Michael Love)
+# this line was incorrect
+# heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
+# From the Apr 2015 vignette
+hc <- hclust(distsRL)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"), width = 800, height = 800)
+heatmap.2(mat,
+    Rowv = as.dendrogram(hc),
+    symm = TRUE, trace = "none",
+    col = rev(hmcol), margin = c(13, 13)
+)
+dev.off()
+
+### Now we run comparisons
+
 for (contrast in comparison[[1]]) {
     contrast_name <- strsplit(contrast, ":")[[1]][1]
     contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
@@ -317,93 +407,6 @@ for (contrast in comparison[[1]]) {
     })
 }
 
-#### Now plot and print over-all comparisons
-
-## Create design-table considering different types (paired, unpaired) and batches
-design <- ~ 0 + condition
-print(design)
-
-# Create DESeqDataSet
-dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
-
-# filter low counts
-keep <- rowSums(counts(dds)) >= 10
-dds <- dds[keep, ]
-
-# run for each pair of conditions
-dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
-
-rld <- rlogTransformation(dds, blind = FALSE)
-vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
-
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"))
-DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5)
-dev.off()
-
-# We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-
-
-# Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
-
-par(mai = ifelse(1:4 <= 2, par("mai"), 0))
-px <- counts(dds)[, 1] / sizeFactors(dds)[1]
-ord <- order(px)
-ord <- ord[px[ord] < 150]
-ord <- ord[seq(1, length(ord), length = 50)]
-last <- ord[length(ord)]
-vstcol <- c("blue", "black")
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "VST-and-log2.png", sep = "_"))
-matplot(px[ord], cbind(assay(vsd)[, 1], log2(px))[ord, ], type = "l", lty = 1, col = vstcol, xlab = "n", ylab = "f(n)")
-legend("bottomright", legend = c(expression("variance stabilizing transformation"), expression(log[2](n / s[1]))), fill = vstcol)
-dev.off()
-
-##############################
-library("RColorBrewer")
-library("gplots")
-select <- order(rowMeans(counts(dds, normalized = TRUE)), decreasing = TRUE)[1:30]
-hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width = 800, height = 750)
-heatmap.2(counts(dds, normalized = TRUE)[select, ],
-    col = hmcol,
-    Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
-)
-dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width = 800, height = 750)
-heatmap.2(assay(rld)[select, ],
-    col = hmcol,
-    Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
-)
-dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width = 800, height = 750)
-heatmap.2(assay(vsd)[select, ],
-    col = hmcol,
-    Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
-)
-dev.off()
-
-# The above shows heatmaps for 30 most highly expressed genes (not necessarily the biggest fold change). The data is of raw counts (left), regularized log transformation (center) and from variance stabilizing transformation (right) and you can clearly see the effect of the transformation has by shrinking the variance so that we don’t get the squish effect shown in the left hand graph.
-##############################
-# Now we calculate sample to sample distances so we can make a dendrogram to look at the clustering of samples.
-distsRL <- dist(t(assay(rld)))
-mat <- as.matrix(distsRL)
-rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
-# updated in latest vignette (See comment by Michael Love)
-# this line was incorrect
-# heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
-# From the Apr 2015 vignette
-hc <- hclust(distsRL)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"), width = 800, height = 800)
-heatmap.2(mat,
-    Rowv = as.dendrogram(hc),
-    symm = TRUE, trace = "none",
-    col = rev(hmcol), margin = c(13, 13)
-)
-dev.off()
 
 ##############################
 

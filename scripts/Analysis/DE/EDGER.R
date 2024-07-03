@@ -69,6 +69,59 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
+# Same for all samples without design specific normalization
+## name types and levels for design
+
+## Create design-table considering different types (paired, unpaired) and batches
+des <- ~ 0 + condition
+design <- model.matrix(des, data = sampleData_all)
+colnames(design) <- levels(sampleData_all$condition)
+print(design)
+
+genes <- rownames(countData_all)
+samples <- rownames(sampleData_all)
+
+dge <- DGEList(counts = countData_all, group = sampleData_all$condition, samples = samples, genes = genes)
+
+## filter low counts
+keep <- filterByExpr(dge)
+dge <- dge[keep, , keep.lib.sizes = FALSE]
+
+## normalize with TMM
+dge <- calcNormFactors(dge, method = "TMM", BPPARAM = BPPARAM)
+
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
+
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+
+## create file MDS-plot with and without summarized replicates
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
+png(out)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+dev.off()
+
+## estimate Dispersion
+dge <- estimateDisp(dge, design, robust = TRUE)
+
+## create file BCV-plot - visualizing estimated dispersions
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
+png(out)
+plotBCV(dge)
+dev.off()
+
+## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+fit <- glmQLFit(dge, design, robust = TRUE)
+
+## create file quasi-likelihood-dispersion-plot
+out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
+png(out)
+plotQLDisp(fit)
+dev.off()
+
 ## Analyze according to comparison groups
 for (contrast in comparison[[1]]) {
     contrast_name <- strsplit(contrast, ":")[[1]][1]
@@ -387,57 +440,5 @@ for (contrast in comparison[[1]]) {
     })
 }
 
-# Same for all samples without design specific normalization
-## name types and levels for design
-
-## Create design-table considering different types (paired, unpaired) and batches
-des <- ~ 0 + condition
-design <- model.matrix(des, data = sampleData_all)
-colnames(design) <- levels(sampleData_all$condition)
-print(design)
-
-genes <- rownames(countData_all)
-samples <- rownames(sampleData_all)
-
-dge <- DGEList(counts = countData_all, group = sampleData_all$condition, samples = samples, genes = genes)
-
-## filter low counts
-keep <- filterByExpr(dge)
-dge <- dge[keep, , keep.lib.sizes = FALSE]
-
-## normalize with TMM
-dge <- calcNormFactors(dge, method = "TMM", BPPARAM = BPPARAM)
-
-## create file normalized table
-tmm <- as.data.frame(cpm(dge))
-colnames(tmm) <- t(dge$samples$samples)
-tmm$ID <- dge$genes$genes
-tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
-
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-## create file MDS-plot with and without summarized replicates
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
-dev.off()
-
-## estimate Dispersion
-dge <- estimateDisp(dge, design, robust = TRUE)
-
-## create file BCV-plot - visualizing estimated dispersions
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out)
-plotBCV(dge)
-dev.off()
-
-## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-fit <- glmQLFit(dge, design, robust = TRUE)
-
-## create file quasi-likelihood-dispersion-plot
-out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out)
-plotQLDisp(fit)
-dev.off()
 
 save.image(file = paste("DE_EDGER", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
