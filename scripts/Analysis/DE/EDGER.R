@@ -205,7 +205,7 @@ for (contrast in comparison[[1]]) {
         ## create file MDS-plot with and without summarized replicates
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS_norm.png", sep = "_")
         png(out)
-        plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1)
+        print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
         dev.off()
 
         ## estimate Dispersion
@@ -214,7 +214,7 @@ for (contrast in comparison[[1]]) {
         ## create file BCV-plot - visualizing estimated dispersions
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV_norm.png", sep = "_")
         png(out)
-        plotBCV(dge_norm)
+        print(plotBCV(dge_norm))
         dev.off()
 
         ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
@@ -223,7 +223,7 @@ for (contrast in comparison[[1]]) {
         ## create file quasi-likelihood-dispersion-plot
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp_norm.png", sep = "_")
         png(out)
-        plotQLDisp(fit_norm)
+        print(plotQLDisp(fit_norm))
         dev.off()
     }
 
@@ -252,7 +252,7 @@ for (contrast in comparison[[1]]) {
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
     png(out)
-    plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
     ## estimate Dispersion
@@ -261,7 +261,7 @@ for (contrast in comparison[[1]]) {
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
     png(out)
-    plotBCV(dge)
+    print(plotBCV(dge))
     dev.off()
 
     ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
@@ -270,7 +270,7 @@ for (contrast in comparison[[1]]) {
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
     png(out)
-    plotQLDisp(fit)
+    print(plotQLDisp(fit))
     dev.off()
 
     tryCatch({
@@ -348,7 +348,7 @@ for (contrast in comparison[[1]]) {
         ## plot lFC vs CPM
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MD.png", sep = "_")
         png(out)
-        plotMD(qlf, main = contrast_name)
+        print(plotMD(qlf, main = contrast_name))
         abline(h = c(-1, 1), col = "blue")
         dev.off()
 
@@ -429,7 +429,7 @@ for (contrast in comparison[[1]]) {
             ## plot lFC vs CPM
             out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MD_norm.png", sep = "_")
             png(out)
-            plotMD(qlf, main = contrast_name)
+            print(plotMD(qlf, main = contrast_name))
             abline(h = c(-1, 1), col = "blue")
             dev.off()
         }

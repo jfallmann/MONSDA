@@ -162,7 +162,7 @@ for (contrast in comparisons[[1]]) {
         dxdpair <- estimateDispersions(dxdpair, BPPARAM = BPPARAM)
 
         png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "DispEsts.png", sep = "_"))
-        plotDispEsts(dxdpair)
+        print(plotDispEsts(dxdpair))
         dev.off()
 
         dxdpair <- testForDEU(dxdpair, reducedModel = reduced, fullModel = full, BPPARAM = BPPARAM)
