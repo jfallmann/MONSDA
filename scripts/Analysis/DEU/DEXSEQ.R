@@ -161,7 +161,7 @@ for (contrast in comparisons[[1]]) {
         dxdpair <- estimateSizeFactors(dxdpair)
         dxdpair <- estimateDispersions(dxdpair, BPPARAM = BPPARAM)
 
-        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "DispEsts.png", sep = "_"), width = 400, height = 350, res = 45)
+        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "DispEsts.png", sep = "_"), width = 400, height = 350, res = 300)
         print(plotDispEsts(dxdpair))
         dev.off()
 
@@ -173,7 +173,7 @@ for (contrast in comparisons[[1]]) {
 
         comparison_objs[[contrast_name]] <- dxr1
 
-        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"), width = 400, height = 350, res = 45)
+        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"), width = 400, height = 350, res = 300)
         print(plotMA(dxr1, cex = 0.8))
         dev.off()
 
