@@ -214,7 +214,7 @@ for (contrast in comparisons[[1]]) {
         ## Plot feature per gene histogram
         tryCatch(
             {
-                png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "FeatPerGene.png", sep = "_"), width = 400, height = 350, res = 300)
+                png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "FeatPerGene.png", sep = "_"), width=1400, height=960, res=300)
                 print(plotData(d))
                 dev.off()
             },
@@ -228,12 +228,12 @@ for (contrast in comparisons[[1]]) {
             }
         )
         ## Plot precision
-        png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "Precision.png", sep = "_"), width = 400, height = 350, res = 300)
+        png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "Precision.png", sep = "_"), width=1400, height=960, res=300)
         print(plotPrecision(d))
         dev.off()
 
         ## Plot gene-level p-values
-        png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "PValues.png", sep = "_"), width = 400, height = 350, res = 300)
+        png(paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, "figure", "PValues.png", sep = "_"), width=1400, height=960, res=300)
         print(plotPValues(d))
         dev.off()
 
@@ -252,17 +252,17 @@ for (contrast in comparisons[[1]]) {
                 next
             }
             name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "plotProportions", "props.png", sep = "_")
-            png(name1, width = 400, height = 350, res = 300)
+            png(name1, width=1400, height=960, res=300)
             print(plotProportions(d, res$gene_id[gene], group_variable = "condition"))
             dev.off()
 
             name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "lineplot.png", sep = "_")
-            png(name2, width = 400, height = 350, res = 300)
+            png(name2, width=1400, height=960, res=300)
             print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "lineplot"))
             dev.off()
 
             name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res$Gene[gene], "figure", "ribbonplot.png", sep = "_")
-            png(name3, width = 400, height = 350, res = 300)
+            png(name3, width=1400, height=960, res=300)
             print(plotProportions(d, res$gene_id[gene], group_variable = "condition", plot_type = "ribbonplot"))
             dev.off()
 
@@ -300,17 +300,17 @@ for (contrast in comparisons[[1]]) {
                 next
             }
             name1 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "plotProportions_transcript", "props.png", sep = "_")
-            png(name1, width = 400, height = 350, res = 300)
+            png(name1, width=1400, height=960, res=300)
             print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition"))
             dev.off()
 
             name2 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "lineplot_transcript.png", sep = "_")
-            png(name2, width = 400, height = 350, res = 300)
+            png(name2, width=1400, height=960, res=300)
             print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "lineplot"))
             dev.off()
 
             name3 <- paste("Figures/DTU", "DRIMSEQ", combi, contrast_name, res.txp$Gene[trans], res.txp$feature_id[trans], "figure", "ribbonplot_transcript.png", sep = "_")
-            png(name3, width = 400, height = 350, res = 300)
+            png(name3, width=1400, height=960, res=300)
             print(plotProportions(d, res.txp$gene_id[trans], group_variable = "condition", plot_type = "ribbonplot"))
             dev.off()
 

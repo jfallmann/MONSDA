@@ -90,7 +90,7 @@ dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
 rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width = 400, height = 350, res = 300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1400, height=960, res=300)
 print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5))
 dev.off()
 
@@ -118,21 +118,21 @@ library("RColorBrewer")
 library("gplots")
 select <- order(rowMeans(counts(dds, normalized = TRUE)), decreasing = TRUE)[1:30]
 hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width = 400, height = 350, res = 300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width=1400, height=960, res=300)
 heatmap.2(counts(dds, normalized = TRUE)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
     dendrogram = "none", trace = "none", margin = c(12, 8)
 )
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width = 400, height = 350, res = 300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width=1400, height=960, res=300)
 heatmap.2(assay(rld)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
     dendrogram = "none", trace = "none", margin = c(12, 8)
 )
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width = 400, height = 350, res = 300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width=1400, height=960, res=300)
 heatmap.2(assay(vsd)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
@@ -151,7 +151,7 @@ rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
 # heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
 # From the Apr 2015 vignette
 hc <- hclust(distsRL)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"), width = 400, height = 350, res = 300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"), width=1400, height=960, res=300)
 heatmap.2(mat,
     Rowv = as.dendrogram(hc),
     symm = TRUE, trace = "none",
@@ -220,7 +220,7 @@ for (contrast in comparison[[1]]) {
         rld_norm <- rlogTransformation(dds_norm, blind = FALSE)
         vsd_norm <- varianceStabilizingTransformation(dds_norm, blind = FALSE)
 
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width = 400, height = 350, res = 300)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1400, height=960, res=300)
         print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
         # DESeq2::plotPCA(rld_norm, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
         dev.off()
@@ -252,7 +252,7 @@ for (contrast in comparison[[1]]) {
     rld <- rlogTransformation(dds, blind = FALSE)
     vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width = 400, height = 350, res = 300)
+    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1400, height=960, res=300)
     print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
     # DESeq2::plotPCA(rld, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
     dev.off()
@@ -326,7 +326,7 @@ for (contrast in comparison[[1]]) {
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
         # plotMA
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width = 400, height = 350, res = 300)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width=1400, height=960, res=300)
         DESeq2::plotMA(res_shrink)
         dev.off()
 
@@ -397,7 +397,7 @@ for (contrast in comparison[[1]]) {
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
             # plotMA
-            png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep = "_"), width = 400, height = 350, res = 300)
+            png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep = "_"), width=1400, height=960, res=300)
             DESeq2::plotMA(res)
             dev.off()
         }

@@ -101,7 +101,7 @@ write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER", combi, "Data
 
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out, width = 400, height = 350, res = 300)
+png(out, width=1400, height=960, res=300)
 plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
@@ -110,7 +110,7 @@ dge <- estimateDisp(dge, design, robust = TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width = 400, height = 350, res = 300)
+png(out, width=1400, height=960, res=300)
 plotBCV(dge)
 dev.off()
 
@@ -119,7 +119,7 @@ fit <- glmQLFit(dge, design, robust = TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width = 400, height = 350, res = 300)
+png(out, width=1400, height=960, res=300)
 plotQLDisp(fit)
 dev.off()
 
@@ -201,7 +201,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
-    png(out, width = 400, height = 350, res = 300)
+    png(out, width=1400, height=960, res=300)
     print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
@@ -210,7 +210,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
-    png(out, width = 400, height = 350, res = 300)
+    png(out, width=1400, height=960, res=300)
     print(plotBCV(dge))
     dev.off()
 
@@ -219,7 +219,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
-    png(out, width = 400, height = 350, res = 300)
+    png(out, width=1400, height=960, res=300)
     print(plotQLDisp(fit))
     dev.off()
 
@@ -260,7 +260,7 @@ for (compare in comparisons[[1]]) {
 
         ## plot lFC vs CPM
         out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "figure", "MD.png", sep = "_")
-        png(out, width = 400, height = 350, res = 300)
+        png(out, width=1400, height=960, res=300)
         print(plotMD(qlf, main = contrast_name))
         abline(h = c(-1, 1), col = "blue")
         dev.off()
