@@ -103,7 +103,7 @@ write.table(as.data.frame(tmm.genes), gzfile(paste("Tables/DAS", "EDGER", combi,
 
 ## create file MDS-plot with and without sumarized replicates
 out <- paste("Figures/DAS", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out, width=1400, height=960, res=300)
+png(out, width=1900, height=1200, res=300)
 plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
@@ -112,7 +112,7 @@ dge <- estimateDisp(dge, design, robust = TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DAS", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width=1400, height=960, res=300)
+png(out, width=1900, height=1200, res=300)
 plotBCV(dge)
 dev.off()
 
@@ -121,7 +121,7 @@ fit <- glmQLFit(dge, design, robust = TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DAS", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width=1400, height=960, res=300)
+png(out, width=1900, height=1200, res=300)
 plotQLDisp(fit)
 dev.off()
 
@@ -207,7 +207,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file MDS-plot with and without sumarized replicates
     out <- paste("Figures/DAS", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
-    png(out, width=1400, height=960, res=300)
+    png(out, width=1900, height=1200, res=300)
     print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
@@ -216,7 +216,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DAS", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
-    png(out, width=1400, height=960, res=300)
+    png(out, width=1900, height=1200, res=300)
     print(plotBCV(dge))
     dev.off()
 
@@ -225,7 +225,7 @@ for (compare in comparisons[[1]]) {
 
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DAS", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
-    png(out, width=1400, height=960, res=300)
+    png(out, width=1900, height=1200, res=300)
     print(plotQLDisp(fit))
     dev.off()
 
@@ -292,7 +292,7 @@ for (compare in comparisons[[1]]) {
             }
 
             name1 <- paste("Figures/DAS", "EDGER", combi, contrast_name, tops$genes[gene], "figure", "transcripts.png", sep = "_")
-            png(name1, width=1400, height=960, res=300)
+            png(name1, width=1900, height=1200, res=300)
             print(plotSpliceDGE(sp, geneid = tops$genes[gene], genecol = "genes"))
             dev.off()
             figures[counter, ] <- c(rownames(tops)[gene], tops$genes[gene], paste(outdir, name1, sep = "/"))
