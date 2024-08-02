@@ -21,9 +21,8 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-bcv <- if (argsLen > 7) as.numeric(args[8])
+bcv <- if (argsLen > 7) as.numeric(args[8]) else 0.2
 spike <- if (argsLen > 8) args[9] else ""
-
 if (bcv == ''){
     bcv <- 0.2
 }
