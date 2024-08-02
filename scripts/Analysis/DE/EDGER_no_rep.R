@@ -265,12 +265,12 @@ for (contrast in comparison[[1]]) {
 
         ## Testing
         # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+        #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
         ## estimate Dispersion, THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES
         # dge <- estimateDisp(dge, design, robust = TRUE)
         # AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES => no glmQLFTest possible
         # qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-        qlf <- exactTest(dge, contrast = AvsB, dispersion = bcv^2)
+        qlf <- exactTest(dge, pair = c(B, A), dispersion = bcv^2)
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
@@ -351,10 +351,10 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+            #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
             # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            qlf <- exactTest(dge_norm, contrast = AvsB, dispersion = bcv^2)
+            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2)
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
