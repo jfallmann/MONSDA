@@ -23,7 +23,7 @@ combi <- args[6]
 availablecores <- as.integer(args[7])
 bcv <- if (argsLen > 7) as.numeric(args[8]) else 0.2
 spike <- if (argsLen > 8) args[9] else ""
-if (!exists(bcv)){
+if (!exists(quote(bcv))){
     bcv <- 0.2
 }
 
