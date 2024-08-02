@@ -100,10 +100,9 @@ tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-## create file MDS-plot with and without summarized replicates
+## create dummy file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
 png(out, width=1900, height=1200, res=300)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
 ## create dummy file BCV-plot - visualizing estimated dispersions
@@ -196,10 +195,9 @@ for (contrast in comparison[[1]]) {
 
         write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-        ## create file MDS-plot with and without summarized replicates
+        ## create dummy file MDS-plot with and without summarized replicates
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS_norm.png", sep = "_")
-        png(out, width=1900, height=1200, res=300)
-        print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
+        png(out, width=1900, height=1200, res=300)        
         dev.off()
 
         ## create dummy file BCV-plot - visualizing estimated dispersions
@@ -235,10 +233,9 @@ for (contrast in comparison[[1]]) {
 
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-    ## create file MDS-plot with and without summarized replicates
+    ## create dummy file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
     ## create dummy file BCV-plot - visualizing estimated dispersions
