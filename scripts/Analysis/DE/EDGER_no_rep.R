@@ -21,8 +21,12 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-bcv <- if (argsLen > 7) as.numeric(args[8]) else as.numeric("0.1")
+bcv <- if (argsLen > 7) as.numeric(args[8])
 spike <- if (argsLen > 8) args[9] else ""
+
+if (bcv == ''){
+    bcv <- 0.2
+}
 
 print(args)
 print(paste0("Typical values for the common BCV (square-root-dispersion) for datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms or 0.01 for technical replicates. You selected ", bcv, sep = ""))
@@ -354,7 +358,7 @@ for (contrast in comparison[[1]]) {
             #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
             # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2)
+            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv)
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
