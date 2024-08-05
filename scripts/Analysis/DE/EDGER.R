@@ -135,6 +135,7 @@ for (contrast in comparison[[1]]) {
 
     # subset Datasets for pairwise comparison
     countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
+    rownames(countData) <- rownames(countData_all)
     sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
     sampleData$condition <- relevel(sampleData$condition, ref = B)
 
@@ -177,7 +178,6 @@ for (contrast in comparison[[1]]) {
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
         genes <- rownames(countData)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
         # colnames(design_norm) <- c(colnames(design),"W_1")

@@ -172,6 +172,7 @@ for (contrast in comparison[[1]]) {
 
     # subset Datasets for pairwise comparison
     countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
+    rownames(countData) <- rownames(countData_all)
     sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
 
     ## Create design-table considering different types (paired, unpaired) and batches
