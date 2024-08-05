@@ -357,7 +357,7 @@ for (contrast in comparison[[1]]) {
             #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
             # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv)
+            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2)
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
