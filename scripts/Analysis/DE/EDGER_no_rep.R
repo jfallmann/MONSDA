@@ -105,18 +105,15 @@ write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataS
 
 ## create dummy file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
 ## create dummy file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
 ## create dummy file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
 ## Analyze according to comparison groups
 for (contrast in comparison[[1]]) {
@@ -274,7 +271,7 @@ for (contrast in comparison[[1]]) {
         # dge <- estimateDisp(dge, design, robust = TRUE)
         # AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES => no glmQLFTest possible
         # qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-        qlf <- exactTest(dge, pair = c(B, A), dispersion = bcv^2)
+        qlf <- exactTest(dge, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
@@ -284,7 +281,7 @@ for (contrast in comparison[[1]]) {
             get_gene_name(x, gtf_gene)
         }))
         qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
+        res <- qlf$table[, c(5, 4, 2, 1, 3)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
 
         # plotVolcano
@@ -320,12 +317,12 @@ for (contrast in comparison[[1]]) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -358,7 +355,7 @@ for (contrast in comparison[[1]]) {
             #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
             # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2)
+            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
@@ -367,7 +364,7 @@ for (contrast in comparison[[1]]) {
                 get_gene_name(x, gtf_gene)
             }))
             qlf$table$Gene_ID <- rownames(qlf$table)
-            res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
+            res <- qlf$table[, c(5, 4, 2, 1, 3)]
             res$FDR <- p.adjust(res$PValue, method = "BH")
 
             # plotVolcano
@@ -403,12 +400,12 @@ for (contrast in comparison[[1]]) {
 
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
