@@ -1,7 +1,7 @@
 TRIMENV=get_always('TRIMMINGENV')
 TRIMBIN=get_always('TRIMMINGBIN')
 
-TRIMPARAMS = get_always('bbduk_params_TRIM') ?: ''
+TRIMPARAMS = get_always('fastp_params_TRIM') ?: ''
 //int cores = min(THREADS,4)
 //TRIMMING PROCESSES
 
@@ -33,14 +33,14 @@ process trim{
         p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN $TRIMPARAMS t=${task.cpus} in1=$r1 in2=$r2 out1=$o out2=$p &> $r 
+        $TRIMBIN $TRIMPARAMS --thread ${task.cpus} --in1 $r1 --in2 $r2 --out1 $o --out2 $p &> $r 
         """
     }
     else{
         o = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"        
         r = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        $TRIMBIN $TRIMPARAMS t=${task.cpus} in=$r1 out=$o &> $r 
+        $TRIMBIN $TRIMPARAMS --threads ${task.cpus} --i $r1 --o $o &> $r 
         """
     }
 }
