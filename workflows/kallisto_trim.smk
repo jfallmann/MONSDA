@@ -46,7 +46,7 @@ if paired == 'paired':
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                 r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 uidx = rules.kallisto_index.output.uidx[0]
-        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/kallistoquant.log"
         conda:  ""+COUNTENV+".yaml"
@@ -60,9 +60,8 @@ if paired == 'paired':
 else:
     rule mapping:
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
-                index = rules.kallisto_index.output.idx,
                 uidx = rules.kallisto_index.output.uidx[0]
-        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/kallistoquant.log"
         conda:  ""+COUNTENV+".yaml"
