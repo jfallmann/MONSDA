@@ -7,7 +7,7 @@ MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
 MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX')
-MAPUIDX.replace('.idx','')
+MAPUIDX = MAPUIDX.replace('.idx','')
 
 IDXPARAMS = get_always('star_params_INDEX') ?: ''
 MAPPARAMS = get_always('star_params_MAP') ?: ''

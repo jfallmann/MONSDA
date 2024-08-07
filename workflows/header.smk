@@ -209,7 +209,7 @@ for x in ['TRACKS', 'COUNTING']:
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
-        if XENV == 'salmon' or XENV == 'kallisto':
+        if XENV in ["salmon", "kallisto"]:
             IDX = XCONF.get('INDEX')
             if IDX:
                 INDEX = IDX

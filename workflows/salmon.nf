@@ -2,13 +2,13 @@ COUNTENV = get_always('COUNTINGENV')
 COUNTBIN = get_always('COUNTINGBIN')
 COUNTIDX = get_always('COUNTINGIDX')
 COUNTUIDX = get_always('COUNTINGUIDX')
-COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')+'.idx'
+COUNTUIDX = COUNTUIDX.replaceAll('.idx','')
+COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTDECOY = get_always('COUNTINDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
-COUNTUIDX.replace('.idx','')
 
 IDXPARAMS = get_always('salmon_params_INDEX') ?: ''
 COUNTPARAMS = get_always('salmon_params_COUNT') ?: ''
@@ -63,8 +63,9 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename == "salmon.idx")            "$COUNTUIDX"
+        if (filename == "salmon.idx")            "$COUNTIDX"
         else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
+        else                                      "$COUNTUIDX"
     }
 
     input:
@@ -95,15 +96,17 @@ process salmon_quant{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+
+        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
     path reads
 
     output:
-    path "*.gz", emit: counts
+    path "*.gz", includeInputs:false, emit: counts
     path "*.log", emit: logs
+    path "*", includeInputs:false, emit: rest
 
     script:
 
@@ -152,7 +155,7 @@ workflow COUNTING{
 
     main:
    
-    checkidx = file(COUNTIDX)
+    checkidx = file(COUNTUIDX)
     collection.filter(~/.fastq.gz/)
     
     if (checkidx.exists()){

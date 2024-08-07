@@ -8,7 +8,6 @@ COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTDECOY = get_always('COUNTINDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
-COUNTUIDX.replace('.idx','')
 
 IDXPARAMS = get_always('kallisto_params_INDEX') ?: ''
 COUNTPARAMS = get_always('kallisto_params_COUNT') ?: ''
@@ -61,10 +60,11 @@ process kallisto_idx{
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "kallisto.idx")            "$COUNTUIDX"
+        if (filename == "kallisto.idx")            "$COUNTIDX"
         else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/kallisto_index.log"
+        else                                        "$COUNTUIDX"
     }
 
     input:
@@ -95,17 +95,18 @@ process kallisto_quant{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/kallisto/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "COUNTS/${SCOMBO}/kallisto/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else                                    "COUNTS/${SCOMBO}/kallisto/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
     path reads
 
     output:
-    path "*.gz", emit: counts
+    path "*.gz", includeInputs:false, emit: counts
     path "*.log", emit: logs
     path "*.json", emit: json
     path "*.h5", emit: h5
+    path "*", includeInputs:false, emit: rest
 
     script:
 
@@ -127,7 +128,7 @@ process kallisto_quant{
         oz = fn+"/abundance.tsv.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn $r1 $r2 &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json run_info.json && ln -fs ${fn}/abundance.h5 abundance.h5
+        $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn $r1 $r2 &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json ${fn}_run_info.json && ln -fs ${fn}/abundance.h5 ${fn}_abundance.h5
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -144,7 +145,7 @@ process kallisto_quant{
         oz = fn+"/abundance.tsv.gz"
         ol = fn+"_counts.gz"
         """
-         $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn --single $read &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json run_info.json && ln -fs ${fn}/abundance.h5 abundance.h5
+         $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn --single $read &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json ${fn}_run_info.json && ln -fs ${fn}/abundance.h5 ${fn}_abundance.h5
         """
     }
 }
@@ -154,7 +155,7 @@ workflow COUNTING{
 
     main:
    
-    checkidx = file(COUNTIDX)
+    checkidx = file(COUNTUIDX)
     collection.filter(~/.fastq.gz/)
     
     if (checkidx.exists()){
