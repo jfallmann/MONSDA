@@ -6,7 +6,7 @@ keydict["ENV"] = COUNTENV
 unik = get_dict_hash(keydict)
 
 rule themall:
-    input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", combo=combo, file=samplecond(SAMPLES, config)),
+    input:  expand("COUNTS/{combo}/{file}_counts.gz", combo=combo, file=samplecond(SAMPLES, config)),
 
 if paired == 'paired':
     rule simulate_trim:
@@ -45,7 +45,7 @@ if paired == 'paired':
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                 r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 uidx = rules.salmon_index.output.uidx[0]
-        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
@@ -61,7 +61,7 @@ else:
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
                 index = rules.salmon_index.output.idx,
                 uidx = rules.salmon_index.output.uidx[0]
-        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+        output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"

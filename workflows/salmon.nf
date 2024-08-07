@@ -95,7 +95,7 @@ process salmon_quant{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
+        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
     input:
@@ -125,7 +125,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -142,7 +142,7 @@ process salmon_quant{
         oz = fn+"/quant.sf.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
 }
