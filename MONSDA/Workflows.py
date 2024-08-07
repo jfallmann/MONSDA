@@ -62,12 +62,7 @@
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
 import collections
-import datetime
-import functools
 import glob
-import gzip
-import hashlib
-import heapq
 import inspect
 import itertools
 import json
@@ -78,12 +73,8 @@ import shutil
 import subprocess
 import sys
 import traceback as tb
-from collections import OrderedDict, defaultdict
-from io import StringIO
-from operator import itemgetter
+from collections import OrderedDict
 
-import numpy as np
-from Bio import SeqIO
 from pkg_resources import parse_version
 from snakemake.common.configfile import load_configfile
 
@@ -889,7 +880,7 @@ def make_sub(
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
-                            and not "MAPPING" in works
+                            and "MAPPING" not in works
                         ):
                             if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
@@ -898,8 +889,8 @@ def make_sub(
 
                         if (
                             works[j] == "QC"
-                            and not "TRIMMING" in works
-                            and not "MAPPING" in works
+                            and "TRIMMING" not in works
+                            and "MAPPING" not in works
                         ):
                             if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
@@ -1057,9 +1048,9 @@ def make_sub(
                     if (
                         subwork == "QC"
                         and "TRIMMING" in subworkflows
-                        and not "MAPPING" in subworkflows
+                        and "MAPPING" not in subworkflows
                     ):
-                        if "DEDUP" in subworkflows and not "picard" in any(
+                        if "DEDUP" in subworkflows and "picard" not in any(
                             [x for x in listoftools]
                         ):
                             subname = toolenv + "_dedup_trim.smk"
@@ -1453,7 +1444,7 @@ def make_post(
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                         if (
-                            toolbin == "salmon"
+                            toolbin in ["salmon", "kallisto"]
                             and "TRIMMING" not in config["WORKFLOWS"]
                         ):
                             log.debug(logid + "Simulated read trimming only!")
@@ -1613,7 +1604,10 @@ def make_post(
             subname = toolenv + ".smk"
             smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
-            if toolbin == "salmon" and "TRIMMING" not in config["WORKFLOWS"]:
+            if (
+                toolbin in ["salmon", "kallisto"]
+                and "TRIMMING" not in config["WORKFLOWS"]
+            ):
                 log.debug(logid + "Simulated read trimming only!")
                 mu.makeoutdir("TRIMMED_FASTQ")
                 smkf = (
@@ -1775,7 +1769,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
 
     allmap = (
         'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
-        if not "DEDUP" in subworkflows
+        if "DEDUP" not in subworkflows
         else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
     )
     allqc = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
@@ -2165,7 +2159,7 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            if XENV == "salmon":
+            if XENV in ["salmon", "kallisto"]:
                 IDX = XCONF.get("INDEX")
                 if IDX:
                     INDEX = IDX
