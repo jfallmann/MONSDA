@@ -65,6 +65,64 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
+## Create design-table considering different types (paired, unpaired) and batches
+des <- ~ 0 + condition
+design <- model.matrix(des, data = sampleData_all)
+colnames(design) <- levels(sampleData_all$condition)
+print(design)
+
+genes <- rownames(countData_all)
+samples <- rownames(sampleData_all)
+
+splitted <- strsplit(rownames(countData_all), ":")
+exons <- sapply(splitted, "[[", 2)
+genesrle <- sapply(splitted, "[[", 1)
+
+dge <- DGEList(counts = countData_all, group = sampleData_all$condition, samples = samples, genes = genesrle)
+
+## Addd exons to dge
+dge$genes$exons <- exons
+
+## filter low counts
+keep <- filterByExpr(dge)
+dge <- dge[keep, , keep.lib.sizes = FALSE]
+
+## normalize with TMM
+dge <- calcNormFactors(dge, method = "TMM", BPPARAM = BPPARAM)
+
+
+## create file normalized table
+tmm <- as.data.frame(cpm(dge))
+colnames(tmm) <- t(dge$samples$samples)
+tmm$ID <- dge$genes$genes
+tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
+
+write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+
+## create file MDS-plot with and without summarized replicates
+out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
+png(out, width=1900, height=1200, res=300)
+plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+dev.off()
+
+## estimate Dispersion
+dge <- estimateDisp(dge, design, robust = TRUE)
+
+## create file BCV-plot - visualizing estimated dispersions
+out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
+png(out, width=1900, height=1200, res=300)
+plotBCV(dge)
+dev.off()
+
+## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+fit <- glmQLFit(dge, design, robust = TRUE)
+
+## create file quasi-likelihood-dispersion-plot
+out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
+png(out, width=1900, height=1200, res=300)
+plotQLDisp(fit)
+dev.off()
+
 ## Analyze according to comparison groups
 for (compare in comparisons[[1]]) {
     contrast_name <- strsplit(compare, ":")[[1]][1]
@@ -78,6 +136,7 @@ for (compare in comparisons[[1]]) {
 
     # subset Datasets for pairwise comparison
     countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
+    rownames(countData) <- rownames(countData_all)
     sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
     sampleData$condition <- relevel(sampleData$condition, ref = B)
     samples <- rownames(sampleData)
@@ -143,8 +202,8 @@ for (compare in comparisons[[1]]) {
 
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
-    png(out)
-    plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+    png(out, width=1900, height=1200, res=300)
+    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
     ## estimate Dispersion
@@ -152,8 +211,8 @@ for (compare in comparisons[[1]]) {
 
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
-    png(out, width = 400, height = 400)
-    plotBCV(dge)
+    png(out, width=1900, height=1200, res=300)
+    print(plotBCV(dge))
     dev.off()
 
     ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
@@ -161,8 +220,8 @@ for (compare in comparisons[[1]]) {
 
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
-    png(out, width = 400, height = 400)
-    plotQLDisp(fit)
+    png(out, width=1900, height=1200, res=300)
+    print(plotQLDisp(fit))
     dev.off()
 
     tryCatch({
@@ -182,7 +241,7 @@ for (compare in comparisons[[1]]) {
 
         # quasi-likelihood F-Test
         # qlf <- glmQLFTest(fit, contrast = contrast)
-        qlf <- glmQLFTest(fit)
+        qlf <- glmQLFTest(fit, prior.count = 5)
         is.de <- decideTests(qlf, p.value = 0.05)
 
         # add comp object to list for image
@@ -202,8 +261,8 @@ for (compare in comparisons[[1]]) {
 
         ## plot lFC vs CPM
         out <- paste("Figures/DEU", "EDGER", combi, contrast_name, "figure", "MD.png", sep = "_")
-        png(out)
-        plotMD(qlf, main = contrast_name)
+        png(out, width=1900, height=1200, res=300)
+        print(plotMD(qlf, main = contrast_name))
         abline(h = c(-1, 1), col = "blue")
         dev.off()
 
@@ -212,64 +271,6 @@ for (compare in comparisons[[1]]) {
         print(paste("cleanup done for ", contrast_name, sep = ""))
     })
 }
-
-## Create design-table considering different types (paired, unpaired) and batches
-des <- ~ 0 + condition
-design <- model.matrix(des, data = sampleData_all)
-colnames(design) <- levels(sampleData_all$condition)
-print(design)
-
-genes <- rownames(countData_all)
-samples <- rownames(sampleData_all)
-
-splitted <- strsplit(rownames(countData_all), ":")
-exons <- sapply(splitted, "[[", 2)
-genesrle <- sapply(splitted, "[[", 1)
-
-dge <- DGEList(counts = countData_all, group = sampleData_all$condition, samples = samples, genes = genesrle)
-
-## Addd exons to dge
-dge$genes$exons <- exons
-
-## filter low counts
-keep <- filterByExpr(dge)
-dge <- dge[keep, , keep.lib.sizes = FALSE]
-
-## normalize with TMM
-dge <- calcNormFactors(dge, method = "TMM", BPPARAM = BPPARAM)
-
-
-## create file normalized table
-tmm <- as.data.frame(cpm(dge))
-colnames(tmm) <- t(dge$samples$samples)
-tmm$ID <- dge$genes$genes
-tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
-
-write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-## create file MDS-plot with and without summarized replicates
-out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
-dev.off()
-
-## estimate Dispersion
-dge <- estimateDisp(dge, design, robust = TRUE)
-
-## create file BCV-plot - visualizing estimated dispersions
-out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width = 400, height = 400)
-plotBCV(dge)
-dev.off()
-
-## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-fit <- glmQLFit(dge, design, robust = TRUE)
-
-## create file quasi-likelihood-dispersion-plot
-out <- paste("Figures/DEU", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width = 400, height = 400)
-plotQLDisp(fit)
-dev.off()
 
 
 save.image(file = paste("DEU_EDGER", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

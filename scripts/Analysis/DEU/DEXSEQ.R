@@ -161,8 +161,8 @@ for (contrast in comparisons[[1]]) {
         dxdpair <- estimateSizeFactors(dxdpair)
         dxdpair <- estimateDispersions(dxdpair, BPPARAM = BPPARAM)
 
-        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "DispEsts.png", sep = "_"))
-        plotDispEsts(dxdpair)
+        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "DispEsts.png", sep = "_"), width=1900, height=1200, res=300)
+        print(plotDispEsts(dxdpair))
         dev.off()
 
         dxdpair <- testForDEU(dxdpair, reducedModel = reduced, fullModel = full, BPPARAM = BPPARAM)
@@ -173,7 +173,7 @@ for (contrast in comparisons[[1]]) {
 
         comparison_objs[[contrast_name]] <- dxr1
 
-        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"))
+        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"), width=1900, height=1200, res=300)
         print(plotMA(dxr1, cex = 0.8))
         dev.off()
 
@@ -206,7 +206,7 @@ for (contrast in comparisons[[1]]) {
                 break
             }
             name1 <- paste("Figures/DEU", "DEXSEQ", combi, contrast_name, counter, "figure", "transcripts.png", sep = "_")
-            png(name1, height = 1000, width = 1000)
+            png(name1, height = 1000, width = 1000, res = 72)
             print(plotDEXSeq(dxr1, dxr1$groupID[gene], legend = TRUE, cex.axis = 1.2, cex = 1.3, lwd = 2))
             dev.off()
             figures[counter, ] <- c(dxr1$groupID[gene], as.character(gene), paste(outdir, name1, sep = "/"))

@@ -7,7 +7,7 @@ MAPREF = get_always('MAPPINGREF')
 MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
 MAPANNO = get_always('MAPPINGANNO')
 MAPPREFIX = get_always('MAPPINGPREFIX') ?: MAPBIN.split(' ')[0]
-MAPUIDX.replace('.idx','')
+MAPUIDX = MAPUIDX.replace('.idx','')
 
 IDXPARAMS = get_always('hisat2_params_INDEX') ?: ''
 MAPPARAMS = get_always('hisat2_params_MAP') ?: ''

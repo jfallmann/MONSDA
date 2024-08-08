@@ -21,9 +21,14 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-spike <- if (argsLen > 7) args[8] else ""
+bcv <- if (argsLen > 7) as.numeric(args[8]) else 0.2
+spike <- if (argsLen > 8) args[9] else ""
+if (!exists(quote(bcv))){
+    bcv <- 0.2
+}
 
 print(args)
+print(paste0("Typical values for the common BCV (square-root-dispersion) for datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms or 0.01 for technical replicates. You selected ", bcv, sep = ""))
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
@@ -98,29 +103,17 @@ tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-## create file MDS-plot with and without summarized replicates
+## create dummy file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
-## estimate Dispersion
-dge <- estimateDisp(dge, design, robust = TRUE)
-
-## create file BCV-plot - visualizing estimated dispersions
+## create dummy file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-plotBCV(dge)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
-## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-fit <- glmQLFit(dge, design, robust = TRUE)
-
-## create file quasi-likelihood-dispersion-plot
+## create dummy file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-plotQLDisp(fit)
-dev.off()
+png::writePNG(array(0, dim = c(1,1,4)), out)
 
 ## Analyze according to comparison groups
 for (contrast in comparison[[1]]) {
@@ -178,6 +171,7 @@ for (contrast in comparison[[1]]) {
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
         genes <- rownames(countData)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
+
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
         # colnames(design_norm) <- c(colnames(design),"W_1")
@@ -202,28 +196,19 @@ for (contrast in comparison[[1]]) {
 
         write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-        ## create file MDS-plot with and without summarized replicates
+        ## create dummy file MDS-plot with and without summarized replicates
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS_norm.png", sep = "_")
-        png(out, width=1900, height=1200, res=300)
-        print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
+        png(out, width=1900, height=1200, res=300)        
         dev.off()
 
-        ## estimate Dispersion
-        dge_norm <- estimateDisp(dge_norm, design_norm, robust = TRUE)
-
-        ## create file BCV-plot - visualizing estimated dispersions
+        ## create dummy file BCV-plot - visualizing estimated dispersions
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
-        print(plotBCV(dge_norm))
         dev.off()
 
-        ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-        fit_norm <- glmQLFit(dge_norm, design_norm, robust = TRUE)
-
-        ## create file quasi-likelihood-dispersion-plot
+        ## create dummy file quasi-likelihood-dispersion-plot
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
-        print(plotQLDisp(fit_norm))
         dev.off()
     }
 
@@ -249,28 +234,19 @@ for (contrast in comparison[[1]]) {
 
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
-    ## create file MDS-plot with and without summarized replicates
+    ## create dummy file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
-    ## estimate Dispersion
-    dge <- estimateDisp(dge, design, robust = TRUE)
-
-    ## create file BCV-plot - visualizing estimated dispersions
+    ## create dummy file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotBCV(dge))
     dev.off()
 
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit <- glmQLFit(dge, design, robust = TRUE)
-
-    ## create file quasi-likelihood-dispersion-plot
+    ## create dummy file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotQLDisp(fit))
     dev.off()
 
     tryCatch({
@@ -290,8 +266,13 @@ for (contrast in comparison[[1]]) {
 
         ## Testing
         # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-        qlf <- glmQLFTest(fit, contrast = AvsB, prior.count = 5) ## glm quasi-likelihood-F-Test
+        #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+        ## estimate Dispersion, THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES
+        # dge <- estimateDisp(dge, design, robust = TRUE)
+        # AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES => no glmQLFTest possible
+        # qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+        qlf <- exactTest(dge, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
+
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
@@ -300,7 +281,7 @@ for (contrast in comparison[[1]]) {
             get_gene_name(x, gtf_gene)
         }))
         qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
+        res <- qlf$table[, c(5, 4, 2, 1, 3)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
 
         # plotVolcano
@@ -336,12 +317,12 @@ for (contrast in comparison[[1]]) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -371,8 +352,10 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-            qlf <- glmQLFTest(fit, contrast = AvsB, prior.count = 5) ## glm quasi-likelihood-F-Test
+            #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+            # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
+            #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
@@ -381,7 +364,7 @@ for (contrast in comparison[[1]]) {
                 get_gene_name(x, gtf_gene)
             }))
             qlf$table$Gene_ID <- rownames(qlf$table)
-            res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
+            res <- qlf$table[, c(5, 4, 2, 1, 3)]
             res$FDR <- p.adjust(res$PValue, method = "BH")
 
             # plotVolcano
@@ -417,12 +400,12 @@ for (contrast in comparison[[1]]) {
 
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 

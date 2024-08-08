@@ -62,12 +62,7 @@
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
 import collections
-import datetime
-import functools
 import glob
-import gzip
-import hashlib
-import heapq
 import inspect
 import itertools
 import json
@@ -78,12 +73,8 @@ import shutil
 import subprocess
 import sys
 import traceback as tb
-from collections import OrderedDict, defaultdict
-from io import StringIO
-from operator import itemgetter
+from collections import OrderedDict
 
-import numpy as np
-from Bio import SeqIO
 from pkg_resources import parse_version
 from snakemake.common.configfile import load_configfile
 
@@ -889,7 +880,7 @@ def make_sub(
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
-                            and not "MAPPING" in works
+                            and "MAPPING" not in works
                         ):
                             if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
@@ -898,8 +889,8 @@ def make_sub(
 
                         if (
                             works[j] == "QC"
-                            and not "TRIMMING" in works
-                            and not "MAPPING" in works
+                            and "TRIMMING" not in works
+                            and "MAPPING" not in works
                         ):
                             if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
@@ -1057,9 +1048,9 @@ def make_sub(
                     if (
                         subwork == "QC"
                         and "TRIMMING" in subworkflows
-                        and not "MAPPING" in subworkflows
+                        and "MAPPING" not in subworkflows
                     ):
-                        if "DEDUP" in subworkflows and not "picard" in any(
+                        if "DEDUP" in subworkflows and "picard" not in any(
                             [x for x in listoftools]
                         ):
                             subname = toolenv + "_dedup_trim.smk"
@@ -1453,7 +1444,7 @@ def make_post(
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
                         if (
-                            toolbin == "salmon"
+                            toolbin in ["salmon", "kallisto"]
                             and "TRIMMING" not in config["WORKFLOWS"]
                         ):
                             log.debug(logid + "Simulated read trimming only!")
@@ -1579,95 +1570,98 @@ def make_post(
             subconf.update(sconf)
             toollist.extend(listoftools)
 
-        listoftools = [list(x) for x in set(tuple(x) for x in toollist)]
-        for a in range(0, len(listoftools)):
-            subjobs = list()
+            listoftools = [list(x) for x in set(tuple(x) for x in toollist)]
+            for a in range(0, len(listoftools)):
+                subjobs = list()
 
-            toolenv, toolbin = map(str, listoftools[a])
-            if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
-                "deseq",
-                "diego",
-            ]:  # for all other postprocessing tools we have more than one defined subworkflow
-                toolenv = toolenv + "_" + subwork
-                log.debug(logid + "toolenv: " + str(toolenv))
+                toolenv, toolbin = map(str, listoftools[a])
+                if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
+                    "deseq",
+                    "diego",
+                ]:  # for all other postprocessing tools we have more than one defined subworkflow
+                    toolenv = toolenv + "_" + subwork
+                    log.debug(logid + "toolenv: " + str(toolenv))
 
-            subconf[subwork + "ENV"] = toolenv
-            subconf[subwork + "BIN"] = toolbin
+                subconf[subwork + "ENV"] = toolenv
+                subconf[subwork + "BIN"] = toolbin
 
-            scombo = ""
-            combo = toolenv
+                scombo = ""
+                combo = toolenv
 
-            # Add variable for combination string
-            subjobs.append(
-                "\ncombo = '"
-                + combo
-                + "'\n"
-                + "\nscombo = '"
-                + scombo
-                + "'\n"
-                + '\nwildcard_constraints:\n    combo = combo,\n    scombo = scombo,\n    read = "R1|R2",\n    type = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
-            )
-            subjobs.append("\n\n")
-            # subconf.update(sconf)
-
-            subname = toolenv + ".smk"
-            smkf = os.path.abspath(os.path.join(workflowpath, subname))
-
-            if toolbin == "salmon" and "TRIMMING" not in config["WORKFLOWS"]:
-                log.debug(logid + "Simulated read trimming only!")
-                mu.makeoutdir("TRIMMED_FASTQ")
-                smkf = (
-                    os.path.abspath(os.path.join(workflowpath, toolenv)) + "_trim.smk"
+                # Add variable for combination string
+                subjobs.append(
+                    "\ncombo = '"
+                    + combo
+                    + "'\n"
+                    + "\nscombo = '"
+                    + scombo
+                    + "'\n"
+                    + '\nwildcard_constraints:\n    combo = combo,\n    scombo = scombo,\n    read = "R1|R2",\n    type = "sorted|sorted_unique" if not rundedup else "sorted|sorted_unique|sorted_dedup|sorted_unique_dedup"'
                 )
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    subjobs.append(line)
                 subjobs.append("\n\n")
+                # subconf.update(sconf)
 
-            # Append footer and write out subsnake and subconf per condition
-            smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+                subname = toolenv + ".smk"
+                smkf = os.path.abspath(os.path.join(workflowpath, subname))
 
-            te = (
-                toolenv.split("_")[0] if "_" in toolenv else toolenv
-            )  # shorten toolenv if subwork is already added
-            smko = os.path.abspath(
-                os.path.join(
-                    subdir,
-                    "_".join(["_".join(condition), subwork, te, "subsnake.smk"]),
+                if (
+                    toolbin in ["salmon", "kallisto"]
+                    and "TRIMMING" not in config["WORKFLOWS"]
+                ):
+                    log.debug(logid + "Simulated read trimming only!")
+                    mu.makeoutdir("TRIMMED_FASTQ")
+                    smkf = (
+                        os.path.abspath(os.path.join(workflowpath, toolenv)) + "_trim.smk"
+                    )
+                with open(smkf, "r") as smk:
+                    for line in mu.comment_remover(smk.readlines()):
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
+                        subjobs.append(line)
+                    subjobs.append("\n\n")
+
+                # Append footer and write out subsnake and subconf per condition
+                smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
+                with open(smkf, "r") as smk:
+                    for line in mu.comment_remover(smk.readlines()):
+                        line = re.sub(condapath, 'conda: "' + envpath, line)
+                        if "include: " in line:
+                            line = fixinclude(
+                                line, loglevel, condapath, envpath, workflowpath, logfix
+                            )
+                        subjobs.append(line)
+                    subjobs.append("\n\n")
+
+                te = (
+                    toolenv.split("_")[0] if "_" in toolenv else toolenv
+                )  # shorten toolenv if subwork is already added
+                smko = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(["_".join(condition), subwork, te, "subsnake.smk"]),
+                    )
                 )
-            )
-            if os.path.exists(smko):
-                os.rename(smko, smko + ".bak")
-            with open(smko, "w") as smkout:
-                smkout.write("".join(add))
-                smkout.write("".join(subjobs))
+                if os.path.exists(smko):
+                    os.rename(smko, smko + ".bak")
+                with open(smko, "w") as smkout:
+                    smkout.write("".join(add))
+                    smkout.write("".join(subjobs))
 
-            confo = os.path.abspath(
-                os.path.join(
-                    subdir,
-                    "_".join(["_".join(condition), subwork, te, "subconfig.json"]),
+                confo = os.path.abspath(
+                    os.path.join(
+                        subdir,
+                        "_".join(["_".join(condition), subwork, te, "subconfig.json"]),
+                    )
                 )
-            )
-            if os.path.exists(confo):
-                os.rename(confo, confo + ".bak")
-            with open(confo, "w") as confout:
-                json.dump(subconf, confout)
+                if os.path.exists(confo):
+                    os.rename(confo, confo + ".bak")
+                with open(confo, "w") as confout:
+                    json.dump(subconf, confout)
 
-            jobs.append([smko, confo])
+                jobs.append([smko, confo])
 
     return jobs
 
@@ -1775,7 +1769,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
 
     allmap = (
         'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
-        if not "DEDUP" in subworkflows
+        if "DEDUP" not in subworkflows
         else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
     )
     allqc = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
@@ -2165,7 +2159,7 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            if XENV == "salmon":
+            if XENV in ["salmon", "kallisto"]:
                 IDX = XCONF.get("INDEX")
                 if IDX:
                     INDEX = IDX
@@ -3967,29 +3961,28 @@ def nf_make_post(
     else:
         subwork = postworkflow
         add = list()
+        nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
+        with open(nfi, "r") as nf:
+            for line in mu.comment_remover(nf.readlines()):
+                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+                line = re.sub(condapath, 'conda "' + envpath, line)
+                if "include {" in line:
+                    line = fixinclude(
+                        line,
+                        loglevel,
+                        condapath,
+                        envpath,
+                        workflowpath,
+                        logfix,
+                        "nfmode",
+                    )
+                add.append(line)
+            add.append("\n\n")
 
         for condition in conditions:
             flowlist = list()
             subjobs = list()
             subconf = mu.NestedDefaultDict()
-
-            nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-            with open(nfi, "r") as nf:
-                for line in mu.comment_remover(nf.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include {" in line:
-                        line = fixinclude(
-                            line,
-                            loglevel,
-                            condapath,
-                            envpath,
-                            workflowpath,
-                            logfix,
-                            "nfmode",
-                        )
-                    add.append(line)
-                add.append("\n\n")
 
             listoftools, listofconfigs = create_subworkflow(
                 config, subwork, [condition], stage="POST"
@@ -4068,7 +4061,6 @@ def nf_make_post(
                         "_".join(
                             [
                                 "_".join(condition),
-                                envlist[i],
                                 subwork,
                                 te,
                                 "subflow.nf",
@@ -4088,7 +4080,6 @@ def nf_make_post(
                         "_".join(
                             [
                                 "_".join(condition),
-                                envlist[i],
                                 subwork,
                                 te,
                                 "subconfig.json",
@@ -4102,8 +4093,8 @@ def nf_make_post(
                     json.dump(subconf, confout)
 
                 tpl = " ".join(tp)
-                combi = list((str(envlist[i]), toolenv))
-                para = nf_fetch_params(confo, condition, combi)
+                # combi = list((str(envlist[i]), toolenv))
+                para = nf_fetch_params(confo, condition, None)
 
                 """
                 NOTE: Workaround for multi-feature featurecount, we can not run for loops for feature lists in nextflow so we need to rerun the jobs for single features and featuremaps (feature->id). This could break reproducibility for manual runs, could be better to loop at generation of nfo and confo and add feature name to output files, but this is inconsistent with snakemake runs so we choose this as workaround

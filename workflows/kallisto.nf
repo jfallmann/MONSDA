@@ -2,16 +2,15 @@ COUNTENV = get_always('COUNTINGENV')
 COUNTBIN = get_always('COUNTINGBIN')
 COUNTIDX = get_always('COUNTINGIDX')
 COUNTUIDX = get_always('COUNTINGUIDX')
-COUNTUIDX = COUNTUIDX.replaceAll('.idx','')
-COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
+COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')+'.idx'
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
 COUNTDECOY = get_always('COUNTINDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
-IDXPARAMS = get_always('salmon_params_INDEX') ?: ''
-COUNTPARAMS = get_always('salmon_params_COUNT') ?: ''
+IDXPARAMS = get_always('kallisto_params_INDEX') ?: ''
+COUNTPARAMS = get_always('kallisto_params_COUNT') ?: ''
 
 //COUNTING PROCESSES
 
@@ -55,24 +54,24 @@ process trim{
     }
 }
 
-process salmon_idx{
+process kallisto_idx{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
 
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "salmon.idx")            "$COUNTIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
-        else                                      "$COUNTUIDX"
+        if (filename == "kallisto.idx")            "$COUNTIDX"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/kallisto_index.log"
+        else                                        "$COUNTUIDX"
     }
 
     input:
     path genome
 
     output:
-    path "salmon.idx", emit: idx
+    path "kallisto.idx", emit: idx
 
     script:    
     gen =  genome.getName()
@@ -82,12 +81,12 @@ process salmon_idx{
         decoy = ''
     }
     """
-    $COUNTBIN index $IDXPARAMS $decoy -p ${task.cpus} -t $gen -i $COUNTUIDXNAME &> index.log && ln -fs $COUNTUIDXNAME salmon.idx
+    $COUNTBIN index $IDXPARAMS $decoy -t ${task.cpus} -i $COUNTUIDXNAME $gen &> index.log && ln -fs $COUNTUIDXNAME kallisto.idx
     """
 
 }
 
-process salmon_quant{
+process kallisto_quant{
     conda "$COUNTENV"+".yaml"
     cpus THREADS
 	cache 'lenient'
@@ -95,9 +94,8 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
-
-        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/kallisto/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/kallisto/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
@@ -106,6 +104,8 @@ process salmon_quant{
     output:
     path "*.gz", includeInputs:false, emit: counts
     path "*.log", emit: logs
+    path "*.json", emit: json
+    path "*.h5", emit: h5
     path "*", includeInputs:false, emit: rest
 
     script:
@@ -113,22 +113,22 @@ process salmon_quant{
     idx = reads[0]
     if (PAIRED == 'paired'){
         if (STRANDED == 'fr' || STRANDED == 'ISF'){
-            stranded = '-l ISF'
+            stranded = '--fr-stranded'
         }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
-            stranded = '-l ISR'
+            stranded = '--rf-stranded'
         }else{
-            stranded = '-l IU'
+            stranded = ''
         }
         rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
         r1 = rs[0]
         r2 = rs[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-        lf = "salmon_"+fn+".log"
-        of = fn+"/quant.sf"
-        oz = fn+"/quant.sf.gz"
+        lf = "kallisto_"+fn+".log"
+        of = fn+"/abundance.tsv"
+        oz = fn+"/abundance.tsv.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
+        $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn $r1 $r2 &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json ${fn}_run_info.json && ln -fs ${fn}/abundance.h5 ${fn}_abundance.h5
         """
     }else{
         if (STRANDED == 'fr' || STRANDED == 'SF'){
@@ -140,12 +140,12 @@ process salmon_quant{
         }
         read = reads[1]
         fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-        lf = "salmon_"+fn+".log"
-        of = fn+"/quant.sf"
-        oz = fn+"/quant.sf.gz"
+        lf = "kallisto_"+fn+".log"
+        of = fn+"/abundance.tsv"
+        oz = fn+"/abundance.tsv.gz"
         ol = fn+"_counts.gz"
         """
-        $COUNTBIN quant -p ${task.cpus} -i $idx $stranded -o $fn $COUNTPARAMS -r $read &>> $lf && gzip $of && ln -fs $oz $ol
+         $COUNTBIN quant -t ${task.cpus} -i $idx $stranded $COUNTPARAMS -o $fn --single $read &>> $lf && gzip $of && ln -fs $oz $ol && ln -fs ${fn}/run_info.json ${fn}_run_info.json && ln -fs ${fn}/abundance.h5 ${fn}_abundance.h5
         """
     }
 }
@@ -161,22 +161,22 @@ workflow COUNTING{
     if (checkidx.exists()){
         idxfile = Channel.fromPath(COUNTUIDX)
         if (PAIRED == 'paired'){
-            salmon_quant(idxfile.combine(samples_ch.collate(2)))
+            kallisto_quant(idxfile.combine(samples_ch.collate(2)))
         } else{
-            salmon_quant(idxfile.combine(samples_ch.collate(1)))
+            kallisto_quant(idxfile.combine(samples_ch.collate(1)))
         }        
     }
     else{
         genomefile = Channel.fromPath(COUNTREF)
-        salmon_idx(genomefile)
+        kallisto_idx(genomefile)
         if (PAIRED == 'paired'){
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
+            kallisto_quant(kallisto_idx.out.idx.combine(samples_ch.collate(2)))
         } else{
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+            kallisto_quant(kallisto_idx.out.idx.combine(samples_ch.collate(1)))
         }
     }
 
     emit:
-    counts = salmon_quant.out.counts
-    logs = salmon_quant.out.logs
+    counts = kallisto_quant.out.counts
+    logs = kallisto_quant.out.logs
 }

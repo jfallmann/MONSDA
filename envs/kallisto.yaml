@@ -1,6 +1,6 @@
-name: salmon
+name: kallisto
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - salmon =1.10.3
+  - kallisto =0.51.0

@@ -36,7 +36,7 @@ def generate_datafiles():
 
     workflows = list()
     for d in glob("workflows/*"):
-        if not "wip" in d:
+        if "wip" not in d:
             workflows.append(
                 os.path.relpath(d)
             )  # os.path.join(d, os.path.split(d)[1]))
@@ -90,11 +90,11 @@ setup(
     },
     # install_requires=requires,
     install_requires=[
-        "biopython>=1.78",
-        "snakemake>=8.10.0",
+        "biopython>=1.83",
+        "snakemake>=8.16.0",
         "black>=21.5b2",
         "flake8>=3.8.3",
-        "isort>=5.9.2",
+        "isort>=5.13.2",
         "sphinx>=4.1.0",
     ],
     python_requires=">=3.12.0",

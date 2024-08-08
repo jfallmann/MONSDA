@@ -9,7 +9,7 @@ dependencies:
   - isort=5.13.2
   - monsda=1.2.8
   - natsort=8.4.0
-  - nextflow=24.04.2
+  - nextflow=24.04.4
   - numpy=1.26.4
   - pandas=2.2.1
   - perl=5.34.0
@@ -17,11 +17,13 @@ dependencies:
   - python=3.12.2
   - pyyaml=6.0.1
   - scipy=1.12.0
-  - snakemake=8.12.0
-  - snakemake-executor-plugin-slurm=0.5.0
+  - snakemake=8.16.0
+  - snakemake-executor-plugin-slurm=0.8.0
   - snakemake-executor-plugin-cluster-generic=1.0.9
   - snakemake-interface-common=1.17.2
-  - snakemake-interface-executor-plugins=9.1.1
+  - snakemake-interface-executor-plugins=9.2.0
   - snakemake-interface-report-plugins=1.0.0
-  - snakemake-interface-storage-plugins=3.2.2
+  - snakemake-interface-storage-plugins=3.2.3
   - snakemake-storage-plugin-s3=0.2.11
+  - snakemake-storage-plugin-ftp=0.1.2
+  - snakemake-storage-plugin-http=0.2.3
