@@ -63,6 +63,7 @@ def parseargs():
     parser.add_argument(
         "-c",
         "--config",
+        "--configfile",
         type=str,
         nargs="+",
         action="append",
@@ -533,7 +534,7 @@ def run_nextflow(
                     continue
                 if SAMPLES is None:
                     log.info(
-                        logid + f"All SAMPLES already available, skipping FETCH process"
+                        logid + "All SAMPLES already available, skipping FETCH process"
                     )
                     continue
 
@@ -800,7 +801,7 @@ def runjob(jobtorun):
             if output and output != "":
                 if (
                     any(x in output for x in ["ERROR", "Error", "error", "Exception"])
-                    and not "Workflow finished" in output
+                    and "Workflow finished" not in output
                     or "Workflow finished" in outerr
                 ):
                     if outerr:
@@ -816,9 +817,9 @@ def runjob(jobtorun):
                     log.info(logid + str(output))
             if outerr and outerr != "":
                 if (
-                    not "Workflow finished" in outerr
-                    and not "Nothing to be done" in outerr
-                    and not "Workflow finished" in output
+                    "Workflow finished" not in outerr
+                    and "Nothing to be done" not in outerr
+                    and "Workflow finished" not in output
                     and any(
                         x in outerr for x in ["ERROR", "Error", "error", "Exception"]
                     )
@@ -870,6 +871,13 @@ def main():
             sys.exit("MONSDA version " + __version__)
 
         log.setLevel(knownargs.loglevel)
+
+        if knownargs.config is None:
+            if knownargs.configfile is None:
+                sys.exit("No configuration file given, please provide one!")
+            else:
+                knownargs.config = list()
+                knownargs.config.extend(knownargs.configfile)
 
         knownargs.configfile = str(knownargs.config[0].pop())
 
