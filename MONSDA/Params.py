@@ -61,32 +61,19 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import collections
 import datetime
-import functools
 import glob
-import gzip
-import hashlib
-import heapq
 import inspect
 import itertools
-import json
 import logging
 import os
 import re
 import shutil
-import subprocess
 import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
-from io import StringIO
-from operator import itemgetter
 
-import numpy as np
-import six
-from Bio import SeqIO
 from natsort import natsorted
-from snakemake.common.configfile import load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
@@ -1040,7 +1027,7 @@ def sample_from_path(path: str) -> str:
 
 
 @check_run
-def runstate_from_sample(sample: str, config: dict) -> list:
+def runstate_from_sample(sample: list, config: dict) -> list:
     """all runstates for sample in config
 
     Parameters
@@ -1586,6 +1573,27 @@ def get_combo_name(combinations: list) -> mu.NestedDefaultDict:
 
     log.debug(logid + "ComboName: " + str(combname))
     return combname
+
+
+@check_run
+def fixRunParameters(
+    config: dict,
+    env: str,
+    sample: str,
+    runstate: str,
+    workflow: str,
+    step: str,
+    paramToFix: str,
+    fixedParam: str,
+) -> str:
+    para = tool_params(sample, runstate, config, workflow, env)["OPTIONS"].get(step, "")
+    if paramToFix in para and fixedParam:
+        return re.sub(paramToFix + " [0-9a-zA-Z\.\_\-\\\/]+", fixedParam, para)
+    else:
+        log.warning(
+            f"No parameter to fix {paramToFix} found or fix {fixedParam} defined for {para}!"
+        )
+        return para
 
 
 #

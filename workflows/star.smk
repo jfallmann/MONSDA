@@ -16,12 +16,11 @@ rule generate_index:
     conda:  ""+MAPPERENV+".yaml"
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
-            ipara = lambda w: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
-            anno = ANNOTATION,            
-            #tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
+            ipara = lambda w,output: fixRunParameters(config, MAPPERENV, SAMPLES[0], None, 'MAPPING', 'INDEX', "--sjdbGTFfile", f"--sjdbGTFfile {output.tmpref}"),
+            anno = ANNOTATION,                        
             pref = PREFIX,
             lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir TMP/star_generate_genome --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa} --sjdbGTFfile {output.tmpref} &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi"
+    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir TMP/star_generate_index --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf TMP/star_generate_index"
 
 if paired == 'paired':
     rule mapping:
@@ -61,7 +60,7 @@ else:
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             threads: MAXTHREAD
-            params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
+            params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),                    
                     mapp = MAPPERBIN,
                     anno = ANNOTATION,
                     pref = PREFIX,

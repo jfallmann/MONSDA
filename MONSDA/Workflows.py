@@ -2319,7 +2319,14 @@ def nf_fetch_params(
 
 @check_run
 def nf_tool_params(
-    sample, runstate, config, subwork, toolenv, toolbin, workflows=None, condition=None
+    sample: str,
+    runstate: str,
+    config: dict,
+    subwork: str,
+    toolenv: str,
+    toolbin: str,
+    workflows: str | None = None,
+    condition: str | None = None,
 ):
     logid = scriptname + ".nf_tool_params: "
     log.debug(
@@ -2360,6 +2367,8 @@ def nf_tool_params(
         )
 
         toolpar = list()
+        if "star" in [toolenv, toolbin]:
+                np['INDEX'] = mp.fixRunParameters(config, toolenv, sample, None, 'MAPPING', 'INDEX', "--sjdbGTFfile", "--sjdbGTFfile tmp_anno")
         for key, val in np.items():
             pars = val if val and val != "" else None
             if pars:
@@ -3422,7 +3431,6 @@ def nf_make_sub(
                                 )
                             subjobs.append(line)
                         subjobs.append("\n\n")
-
                 flowlist.append("MAPPING")
 
                 nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
