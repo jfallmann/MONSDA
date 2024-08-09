@@ -196,6 +196,8 @@ Count (unique) mapped reads and how often they map to defined features
   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
   | Salmon         | Salmon is a tool for wicked-fast transcript quantification from RNA-seq data.                                         | salmon      | salmon         | `salmon <https://salmon.readthedocs.io/en/latest/salmon.html>`_  | FASTQ/TRIMMED_FASTQ  | TEXT    |
   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+  | Kallisto         | Kallisto is a program for quantifying abundances of transcripts from bulk and single-cell RNA-Seq data, or more generally of target sequences using high-throughput sequencing reads. | kallisto      | kallisto         | `kallisto <https://pachterlab.github.io/kallisto/manual>`_  | FASTQ/TRIMMED_FASTQ  | TEXT    |
+  +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
 
 
 Differential Analyses
