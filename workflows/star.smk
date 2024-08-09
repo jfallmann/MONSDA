@@ -39,7 +39,7 @@ if paired == 'paired':
         conda:  ""+MAPPERENV+".yaml"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                mapp=MAPPERBIN,
+                mapp = MAPPERBIN,
                 anno = ANNOTATION,
                 pref = PREFIX,
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
