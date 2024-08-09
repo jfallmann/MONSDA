@@ -460,6 +460,7 @@ def run_nextflow(
     try:
         logid = scriptname + ".run_nextflow: "
         argslist = list()
+        writeout = True
         if useconda:
             argslist.append("-with-conda")
         else:
@@ -470,6 +471,9 @@ def run_nextflow(
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
+            if "resume" in optionalargs:
+                log.info(logid + "Resuming workflow")
+                writeout = False
 
         if clean:
             log.info(logid + "Cleaning working directory")
@@ -556,6 +560,7 @@ def run_nextflow(
                     loglevel,
                     "Pre",
                     combinations=combinations,
+                    writeout=writeout,
                 )
 
                 jobstorun = list()
@@ -606,6 +611,7 @@ def run_nextflow(
                     subdir,
                     loglevel,
                     combinations=combinations,
+                    writeout=writeout,
                 )
 
                 jobstorun = list()
@@ -651,6 +657,7 @@ def run_nextflow(
                 subdir,
                 loglevel,
                 combinations=combinations,
+                writeout=writeout,
             )
 
             jobstorun = list()
@@ -704,6 +711,7 @@ def run_nextflow(
                     subdir,
                     loglevel,
                     combinations=combinations,
+                    writeout=writeout,
                 )
                 jobstorun = list()
 

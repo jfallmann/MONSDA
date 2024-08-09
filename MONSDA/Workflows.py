@@ -2508,6 +2508,7 @@ def nf_make_pre(
     state="",
     subname=None,
     combinations=None,
+    writeout=True,
 ):
     logid = scriptname + ".Workflows_nf_make_pre: "
     log.info(
@@ -2677,11 +2678,12 @@ def nf_make_pre(
                                 ),
                             )
                         )
-                        if os.path.exists(nfo):
-                            os.rename(nfo, nfo + ".bak")
-                        with open(nfo, "a") as nfout:
-                            nfout.write("".join(subjobs))
-                            nfout.write("\n\n")
+                        if writeout:
+                            if os.path.exists(nfo):
+                                os.rename(nfo, nfo + ".bak")
+                            with open(nfo, "a") as nfout:
+                                nfout.write("".join(subjobs))
+                                nfout.write("\n\n")
 
                         confo = os.path.abspath(
                             os.path.join(
@@ -2696,10 +2698,11 @@ def nf_make_pre(
                                 ),
                             )
                         )
-                        if os.path.exists(confo):
-                            os.rename(confo, confo + ".bak")
-                        with open(confo, "a") as confout:
-                            json.dump(subconf, confout)
+                        if writeout:
+                            if os.path.exists(confo):
+                                os.rename(confo, confo + ".bak")
+                            with open(confo, "a") as confout:
+                                json.dump(subconf, confout)
 
                         tp = nf_tool_params(
                             subsamples[0],
@@ -2871,10 +2874,11 @@ def nf_make_pre(
                         ),
                     )
                 )
-                if os.path.exists(nfo):
-                    os.rename(nfo, nfo + ".bak")
-                with open(nfo, "w") as nfout:
-                    nfout.write("".join(subjobs))
+                if writeout:
+                    if os.path.exists(nfo):
+                        os.rename(nfo, nfo + ".bak")
+                    with open(nfo, "w") as nfout:
+                        nfout.write("".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -2889,10 +2893,11 @@ def nf_make_pre(
                         ),
                     )
                 )
-                if os.path.exists(confo):
-                    os.rename(confo, confo + ".bak")
-                with open(confo, "w") as confout:
-                    json.dump(subconf, confout)
+                if writeout:
+                    if os.path.exists(confo):
+                        os.rename(confo, confo + ".bak")
+                    with open(confo, "w") as confout:
+                        json.dump(subconf, confout)
 
                 tpl = " ".join(tp)
                 combi = None
@@ -2913,6 +2918,7 @@ def nf_make_sub(
     loglevel,
     subname=None,
     combinations=None,
+    writeout=True,
 ):
     logid = scriptname + ".Workflows_nf_make_sub: "
 
@@ -3273,11 +3279,12 @@ def nf_make_sub(
                         "_".join(["_".join(condition), envlist[i], "subflow.nf"]),
                     )
                 )
-                if os.path.exists(nfo):
-                    os.rename(nfo, nfo + ".bak")
-                with open(nfo, "w") as nfout:
-                    nfout.write("".join(add))
-                    nfout.write("".join(subjobs))
+                if writeout:
+                    if os.path.exists(nfo):
+                        os.rename(nfo, nfo + ".bak")
+                    with open(nfo, "w") as nfout:
+                        nfout.write("".join(add))
+                        nfout.write("".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -3285,10 +3292,11 @@ def nf_make_sub(
                         "_".join(["_".join(condition), envlist[i], "subconfig.json"]),
                     )
                 )
-                if os.path.exists(confo):
-                    os.rename(confo, confo + ".bak")
-                with open(confo, "w") as confout:
-                    json.dump(subconf, confout)
+                if writeout:
+                    if os.path.exists(confo):
+                        os.rename(confo, confo + ".bak")
+                    with open(confo, "w") as confout:
+                        json.dump(subconf, confout)
 
                 tpl = " ".join(tp)
                 combi = list((str(envlist[i]), ""))
@@ -3570,18 +3578,20 @@ def nf_make_sub(
             nfo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subflow.nf"]))
             )
-            if os.path.exists(nfo):
-                os.rename(nfo, nfo + ".bak")
-            with open(nfo, "w") as nfout:
-                nfout.write("".join(subjobs))
+            if writeout:
+                if os.path.exists(nfo):
+                    os.rename(nfo, nfo + ".bak")
+                with open(nfo, "w") as nfout:
+                    nfout.write("".join(subjobs))
 
             confo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
             )
-            if os.path.exists(confo):
-                os.rename(confo, confo + ".bak")
-            with open(confo, "w") as confout:
-                json.dump(subconf, confout)
+            if writeout:
+                if os.path.exists(confo):
+                    os.rename(confo, confo + ".bak")
+                with open(confo, "w") as confout:
+                    json.dump(subconf, confout)
 
             tpl = " ".join(tp)
             # combi = list((str(envlist[i]), ""))
@@ -3603,6 +3613,7 @@ def nf_make_post(
     loglevel,
     subname=None,
     combinations=None,
+    writeout=True,
 ):
     logid = scriptname + ".Workflows_nf_make_post: "
 
@@ -3751,11 +3762,12 @@ def nf_make_post(
                             ),
                         )
                     )
-                    if os.path.exists(nfo):
-                        os.rename(nfo, nfo + ".bak")
-                    with open(nfo, "w") as nfout:
-                        nfout.write("".join(add))
-                        nfout.write("".join(subjobs))
+                    if writeout:
+                        if os.path.exists(nfo):
+                            os.rename(nfo, nfo + ".bak")
+                        with open(nfo, "w") as nfout:
+                            nfout.write("".join(add))
+                            nfout.write("".join(subjobs))
 
                     confo = os.path.abspath(
                         os.path.join(
@@ -3771,10 +3783,11 @@ def nf_make_post(
                             ),
                         )
                     )
-                    if os.path.exists(confo):
-                        os.rename(confo, confo + ".bak")
-                    with open(confo, "w") as confout:
-                        json.dump(subconf, confout)
+                    if writeout:
+                        if os.path.exists(confo):
+                            os.rename(confo, confo + ".bak")
+                        with open(confo, "w") as confout:
+                            json.dump(subconf, confout)
 
                     tpl = " ".join(tp)
                     combi = list((str(envlist[i]), toolenv))
@@ -3924,11 +3937,12 @@ def nf_make_post(
                                 ),
                             )
                         )
-                        if os.path.exists(nfo):
-                            os.rename(nfo, nfo + ".bak")
-                        with open(nfo, "w") as nfout:
-                            nfout.write("".join(add))
-                            nfout.write("".join(subjobs))
+                        if writeout:
+                            if os.path.exists(nfo):
+                                os.rename(nfo, nfo + ".bak")
+                            with open(nfo, "w") as nfout:
+                                nfout.write("".join(add))
+                                nfout.write("".join(subjobs))
 
                         confo = os.path.abspath(
                             os.path.join(
@@ -3944,10 +3958,11 @@ def nf_make_post(
                                 ),
                             )
                         )
-                        if os.path.exists(confo):
-                            os.rename(confo, confo + ".bak")
-                        with open(confo, "w") as confout:
-                            json.dump(subconf, confout)
+                        if writeout:
+                            if os.path.exists(confo):
+                                os.rename(confo, confo + ".bak")
+                            with open(confo, "w") as confout:
+                                json.dump(subconf, confout)
 
                         tpl = " ".join(tp)
                         combi = list((str(envlist[i]), toolenv))
@@ -4076,11 +4091,12 @@ def nf_make_post(
                         ),
                     )
                 )
-                if os.path.exists(nfo):
-                    os.rename(nfo, nfo + ".bak")
-                with open(nfo, "w") as nfout:
-                    nfout.write("".join(add))
-                    nfout.write("".join(subjobs))
+                if writeout:
+                    if os.path.exists(nfo):
+                        os.rename(nfo, nfo + ".bak")
+                    with open(nfo, "w") as nfout:
+                        nfout.write("".join(add))
+                        nfout.write("".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -4095,10 +4111,11 @@ def nf_make_post(
                         ),
                     )
                 )
-                if os.path.exists(confo):
-                    os.rename(confo, confo + ".bak")
-                with open(confo, "w") as confout:
-                    json.dump(subconf, confout)
+                if writeout:
+                    if os.path.exists(confo):
+                        os.rename(confo, confo + ".bak")
+                    with open(confo, "w") as confout:
+                        json.dump(subconf, confout)
 
                 tpl = " ".join(tp)
                 # combi = list((str(envlist[i]), toolenv))
