@@ -2,7 +2,7 @@ name: LoveSonesonPatro
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - bioconductor-annotate =1.68.0 =r40_0
   - bioconductor-annotationdbi =1.52.0 =r40_0

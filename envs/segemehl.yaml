@@ -2,7 +2,7 @@ name: segemehl
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - samtools =1.16.1
   - segemehl =0.2.0

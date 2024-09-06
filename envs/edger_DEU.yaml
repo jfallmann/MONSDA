@@ -2,7 +2,7 @@ name: edger_DEU
 channels:
   - bioconda
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - bioconductor-biobase =2.46.0
   - bioconductor-biocgenerics =0.32.0

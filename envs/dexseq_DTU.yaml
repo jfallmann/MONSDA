@@ -2,7 +2,7 @@ name: dexseq
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bioconductor-annotate =1.76.0

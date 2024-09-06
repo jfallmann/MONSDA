@@ -2,7 +2,7 @@ name: bwa
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bwa-mem2 =2.2.1

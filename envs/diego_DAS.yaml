@@ -2,7 +2,7 @@ name: diego
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bedtools =2.30.0

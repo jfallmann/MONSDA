@@ -2,7 +2,7 @@ name: countreads
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bcftools =1.8

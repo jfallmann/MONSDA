@@ -2,7 +2,7 @@ name: drimseq_DTU
 channels:
   - bioconda
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - bioconductor-annotationdbi =1.52.0
   - bioconductor-biobase =2.50.0

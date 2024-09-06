@@ -2,7 +2,7 @@ name: trimm
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - bbmap =38.22
   - cutadapt =1.18

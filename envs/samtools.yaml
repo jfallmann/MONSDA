@@ -2,7 +2,7 @@ name: samtools
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - samtools =1.16.1
   - grep =2.14

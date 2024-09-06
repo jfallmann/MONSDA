@@ -2,7 +2,7 @@ name: summary
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - r-base =4.2.2

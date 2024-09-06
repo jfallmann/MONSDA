@@ -2,7 +2,7 @@ name: ucsc
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - grep =2.14

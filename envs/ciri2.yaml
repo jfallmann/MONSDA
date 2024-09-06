@@ -2,7 +2,7 @@ name: ciri2
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - perl =5.32.0

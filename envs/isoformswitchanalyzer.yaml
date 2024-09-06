@@ -2,7 +2,7 @@ name: isoformswitchanalyzer
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bioconductor-annotate =1.66.0

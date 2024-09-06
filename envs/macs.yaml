@@ -2,7 +2,7 @@ name: macs
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - macs2 =2.2.7.1

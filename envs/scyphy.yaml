@@ -2,7 +2,7 @@ name: scyphy
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bzip2 =1.0.8

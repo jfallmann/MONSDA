@@ -2,7 +2,7 @@ name: dexseq
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bcftools =1.16

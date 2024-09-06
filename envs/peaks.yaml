@@ -2,7 +2,7 @@ name: peaks
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - clustalw =2.1
   - curl =7.87.0

@@ -2,7 +2,7 @@ name: bwameth
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - bwameth =0.2.7

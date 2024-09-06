@@ -2,7 +2,7 @@ name: index
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - samtools =1.16.1
   - curl =7.87.0

@@ -2,7 +2,7 @@ name: bbmap
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - bbmap =39.01
   - rename =1.601

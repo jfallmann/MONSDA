@@ -2,7 +2,7 @@ name: monsda
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - biopython=1.83
   - grep >=3.4
@@ -12,7 +12,7 @@ dependencies:
   - nextflow=24.04.4
   - numpy=1.26.4
   - pandas=2.2.1
-  - perl=5.34.0
+  - perl=5.32.0
   - pip>=24.0
   - python=3.12.2
   - pyyaml=6.0.1

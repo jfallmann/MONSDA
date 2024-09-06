@@ -2,7 +2,7 @@ name: guppy
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
   - r
 dependencies:
   - gettext =0.19.8.1
