@@ -464,7 +464,14 @@ def run_nextflow(
         argslist = list()
         writeout = True
         if useconda and not any(
-            [x in optionalargs for x in ["-with-singularity", "-with-apptainer"]]
+            [
+                x in optionalargs
+                for x in [
+                    "-without-conda",
+                    "-apptainer.enabled",
+                    "-singularity.enabled",
+                ]
+            ]
         ):
             argslist.append("-with-conda")
         else:
