@@ -19,6 +19,7 @@ process collect_multi{
 
 process premultiqc{
     conda "$QCENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

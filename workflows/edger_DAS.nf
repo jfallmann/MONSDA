@@ -20,6 +20,7 @@ COUNTENV = 'countreads_de'
 
 process featurecount_edger{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -67,6 +68,7 @@ process featurecount_edger{
 
 process prepare_count_table{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -97,6 +99,7 @@ process prepare_count_table{
 
 process run_edger{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -133,6 +136,7 @@ process run_edger{
 
 process filter_significant{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -158,6 +162,7 @@ process filter_significant{
 
 process create_summary_snippet{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -185,6 +190,7 @@ process create_summary_snippet{
 
 process collect_edger{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

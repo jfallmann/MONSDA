@@ -20,6 +20,7 @@ COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
 
 process featurecount_deseq{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -67,6 +68,7 @@ process featurecount_deseq{
 
 process prepare_count_table{
     conda "$DEENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -97,6 +99,7 @@ process prepare_count_table{
 
 process run_deseq2{
     conda "$DEENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -132,6 +135,7 @@ process run_deseq2{
 
 process filter_significant{
     conda "$DEENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -157,6 +161,7 @@ process filter_significant{
 
 process create_summary_snippet{
     conda "$DEENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -183,6 +188,7 @@ process create_summary_snippet{
 
 process collect_deseq{
     conda "$DEENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

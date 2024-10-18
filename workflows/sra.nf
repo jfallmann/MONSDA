@@ -9,6 +9,7 @@ DOWNPARAMS = get_always('sra_params_DOWNLOAD') ?: ''
 
 process prefetch_sra{
     conda "$FETCHENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$FETCHENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -35,6 +36,7 @@ process prefetch_sra{
 
 process download_sra{
     conda "$FETCHENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$FETCHENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

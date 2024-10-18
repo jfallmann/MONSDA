@@ -7,6 +7,7 @@ TRIMPARAMS = get_always('bbduk_params_TRIM') ?: ''
 
 process trim{
     conda "$TRIMENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$TRIMENV"
     cpus 4//cores
     //validExitStatus 0,1
 

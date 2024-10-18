@@ -57,6 +57,7 @@ process trim{
 
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -89,6 +90,7 @@ process salmon_idx{
 
 process salmon_quant{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

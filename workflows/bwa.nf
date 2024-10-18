@@ -32,6 +32,7 @@ process collect_tomap{
 
 process bwa_idx{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
@@ -61,6 +62,7 @@ process bwa_idx{
 
 process bwa_mapping{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'

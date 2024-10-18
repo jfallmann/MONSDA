@@ -5,6 +5,7 @@ QCPARAMS = get_always('fastqc_params_QC') ?: ''
 //QC RAW
 process qc_raw{
     conda "$QCENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -44,6 +45,7 @@ workflow QC_RAW{
 
 process qc_trimmed{
     conda "$QCENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -83,6 +85,7 @@ workflow QC_TRIMMING{
 
 process qc_mapped{
     conda "$QCENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -120,6 +123,7 @@ workflow QC_MAPPING{
 
 process qc_dedup{
     conda "$QCENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

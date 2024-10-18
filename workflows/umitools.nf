@@ -6,6 +6,7 @@ EXTRACTPARAMS = get_always('umitools_params_EXTRACT') ?: ''
 
 process whitelist{
     conda "$DEDUPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEDUPENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -49,6 +50,7 @@ process whitelist{
 
 process extract_fq{
     conda "$DEDUPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DEDUPENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

@@ -33,6 +33,7 @@ process collect_tomap{
 
 process segemehl_idx{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
@@ -67,6 +68,7 @@ process segemehl_idx{
 
 process segemehl_mapping{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'

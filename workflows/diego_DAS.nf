@@ -22,6 +22,7 @@ COUNTENV = 'countreads_de'
 
 process featurecount_diego{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -70,6 +71,7 @@ process featurecount_diego{
 
 process create_samplemaps{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -95,6 +97,7 @@ process create_samplemaps{
 
 process prepare_junction_usage_matrix{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -124,6 +127,7 @@ process prepare_junction_usage_matrix{
 
 process create_contrast_files{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -149,6 +153,7 @@ process create_contrast_files{
 
 process run_diego{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -180,6 +185,7 @@ process run_diego{
 
 process filter_significant{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -205,6 +211,7 @@ process filter_significant{
 
 process convertPDF{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -230,6 +237,7 @@ process convertPDF{
 
 process create_summary_snippet{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -257,6 +265,7 @@ process create_summary_snippet{
 
 process collect_diego{
     conda "$DASENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$DASENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

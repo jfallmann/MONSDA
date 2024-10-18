@@ -1,5 +1,6 @@
 process make_rmd{
     conda "summary.yaml"
+    container "docker://jfallmann/monsda:"+"summary"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

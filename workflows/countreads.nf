@@ -16,6 +16,7 @@ COUNTMAP = get_always('COUNTINGMAP') ?: ''
 //COUNTING PROCESSES
 process count_fastq{
     conda "base.yaml"
+    container "docker://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -58,6 +59,7 @@ process count_fastq{
 
 process count_trimmed_fastq{
     conda "base.yaml"
+    container "docker://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -100,6 +102,7 @@ process count_trimmed_fastq{
 
 process count_dedup_fastq{
     conda "base.yaml"
+    container "docker://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -142,6 +145,7 @@ process count_dedup_fastq{
 
 process count_mappers{
     conda "samtools.yaml"
+    container "docker://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -171,6 +175,7 @@ process count_mappers{
 
 process featurecount{
     conda "$COUNTENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -219,6 +224,7 @@ process featurecount{
 
 process summarize_counts{
     conda "base.yaml"
+    container "docker://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

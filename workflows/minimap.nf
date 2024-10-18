@@ -30,6 +30,7 @@ process collect_tomap{
 
 process minimap_idx{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
@@ -59,6 +60,7 @@ process minimap_idx{
 
 process minimap_mapping{
     conda "$MAPENV"+".yaml"
+    container "docker://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
