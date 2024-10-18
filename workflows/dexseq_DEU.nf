@@ -19,7 +19,7 @@ COUNTENV = 'countreads_de'
 //DEU PROCESSES
 process prepare_deu_annotation{
     conda "$COUNTENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$COUNTENV"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -58,7 +58,7 @@ process prepare_deu_annotation{
 
 process featurecount_dexseq{
     conda "$COUNTENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$COUNTENV"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -106,7 +106,7 @@ process featurecount_dexseq{
 
 process prepare_count_table{
     conda "$DEUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEUENV"
+    container "oras://jfallmann/monsda:"+"$DEUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -137,7 +137,7 @@ process prepare_count_table{
 
 process run_dexseq{
     conda "$DEUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEUENV"
+    container "oras://jfallmann/monsda:"+"$DEUENV"
     cpus 1 // THREADS Not possible due to BPParam Error
 	cache 'lenient'
     //validExitStatus 0,1
@@ -178,7 +178,7 @@ process run_dexseq{
 
 process filter_significant{
     conda "$DEUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEUENV"
+    container "oras://jfallmann/monsda:"+"$DEUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -204,7 +204,7 @@ process filter_significant{
 
 process create_summary_snippet{
     conda "$DEUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEUENV"
+    container "oras://jfallmann/monsda:"+"$DEUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -232,7 +232,7 @@ process create_summary_snippet{
 
 process collect_dexseq{
     conda "$DEUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEUENV"
+    container "oras://jfallmann/monsda:"+"$DEUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

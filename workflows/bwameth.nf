@@ -32,7 +32,7 @@ process collect_tomap{
 
 process bwameth_idx{
     conda "$MAPENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$MAPENV"
+    container "oras://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
@@ -64,7 +64,7 @@ process bwameth_idx{
 
 process bwameth_mapping{
     conda "$MAPENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$MAPENV"
+    container "oras://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'

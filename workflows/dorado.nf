@@ -8,7 +8,7 @@ MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
 
 process dorado{
     conda "$CALLERENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$CALLERENV"
+    container "oras://jfallmann/monsda:"+"$CALLERENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

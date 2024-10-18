@@ -13,7 +13,7 @@ include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
 process RemoveSoftclip{
     conda "$PEAKSENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$PEAKSENV"
+    container "oras://jfallmann/monsda:"+"$PEAKSENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -47,7 +47,7 @@ process RemoveSoftclip{
 
 process BamToBed{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -87,7 +87,7 @@ process BamToBed{
 
 process ExtendBed{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -124,7 +124,7 @@ process ExtendBed{
 
 process RevExtendBed{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -162,7 +162,7 @@ process RevExtendBed{
 
 process BedToBedg{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -213,7 +213,7 @@ process BedToBedg{
 
 process BedToBedgPeak{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -263,7 +263,7 @@ process BedToBedgPeak{
 
 process PreprocessPeaks{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -294,7 +294,7 @@ process PreprocessPeaks{
 
 process FindPeaks{
     conda "$PEAKSENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$PEAKSENV"
+    container "oras://jfallmann/monsda:"+"$PEAKSENV"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -324,7 +324,7 @@ process FindPeaks{
 
 process AddSequenceToPeak{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -356,7 +356,7 @@ process AddSequenceToPeak{
 
 process PeakToBedg{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -393,7 +393,7 @@ process PeakToBedg{
 
 process NormalizeBedg{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -427,7 +427,7 @@ process NormalizeBedg{
 
 process NormalizePeakBedg{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -461,7 +461,7 @@ process NormalizePeakBedg{
 
 process PeakToTRACKS{
     conda "ucsc.yaml"
-    container "docker://jfallmann/monsda:"+"ucsc"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -496,7 +496,7 @@ process PeakToTRACKS{
 
 process BedgToTRACKS{
     conda "ucsc.yaml"
-    container "docker://jfallmann/monsda:"+"ucsc"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -532,7 +532,7 @@ process BedgToTRACKS{
 
 process GenerateTrack{
     conda "base.yaml"
-    container "docker://jfallmann/monsda:"+"base"
+    container "oras://jfallmann/monsda:"+"base"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1

@@ -1,6 +1,6 @@
 process UnzipGenome{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -35,7 +35,7 @@ process UnzipGenome{
 
 process UnzipGenome_no_us{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1

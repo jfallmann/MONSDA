@@ -10,7 +10,7 @@ CIRCPARAMS = get_always('ciri2_params_CIRC') ?: ''
 
 process ciri2{
     conda "$CIRCENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$CIRCENV"
+    container "oras://jfallmann/monsda:"+"$CIRCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

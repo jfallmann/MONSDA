@@ -13,7 +13,7 @@ include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
 process BamToBed{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -51,7 +51,7 @@ process BamToBed{
 
 process BedToBedg{
     conda "bedtools.yaml"
-    container "docker://jfallmann/monsda:"+"bedtools"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -89,7 +89,7 @@ process BedToBedg{
 
 process NormalizeBedg{
     conda "perl.yaml"
-    container "docker://jfallmann/monsda:"+"perl"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -123,7 +123,7 @@ process NormalizeBedg{
 
 process BedgToTRACKS{
     conda "ucsc.yaml"
-    container "docker://jfallmann/monsda:"+"ucsc"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -158,7 +158,7 @@ process BedgToTRACKS{
 
 process GenerateTrack{
     conda "base.yaml"
-    container "docker://jfallmann/monsda:"+"base"
+    container "oras://jfallmann/monsda:"+"base"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1

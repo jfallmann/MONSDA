@@ -4,7 +4,7 @@ QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
 process mqc{
     conda "$QCENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$QCENV"
+    container "oras://jfallmann/monsda:"+"$QCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

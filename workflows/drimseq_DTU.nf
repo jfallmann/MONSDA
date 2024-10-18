@@ -25,7 +25,7 @@ COUNTENV = 'salmon'
 
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$COUNTENV"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -60,7 +60,7 @@ process salmon_idx{
 
 process salmon_quant{
     conda "$COUNTENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$COUNTENV"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -122,7 +122,7 @@ process salmon_quant{
 
 process prepare_dtu_annotation{
     conda "$DTUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DTUENV"
+    container "oras://jfallmann/monsda:"+"$DTUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -147,7 +147,7 @@ process prepare_dtu_annotation{
 
 process run_drimseq{
     conda "$DTUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DTUENV"
+    container "oras://jfallmann/monsda:"+"$DTUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -187,7 +187,7 @@ process run_drimseq{
 
 process create_summary_snippet{
     conda "$DTUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DTUENV"
+    container "oras://jfallmann/monsda:"+"$DTUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -215,7 +215,7 @@ process create_summary_snippet{
 
 process collect_drimseq{
     conda "$DTUENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DTUENV"
+    container "oras://jfallmann/monsda:"+"$DTUENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

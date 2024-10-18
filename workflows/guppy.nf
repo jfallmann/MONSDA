@@ -8,7 +8,7 @@ MODELPARAMS = get_always('guppy_params_MODEL') ?: ''
 
 process guppy{
     conda "$CALLERENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$CALLERENV"
+    container "oras://jfallmann/monsda:"+"$CALLERENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

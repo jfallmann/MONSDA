@@ -5,7 +5,7 @@ JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 
 process dedup_bam{
     conda "$DEDUPENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$DEDUPENV"
+    container "oras://jfallmann/monsda:"+"$DEDUPENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

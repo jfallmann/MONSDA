@@ -29,7 +29,7 @@ process collect_tomap{
 
 process hisat2_idx{
     conda "$MAPENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$MAPENV"
+    container "oras://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'
@@ -62,7 +62,7 @@ process hisat2_idx{
 
 process hisat2_mapping{
     conda "$MAPENV"+".yaml"
-    container "docker://jfallmann/monsda:"+"$MAPENV"
+    container "oras://jfallmann/monsda:"+"$MAPENV"
     cpus THREADS
 	cache 'lenient'
     label 'big_mem'

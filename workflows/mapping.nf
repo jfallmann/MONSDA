@@ -2,7 +2,7 @@
 
 process sortsam{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -31,7 +31,7 @@ process sortsam{
 
 process sam2bam{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -62,7 +62,7 @@ process sam2bam{
 
 process uniqsam{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -96,7 +96,7 @@ process uniqsam{
 
 process sam2bamuniq{
     conda "samtools.yaml"
-    container "docker://jfallmann/monsda:"+"samtools"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
