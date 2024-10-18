@@ -468,8 +468,8 @@ def run_nextflow(
                 x in optionalargs
                 for x in [
                     "-without-conda",
-                    "-apptainer.enabled",
-                    "-singularity.enabled",
+                    "apptainer",
+                    "singularity",
                 ]
             ]
         ):
