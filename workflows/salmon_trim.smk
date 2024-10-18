@@ -33,7 +33,7 @@ rule salmon_index:
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('INDEX', ""),
@@ -50,7 +50,7 @@ if paired == 'paired':
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
-        container: "docker://jfallmann/monsda:COUNTENV"
+        container: "docker://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
                 mapp=COUNTBIN,
@@ -67,7 +67,7 @@ else:
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
-        container: "docker://jfallmann/monsda:COUNTENV"
+        container: "docker://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
                 mapp=COUNTBIN,

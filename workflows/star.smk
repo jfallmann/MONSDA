@@ -14,7 +14,7 @@ rule generate_index:
             tmpref = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
-    container: "docker://jfallmann/monsda:MAPPERENV"
+    container: "docker://jfallmann/monsda:"+MAPPERENV+""
     threads: MAXTHREAD
     params: mapp = MAPPERBIN,
             ipara = lambda w,output: fixRunParameters(config, MAPPERENV, SAMPLES[0], None, 'MAPPING', 'INDEX', "--sjdbGTFfile", f"--sjdbGTFfile {output.tmpref}"),
@@ -38,7 +38,7 @@ if paired == 'paired':
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
-        container: "docker://jfallmann/monsda:MAPPERENV"
+        container: "docker://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
@@ -61,7 +61,7 @@ else:
                     tmp = temp("TMP/STAROUT/{combo}/{file}")                    
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
-            container: "docker://jfallmann/monsda:MAPPERENV"
+            container: "docker://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),                    
                     mapp = MAPPERBIN,
@@ -84,7 +84,7 @@ else:
                     tmp = temp("TMP/STAROUT/{combo}/{file}")
             log:    "LOGS/{combo}/{file}/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
-            container: "docker://jfallmann/monsda:MAPPERENV"
+            container: "docker://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     stranded = lambda x: '--soloStrand Forward' if stranded == 'fr' else '--soloStrand Reverse' if stranded == 'rf' else '--soloStrand Unstranded',

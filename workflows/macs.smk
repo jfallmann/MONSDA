@@ -48,7 +48,7 @@ rule FindPeaks:
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
     conda:  ""+PEAKENV+".yaml"
-    container: "docker://jfallmann/monsda:PEAKENV"
+    container: "docker://jfallmann/monsda:"+PEAKENV+""
     threads: 1
     params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', get_samples_postprocess(config, 'PEAKS')), scombo),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),

@@ -101,7 +101,7 @@ rule featurecount:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -117,7 +117,7 @@ rule featurecount_unique:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -133,7 +133,7 @@ rule featurecount_dedup:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_dedup.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -149,7 +149,7 @@ rule featurecount_unique_dedup:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique_dedup.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,

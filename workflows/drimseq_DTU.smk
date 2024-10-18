@@ -37,7 +37,7 @@ rule salmon_index:
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
@@ -74,7 +74,7 @@ if paired == 'paired':
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
-        container: "docker://jfallmann/monsda:COUNTENV"
+        container: "docker://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
@@ -91,7 +91,7 @@ else:
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
-        container: "docker://jfallmann/monsda:COUNTENV"
+        container: "docker://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
@@ -105,7 +105,7 @@ rule create_annotation_table:
     output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
     log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: 1
     params: dereps = lambda wildcards, input: get_reps(input.dir, config, 'DTU'),
             bins = BINS
@@ -124,7 +124,7 @@ rule run_DTU:
             fig_files = rules.themall.input.fig_files
     log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
-    container: "docker://jfallmann/monsda:DTUENV"
+    container: "docker://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
@@ -145,7 +145,7 @@ rule filter_significant_drimseq:
             sig_ut  = rules.themall.input.sig_ut
     log:    "LOGS/DTU/filter_drimseqDTU.log"
     conda:  ""+DTUENV+".yaml"
-    container: "docker://jfallmann/monsda:DTUENV"
+    container: "docker://jfallmann/monsda:"+DTUENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
@@ -169,7 +169,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
-    container: "docker://jfallmann/monsda:DTUENV"
+    container: "docker://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

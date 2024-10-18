@@ -27,7 +27,7 @@ rule featurecount_unique:
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:COUNTENV"
+    container: "docker://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -44,7 +44,7 @@ rule prepare_count_table:
              anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
     conda:   ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:DASENV"
+    container: "docker://jfallmann/monsda:"+DASENV+""
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
              bins = BINS
@@ -63,7 +63,7 @@ rule run_edger:
             resE    = rules.themall.input.resE
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:DASENV"
+    container: "docker://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             outdir = 'DAS/'+combo,
@@ -80,7 +80,7 @@ rule filter_significant_edger:
             sig_u= rules.themall.input.sig_u,
     log:    "LOGS/DAS/filter_edgerDAS.log"
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:DASENV"
+    container: "docker://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -101,7 +101,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:DASENV"
+    container: "docker://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

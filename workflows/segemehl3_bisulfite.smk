@@ -13,7 +13,7 @@ rule generate_index:
             uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs')
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
-    container: "docker://jfallmann/monsda:MAPPERENV.replace('bisulfite','')"
+    container: "docker://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
@@ -33,7 +33,7 @@ if paired == 'paired':
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
-        container: "docker://jfallmann/monsda:MAPPERENV.replace('bisulfite','')"
+        container: "docker://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
@@ -48,7 +48,7 @@ else:
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
-        container: "docker://jfallmann/monsda:MAPPERENV.replace('bisulfite','')"
+        container: "docker://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
