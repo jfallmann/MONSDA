@@ -155,7 +155,9 @@ def run_snakemake(
         mp.create_skeleton(subdir, skeleton)
 
         argslist = list()
-        if useconda:
+        if useconda and not any(
+            [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+        ):
             argslist.append("--conda-frontend conda --software-deployment-method conda")
         else:
             log.warning(
@@ -461,7 +463,9 @@ def run_nextflow(
         logid = scriptname + ".run_nextflow: "
         argslist = list()
         writeout = True
-        if useconda:
+        if useconda and not any(
+            [x in optionalargs for x in ["-with-singularity", "-with-apptainer"]]
+        ):
             argslist.append("-with-conda")
         else:
             log.warning(
