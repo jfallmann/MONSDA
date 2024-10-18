@@ -13,7 +13,7 @@ rule call_base:
             telemetry = "FASTQ/{rawfile}_telemetry.js"
     log:    "LOGS/BASECALL/{rawfile}_guppy.log"
     conda:  ""+CALLERENV+".yaml"
-    container: "docker://jfallmann/monsda:"+CALLERENV+""
+    container: "oras://jfallmann/monsda:"+CALLERENV+""
     threads: MAXTHREAD
     params: caller = CALLERBIN,
             cpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'].get('BASECALL', ""),

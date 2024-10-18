@@ -21,7 +21,7 @@ if paired == 'paired':
                 r2 = "COUNTS/{combo}/{file}_R2_raw_fq.count"
         log:    "LOGS/{combo}/{file}/countfastq.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
 
@@ -32,7 +32,7 @@ if paired == 'paired':
                 r2 = "COUNTS/{combo}/{file}_R2_trimmed_fq.count"
         log:    "LOGS/{combo}/{file}/countfastq.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}; arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}"
 
@@ -42,7 +42,7 @@ else:
         output: r1 = "COUNTS/{combo}/{file}_raw_fq.count"
         log:    "LOGS/{combo}/{file}/countfastq.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
 
@@ -51,7 +51,7 @@ else:
         output: r1 = "COUNTS/{combo}/{file}_trimmed_fq.count"
         log:    "LOGS/{combo}/{file}/count_trimmedfastq.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.r1}); orr=({output.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}"
 
@@ -60,7 +60,7 @@ rule count_mappers:
     output: m = "COUNTS/{combo}/{file}_mapped.count"
     log:    "LOGS/{combo}/{file}/countmappers.log"
     conda:  "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
@@ -70,7 +70,7 @@ rule count_unique_mappers:
     output: u = "COUNTS/{combo}/{file}_mapped_unique.count"
     log:    "LOGS/{combo}/{file}/count_unique_mappers.log"
     conda:  "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
@@ -80,7 +80,7 @@ rule count_dedup_mappers:
     output: m = "COUNTS/{combo}/{file}_mapped_dedup.count"
     log:    "LOGS/{combo}/{file}/countdedupmappers.log"
     conda:  "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.m} ;done 2>> {log}"
@@ -90,7 +90,7 @@ rule count_unique_dedup_mappers:
     output: u = "COUNTS/{combo}/{file}_mapped_unique_dedup.count"
     log:    "LOGS/{combo}/{file}/count_unique_dedupmappers.log"
     conda:  "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}% -T TMP -u |wc -l > {output.u} ;done 2>> {log}"
@@ -101,7 +101,7 @@ rule featurecount:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:"+COUNTENV+""
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -117,7 +117,7 @@ rule featurecount_unique:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:"+COUNTENV+""
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -133,7 +133,7 @@ rule featurecount_dedup:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_dedup.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:"+COUNTENV+""
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -149,7 +149,7 @@ rule featurecount_unique_dedup:
             c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique_dedup.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:"+COUNTENV+""
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -170,7 +170,7 @@ if rundedup:
         output: "COUNTS/{combo}/{file}.summary"
         log:    "LOGS/{combo}/{file}/summarize_counts.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 else:
@@ -182,6 +182,6 @@ else:
         output: "COUNTS/{combo}/{file}.summary"
         log:    "LOGS/{combo}/{file}/summarize_counts.log"
         conda:  "base.yaml"
-        container: "docker://jfallmann/monsda:base"
+        container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"

@@ -48,7 +48,7 @@ rule FindPeaks:
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_macs_{type}.log"
     conda:  ""+PEAKENV+".yaml"
-    container: "docker://jfallmann/monsda:"+PEAKENV+""
+    container: "oras://jfallmann/monsda:"+PEAKENV+""
     threads: 1
     params: pairing = lambda wildcards: get_pairing(wildcards.file, wildcards.type, config, config.get('SAMPLES', get_samples_postprocess(config, 'PEAKS')), scombo),
             ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
@@ -67,7 +67,7 @@ rule AddSequenceToPeak:
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_seq2peaks_{type}.log"
     conda:  "bedtools.yaml"
-    container: "docker://jfallmann/monsda:bedtools"
+    container: "oras://jfallmann/monsda:bedtools"
     threads: 1
     params: bins=BINS,
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -79,7 +79,7 @@ if ANNOPEAK is not None:
         output: "PEAKS/{combo}/{file}_peak_anno_{type}.bed.gz"
         log:    "LOGS/PEAKS/{combo}/{file}_annotatepeaks_{type}.log"
         conda:  "perl.yaml"
-        container: "docker://jfallmann/monsda:perl"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins=BINS,
                 anno = ANNOTATION
@@ -95,7 +95,7 @@ if ANNOPEAK is not None:
                 trw = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
-        container: "docker://jfallmann/monsda:perl"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins=BINS,
                 sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -111,7 +111,7 @@ else:
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
-        container: "docker://jfallmann/monsda:perl"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins=BINS,
                 sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -125,7 +125,7 @@ rule NormalizeBedg:
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_ucscpeaknormalizebedgraph_{type}.log"
     conda:  "perl.yaml"
-    container: "docker://jfallmann/monsda:perl"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re}) | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
@@ -142,7 +142,7 @@ rule PeakToTRACKS:
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
-    container: "docker://jfallmann/monsda:ucsc"
+    container: "oras://jfallmann/monsda:ucsc"
     threads: 1
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
@@ -153,7 +153,7 @@ rule GenerateTrack:
             "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
     log:    "LOGS/PEAKS/{combo}/{file}_peaktrack_{type}.log"
     conda:  "base.yaml"
-    container: "docker://jfallmann/monsda:base"
+    container: "oras://jfallmann/monsda:base"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "TRACKS/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),

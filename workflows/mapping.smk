@@ -5,7 +5,7 @@ rule sortsam:
             tmpfile = temp("TMP/{combo}/{file}")
     log:    "LOGS/{combo}/{file}/sortsam.log"
     conda: "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     priority: 100
     params: linkto = lambda wildcards, output: os.path.basename(output.sortedsam),
@@ -18,7 +18,7 @@ rule sam2bam:
             bamindex = "MAPPED/{combo}/{file}_mapped_sorted.bam.bai"
     log:    "LOGS/{combo}/{file}/sam2bam.log"
     conda: "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: bins = BINS
     shell: "zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}"
@@ -29,7 +29,7 @@ rule uniqsam:
     output: uniqsam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
     log: "LOGS/{combo}/{file}/uniqsam.log"
     conda: "base.yaml"
-    container: "docker://jfallmann/monsda:base"
+    container: "oras://jfallmann/monsda:base"
     threads: MAXTHREAD
     params: bins=BINS
     shell:  "{params.bins}/Shells/UniqueSam_woPicard.sh {input.sortedsam} {output.uniqsam} {threads} 2> {log}"
@@ -41,7 +41,7 @@ rule sam2bamuniq:
              uniqbamindex = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
     log:     "LOGS/{combo}/{file}/sam2bamuniq.log"
     conda:   "samtools.yaml"
-    container: "docker://jfallmann/monsda:samtools"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     priority: 50
     params: bins = BINS

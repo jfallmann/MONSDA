@@ -12,7 +12,7 @@ rule call_base:
             bam = temp("FASTQ/{rawfile}.bam")
     log:    "LOGS/BASECALL/{rawfile}_dorado.log"
     conda:  ""+CALLERENV+".yaml"
-    container: "docker://jfallmann/monsda:"+CALLERENV+""
+    container: "oras://jfallmann/monsda:"+CALLERENV+""
     threads: MAXTHREAD
     params: caller = CALLERBIN,
             cpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'BASECALL', CALLERENV)['OPTIONS'].get('BASECALL', ""),

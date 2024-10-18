@@ -22,7 +22,7 @@ rule featurecount_unique:
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_diego_unique.log"
     conda:  ""+COUNTENV+".yaml"
-    container: "docker://jfallmann/monsda:"+COUNTENV+""
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -39,7 +39,7 @@ rule create_samplemaps:
             cmap = "DAS/{combo}/Tables/{scombo}_groupings.txt"
     log:    "LOGS/DAS/{combo}/{scombo}_create_samplemaps.log"
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: slist = lambda wildcards, input: get_diego_samples(input.cnd, config, 'DAS'),
             clist = lambda wildcards, input: get_diego_groups(input.cnd, config, 'DAS'),
@@ -54,7 +54,7 @@ rule prepare_junction_usage_matrix:
             anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:    "LOGS/DAS/{combo}/prepare_{scombo}_junction_usage_matrix.log"
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: bins = BINS,
             dereps = lambda wildcards, input: get_reps(input.cnd, config,'DAS'),
@@ -66,7 +66,7 @@ rule create_contrast_files:
     output: contrast = expand("DAS/{combo}/Tables/{scombo}_{comparison}_contrast.txt", combo=combo, scombo=scombo, comparison=compstr)
     log:    expand("LOGS/DAS/{combo}/create_contrast_files.log", combo=combo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: bins = BINS,
             compare=comparison,
@@ -82,7 +82,7 @@ rule run_diego:
             csv = rules.themall.input.csv
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: MAXTHREAD
     params: bins   = str.join(os.sep, [BINS, DASBIN]),
             dpara = lambda x: tool_params(samplecond(SAMPLES, config)[0], None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('DAS', ""),
@@ -96,7 +96,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig
     log:    "LOGS/DAS/filter_diegoDAS.log"
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -108,7 +108,7 @@ rule convertPDF:
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.png", combo=combo, scombo=scombo, comparison=compstr)
     log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/convertPDF.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: MAXTHREAD
     shell: "for pdfile in {input} ; do convert -verbose -density 500 -resize '800' $pdfile ${{pdfile%pdf}}png; done"
 
@@ -122,7 +122,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
     conda:  ""+DASENV+".yaml"
-    container: "docker://jfallmann/monsda:"+DASENV+""
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
