@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+   
+%files
+    /home/fall/MONSDA/envs/bwameth.yaml /opt/envs/
+   
+%environment
+   
+%post
+    ls -alrt /opt/envs
+    chmod -R +x /opt/envs/bwameth.yaml
+    
+    ENV_NAME=bwameth
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+    echo "conda activate $ENV_NAME" >> $APPTAINER_ENVIRONMENT
+   
+    . /opt/conda/etc/profile.d/conda.sh
+    conda env create -f /opt/envs/bwameth.yaml -p /opt/conda/envs/$ENV_NAME
+    conda clean --all
+   
+%runscript
+    exec "$@"

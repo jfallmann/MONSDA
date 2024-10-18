@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+   
+%files
+    /home/fall/MONSDA/envs/segemehl3.yaml /opt/envs/
+   
+%environment
+   
+%post
+    ls -alrt /opt/envs
+    chmod -R +x /opt/envs/segemehl3.yaml
+    
+    ENV_NAME=segemehl3
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+    echo "conda activate $ENV_NAME" >> $APPTAINER_ENVIRONMENT
+   
+    . /opt/conda/etc/profile.d/conda.sh
+    conda env create -f /opt/envs/segemehl3.yaml -p /opt/conda/envs/$ENV_NAME
+    conda clean --all
+   
+%runscript
+    exec "$@"
