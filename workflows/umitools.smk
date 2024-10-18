@@ -14,6 +14,7 @@ if paired == 'paired':
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST', ""),
                     dedup = DEDUPBIN
@@ -28,6 +29,7 @@ if paired == 'paired':
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
@@ -41,6 +43,7 @@ if paired == 'paired':
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
@@ -54,6 +57,7 @@ else:
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('WHITELIST', ""),
                     dedup = DEDUPBIN
@@ -66,6 +70,7 @@ else:
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
@@ -78,6 +83,7 @@ else:
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}_dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
+            container: "docker://jfallmann/monsda:DEDUPENV"
             threads: 1
             params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('EXTRACT', ""),
                     dedup = DEDUPBIN
@@ -91,6 +97,7 @@ if paired == 'paired':
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"
+        container: "docker://jfallmann/monsda:DEDUPENV"
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
@@ -104,6 +111,7 @@ else:
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"
+        container: "docker://jfallmann/monsda:DEDUPENV"
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),

@@ -14,6 +14,7 @@ if all(checklist):
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "base.yaml"
+        container: "docker://jfallmann/monsda:base"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('TRACKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -23,6 +24,7 @@ elif all(checklist2):
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/Bed/linkbed{file}_{type}.log"
         conda:  "base.yaml"
+        container: "docker://jfallmann/monsda:base"
         threads: 1
         params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
         shell:  "ln -s {params.abs} {output}"
@@ -35,6 +37,7 @@ else:
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
     elif stranded and stranded == 'rf':
@@ -46,6 +49,7 @@ else:
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/Bed/createbed{file}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
 
@@ -54,6 +58,7 @@ rule AnnotateBed:
     output: "BED/{combo}/{file}_anno_{type}.bed.gz"
     log:    "LOGS/Bed/annobeds_{type}_{file}.log"
     conda:  "perl.yaml"
+    container: "docker://jfallmann/monsda:perl"
     threads: 1
     params: bins=BINS,
             anno = lambda wildcards: tool_params(wildcards.file, None, config, 'ANNOTATE').get('ANNOTATION', ""),
@@ -68,6 +73,7 @@ rule UnzipGenome:
             fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
+    container: "docker://jfallmann/monsda:samtools"
     threads: 1
     params: bins = BINS
     shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
@@ -79,6 +85,7 @@ rule UnzipGenome_no_us:
             fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
+    container: "docker://jfallmann/monsda:samtools"
     threads: 1
     params: bins = BINS
     shell:  "set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}"
@@ -92,6 +99,7 @@ rule AddSequenceToBed:
             bs = temp("BED/{combo}/{file}_bed_seq_{type}.tmp")
     log:    "LOGS/BED/seq2bed{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: bins=BINS,
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -102,6 +110,7 @@ rule MergeAnnoBed:
     output: "BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz"
     log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"

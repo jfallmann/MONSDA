@@ -19,6 +19,7 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
@@ -29,6 +30,7 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
@@ -51,6 +53,7 @@ if not all(checklist):
                 re = "TRACKS/{combo}/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/TRACKS/{combo}/{file}_{type}_ucscbedtobedgraph.log"
         conda:  "bedtools.yaml"
+        container: "docker://jfallmann/monsda:bedtools"
         threads: 1
         params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
         shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} | sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
@@ -63,6 +66,7 @@ rule NormalizeBedg:
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.norm.bedg.gz"
     log:    "LOGS/TRACKS/{combo}/{file}_{type}_ucscnormalizebedgraph.log"
     conda:  "perl.yaml"
+    container: "docker://jfallmann/monsda:perl"
     threads: 1
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
@@ -78,6 +82,7 @@ rule BedgToTRACKS:
             tre = temp("TRACKS/{combo}/{file}_mapped_{type}.re.tmp")
     log:    "LOGS/TRACKS/{combo}/{file}_{type}_bedgtoucsc.log"
     conda:  "ucsc.yaml"
+    container: "docker://jfallmann/monsda:ucsc"
     threads: 1
     priority: 10               # This should be finished before we generate tracks
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
@@ -89,6 +94,7 @@ rule GenerateTrack:
             "TRACKS/{combo}/{file}_mapped_{type}.re.bw.trackdone"
     log:    "LOGS/TRACKS/{combo}/{file}_track_{type}.log"
     conda:  "base.yaml"
+    container: "docker://jfallmann/monsda:base"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "TRACKS/{src}".format(src=SETS),
             bins = os.path.abspath(BINS),

@@ -29,6 +29,7 @@ rule featurecount_unique:
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
     conda:  ""+COUNTENV+".yaml"
+    container: "docker://jfallmann/monsda:COUNTENV"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -44,6 +45,7 @@ rule prepare_count_table:
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
     conda:   ""+DEENV+".yaml"
+    container: "docker://jfallmann/monsda:DEENV"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
              bins = BINS
@@ -64,6 +66,7 @@ rule run_deseq2:
             heats  = rules.themall.input.heats
     log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
+    container: "docker://jfallmann/monsda:DEENV"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = str.join(os.sep, [BINS, DEBIN]),
             outdir = 'DE/'+combo,
@@ -80,6 +83,7 @@ rule filter_significant:
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DE/filter_deseq2.log"
     conda:  ""+DEENV+".yaml"
+    container: "docker://jfallmann/monsda:DEENV"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
@@ -102,6 +106,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
     conda:  ""+DEENV+".yaml"
+    container: "docker://jfallmann/monsda:DEENV"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

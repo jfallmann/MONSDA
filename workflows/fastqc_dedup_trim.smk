@@ -18,6 +18,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -27,6 +28,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_{read}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -36,6 +38,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_{read}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -49,6 +52,7 @@ if paired == 'paired':
                 lst = "QC/Multi/{combo}/{condition}/qclist_trim_dedup.txt"
         log:    "LOGS/{combo}/{condition}_multiqc_trim_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: 1
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
         shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"
@@ -59,6 +63,7 @@ else:
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}_fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -68,6 +73,7 @@ else:
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -77,6 +83,7 @@ else:
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
@@ -90,6 +97,7 @@ else:
                 lst = "QC/Multi/{combo}/{condition}/qclist_trim_dedup.txt"
         log:    "LOGS/{combo}/{condition}_multiqc_trim_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: 1
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
         shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT -l {output.lst} 2> {log}"

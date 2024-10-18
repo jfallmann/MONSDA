@@ -7,6 +7,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
         log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -17,6 +18,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_{read}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -27,6 +29,7 @@ if paired == 'paired':
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_{read}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -38,6 +41,7 @@ else:
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}_fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -48,6 +52,7 @@ else:
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -58,6 +63,7 @@ else:
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
+        container: "docker://jfallmann/monsda:QCENV"
         threads: MAXTHREAD
         priority: 10
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
@@ -68,6 +74,7 @@ rule qc_mapped:
     output:  o1 = report("QC/{combo}/{file}_mapped_sorted_fastqc.zip", category="QC")
     log:     "LOGS/{combo}/{file}_fastqc_mapped.log"
     conda:  ""+QCENV+".yaml"
+    container: "docker://jfallmann/monsda:QCENV"
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
@@ -78,6 +85,7 @@ rule qc_uniquemapped:
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_uniquemapped.log"
     conda:  ""+QCENV+".yaml"
+    container: "docker://jfallmann/monsda:QCENV"
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
@@ -88,6 +96,7 @@ rule qc_dedupmapped:
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_dedup_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_dedupmapped.log"
     conda:  ""+QCENV+".yaml"
+    container: "docker://jfallmann/monsda:QCENV"
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"
@@ -98,6 +107,7 @@ rule qc_uniquededup:
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_dedup_fastqc.zip", category="QC")
     log:    "LOGS/{combo}/{file}_fastqc_uniquededup.log"
     conda:  ""+QCENV+".yaml"
+    container: "docker://jfallmann/monsda:QCENV"
     threads: MAXTHREAD
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
     shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}"

@@ -21,6 +21,7 @@ rule FindCircs:
             tf = temp("CIRCS/{combo}/{file}_tmp.fa")
     log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
     conda:  ""+CENV+".yaml"
+    container: "docker://jfallmann/monsda:CENV"
     threads: MAXTHREAD
     params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, "CIRCS", CENV)['OPTIONS'].get('CIRC', ""),
             circ = CBIN

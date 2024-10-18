@@ -65,6 +65,7 @@ if not all(checklist):
                 bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
         log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
         conda:  "scyphy.yaml"
+        container: "docker://jfallmann/monsda:scyphy"
         threads: 1
         params: bins = BINS,
                 tmpidx = lambda x: tempfile.mkdtemp(dir='TMP'),
@@ -77,6 +78,7 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
@@ -87,6 +89,7 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "docker://jfallmann/monsda:bedtools"
             threads: 1
             params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
@@ -98,6 +101,7 @@ rule extendbed:
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}_nosoftclip.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}extendbed_{type}.log"
     conda:  "perl.yaml"
+    container: "docker://jfallmann/monsda:perl"
     threads: 1
     params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 0 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
@@ -108,6 +112,7 @@ rule rev_extendbed:
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}_nosoftclip.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}extendbed_{type}.log"
     conda:  "perl.yaml"
+    container: "docker://jfallmann/monsda:perl"
     threads: 1
     params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -d 0 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
@@ -122,6 +127,7 @@ rule BedToBedg_ext:
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_ext.unsrt")
     log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_ext_{type}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: bins = BINS,
             odir = lambda wildcards, output:(os.path.dirname(output[0])),
@@ -138,6 +144,7 @@ rule BedToBedg_rev:
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_rev.unsrt")
     log:    "LOGS/PEAKS/{combo}/bed2bedgraph_rev_{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: bins = BINS,
             odir = lambda wildcards, output:(os.path.dirname(output[0])),
@@ -154,6 +161,7 @@ rule BedToBedg:
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
     log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: bins = BINS,
             odir = lambda wildcards, output:(os.path.dirname(output[0])),
@@ -166,6 +174,7 @@ if any(x == IP for x in ['iCLIP', 'CLIP']):
         output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
         log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
         conda:  "perl.yaml"
+        container: "docker://jfallmann/monsda:perl"
         threads: 1
         params: bins = BINS,
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
@@ -177,6 +186,7 @@ elif IP == 'revCLIP':
         output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
         log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
         conda:  "perl.yaml"
+        container: "docker://jfallmann/monsda:perl"
         threads: 1
         params:  bins = BINS,
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
@@ -187,6 +197,7 @@ rule FindPeaks:
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/findpeaks_{type}_{file}.log"
     conda:  ""+PEAKENV+".yaml"
+    container: "docker://jfallmann/monsda:PEAKENV"
     threads: 1
     params: ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             peak = PEAKBIN,
@@ -201,6 +212,7 @@ rule AddSequenceToPeak:
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/PEAKS/{combo}/seq2peaks_{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "docker://jfallmann/monsda:bedtools"
     threads: 1
     params: bins=BINS,
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -212,6 +224,7 @@ if ANNOPEAK is not None:
         output: "PEAKS/{combo}/{file}_peak_anno_{type}.bed.gz"
         log:    "LOGS/PEAKS/{combo}/annotatepeaks_{type}_{file}.log"
         conda:  "perl.yaml"
+        container: "docker://jfallmann/monsda:perl"
         threads: 1
         params: bins = BINS,
                 anno = ANNOTATION
@@ -227,6 +240,7 @@ if ANNOPEAK is not None:
                 trw = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
+        container: "docker://jfallmann/monsda:perl"
         threads: 1
         params: bins=BINS,
                 sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -242,6 +256,7 @@ else:
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}_peak2bedg_{type}.log"
         conda:  "perl.yaml"
+        container: "docker://jfallmann/monsda:perl"
         threads: 1
         params: bins=BINS,
                 sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
@@ -267,6 +282,7 @@ rule NormalizeBedg:
             map_re_rev = "PEAKS/{combo}/{file}_mapped_{type}_rev.re.norm.bedg.gz"
     log:    "LOGS/PEAKS/{combo}/ucscpeaknormalizebedgraph_{type}_{file}.log"
     conda:  "perl.yaml"
+    container: "docker://jfallmann/monsda:perl"
     threads: 1
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
     shell: "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw} 2> {log}; else gzip < /dev/null > {output.map_fw}; echo \"File {input.map_fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re} 2> {log}; else gzip < /dev/null > {output.map_re}; echo \"File {input.map_re} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw_ext} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw_ext}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw_ext})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw_ext} 2> {log}; else gzip < /dev/null > {output.map_fw_ext}; echo \"File {input.map_fw_ext} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re_ext} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re_ext}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re_ext})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re_ext} 2> {log}; else gzip < /dev/null > {output.map_re_ext}; echo \"File {input.map_re_ext} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw_rev} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw_rev}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw_rev})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw_rev} 2> {log}; else gzip < /dev/null > {output.map_fw_rev}; echo \"File {input.map_fw_rev} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re_rev} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re_rev}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re_rev})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re_rev} 2> {log}; else gzip < /dev/null > {output.map_re_rev}; echo \"File {input.map_re_rev} empty\" >> {log}; fi"
@@ -301,6 +317,7 @@ rule PeakToTRACKS:
             tmapre_rev = temp("TRACKS/PEAKS/{combo}/{file}_{type}mapre_rev_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
+    container: "docker://jfallmann/monsda:ucsc"
     threads: 1
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && zcat {input.map_fw} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw} 2>> {log} && zcat {input.map_re} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re} 2>> {log} && zcat {input.map_fw_ext} > {output.tmapfw_ext} 2>> {log} && bedGraphToBigWig {output.tmapfw_ext} {input.fas} {output.map_fw_ext} 2>> {log} && zcat {input.map_re_ext} > {output.tmapre_ext} 2>> {log} && bedGraphToBigWig {output.tmapre_ext} {input.fas} {output.map_re_ext} 2>> {log} && zcat {input.map_fw_rev} > {output.tmapfw_rev} 2>> {log} && bedGraphToBigWig {output.tmapfw_rev} {input.fas} {output.map_fw_rev} 2>> {log} && zcat {input.map_re_rev} > {output.tmapre_rev} 2>> {log} && bedGraphToBigWig {output.tmapre_rev} {input.fas} {output.map_re_rev} 2>> {log}"
 
@@ -323,6 +340,7 @@ rule GenerateTrack:
             "TRACKS/PEAKS/{combo}/{file}_mapped_{type}_rev.re.bw.trackdone"
     log:    "LOGS/PEAKS/{combo}/generatetrack_{type}_{file}.log"
     conda:  "base.yaml"
+    container: "docker://jfallmann/monsda:base"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "TRACKS/PEAKS/{combo}/{src}".format(combo=combo, src=SETS),
             bins = os.path.abspath(BINS),

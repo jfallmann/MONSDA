@@ -9,6 +9,7 @@ if paired == 'paired':
         output: prefetch = temp("TMP/{srafile}.sra")
         log:    "LOGS/FETCH/prefetch_{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
+        container: "docker://jfallmann/monsda:FETCHENV"
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
         shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}"
@@ -18,6 +19,7 @@ if paired == 'paired':
         output: fq = expand("FASTQ/{{srafile}}_{read}.fastq.gz", read=['R1','R2'])
         log:    "LOGS/FETCH/{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
+        container: "docker://jfallmann/monsda:FETCHENV"
         threads: min(MAXTHREAD, 6)
         params: outdir = lambda w, output: expand("{cond}", cond=[os.path.dirname(x) for x in output.fq]),
                 ids = lambda w, input: os.path.abspath(input.prefetch),
@@ -36,6 +38,7 @@ else:
         output: prefetch = temp("TMP/{srafile}.sra")
         log:    "LOGS/FETCH/prefetch_{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
+        container: "docker://jfallmann/monsda:FETCHENV"
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
                 fpara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'FETCH', FETCHENV)['OPTIONS'].get('PREFETCH', ""),
         shell: "export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}"
@@ -45,6 +48,7 @@ else:
         output: fq = "FASTQ/{srafile}.fastq.gz"
         log:    "LOGS/FETCH/{srafile}.log"
         conda:  ""+FETCHENV+".yaml"
+        container: "docker://jfallmann/monsda:FETCHENV"
         threads: min(MAXTHREAD, 6)
         params: outdir = lambda w, output: expand("{cond}", cond=os.path.dirname(output.fq)),
                 ids = lambda w, input: os.path.abspath(input.prefetch),

@@ -27,6 +27,7 @@ rule featurecount_unique:
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DEU/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
+    container: "docker://jfallmann/monsda:COUNTENV"
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
@@ -43,6 +44,7 @@ rule prepare_count_table:
              anno = "DEU/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
     conda:   ""+DEUENV+".yaml"
+    container: "docker://jfallmann/monsda:DEUENV"
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DEU'),
              bins = BINS
@@ -60,6 +62,7 @@ rule run_edger:
             rules.themall.input.res,
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  ""+DEUENV+".yaml"
+    container: "docker://jfallmann/monsda:DEUENV"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEUBIN]),
             outdir = 'DEU/'+combo,
@@ -76,6 +79,7 @@ rule filter_significant:
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DEU/filter_edgerDEU.log"
     conda:  ""+DEUENV+".yaml"
+    container: "docker://jfallmann/monsda:DEUENV"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc')
@@ -96,6 +100,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log",combo=combo)
     conda:  ""+DEUENV+".yaml"
+    container: "docker://jfallmann/monsda:DEUENV"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

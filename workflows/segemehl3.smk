@@ -11,6 +11,7 @@ rule generate_index:
             uidx = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
+    container: "docker://jfallmann/monsda:MAPPERENV"
     threads: MAXTHREAD
     params: indexer = MAPPERBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
@@ -31,6 +32,7 @@ if paired == 'paired':
                 txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
+        container: "docker://jfallmann/monsda:MAPPERENV"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
@@ -49,6 +51,7 @@ else:
                 txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
+        container: "docker://jfallmann/monsda:MAPPERENV"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,

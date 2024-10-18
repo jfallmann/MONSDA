@@ -8,6 +8,7 @@ rule dedupbam:
             td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
     log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
     conda:  ""+DEDUPENV+".yaml"
+    container: "docker://jfallmann/monsda:DEDUPENV"
     threads: 1
     priority: 0               # This should be done after all mapping is done
     params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),

@@ -11,6 +11,7 @@ rule generate_index:
             uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX+os.path.basename(REFERENCE).replace(".gz", ""))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
+    container: "docker://jfallmann/monsda:MAPPERENV"
     threads: 1
     params: indexer = 'bwameth.py index-mem2',
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
@@ -27,6 +28,7 @@ if paired == 'paired':
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/bwameth.log"
         conda:  ""+MAPPERENV+".yaml"
+        container: "docker://jfallmann/monsda:MAPPERENV"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
                 mapp = MAPPERBIN
@@ -39,6 +41,7 @@ else:
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
         log:    "LOGS/{combo}/{file}/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
+        container: "docker://jfallmann/monsda:MAPPERENV"
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN

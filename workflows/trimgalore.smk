@@ -17,6 +17,7 @@ if paired == 'paired':
                 o2 = "TRIMMED_FASTQ/{combo}/{file}_R2_val_2.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_R2_dedup_val_2.fq.gz"
         log:   "LOGS/{combo}/{file}_trim.log"
         conda: ""+TRIMENV+".yaml"
+        container: "docker://jfallmann/monsda:TRIMENV"
         threads: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir=lambda wildcards, output:os.path.dirname(output.o1),
                 tpara = lambda wildcards: tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'].get('TRIM', ""),
@@ -29,6 +30,7 @@ if paired == 'paired':
         output: r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz"
         conda: ""+TRIMENV+".yaml"
+        container: "docker://jfallmann/monsda:TRIMENV"
         threads: 1
         shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"
 
@@ -38,6 +40,7 @@ else:
         output: o1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_dedup_trimmed.fq.gz"
         log:    "LOGS/{combo}/{file}_trim.log"
         conda: ""+TRIMENV+".yaml"
+        container: "docker://jfallmann/monsda:TRIMENV"
         threads: min(int(MAXTHREAD/2),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
         params: odir = lambda wildcards, output: os.path.dirname(output.o1),
                 tpara = lambda wildcards: tool_params(wildcards.file, None, config, "TRIMMING", TRIMENV)['OPTIONS'].get('TRIM', ""),
@@ -48,5 +51,6 @@ else:
         input:  o1 = rules.trimgalore_trim.output.o1
         output: r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
         conda: ""+TRIMENV+".yaml"
+        container: "docker://jfallmann/monsda:TRIMENV"
         threads: 1
         shell:  "mv {input.o1} {output.r1}"
