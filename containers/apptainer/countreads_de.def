@@ -2,8 +2,9 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    ${HOME}/MONSDA/envs/countreads_de.yaml /opt/envs/
-   
+    /home/fall/MONSDA/envs/countreads_de.yaml /opt/envs/
+    ${HOME}/MONSDA/scripts /opt/MONSDA/
+
 %environment
    
 %post

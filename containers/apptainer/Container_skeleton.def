@@ -3,7 +3,8 @@ From: continuumio/miniconda3
    
 %files
     ##environment.yaml##
-   
+    ${HOME}/MONSDA/scripts /opt/MONSDA/
+
 %environment
    
 %post
