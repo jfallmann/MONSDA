@@ -160,10 +160,15 @@ def run_snakemake(
         ):
             argslist.append("--conda-frontend conda --software-deployment-method conda")
         else:
-            log.warning(
-                logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
-            )
+            if not any(
+                [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+            ):
+                log.warning(
+                    logid
+                    + "You are not making use of conda or singularity/apptainer, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call or enable singularity/apptainer. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
+                )
+            else:
+                config["BINS"] = "/opt/MONSDA/scripts"
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
@@ -475,10 +480,22 @@ def run_nextflow(
         ):
             argslist.append("-with-conda")
         else:
-            log.warning(
-                logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --software-deployment-method conda option to your commandline call."
-            )
+            if any(
+                [
+                    x in optionalargs
+                    for x in [
+                        "-without-conda",
+                        "apptainer",
+                        "singularity",
+                    ]
+                ]
+            ):
+                log.warning(
+                    logid
+                    + "You are not making use of conda or singularity/apptainer, be aware that this will most likely not work for the workflows provided here! To change append the -with-conda option to your commandline call or enable singularity/apptainer in your nextflow.config, an example config file is shipped with MONSDA/profile_nextflow. You can also speed up conda with mamba (experimental) and store conda environment locations across runs with the conda.cachedir parameter."
+                )
+            else:
+                config["BINS"] = "/opt/MONSDA/scripts"
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
