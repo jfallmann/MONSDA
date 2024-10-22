@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/cutadapt.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/cutadapt.yaml /opt/envs/
    
 %environment
    

@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/edger_DEU.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/edger_DEU.yaml /opt/envs/
    
 %environment
    

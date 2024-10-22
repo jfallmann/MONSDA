@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/dexseq_DTU.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/dexseq_DTU.yaml /opt/envs/
    
 %environment
    

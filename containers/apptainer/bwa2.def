@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/bwa2.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/bwa2.yaml /opt/envs/
    
 %environment
    

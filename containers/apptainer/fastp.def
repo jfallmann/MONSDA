@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/fastp.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/fastp.yaml /opt/envs/
    
 %environment
    

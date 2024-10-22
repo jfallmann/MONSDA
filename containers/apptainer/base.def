@@ -2,7 +2,8 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/base.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/base.yaml /opt/envs/
+    ${HOME}/MONSDA/scripts /opt/MONSDA/
    
 %environment
    
@@ -17,6 +18,6 @@ From: continuumio/miniconda3
     . /opt/conda/etc/profile.d/conda.sh
     conda env create -f /opt/envs/base.yaml -p /opt/conda/envs/$ENV_NAME
     conda clean --all
-   
+
 %runscript
     exec "$@"

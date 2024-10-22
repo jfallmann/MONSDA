@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/MONSDA/envs/trimgalore.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/trimgalore.yaml /opt/envs/
    
 %environment
    
