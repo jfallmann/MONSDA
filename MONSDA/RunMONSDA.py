@@ -468,6 +468,7 @@ def run_nextflow(
         logid = scriptname + ".run_nextflow: "
         argslist = list()
         writeout = True
+        config = load_configfile(configfile)
         if useconda and not any(
             [
                 x in optionalargs
@@ -480,11 +481,11 @@ def run_nextflow(
         ):
             argslist.append("-with-conda")
         else:
-            if any(
+            if not any(
                 [
                     x in optionalargs
                     for x in [
-                        "-without-conda",
+                        "with-conda",
                         "apptainer",
                         "singularity",
                     ]
@@ -512,12 +513,13 @@ def run_nextflow(
             log.debug(logid + "JOB CODE " + str(job))
             sys.exit()
 
-        config = load_configfile(configfile)
         workdir = os.path.abspath(str.join(os.sep, [workdir, "NextFlowWork"]))
         subdir = "SubFlows"
         mp.create_skeleton(subdir, skeleton)
 
-        if not os.path.exists(os.path.abspath(subdir + os.sep + "bin")):
+        if not os.path.exists(
+            os.path.abspath(subdir + os.sep + "bin")
+        ) and "/opt/MONSDA/scripts" not in config.get("BINS", ""):
             os.symlink(
                 os.path.abspath(config.get("BINS", "")),
                 os.path.abspath(subdir + os.sep + "bin"),
