@@ -28,8 +28,8 @@ rule uniqsam:
             bam = rules.sam2bam.output
     output: uniqsam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
     log: "LOGS/{combo}/{file}/uniqsam.log"
-    conda: "base.yaml"
-    container: "oras://jfallmann/monsda:base"
+    conda: "samtools.yaml"
+    container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
     params: bins=BINS
     shell:  "{params.bins}/Shells/UniqueSam_woPicard.sh {input.sortedsam} {output.uniqsam} {threads} 2> {log}"
