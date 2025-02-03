@@ -90,7 +90,7 @@ dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
 rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
 print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5))
 dev.off()
 
@@ -221,7 +221,7 @@ for (contrast in comparison[[1]]) {
         rld_norm <- rlogTransformation(dds_norm, blind = FALSE)
         vsd_norm <- varianceStabilizingTransformation(dds_norm, blind = FALSE)
 
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=300)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=75)
         print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
         # DESeq2::plotPCA(rld_norm, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
         dev.off()
@@ -253,7 +253,7 @@ for (contrast in comparison[[1]]) {
     rld <- rlogTransformation(dds, blind = FALSE)
     vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=300)
+    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
     print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
     # DESeq2::plotPCA(rld, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
     dev.off()
@@ -327,7 +327,7 @@ for (contrast in comparison[[1]]) {
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
         # plotMA
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width=1900, height=1200, res=300)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width=1900, height=1200, res=75)
         DESeq2::plotMA(res_shrink)
         dev.off()
 

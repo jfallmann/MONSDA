@@ -47,6 +47,6 @@ jobs:
           cd ${{ github.workspace }}/tests
           ln -fs data/* .    
           mkdir -p CONDALIB
-          monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --rerun-incomplete --rerun-triggers mtime && echo "MONSDA test passed" || echo "MONSDA test ailed"
+          monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --save && echo "MONSDA test passed" || echo "MONSDA test failed"
           #chmod +x cicd_test.sh      
           #./cicd_test.sh

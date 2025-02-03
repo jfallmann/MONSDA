@@ -173,7 +173,7 @@ for (contrast in comparisons[[1]]) {
 
         comparison_objs[[contrast_name]] <- dxr1
 
-        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"), width=1900, height=1200, res=300)
+        png(paste("Figures/DEU", "DEXSEQ", combi, contrast_name, "figure", "plotMA.png", sep = "_"), width=1900, height=1200, res=75)
         print(plotMA(dxr1, cex = 0.8))
         dev.off()
 

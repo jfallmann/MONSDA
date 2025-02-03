@@ -1,6 +1,6 @@
 # zsh -i Convert_yaml_to_def.sh 
 
-for i in ${HOME}/MONSDA/envs/*.yaml;do a=${i%.yaml};b=${a##*/};cat Container_skeleton.def |sed -e "s,##environment.yaml##,${i} /opt/envs/,g" -e "s,##environment_short.yaml##,/opt/envs/${b}.yaml,g" -e "s/##ENV_NAME##/${b}/g" > ${b}.def;done
+for i in ${HOME}/MONSDA/envs/*.yaml;do a=${i%.yaml};b=${a##*/};cat ${HOME}/MONSDA/containers/apptainer/Container_skeleton.def |sed -e "s,##environment.yaml##,${i} /opt/envs/,g" -e "s,##environment_short.yaml##,/opt/envs/${b}.yaml,g" -e "s/##ENV_NAME##/${b}/g" > ${b}.def;done
 sed -i 's,=base,=monsda_base,g' base.def
 conda activate apptainer
 mkdir -p TMP_BUILDDIR
