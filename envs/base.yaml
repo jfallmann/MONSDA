@@ -13,4 +13,4 @@ dependencies:
   - python =3.10.4
   - python_abi =3.10
   - pyfaidx =0.5.9
-  - pysam =1.22.1
+  - pysam =0.23.0
