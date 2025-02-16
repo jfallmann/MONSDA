@@ -192,17 +192,29 @@ elif IP == 'revCLIP':
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
         shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
+#rule FindPeaks:
+#    input:  pre = rules.PreprocessPeaks.output.pre
+#    output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
+#    log:    "LOGS/PEAKS/{combo}/findpeaks_{type}_{file}.log"
+#    conda:  ""+PEAKENV+".yaml"
+#    container: "oras://jfallmann/monsda:"+PEAKENV+""
+#    threads: 1
+#    params: ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
+#            peak = PEAKBIN,
+#            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
+#    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}|sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6) 2> {log}|tail -n+2| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
+
 rule FindPeaks:
     input:  pre = rules.PreprocessPeaks.output.pre
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}/findpeaks_{type}_{file}.log"
-    conda:  ""+PEAKENV+".yaml"
-    container: "oras://jfallmann/monsda:"+PEAKENV+""
+    log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_{type}.log"
+    conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
-    params: ppara = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
-            peak = PEAKBIN,
+    params: opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
+            bins = BINS,
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}|sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6) 2> {log}|tail -n+2| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi"
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}"
 
 rule AddSequenceToPeak:
     input:  pk = rules.FindPeaks.output.peak,

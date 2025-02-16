@@ -153,7 +153,7 @@ rule PreprocessPeaks:
 rule FindPeaks:
     input:  pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}/{file}findpeaks_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
