@@ -74,7 +74,7 @@ rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+    log:    "LOGS/PEAKS/{scombo}/{file}_extendbed_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -85,7 +85,7 @@ rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+    log:    "LOGS/PEAKS/{scombo}/{file}_revextend_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1

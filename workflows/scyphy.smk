@@ -125,7 +125,7 @@ rule BedToBedg_ext:
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.bedg.gz",
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_ext.unsrt")
-    log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_ext_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_bed2bedgraph_ext_{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
@@ -142,7 +142,7 @@ rule BedToBedg_rev:
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.bedg.gz",
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}_rev.unsrt")
-    log:    "LOGS/PEAKS/{combo}/bed2bedgraph_rev_{type}_{file}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_bed2bedgraph_rev_{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
@@ -159,7 +159,7 @@ rule BedToBedg:
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.bedg.gz",
             tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
-    log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_bed2bedgraph_{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
