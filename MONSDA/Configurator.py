@@ -154,7 +154,7 @@ class GUIDE:
                         "unfinished_config.pkl",
                     )
                     print(
-                        f"\n\nYour entries has been saved. Continue your Session with\n"
+                        "\n\nYour entries has been saved. Continue your Session with\n"
                     )
                     prGreen(f"   monsda_configure -s {file}\n\n")
                 exit()
@@ -392,7 +392,7 @@ def rec_tree_builder(subtree, leafes, path=[], tree=None, add_mode=False):
         path.pop()
         return
     for leaf in leafes:
-        if not leaf in subtree.keys():
+        if leaf not in subtree.keys():
             subtree[leaf] = NestedDefaultDict()
     copy = []
     for k, v in subtree.items():
@@ -551,7 +551,7 @@ def show_settings():
     provars["project.settingsList"] = project.settingsList
     provars["project.workflowsDict"] = project.workflowsDict
     provars["project.commentsDict"] = project.commentsDict
-    print(f"============COPYME:\n")
+    print("============COPYME:\n")
     for name, var in provars.items():
         if isinstance(var, str):
             var = f"'{var}'"
@@ -561,7 +561,7 @@ def show_settings():
             print(f"{name} = {var}")
         except:
             print(f"{name} = NestedDefaultDict()")
-    print(f"\n============")
+    print("\n============")
 
 
 def rlinput(prompt, prefill=""):
@@ -806,7 +806,7 @@ def add_sample_dirs(only_conditions=None):
             ques = f"Sorry, couldn't find '{dir}'. Enter an absolute path where samples are stored"
             sp = dir
         if er == 2:
-            ques = f"Samples must be specified to continue. Enter an absolute path where samples are stored"
+            ques = "Samples must be specified to continue. Enter an absolute path where samples are stored"
             sp = current_path
         guide.display(
             question=ques,
@@ -900,7 +900,7 @@ def assign_SRA(only_conditions=None):
             ):
                 continue
 
-            ques = f"Enter SRA Accession Numbers according to the displayed condition comma separated"
+            ques = "Enter SRA Accession Numbers according to the displayed condition comma separated"
             cond_as_list = [x for x in condition.split(":")]
             location(project.settingsDict, [cond_as_list])
             guide.display(
@@ -965,10 +965,10 @@ def assign_samples(only_conditions=None):
             ):
                 continue
             if er == 0:
-                ques = f"enter all sample-numbers according to the displayed condition comma separated or * to select all or define a range - separated"
+                ques = "enter all sample-numbers according to the displayed condition comma separated or * to select all or define a range - separated"
             if er == 1:
                 guide.clear(guide.toclear + 4)
-                ques = f"ERROR: Its not possible to merge single-end and paired-end samples, try again"
+                ques = "ERROR: Its not possible to merge single-end and paired-end samples, try again"
 
             cond_as_list = [x for x in condition.split(":")]
             location(project.settingsDict, [cond_as_list])
@@ -1469,7 +1469,7 @@ def set_workflows(wf=None):
                     opt_dict[number] = k
                     number += 1
                 if number > 2:
-                    print(f"   Tools:\n")
+                    print("   Tools:\n")
                     guide.display(
                         question="Select from these available Tools comma separated:",
                         options=opt_dict,
@@ -1501,7 +1501,7 @@ def set_workflows(wf=None):
                     opt_dict[number] = k
                     number += 1
                 if number > 2:
-                    print(f"   FEATURES:\n")
+                    print("   FEATURES:\n")
                     guide.display(
                         question='Select from these available FEATURES comma separated. Defines FEATURES that are used to count as key and their identifiers in the corresponding annotation as value, e.g "gene":"gene_id". IFF other features than those preselected are needed or they do not map to the standard identifiers (gene_id for exon and gene, please change them manually after config was created.)',
                         options=opt_dict,
@@ -1521,10 +1521,10 @@ def set_workflows(wf=None):
 
             if (
                 workflow == "PEAKS"
-                and "macs" in ", ".join(tools_to_use.keys())
+                and any(["macs2", "macs3"] in ", ".join(tools_to_use.keys()))
                 or workflow in comparable_workflows
             ):
-                prRed(f"\n   Settings for differential Analyses:\n")
+                prRed("\n   Settings for differential Analyses:\n")
 
             if "CUTOFFS" in project.baseDict[workflow].keys() and not wf:
                 project.workflowsDict[workflow].update({"CUTOFFS": {}})
@@ -1535,7 +1535,7 @@ def set_workflows(wf=None):
                 for key, value in project.baseDict[workflow]["CUTOFFS"].items():
                     print(f"      {key}:")
                     guide.display(
-                        question=f"set cutoff", proof="only_numbers", spec=value
+                        question="set cutoff", proof="only_numbers", spec=value
                     )
                     guide.clear(4)
                     prCyan(f"      {key}: {guide.answer}")
@@ -1547,13 +1547,13 @@ def set_workflows(wf=None):
 
             if (
                 workflow == "PEAKS"
-                and "macs" in ", ".join(tools_to_use.keys())
+                and "macs2" in ", ".join(tools_to_use.keys())
                 or workflow in comparable_workflows
                 and not project.workflowsDict[workflow]["COMPARABLE"]
             ):
                 project.workflowsDict[workflow]["COMPARABLE"]
                 project.workflowsDict[workflow]["EXCLUDE"] = []
-                prCyan(f"      Comparables:\n")
+                prCyan("      Comparables:\n")
                 groups = set()
                 conditions = get_conditions_from_dict(project.conditionsDict)
                 for condition in conditions:
@@ -1564,7 +1564,7 @@ def set_workflows(wf=None):
                     )
                 if len(groups) < 2:
                     guide.clear(2)
-                    prCyan(f"      Comparables: No Groups found\n")
+                    prCyan("      Comparables: No Groups found\n")
                     project.workflowsDict[workflow]["COMPARABLE"] = ""
                 else:
                     while True:
@@ -1873,7 +1873,7 @@ def create_project(final_dict):
     with open(os.path.join(project.path, configfile), "w") as jsonout:
         print(json.dumps(final_dict, indent=4), file=jsonout)
     os.remove(os.path.join(current_path, project.unfinished_config))
-    print(f"\nStart MONSDA with\n")
+    print("\nStart MONSDA with\n")
     prGreen(f"   monsda -c {configfile} --directory ${{PWD}}\n\n")
 
 

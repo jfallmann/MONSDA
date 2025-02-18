@@ -245,7 +245,7 @@
   },
   "PEAKS": {
     "TOOLS": {
-      "macs": "macs2",
+      "macs2": "macs2",
       "peaks": "peaks",
       "piranha": "Piranha"
     },
@@ -255,7 +255,7 @@
     },
     "id": {
       "condition": {
-        "macs": {
+        "macs2": {
           "CLIP": "iCLIP",
           "OPTIONS":
             {  

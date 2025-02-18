@@ -1,0 +1,10 @@
+name: macs
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - macs3 =3.0.2
+  - readline =8.2
+  - samtools =1.21
+  - sed =4.8

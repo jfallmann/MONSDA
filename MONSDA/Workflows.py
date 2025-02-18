@@ -2112,7 +2112,7 @@ def nf_fetch_params(
         retconf["PEAKANNO"] = ANNOTATION
         retconf["PEAKIP"] = IP
         PEAKSBIN, PEAKSENV = mp.env_bin_from_config(config, "PEAKS")
-        if PEAKSENV == "macs":
+        if PEAKSENV in ["macs2", "macs3"]:
             PEAKSAMPLES = mp.set_pairing(SAMPLES, config)
             postsamples = mp.get_samples_postprocess(config, "PEAKS")
             pairsamples = config.get("SAMPLES", postsamples)
