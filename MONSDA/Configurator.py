@@ -1521,7 +1521,7 @@ def set_workflows(wf=None):
 
             if (
                 workflow == "PEAKS"
-                and any(["macs2", "macs3"] in ", ".join(tools_to_use.keys()))
+                and "macs" in ", ".join(tools_to_use.keys())
                 or workflow in comparable_workflows
             ):
                 prRed("\n   Settings for differential Analyses:\n")

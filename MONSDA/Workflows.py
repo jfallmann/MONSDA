@@ -2112,7 +2112,7 @@ def nf_fetch_params(
         retconf["PEAKANNO"] = ANNOTATION
         retconf["PEAKIP"] = IP
         PEAKSBIN, PEAKSENV = mp.env_bin_from_config(config, "PEAKS")
-        if PEAKSENV in ["macs2", "macs3"]:
+        if "macs" in PEAKSENV:
             PEAKSAMPLES = mp.set_pairing(SAMPLES, config)
             postsamples = mp.get_samples_postprocess(config, "PEAKS")
             pairsamples = config.get("SAMPLES", postsamples)
@@ -2127,11 +2127,14 @@ def nf_fetch_params(
                 stypes = ["sorted", "sorted_unique"]
             pairing = [
                 x
-                for x in mp.get_pairing(
-                    y, stypes, config, pairsamples, SETUP, mode="nf"
-                )
-                for y in mp.samplecond(PEAKSAMPLES, config)
+                for x in [
+                    mp.get_pairing(y, stypes, config, pairsamples, SETUP, mode="nf")
+                    for y in mp.samplecond(PEAKSAMPLES, config)
+                ]
             ]
+            log.debug(
+                f"{logid} PEAKSAMPLES: {PEAKSAMPLES} \tPAIRING: {pairing} \tpostsamples: {postsamples} \tpairsamples: {pairsamples} \tpairing: {pairing}"
+            )
             retconf["PEAKSAMPLES"] = ",".join(pairing)
 
     # TRACKS/COUNTING Variables

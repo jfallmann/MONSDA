@@ -196,7 +196,7 @@ workflow PEAKS{
     PAIRSAMPLES = PEAKSAMPLES.collect{
         element -> return "${workflow.workDir}/../"+element+".bam"
     }
-
+    
     peaksamples_ch = Channel.fromPath(PAIRSAMPLES.sort())
     genomefile = Channel.fromPath(REF)
 
