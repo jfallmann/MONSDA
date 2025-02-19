@@ -15,7 +15,7 @@ dependencies:
   - bioconductor-biostrings =2.66.0
   - bioconductor-data-packages =20230202
   - bioconductor-delayedarray =0.24.0
-  - bioconductor-deseq2 =1.38.0
+  - bioconductor-deseq2 =1.39.0
   - bioconductor-dexseq =1.44.0
   - bioconductor-drimseq =1.26.0
   - bioconductor-edger =4.4.0

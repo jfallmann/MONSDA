@@ -16,7 +16,7 @@ dependencies:
   - bioconductor-biomart =2.48.0
   - bioconductor-biostrings =2.60.0
   - bioconductor-delayedarray =0.18.0
-  - bioconductor-deseq2 =1.32.0
+  - bioconductor-deseq2 =1.39.0
   - bioconductor-edaseq =2.26.0
   - bioconductor-edger =4.4.0
   - bioconductor-genefilter =1.74.0
