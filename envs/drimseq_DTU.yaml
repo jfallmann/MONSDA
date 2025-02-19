@@ -13,7 +13,7 @@ dependencies:
   - bioconductor-biostrings =2.58.0
   - bioconductor-delayedarray =0.16.0
   - bioconductor-drimseq =1.18.0
-  - bioconductor-edger =3.32.0
+  - bioconductor-edger =4.4.0
   - bioconductor-genomeinfodb =1.26.0
   - bioconductor-genomeinfodbdata =1.2.4
   - bioconductor-genomicalignments =1.26.0

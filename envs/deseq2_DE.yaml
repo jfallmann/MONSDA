@@ -18,7 +18,7 @@ dependencies:
   - bioconductor-delayedarray =0.18.0
   - bioconductor-deseq2 =1.32.0
   - bioconductor-edaseq =2.26.0
-  - bioconductor-edger =3.34.0
+  - bioconductor-edger =4.4.0
   - bioconductor-genefilter =1.74.0
   - bioconductor-geneplotter =1.70.0
   - bioconductor-genomeinfodb =1.28.0

@@ -18,7 +18,7 @@ dependencies:
   - bioconductor-deseq2 =1.38.0
   - bioconductor-dexseq =1.44.0
   - bioconductor-drimseq =1.26.0
-  - bioconductor-edger =3.40.0
+  - bioconductor-edger =4.4.0
   - bioconductor-genefilter =1.80.0
   - bioconductor-geneplotter =1.76.0
   - bioconductor-genomeinfodb =1.34.8
