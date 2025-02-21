@@ -99,7 +99,6 @@ setup(
     ],
     python_requires=">=3.12.0",
     setup_requires=["pytest-runner"],
-    tests_require=["pytest"],
     zip_safe=False,
     license="LICENSE",
     url="https://github.com/jfallmann/MONSDA",
