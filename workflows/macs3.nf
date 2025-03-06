@@ -8,6 +8,7 @@ IP = get_always('IP')
 PREPARAMS = get_always('macs_params_PREPROCESS') ?: ''
 PEAKSPARAMS = get_always('macs_params_FINDPEAKS') ?: ''
 PEAKSAMPLES = get_always('PEAKSAMPLES')
+BACKGROUND = get_always('PEAKSAMPLEBACKGROUND')
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
@@ -31,22 +32,27 @@ process FindPeaks{
     path "*_peak.bed.gz", emit: peak
     path "*.log", emit: log
 
-    script: 
-    bf = bam[0]
-    bc = bam[1]
+    script:     
+    if (BACKGROUND){
+        bf = bam[0]
+        bc = '-c '+bam[1]
+    }else{
+        bf = bam
+        bc = ''
+    }    
     fn = file(bf).getSimpleName()
     of = fn+"_peak.bed"
     oz = fn+"_peak.bed.gz"
     ol = fn+".log"
     sortmem = '30%'
-    if (PAIRED == 'paired' && bam.indexOf("unique") == 0){
+    if (PAIRED == 'paired' && fn.indexOf("unique") == 0){
         mapmode = 'BAMPE'
     }else{
         mapmode = 'BAM'
     }
     
     """      
-    set +o pipefail; export LC_ALL=C; if [[ -n \"\$(samtools view $bf | head -c 1 | tr '\\0\\n' __)\" ]] ;then $PEAKBIN callpeak -t $bf -c $bc --outdir . -n $of -f $mapmode $PEAKSPARAMS 2> $ol && gzip *_peaks.narrowPeak 2>> $ol && mv -f *_peaks.narrowPeak.gz $oz 2>> $ol; else gzip < /dev/null > $oz; echo \"File $bam empty\" >> $ol; fi
+    set +o pipefail; export LC_ALL=C; if [[ -n \"\$(samtools view $bf | head -c 1 | tr '\\0\\n' __)\" ]] ;then $PEAKSBIN callpeak -t $bf $bc --outdir . -n $of -f $mapmode $PEAKSPARAMS 2> $ol && gzip *_peaks.narrowPeak 2>> $ol && mv -f *_peaks.narrowPeak.gz $oz 2>> $ol; else gzip < /dev/null > $oz; echo \"File $bam empty\" >> $ol; fi
     """    
 }
 
@@ -197,11 +203,15 @@ workflow PEAKS{
         element -> return "${workflow.workDir}/../"+element+".bam"
     }
     
-    peaksamples_ch = Channel.fromPath(PAIRSAMPLES.sort())
+    peaksamples_ch = Channel.fromPath(PAIRSAMPLES)
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
-    FindPeaks(peaksamples_ch.collate(2))
+    if (BACKGROUND){
+        FindPeaks(peaksamples_ch.collate(2))
+    }else{
+        FindPeaks(peaksamples_ch)
+    }
     PeakToBedg(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
     NormalizeBedg(PeakToBedg.out.bedgf.collate(1), PeakToBedg.out.bedgr.collate(1))
     PeakToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))

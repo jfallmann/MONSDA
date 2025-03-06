@@ -1924,10 +1924,12 @@ def nf_fetch_params(
             ]
             if pairing[0] == "":
                 pairing.extend(PEAKSAMPLES)
+                retconf["PEAKSAMPLEBACKGROUND"] = "false"
             log.debug(
                 f"{logid} PEAKSAMPLES: {PEAKSAMPLES} \tPAIRING: {pairing} \tpostsamples: {postsamples} \tpairsamples: {pairsamples}"
             )
             retconf["PEAKSAMPLES"] = ",".join(pairing)
+            retconf["PEAKSAMPLEBACKGROUND"] = "true"
 
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:
