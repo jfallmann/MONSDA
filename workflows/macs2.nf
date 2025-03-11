@@ -7,8 +7,8 @@ SETS = get_always('SETS')
 IP = get_always('IP')
 PREPARAMS = get_always('macs_params_PREPROCESS') ?: ''
 PEAKSPARAMS = get_always('macs_params_FINDPEAKS') ?: ''
-PEAKSAMPLES = get_always('PEAKSAMPLES')
-BACKGROUND = get_always('PEAKSAMPLEBACKGROUND')
+PEAKSAMPLES = get_always('PEAKSAMPLES').split(',') ?: ''
+BACKGROUND = get_always('PEAKSAMPLEBACKGROUND') ?: false
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
@@ -83,8 +83,8 @@ process PeakToBedg{
     sizes = bedf[1]
 
     fn = file(bed).getSimpleName()
-    fw = fn+'_peak.fw.bedg.gz'
-    fr = fn+'_peak.re.bedg.gz'
+    fw = fn+'.fw.bedg.gz'
+    fr = fn+'.re.bedg.gz'
     ol = fn+".log"
     sortmem = '30%'
 

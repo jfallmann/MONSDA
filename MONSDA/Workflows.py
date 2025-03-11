@@ -1923,7 +1923,7 @@ def nf_fetch_params(
                 ]
             ]
             if pairing[0] == "":
-                pairing.extend(PEAKSAMPLES)
+                pairing = PEAKSAMPLES
                 retconf["PEAKSAMPLEBACKGROUND"] = "false"
             log.debug(
                 f"{logid} PEAKSAMPLES: {PEAKSAMPLES} \tPAIRING: {pairing} \tpostsamples: {postsamples} \tpairsamples: {pairsamples}"
