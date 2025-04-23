@@ -64,7 +64,7 @@ if not all(checklist):
         output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
                 bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
         log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
-        conda:  "scyphy.yaml"
+        conda:  "base.yaml"
         container: "oras://jfallmann/monsda:scyphy"
         threads: 1
         params: bins = BINS,
