@@ -298,7 +298,7 @@
   },
   "PEAKS": {
     "TOOLS": {
-      "macs": "macs2",
+      "macs2": "macs2",
       "peaks": "peaks",
       "piranha": "Piranha"
     },
@@ -311,7 +311,7 @@
     "ENV" : "",
     "BIN" : "",
     "IP": "",
-    "macs": {
+    "macs2": {
       "CLIP": "",
       "comment": {
           "FINDPEAKS": "Set options for peak finding procedure"
