@@ -8,7 +8,7 @@ dependencies:
   - grep >=3.4
   - isort=5.13.2
   - natsort=8.4.0
-  - nextflow=24.10.4
+  - nextflow=24.10.5
   - numpy=1.26.4
   - pandas=2.2.1
   - perl=5.32.0
