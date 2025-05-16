@@ -10,7 +10,7 @@ rule sortsam:
     priority: 100
     params: linkto = lambda wildcards, output: os.path.basename(output.sortedsam),
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell: "set +o pipefail;samtools view -H {input.mapps}|grep -P '^@HD' |pigz -p {threads} -f > {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@RG'|pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} ; export LC_ALL=C;samtools view -h {input.mapps} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} ; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2> {log}"# && rm -f {input.mapps} && touch {input.mapps}"
+    shell: "set +o pipefail;samtools view -H {input.mapps}|grep -P '^@HD' |pigz -p {threads} -f > {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@RG'|pigz -p {threads} -f >> {output.tmphead} ; samtools view -H {input.mapps}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} ; export LC_ALL=C;samtools view -h {input.mapps} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} ; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2> {log}"# && rm -f {input.mapps} && touch {input.mapps}"
 
 rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam

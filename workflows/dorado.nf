@@ -30,7 +30,7 @@ process dorado{
     fn = file(f5).getSimpleName()
     oc = fn+".fastq.gz"
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     
     """
     $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS $MODELPARAMS . 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz 1> $oc 2>> $ol && rm -rf tmp.bam

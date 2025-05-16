@@ -47,7 +47,7 @@ process featurecount_edger{
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     if (PAIRED == 'paired'){
         pair = "-p"
     }

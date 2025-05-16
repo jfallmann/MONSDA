@@ -35,7 +35,7 @@ process BamToBed{
     fn = file(bam).getSimpleName()
     fo = fn+'.bed.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     
     if (STRANDED == 'rf' || STRANDED == 'ISR'){
         """
@@ -74,7 +74,7 @@ process ExtendBed{
 
     fn = file(bed).getSimpleName()
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     if (IP == 'iCLIP'){
         of = fn+'_extended.bed.gz'    
@@ -118,7 +118,7 @@ process BedToBedg{
     fn = file(bed).getSimpleName()
     of = fn+'.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     """
     export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"+\")' > tosrt 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"-\")' >> tosrt 2>> $ol && cat tosrt | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $of 2>> $ol
@@ -148,7 +148,7 @@ process PreprocessPeaks{
     script: 
     of = file(bed).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak")+".bed.gz"
     ol = file(bed).getSimpleName()+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     """        
     perl $BINS/Analysis/PreprocessPeaks.pl -p <(zcat $bed) $PREPARAMS | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6 |gzip > $of 2> $ol
@@ -178,7 +178,7 @@ process FindPeaks{
     script: 
     of = file(bed).getName().replaceAll(/\Q_prepeak\E/,"_peak")
     ol = file(bed).getSimpleName()+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     """  
     export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
@@ -215,7 +215,7 @@ process PeakToBedg{
     fw = fn+'.fw.bedg.gz'
     fr = fn+'.re.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     """
     perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -250,7 +250,7 @@ process NormalizeBedg{
     fw = fn+'.fw.norm.bedg.gz'
     fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi

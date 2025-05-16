@@ -167,7 +167,7 @@ process count_mappers{
     fn = file(reads).getSimpleName()
     oc = fn+".count"
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     """
     mkdir -p TMP; export LC_ALL=C; samtools view -F 260 $reads | cut -d\$'\\t' -f1|sort --parallel=${task.cpus} -S $sortmem -T TMP -u |wc -l > $oc 2>> $ol
     """
@@ -203,7 +203,7 @@ process featurecount{
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     if (PAIRED == 'paired'){
         pair = "-p"
     }

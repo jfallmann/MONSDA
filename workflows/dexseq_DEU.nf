@@ -43,7 +43,7 @@ process prepare_deu_annotation{
     ca = fn+"_fc_dexseq.gtf.gz"
     da = fn+"_dexseqflat.gtf.gz"
     ol = "featurecount_dexseq_annotation.log"
-    sortmem = '30%'
+    sortmem = '30GB'
     if (STRANDED == 'fr' || STRANDED == 'ISF'){
             stranded = '-s'
         }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
@@ -85,7 +85,7 @@ process featurecount_dexseq{
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     if (PAIRED == 'paired'){
         pair = "-p"
     }

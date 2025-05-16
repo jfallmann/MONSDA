@@ -35,7 +35,7 @@ process BamToBed{
     fn = file(bam).getSimpleName()
     fo = fn+'.bed.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     
     if (STRANDED == 'rf' || STRANDED == 'ISR'){
         """
@@ -79,7 +79,7 @@ process BedToBedg{
     fw = fn+'.fw.bedg.gz'
     fr = fn+'.re.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
 
     """
     export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -114,7 +114,7 @@ process NormalizeBedg{
     fw = fn+'.fw.norm.bedg.gz'
     fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    sortmem = '30GB'
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi

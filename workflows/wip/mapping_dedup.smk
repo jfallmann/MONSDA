@@ -141,7 +141,7 @@ rule sortsam:
     conda: "../envs/samtools.yaml"
     threads: MAXTHREAD
     params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "samtools view -H {input[0]}|grep '@HD' |pigz -p {threads} -f > {output[1]} && samtools view -H {input[0]}|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@RG'|pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@PG'|pigz -p {threads} -f >> {output[1]} && export LC_ALL=C;zcat {input[0]} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}% -T SORTTMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output[2]} && cat {output[1]} {output[2]} > {output[0]}"
+    shell:  "samtools view -H {input[0]}|grep '@HD' |pigz -p {threads} -f > {output[1]} && samtools view -H {input[0]}|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@RG'|pigz -p {threads} -f >> {output[1]} && samtools view -H {input[0]}|grep '@PG'|pigz -p {threads} -f >> {output[1]} && export LC_ALL=C;zcat {input[0]} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}G -T SORTTMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output[2]} && cat {output[1]} {output[2]} > {output[0]}"
 
 ### Fixing header order for Picardtools
 # for i in *.sam.gz;do echo $i;zcat $i|samtools view -H|grep '@HD'|pigz > tmp.gz && zcat $i|samtools view -H|grep '@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz >> tmp.gz && zcat $i|samtools view -H|grep '@PG' |pigz >> tmp.gz && zcat $i|grep -v "^@"|pigz > temp.gz && cat tmp.gz temp.gz > $i\_rehead.gz;done
