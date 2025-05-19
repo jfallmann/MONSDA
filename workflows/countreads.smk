@@ -3,14 +3,25 @@ COUNTBIN, COUNTENV = env_bin_from_config(config, 'COUNTING')
 if not rundedup:
     rule themall:
         input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
+                expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)                
+
 else:
     rule themall:
         input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
 
 if paired == 'paired':
@@ -98,7 +109,7 @@ rule count_unique_dedup_mappers:
 rule featurecount:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_tmp.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz"
+            cts = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
@@ -109,12 +120,12 @@ rule featurecount:
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary"
 
 rule featurecount_unique:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_tmp_uni.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz"
+            cts = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
@@ -125,12 +136,12 @@ rule featurecount_unique:
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary"
 
 rule featurecount_dedup:
     input:  s = expand("MAPPED/{combo}/{{file}}_mapped_sorted_dedup.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_dedup_tmp.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz"
+            cts = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_dedup.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
@@ -141,12 +152,12 @@ rule featurecount_dedup:
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary"
 
 rule featurecount_unique_dedup:
     input:  u = expand("MAPPED/{combo}/{{file}}_mapped_sorted_unique_dedup.bam", combo=scombo)
     output: t = temp("COUNTS/Featurecounts_{feat}s/{combo}/{file}_dedup_tmp_uni.counts"),
-            c = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz"
+            cts = "COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/{combo}/{file}/featurecount_{feat}s_unique_dedup.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
@@ -157,7 +168,7 @@ rule featurecount_unique_dedup:
             paired = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.c} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.c} && mv {output.t}.summary {output.c}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary"
 
 if rundedup:
     rule summarize_counts:
@@ -173,10 +184,35 @@ if rundedup:
         container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+
+    rule prepare_count_table:
+        input:  cts  = lambda wildcards: expand(rules.featurecount.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
+                cts_u  = lambda wildcards: expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
+                cts_d  = lambda wildcards: expand(rules.featurecount_dedup.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
+                cts_ud  = lambda wildcards: expand(rules.featurecount_unique_dedup.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo)
+        output:  tbl  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz",
+                 tbl_u  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz",
+                 tbl_d  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_dedup.counts.gz",
+                 tbl_ud  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique_dedup.counts.gz",
+                 anno  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.samples.gz",
+                 anno_u = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.samples.gz",
+                 anno_d = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_dedup.samples.gz",
+                 anno_ud = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique_dedup.samples.gz"
+        log:     "LOGS/DE/{combo}/Prepare_{feat}_count_table.log"
+        conda:   "base.yaml"
+        container: "oras://jfallmann/monsda:base"
+        threads: 1
+        params:  samples = lambda wildcards, input: ','.join(input.cts),
+                 samples_u = lambda wildcards, input: ','.join(input.cts_u),
+                 samples_d = lambda wildcards, input: ','.join(input.cts_d),
+                 samples_ud = lambda wildcards, input: ','.join(input.cts_ud),
+                 bins = BINS
+        shell:  "{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_d} --table {output.tbl_d} --anno {output.anno_d} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_ud} --table {output.tbl_ud} --anno {output.anno_ud} 2> {log}"
+
 else:
     rule summarize_counts:
         input:  f = lambda wildcards: expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
-            t = lambda wildcards: expand(rules.count_trimmed_fastq.output,  file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
+                t = lambda wildcards: expand(rules.count_trimmed_fastq.output,  file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
                 m = rules.count_mappers.output,
                 u = rules.count_unique_mappers.output
         output: "COUNTS/{combo}/{file}.summary"
@@ -185,3 +221,19 @@ else:
         container: "oras://jfallmann/monsda:base"
         threads: 1
         shell:  "arr=({input.f}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+
+    rule prepare_count_table:
+        input:  cts  = lambda wildcards: expand(rules.featurecount.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
+                cts_u  = lambda wildcards: expand(rules.featurecount_unique.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo)
+        output:  tbl  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz",
+                 tbl_u  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz",
+                 anno  = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.samples.gz",
+                 anno_u = "COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.samples.gz"
+        log:     "LOGS/DE/{combo}/Prepare_{feat}_count_table.log"
+        conda:   "base.yaml"
+        container: "oras://jfallmann/monsda:base"
+        threads: 1
+        params:  samples = lambda wildcards, input: ','.join(input.cts),
+                 samples_u = lambda wildcards, input: ','.join(input.cts_u),                 
+                 bins = BINS
+        shell:  "{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log}"

@@ -22,7 +22,7 @@ set-resources:
     mem: "160GB"
   sortsam:
     mem: "30GB"                                                                                 
-  countmappers:
+  count_mappers:
     mem: "40GB"
   multiqc:
     mem: "100GB"

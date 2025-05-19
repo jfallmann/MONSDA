@@ -222,6 +222,39 @@ process featurecount{
     """
 }
 
+
+process prepare_count_table{
+    conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
+    cpus THREADS
+	cache 'lenient'
+    //validExitStatus 0,1
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
+        else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
+        else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
+        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+    }
+
+    input:
+    //path '*.count*'// from reads
+    path reps
+
+    output: 
+    path "*COUNTS.gz", emit: counts
+    path "*ANNOTATION.gz", emit: anno
+    path "*SampleDict.gz", emit: sdict
+    path "log", emit: log
+
+    script:
+    """
+    ${BINS}/Analysis/build_count_table.py $DEREPS --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    """
+}
+
+
 process summarize_counts{
     conda "base.yaml"
     container "oras://jfallmann/monsda:"+"base"
@@ -298,6 +331,7 @@ workflow COUNTING{
     }        
     count_mappers(mapsamples_ch.collate(1))
     featurecount(annofile.combine(mapsamples_ch.collate(1)))
+    prepare_count_table(featurecount.out.fc_cts.collate(1))
     summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts))).collect())
 
     emit:
