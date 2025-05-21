@@ -1198,6 +1198,7 @@ def make_post(
                     subjobs = list()
                     toolenv, toolbin = map(str, listoftools[a])
 
+                    log.debug(logid + "toolenv: " + str(toolenv))
                     if postworkflow == "CIRCS":
                         if toolenv == "ciri2" and "bwa" not in envs:
                             log.warning(
@@ -1213,6 +1214,12 @@ def make_post(
                         sconf[postworkflow]["TOOLS"] = mu.sub_dict(
                             sconf[postworkflow]["TOOLS"], [toolenv]
                         )
+
+                    if postworkflow in ["DE", "DEU", "DAS", "DTU"] and toolbin not in [
+                        "deseq",
+                        "diego",
+                    ]:  # for all other postprocessing tools we have more than one defined subworkflow
+                        toolenv = toolenv + "_" + postworkflow
 
                     sconf[postworkflow + "ENV"] = toolenv
                     sconf[postworkflow + "BIN"] = toolbin
