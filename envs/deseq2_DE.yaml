@@ -13,4 +13,5 @@ dependencies:
   - bioconductor-ruvseq=1.40.0 
   - pigz =2.6
   - readline =8.2
+  - r-gplots =3.2.0
   - sed =4.7
