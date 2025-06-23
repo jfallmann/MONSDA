@@ -399,7 +399,7 @@ for (contrast in comparison[[1]]) {
 
             # plotMA
             png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep = "_"), width=1900, height=1200, res=300)
-            DESeq2::plotMA(res)
+            DESeq2::plotMA(res_shrink)
             dev.off()
         }
         # cleanup
