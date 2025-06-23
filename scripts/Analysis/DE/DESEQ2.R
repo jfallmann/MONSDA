@@ -194,9 +194,9 @@ for (contrast in comparison[[1]]) {
     # Normalize by spike in if available
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spike <- strsplit(spike, "=")[[1]][2]
+        spiken <- strsplit(spike, "=")[[1]][2]
         setwd(WD)
-        ctrlgenes <- readLines(spike)
+        ctrlgenes <- readLines(spiken)
         setwd(outdir)
 
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
