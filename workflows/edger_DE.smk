@@ -4,6 +4,7 @@ COUNTBIN, COUNTENV = ['featureCounts', 'countreads_de']#env_bin_from_config(conf
 comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
+usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -13,11 +14,11 @@ rule themall:
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
             vulcan  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_Volcano.pdf", combo=combo, comparison=compstr, scombo=scombo),
             allN    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
-            res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]),
-            sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]) if not usespike else expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results_norm{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]),
+            sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:

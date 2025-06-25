@@ -4,21 +4,22 @@ COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(confi
 comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
+usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_DESEQ2_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
             pca  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_PCA.png", combo=combo, scombo=scombo),
             rld  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_DataSet_table_rld.tsv.gz", combo=combo, scombo=scombo),
             vsd  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_DataSet_table_vsd.tsv.gz", combo=combo, scombo=scombo),
-            tbl  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            tbl  = expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             plot = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_{comparison}_figure_MA.png", combo=combo, comparison=compstr, scombo=scombo),
             vulcan = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_{comparison}_figure_Volcano.pdf", combo=combo, comparison=compstr, scombo=scombo),
             vst  = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_VST-and-log2.png", combo=combo, scombo=scombo),
             heat = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap{i}.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
             heats = expand("DE/{combo}/Figures/DE_DESEQ2_{scombo}_DataSet_figure_heatmap-samplebysample.png", combo=combo,i=[1,2,3,"-samplebysample"], scombo=scombo),
-            sig   = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig   = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
