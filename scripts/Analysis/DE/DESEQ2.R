@@ -91,7 +91,7 @@ rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
 png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
-print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5))
+print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5) + theme_bw()) # requires ggrepel)
 dev.off()
 
 # We also write the normalized counts to file
@@ -222,7 +222,7 @@ for (contrast in comparison[[1]]) {
         vsd_norm <- varianceStabilizingTransformation(dds_norm, blind = FALSE)
 
         png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=75)
-        print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
+        print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
         # DESeq2::plotPCA(rld_norm, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
         dev.off()
 
@@ -254,7 +254,7 @@ for (contrast in comparison[[1]]) {
     vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
     png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
-    print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
+    print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
     # DESeq2::plotPCA(rld, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
     dev.off()
 
