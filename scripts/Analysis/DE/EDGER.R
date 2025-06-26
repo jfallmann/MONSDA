@@ -390,8 +390,8 @@ for (contrast in comparison[[1]]) {
             )
             print(EnhancedVolcano(res,
                 lab = res$Gene,
-                x = as.numeric("logFC"),
-                y = as.numeric("FDR"),
+                x = "logFC",
+                y = "FDR",
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),
                 pCutoff = 0.05,
                 FCcutoff = 1.5,
