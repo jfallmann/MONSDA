@@ -7,7 +7,7 @@ OUTDIR = config.get("outdir", "output")
 ENVFILE = config.get("envfile", None)
 CONTAINER = config.get("container", None)
 PAIRED = config.get("paired", "paired")  # "paired" or "single"
-
+THREADS = config.get("threads", 4)
 # Read sample table (expects columns: sample, r1, r2)
 sample_table = [line.strip().split() for line in open(SAMPLES) if line.strip() and not line.startswith("#")]
 SAMPLE_LIST = [row[0] for row in sample_table]
@@ -16,17 +16,6 @@ SAMPLE_R2 = {row[0]: row[2] for row in sample_table} if PAIRED == "paired" else 
 
 # Whitelist path (assume one for all samples, can be customized)
 WHITELIST = config.get("whitelist", "Multx_whitelist.txt")
-
-# Helper for env/container
-def env_directive():
-    if ENVFILE:
-        return f'conda: "{ENVFILE}"'
-    elif CONTAINER:
-        return f'container: "{CONTAINER}"'
-    else:
-        return ""
-
-env_line = env_directive()
 
 if PAIRED == "paired":
     rule all:
@@ -46,9 +35,9 @@ if PAIRED == "paired":
             unmatched_r2 = temp("{outdir}/{sample}_unmatched_R2.fastq.gz")
         log:
             "{outdir}/{sample}_multx_first.log"
-        threads: 4
-        # Dynamically set conda or container
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             multx-fastq --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} --in2 {input.r2} \
@@ -61,8 +50,9 @@ if PAIRED == "paired":
             r1 = rules.multx_demux_first.output.unmatched_r1
         output:
             r1_trimmed = temp("{outdir}/{sample}_unmatched_R1_trimmed.fastq.gz")
-        threads: 1
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             fastp --in1 {input.r1} --out1 {output.r1_trimmed} --trim_front1 1 --disable_adapter_trimming \
@@ -80,8 +70,9 @@ if PAIRED == "paired":
             o2 = temp("{outdir}/{sample}_R2.demux_second.fastq.gz")
         log:
             "{outdir}/{sample}_multx_second.log"
-        threads: 4
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             multx-fastq --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} --in2 {input.r2} \
@@ -102,7 +93,6 @@ if PAIRED == "paired":
             cat {input.o1_first} {input.o1_second} > {output.o1}
             cat {input.o2_first} {input.o2_second} > {output.o2}
             """
-
 else:
     rule all:
         input:
@@ -117,8 +107,9 @@ else:
             unmatched_r1 = temp("{outdir}/{sample}_unmatched.fastq.gz")
         log:
             "{outdir}/{sample}_multx_first.log"
-        threads: 4
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             multx-fastq --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} \
@@ -130,8 +121,9 @@ else:
             r1 = rules.multx_demux_first.output.unmatched_r1
         output:
             r1_trimmed = temp("{outdir}/{sample}_unmatched_trimmed.fastq.gz")
-        threads: 1
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             fastp --in1 {input.r1} --out1 {output.r1_trimmed} --trim_front1 1 --disable_adapter_trimming \
@@ -147,8 +139,9 @@ else:
             o1 = temp("{outdir}/{sample}.demux_second.fastq.gz")
         log:
             "{outdir}/{sample}_multx_second.log"
-        threads: 4
-        __env__ = env_line
+        threads: THREADS
+        conda: ENVFILE if ENVFILE else None
+        container: CONTAINER if CONTAINER else None
         shell:
             """
             multx-fastq --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} \
