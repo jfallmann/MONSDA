@@ -122,58 +122,6 @@ png(out, width=1900, height=1200, res=300)
 plotQLDisp(fit)
 dev.off()
 
-## check genes and spike-ins
-if (spike != "") {
-    print("Spike-in used, data will be normalized to spike in separately")
-    spiken <- strsplit(spike, "=")[[1]][2]
-    setwd(WD)
-    ctrlgenes <- readLines(spiken)
-    setwd(outdir)
-    counts_norm_tmp <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
-    genes_tmp <- rownames(countData_all)    
-    sampleData_tmp <- cbind(sampleData_all, pData(counts_norm_tmp))
-    dge_tmp <- DGEList(counts = counts(counts_norm_tmp), group = sampleData_tmp$condition, samples = samples, genes = genes_tmp)
-    ## filter low counts
-    keep_tmp <- filterByExpr(dge_tmp)
-    dge_tmp <- dge_tmp[keep_tmp, , keep.lib.sizes = FALSE]
-    ## normalize with TMM
-    dge_tmp <- calcNormFactors(dge_tmp, method = "TMM", BPPARAM = BPPARAM)
-    ## create file normalized table
-    tmm_tmp <- as.data.frame(cpm(dge_tmp))
-    colnames(tmm_tmp) <- t(dge_tmp$samples$samples)
-    tmm_tmp$ID <- dge_tmp$genes$genes
-    tmm_tmp <- tmm_tmp[c(ncol(tmm_tmp), 1:ncol(tmm_tmp) - 1)]
-
-    write.table(as.data.frame(tmm_tmp), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-    
-    ## create file MDS-plot with and without summarized replicates
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS_norm.png", sep = "_")
-    png(out, width=1900, height=1200, res=300)
-    plotMDS(dge_tmp, col = as.numeric(dge_tmp$samples$group), cex = 1)
-    dev.off()
-
-    ## estimate Dispersion
-    dge_tmp <- estimateDisp(dge_tmp, design, robust = TRUE)
-
-    ## create file BCV-plot - visualizing estimated dispersions
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV_norm.png", sep = "_")
-    png(out, width=1900, height=1200, res=300)
-    plotBCV(dge_tmp)
-    dev.off()
-
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit_tmp <- glmQLFit(dge_tmp, design, robust = TRUE)
-
-    ## create file quasi-likelihood-dispersion-plot
-    out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp_norm.png", sep = "_")
-    png(out, width=1900, height=1200, res=300)
-    plotQLDisp(fit_tmp)
-    dev.off()
-
-    rm(counts_norm_tmp, dge_tmp, tmm_tmp, fit_tmp, sampleData_tmp, ctrlgenes, genes_tmp)
-}
-
-
 ## Analyze according to comparison groups
 for (contrast in comparison[[1]]) {
     contrast_name <- strsplit(contrast, ":")[[1]][1]
@@ -231,11 +179,13 @@ for (contrast in comparison[[1]]) {
         genes <- rownames(countData)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
+        #design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
+        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))
+        design_norm <- model.matrix(des_norm, data = sampleData_norm)
+        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
         # colnames(design_norm) <- c(colnames(design),"W_1")
 
         dge_norm <- DGEList(counts = counts(counts_norm), group = sampleData$condition, samples = samples, genes = genes)
-
         ## filter low counts
         keep <- filterByExpr(dge_norm)
         dge_norm <- dge_norm[keep, , keep.lib.sizes = FALSE]
@@ -342,7 +292,7 @@ for (contrast in comparison[[1]]) {
 
         ## Testing
         # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design_norm)
         qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
@@ -423,8 +373,8 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-            qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design_norm)
+            qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
