@@ -6,8 +6,7 @@ channels:
 dependencies:
   - biopython =1.83
   - grep >=3.4
-  - isort =5.13.2
-  - monsda =1.2.8
+  - isort =5.13.2  
   - natsort =8.4.0
   - nextflow =25.04.5
   - numpy =1.26.4
