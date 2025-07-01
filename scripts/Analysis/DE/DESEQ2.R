@@ -91,13 +91,12 @@ rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
 png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
-print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5) + theme_bw()) # requires ggrepel)
+print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5) + theme_bw()) # requires ggrepel)
 dev.off()
 
 # We also write the normalized counts to file
 write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-
 
 # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
 
@@ -112,6 +111,52 @@ png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "VST-and-log2.png"
 matplot(px[ord], cbind(assay(vsd)[, 1], log2(px))[ord, ], type = "l", lty = 1, col = vstcol, xlab = "n", ylab = "f(n)")
 legend("bottomright", legend = c(expression("variance stabilizing transformation"), expression(log[2](n / s[1]))), fill = vstcol)
 dev.off()
+
+# Normalize by spike in if available
+if (spike != "") {
+    print("Spike-in used, data will be normalized to spike in separately")
+    spiken <- strsplit(spike, "=")[[1]][2]
+    setwd(WD)
+    ctrlgenes <- readLines(spiken)
+    setwd(outdir)
+    counts_norm_tmp <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_tmp <- cbind(sampleData_all, pData(counts_norm_tmp))
+    dds_norm_tmp <- DESeqDataSetFromMatrix(countData = counts(counts_norm_tmp), colData = sampleData_tmp, design = design)
+
+    # filter low counts
+    keep_tmp <- rowSums(counts(dds_norm_tmp)) >= 10
+    dds_norm_tmp <- dds_norm_tmp[keep_tmp, ]
+    # run for each pair of conditions
+    dds_norm_tmp <- DESeq(dds_norm_tmp, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
+    rld_tmp <- rlogTransformation(dds_norm_tmp, blind = FALSE)
+    vsd_tmp <- varianceStabilizingTransformation(dds_norm_tmp, blind = FALSE)
+
+    png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=75)
+    print(DESeq2::plotPCA(vsd_tmp, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5) + theme_bw()) # requires ggrepel)
+    dev.off()
+
+    # We also write the normalized counts to file
+    write.table(as.data.frame(assay(rld_tmp)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+    write.table(as.data.frame(assay(vsd_tmp)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+
+    # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
+
+    par(mai = ifelse(1:4 <= 2, par("mai"), 0))
+    px <- counts(dds_norm_tmp)[, 1] / sizeFactors(dds_norm_tmp)[1]
+    ord <- order(px)
+    ord <- ord[px[ord] < 150]
+    ord <- ord[seq(1, length(ord), length = 50)]
+    last <- ord[length(ord)]
+    vstcol <- c("blue", "black")
+    png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "VST-and-log2_norm.png", sep = "_"),width=400,height=350,res=45)
+    matplot(px[ord], cbind(assay(vsd_tmp)[, 1], log2(px))[ord, ], type = "l", lty = 1, col = vstcol, xlab = "n", ylab = "f(n)")
+    legend("bottomright", legend = c(expression("variance stabilizing transformation"), expression(log[2](n / s[1]))), fill = vstcol)
+    dev.off()
+
+    # cleanup
+    rm(counts_norm_tmp, sampleData_tmp, dds_norm_tmp, rld_tmp, vsd_tmp)
+}
+
 
 ##############################
 library("RColorBrewer")
@@ -222,7 +267,7 @@ for (contrast in comparison[[1]]) {
         vsd_norm <- varianceStabilizingTransformation(dds_norm, blind = FALSE)
 
         png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=75)
-        print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
+        print(DESeq2::plotPCA(vsd_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
         # DESeq2::plotPCA(rld_norm, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
         dev.off()
 
@@ -254,7 +299,7 @@ for (contrast in comparison[[1]]) {
     vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
     png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
-    print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
+    print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
     # DESeq2::plotPCA(rld, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
     dev.off()
 
