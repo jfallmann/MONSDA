@@ -180,7 +180,7 @@ for (contrast in comparison[[1]]) {
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         #design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
-        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))
+        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))
         design_norm <- model.matrix(des_norm, data = sampleData_norm)
         print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
         # colnames(design_norm) <- c(colnames(design),"W_1")
