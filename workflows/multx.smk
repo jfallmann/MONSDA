@@ -23,8 +23,7 @@ if paired == 'paired':
             tpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEMULTIPLEXING", MULTXENV).get('DEMUX', ""),
             multx = MULTXBIN
         shell:
-            "{params.multx} --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} --in2 {input.r2} "
-            "--out1 {output.o1} --out2 {output.o2} --unmatched1 {output.unmatched_r1} --unmatched2 {output.unmatched_r2} {params.tpara} > {log} 2>&1"
+            "{params.multx} -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o %_R1_demux.fastq.gz -o %_R2_demux.fastq.gz {params.tpara} 2>&1 > {log} "
 
     rule fastp_trim_unmatched:
         input:
@@ -55,7 +54,7 @@ if paired == 'paired':
             tpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEMULTIPLEXING", MULTXENV).get('DEMUX', ""),
             multx = MULTXBIN
         shell:
-            "{params.multx} --threads {threads} --barcodes {input.whitelist} --in1 {input.r1} --in2 {input.r2} --out1 {output.o1} --out2 {output.o2} {params.tpara} > {log} 2>&1"
+            "{params.multx}  -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o %_R1_demux.fastq.gz -o %_R2_demux.fastq.gz {params.tpara} 2>&1 > {log} > {log} 2>&1"
 
     rule concat_final:
         input:
