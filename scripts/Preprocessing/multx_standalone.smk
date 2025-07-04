@@ -75,8 +75,10 @@ if PAIRED == "paired":
             r2 = expand("{outdir}/first/{sample_mux}_unmatched_R2_trimmed.fastq.gz", outdir=OUTDIR, sample_mux=SAMPLE_LIST),
             whitelist = WHITELIST
         output:
-            o1 = temp("{outdir}/second/{sample}_R1_demux.fastq.gz"),
-            o2 = temp("{outdir}/second/{sample}_R2_demux.fastq.gz")        
+            o1 = temp(expand("{outdir}/second/{sample}_R1_demux.fastq.gz", outdir=OUTDIR, sample=DEMUX_LIST)),
+            o2 = temp(expand("{outdir}/second/{sample}_R2_demux.fastq.gz", outdir=OUTDIR, sample=DEMUX_LIST)),
+            unmatched_r1 = temp(expand("{outdir}/second/{sample_mux}_unmatched_R1.fastq.gz", outdir=OUTDIR, sample_mux=SAMPLE_LIST)),
+            unmatched_r2 = temp(expand("{outdir}/second/{sample_mux}_unmatched_R2.fastq.gz", outdir=OUTDIR, sample_mux=SAMPLE_LIST))         
         threads: THREADS
         conda: ENVFILE if ENVFILE else None
         container: CONTAINER if CONTAINER else None
@@ -84,8 +86,10 @@ if PAIRED == "paired":
             outdir = OUTDIR
         shell:
             """
-            fastq-multx -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o {params.outdir}/second/%_R1_demux_second.fastq.gz -o {params.outdir}/second/%_R2_demux_second.fastq.gz &> LOGS/multx_second.log &&
-            touch {output.o1} {output.o2}
+            fastq-multx -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o {params.outdir}/second/%_R1_demux.fastq.gz -o {params.outdir}/second/%_R2_demux.fastq.gz &> LOGS/multx_second.log &&
+            mv -f {params.outdir}/second/unmatched_R1_demux.fastq.gz {output.unmatched_r1} &&
+            mv -f {params.outdir}/second/unmatched_R2_demux.fastq.gz {output.unmatched_r2} &&
+            touch {output.o1} {output.o2} {output.unmatched_r1} {output.unmatched_r2}
             """
 
     rule concat_final:
@@ -144,7 +148,7 @@ else:
             r1 = expand("{outdir}/first/{sample_mux}_unmatched_trimmed.fastq.gz", outdir=OUTDIR, sample_mux=SAMPLE_LIST),            
             whitelist = WHITELIST
         output:
-            o1 = temp("{outdir}/second/{sample}_demux.fastq.gz")            
+            temp(expand("{outdir}/second/{sample}_demux.fastq.gz", outdir=OUTDIR, sample=DEMUX_LIST))            
         threads: THREADS
         conda: ENVFILE if ENVFILE else None
         container: CONTAINER if CONTAINER else None
