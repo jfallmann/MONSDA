@@ -373,7 +373,7 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design_norm)
+            AvsB <- makeContrasts(TreatvsUntreat = paste("W_1 + condition", A, sep = ""), levels = design_norm)
             qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
