@@ -161,7 +161,7 @@ for (contrast in comparison[[1]]) {
             design <- model.matrix(des, data = sampleData)
             # colnames(design) <- c(levels(sampleData$condition), bl)
         } else {
-            des <- ~condition
+            des <- ~ condition
             design <- model.matrix(des, data = sampleData)
             # colnames(design) <- levels(sampleData$condition)
         }
@@ -176,11 +176,11 @@ for (contrast in comparison[[1]]) {
         ctrlgenes <- readLines(spiken)
         setwd(outdir)
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        genes <- rownames(countData)
+        genes <- rownames(counts(counts_norm))
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-        sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        #design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
-        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))
+        sampleData_norm <- cbind(sampleData, pData(counts_norm))        
+        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))  # Last argument is variable of interest
+        # des_norm <- as.formula(paste(deparse(des), " + W_1"), collapse = "")
         design_norm <- model.matrix(des_norm, data = sampleData_norm)
         print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
         # colnames(design_norm) <- c(colnames(design),"W_1")
@@ -292,7 +292,7 @@ for (contrast in comparison[[1]]) {
 
         ## Testing
         # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design_norm)
+        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
         qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf

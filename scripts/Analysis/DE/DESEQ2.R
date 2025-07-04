@@ -81,7 +81,8 @@ print(design)
 dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
 
 # filter low counts
-keep <- rowSums(counts(dds)) >= 10
+smallestGroupSize <- length(unique(sampleData_all$condition))
+keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
 dds <- dds[keep, ]
 
 # run for each pair of conditions
@@ -201,12 +202,14 @@ for (contrast in comparison[[1]]) {
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))
+        design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))  # Last argument is variable of interest
+        #design_norm <- as.formula(paste(deparse(design), " + W_1"), collapse = "")
         print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
 
         dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
         # filter low counts
-        keep_norm <- rowSums(counts(dds_norm)) >= 10
+        smallestGroupSize <- length(unique(sampleData_norm$condition))
+        keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
         dds_norm <- dds_norm[keep_norm, ]
 
         # drop unused samples
@@ -233,7 +236,8 @@ for (contrast in comparison[[1]]) {
     dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
 
     # filter low counts
-    keep <- rowSums(counts(dds)) >= 10
+    smallestGroupSize <- length(unique(sampleData$condition))
+    keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
     dds <- dds[keep, ]
 
     # drop unused samples
