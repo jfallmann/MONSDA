@@ -73,7 +73,7 @@ import sys
 import traceback as tb
 from collections import OrderedDict
 
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from snakemake.common.configfile import load_configfile
 
 import MONSDA.Params as mp
@@ -1929,14 +1929,15 @@ def nf_fetch_params(
                     for y in mp.samplecond(PEAKSAMPLES, config)
                 ]
             ]
-            if pairing[0] == "":
+            if len(pairing) < 2 or pairing[1] == "":
                 pairing = PEAKSAMPLES
                 retconf["PEAKSAMPLEBACKGROUND"] = "false"
+            else:
+                retconf["PEAKSAMPLEBACKGROUND"] = "true"
             log.debug(
                 f"{logid} PEAKSAMPLES: {PEAKSAMPLES} \tPAIRING: {pairing} \tpostsamples: {postsamples} \tpairsamples: {pairsamples}"
             )
             retconf["PEAKSAMPLES"] = ",".join(pairing)
-            retconf["PEAKSAMPLEBACKGROUND"] = "true"
 
     # TRACKS/COUNTING Variables
     for x in ["TRACKS", "COUNTING"]:

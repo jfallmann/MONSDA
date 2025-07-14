@@ -29,7 +29,7 @@ process FindPeaks{
     path bam
 
     output:
-    path "*_peak.bed.gz", emit: peak
+    path "*_peak*.bed.gz", emit: peak
     path "*.log", emit: log
 
     script:     
@@ -41,9 +41,9 @@ process FindPeaks{
         bc = ''
     }    
     fn = file(bf).getSimpleName()
-    of = fn+"_peak.bed"
-    oz = fn+"_peak.bed.gz"
-    ol = fn+".log"
+    of = fn.replace("_mapped", "_peak")+".bed"
+    oz = fn.replace("_mapped", "_peak")+".bed.gz"
+    ol = fn.replace("_mapped", "_peak")+".log"
     sortmem = '30GB'
     if (PAIRED == 'paired' && fn.indexOf("unique") == 0){
         mapmode = 'BAMPE'
@@ -200,10 +200,11 @@ workflow PEAKS{
     main:
     
     PAIRSAMPLES = PEAKSAMPLES.collect{
-        element -> return "${workflow.workDir}/../"+element+".bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted*.bam"
     }
     
     peaksamples_ch = Channel.fromPath(PAIRSAMPLES)
+    //peaksamples_ch.subscribe {  println "PEAKSAMPLESINCHANNEL: $it"  }
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
