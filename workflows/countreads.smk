@@ -5,7 +5,9 @@ if not rundedup:
         input:  expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)                
 
 else:
@@ -22,6 +24,8 @@ else:
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
 
 if paired == 'paired':
@@ -237,3 +241,21 @@ else:
                  samples_u = lambda wildcards, input: ','.join(input.cts_u),                 
                  bins = BINS
         shell:  "{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log}"
+    
+rule cpm_tpm_table:
+    input:
+        counts = rules.prepare_count_table.output.tbl_u if not rundedup else rules.prepare_count_table.output.tbl_ud
+    output:
+        cpm = "COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique.counts.gz" if not rundedup else "COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique_dedup.counts.gz",
+        tpm = "COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique.counts.gz" if not rundedup else "COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique_dedup.counts.gz"
+    log:
+        "LOGS/DE/{combo}/CPM_TPM_{feat}_table.log"
+    conda:
+        "deseq2_DE.yaml"
+    container:
+        "oras://jfallmann/monsda:deseq2_DE"
+    threads: 1
+    shell:
+        "Rscript scripts/Analysis/CPM_TPM_from_counts.R {input.counts} 2> {log} && mv CPM_{input.counts} {output.cpm} && mv TPM_{input.counts} {output.tpm}"
+
+
