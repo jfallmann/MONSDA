@@ -187,8 +187,7 @@ if rundedup:
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params:
-            curfile = lambda wildcards: wildcard.file
+        params: curfile = lambda wildcards: wildcards.file
         shell:  "arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 
     rule prepare_count_table:
@@ -226,8 +225,7 @@ else:
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params:
-            curfile = lambda wildcards: wildcard.file
+        params: curfile = lambda wildcards: wildcards.file
         shell:  "arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
 
     rule prepare_count_table:
@@ -252,14 +250,11 @@ rule cpm_tpm_table:
     output:
         cpm = "COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique.counts.gz" if not rundedup else "COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique_dedup.counts.gz",
         tpm = "COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique.counts.gz" if not rundedup else "COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique_dedup.counts.gz"
-    log:
-        "LOGS/DE/{combo}/CPM_TPM_{feat}_table.log"
-    conda:
-        "deseq2_DE.yaml"
-    container:
-        "oras://jfallmann/monsda:deseq2_DE"
+    log: "LOGS/DE/{combo}/CPM_TPM_{feat}_table.log"
+    conda: "deseq2_DE.yaml"
+    container: "oras://jfallmann/monsda:deseq2_DE"
     threads: 1
-    shell:
-        "Rscript scripts/Analysis/CPM_TPM_from_counts.R {input.counts} 2> {log} && mv CPM_{input.counts} {output.cpm} && mv TPM_{input.counts} {output.tpm}"
+    params: bins = str.join(os.sep, [BINS, "Analysis/CPM_TPM_from_counts.R"]),
+    shell: "Rscript {params.bins} {input.counts} {output.cpm} {output.tpm} 2> {log}"
 
 
