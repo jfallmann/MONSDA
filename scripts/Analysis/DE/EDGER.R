@@ -59,14 +59,6 @@ if (combi == "none") {
 ## readin counttable
 countData_all <- read.table(countfile, header = TRUE, row.names = 1, check.names = FALSE)
 
-# Calculate CPM and TPM
-cpm_matrix <- calc_cpm(countData_all)
-tpm_matrix <- calc_tpm(countData_all, gtf_gene)
-
-# Write out CPM and TPM tables
-write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-
 # Check if names are consistent
 if (!all(rownames(sampleData_all) %in% colnames(countData_all))) {
     stop("Count file does not correspond to the annotation file")
@@ -76,6 +68,14 @@ comparison_objs <- list()
 
 WD <- getwd()
 setwd(outdir)
+
+# Calculate CPM and TPM
+cpm_matrix <- calc_cpm(countData_all)
+tpm_matrix <- calc_tpm(countData_all, gtf_gene)
+
+# Write out CPM and TPM tables
+write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 # Same for all samples without design specific normalization
 ## name types and levels for design
