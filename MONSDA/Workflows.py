@@ -425,6 +425,10 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                             )
                         if config[subwork].get("CUTOFFS"):
                             tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
+                        if config[subwork].get("ANNOTATION"):
+                            tempconf[subwork]["ANNOTATION"] = config[subwork][
+                                "ANNOTATION"
+                            ]
                         if subwork == "COUNTING":
                             tempconf["COUNTING"]["FEATURES"] = (
                                 config["COUNTING"]["FEATURES"]
