@@ -379,6 +379,12 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                         ) or config.get("RUNDEDUP"):
                             tempconf["RUNDEDUP"] = "enabled"
                         continue
+                    if mu.sub_dict(config[subwork], condition).get("ANNOTATION"):
+                        tempconf[subwork]["ANNOTATION"] = mu.sub_dict(
+                            config[subwork], condition
+                        )["ANNOTATION"]
+                    elif config[subwork].get("ANNOTATION"):
+                        tempconf[subwork]["ANNOTATION"] = config[subwork]["ANNOTATION"]
                     if ("TOOLS" in config[key] and env == "" and exe == "") and len(
                         mu.get_from_dict(config[key], condition)
                     ) != 0:  # env and exe overrule TOOLS
@@ -425,10 +431,6 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                             )
                         if config[subwork].get("CUTOFFS"):
                             tempconf[subwork]["CUTOFFS"] = config[subwork]["CUTOFFS"]
-                        if config[subwork].get("ANNOTATION"):
-                            tempconf[subwork]["ANNOTATION"] = config[subwork][
-                                "ANNOTATION"
-                            ]
                         if subwork == "COUNTING":
                             tempconf["COUNTING"]["FEATURES"] = (
                                 config["COUNTING"]["FEATURES"]

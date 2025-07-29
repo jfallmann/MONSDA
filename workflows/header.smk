@@ -119,9 +119,9 @@ if 'MAPPING' in config:
     MAPCONF = sub_dict(config['MAPPING'], SETUP)
     MAPPERENV = MAPPERENV.split('_')[0]
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE"))
-    MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION"))
-    MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY"))
+    REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE", config['MAPPING'].get("REFERENCE")))
+    MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION", config['MAPPING'].get("ANNOTATION")))
+    MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY", config['MAPPING'].get("DECOY")))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -172,8 +172,8 @@ if 'MAPPING' in config:
 if 'PEAKS' in config:
     PEAKCONF = sub_dict(config['PEAKS'], SETUP)
     PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
-    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
-    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
+    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE', config['PEAKS'].get('REFERENCE')))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION', config['PEAKS'].get('ANNOTATION')))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -193,9 +193,9 @@ for x in ['TRACKS', 'COUNTING']:
         XCONF = sub_dict(config[x], SETUP)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE'))
-        XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION'))
-        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+        REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE', config[x].get('REFERENCE')))
+        XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION', config[x].get('ANNOTATION')))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -232,11 +232,11 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         XBIN, XENV = env_bin_from_config(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
-        XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
-        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+        REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE")))
+        XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION")))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
         if XANNO and XANNO != '':
-            ANNOTATION = XANNO
+            ANNOTATION = XANNO            
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if XDECOY and not dict_inst(XDECOY):
@@ -268,8 +268,8 @@ if 'CIRCS' in config:
     CIRCCONF = sub_dict(config['CIRCS'], SETUP)
     XBIN, XENV = env_bin_from_config(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
-    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))
-    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION'))
+    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE', config['CIRCS'].get('REFERENCE')))
+    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION', config['CIRCS'].get('ANNOTATION')))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -281,5 +281,7 @@ if 'CIRCS' in config:
 
 
 combo = ''
+
+log.info(logid+f'Using COMBO: {combo}, REF: {REFERENCE}, ANNO: {ANNOTATION}, DECOY: {DECOY}, INDEX: {INDEX}, INDEX2: {INDEX2}, PREFIX: {PREFIX}, IP: {IP}, SETUP: {SETUP}, SEQUENCING: {SEQUENCING}, STRANDED: {stranded}, PAIRED: {paired}, RUNDEDUP: {rundedup}, PREDEDUP: {prededup}, SAMPLES: {SAMPLES}, BINS: {BINS}, MAXTHREAD: {MAXTHREAD}')
 
 ####HEADER ENDS HERE####
