@@ -69,16 +69,29 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
-# Calculate CPM and TPM
+## Calculate CPM and TPM
 cpm_matrix <- calc_cpm(countData_all)
 tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 
-# Write out CPM and TPM tables
+## Write out CPM and TPM tables
 write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
-# Same for all samples without design specific normalization
-## name types and levels for design
+## Normalize by spike in if available
+if (spike != "") {
+    print("Spike-in used, data will be normalized to spike in separately")
+    spiken <- strsplit(spike, "=")[[1]][2]
+    setwd(WD)
+    ctrlgenes <- readLines(spiken)
+    setwd(outdir)
+    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
+    counts_norm <- as.data.frame(normCounts(counts_norm))
+    countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
+    write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+}
 
 ## Create design-table considering different types (paired, unpaired) and batches
 des <- ~ 0 + condition
@@ -190,8 +203,7 @@ for (contrast in comparison[[1]]) {
         des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))  # Last argument is variable of interest
         # des_norm <- as.formula(paste(deparse(des), " + W_1"), collapse = "")
         design_norm <- model.matrix(des_norm, data = sampleData_norm)
-        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
-        # colnames(design_norm) <- c(colnames(design),"W_1")
+        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))        
 
         dge_norm <- DGEList(counts = counts(counts_norm), group = sampleData$condition, samples = samples, genes = genes)
         ## filter low counts

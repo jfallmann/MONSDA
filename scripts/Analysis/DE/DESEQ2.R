@@ -79,7 +79,21 @@ tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
-
+# Normalize by spike in if available
+if (spike != "") {
+    print("Spike-in used, data will be normalized to spike in separately")
+    spiken <- strsplit(spike, "=")[[1]][2]
+    setwd(WD)
+    ctrlgenes <- readLines(spiken)
+    setwd(outdir)
+    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
+    counts_norm <- as.data.frame(normCounts(counts_norm))
+    countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
+    write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+}
 #### Now plot and print over-all comparisons
 
 ## Create design-table considering different types (paired, unpaired) and batches
