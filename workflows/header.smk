@@ -96,6 +96,8 @@ IP = SETTINGS.get('IP')
 rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
 
+ANNOTATION = False  # by default no annotation is set for every workflow step
+
 if rundedup:
     if prededup:
         log.info(logid+'(PRE)DEDUPLICATION ENABLED')
@@ -282,6 +284,7 @@ if 'CIRCS' in config:
 
 combo = ''
 
-log.info(logid+f'Using COMBO: {combo}, REF: {REFERENCE}, ANNO: {ANNOTATION}, DECOY: {DECOY}, INDEX: {INDEX}, INDEX2: {INDEX2}, PREFIX: {PREFIX}, IP: {IP}, SETUP: {SETUP}, SEQUENCING: {SEQUENCING}, STRANDED: {stranded}, PAIRED: {paired}, RUNDEDUP: {rundedup}, PREDEDUP: {prededup}, SAMPLES: {SAMPLES}, BINS: {BINS}, MAXTHREAD: {MAXTHREAD}')
+if ANNOTATION:
+    log.info(logid+f'Using COMBO: {combo}, REF: {REFERENCE}, ANNO: {ANNOTATION}, DECOY: {DECOY}, INDEX: {INDEX}, INDEX2: {INDEX2}, PREFIX: {PREFIX}, IP: {IP}, SETUP: {SETUP}, SEQUENCING: {SEQUENCING}, STRANDED: {stranded}, PAIRED: {paired}, RUNDEDUP: {rundedup}, PREDEDUP: {prededup}, SAMPLES: {SAMPLES}, BINS: {BINS}, MAXTHREAD: {MAXTHREAD}')
 
 ####HEADER ENDS HERE####
