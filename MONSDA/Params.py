@@ -1507,7 +1507,7 @@ def comparable_as_string(config: dict, subwork: str) -> str:
         flattened = sorted(
             set(val for sublist in groups_by_condition for val in sublist)
         )
-        combined = list(set(itertools.combinations(flattened, 2)))
+        combined = list(set(itertools.permutations(flattened, 2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}:{key}-vs-{value}")
