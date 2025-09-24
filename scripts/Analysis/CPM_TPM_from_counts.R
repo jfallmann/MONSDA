@@ -2,6 +2,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr)
+  library(R.utils)
 })
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -40,5 +41,5 @@ cpm_out <- data.frame(ID = gene_ids, cpm, check.names = FALSE)
 tpm_out <- data.frame(ID = gene_ids, tpm, check.names = FALSE)
 
 # ---- Write output ----
-write.table(cpm_out, cpmoutfile, sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(tpm_out, tpmoutfile, sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(cpm_out, gzfile(cpmoutfile), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(tpm_out, gzfile(tpmoutfile), sep = "\t", quote = FALSE, row.names = FALSE)

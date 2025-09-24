@@ -74,8 +74,8 @@ cpm_matrix <- calc_cpm(countData_all)
 tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 
 ## Write out CPM and TPM tables
-write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(cpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(tpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 ## Normalize by spike in if available
 if (spike != "") {
@@ -88,9 +88,18 @@ if (spike != "") {
     sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
     counts_norm <- as.data.frame(normCounts(counts_norm))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
-    write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
+    write.table(counts_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(countData_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    # Calculate CPM and TPM
+    cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
+    tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
+
+    # Write out CPM and TPM tables
+    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 }
 
 ## Create design-table considering different types (paired, unpaired) and batches

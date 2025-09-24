@@ -216,8 +216,8 @@ if rundedup:
 
 else:
     rule summarize_counts:
-        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
-                t = lambda wildcards: expand(rules.count_trimmed_fastq.output,  file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
+        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=wildcards.file, combo=wildcards.combo), # samplecond(SAMPLES, config), combo=combo),
+                t = lambda wildcards: expand(rules.count_trimmed_fastq.output,  file=wildcards.file, combo=wildcards.combo), # samplecond(SAMPLES, config), combo=combo),
                 m = rules.count_mappers.output,
                 u = rules.count_unique_mappers.output
         output: "COUNTS/{combo}/{file}.summary"
