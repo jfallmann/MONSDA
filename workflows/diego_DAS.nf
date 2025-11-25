@@ -49,7 +49,7 @@ process featurecount_diego{
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
-    sortmem = '30GB'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     if (PAIRED == 'paired'){
         pair = "-p"
     }
