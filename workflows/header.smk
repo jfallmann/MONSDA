@@ -67,6 +67,27 @@ except:
 BINS = config.get("BINS")
 MAXTHREAD = int(config["MAXTHREADS"])
 
+# set maximum available memory for sorting
+def get_sortmem(w, resources):
+    # Otherwise, try mem of form 8G / 8GB, again skipping `<TBD>`
+    if hasattr(resources, "mem"):
+        mem_val = str(resources.mem)
+        if mem_val != "<TBD>":
+            mem_str = re.sub(r"GB?$", "", mem_val, flags=re.IGNORECASE).strip()
+            return max(int(mem_str) -2, 4)  # reserve 2GB for other processes, min 4GB
+
+    # Convert mem_mb if present and not `<TBD>`
+    if hasattr(resources, "mem_mb"):
+        mem_val = str(resources.mem_mb)
+        if mem_val != "<TBD>":
+            mem_mb = int(mem_val)
+            # round up to full GB
+            return max(int((mem_mb + 1023) / 1024) - 2, 4)  # reserve 2GB for other processes, min 4GB
+    
+    # Fallback if everything is `<TBD>` or missing
+    # pick something conservative but nonzero
+    return 4  # 4 GB
+
 if not config.get('FETCH', False) and not config.get("BASECALL", False):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]  
 elif not config.get("BASECALL", False):

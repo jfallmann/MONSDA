@@ -9,7 +9,7 @@ rule sortsam:
     threads: MAXTHREAD
     priority: 100
     params: linkto = lambda wildcards, output: os.path.basename(output.sortedsam),
-            sortmem = lambda w, resources: int(int(resources.mem_mb) / 1024)
+            sortmem = get_sortmem
     shell: "set +o pipefail; export LC_ALL=C; samtools view -H {input.mapps}|grep '^@HD' |pigz -p 1 -f > {output.tmphead} 2> {log}; samtools view -H {input.mapps}|grep '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p 1 -f >> {output.tmphead} 2>> {log}; samtools view -H {input.mapps}|grep '^@RG'|pigz -p 1 -f >> {output.tmphead} 2>> {log}; samtools view -H {input.mapps}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} 2>> {log}; samtools view -h {input.mapps} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} 2>> {log}; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2>> {log}"
 
 rule sam2bam:

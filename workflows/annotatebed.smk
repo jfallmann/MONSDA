@@ -102,7 +102,7 @@ rule AddSequenceToBed:
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
     params: bins=BINS,
-            sortmem = lambda w, resources: int(int(resources.mem_mb) / 1024)
+            sortmem = get_sortmem
     shell:  "export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}"
 
 rule MergeAnnoBed:
@@ -112,5 +112,5 @@ rule MergeAnnoBed:
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
-    params: sortmem = lambda w, resources: int(int(resources.mem_mb) / 1024)
+    params: sortmem = get_sortmem
     shell:  "export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}"
