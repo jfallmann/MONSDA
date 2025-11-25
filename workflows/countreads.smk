@@ -6,8 +6,8 @@ if not rundedup:
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/{file}_mapped_sorted.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),                
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat='gene', combo=combo) if 'gene' in config['COUNTING']['FEATURES'].keys() else [],
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat='gene', combo=combo) if 'gene' in config['COUNTING']['FEATURES'].keys() else [],
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)                
 
 else:
@@ -24,8 +24,8 @@ else:
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
                 expand("COUNTS/Featurecounts_{feat}s/{combo}/COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
-                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat=config['COUNTING']['FEATURES'].keys(), combo=combo),
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/CPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat='gene' if 'gene' in config['COUNTING']['FEATURES'].keys() else None, combo=combo) if 'gene' in config['COUNTING']['FEATURES'].keys() else [],
+                expand("COUNTS/Featurecounts_{feat}s/{combo}/TPM_COUNTS_mapped_unique_dedup.counts.gz", file=samplecond(SAMPLES, config), feat='gene' if 'gene' in config['COUNTING']['FEATURES'].keys() else None, combo=combo) if 'gene' in config['COUNTING']['FEATURES'].keys() else [],
                 expand("COUNTS/{combo}/{file}.summary", file=samplecond(SAMPLES, config), combo=combo)
 
 if paired == 'paired':
