@@ -4,12 +4,12 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - bioconductor-apeglm=1.28.0
-  - bioconductor-biomart=2.62.0  
-  - bioconductor-deseq2=1.46.0  
-  - bioconductor-edger=4.4.0
-  - bioconductor-enhancedvolcano=1.24.0  
-  - bioconductor-rsamtools=2.22.0  
+  - bioconductor-apeglm =1.28.0
+  - bioconductor-biomart =2.62.0  
+  - bioconductor-deseq2 =1.46.0  
+  - bioconductor-edger =4.4.0
+  - bioconductor-enhancedvolcano =1.24.0  
+  - bioconductor-rsamtools =2.22.0  
   - bioconductor-ruvseq=1.40.0  
   - pigz =2.6
   - readline =8.2
