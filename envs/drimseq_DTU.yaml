@@ -10,6 +10,7 @@ dependencies:
   - bioconductor-drimseq=1.34.0
   - bioconductor-edger=4.4.0
   - bioconductor-enhancedvolcano=1.24.0  
+  - bioconductor-tximport=1.34.0
   - bioconductor-rsamtools=2.22.0  
   - bioconductor-ruvseq=1.40.0 
   - readline =8.2
