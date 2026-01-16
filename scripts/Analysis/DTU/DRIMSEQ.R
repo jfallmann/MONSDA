@@ -158,6 +158,7 @@ for (contrast in comparisons[[1]]) {
     mean_expr <- rowMeans(cts)
     var_expr <- apply(cts, 1, var)
     meanvar_df <- data.frame(mean = mean_expr, variance = var_expr)
+    meanvar_df <- meanvar_df[meanvar_df$mean > 0 & meanvar_df$variance > 0, ]
     p_meanvar <- ggplot(meanvar_df, aes(x = mean, y = variance)) +
         geom_point(alpha = 0.5) +
         scale_x_log10() + scale_y_log10() +
@@ -187,10 +188,16 @@ for (contrast in comparisons[[1]]) {
     d <- dmFit(d, design = design)
     d <- dmTest(d, contrast = contrast_vec)
 
-    #  QC: PCA of transcript proportions 
+    #  QC: PCA of transcript proportions (robust to constant/zero columns) 
     proportions_tmp <- tryCatch({ DRIMSeq::proportions(d) }, error = function(e) NULL)
     if (!is.null(proportions_tmp) && ncol(proportions_tmp) > 3) {
         prop_mat <- as.matrix(proportions_tmp[, grep("^sample", colnames(proportions_tmp)), drop = FALSE])
+        # Remove columns (samples) that are constant or all zero
+        is_const_col <- apply(prop_mat, 2, function(x) length(unique(x)) == 1)
+        prop_mat <- prop_mat[, !is_const_col, drop = FALSE]
+        # Remove rows (transcripts) that are constant or all zero
+        is_const_row <- apply(prop_mat, 1, function(x) length(unique(x)) == 1)
+        prop_mat <- prop_mat[!is_const_row, , drop = FALSE]
         if (nrow(prop_mat) > 2 && ncol(prop_mat) > 2) {
             pca <- prcomp(t(prop_mat), scale. = TRUE)
             pca_df <- data.frame(
