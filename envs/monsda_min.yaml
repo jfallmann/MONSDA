@@ -4,29 +4,29 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - biopython =1.83
-  - fastapi-0.116.2
+  - biopython =1.86
+  - fastapi =0.128.0
   - grep >=3.4
-  - isort =5.13.2  
+  - isort =7.0.0  
   - natsort =8.4.0
-  - nextflow =25.04.5
-  - numpy =1.26.4
-  - pandas =2.2.1
-  - perl =5.32.0
-  - pip >=24.0
+  - nextflow =25.10.2
+  - numpy =2.4.1
+  - pandas =2.3.3
+  - perl =5.32.1
+  - pip >=25.3
   - python =3.12.2
-  - pyyaml =6.0.1
-  - scipy =1.12.0
-  - snakemake =9.6.2
-  - snakemake-executor-plugin-slurm =1.4.0
+  - pyyaml =6.0.3
+  - scipy =1.17.0
+  - snakemake =9.14.8
+  - snakemake-executor-plugin-slurm =2.0.3
   - snakemake-executor-plugin-cluster-generic =1.0.9
-  - snakemake-interface-common =1.19.4
-  - snakemake-interface-executor-plugins =9.3.7
-  - snakemake-interface-report-plugins =1.1.0
-  - snakemake-interface-storage-plugins =4.2.1
-  - snakemake-storage-plugin-s3 =0.3.3
+  - snakemake-interface-common =1.22.0
+  - snakemake-interface-executor-plugins =9.3.9
+  - snakemake-interface-report-plugins =1.3.0
+  - snakemake-interface-storage-plugins =4.3.2
+  - snakemake-storage-plugin-s3 =0.3.6
   - snakemake-storage-plugin-ftp =0.1.3
   - snakemake-storage-plugin-sftp =0.1.3
   - snakemake-storage-plugin-http =0.3.0
   - snakemake-storage-plugin-zenodo =0.1.5
-  - uvicorn-0.35.0
+  - uvicorn =0.40.0
