@@ -136,17 +136,27 @@ for (contrast in comparisons[[1]]) {
     # Create dmDSdata object for this comparison
     d <- dmDSdata(counts = counts, samples = sampleData)
 
-    # Filter
+    # Filter (use DRIMSeq defaults scaled to group size)
     n <- nrow(sampleData)
-    n.small <- n / length(levels(sampleData$condition))
-    eval(parse(text = paste("d <- dmFilter(d,", filter, ")", sep = "")))
+    n.small <- max(1, ceiling(n / length(levels(sampleData$condition))))
+    default_filter <- paste(
+        "min_samps_feature_expr =", n.small,
+        ", min_feature_expr = 10",
+        ", min_samps_feature_prop =", n.small,
+        ", min_feature_prop = 0.1",
+        ", min_samps_gene_expr =", n.small,
+        ", min_gene_expr = 10"
+    )
+    filter_string <- ifelse(is.null(filter) || filter == "", default_filter, filter)
+    d <- eval(parse(text = paste0("dmFilter(d, ", filter_string, ")")))
 
     #  QC: Filtering summary table 
+    counts_filtered <- counts(d)
     filter_summary <- data.frame(
         n_genes_before = length(unique(txdf_sub$GENEID)),
-        n_genes_after = length(unique(counts$gene_id)),
+        n_genes_after = length(unique(counts_filtered$gene_id)),
         n_features_before = nrow(txdf_sub),
-        n_features_after = nrow(counts)
+        n_features_after = nrow(counts_filtered)
     )
     write.table(
         filter_summary,
@@ -171,14 +181,15 @@ for (contrast in comparisons[[1]]) {
     )
 
     # Set up contrast vector
-    minus <- 1 / length(A) * (-1)
-    plus <- 1 / length(B)
+    # Direction: positive for group A (first side of contrast), negative for group B
+    plus <- 1 / length(A)
+    minus <- -1 / length(B)
     contrast_vec <- cbind(integer(dim(design)[2]), colnames(design))
     for (i in A) {
-        contrast_vec[which(contrast_vec[, 2] == i)] <- minus
+        contrast_vec[which(contrast_vec[, 2] == i)] <- plus
     }
     for (i in B) {
-        contrast_vec[which(contrast_vec[, 2] == i)] <- plus
+        contrast_vec[which(contrast_vec[, 2] == i)] <- minus
     }
     contrast_vec <- as.numeric(contrast_vec[, 1])
 
@@ -229,7 +240,18 @@ for (contrast in comparisons[[1]]) {
     samples_of_group_B <- subset(samples(d), condition %in% B_lvls)$sample_id
     proportions[paste(A[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_A)])
     proportions[paste(B[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_B)])
-    proportions["lfc"] <- log2(proportions[paste(A[[1]], "mean", sep = "_")]) - log2(proportions[paste(B[[1]], "mean", sep = "_")])
+
+    # Avoid -Inf when a group mean is zero: add a tiny pseudocount derived from the data scale
+    nonzero_props <- as.numeric(unlist(proportions[grep("^sample", colnames(proportions))]))
+    nonzero_props <- nonzero_props[nonzero_props > 0]
+    eps <- if (length(nonzero_props) > 0) {
+        max(1e-10, min(nonzero_props) / 10)
+    } else {
+        1e-10
+    }
+    a_mean <- proportions[[paste(A[[1]], "mean", sep = "_")]]
+    b_mean <- proportions[[paste(B[[1]], "mean", sep = "_")]]
+    proportions[["lfc"]] <- log2((a_mean + eps) / (b_mean + eps))
     props_transcripts <- proportions[c("feature_id", "lfc")]
     props_genes <- aggregate(proportions, list(proportions$gene_id), mean)[c("Group.1", "lfc")]
     colnames(props_genes) <- c("gene_id", "lfc")
