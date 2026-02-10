@@ -238,8 +238,10 @@ for (contrast in comparisons[[1]]) {
     B_lvls <- B[[1]]
     samples_of_group_A <- subset(samples(d), condition %in% A_lvls)$sample_id
     samples_of_group_B <- subset(samples(d), condition %in% B_lvls)$sample_id
-    proportions[paste(A[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_A)])
-    proportions[paste(B[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_B)])
+    proportions[paste(A[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_A)], na.rm = TRUE)
+    proportions[paste(B[[1]], "mean", sep = "_")] <- rowMeans(proportions[as.vector(samples_of_group_B)], na.rm = TRUE)
+    proportions[[paste(A[[1]], "mean", sep = "_")]][is.nan(proportions[[paste(A[[1]], "mean", sep = "_")]])] <- 0
+    proportions[[paste(B[[1]], "mean", sep = "_")]][is.nan(proportions[[paste(B[[1]], "mean", sep = "_")]])] <- 0
 
     # Avoid -Inf when a group mean is zero: add a tiny pseudocount derived from the data scale
     nonzero_props <- as.numeric(unlist(proportions[grep("^sample", colnames(proportions))]))
