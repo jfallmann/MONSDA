@@ -269,10 +269,13 @@ for (contrast in comparisons[[1]]) {
     res$adj_pvalue <- no.na(res$adj_pvalue)
     res.txp$adj_pvalue <- no.na(res.txp$adj_pvalue)
 
-    res <- merge(props_genes, res)
-    res.txp <- merge(props_transcripts, res.txp)
-    res <- res[, c(1, 6, 2, 3, 4, 5)]
-    res.txp <- res.txp[, c(1, 7, 2, 3, 4, 5, 6)]
+    # Keep LFCs after merge by explicitly matching keys and selecting columns by name
+    res <- merge(props_genes, res, by = "gene_id", all.x = TRUE, sort = FALSE)
+    res.txp <- merge(props_transcripts, res.txp, by = "feature_id", all.x = TRUE, sort = FALSE)
+
+    # Reorder columns explicitly to avoid index-based mismatches that can introduce NA lfc values
+    res <- res[, c("gene_id", "lfc", "log_lik_ratio", "df", "pvalue", "adj_pvalue")]
+    res.txp <- res.txp[, c("feature_id", "gene_id", "lfc", "log_lik_ratio", "df", "pvalue", "adj_pvalue")]
 
     proportions$Gene <- lapply(proportions$gene_id, function(x) {
         get_gene_name(x, gtf.df)
