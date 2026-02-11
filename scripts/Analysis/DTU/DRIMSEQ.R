@@ -273,9 +273,34 @@ for (contrast in comparisons[[1]]) {
     res <- merge(props_genes, res, by = "gene_id", all.x = TRUE, sort = FALSE)
     res.txp <- merge(props_transcripts, res.txp, by = "feature_id", all.x = TRUE, sort = FALSE)
 
-    # Reorder columns explicitly to avoid index-based mismatches that can introduce NA lfc values
-    res <- res[, c("gene_id", "lfc", "log_lik_ratio", "df", "pvalue", "adj_pvalue")]
-    res.txp <- res.txp[, c("feature_id", "gene_id", "lfc", "log_lik_ratio", "df", "pvalue", "adj_pvalue")]
+    # Robust column ordering (tolerate naming differences across DRIMSeq versions)
+    col_pick <- function(df, candidates) {
+        hits <- intersect(candidates, colnames(df))
+        hits[hits != ""]
+    }
+
+    res_cols <- c(
+        "gene_id",
+        col_pick(res, "lfc"),
+        col_pick(res, c("log_lik_ratio", "lr", "logLik")),
+        col_pick(res, "df"),
+        col_pick(res, "pvalue"),
+        col_pick(res, c("adj_pvalue", "adj.pvalue", "padj"))
+    )
+    res_cols <- unique(res_cols)
+    res <- res[, res_cols, drop = FALSE]
+
+    res_txp_cols <- c(
+        "feature_id",
+        col_pick(res.txp, "gene_id"),
+        col_pick(res.txp, "lfc"),
+        col_pick(res.txp, c("log_lik_ratio", "lr", "logLik")),
+        col_pick(res.txp, "df"),
+        col_pick(res.txp, "pvalue"),
+        col_pick(res.txp, c("adj_pvalue", "adj.pvalue", "padj"))
+    )
+    res_txp_cols <- unique(res_txp_cols)
+    res.txp <- res.txp[, res_txp_cols, drop = FALSE]
 
     proportions$Gene <- lapply(proportions$gene_id, function(x) {
         get_gene_name(x, gtf.df)
