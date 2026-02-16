@@ -243,17 +243,23 @@ for (contrast in comparisons[[1]]) {
     proportions[[paste(A[[1]], "mean", sep = "_")]][is.nan(proportions[[paste(A[[1]], "mean", sep = "_")]])] <- 0
     proportions[[paste(B[[1]], "mean", sep = "_")]][is.nan(proportions[[paste(B[[1]], "mean", sep = "_")]])] <- 0
 
-    # Avoid -Inf when a group mean is zero: add a tiny pseudocount derived from the data scale
-    nonzero_props <- as.numeric(unlist(proportions[grep("^sample", colnames(proportions))]))
-    nonzero_props <- nonzero_props[nonzero_props > 0]
-    eps <- if (length(nonzero_props) > 0) {
-        max(1e-10, min(nonzero_props) / 10)
+    # Avoid -Inf/NA when a group mean is zero: add a tiny pseudocount derived from the data scale
+    prop_numeric <- suppressWarnings(as.numeric(unlist(proportions[grep("^sample", colnames(proportions))])))
+    prop_numeric <- prop_numeric[is.finite(prop_numeric) & prop_numeric > 0]
+    eps <- if (length(prop_numeric) > 0) {
+        max(1e-10, min(prop_numeric) / 10)
     } else {
         1e-10
     }
-    a_mean <- proportions[[paste(A[[1]], "mean", sep = "_")]]
-    b_mean <- proportions[[paste(B[[1]], "mean", sep = "_")]]
-    proportions[["lfc"]] <- log2((a_mean + eps) / (b_mean + eps))
+
+    a_mean <- suppressWarnings(as.numeric(proportions[[paste(A[[1]], "mean", sep = "_")]]))
+    b_mean <- suppressWarnings(as.numeric(proportions[[paste(B[[1]], "mean", sep = "_")]]))
+    a_mean[is.na(a_mean)] <- 0
+    b_mean[is.na(b_mean)] <- 0
+
+    lfc_vec <- log2((a_mean + eps) / (b_mean + eps))
+    lfc_vec[!is.finite(lfc_vec)] <- 0
+    proportions[["lfc"]] <- lfc_vec
     props_transcripts <- proportions[c("feature_id", "lfc")]
     props_genes <- aggregate(proportions, list(proportions$gene_id), mean)[c("Group.1", "lfc")]
     colnames(props_genes) <- c("gene_id", "lfc")
