@@ -52,9 +52,10 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "oras://jfallmann/monsda:bedtools"
             threads: 1
-            params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+            params: sortmem = get_sortmem
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
     elif stranded and (stranded == 'rf' or stranded == 'ISR'):
         rule BamToBed:
@@ -62,9 +63,10 @@ if not all(checklist):
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
             log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
             conda:  "bedtools.yaml"
+            container: "oras://jfallmann/monsda:bedtools"
             threads: 1
-            params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
+            params: sortmem = get_sortmem
+            shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}"
 
 include: "manipulate_genome.smk"
 
@@ -72,8 +74,9 @@ rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+    log:    "LOGS/PEAKS/{scombo}/{file}_extendbed_{type}.log"
     conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
     params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -u 1 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}"
@@ -82,8 +85,9 @@ rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+    log:    "LOGS/PEAKS/{scombo}/{file}_revextend_{type}.log"
     conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
     params: bins = BINS
     shell:  "{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}"
@@ -97,11 +101,12 @@ if IP == 'iCLIP':
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
+        container: "oras://jfallmann/monsda:bedtools"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0])),
-                sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
+                sortmem = get_sortmem
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
 elif IP == 'revCLIP':
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}.bed.gz", scombo=scombo),
@@ -111,11 +116,12 @@ elif IP == 'revCLIP':
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
+        container: "oras://jfallmann/monsda:bedtools"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0])),
-                sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
+                sortmem = get_sortmem
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
 else:
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}.bed.gz", scombo=scombo),
@@ -125,33 +131,36 @@ else:
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
         conda:  "bedtools.yaml"
+        container: "oras://jfallmann/monsda:bedtools"
         threads: 1
         params: bins = BINS,
                 odir = lambda wildcards, output:(os.path.dirname(output[0])),
-                sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
+                sortmem = get_sortmem
+        shell: "export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}"
 
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
     output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
     log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
     conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
     params:  bins = BINS,
              opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', ""),
-             sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
+             sortmem = get_sortmem
+    shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
 rule FindPeaks:
     input:  pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}/{file}findpeaks_{type}.log"
+    log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_{type}.log"
     conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
     params: opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('FINDPEAKS', ""),
             bins = BINS,
-            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}"
+            sortmem = get_sortmem
+    shell:  "perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}"
 
 #rule QuantPeaks:
 #   input:  "{outdir}{source}/Peak_{file}.bed.gz"
@@ -170,10 +179,11 @@ rule AddSequenceToPeak:
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")
     log:    "LOGS/PEAKS/{combo}/seq2peaks_{type}_{file}.log"
     conda:  "bedtools.yaml"
+    container: "oras://jfallmann/monsda:bedtools"
     threads: 1
     params: bins = BINS,
-            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
+            sortmem = get_sortmem
+    shell:  "set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi"  # NEED TO GET RID OF SPACES AND WHATEVER IN HEADER
 
 if ANNOPEAK is not None:
     rule AnnotatePeak:
@@ -181,6 +191,7 @@ if ANNOPEAK is not None:
         output: "PEAKS/{combo}/{file}_peak_anno_{type}.bed.gz"
         log:    "LOGS/PEAKS/{combo}/{file}annotatepeaks_{type}.log"
         conda:  "perl.yaml"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins = BINS,
                 anno = ANNOTATION
@@ -196,10 +207,11 @@ if ANNOPEAK is not None:
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}peak2bedg_{type}.log"
         conda:  "perl.yaml"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins = BINS,
-                sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+                sortmem = get_sortmem
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 else:
     rule PeakToBedg:
@@ -211,10 +223,11 @@ else:
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
         log:    "LOGS/PEAKS/{combo}/{file}peak2bedg_{type}.log"
         conda:  "perl.yaml"
+        container: "oras://jfallmann/monsda:perl"
         threads: 1
         params: bins = BINS,
-                sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
+                sortmem = get_sortmem
+        shell:  "perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}"
 
 ### This step normalized the bedg files for comparison in the browser
 rule NormalizeBedg:
@@ -224,9 +237,10 @@ rule NormalizeBedg:
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
     log:    "LOGS/PEAKS/{combo}/{file}_peaknormalizebedgraph_{type}.log"
     conda:  "perl.yaml"
+    container: "oras://jfallmann/monsda:perl"
     threads: 1
-    params: sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}% -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
+    params: sortmem = get_sortmem
+    shell: "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
 
 ### This step generates bigwig files for peaks which can then be copied to a web-browsable directory and uploaded to TRACKS via the track field
@@ -240,6 +254,7 @@ rule PeakToTRACKS:
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
     log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
+    container: "oras://jfallmann/monsda:ucsc"
     threads: 1
     shell:  "export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi"
 
@@ -250,6 +265,7 @@ rule GenerateTrack:
             "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
     log:    "LOGS/PEAKS/{combo}/{file}_generatetrack_{type}_peak.log"
     conda:  "base.yaml"
+    container: "oras://jfallmann/monsda:base"
     threads: MAXTHREAD
     params: bwdir = lambda wildcards: "TRACKS/PEAKS/{combo}/{src}".format(combo=combo, src=SETS),
             bins = os.path.abspath(BINS),

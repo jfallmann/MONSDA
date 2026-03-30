@@ -167,7 +167,7 @@
                                  "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
                                     {
                                         "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
-                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore",  #mapping options
+                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
                                         "EXTENSION" : ""
                                     }
                              },
@@ -262,7 +262,7 @@
     "PEAKS" : {
         "TOOLS" :
         {
-            "macs" : "macs2",
+            "macs2" : "macs2",
             "peaks" : "peaks",
             "piranha" : "Piranha"
         },
@@ -276,7 +276,7 @@
                               "ENV" : "piranha",
                               "BIN" : "Piranha",
                               "IP": "iCLIP", #which CLIP protocol to follow for read extension/trimming before peak calling, choices are iCLIP (5'enriched), revCLIP (3' enriched) or STD (no end enrichment)
-                              "macs": {
+                              "macs2": {
                                 "OPTIONS":
                                   {
                                       "FINDPEAKS": "-g --keep-dup auto --fix-bimodal --extsize 200 --qvalue 0.05 --shift -100"

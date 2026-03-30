@@ -2,8 +2,7 @@ name: picardtools
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - picard =2.27.4
-  - samtools =1.16.1
+  - samtools =1.21

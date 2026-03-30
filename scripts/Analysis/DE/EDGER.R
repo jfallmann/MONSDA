@@ -69,8 +69,38 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
-# Same for all samples without design specific normalization
-## name types and levels for design
+## Calculate CPM and TPM
+cpm_matrix <- calc_cpm(countData_all)
+tpm_matrix <- calc_tpm(countData_all, gtf_gene)
+
+## Write out CPM and TPM tables
+write.table(cpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(tpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+
+## Normalize by spike in if available
+if (spike != "") {
+    print("Spike-in used, data will be normalized to spike in separately")
+    spiken <- strsplit(spike, "=")[[1]][2]
+    setwd(WD)
+    ctrlgenes <- readLines(spiken)
+    setwd(outdir)
+    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
+    counts_norm <- as.data.frame(normCounts(counts_norm))
+    countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
+    counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
+    write.table(counts_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(countData_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    # Calculate CPM and TPM
+    cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
+    tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
+
+    # Write out CPM and TPM tables
+    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+}
 
 ## Create design-table considering different types (paired, unpaired) and batches
 des <- ~ 0 + condition
@@ -161,7 +191,7 @@ for (contrast in comparison[[1]]) {
             design <- model.matrix(des, data = sampleData)
             # colnames(design) <- c(levels(sampleData$condition), bl)
         } else {
-            des <- ~condition
+            des <- ~ condition
             design <- model.matrix(des, data = sampleData)
             # colnames(design) <- levels(sampleData$condition)
         }
@@ -171,19 +201,20 @@ for (contrast in comparison[[1]]) {
     ## check genes and spike-ins
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spike <- strsplit(spike, "=")[[1]][2]
+        spiken <- strsplit(spike, "=")[[1]][2]
         setwd(WD)
-        ctrlgenes <- readLines(spike)
+        ctrlgenes <- readLines(spiken)
         setwd(outdir)
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        genes <- rownames(countData)
+        genes <- rownames(counts(counts_norm))
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-        sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
-        # colnames(design_norm) <- c(colnames(design),"W_1")
+        sampleData_norm <- cbind(sampleData, pData(counts_norm))        
+        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))  # Last argument is variable of interest
+        # des_norm <- as.formula(paste(deparse(des), " + W_1"), collapse = "")
+        design_norm <- model.matrix(des_norm, data = sampleData_norm)
+        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))        
 
         dge_norm <- DGEList(counts = counts(counts_norm), group = sampleData$condition, samples = samples, genes = genes)
-
         ## filter low counts
         keep <- filterByExpr(dge_norm)
         dge_norm <- dge_norm[keep, , keep.lib.sizes = FALSE]
@@ -200,10 +231,10 @@ for (contrast in comparison[[1]]) {
         tmm_norm$ID <- dge_norm$genes$genes
         tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm) - 1)]
 
-        write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+        write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         ## create file MDS-plot with and without summarized replicates
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS_norm.png", sep = "_")
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
         print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
         dev.off()
@@ -212,7 +243,7 @@ for (contrast in comparison[[1]]) {
         dge_norm <- estimateDisp(dge_norm, design_norm, robust = TRUE)
 
         ## create file BCV-plot - visualizing estimated dispersions
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV_norm.png", sep = "_")
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "BCV_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
         print(plotBCV(dge_norm))
         dev.off()
@@ -221,7 +252,7 @@ for (contrast in comparison[[1]]) {
         fit_norm <- glmQLFit(dge_norm, design_norm, robust = TRUE)
 
         ## create file quasi-likelihood-dispersion-plot
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp_norm.png", sep = "_")
+        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "QLDisp_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
         print(plotQLDisp(fit_norm))
         dev.off()
@@ -247,10 +278,10 @@ for (contrast in comparison[[1]]) {
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
-    write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+    write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
     ## create file MDS-plot with and without summarized replicates
-    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "MDS.png", sep = "_")
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
     print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
@@ -259,7 +290,7 @@ for (contrast in comparison[[1]]) {
     dge <- estimateDisp(dge, design, robust = TRUE)
 
     ## create file BCV-plot - visualizing estimated dispersions
-    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "BCV.png", sep = "_")
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "BCV.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
     print(plotBCV(dge))
     dev.off()
@@ -268,7 +299,7 @@ for (contrast in comparison[[1]]) {
     fit <- glmQLFit(dge, design, robust = TRUE)
 
     ## create file quasi-likelihood-dispersion-plot
-    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "DataSet", "figure", "QLDisp.png", sep = "_")
+    out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "QLDisp.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
     print(plotQLDisp(fit))
     dev.off()
@@ -371,8 +402,8 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-            qlf <- glmQLFTest(fit, contrast = AvsB, prior.count = 5) ## glm quasi-likelihood-F-Test
+            AvsB <- makeContrasts(TreatvsUntreat = paste("W_1 + condition", A, sep = ""), levels = design_norm)
+            qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
 
@@ -390,8 +421,8 @@ for (contrast in comparison[[1]]) {
             )
             print(EnhancedVolcano(res,
                 lab = res$Gene,
-                x = as.numeric("logFC"),
-                y = as.numeric("FDR"),
+                x = "logFC",
+                y = "FDR",
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),
                 pCutoff = 0.05,
                 FCcutoff = 1.5,

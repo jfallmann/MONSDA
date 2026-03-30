@@ -1,0 +1,9 @@
+name: multx
+channels:
+  - bioconda
+  - conda-forge
+  - nodefaults
+dependencies:  
+  - fastp=1.0.1
+  - fastq-multx=1.4.2  
+  - pigz=2.8

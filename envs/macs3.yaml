@@ -2,10 +2,9 @@ name: macs
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
-  - macs2 =2.2.7.1
+  - macs3 =3.0.2
   - readline =8.2
-  - samtools =1.16.1
+  - samtools =1.21
   - sed =4.8

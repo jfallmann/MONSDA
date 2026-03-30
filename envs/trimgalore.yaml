@@ -2,7 +2,7 @@ name: trimgalore
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - nodefaults
 dependencies:
   - trim-galore =0.6.7
   - rename =1.601

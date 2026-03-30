@@ -1,0 +1,264 @@
+{
+    "WORKFLOWS": "QC,TRIMMING,DEDUP,MAPPING,COUNTING,TRACKS,PEAKS,DE,DEU,DAS,DTU",
+    "BINS": "",
+    "MAXTHREADS": "4",
+    "VERSION": "2.0.0-a",
+    "SETTINGS": {
+        "Test": {
+            "SAMPLES": [
+                "SRR6357070",
+                "SRR6357071",
+                "SRR6357072"
+            ],
+            "SEQUENCING": "paired",
+            "REFERENCE": "GENOME/genome.fa.gz",
+            "DECOY": "",
+            "ANNOTATION": {
+                "GTF": "GENOME/genomic.gtf.gz",
+                "GFF": "GENOME/genomic.gff.gz"
+            },
+            "IP": "",
+            "GROUPS": [
+                "T1",
+                "T2",
+                "T3"
+            ],
+            "TYPES": "",
+            "BATCHES": "",
+            "INDEX": "",
+            "PREFIX": ""
+        }
+    },
+    "QC": {
+        "TOOLS": {
+            "fastqc": "fastqc"
+        },
+        "Test": {
+            "fastqc": {
+                "OPTIONS": {
+                    "QC": "",
+                    "MULTI": ""
+                }
+            }
+        }
+    },
+    "TRIMMING": {
+        "TOOLS": {
+            "trimgalore": "trim_galore",
+            "cutadapt": "cutadapt",
+            "bbduk": "bbduk.sh"
+        },
+        "Test": {
+            "trimgalore": {
+                "OPTIONS": {
+                    "TRIM": "--length 8"
+                }
+            },
+            "cutadapt": {
+                "OPTIONS": {
+                    "TRIM": "--length 8"
+                }
+            },
+            "bbduk": {
+                "OPTIONS": {
+                    "TRIM": "--length 8"
+                }
+            }
+        }
+    },
+    "DEDUP": {
+        "TOOLS": {
+            "picard": "picard"
+        },
+        "Test": {
+            "picard": {
+                "OPTIONS": {
+                    "DEDUP": ""
+                }
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR",
+            "bwa": "bwa mem"
+        },
+        "Test": {
+            "star": {
+                "OPTIONS": {
+                    "INDEX": "",
+                    "MAP": "--outSAMprimaryFlag AllBestScore",
+                    "EXTENSION": ""
+                }
+            },
+            "bwa": {
+                "OPTIONS": {
+                    "INDEX": "",
+                    "MAP": "",
+                    "EXTENSION": ""
+                }
+            }
+        }
+    },
+    "COUNTING": {
+        "TOOLS": {
+            "countreads": "featureCounts"
+        },
+        "FEATURES": {
+            "exon": "gene_id",
+            "gene": "gene_id"
+        },
+        "Test": {
+            "countreads": {
+                "OPTIONS": {
+                    "COUNT": "-f --fraction"
+                }
+            }
+        }
+    },
+    "TRACKS": {
+        "TOOLS": {
+            "ucsc": "ucsc"
+        },
+        "Test": {
+            "ucsc": {
+                "OPTIONS": {
+                    "TRACKS": "-n TestHub -s Hub -l Testtrack -b Test"
+                }
+            }
+        }
+    },
+    "PEAKS": {
+        "TOOLS": {
+            "piranha": "Piranha"
+        },
+        "COMPARABLE": {
+            "T1-VS-T2": [
+                [
+                    "T1"
+                ],
+                [
+                    "T2"
+                ]
+            ]
+        },
+        "EXCLUDE": [],
+        "Test": {
+            "piranha": {
+                "OPTIONS": {
+                    "PREPROCESS": "",
+                    "FINDPEAKS": "-b 10"
+                }
+            }
+        }
+    },
+    "DE": {
+        "TOOLS": {
+            "deseq2": "Analysis/DE/DESEQ2.R",
+            "edger": "Analysis/DE/EDGER.R"
+        },
+        "CUTOFFS": {
+            "pvalue": "0.05",
+            "lfc": "1.5"
+        },
+        "COMPARABLE": {
+            "T1-VS-T2": [
+                [
+                    "T1"
+                ],
+                [
+                    "T2"
+                ]
+            ],
+            "T2-VS-T3": [
+                [
+                    "T2"
+                ],
+                [
+                    "T3"
+                ]
+            ],
+            "T1-VS-T3": [
+                [
+                    "T1"
+                ],
+                [
+                    "T3"
+                ]
+            ]
+        },
+        "EXCLUDE": [],
+        "Test": {
+            "deseq2": {
+                "OPTIONS": {
+                    "COUNT": "-t gene -g gene_id",
+                    "DE": ""
+                }
+            },
+            "edger": {
+                "OPTIONS": {
+                    "COUNT": "-t gene -g gene_id",
+                    "DE": ""
+                }
+            }
+        }
+    },
+    "DEU": {
+        "TOOLS": {
+            "edger": "Analysis/DEU/EDGER.R"
+        },
+        "CUTOFFS": {
+            "pvalue": "0.05",
+            "lfc": "1.5"
+        },
+        "COMPARABLE": {},
+        "EXCLUDE": [],
+        "Test": {
+            "edger": {
+                "OPTIONS": {
+                    "COUNT": "-t exon -g gene_id -f",
+                    "DEU": ""
+                }
+            }
+        }
+    },
+    "DAS": {
+        "TOOLS": {
+            "edger": "Analysis/DAS/EDGER.R"
+        },
+        "CUTOFFS": {
+            "pvalue": "0.05",
+            "lfc": "1.5"
+        },
+        "COMPARABLE": {},
+        "EXCLUDE": [],
+        "Test": {
+            "edger": {
+                "OPTIONS": {
+                    "COUNT": "-t exon -g gene_id -f",
+                    "DAS": ""
+                }
+            }
+        }
+    },
+    "DTU": {
+        "TOOLS": {
+            "drimseq": "Analysis/DTU/DRIMSEQ.R"
+        },
+        "CUTOFFS": {
+            "pvalue": "0.05",
+            "lfc": "1.5"
+        },
+        "COMPARABLE": {},
+        "EXCLUDE": [],
+        "Test": {
+            "drimseq": {
+                "OPTIONS": {
+                    "INDEX": "-l A --gencode -d GENOMES/transcripts.fa.gz",
+                    "QUANT": "--gcBias",
+                    "DTU": ""
+                }
+            }
+        }
+    }
+}

@@ -2,8 +2,7 @@ name: piranha
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - bamtools =2.5.1
   - piranha =1.2.1

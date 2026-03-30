@@ -8,6 +8,7 @@ MODELPARAMS = get_always('dorado_params_MODEL') ?: ''
 
 process dorado{
     conda "$CALLERENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$CALLERENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -29,7 +30,7 @@ process dorado{
     fn = file(f5).getSimpleName()
     oc = fn+".fastq.gz"
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     $CALLERBIN download --model $MODELPARAMS &> $ol && $CALLERBIN basecaller $CALLERPARAMS $MODELPARAMS . 2>> $ol 1> tmp.bam && samtools view -h tmp.bam|samtools fastq -n - | pigz 1> $oc 2>> $ol && rm -rf tmp.bam

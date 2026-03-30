@@ -2,8 +2,7 @@ name: dorado
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
-  - samtools =1.16.1
+  - samtools =1.21
   - pigz =2.6

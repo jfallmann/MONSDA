@@ -27,14 +27,15 @@ rule featurecount_unique:
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+            sortmem = get_sortmem
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
     
 
 rule prepare_count_table:
@@ -43,6 +44,7 @@ rule prepare_count_table:
              anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
     conda:   ""+DASENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DAS'),
              bins = BINS
@@ -61,6 +63,7 @@ rule run_edger:
             resE    = rules.themall.input.resE
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  ""+DASENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DASBIN]),
             outdir = 'DAS/'+combo,
@@ -77,6 +80,7 @@ rule filter_significant_edger:
             sig_u= rules.themall.input.sig_u,
     log:    "LOGS/DAS/filter_edgerDAS.log"
     conda:  ""+DASENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
@@ -97,6 +101,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
     conda:  ""+DASENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

@@ -20,6 +20,7 @@ COUNTENV = 'countreads_de'
 
 process featurecount_edger{
     conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -46,7 +47,7 @@ process featurecount_edger{
     oc = fn+".counts.gz"
     os = fn+".counts.summary"
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     if (PAIRED == 'paired'){
         pair = "-p"
     }
@@ -67,6 +68,7 @@ process featurecount_edger{
 
 process prepare_count_table{
     conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -97,6 +99,7 @@ process prepare_count_table{
 
 process run_edger{
     conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -132,6 +135,7 @@ process run_edger{
 
 process filter_significant{
     conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -157,6 +161,7 @@ process filter_significant{
 
 process create_summary_snippet{
     conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -184,6 +189,7 @@ process create_summary_snippet{
 
 process collect_edger{
     conda "$DEENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$DEENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

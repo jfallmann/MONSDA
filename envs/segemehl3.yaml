@@ -2,9 +2,8 @@ name: segemehl3
 channels:
   - conda-forge
   - bioconda
-  - r
 dependencies:
   - grep =2.14
-  - samtools =1.16.1
+  - samtools =1.21
   - segemehl =0.3.4
   - pigz =2.6

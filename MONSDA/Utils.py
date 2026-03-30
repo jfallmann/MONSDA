@@ -62,9 +62,8 @@
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
 import collections
-import datetime
+import filecmp
 import functools
-import glob
 import gzip
 import hashlib
 import heapq
@@ -74,8 +73,6 @@ import json
 import logging
 import os
 import re
-import shutil
-import subprocess
 import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
@@ -85,17 +82,10 @@ from operator import itemgetter
 import numpy as np
 import six
 from Bio import SeqIO
-from natsort import natsorted
-from snakemake.common.configfile import load_configfile
 
-try:
-    scriptname = (
-        os.path.basename(inspect.stack()[-1].filename)
-        .replace("Run", "")
-        .replace(".py", "")
-    )
+
+def setup_logger(scriptname):
     log = logging.getLogger(scriptname)
-
     lvl = log.level if log.level else "INFO"
     for handler in log.handlers[:]:
         handler.close()
@@ -117,7 +107,16 @@ try:
     )
     log.addHandler(handler)
     log.setLevel(lvl)
+    return log
 
+
+try:
+    scriptname = (
+        os.path.basename(inspect.stack()[-1].filename)
+        .replace("Run", "")
+        .replace(".py", "")
+    )
+    log = setup_logger(scriptname)
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -1236,6 +1235,42 @@ def add_to_innermost_key_by_list(addto:dict, toadd:str, keylist:list) -> dict:
 
     addto.update(tconf)
     return addto
+
+
+@check_run
+def write_if_different(filepath, content):
+    logid = scriptname + ".Utils_write_if_different: "
+    temp_filepath = filepath + ".temp"
+    with open(temp_filepath, "w") as temp_file:
+        temp_file.write(content)
+    if os.path.exists(filepath):
+        cmp = filecmp.cmp(temp_filepath, filepath, shallow=False)
+        if not cmp:
+            log.debug(f"{logid} Filecompare {cmp}, writing to {filepath}")
+            os.rename(filepath, filepath + ".bak")
+            os.rename(temp_filepath, filepath)
+        else:
+            os.remove(temp_filepath)
+    else:
+        os.rename(temp_filepath, filepath)
+
+
+@check_run
+def dump_if_different(filepath, content):
+    logid = scriptname + ".Utils_dump_if_different: "
+    temp_filepath = filepath + ".temp"
+    with open(temp_filepath, "w") as temp_file:
+        json.dump(content, temp_file)
+    if os.path.exists(filepath):
+        cmp = filecmp.cmp(temp_filepath, filepath, shallow=False)
+        if not cmp:
+            log.debug(f"{logid} Filecompare {cmp}, writing to {filepath}")
+            os.rename(filepath, filepath + ".bak")
+            os.rename(temp_filepath, filepath)
+        else:
+            os.remove(temp_filepath)
+    else:
+        os.rename(temp_filepath, filepath)
 
 
 #

@@ -2,6 +2,7 @@
 
 process sortsam{
     conda "samtools.yaml"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -22,7 +23,7 @@ process sortsam{
     fn = file(map[0]).getSimpleName()
     sorted = fn+'_sorted.sam.gz'
     //No Maxthread in nextflow 
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     """
     set +o pipefail; mkdir -p TMP; samtools view -H $map|grep -P '^@HD' |pigz -p ${task.cpus} -f > tmphead; samtools view -H $map|grep -P '^@SQ'|sort -t\$'\\t' -k1,1 -k2,2V |pigz -p ${task.cpus} -f >> tmphead ; samtools view -H $map|grep -P '^@RG'|pigz -p ${task.cpus} -f >> tmphead ; samtools view -H $map|grep -P '^@PG'|pigz -p ${task.cpus} -f >> tmphead ; export LC_ALL=C;zcat $map | grep -v \"^@\"|sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k3,3V -k4,4n - |pigz -p ${task.cpus} -f > tmpfile; cat tmphead tmpfile > $sorted && rm -f tmphead tmpfile ${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}/$map
     """
@@ -30,6 +31,7 @@ process sortsam{
 
 process sam2bam{
     conda "samtools.yaml"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -60,6 +62,7 @@ process sam2bam{
 
 process uniqsam{
     conda "samtools.yaml"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -93,6 +96,7 @@ process uniqsam{
 
 process sam2bamuniq{
     conda "samtools.yaml"
+    container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

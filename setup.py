@@ -91,7 +91,7 @@ setup(
     # install_requires=requires,
     install_requires=[
         "biopython>=1.83",
-        "snakemake>=8.16.0",
+        "snakemake>=8.26.0",
         "black>=21.5b2",
         "flake8>=3.8.3",
         "isort>=5.13.2",
@@ -99,7 +99,6 @@ setup(
     ],
     python_requires=">=3.12.0",
     setup_requires=["pytest-runner"],
-    tests_require=["pytest"],
     zip_safe=False,
     license="LICENSE",
     url="https://github.com/jfallmann/MONSDA",

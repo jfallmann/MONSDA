@@ -71,6 +71,39 @@ comparison_objs <- list()
 WD <- getwd()
 setwd(outdir)
 
+# Calculate CPM and TPM
+cpm_matrix <- calc_cpm(countData_all)
+tpm_matrix <- calc_tpm(countData_all, gtf_gene)
+
+# Write out CPM and TPM tables
+write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+
+# Normalize by spike in if available
+if (spike != "") {
+    print("Spike-in used, data will be normalized to spike in separately")
+    spiken <- strsplit(spike, "=")[[1]][2]
+    setwd(WD)
+    ctrlgenes <- readLines(spiken)
+    setwd(outdir)
+    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
+    counts_norm <- as.data.frame(normCounts(counts_norm))
+    countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
+    counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
+     write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    # Calculate CPM and TPM
+    cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
+    tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
+
+    # Write out CPM and TPM tables
+    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+
+}
 #### Now plot and print over-all comparisons
 
 ## Create design-table considering different types (paired, unpaired) and batches
@@ -81,7 +114,8 @@ print(design)
 dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
 
 # filter low counts
-keep <- rowSums(counts(dds)) >= 10
+smallestGroupSize <- length(unique(sampleData_all$condition))
+keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
 dds <- dds[keep, ]
 
 # run for each pair of conditions
@@ -90,14 +124,13 @@ dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM, betaPrior = FALSE)
 rld <- rlogTransformation(dds, blind = FALSE)
 vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=300)
-print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
+print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.01, "npc")), box.padding = 1, max.overlaps = 100, force = 5) + theme_bw()) # requires ggrepel)
 dev.off()
 
 # We also write the normalized counts to file
 write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-
 
 # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
 
@@ -186,7 +219,7 @@ for (contrast in comparison[[1]]) {
         if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
             design <- ~ batch + condition
         } else {
-            design <- ~condition
+            design <- ~ condition
         }
     }
     print(design)
@@ -194,21 +227,22 @@ for (contrast in comparison[[1]]) {
     # Normalize by spike in if available
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spike <- strsplit(spike, "=")[[1]][2]
+        spiken <- strsplit(spike, "=")[[1]][2]
         setwd(WD)
-        ctrlgenes <- readLines(spike)
+        ctrlgenes <- readLines(spiken)
         setwd(outdir)
 
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        design_norm <- as.formula(paste(deparse(design), colnames(pData(counts_norm))[1], sep = " + "))
+        design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))  # Last argument is variable of interest
+        #design_norm <- as.formula(paste(deparse(design), " + W_1"), collapse = "")
+        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
 
-        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design)
-
+        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
         # filter low counts
-        keep_norm <- rowSums(counts(dds_norm)) >= 10
+        smallestGroupSize <- length(unique(sampleData_norm$condition))
+        keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
         dds_norm <- dds_norm[keep_norm, ]
 
         # drop unused samples
@@ -221,8 +255,8 @@ for (contrast in comparison[[1]]) {
         rld_norm <- rlogTransformation(dds_norm, blind = FALSE)
         vsd_norm <- varianceStabilizingTransformation(dds_norm, blind = FALSE)
 
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=300)
-        print(DESeq2::plotPCA(rld_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA_norm.png", sep = "_"), width=1900, height=1200, res=75)
+        print(DESeq2::plotPCA(vsd_norm, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
         # DESeq2::plotPCA(rld_norm, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
         dev.off()
 
@@ -235,7 +269,8 @@ for (contrast in comparison[[1]]) {
     dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
 
     # filter low counts
-    keep <- rowSums(counts(dds)) >= 10
+    smallestGroupSize <- length(unique(sampleData$condition))
+    keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
     dds <- dds[keep, ]
 
     # drop unused samples
@@ -253,8 +288,8 @@ for (contrast in comparison[[1]]) {
     rld <- rlogTransformation(dds, blind = FALSE)
     vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
 
-    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=300)
-    print(DESeq2::plotPCA(rld, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5)) # requires ggrepel)
+    png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "PCA.png", sep = "_"), width=1900, height=1200, res=75)
+    print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(label = name), arrow = arrow(length = unit(0.02, "npc")), box.padding = .5) + theme_bw()) # requires ggrepel)
     # DESeq2::plotPCA(rld, intgroup=c('condition')) + geom_text(aes(label = name), position = position_nudge(y = 2))
     dev.off()
 
@@ -327,7 +362,7 @@ for (contrast in comparison[[1]]) {
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
         # plotMA
-        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width=1900, height=1200, res=300)
+        png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA.png", sep = "_"), width=1900, height=1200, res=75)
         DESeq2::plotMA(res_shrink)
         dev.off()
 
@@ -399,7 +434,7 @@ for (contrast in comparison[[1]]) {
 
             # plotMA
             png(paste("Figures/DE", "DESEQ2", combi, contrast_name, "figure", "MA_norm.png", sep = "_"), width=1900, height=1200, res=300)
-            DESeq2::plotMA(res)
+            DESeq2::plotMA(res_shrink)
             dev.off()
         }
         # cleanup

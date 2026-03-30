@@ -1,16 +1,12 @@
 #! /usr/bin/env python3
 
-import sys
 import argparse
-import os
 import inspect
-import gzip
-import glob
-import re
 import logging
+import os
+import sys
 import traceback as tb
 from collections import defaultdict
-
 
 cmd_subfolder = os.path.join(
     os.path.dirname(
@@ -177,6 +173,7 @@ def create_file_tree(files):
             continue
         filename = setting.split("_")
         if len(filename) < 7:
+            log.debug(logid + "FILE: " + str(file))
             WF, TOOL, COMBI, COMP, RES, NAME = setting.split("_")
             EXT = os.path.basename(file).split(".", 1)[1]
             tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
@@ -216,7 +213,7 @@ def integrate_figures(files, islist=False):
         counter += 1
     listlines.append(f"knitr::include_graphics(c({','.join(img)}), rel_path=FALSE)")
     listlines.append("```\n\n")
-    listlines.append(f"\n***\n")
+    listlines.append("\n***\n")
     return "\n".join(listlines)
 
 
@@ -261,12 +258,12 @@ def create_Rmd(files, output, env):
                 lines.append(f"#### {comparison}  {{.tabset}} \n\n")
 
                 if "figure" in tree[workflow][tool][combi][comparison].keys():
-                    lines.append(f"##### FIGURES  {{.tabset}} \n\n")
-                    lines.append(f"###### OVERVIEW \n\n")
+                    lines.append("##### FIGURES  {.tabset} \n\n")
+                    lines.append("###### OVERVIEW \n\n")
                     for name in tree[workflow][tool][combi][comparison][
                         "figure"
                     ].keys():
-                        lines.append(f"\n<br />\n")
+                        lines.append("\n<br />\n")
                         lines.append(f"\n**{name}** \n")
                         lines.append(
                             f"\n```\n{tree[workflow][tool][combi][comparison]['figure'][name]}\n```\n"
@@ -284,7 +281,7 @@ def create_Rmd(files, output, env):
                 if "list" in tree[workflow][tool][combi][comparison].keys():
                     for name in tree[workflow][tool][combi][comparison]["list"].keys():
                         lines.append(f"\n##### {name} \n")
-                        lines.append(f"\n<br />\n")
+                        lines.append("\n<br />\n")
                         lines.append(
                             integrate_list(
                                 tree[workflow][tool][combi][comparison]["list"][name]
@@ -292,9 +289,9 @@ def create_Rmd(files, output, env):
                         )
 
                 if "table" in tree[workflow][tool][combi][comparison].keys():
-                    lines.append(f"##### TABLES  \n")
+                    lines.append("##### TABLES  \n")
                     for name in tree[workflow][tool][combi][comparison]["table"].keys():
-                        lines.append(f"\n<br />\n")
+                        lines.append("\n<br />\n")
                         lines.append(f"\n**{name}**  \n")
                         # lines.append(integrate_table(tree[workflow][tool][combi][comparison]["table"][name]["tsv.gz"]))
                         lines.append(
@@ -302,16 +299,16 @@ def create_Rmd(files, output, env):
                         )
 
                 if "SESSION" in tree[workflow][tool][combi][comparison].keys():
-                    lines.append(f"##### R-SESSION  {{.tabset}} \n\n")
-                    lines.append(f"\n<br />\n")
+                    lines.append("##### R-SESSION  {.tabset} \n\n")
+                    lines.append("\n<br />\n")
                     lines.append(
                         f"To access the {tool} R-session, follow these steps\n\n"
                     )
                     lines.append(
-                        f"1) Create the corresponding conda environment and activate it:  \n"
+                        "1) Create the corresponding conda environment and activate it:  \n"
                     )
                     lines.append(f"```\nconda env create -f {env}.yaml\n```  \n")
-                    lines.append(f"2) Start R and load the workspace:  \n")
+                    lines.append("2) Start R and load the workspace:  \n")
                     lines.append(
                         f"```\nload('{tree[workflow][tool][combi][comparison]['SESSION']}')\n```\n"
                     )
@@ -341,7 +338,7 @@ if __name__ == "__main__":
 
         create_Rmd(args.files, args.output, args.env)
 
-    except Exception as err:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(
             exc_type,

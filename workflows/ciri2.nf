@@ -10,6 +10,7 @@ CIRCPARAMS = get_always('ciri2_params_CIRC') ?: ''
 
 process ciri2{
     conda "$CIRCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$CIRCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -34,7 +35,7 @@ process ciri2{
     fn = file(reads).getSimpleName()
     oc = fn+"_circs"
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     set +o pipefail; export LC_ALL=C; if [[ -n \"\$(zcat ${reads} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then mkdir -p TMP && zcat ${reads}|samtools sort -n -@ ${task.cpus} -u -O sam -T TMP > ${fn}_tmp.sam && zcat ${anno} > ${fn}_tmp.gtf && zcat ${ref} > ${fn}_tmp.fa && perl $CIRCBIN -I ${fn}_tmp.sam -O ${fn}_circs -F ${fn}_tmp.fa -T ${task.cpus} -A ${fn}_tmp.gtf -G log $CIRCPARAMS &>> log; else gzip < /dev/null > ${fn}_circs; echo \"File ${reads} empty\" >> log; fi; touch CIRIerror.log && cat CIRIerror.log >> {log} && echo '' > CIRIerror.log && touch ${fn}_circs

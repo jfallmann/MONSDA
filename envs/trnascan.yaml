@@ -2,8 +2,7 @@ name: trnascan
 channels:
   - bioconda
   - conda-forge
-  - r
-  - defaults
+  - nodefaults
 dependencies:
   - infernal =1.1.2
   - trnascan-se =2.0

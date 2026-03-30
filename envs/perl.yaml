@@ -2,8 +2,7 @@ name: perl
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - grep >=2.14
   - perl >=5.26.2

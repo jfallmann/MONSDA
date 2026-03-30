@@ -61,35 +61,22 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
-import collections
 import datetime
-import functools
 import glob
-import gzip
-import hashlib
-import heapq
 import inspect
 import itertools
-import json
-import logging
 import os
 import re
 import shutil
-import subprocess
 import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
-from io import StringIO
-from operator import itemgetter
 
-import numpy as np
-import six
-from Bio import SeqIO
 from natsort import natsorted
-from snakemake.common.configfile import load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
+from MONSDA.Utils import setup_logger
 
 # cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 # for x in cmd_subfolder:
@@ -103,30 +90,7 @@ try:
         .replace("Run", "")
         .replace(".py", "")
     )
-    log = logging.getLogger(scriptname)
-
-    lvl = log.level if log.level else "INFO"
-    for handler in log.handlers[:]:
-        handler.close()
-        log.removeHandler(handler)
-    handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
-    handler.setFormatter(
-        logging.Formatter(
-            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
-            datefmt="%m-%d %H:%M",
-        )
-    )
-    log.addHandler(handler)
-    handler = logging.StreamHandler()
-    handler.setFormatter(
-        logging.Formatter(
-            fmt="%(asctime)s %(levelname)-8s %(name)-12s %(message)s",
-            datefmt="%m-%d %H:%M",
-        )
-    )
-    log.addHandler(handler)
-    log.setLevel(lvl)
-
+    log = setup_logger(scriptname)
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()
     tbe = tb.TracebackException(
@@ -1040,7 +1004,7 @@ def sample_from_path(path: str) -> str:
 
 
 @check_run
-def runstate_from_sample(sample: str, config: dict) -> list:
+def runstate_from_sample(sample: list, config: dict) -> list:
     """all runstates for sample in config
 
     Parameters
@@ -1543,7 +1507,7 @@ def comparable_as_string(config: dict, subwork: str) -> str:
         flattened = sorted(
             set(val for sublist in groups_by_condition for val in sublist)
         )
-        combined = list(set(itertools.combinations(flattened, 2)))
+        combined = list(set(itertools.permutations(flattened, 2)))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}:{key}-vs-{value}")
@@ -1586,6 +1550,27 @@ def get_combo_name(combinations: list) -> mu.NestedDefaultDict:
 
     log.debug(logid + "ComboName: " + str(combname))
     return combname
+
+
+@check_run
+def fixRunParameters(
+    config: dict,
+    env: str,
+    sample: str,
+    runstate: str,
+    workflow: str,
+    step: str,
+    paramToFix: str,
+    fixedParam: str,
+) -> str:
+    para = tool_params(sample, runstate, config, workflow, env)["OPTIONS"].get(step, "")
+    if paramToFix in para and fixedParam:
+        return re.sub(paramToFix + " [0-9a-zA-Z\.\_\-\\\/]+", fixedParam, para)
+    else:
+        log.warning(
+            f"No parameter to fix {paramToFix} found or fix {fixedParam} defined for {para}!"
+        )
+        return para
 
 
 #

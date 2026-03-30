@@ -2,8 +2,7 @@ name: ucsc
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - grep =2.14
   - ucsc-bedgraphtobigwig =377

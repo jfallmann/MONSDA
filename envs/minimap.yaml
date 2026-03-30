@@ -2,9 +2,8 @@ name: minimap
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - minimap2 =2.24
   - pigz =2.6
-  - samtools =1.16.1
+  - samtools =1.21

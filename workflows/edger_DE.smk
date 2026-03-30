@@ -4,6 +4,7 @@ COUNTBIN, COUNTENV = ['featureCounts', 'countreads_de']#env_bin_from_config(conf
 comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
+usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -13,11 +14,11 @@ rule themall:
             MDplot  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_MD.png", combo=combo, comparison=compstr, scombo=scombo),
             vulcan  = expand("DE/{combo}/Figures/DE_EDGER_{scombo}_{comparison}_figure_Volcano.pdf", combo=combo, comparison=compstr, scombo=scombo),
             allN    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_DataSet_table_AllConditionsNormalized.tsv.gz", combo=combo, scombo=scombo),
-            res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]),
-            sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            res     = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sort    = expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]) if not usespike else expand("DE/{combo}/Tables/DE_EDGER_{scombo}_{comparison}_table_results{sort}_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo, sort=["PValueSorted"]),
+            sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
+            sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
 rule featurecount_unique:
@@ -28,14 +29,15 @@ rule featurecount_unique:
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
     log:    "LOGS/DE/{combo}/{file}_featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
-            sortmem = lambda wildcards, threads:  int(30/MAXTHREAD*threads)
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}% -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+            sortmem = get_sortmem
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
@@ -43,6 +45,7 @@ rule prepare_count_table:
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
     log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
     conda:   ""+DEENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
     params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
              bins = BINS
@@ -62,6 +65,7 @@ rule run_edger:
             sort    = rules.themall.input.sort
     log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
     conda:  ""+DEENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DEBIN]),
             outdir = 'DE/'+combo,
@@ -78,6 +82,7 @@ rule filter_significant:
             sig_u = rules.themall.input.sig_u
     log:    "LOGS/DE/filter_edgerDE.log"
     conda:  ""+DEENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
@@ -100,6 +105,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
     conda:  ""+DEENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

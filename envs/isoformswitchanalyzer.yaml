@@ -2,8 +2,7 @@ name: isoformswitchanalyzer
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
   - bioconductor-annotate =1.66.0
   - bioconductor-annotationdbi =1.50.0
@@ -15,10 +14,10 @@ dependencies:
   - bioconductor-biostrings =2.56.0
   - bioconductor-bsgenome =1.56.0
   - bioconductor-delayedarray =0.14.0
-  - bioconductor-deseq2 =1.28.0
+  - bioconductor-deseq2 =1.39.0
   - bioconductor-dexseq =1.34.0
   - bioconductor-drimseq =1.16.0
-  - bioconductor-edger =3.30.0
+  - bioconductor-edger =4.4.0
   - bioconductor-genefilter =1.70.0
   - bioconductor-geneplotter =1.66.0
   - bioconductor-genomeinfodb =1.24.0

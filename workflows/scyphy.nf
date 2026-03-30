@@ -13,6 +13,7 @@ include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
 process RemoveSoftclip{
     conda "$PEAKSENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$PEAKSENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -37,7 +38,7 @@ process RemoveSoftclip{
     fo = fn+'_nosoftclip.bam'
     fi = fn+'_nosoftclip.bam.bai'
     ol = "log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     mkdir -p TMP/$fn; p=\$( dirname \$(realpath \"$bam\") ); ln -s \${p}/${fn}.bam.bai .; python $BINS/Analysis/RemoveSoftClip.py -f $REF -b $bam $SOFTPARAMS -o \'-\' | samtools sort -T TMP/$fn -o $fo --threads ${task.cpus} \'-\' 2>> $ol && samtools index $fo 2>> $ol && mv $ol ${fn}.log; rm -rf TMP/$fn
@@ -46,6 +47,7 @@ process RemoveSoftclip{
 
 process BamToBed{
     conda "bedtools.yaml"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -67,7 +69,7 @@ process BamToBed{
     fn = file(bam).getSimpleName()
     fo = fn+'.bed.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     if (STRANDED == 'rf' || STRANDED == 'ISR'){
         """
@@ -85,6 +87,7 @@ process BamToBed{
 
 process ExtendBed{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -112,7 +115,7 @@ process ExtendBed{
     of = fn+'.bed.gz'    
     opt = '-u 0'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """        
     $BINS/Universal/ExtendBed.pl $opt -b $bed -o $of -g $sizes 2> $ol
@@ -121,6 +124,7 @@ process ExtendBed{
 
 process RevExtendBed{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -148,7 +152,7 @@ process RevExtendBed{
     of = fn+'.bed.gz'    
     opt = '-d 0'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """        
     $BINS/Universal/ExtendBed.pl $opt -b $bed -o $of -g $sizes 2> $ol
@@ -158,6 +162,7 @@ process RevExtendBed{
 
 process BedToBedg{
     conda "bedtools.yaml"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -199,7 +204,7 @@ process BedToBedg{
         fw = fn+'.fw.bedg.gz'
     }
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """
     export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -208,6 +213,7 @@ process BedToBedg{
 
 process BedToBedgPeak{
     conda "bedtools.yaml"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -248,7 +254,7 @@ process BedToBedgPeak{
         fw = fn+'.fw.bedg.gz'
     }
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """
     export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i $bed -bg -split -strand + -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"+\")' > tosrt && cat tosrt| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol && bedtools genomecov -i $bed -bg -split -strand - -g $sizes | perl -wlane 'print join(\"\\t\",@F[0..2],\".\",\$F[3],\"-\")' > tosrt && cat tosrt|sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -257,6 +263,7 @@ process BedToBedgPeak{
 
 process PreprocessPeaks{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -278,7 +285,7 @@ process PreprocessPeaks{
     script: 
     of = file(bedgf).getSimpleName().replaceAll(/\Q_mapped\E/,"_prepeak").replaceAll(/\Q_rev\E/,"").replaceAll(/\Q_ext\E/,"")+".bed.gz"
     ol = file(bedgf).getSimpleName()+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """        
     perl $BINS/Analysis/PreprocessPeaks.pl -p <(zcat $bedgf $bedgr| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6) $PREPARAMS | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k3,3n -k2,2n -k6,6 |gzip > $of 2> $ol
@@ -287,6 +294,7 @@ process PreprocessPeaks{
 
 process FindPeaks{
     conda "$PEAKSENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$PEAKSENV"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -307,7 +315,7 @@ process FindPeaks{
     script: 
     of = file(bed).getName().replaceAll(/\Q_prepeak\E/,"_peak").replaceAll(/\Q_nosoftclip\E/,"").replaceAll(/\Q_rev.bed.gz\E/,".bed.gz").replaceAll(/\Q_ext.bed.gz\E/,".bed.gz")
     ol = file(of).getSimpleName()+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """  
     export LC_ALL=C; if [[ -n \"\$(zcat $bed | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then $PEAKSBIN $PEAKSPARAMS <(zcat $bed|sort -t\$\'\\t\' -k1,1 -k3,3n -k2,2n -k6,6) 2> $ol|tail -n+2| sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$\'\\t\' -k1,1 -k2,2n |grep -v \'nan\'| gzip > $of 2>> $ol; else gzip < /dev/null > $of; echo \"File $bed empty\" >> $ol; fi
@@ -316,6 +324,7 @@ process FindPeaks{
 
 process AddSequenceToPeak{
     conda "bedtools.yaml"
+    container "oras://jfallmann/monsda:"+"bedtools"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -338,7 +347,7 @@ process AddSequenceToPeak{
     fa = bed[1]
     of = file(pk).getName().replaceAll(/\Q_peak\E/,"_peak_seq")
     ol = file(pk).getSimpleName()+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """  
     export LC_ALL=C; mkdir -p TMP; if [[ -n \"\$(zcat $pk | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then  zcat $pk | perl -wlane '\$F[0] = \$F[0] =~ /^chr/ ? \$F[0] : \"chr\".\$F[0]; print join(\"\\t\",@F[0..5])' > pktmp && bedtools getfasta -fi $fa -bed pktmp -name -tab -s -fullHeader -fo pkseqtmp && cut -d\$'\\t' -f2 pkseqtmp|sed 's/t/u/ig'|paste -d\$'\\t' <(zcat pktmp) - |sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip  > $of 2> $ol; else gzip < /dev/null > $of; echo \"File $pk empty\" >> $ol; fi
@@ -347,6 +356,7 @@ process AddSequenceToPeak{
 
 process PeakToBedg{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -373,7 +383,7 @@ process PeakToBedg{
     fw = fn+'.fw.bedg.gz'
     fr = fn+'.re.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """
     mkdir -p TMP/fw TMP/re ; perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=${task.cpus} -S $sortmem -T TMP/fw -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP/re -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -383,6 +393,7 @@ process PeakToBedg{
 
 process NormalizeBedg{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -407,7 +418,7 @@ process NormalizeBedg{
     fw = fn+'.fw.norm.bedg.gz'
     fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
@@ -416,6 +427,7 @@ process NormalizeBedg{
 
 process NormalizePeakBedg{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -440,7 +452,7 @@ process NormalizePeakBedg{
     fw = fn+'.fw.norm.bedg.gz'
     fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
@@ -449,6 +461,7 @@ process NormalizePeakBedg{
 
 process PeakToTRACKS{
     conda "ucsc.yaml"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -483,6 +496,7 @@ process PeakToTRACKS{
 
 process BedgToTRACKS{
     conda "ucsc.yaml"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -518,6 +532,7 @@ process BedgToTRACKS{
 
 process GenerateTrack{
     conda "base.yaml"
+    container "oras://jfallmann/monsda:"+"base"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1

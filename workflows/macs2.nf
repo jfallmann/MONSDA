@@ -7,12 +7,14 @@ SETS = get_always('SETS')
 IP = get_always('IP')
 PREPARAMS = get_always('macs_params_PREPROCESS') ?: ''
 PEAKSPARAMS = get_always('macs_params_FINDPEAKS') ?: ''
-PEAKSAMPLES = get_always('PEAKSAMPLES')
+PEAKSAMPLES = get_always('PEAKSAMPLES').split(',') ?: ''
+BACKGROUND = get_always('PEAKSAMPLEBACKGROUND') ?: false
 
 include { UnzipGenome; UnzipGenome_no_us } from "manipulate_genome.nf"
 
 process FindPeaks{
     conda "$PEAKSENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$PEAKSENV"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -27,31 +29,37 @@ process FindPeaks{
     path bam
 
     output:
-    path "*_peak.bed.gz", emit: peak
+    path "*_peak*.bed.gz", emit: peak
     path "*.log", emit: log
 
-    script: 
-    bf = bam[0]
-    bc = bam[1]
+    script:     
+    if (BACKGROUND){
+        bf = bam[0]
+        bc = '-c '+bam[1]
+    }else{
+        bf = bam
+        bc = ''
+    }    
     fn = file(bf).getSimpleName()
-    of = fn+"_peak.bed"
-    oz = fn+"_peak.bed.gz"
-    ol = fn+".log"
-    sortmem = '30%'
-    if (PAIRED == 'paired' && bam.indexOf("unique") == 0){
+    of = fn.replace("_mapped", "_peak")+".bed"
+    oz = fn.replace("_mapped", "_peak")+".bed.gz"
+    ol = fn.replace("_mapped", "_peak")+".log"
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
+    if (PAIRED == 'paired' && fn.indexOf("unique") == 0){
         mapmode = 'BAMPE'
     }else{
         mapmode = 'BAM'
     }
     
     """      
-    set +o pipefail; export LC_ALL=C; if [[ -n \"\$(samtools view $bf | head -c 1 | tr '\\0\\n' __)\" ]] ;then $PEAKBIN callpeak -t $bf -c $bc --outdir . -n $of -f $mapmode $PEAKSPARAMS 2> $ol && gzip *_peaks.narrowPeak 2>> $ol && mv -f *_peaks.narrowPeak.gz $oz 2>> $ol; else gzip < /dev/null > $oz; echo \"File $bam empty\" >> $ol; fi
+    set +o pipefail; export LC_ALL=C; if [[ -n \"\$(samtools view $bf | head -c 1 | tr '\\0\\n' __)\" ]] ;then $PEAKSBIN callpeak -t $bf $bc --outdir . -n $of -f $mapmode $PEAKSPARAMS 2> $ol && gzip *_peaks.narrowPeak 2>> $ol && mv -f *_peaks.narrowPeak.gz $oz 2>> $ol; else gzip < /dev/null > $oz; echo \"File $bam empty\" >> $ol; fi
     """    
 }
 
 
 process PeakToBedg{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -75,10 +83,10 @@ process PeakToBedg{
     sizes = bedf[1]
 
     fn = file(bed).getSimpleName()
-    fw = fn+'_peak.fw.bedg.gz'
-    fr = fn+'_peak.re.bedg.gz'
+    fw = fn+'.fw.bedg.gz'
+    fr = fn+'.re.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
 
     """
     perl $BINS/Universal/Bed2Bedgraph.pl -f <(zcat $bed) -c $sizes -p peak -x tmp.fw.gz -y tmp.re.gz -a track 2>> $ol && zcat tmp.fw.gz | sort --parallel=${task.cpus} -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2>> $ol && zcat tmp.re.gz |sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fr 2>> $ol
@@ -88,6 +96,7 @@ process PeakToBedg{
 
 process NormalizeBedg{
     conda "perl.yaml"
+    container "oras://jfallmann/monsda:"+"perl"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -112,7 +121,7 @@ process NormalizeBedg{
     fw = fn+'.fw.norm.bedg.gz'
     fr = fn+'.re.norm.bedg.gz'
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     export LC_ALL=C; if [[ -n \"\$(zcat $bedgf | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgf|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgf)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n |gzip > $fw 2> $ol; else gzip < /dev/null > $fw; echo \"File $bedgf empty\" >> $ol; fi && if [[ -n \"\$(zcat $bedgr | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=\$(bc <<< \"scale=6;\$(zcat $bedgr|cut -f4|perl -wne '{\$x+=\$_;}END{if (\$x == 0){\$x=1} print \$x}')/1000000\") perl -wlane '\$sc=\$ENV{scale};print join(\"\\t\",@F[0..\$#F-1]),\"\\t\",\$F[-1]/\$sc' <(zcat $bedgr)| sort -S $sortmem -T TMP -t\$'\\t' -k1,1 -k2,2n|gzip > $fr 2> $ol; else gzip < /dev/null > $fr; echo \"File $bedgr empty\" >> $ol; fi
@@ -121,6 +130,7 @@ process NormalizeBedg{
 
 process PeakToTRACKS{
     conda "ucsc.yaml"
+    container "oras://jfallmann/monsda:"+"ucsc"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -155,6 +165,7 @@ process PeakToTRACKS{
 
 process GenerateTrack{
     conda "base.yaml"
+    container "oras://jfallmann/monsda:"+"base"
     cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
@@ -189,14 +200,18 @@ workflow PEAKS{
     main:
     
     PAIRSAMPLES = PEAKSAMPLES.collect{
-        element -> return "${workflow.workDir}/../"+element+".bam"
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted*.bam"
     }
 
-    peaksamples_ch = Channel.fromPath(PAIRSAMPLES.sort())
+    peaksamples_ch = Channel.fromPath(PAIRSAMPLES)
     genomefile = Channel.fromPath(REF)
 
     UnzipGenome(genomefile)
-    FindPeaks(peaksamples_ch.collate(2))
+    if (BACKGROUND){
+        FindPeaks(peaksamples_ch.collate(2))
+    }else{
+        FindPeaks(peaksamples_ch)
+    }
     PeakToBedg(FindPeaks.out.peak.combine(UnzipGenome.out.chromsize))
     NormalizeBedg(PeakToBedg.out.bedgf.collate(1), PeakToBedg.out.bedgr.collate(1))
     PeakToTRACKS(NormalizeBedg.out.bedgf.collate(1), NormalizeBedg.out.bedgr.collate(1).combine(UnzipGenome.out.chromsize))

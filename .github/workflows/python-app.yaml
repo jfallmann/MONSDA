@@ -1,0 +1,52 @@
+name: Python application
+
+on: [pull_request]
+
+jobs:
+  monsdatest:   
+    name: monsda-test 
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash -el {0}
+    # Docker Hub image that `postgres-job` executes in
+    container: node:latest
+    # service containers to run with `postgres-job`
+    steps:      
+      - uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - uses: conda-incubator/setup-miniconda@master
+        with:
+          miniconda-version: "latest"
+          activate-environment: monsda-test
+          environment-file: environment.yml
+          python-version: 3.12.2
+          channels: conda-forge,bioconda
+          allow-softlinks: true
+          channel-priority: flexible
+          show-channel-urls: true
+          use-only-tar-bz2: false
+          auto-activate-base: false
+      - name: build and install monsda
+        run: |
+          cd ${{ github.workspace }}
+          echo "Build start"          
+          python -m pip install --upgrade pip                
+          python -m pip install build                                        
+          python -m build
+          pip install dist/*.whl
+      - name: preparing test
+        run: |          
+          echo "Build finished, preparing tests"                     
+          export a=$(monsda --version 2>&1 >/dev/null |sed 's/MONSDA version //g')          
+          sed -i "s/\"VERSION\": \"FIXME\"/\"VERSION\": \"$a\"/g" tests/data/config_Test.json   
+      - name: running test
+        run: |   
+          echo "Running tests" 
+          cd ${{ github.workspace }}/tests
+          ln -fs data/* .    
+          mkdir -p CONDALIB
+          monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --save && echo "MONSDA test passed" || echo "MONSDA test failed"
+          #chmod +x cicd_test.sh      
+          #./cicd_test.sh

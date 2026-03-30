@@ -2,20 +2,18 @@ name: countreads_de
 channels:
   - conda-forge
   - bioconda
-  - defaults
-  - r
+  - nodefaults
 dependencies:
-  - bcftools =1.8
-  - gffutils =0.11.1
-  - grep =2.14
-  - htseq =2.0.2
-  - pigz =2.6
-  - pyfaidx =0.5.8
-  - pyparsing =2.4.6
-  - pysam =0.19.1
-  - python =3.9
-  - python-dateutil =2.8.1
+  - bcftools =1.21
+  - gffutils =0.13
+  - grep =3.11
+  - htseq =2.0.5
+  - pigz =2.8
+  - pyfaidx =0.8.1.3
+  - pyparsing =3.2.0
+  - pysam =0.22.1
+  - python =3.12.8
   - readline =8.2
-  - samtools =1.16.1
-  - simplejson =3.17.0
-  - subread =1.6.4
+  - samtools =1.21
+  - simplejson =3.19.3
+  - subread =2.0.8

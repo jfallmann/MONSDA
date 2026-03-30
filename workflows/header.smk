@@ -18,7 +18,7 @@ for x in cmd_subfolder:
         sys.path.insert(0, x)
 
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 
 loglevel="INFO"
@@ -67,6 +67,27 @@ except:
 BINS = config.get("BINS")
 MAXTHREAD = int(config["MAXTHREADS"])
 
+# set maximum available memory for sorting
+def get_sortmem(w, resources):
+    # Otherwise, try mem of form 8G / 8GB, again skipping `<TBD>`
+    if hasattr(resources, "mem"):
+        mem_val = str(resources.mem)
+        if mem_val != "<TBD>":
+            mem_str = re.sub(r"GB?$", "", mem_val, flags=re.IGNORECASE).strip()
+            return max(int(mem_str) -2, 4)  # reserve 2GB for other processes, min 4GB
+
+    # Convert mem_mb if present and not `<TBD>`
+    if hasattr(resources, "mem_mb"):
+        mem_val = str(resources.mem_mb)
+        if mem_val != "<TBD>":
+            mem_mb = int(mem_val)
+            # round up to full GB
+            return max(int((mem_mb + 1023) / 1024) - 2, 4)  # reserve 2GB for other processes, min 4GB
+    
+    # Fallback if everything is `<TBD>` or missing
+    # pick something conservative but nonzero
+    return 4  # 4 GB
+
 if not config.get('FETCH', False) and not config.get("BASECALL", False):
     SAMPLES = [os.path.join(x) for x in sampleslong(config)]  
 elif not config.get("BASECALL", False):
@@ -96,6 +117,8 @@ IP = SETTINGS.get('IP')
 rundedup = True if (config.get('RUNDEDUP')) == 'enabled' else False
 prededup = True if (config.get('PREDEDUP')) == 'enabled' else False
 
+ANNOTATION = False  # by default no annotation is set for every workflow step
+
 if rundedup:
     if prededup:
         log.info(logid+'(PRE)DEDUPLICATION ENABLED')
@@ -119,9 +142,9 @@ if 'MAPPING' in config:
     MAPCONF = sub_dict(config['MAPPING'], SETUP)
     MAPPERENV = MAPPERENV.split('_')[0]
     log.debug(logid+'MAPPINGCONFIG: '+str(SETUP)+'\t'+str(MAPCONF))
-    REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE"))
-    MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION"))
-    MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY"))
+    REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE", config['MAPPING'].get("REFERENCE")))
+    MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION", config['MAPPING'].get("ANNOTATION")))
+    MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY", config['MAPPING'].get("DECOY")))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -172,8 +195,8 @@ if 'MAPPING' in config:
 if 'PEAKS' in config:
     PEAKCONF = sub_dict(config['PEAKS'], SETUP)
     PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
-    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE'))
-    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION'))
+    REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE', config['PEAKS'].get('REFERENCE')))
+    ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION', config['PEAKS'].get('ANNOTATION')))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -193,9 +216,9 @@ for x in ['TRACKS', 'COUNTING']:
         XCONF = sub_dict(config[x], SETUP)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE'))
-        XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION'))
-        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+        REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE', config[x].get('REFERENCE')))
+        XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION', config[x].get('ANNOTATION')))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -232,11 +255,11 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         XBIN, XENV = env_bin_from_config(config, x)
         XENV = XENV.split('_')[0]
         log.debug(logid+'XCONFIG: '+str(SETUP)+'\t'+str(XCONF))
-        REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
-        XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
-        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+        REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE")))
+        XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION")))
+        XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
         if XANNO and XANNO != '':
-            ANNOTATION = XANNO
+            ANNOTATION = XANNO            
         else:
             ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
         if XDECOY and not dict_inst(XDECOY):
@@ -268,8 +291,8 @@ if 'CIRCS' in config:
     CIRCCONF = sub_dict(config['CIRCS'], SETUP)
     XBIN, XENV = env_bin_from_config(config, 'CIRCS')
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
-    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE'))
-    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION'))
+    REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE', config['CIRCS'].get('REFERENCE')))
+    XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION', config['CIRCS'].get('ANNOTATION')))
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -281,5 +304,8 @@ if 'CIRCS' in config:
 
 
 combo = ''
+
+if ANNOTATION:
+    log.info(logid+f'Using COMBO: {combo}, REF: {REFERENCE}, ANNO: {ANNOTATION}, DECOY: {DECOY}, INDEX: {INDEX}, INDEX2: {INDEX2}, PREFIX: {PREFIX}, IP: {IP}, SETUP: {SETUP}, SEQUENCING: {SEQUENCING}, STRANDED: {stranded}, PAIRED: {paired}, RUNDEDUP: {rundedup}, PREDEDUP: {prededup}, SAMPLES: {SAMPLES}, BINS: {BINS}, MAXTHREAD: {MAXTHREAD}')
 
 ####HEADER ENDS HERE####

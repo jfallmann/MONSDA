@@ -155,13 +155,20 @@ def run_snakemake(
         mp.create_skeleton(subdir, skeleton)
 
         argslist = list()
-        if useconda:
+        if useconda and not any(
+            [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+        ):
             argslist.append("--conda-frontend conda --software-deployment-method conda")
         else:
-            log.warning(
-                logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
-            )
+            if not any(
+                [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+            ):
+                log.warning(
+                    logid
+                    + "You are not making use of conda or singularity/apptainer, be aware that this will most likely not work for the workflows provided here! To change append the --use-conda option to your commandline call or enable singularity/apptainer. You can also speed up conda with the --conda-frontend mamba argument and preinstall all conda environments appending the --software-deployment-method conda and the --create-envs-only arguments and share conda environment locations across runs with the --conda-prefix argument."
+                )
+            else:
+                config["BINS"] = "/opt/MONSDA/scripts"
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
@@ -253,7 +260,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs -p {rest}"
                     )
 
                 for job in jobstorun:
@@ -460,16 +467,42 @@ def run_nextflow(
     try:
         logid = scriptname + ".run_nextflow: "
         argslist = list()
-        if useconda:
+        writeout = True
+        config = load_configfile(configfile)
+        if useconda and not any(
+            [
+                x in optionalargs
+                for x in [
+                    "-without-conda",
+                    "apptainer",
+                    "singularity",
+                ]
+            ]
+        ):
             argslist.append("-with-conda")
         else:
-            log.warning(
-                logid
-                + "You are not making use of conda, be aware that this will most likely not work for the workflows provided here! To change append the --software-deployment-method conda option to your commandline call."
-            )
+            if not any(
+                [
+                    x in optionalargs
+                    for x in [
+                        "with-conda",
+                        "apptainer",
+                        "singularity",
+                    ]
+                ]
+            ):
+                log.warning(
+                    logid
+                    + "You are not making use of conda or singularity/apptainer, be aware that this will most likely not work for the workflows provided here! To change append the -with-conda option to your commandline call or enable singularity/apptainer in your nextflow.config, an example config file is shipped with MONSDA/profile_nextflow. You can also speed up conda with mamba (experimental) and store conda environment locations across runs with the conda.cachedir parameter."
+                )
+            else:
+                config["BINS"] = "/opt/MONSDA/scripts"
         if optionalargs and len(optionalargs) > 0:
             log.debug(logid + "OPTIONALARGS: " + str(optionalargs))
             argslist.extend(optionalargs)
+            if "resume" in optionalargs:
+                log.info(logid + "Resuming workflow")
+                writeout = False
 
         if clean:
             log.info(logid + "Cleaning working directory")
@@ -480,12 +513,13 @@ def run_nextflow(
             log.debug(logid + "JOB CODE " + str(job))
             sys.exit()
 
-        config = load_configfile(configfile)
         workdir = os.path.abspath(str.join(os.sep, [workdir, "NextFlowWork"]))
         subdir = "SubFlows"
         mp.create_skeleton(subdir, skeleton)
 
-        if not os.path.exists(os.path.abspath(subdir + os.sep + "bin")):
+        if not os.path.exists(
+            os.path.abspath(subdir + os.sep + "bin")
+        ) and "/opt/MONSDA/scripts" not in config.get("BINS", ""):
             os.symlink(
                 os.path.abspath(config.get("BINS", "")),
                 os.path.abspath(subdir + os.sep + "bin"),
@@ -556,6 +590,7 @@ def run_nextflow(
                     loglevel,
                     "Pre",
                     combinations=combinations,
+                    writeout=writeout,
                 )
 
                 jobstorun = list()
@@ -606,6 +641,7 @@ def run_nextflow(
                     subdir,
                     loglevel,
                     combinations=combinations,
+                    writeout=writeout,
                 )
 
                 jobstorun = list()
@@ -651,6 +687,7 @@ def run_nextflow(
                 subdir,
                 loglevel,
                 combinations=combinations,
+                writeout=writeout,
             )
 
             jobstorun = list()
@@ -704,6 +741,7 @@ def run_nextflow(
                     subdir,
                     loglevel,
                     combinations=combinations,
+                    writeout=writeout,
                 )
                 jobstorun = list()
 

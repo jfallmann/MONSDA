@@ -8,6 +8,7 @@ MODELPARAMS = get_always('guppy_params_MODEL') ?: ''
 
 process guppy{
     conda "$CALLERENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$CALLERENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -33,7 +34,7 @@ process guppy{
     fn = file(f5).getSimpleName()
     oc = fn+".fastq.gz"
     ol = fn+".log"
-    sortmem = '30%'
+    def sortmem = Math.ceil(task.memory.giga as double) as int 
     
     """
     mkdir -p TMP; echo \"${f5}\" > f5list && $CALLERBIN $CALLERPARAMS  -c $MODELPARAMS --compress_fastq -i . --input_file_list f5list -s TMP 2> $ol && cat TMP/pass/fastq_runid_*.fastq.gz > $oc && cat TMP/*.log >> $ol && mv -f TMP/sequencing_summary.txt . &&  mv -f TMP/sequencing_telemetry.js . && rm -rf TMP

@@ -35,3 +35,27 @@ get_exon_name <- function(id, df) {
         return(paste(unique(name_list), sep = "|"))
     }
 }
+
+fpkmToTpm <- function(fpkm){
+    exp(log(fpkm) - log(sum(fpkm)) + log(1e6))
+}
+
+
+calc_cpm <- function(counts) {
+    lib_sizes <- colSums(counts)
+    cpm <- t(t(counts) / lib_sizes * 1e6)
+    return(cpm)
+}
+
+
+calc_tpm <- function(counts, gtf) {
+    # Get gene lengths from GTF (assumes gtf_gene has columns 'gene_id' and 'width')
+    gene_lengths <- gtf$width
+    names(gene_lengths) <- gtf$gene_id
+    matched_lengths <- gene_lengths[rownames(counts)]
+    gene_lengths_kb <- matched_lengths / 1000
+    rpk <- counts / gene_lengths_kb
+    scaling_factors <- colSums(rpk)
+    tpm <- t(t(rpk) / scaling_factors * 1e6)
+    return(tpm)
+}
