@@ -318,9 +318,7 @@ for (contrast in comparison[[1]]) {
         #    contrast[which(contrast[,2]==i)]<- plus
         # }
         # contrast <- as.numeric(contrast[,1])
-
-        ## Testing
-        # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
+        
         AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
         qlf <- glmQLFTest(fit, contrast = AvsB, prior.count = 5) ## glm quasi-likelihood-F-Test
         # add comp object to list for image

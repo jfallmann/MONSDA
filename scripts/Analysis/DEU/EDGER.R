@@ -239,9 +239,8 @@ for (compare in comparisons[[1]]) {
         # }
         # contrast <- as.numeric(contrast[,1])
 
-        # quasi-likelihood F-Test
-        # qlf <- glmQLFTest(fit, contrast = contrast)
-        qlf <- glmQLFTest(fit, prior.count = 5)
+        # quasi-likelihood F-Test        
+        qlf <- glmQLFTest(fit)
         is.de <- decideTests(qlf, p.value = 0.05)
 
         # add comp object to list for image
