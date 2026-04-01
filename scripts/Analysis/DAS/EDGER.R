@@ -245,8 +245,7 @@ for (compare in comparisons[[1]]) {
         # }
         # contrast <- as.numeric(contrast[,1])
 
-        # create files topSpliced by gene, simes and exon method
-        # sp <- diffSpliceDGE(fit, contrast=contrast, geneid="genes", exonid="exons", verbose=FALSE)
+        # create files topSpliced by gene, simes and exon method        
         sp <- diffSpliceDGE(fit, geneid = "genes", exonid = "exons", verbose = FALSE)
 
         # add comp object to list for image
