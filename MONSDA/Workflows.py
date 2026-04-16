@@ -570,6 +570,12 @@ def make_pre(
                         subname = toolenv + ".smk"
 
                         if works[j] == "QC":
+                            if toolenv == "rustqc":
+                                log.warning(
+                                    logid
+                                    + "RustQC is post-alignment QC and requires MAPPING in the workflow, skipping preprocess QC"
+                                )
+                                continue
                             subname = toolenv + "_raw.smk"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -690,6 +696,12 @@ def make_pre(
                 subname = toolenv + ".smk"
 
                 if subwork == "QC":
+                    if toolenv == "rustqc":
+                        log.warning(
+                            logid
+                            + "RustQC is post-alignment QC and requires MAPPING in the workflow, skipping preprocess QC"
+                        )
+                        continue
                     subname = toolenv + "_raw.smk"
 
                 # Add rulethemall based on chosen workflows
@@ -869,10 +881,23 @@ def make_sub(
 
                         subconf.update(sconf)
                         log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
+                        # RustQC is post-alignment QC only; skip if no MAPPING
+                        if (
+                            works[j] == "QC"
+                            and toolenv == "rustqc"
+                            and "MAPPING" not in works
+                        ):
+                            log.warning(
+                                logid
+                                + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
+                            )
+                            continue
+
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
                             and "MAPPING" not in works
+                            and toolenv != "rustqc"
                         ):
                             if "DEDUP" in works and "umitools" in envs:
                                 subname = toolenv + "_dedup_trim.smk"
@@ -883,6 +908,7 @@ def make_sub(
                             works[j] == "QC"
                             and "TRIMMING" not in works
                             and "MAPPING" not in works
+                            and toolenv != "rustqc"
                         ):
                             if "DEDUP" in subworkflows and "umitools" in envs:
                                 subname = toolenv + "_dedup.smk"
@@ -929,7 +955,13 @@ def make_sub(
                             subjobs.append(line)
                         subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
+                    # Use rustqc-specific multiqc if QC env is rustqc
+                    qc_mqc = (
+                        "multiqc_rustqc.smk"
+                        if "QC" in works and envs[works.index("QC")] == "rustqc"
+                        else "multiqc.smk"
+                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
                     with open(smkf, "r") as smk:
                         for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
@@ -1032,10 +1064,23 @@ def make_sub(
                     sconf[subwork + "BIN"] = toolbin
                     subconf.update(sconf)
 
+                    # RustQC is post-alignment QC only; skip if no MAPPING
+                    if (
+                        subwork == "QC"
+                        and toolenv == "rustqc"
+                        and "MAPPING" not in subworkflows
+                    ):
+                        log.warning(
+                            logid
+                            + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
+                        )
+                        continue
+
                     if (
                         subwork == "QC"
                         and "TRIMMING" in subworkflows
                         and "MAPPING" not in subworkflows
+                        and toolenv != "rustqc"
                     ):
                         if "DEDUP" in subworkflows and "picard" not in any(
                             [x for x in listoftools]
@@ -1092,7 +1137,13 @@ def make_sub(
                         subjobs.append(line)
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    smkf = os.path.abspath(os.path.join(workflowpath, "multiqc.smk"))
+                    # Use rustqc-specific multiqc if QC env is rustqc
+                    qc_mqc = (
+                        "multiqc_rustqc.smk"
+                        if sconf.get("QCENV") == "rustqc"
+                        else "multiqc.smk"
+                    )
+                    smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
                     with open(smkf, "r") as smk:
                         for line in mu.comment_remover(smk.readlines()):
                             line = re.sub(condapath, 'conda: "' + envpath, line)
@@ -2412,6 +2463,12 @@ def nf_make_pre(
                         )
 
                         if works[j] == "QC":
+                            if toolenv == "rustqc":
+                                log.warning(
+                                    logid
+                                    + "RustQC is post-alignment QC and requires MAPPING in the workflow, skipping preprocess QC"
+                                )
+                                continue
                             subname = toolenv + "_raw.nf"
                             flowlist.append("QC_RAW")
                             flowlist.append("MULTIQC")
@@ -2597,6 +2654,12 @@ def nf_make_pre(
                 )
 
                 if subwork == "QC":
+                    if toolenv == "rustqc":
+                        log.warning(
+                            logid
+                            + "RustQC is post-alignment QC and requires MAPPING in the workflow, skipping preprocess QC"
+                        )
+                        continue
                     subname = toolenv + "_raw.nf"
                     flowlist.append("QC_RAW")
                 elif subwork == "FETCH":
@@ -2809,7 +2872,17 @@ def nf_make_sub(
                         )
 
                         if works[j] == "QC":
-                            if "TRIMMING" in works:
+                            if toolenv == "rustqc":
+                                # RustQC is post-alignment QC only
+                                if "MAPPING" in works:
+                                    flowlist.append("QC_MAPPING")
+                                else:
+                                    log.warning(
+                                        logid
+                                        + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
+                                    )
+                                    continue
+                            elif "TRIMMING" in works:
                                 flowlist.append("QC_RAW")
                                 flowlist.append("TRIMMING")
                                 flowlist.append("QC_TRIMMING")
@@ -3021,7 +3094,12 @@ def nf_make_sub(
                                     + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                                 )
                         elif w == "MULTIQC":
-                            if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
+                            if "QC_RAW" not in flowlist and "QC_MAPPING" in flowlist:
+                                # RustQC: only BAM-level QC, no FASTQ QC
+                                subjobs.append(
+                                    " " * 4 + w + "(QC_MAPPING.out.qc.collect())\n"
+                                )
+                            elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
@@ -3147,7 +3225,17 @@ def nf_make_sub(
                     )
 
                     if subwork == "QC":
-                        if "TRIMMING" in subworkflows:
+                        if toolenv == "rustqc":
+                            # RustQC is post-alignment QC only
+                            if "MAPPING" in subworkflows:
+                                flowlist.append("QC_MAPPING")
+                            else:
+                                log.warning(
+                                    logid
+                                    + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
+                                )
+                                continue
+                        elif "TRIMMING" in subworkflows:
                             if "DEDUP" in subworkflows:
                                 flowlist.append("QC_RAW")
                                 flowlist.append("DEDUP_TRIM")
@@ -3322,7 +3410,12 @@ def nf_make_sub(
                                 + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                             )
                     elif w == "MULTIQC":
-                        if "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
+                        if "QC_RAW" not in flowlist and "QC_MAPPING" in flowlist:
+                            # RustQC: only BAM-level QC, no FASTQ QC
+                            subjobs.append(
+                                " " * 4 + w + "(QC_MAPPING.out.qc.collect())\n"
+                            )
+                        elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                             subjobs.append(
                                 " " * 4
                                 + w
