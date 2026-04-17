@@ -1092,7 +1092,7 @@ def make_sub(
                     # Picard tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.smk"
-                        subconf.poop("PREDEDUP", None)
+                        subconf.pop("PREDEDUP", None)
                     elif works[j] == "DEDUP" and toolenv == "umitools":
                         subconf["PREDEDUP"] = "enabled"
                     # Add rulethemall based on chosen workflows

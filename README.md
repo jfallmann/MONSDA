@@ -105,6 +105,30 @@ respectively.
 
 For other workload managers please refer to the documentation of ```Snakemake``` and ```Nextflow```.
 
+## Testing
+
+### Quick local unit tests (same path as CI)
+
+From the repository root run:
+
+```
+pytest -q tests/test_Utils.py
+```
+
+or use the helper script:
+
+```
+bash tests/cicd_test.sh
+```
+
+### Optional local integration smoke test
+
+To also run the heavier pipeline smoke test from the helper script:
+
+```
+RUN_INTEGRATION_TESTS=1 bash tests/cicd_test.sh
+```
+
 
 ## Contribute
 If you like this project, are missing features, want to contribute or
