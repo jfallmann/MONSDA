@@ -68,6 +68,7 @@ import gzip
 import hashlib
 import heapq
 import inspect
+import itertools
 import json
 import logging
 import os
@@ -464,23 +465,30 @@ def keysets_from_dict(
     """
     logid = scriptname + ".Collection_keysets_from_dict: "
 
-    ret = list()
-    if not dict_inst(dictionary):
+    keylist = list()
+    if dict_inst(dictionary):
+        for k, v in keys_from_dict(dictionary, search).items():
+            keylist.append(v)
+        log.debug(logid + "kl:" + str(keylist))
+        combis = list()
+        for i in range(1, len(keylist) + 1):
+            subkeylist = keylist[0:i]
+            combis.extend(list(itertools.product(*subkeylist)))
+        log.debug(logid + "cs:" + str(combis))
+        ret = list()
+        for combi in combis:
+            check = sub_dict(dictionary, combi)
+            log.debug(logid + "checking: " + str(check))
+            if (
+                isvalid(check)
+                and (isinstance(check, dict) and check.get("SAMPLES"))
+                or isinstance(check, str)
+            ):
+                log.debug(logid + "found: " + str(combi))
+                ret.append(combi)
         return ret
-
-    def _collect_paths(d, path):
-        if dict_inst(d):
-            if len(d) == 0:
-                return
-            for k, v in d.items():
-                _collect_paths(v, path + [k])
-        else:
-            ret.append(tuple(path))
-
-    _collect_paths(dictionary, [])
-    if search:
-        return [path for path in ret if search in path]
-    return ret
+    else:
+        return keylist
 
 
 @check_run
