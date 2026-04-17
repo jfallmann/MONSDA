@@ -1,22 +1,28 @@
-name: Python application
+name: MONSDA CI
 
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      run_full_pipeline:
+        description: "Run full pipeline integration test"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
-  monsdatest:   
-    name: monsda-test 
-    runs-on: "ubuntu-latest"
+  tests:
+    name: Unit tests (pytest)
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
-    # Docker Hub image that `postgres-job` executes in
-    container: node:latest
-    # service containers to run with `postgres-job`
-    steps:      
-      - uses: actions/checkout@master
+    steps:
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: conda-incubator/setup-miniconda@master
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
           activate-environment: monsda-test
@@ -28,25 +34,70 @@ jobs:
           show-channel-urls: true
           use-only-tar-bz2: false
           auto-activate-base: false
-      - name: build and install monsda
+      - name: build and install MONSDA
         run: |
           cd ${{ github.workspace }}
-          echo "Build start"          
-          python -m pip install --upgrade pip                
-          python -m pip install build                                        
-          python -m build
-          pip install dist/*.whl
-      - name: preparing test
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+      - name: run unit tests
         run: |          
-          echo "Build finished, preparing tests"                     
-          export a=$(monsda --version 2>&1 >/dev/null |sed 's/MONSDA version //g')          
-          sed -i "s/\"VERSION\": \"FIXME\"/\"VERSION\": \"$a\"/g" tests/data/config_Test.json   
-      - name: running test
-        run: |   
-          echo "Running tests" 
+          cd ${{ github.workspace }}
+          pytest -q tests/test_Utils.py
+
+  full-pipeline:
+    name: Full pipeline integration test
+    runs-on: ubuntu-latest
+    needs: tests
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.run_full_pipeline) ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-pipeline'))
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          activate-environment: monsda-test
+          environment-file: environment.yml
+          python-version: 3.12.2
+          channels: conda-forge,bioconda
+          allow-softlinks: true
+          channel-priority: flexible
+          show-channel-urls: true
+          use-only-tar-bz2: false
+          auto-activate-base: false
+      - name: build and install MONSDA
+        run: |
+          cd ${{ github.workspace }}
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: prepare integration test config
+        run: |
+          cd ${{ github.workspace }}
+          VERSION=$(monsda --version 2>&1 | sed 's/MONSDA version //g')
+          sed -i "s/\"VERSION\": \"FIXME\"/\"VERSION\": \"${VERSION}\"/g" tests/data/config_Test.json
+      - name: run full pipeline test
+        run: |
           cd ${{ github.workspace }}/tests
-          ln -fs data/* .    
+          ln -fs data/* .
           mkdir -p CONDALIB
-          monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --save && echo "MONSDA test passed" || echo "MONSDA test failed"
-          #chmod +x cicd_test.sh      
-          #./cicd_test.sh
+          monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --save
+      - name: upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-pipeline-debug-artifacts
+          path: |
+            ${{ github.workspace }}/tests/LOGS
+            ${{ github.workspace }}/tests/SUBSNAKES
+            ${{ github.workspace }}/tests/FASTQ
+            ${{ github.workspace }}/tests/MAPPED
+            ${{ github.workspace }}/tests/QC
+            ${{ github.workspace }}/tests/COUNTING
+            ${{ github.workspace }}/tests/PEAKS
+            ${{ github.workspace }}/tests/TRACKS

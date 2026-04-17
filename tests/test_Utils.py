@@ -1,4 +1,11 @@
 import unittest
+import hashlib
+import io
+import os
+import shutil
+from contextlib import redirect_stdout
+
+import numpy as np
 
 from MONSDA.Utils import (
     NestedDefaultDict,
@@ -192,9 +199,10 @@ class TestUtils(unittest.TestCase):
     def test_npprint(self):
         a = np.array([1.23, 4.56])
         expected_output = "1\t1.2300000\n2\t4.5600000\n"
-        with self.assertLogs(level="INFO") as log:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
             npprint(a)
-            self.assertIn(expected_output.strip(), log.output[0])
+        self.assertIn(expected_output, buf.getvalue())
 
     def test_idfromfa(self):
         id = "cluster1:chr19.tRNA5-LysCTT(+)"

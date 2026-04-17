@@ -1153,12 +1153,11 @@ def multi_replace(repl:str, text:str) -> str:
     str
         string with replacements
     """
-    print("MULTI: " + str(repl) + str(text))
-    # Create a regular expression  from the dictionary keys
+    # Create a regular expression from the dictionary keys
     regex = re.compile("(%s)" % "|".join(map(re.escape, repl.keys())))
 
     # For each match, look-up corresponding value in dictionary
-    return regex.sub(lambda mo: dict[mo.string[mo.start() : mo.end()]], text)
+    return regex.sub(lambda mo: repl[mo.string[mo.start() : mo.end()]], text)
 
 
 @check_run
