@@ -1,8 +1,8 @@
-import unittest
 import hashlib
 import io
 import os
 import shutil
+import unittest
 from contextlib import redirect_stdout
 
 import numpy as np
@@ -112,8 +112,8 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(merge_dicts(d1, d2), {"a": 1, "b": {"c": 2, "d": 3}, "e": 4})
 
     def test_keysets_from_dict(self):
-        data_dict = {"a": {"b": {"c": "d"}}}
-        self.assertEqual(keysets_from_dict(data_dict), [("a", "b", "c")])
+        data_dict = {"a": {"b": {"c": {"SAMPLES": "test"}}}}
+        self.assertEqual(keysets_from_dict(data_dict, "SAMPLES"), [("a", "b", "c")])
 
     def test_keys_from_dict(self):
         data_dict = {"a": {"b": {"c": "d"}}}
