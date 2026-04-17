@@ -56,8 +56,14 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(nested_dict['c']['d'], 0)
 
     def test_rmempty(self):
-        files = ["file1.txt", "file2.txt"]
-        self.assertEqual(rmempty(files), files)
+        existing = "file1.txt"
+        missing = "file2.txt"
+        with open(existing, "w") as f:
+            f.write("x")
+        try:
+            self.assertEqual(rmempty([existing, missing]), [existing])
+        finally:
+            os.remove(existing)
 
     def test_comment_remover(self):
         input_text = [
