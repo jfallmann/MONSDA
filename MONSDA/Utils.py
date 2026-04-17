@@ -68,7 +68,6 @@ import gzip
 import hashlib
 import heapq
 import inspect
-import itertools
 import json
 import logging
 import os
@@ -142,7 +141,14 @@ class NestedDefaultDict(collections.defaultdict):
         NestedDefaultDict
     """
     def __init__(self, *args, **kwargs):
-        super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
+        default_factory = NestedDefaultDict
+        remaining_args = args
+        if args and callable(args[0]):
+            default_factory = args[0]
+            remaining_args = args[1:]
+        super(NestedDefaultDict, self).__init__(
+            default_factory, *remaining_args, **kwargs
+        )
 
     def __repr__(self):
         return repr(dict(self))
@@ -197,11 +203,7 @@ def rmempty(check: list) -> list:
     list
         list of non-empty files
     """
-    ret = list()
-    for f in check:
-        if os.path.isfile(f):
-            ret.append(f)
-    return ret
+    return [x for x in check if os.path.isfile(x)]
 
 
 @check_run
@@ -231,7 +233,8 @@ def comment_remover(
         r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
         re.DOTALL | re.MULTILINE,
     )
-    return [re.sub(pattern, replacer, x) for x in textlist]
+    cleaned = [re.sub(pattern, replacer, x) for x in textlist]
+    return [line for line in cleaned if line.strip()]
 
 
 ##############################
@@ -461,30 +464,23 @@ def keysets_from_dict(
     """
     logid = scriptname + ".Collection_keysets_from_dict: "
 
-    keylist = list()
-    if dict_inst(dictionary):
-        for k, v in keys_from_dict(dictionary, search).items():
-            keylist.append(v)
-        log.debug(logid + "kl:" + str(keylist))
-        combis = list()
-        for i in range(1, len(keylist) + 1):
-            subkeylist = keylist[0:i]
-            combis.extend(list(itertools.product(*subkeylist)))
-        log.debug(logid + "cs:" + str(combis))
-        ret = list()
-        for combi in combis:
-            check = sub_dict(dictionary, combi)
-            log.debug(logid + "checking: " + str(check))
-            if (
-                isvalid(check)
-                and (isinstance(check, dict) and check.get("SAMPLES"))
-                or isinstance(check, str)
-            ):
-                log.debug(logid + "found: " + str(combi))
-                ret.append(combi)
+    ret = list()
+    if not dict_inst(dictionary):
         return ret
-    else:
-        return keylist
+
+    def _collect_paths(d, path):
+        if dict_inst(d):
+            if len(d) == 0:
+                return
+            for k, v in d.items():
+                _collect_paths(v, path + [k])
+        else:
+            ret.append(tuple(path))
+
+    _collect_paths(dictionary, [])
+    if search:
+        return [path for path in ret if search in path]
+    return ret
 
 
 @check_run
@@ -673,8 +669,14 @@ def find_key_for_value(val:str, dictionary:dict) -> dict.keys:
             if dict_inst(v):
                 log.debug(logid + "item" + str(v))
                 yield from find_key_for_value(val, v)
-            elif v == val or val in v:
-                yield k
+            else:
+                contains = False
+                try:
+                    contains = val in v
+                except TypeError:
+                    contains = False
+                if v == val or contains:
+                    yield k
     else:
         return dictionary
 
@@ -1053,9 +1055,13 @@ def idfromfa(id:str) -> list:
     """
     goi, chrom, strand = [None, None, None]
     try:
-        goi, chrom = id.split(":")[::2]
-        strand = str(id.split(":")[3].split("(")[1][0])
-    except:
+        parts = id.split(":", 1)
+        goi = parts[0]
+        chrom_info = parts[1]
+        chrom = chrom_info.split(".", 1)[0]
+        sm = re.search(r"\(([+-])\)", id)
+        strand = sm.group(1) if sm else "na"
+    except Exception:
         print(
             "Fasta header is not in expected format, you will loose information on strand and chromosome"
         )
@@ -1154,7 +1160,7 @@ def multi_replace(repl:str, text:str) -> str:
         string with replacements
     """
     # Create a regular expression from the dictionary keys
-    regex = re.compile("(%s)" % "|".join(map(re.escape, repl.keys())))
+    regex = re.compile(r"\b(%s)\b" % "|".join(map(re.escape, repl.keys())))
 
     # For each match, look-up corresponding value in dictionary
     return regex.sub(lambda mo: repl[mo.string[mo.start() : mo.end()]], text)
@@ -1223,16 +1229,9 @@ def add_to_innermost_key_by_list(addto:dict, toadd:str, keylist:list) -> dict:
     logid = scriptname + ".add_to_innermost_key_by_list: "
     log.debug(logid + str(addto) + ", " + str(toadd))
 
-    tconf = {}
-    for i in range(
-        len(keylist)
-    ):  # need to add options as last element to dict of unknown depth
-        tconf[keylist[i]] = {}
-        tconf = tconf[keylist[i]]
-        if i == len(keylist) - 1:
-            tconf = toadd
-
-    addto.update(tconf)
+    if not keylist:
+        return addto
+    nested_set(addto, keylist, toadd)
     return addto
 
 
