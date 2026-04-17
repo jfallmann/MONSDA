@@ -76,11 +76,19 @@
     "QC": {
         "TOOLS" :
         {
-            "fastqc" : "fastqc"
+            "fastqc" : "fastqc",
+            "rustqc" : "rustqc"
         },
         "Ecoli": {
             "KO": {
                 "fastqc": {
+                    "OPTIONS":
+                    {
+                        "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                        "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                    }
+                },
+                "rustqc": {
                     "OPTIONS":
                     {
                         "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
@@ -91,6 +99,13 @@
             "WT": {
                 "dummylevel": {       
                     "fastqc": {
+                        "OPTIONS":
+                        {
+                            "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
+                            "MULTI": ""  #MultiQC options here if any, KO is not required, will be resolved by rules
+                        }
+                    },
+                    "rustqc": {
                         "OPTIONS":
                         {
                             "QC": "",  #QC options here if any, KO is not required, will be resolved by rules
