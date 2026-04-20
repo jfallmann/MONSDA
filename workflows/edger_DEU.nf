@@ -29,7 +29,7 @@ process featurecount_edger{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".counts.summary") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"         
+        else if (filename.indexOf(".counts.summary") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
         else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
     }
 
