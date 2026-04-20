@@ -30,7 +30,7 @@ process featurecount_deseq{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"              
-        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecounts_deseq2_unique.log"
     }
 
     input:
