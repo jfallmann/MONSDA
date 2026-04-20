@@ -1504,14 +1504,18 @@ def comparable_as_string(config: dict, subwork: str) -> str:
             logid + "no comparables found in " + subwork + ". Compare All vs. All."
         )
         groups_by_condition = list(mu.yield_from_dict("GROUPS", config))
+        log.debug(logid + "Groups by condition: " + str(groups_by_condition))
         flattened = sorted(
             set(val for sublist in groups_by_condition for val in sublist)
         )
+        log.debug(logid + "Flattened groups: " + str(flattened))
         combined = list(set(itertools.permutations(flattened, 2)))
+        log.debug(logid + "Combined groups: " + str(combined))
         complist = []
         for key, value in combined:
             complist.append(f"{key}-vs-{value}:{key}-vs-{value}")
         compstr = ",".join(complist)
+        log.debug(logid + "Comparables string: " + compstr)
         return compstr
 
 
