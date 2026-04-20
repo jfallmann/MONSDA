@@ -1797,7 +1797,11 @@ def nf_fetch_params(
         log.error(logid + "No samples found, please check config file")
         sys.exit(logid + "ERROR: No samples found, please check config file")
 
-    SETUP = mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")[0]
+    SETUP = (
+        tuple(condition)
+        if condition
+        else mu.keysets_from_dict(config["SETTINGS"], "SAMPLES")[0]
+    )
     SETS = os.sep.join(SETUP)
     SETTINGS = mu.sub_dict(config["SETTINGS"], SETUP)
 
@@ -1866,11 +1870,14 @@ def nf_fetch_params(
         MAPCONF = mu.sub_dict(config["MAPPING"], SETUP)
         MAPPERBIN, MAPPERENV = mp.env_bin_from_config(config, "MAPPING")
         MAPPERENV = MAPPERENV.split("_")[0]
-        MAPOPT = MAPCONF.get(MAPPERENV).get("OPTIONS")
+        # Subconfigs (from nf_make_sub) have the toolenv key stripped out;
+        # fall back to MAPCONF itself when the toolenv key is absent.
+        mapper_dict = MAPCONF.get(MAPPERENV) or MAPCONF
+        MAPOPT = mapper_dict.get("OPTIONS", {})
         log.debug(logid + "MAPPINGCONFIG: " + str(SETUP) + "\t" + str(MAPCONF))
-        REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE"))
-        MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION"))
-        MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY"))
+        REF = mapper_dict.get("REFERENCE", MAPCONF.get("REFERENCE"))
+        MANNO = mapper_dict.get("ANNOTATION", MAPCONF.get("ANNOTATION"))
+        MDECOY = mapper_dict.get("DECOY", MAPCONF.get("DECOY"))
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -1896,13 +1903,13 @@ def nf_fetch_params(
             PREFIX = PRE
         if not PREFIX or PREFIX is None:
             PREFIX = MAPPERENV
-        IDX = MAPCONF.get("INDEX", MAPCONF[MAPPERENV].get("INDEX"))
+        IDX = MAPCONF.get("INDEX", mapper_dict.get("INDEX"))
         if IDX:
             INDEX = IDX
         if not INDEX:
             INDEX = str.join(os.sep, [REFDIR, "INDICES", MAPPERENV]) + ".idx"
         keydict = mu.sub_dict(
-            mp.tool_params(SAMPLES[0], None, config, "MAPPING", MAPPERENV)["OPTIONS"],
+            MAPOPT,
             ["INDEX"],
         )
         keydict["REF"] = REFERENCE
@@ -1920,7 +1927,7 @@ def nf_fetch_params(
         INDEX2 = None
         UIDX2 = None
         UIDX2NAME = None
-        IDX2 = MAPCONF.get("INDEX2", MAPCONF[MAPPERENV].get("INDEX2"))
+        IDX2 = MAPCONF.get("INDEX2", mapper_dict.get("INDEX2"))
         if IDX2:
             INDEX2 = IDX2
             UIDX2 = f"{REFDIR}/INDICES/{MAPPERENV}_{unikey}_bs"
