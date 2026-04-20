@@ -22,6 +22,7 @@ process featurecount_deseq{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
+    memory 16.GB
 	cache 'lenient'
     //validExitStatus 0,1
 
