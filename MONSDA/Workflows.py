@@ -1272,11 +1272,13 @@ def make_post(
                         )
                         continue
 
-                # Merge postworkflow config from all conditions
+                # Deep-merge postworkflow config from all conditions (preserves all condition paths)
                 for cond in all_conditions:
                     tc = list(cond)
                     tc.append(toolenv)
-                    sconf[postworkflow].update(mu.subset_dict(config[postworkflow], tc))
+                    sconf[postworkflow] = mu.merge_dicts(
+                        sconf[postworkflow], mu.subset_dict(config[postworkflow], tc)
+                    )
 
                 if sconf[postworkflow].get("TOOLS"):
                     sconf[postworkflow]["TOOLS"] = mu.sub_dict(
