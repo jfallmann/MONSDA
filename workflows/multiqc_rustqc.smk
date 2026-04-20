@@ -2,7 +2,13 @@ if rundedup:
     if paired == 'paired':
         if prededup:
             rule multiqc:
-                input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                                input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_dedupmapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquededup.output.js, file=samplecond(SAMPLES, config), combo=combo),
@@ -20,7 +26,13 @@ if rundedup:
                 shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
         else:
             rule multiqc:
-                input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                                input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_dedupmapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquededup.output.js, file=samplecond(SAMPLES, config), combo=combo),
@@ -40,7 +52,13 @@ if rundedup:
     else:
         if prededup:
             rule multiqc:
-                input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                                input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_dedupmapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquededup.output.js, file=samplecond(SAMPLES, config), combo=combo),
@@ -58,7 +76,13 @@ if rundedup:
                 shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
         else:
             rule multiqc:
-                input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                                input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                                expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_dedupmapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.rustqc_uniquededup.output.js, file=samplecond(SAMPLES, config), combo=combo),
@@ -78,7 +102,11 @@ if rundedup:
 else:
     if paired == 'paired':
         rule multiqc:
-            input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
@@ -94,7 +122,11 @@ else:
 
     else:
         rule multiqc:
-            input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+                        input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo) if 'fastqc' in combo else [],
+                                        expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)

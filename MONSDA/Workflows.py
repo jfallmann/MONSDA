@@ -955,10 +955,10 @@ def make_sub(
                             subjobs.append(line)
                         subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    # Use rustqc-specific multiqc if QC env is rustqc
+                    # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     qc_mqc = (
                         "multiqc_rustqc.smk"
-                        if "QC" in works and envs[works.index("QC")] == "rustqc"
+                        if any(x[0] == "rustqc" for x in listoftools if x and x[0])
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
@@ -1137,10 +1137,10 @@ def make_sub(
                         subjobs.append(line)
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
-                    # Use rustqc-specific multiqc if QC env is rustqc
+                    # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     qc_mqc = (
                         "multiqc_rustqc.smk"
-                        if sconf.get("QCENV") == "rustqc"
+                        if any(x[0] == "rustqc" for x in listoftools if x and x[0])
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
