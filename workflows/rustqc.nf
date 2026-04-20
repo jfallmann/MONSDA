@@ -25,8 +25,8 @@ process rustqc_mapped{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("rustqc_summary.json") > 0)      "QC/rustqc/${COMBO}/${CONDITION}/${file(filename).getParent().getName()}/rustqc_summary.json"
-        else                                                    "QC/rustqc/${COMBO}/${CONDITION}/${filename}"
+        if (filename.indexOf("rustqc_summary.json") > 0)      "QC/${COMBO}/${CONDITION}/${file(filename).getParent().getName()}/rustqc_summary.json"
+        else                                                    "QC/${COMBO}/${CONDITION}/${filename}"
     }
 
     input:

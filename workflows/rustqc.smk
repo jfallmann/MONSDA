@@ -14,8 +14,8 @@ RUSTQC_PAIRED = '-p' if paired == 'paired' else ''
 
 rule rustqc_mapped:
     input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"
-    output:  o1 = directory("QC/rustqc/{combo}/{file}_mapped_sorted"),
-             js = "QC/rustqc/{combo}/{file}_mapped_sorted/rustqc_summary.json"
+    output:  o1 = directory("QC/{combo}/{file}_mapped_sorted"),
+             js = "QC/{combo}/{file}_mapped_sorted/rustqc_summary.json"
     log:     "LOGS/{combo}/{file}_rustqc_mapped.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
@@ -29,8 +29,8 @@ rule rustqc_mapped:
 rule rustqc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
-    output: o1 = directory("QC/rustqc/{combo}/{file}_mapped_sorted_unique"),
-            js = "QC/rustqc/{combo}/{file}_mapped_sorted_unique/rustqc_summary.json"
+    output: o1 = directory("QC/{combo}/{file}_mapped_sorted_unique"),
+        js = "QC/{combo}/{file}_mapped_sorted_unique/rustqc_summary.json"
     log:    "LOGS/{combo}/{file}_rustqc_uniquemapped.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
@@ -44,8 +44,8 @@ rule rustqc_uniquemapped:
 rule rustqc_dedupmapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam.bai"
-    output: o1 = directory("QC/rustqc/{combo}/{file}_mapped_sorted_dedup"),
-            js = "QC/rustqc/{combo}/{file}_mapped_sorted_dedup/rustqc_summary.json"
+    output: o1 = directory("QC/{combo}/{file}_mapped_sorted_dedup"),
+        js = "QC/{combo}/{file}_mapped_sorted_dedup/rustqc_summary.json"
     log:    "LOGS/{combo}/{file}_rustqc_dedupmapped.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
@@ -59,8 +59,8 @@ rule rustqc_dedupmapped:
 rule rustqc_uniquededup:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam.bai"
-    output: o1 = directory("QC/rustqc/{combo}/{file}_mapped_sorted_unique_dedup"),
-            js = "QC/rustqc/{combo}/{file}_mapped_sorted_unique_dedup/rustqc_summary.json"
+    output: o1 = directory("QC/{combo}/{file}_mapped_sorted_unique_dedup"),
+        js = "QC/{combo}/{file}_mapped_sorted_unique_dedup/rustqc_summary.json"
     log:    "LOGS/{combo}/{file}_rustqc_uniquededup.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
