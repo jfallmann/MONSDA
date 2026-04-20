@@ -17,7 +17,7 @@ process mqc{
     }
 
     input:
-    path others
+    path others, stageAs: 'mqc_input??/*'
     //path samples
 
     output:
