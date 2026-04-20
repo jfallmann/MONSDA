@@ -825,6 +825,9 @@ def make_sub(
                 works = worklist[i].split("-")
                 envs = envlist[i].split("-")
                 subjobs = list()
+                use_rustqc_multiqc = any(
+                    works[j] == "QC" and envs[j] == "rustqc" for j in range(len(works))
+                )
 
                 # Add variable for combination string
                 subjobs.append(
@@ -892,7 +895,6 @@ def make_sub(
                                 + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
                             )
                             continue
-
                         if (
                             works[j] == "QC"
                             and "TRIMMING" in works
@@ -958,7 +960,7 @@ def make_sub(
                     # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     qc_mqc = (
                         "multiqc_rustqc.smk"
-                        if any(x[0] == "rustqc" for x in listoftools if x and x[0])
+                        if use_rustqc_multiqc
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
@@ -1075,7 +1077,6 @@ def make_sub(
                             + "RustQC requires mapped BAM files, skipping QC step as MAPPING is not in the workflow"
                         )
                         continue
-
                     if (
                         subwork == "QC"
                         and "TRIMMING" in subworkflows
@@ -1138,9 +1139,11 @@ def make_sub(
                     subjobs.append("\n\n")
                 if "QC" in subworkflows:
                     # Use rustqc-specific multiqc whenever rustqc is part of this combo
+                    _qc_tools, _ = create_subworkflow(config, "QC", [condition])
                     qc_mqc = (
                         "multiqc_rustqc.smk"
-                        if any(x[0] == "rustqc" for x in listoftools if x and x[0])
+                        if _qc_tools is not None
+                        and any(str(t[0]) == "rustqc" for t in _qc_tools)
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
