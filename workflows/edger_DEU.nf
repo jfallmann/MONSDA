@@ -212,6 +212,7 @@ workflow DEU{
     if (RUNDEDUP){
         MAPPEDSAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique_dedup.bam"
+        }
     }else{
         MAPPEDSAMPLES = LONGSAMPLES.collect{
             element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
