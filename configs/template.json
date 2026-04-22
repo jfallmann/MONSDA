@@ -120,7 +120,8 @@
     "DEDUP": { #options for deduplication for each sample/condition
                "TOOLS": {
                    "umitools": "umi_tools",
-                   "picard": "picard"
+                   "picard": "picard",
+                   "fgumi": "fgumi"
                },
                "id": {
                    "condition": {
@@ -140,6 +141,13 @@
                                         {
                                             "JAVA" : "",# options
                                             "DEDUP": ""  # dedup options
+                                        }
+                                    },
+                                    "fgumi":{
+                                        "OPTIONS":
+                                        {
+                                            "EXTRACT": "",  # fgumi extract options, e.g. --read-structures 8M+T +T
+                                            "DEDUP": ""  # fgumi dedup options
                                         }
                                     }
                                   }

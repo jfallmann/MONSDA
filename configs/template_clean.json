@@ -110,7 +110,8 @@
   },
   "DEDUP": {
     "TOOLS": {
-      "umitools": "umi_tools"
+      "umitools": "umi_tools",
+      "fgumi": "fgumi"
     },
     "id": {
       "condition": {
@@ -128,6 +129,13 @@
                 "JAVA" : "",
                 "DEDUP": ""
             }
+        },
+        "fgumi": {
+          "OPTIONS":
+          {
+              "EXTRACT": "",
+              "DEDUP": ""
+          }
         }
       }
     }
