@@ -125,6 +125,10 @@ except Exception:
         exc_tb,
     )
     print("".join(tbe.format()), file=sys.stderr)
+    # Fallback logger if initialization fails (e.g., during testing)
+    scriptname = "MONSDA"
+    log = logging.getLogger(scriptname)
+    log.setLevel(logging.INFO)
 
 
 #  NestedDefaultDict
