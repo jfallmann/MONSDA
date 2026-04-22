@@ -123,7 +123,8 @@
   },
   "DEDUP": {
     "TOOLS": {
-      "umitools": "umi_tools"
+      "umitools": "umi_tools",
+      "fgumi": "fgumi"
     },
     "ENV" : "",
     "BIN" : "",
@@ -148,6 +149,18 @@
         "OPTIONS":
         {
             "JAVA" : "",
+            "DEDUP": ""
+        }
+    },
+    "fgumi": {
+      "comment":
+        {
+            "EXTRACT": "fgumi extract options, e.g. --read-structures 8M+T +T",
+            "DEDUP": "fgumi dedup options"
+        },
+      "OPTIONS":
+        {
+            "EXTRACT": "",
             "DEDUP": ""
         }
     }

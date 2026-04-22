@@ -901,7 +901,9 @@ def make_sub(
                             and "MAPPING" not in works
                             and toolenv != "rustqc"
                         ):
-                            if "DEDUP" in works and "umitools" in envs:
+                            if "DEDUP" in works and any(
+                                x in envs for x in ["umitools", "fgumi"]
+                            ):
                                 subname = toolenv + "_dedup_trim.smk"
                             else:
                                 subname = toolenv + "_trim.smk"
@@ -912,16 +914,18 @@ def make_sub(
                             and "MAPPING" not in works
                             and toolenv != "rustqc"
                         ):
-                            if "DEDUP" in subworkflows and "umitools" in envs:
+                            if "DEDUP" in subworkflows and any(
+                                x in envs for x in ["umitools", "fgumi"]
+                            ):
                                 subname = toolenv + "_dedup.smk"
                             else:
                                 subname = toolenv + "_raw.smk"
 
-                        # Picard tools can be extended here
+                        # Dedup tools can be extended here
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
                             subconf.pop("PREDEDUP", None)
-                        elif works[j] == "DEDUP" and toolenv == "umitools":
+                        elif works[j] == "DEDUP" and toolenv in ["umitools", "fgumi"]:
                             subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -1090,11 +1094,11 @@ def make_sub(
                         else:
                             subname = toolenv + "_trim.smk"
 
-                    # Picard tools can be extended here
+                    # Dedup tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.smk"
                         subconf.pop("PREDEDUP", None)
-                    elif works[j] == "DEDUP" and toolenv == "umitools":
+                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi"]:
                         subconf["PREDEDUP"] = "enabled"
                     # Add rulethemall based on chosen workflows
                     add.append(
@@ -2913,7 +2917,7 @@ def nf_make_sub(
                             else:
                                 if "DEDUP" in subworkflows:
                                     flowlist.append("QC_RAW")
-                                    if toolenv == "umitools":
+                                    if toolenv in ["umitools", "fgumi"]:
                                         flowlist.append("DEDUPEXTRACT")
                                     if "MAPPING" in works:
                                         flowlist.append("QC_MAPPING")
@@ -2928,7 +2932,7 @@ def nf_make_sub(
                             flowlist.append("TRIMMING")
 
                         if works[j] == "DEDUP":
-                            if toolenv == "umitools":
+                            if toolenv in ["umitools", "fgumi"]:
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
                                 if "QC" in flowlist:
@@ -3284,8 +3288,31 @@ def nf_make_sub(
 
                         subname = toolenv + ".nf"
 
-                    # Picard tools can be extended here
+                    # Dedup tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
+                        subname = toolenv + "_dedup.nf"
+                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi"]:
+                        flowlist.append("PREDEDUP")
+                        subconf["PREDEDUP"] = "enabled"
+                        if "QC" in flowlist:
+                            flowlist.append("QC_DEDUP")
+                        subname = toolenv + ".nf"
+                        nfi = os.path.abspath(os.path.join(workflowpath, subname))
+                        with open(nfi, "r") as nf:
+                            for line in mu.comment_remover(nf.readlines()):
+                                line = re.sub(condapath, 'conda "' + envpath, line)
+                                if "include {" in line:
+                                    line = fixinclude(
+                                        line,
+                                        loglevel,
+                                        condapath,
+                                        envpath,
+                                        workflowpath,
+                                        logfix,
+                                        "nfmode",
+                                    )
+                                subjobs.append(line)
+                            subjobs.append("\n\n")
                         subname = toolenv + "_dedup.nf"
 
                     nfi = os.path.abspath(os.path.join(workflowpath, subname))

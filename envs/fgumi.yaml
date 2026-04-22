@@ -1,0 +1,9 @@
+name: fgumi
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - samtools =1.21
+  - fgumi =0.1.3
+  - dateutils =0.6.12
