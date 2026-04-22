@@ -13,7 +13,6 @@ process extract_fq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf("_fgumi_extract.bam") > 0) "TMP/FGEX/${COMBO}/${CONDITION}/${filename}"
         else if (filename.indexOf("log") > 0)             "LOGS/${COMBO}/${CONDITION}/DEDUP/dedup_extract.log"
         else null
     }
