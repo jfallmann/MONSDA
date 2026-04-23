@@ -85,6 +85,7 @@ process dedup_bam{
     input:
     path mapped_bam
     path ubam
+    path ref
 
     output:
     path "${mapped_bam.baseName}_dedup.bam", emit: dedup_bam
@@ -94,10 +95,28 @@ process dedup_bam{
     script:
     """
     mkdir -p tmp
-    $DEDUPBIN zipper --unmapped $ubam --aligned $mapped_bam --output tmp/zippered.bam > dedup.log 2>&1
+    $DEDUPBIN zipper --unmapped $ubam --input $mapped_bam --reference $ref --output tmp/zippered.bam > dedup.log 2>&1
     $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam >> dedup.log 2>&1
     $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
     samtools index ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
     rm $ubam
     """
+}
+
+workflow DEDUPBAM{
+    take:
+    map
+    mapi
+    mapu
+    mapui
+    ubam
+
+    main:
+    ref_ch = Channel.fromPath(REFERENCE)
+    dedup_bam(map.concat(mapu), ubam, ref_ch)
+
+    emit:
+    dedup = dedup_bam.out.dedup_bam
+    dedupbai = dedup_bam.out.dedup_idx
+    deduplog = dedup_bam.out.logs
 }
