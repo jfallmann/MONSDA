@@ -77,7 +77,7 @@ workflow DEDUPEXTRACT{
 process dedup_bam{
     conda "$DEDUPENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$DEDUPENV"
-    cpus THREADS
+    cpus 4
     cache 'lenient'
 
     publishDir "${workflow.workDir}/../MAPPED/${COMBO}/${CONDITION}" , mode: 'link'
@@ -97,7 +97,9 @@ process dedup_bam{
     mkdir -p tmp
     ref_dict=\$(basename $ref .gz).dict
     if [[ ! -f "\${ref_dict}" ]]; then samtools dict $ref -o \${ref_dict} >> dedup.log 2>&1; fi
-    $DEDUPBIN zipper --unmapped $ubam --input $mapped_bam --reference $ref --output tmp/zippered.bam >> dedup.log 2>&1
+    samtools sort -n -@ ${task.cpus} -o tmp/ubam_qn.bam $ubam >> dedup.log 2>&1
+    samtools sort -n -@ ${task.cpus} -o tmp/mapped_qn.bam $mapped_bam >> dedup.log 2>&1
+    $DEDUPBIN zipper --unmapped tmp/ubam_qn.bam --input tmp/mapped_qn.bam --reference $ref --output tmp/zippered.bam >> dedup.log 2>&1
     $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam >> dedup.log 2>&1
     $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
     samtools index ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
