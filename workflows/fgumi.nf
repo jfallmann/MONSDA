@@ -95,7 +95,9 @@ process dedup_bam{
     script:
     """
     mkdir -p tmp
-    $DEDUPBIN zipper --unmapped $ubam --input $mapped_bam --reference $ref --output tmp/zippered.bam > dedup.log 2>&1
+    ref_dict=\$(basename $ref .gz).dict
+    if [[ ! -f "\${ref_dict}" ]]; then samtools dict $ref -o \${ref_dict} >> dedup.log 2>&1; fi
+    $DEDUPBIN zipper --unmapped $ubam --input $mapped_bam --reference $ref --output tmp/zippered.bam >> dedup.log 2>&1
     $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam >> dedup.log 2>&1
     $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
     samtools index ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
