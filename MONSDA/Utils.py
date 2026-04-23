@@ -182,6 +182,22 @@ def check_run(func: callable) -> callable:
         try:
             return func(*args, **kwargs)
 
+        except ValueError as e:
+            # Handle sample not found errors gracefully
+            error_msg = str(e)
+            if "sample" in error_msg.lower() and "not found" in error_msg.lower():
+                log.error(logid + error_msg)
+                log.error(logid + "STOPPING: Processing stopped due to missing samples")
+                sys.exit(1)
+            else:
+                # Re-raise other ValueError exceptions
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tbe = tb.TracebackException(
+                    exc_type,
+                    exc_value,
+                    exc_tb,
+                )
+                log.error(logid + "".join(tbe.format()))
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             tbe = tb.TracebackException(

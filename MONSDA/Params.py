@@ -424,6 +424,18 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
                         clean.append(c)
                         break
             log.debug(logid + "checkclean: " + str(clean))
+            
+            # Check if any samples were found in the clean list
+            if not clean:
+                search_dir = os.sep.join(["FASTQ"] + search)
+                error_msg = (
+                    f"No sample files found for condition {os.sep.join(search)}. "
+                    f"Expected to find files matching samples {samples} "
+                    f"in directory: {search_dir}"
+                )
+                log.error(logid + error_msg)
+                raise ValueError(error_msg)
+            
             paired = checkpaired(
                 [os.sep.join([os.sep.join(search), clean[0].split(os.sep)[-1]])], config
             )
