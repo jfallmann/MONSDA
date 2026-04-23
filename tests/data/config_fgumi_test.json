@@ -1,0 +1,47 @@
+{
+  "WORKFLOWS": "DEDUP",
+  "BINS": "",
+  "MAXTHREADS": "2",
+  "VERSION": "FIXME",
+  "SETTINGS": {
+    "Test": {
+      "umi": {
+        "SAMPLES": [
+          "FGUMI01"
+        ],
+        "SEQUENCING": "paired",
+        "REFERENCE": "GENOME/genome.fa.gz",
+        "ANNOTATION": {
+          "GTF": "GENOME/genomic.gtf.gz",
+          "GFF": "GENOME/genomic.gff.gz"
+        },
+        "GROUPS": [
+          "umi"
+        ],
+        "TYPES": [
+          "fgumi_smoke"
+        ],
+        "BATCHES": [
+          "1"
+        ],
+        "INDEX": "",
+        "PREFIX": ""
+      }
+    }
+  },
+  "DEDUP": {
+    "TOOLS": {
+      "fgumi": "fgumi"
+    },
+    "Test": {
+      "umi": {
+        "fgumi": {
+          "OPTIONS": {
+            "EXTRACT": "--read-structures 6M+T +T",
+            "DEDUP": ""
+          }
+        }
+      }
+    }
+  }
+}

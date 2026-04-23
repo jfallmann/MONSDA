@@ -75,6 +75,8 @@ QUALITY CONTROL I
 
 This workflow step can be run as preprocessing step if none of the processing workflows is defined in the config.json.
 
+*rustqc* is intended for mapped BAM-level QC and is therefore generally most useful in processing mode after mapping outputs are available.
+
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
@@ -83,6 +85,8 @@ This workflow step can be run as preprocessing step if none of the processing wo
   | TOOL                       | DESCRIPTION                                                | ENV     | BIN     | LINK                                                                    | INPUT      | OUTPUT    |
   +============================+============================================================+=========+=========+=========================================================================+============+===========+
   | FASTQC (includes MULTIQC)  | A quality control tool for high throughput sequence data.  | fastqc  | fastqc  | `fastqc <https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`_  | FASTQ/BAM  | ZIP/HTML  |
+  +----------------------------+------------------------------------------------------------+---------+---------+-------------------------------------------------------------------------+------------+-----------+
+  | RustQC (includes MULTIQC)  | High-performance RNA-seq QC suite with MultiQC-compatible outputs. | rustqc  | rustqc  | `rustqc <https://github.com/seqeralabs/RustQC>`_  | BAM  | TEXT/TSV/LOG  |
   +----------------------------+------------------------------------------------------------+---------+---------+-------------------------------------------------------------------------+------------+-----------+
   
 
@@ -102,6 +106,8 @@ If any of the below listed processing steps is defined in the config.json, quali
   | TOOL                       | DESCRIPTION                                                | ENV     | BIN     | LINK                                                                    | INPUT      | OUTPUT    |
   +============================+============================================================+=========+=========+=========================================================================+============+===========+
   | FASTQC (includes MULTIQC)  | A quality control tool for high throughput sequence data.  | fastqc  | fastqc  | `fastqc <https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>`_  | FASTQ/BAM  | ZIP/HTML  |
+  +----------------------------+------------------------------------------------------------+---------+---------+-------------------------------------------------------------------------+------------+-----------+
+  | RustQC (includes MULTIQC)  | High-performance RNA-seq QC suite with MultiQC-compatible outputs. | rustqc  | rustqc  | `rustqc <https://github.com/seqeralabs/RustQC>`_  | BAM  | TEXT/TSV/LOG  |
   +----------------------------+------------------------------------------------------------+---------+---------+-------------------------------------------------------------------------+------------+-----------+
 
 
@@ -172,6 +178,8 @@ Deduplicate reads by UMI or based on mapping position and CIGAR string
   | TOOL          | DESCRIPTION                                                                                                                                        | ENV       | BIN        | LINK                                                                                               | INPUT                | OUTPUT     |
   +===============+====================================================================================================================================================+===========+============+====================================================================================================+======================+============+
   | UMI-tools     | UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes.  | umitools  | umi_tools  | `umitools <https://umi-tools.readthedocs.io/en/latest/>`_                                          | FASTQ/TRIMMED_FASTQ  | FASTQ/BAM  |
+  +---------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+------------+----------------------------------------------------------------------------------------------------+----------------------+------------+
+  | fgumi         | High-performance tools for UMI-tagged sequencing data including UMI extraction and UMI-aware deduplication.                                        | fgumi     | fgumi      | `fgumi <https://github.com/fulcrumgenomics/fgumi>`_                                                | FASTQ/TRIMMED_FASTQ  | FASTQ/BAM  |
   +---------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+------------+----------------------------------------------------------------------------------------------------+----------------------+------------+
   | Picard tools  | A better duplication marking algorithm that handles all cases including clipped and gapped alignments.                                             | picard    | picard     | `picard <https://gatk.broadinstitute.org/hc/en-us/articles/360037052812-MarkDuplicates-Picard->`_  | BAM                  | BAM        |
   +---------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+------------+----------------------------------------------------------------------------------------------------+----------------------+------------+
