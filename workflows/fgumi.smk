@@ -47,9 +47,10 @@ if paired == 'paired':
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
-                dedup = DEDUPBIN
+                dedup = DEDUPBIN,
+                ref = REFERENCE
         shell: """mkdir -p {output.td}
-{params.dedup} zipper --unmapped {input.ubam} --aligned {input.bam} --output {output.td}/zippered.bam > {log} 2>&1
+{params.dedup} zipper --unmapped {input.ubam} --input {input.bam} --reference {params.ref} --output {output.td}/zippered.bam > {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
@@ -67,9 +68,10 @@ else:
         threads: 1
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
-                dedup = DEDUPBIN
+                dedup = DEDUPBIN,
+                ref = REFERENCE
         shell: """mkdir -p {output.td}
-{params.dedup} zipper --unmapped {input.ubam} --aligned {input.bam} --output {output.td}/zippered.bam > {log} 2>&1
+{params.dedup} zipper --unmapped {input.ubam} --input {input.bam} --reference {params.ref} --output {output.td}/zippered.bam > {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
