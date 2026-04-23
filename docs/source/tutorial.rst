@@ -57,10 +57,10 @@ This slightly more complex use case involves multiple input files, two condition
 Workflows include: 
 
     - FETCH: Download from SRA
-    - QC: FASTQC of input and output
+    - QC: FASTQC and RustQC of input and output
     - TRIMMING: Adaptor removal with cutadapt/trimgalore
     - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
-    - DEDUP: Read deduplication with umi_tools and picard
+    - DEDUP: Read deduplication with umi_tools, fgumi and picard
 
 The more complex config for this analysis follows
 
@@ -74,7 +74,7 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_toolmix.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all *fastqc* reports and *multiqc* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from *EdgeR* and *DESeq2*. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and the "JOBS" directory with all command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/INDICES" directory containing the built index, a "QC" directory containing all *fastqc*/*rustqc* reports and *multiqc* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools*/*fgumi* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, a "DE" directory will be created which will hold output from counting with featurecounts and DE input and output from *EdgeR* and *DESeq2*. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and the "JOBS" directory with all command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error' at the end.
 
@@ -86,10 +86,10 @@ This postprocessing use case involves multiple input files, two conditions (WT/K
 Workflows include: 
 
     - FETCH: Download from SRA
-    - QC: FASTQC of input and output
+    - QC: FASTQC and RustQC of input and output
     - TRIMMING: Adaptor removal with cutadapt/trimgalore
     - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
-    - DEDUP: Read deduplication with umi_tools and picard
+    - DEDUP: Read deduplication with umi_tools, fgumi and picard
     - DE: Differential Expression analysis with EdgeR and DESeq2
     - DEU: Differential Exon Usage analysis with EdgeR (DEXSeq skipped, runtime)
     - COUNTING: Read counting with FeatureCounts
@@ -108,7 +108,7 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_postprocess.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for *salmon* later on, a "QC" directory containing all *FastQC* reports and *MultiQC* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU" directories will be created which will hold output from counting with FeatureCounts and DE/DEU input and output from *EdgeR* and *DESeq2* respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for *salmon* later on, a "QC" directory containing all *FastQC*/*RustQC* reports and *MultiQC* output, a "TRIMMED_FASTQ" directory for *trimgalore* and *cutadapt* output, a "DEDUP" directory for *umi_tools*/*fgumi* (runs before trimming and after mapping) and *picard* (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU" directories will be created which will hold output from counting with FeatureCounts and DE/DEU input and output from *EdgeR* and *DESeq2* respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error'. Be aware that this is indeed an exhaustive workflow and will require a decent amount of disk-space, memory and compute-time, depending on the hardware at your disposal.
 
@@ -122,10 +122,10 @@ This exhaustive use case involves multiple input files, two conditions (WT/KO) a
 Workflows include: 
 
     - FETCH: Download from SRA
-    - QC: FASTQC of input and output
+    - QC: FASTQC and RustQC of input and output
     - TRIMMING: Adaptor removal with cutadapt/trimgalore
     - MAPPING: Read mapping with STAR, hisat2, bwa, segemehl3 and minimap2 
-    - DEDUP: Read deduplication with umi_tools and picard
+    - DEDUP: Read deduplication with umi_tools, fgumi and picard
     - DE: Differential Expression analysis with EdgeR and DESeq2
     - DEU: Differential Exon Usage analysis with EdgeR (DEXSeq skipped, runtime)
     - DAS: Differential Alternative Splicing analysis with EdgeR and DIEGO 
@@ -186,6 +186,6 @@ Starting the run with 12 cores (defining more will be capped by the config file 
 
     monsda -j 12 -c ${CONDA_PREFIX}/share/MONSDA/configs/tutorial_exhaustive.json --directory ${PWD}
 
-Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS/DTU" directories will be created which will hold output from counting with FeatureCounts (or salmon for DTU) and DE/DEU/DAS/DTU input and output from EDGER, DESeq2, Diego and DrimSeq respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
+Will start the run in the current directory and generate a "FASTQ" sub-directory containing the downloaded sample, a "GENOME/Ecoli/INDICES" directory containing the built indices, including the one built for salmon later on, a "QC" directory containing all FASTQC/RustQC reports and MULTIQC output, a "TRIMMED_FASTQ" directory for trimgalore and cutadapt output, a "DEDUP" directory for umi_tools/fgumi (runs before trimming and after mapping) and picard (runs after mapping) output and a "MAPPING" directory containing the mapped files. Furthermore, "DE/DEU/DAS/DTU" directories will be created which will hold output from counting with FeatureCounts (or salmon for DTU) and DE/DEU/DAS/DTU input and output from EDGER, DESeq2, Diego and DrimSeq respectively. Again, **MONSDA** will create a "LOG" directory containing it's own log, as well as logs of all executed jobs and again a "JOBS" directory for command-line calls. 
 
 A successful run will show the message 'Workflow finished, no error'. Be aware that this is indeed an exhaustive workflow and will require a decent amount of disk-space, memory and compute-time, depending on the hardware at your disposal.

@@ -34,6 +34,11 @@ You can always define differing ENV/BIN keys for each condition-tree leaf separa
 
 The next key-level is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single-/paired-* end or *singlecell* sequencing, this is done automatically.  To add parameters simply add the *OPTION* key which defines a dict where you can set parameters for each defined subworkflow-step. Parameters are here defined as key/value pairs corresponding to the subworkflow-step, e.g. 'INDEX' to generate an index file for mapping and all settings similar to a command line call as values. This should become clear having a look at the different processing steps in the template json.  If there are no options just leave the 'OPTIONS' dict empty.
 
+For newly available tools:
+
+- **QC/rustqc** can be selected with ``"rustqc": "rustqc"`` in the ``QC -> TOOLS`` section and configured via the regular ``OPTIONS`` keys (e.g. ``QC`` and ``MULTI`` entries in tutorial configs).
+- **DEDUP/fgumi** can be selected with ``"fgumi": "fgumi"`` in the ``DEDUP -> TOOLS`` section and supports dedicated options under ``OPTIONS`` using ``EXTRACT`` and ``DEDUP`` keys.
+
 
 .. literalinclude:: ../../configs/template.json
     :language: json
