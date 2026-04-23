@@ -44,7 +44,7 @@ if paired == 'paired':
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
-        threads: 1
+        threads: 4
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
                 dedup = DEDUPBIN,
@@ -52,7 +52,9 @@ if paired == 'paired':
                 ref_dict = (REFERENCE[:-3] if REFERENCE.endswith('.gz') else REFERENCE) + ".dict"
         shell: """mkdir -p {output.td}
 [[ -f "{params.ref_dict}" ]] || samtools dict {params.ref} -o {params.ref_dict} >> {log} 2>&1
-{params.dedup} zipper --unmapped {input.ubam} --input {input.bam} --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
+samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2>&1
+samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
+{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
@@ -67,7 +69,7 @@ else:
         log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
-        threads: 1
+        threads: 4
         priority: 0               # This should be done after all mapping is done
         params: dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
                 dedup = DEDUPBIN,
@@ -75,7 +77,9 @@ else:
                 ref_dict = (REFERENCE[:-3] if REFERENCE.endswith('.gz') else REFERENCE) + ".dict"
         shell: """mkdir -p {output.td}
 [[ -f "{params.ref_dict}" ]] || samtools dict {params.ref} -o {params.ref_dict} >> {log} 2>&1
-{params.dedup} zipper --unmapped {input.ubam} --input {input.bam} --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
+samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2>&1
+samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
+{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
