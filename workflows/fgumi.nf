@@ -101,7 +101,8 @@ process dedup_bam{
     samtools sort -n -@ ${task.cpus} -o tmp/mapped_qn.bam $mapped_bam >> dedup.log 2>&1
     $DEDUPBIN zipper --unmapped tmp/ubam_qn.bam --input tmp/mapped_qn.bam --reference $ref --output tmp/zippered.bam >> dedup.log 2>&1
     $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam >> dedup.log 2>&1
-    $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
+    $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output tmp/dedup.bam >> dedup.log 2>&1
+    samtools sort -@ ${task.cpus} -o ${mapped_bam.baseName}_dedup.bam tmp/dedup.bam >> dedup.log 2>&1
     samtools index ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
     rm $ubam
     """

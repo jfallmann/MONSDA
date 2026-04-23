@@ -56,7 +56,8 @@ samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2
 samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
 {params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
-{params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
+{params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
+samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.bam >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
 rm {input.ubam}"""
 else:
@@ -81,6 +82,7 @@ samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2
 samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
 {params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
-{params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.bam} >> {log} 2>&1
+{params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
+samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.bam >> {log} 2>&1
 samtools index {output.bam} >> {log} 2>&1
 rm {input.ubam}"""
