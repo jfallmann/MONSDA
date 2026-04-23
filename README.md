@@ -43,13 +43,6 @@ pip install MONSDA
 
 More information can be found in the official [documentation](https://monsda.readthedocs.io/en/latest/?badge=latest)
 
-## Notes on newly available tools
-
-- **rustqc** is available as an alternative QC backend and is designed for fast, integrated RNA-seq QC reporting with MultiQC-compatible outputs.
-- **fgumi** is available as an additional UMI-aware deduplication backend in the `DEDUP` step.
-
-Both tools are available through the shipped conda environments in `envs/` and can be selected through the regular config `TOOLS` sections.
-
 
 ## How does it work
 
