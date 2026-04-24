@@ -105,7 +105,7 @@ process hisat2_mapping{
 
         r1 = reads[1]
         r2 = reads[2]
-        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
+        fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
         pf = fn+"_mapped.sam"
         ufo = fn+"_R1_unmapped.fastq.gz"
         uft = fn+"_R2_unmapped.fastq.gz"
@@ -122,7 +122,7 @@ process hisat2_mapping{
             stranded = ''
         }
         read = reads[1]
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
+        fn = file(reads[1]).getSimpleName().replaceAll(/(_dedup)?_trimmed$/,"")
         pf = fn+"_mapped.sam"
         uf = fn+"_unmapped.fastq.gz"
         lf = "hisat2_"+fn+".log"

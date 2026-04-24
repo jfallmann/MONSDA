@@ -383,6 +383,8 @@ def prepare_table(
             exc_tb,
         )
         log.error(logid + "".join(tbe.format()))
+        print("".join(tbe.format()), file=sys.stderr)
+        raise SystemExit(1)
 
 
 def make_sample_list(group_name):
@@ -433,6 +435,8 @@ if __name__ == "__main__":
             exc_tb,
         )
         log.error(logid + "".join(tbe.format()))
+        print("".join(tbe.format()), file=sys.stderr)
+        raise SystemExit(1)
 
 #
 # build_count_table_simple.py ends here
