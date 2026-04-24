@@ -59,7 +59,7 @@ samtools view -h {output.td}/mapped_qn.bam | awk 'BEGIN{{FS=OFS="\t"}} /^@/{{pri
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam --threads {threads} --compression-level 1 >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
 {params.dedup} sort --order coordinate --input {output.td}/dedup.bam --output {output.bam} --write-index --threads {threads} --compression-level 1 >> {log} 2>&1
-rm {input.ubam}"""
+"""
 else:
     rule dedupbam:
         input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam",
@@ -85,4 +85,4 @@ samtools view -h {output.td}/mapped_qn.bam | awk 'BEGIN{{FS=OFS="\t"}} /^@/{{pri
 {params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam --threads {threads} --compression-level 1 >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
 {params.dedup} sort --order coordinate --input {output.td}/dedup.bam --output {output.bam} --write-index --threads {threads} --compression-level 1 >> {log} 2>&1
-rm {input.ubam}"""
+"""
