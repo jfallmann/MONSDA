@@ -99,11 +99,11 @@ process dedup_bam{
     if [[ ! -f "\${ref_dict}" ]]; then samtools dict $ref -o \${ref_dict} >> dedup.log 2>&1; fi
     samtools sort -n -@ ${task.cpus} -o tmp/ubam_qn.bam $ubam >> dedup.log 2>&1
     samtools sort -n -@ ${task.cpus} -o tmp/mapped_qn.bam $mapped_bam >> dedup.log 2>&1
-    $DEDUPBIN zipper --unmapped tmp/ubam_qn.bam --input tmp/mapped_qn.bam --reference $ref --output tmp/zippered.bam >> dedup.log 2>&1
-    $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam >> dedup.log 2>&1
+    samtools view -h tmp/mapped_qn.bam | awk 'BEGIN{FS=OFS="\t"} /^@/{print; next} {f=\$2+0; if (!and(f,256) && !and(f,2048)) {k=\$1":"(and(f,64)?1:0)":"(and(f,128)?1:0); if (seen[k]++) next} print}' | samtools view -b -o tmp/mapped_qn_primaryuniq.bam - >> dedup.log 2>&1
+    $DEDUPBIN zipper --unmapped tmp/ubam_qn.bam --input tmp/mapped_qn_primaryuniq.bam --reference $ref --output tmp/zippered.bam --threads ${task.cpus} --compression-level 1 >> dedup.log 2>&1
+    $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam --threads ${task.cpus} --compression-level 1 >> dedup.log 2>&1
     $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output tmp/dedup.bam >> dedup.log 2>&1
-    samtools sort -@ ${task.cpus} -o ${mapped_bam.baseName}_dedup.bam tmp/dedup.bam >> dedup.log 2>&1
-    samtools index ${mapped_bam.baseName}_dedup.bam >> dedup.log 2>&1
+    $DEDUPBIN sort --order coordinate --input tmp/dedup.bam --output ${mapped_bam.baseName}_dedup.bam --write-index --threads ${task.cpus} --compression-level 1 >> dedup.log 2>&1
     rm $ubam
     """
 }

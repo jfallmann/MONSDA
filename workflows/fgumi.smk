@@ -54,11 +54,11 @@ if paired == 'paired':
 [[ -f "{params.ref_dict}" ]] || samtools dict {params.ref} -o {params.ref_dict} >> {log} 2>&1
 samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2>&1
 samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
-{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
-{params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
+samtools view -h {output.td}/mapped_qn.bam | awk 'BEGIN{{FS=OFS="\t"}} /^@/{{print; next}} {{f=$2+0; if (!and(f,256) && !and(f,2048)) {{k=$1":"(and(f,64)?1:0)":"(and(f,128)?1:0); if (seen[k]++) next}} print}}' | samtools view -b -o {output.td}/mapped_qn_primaryuniq.bam - >> {log} 2>&1
+{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn_primaryuniq.bam --reference {params.ref} --output {output.td}/zippered.bam --threads {threads} --compression-level 1 >> {log} 2>&1
+{params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam --threads {threads} --compression-level 1 >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
-samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.bam >> {log} 2>&1
-samtools index {output.bam} >> {log} 2>&1
+{params.dedup} sort --order coordinate --input {output.td}/dedup.bam --output {output.bam} --write-index --threads {threads} --compression-level 1 >> {log} 2>&1
 rm {input.ubam}"""
 else:
     rule dedupbam:
@@ -80,9 +80,9 @@ else:
 [[ -f "{params.ref_dict}" ]] || samtools dict {params.ref} -o {params.ref_dict} >> {log} 2>&1
 samtools sort -n -@ {threads} -o {output.td}/ubam_qn.bam {input.ubam} >> {log} 2>&1
 samtools sort -n -@ {threads} -o {output.td}/mapped_qn.bam {input.bam} >> {log} 2>&1
-{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn.bam --reference {params.ref} --output {output.td}/zippered.bam >> {log} 2>&1
-{params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam >> {log} 2>&1
+samtools view -h {output.td}/mapped_qn.bam | awk 'BEGIN{{FS=OFS="\t"}} /^@/{{print; next}} {{f=$2+0; if (!and(f,256) && !and(f,2048)) {{k=$1":"(and(f,64)?1:0)":"(and(f,128)?1:0); if (seen[k]++) next}} print}}' | samtools view -b -o {output.td}/mapped_qn_primaryuniq.bam - >> {log} 2>&1
+{params.dedup} zipper --unmapped {output.td}/ubam_qn.bam --input {output.td}/mapped_qn_primaryuniq.bam --reference {params.ref} --output {output.td}/zippered.bam --threads {threads} --compression-level 1 >> {log} 2>&1
+{params.dedup} sort --order template-coordinate --input {output.td}/zippered.bam --output {output.td}/sorted.bam --threads {threads} --compression-level 1 >> {log} 2>&1
 {params.dedup} dedup {params.dpara} --input {output.td}/sorted.bam --output {output.td}/dedup.bam >> {log} 2>&1
-samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.bam >> {log} 2>&1
-samtools index {output.bam} >> {log} 2>&1
+{params.dedup} sort --order coordinate --input {output.td}/dedup.bam --output {output.bam} --write-index --threads {threads} --compression-level 1 >> {log} 2>&1
 rm {input.ubam}"""
