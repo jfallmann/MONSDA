@@ -2712,6 +2712,9 @@ def nf_make_pre(
                         subjobs.append(line)
                     subjobs.append("\n\n")
 
+                if "DEDUP" in works:
+                    flowlist.append("DEDUPBAM")
+
                 tp.append(
                     nf_tool_params(
                         subsamples[0],
@@ -2932,6 +2935,7 @@ def nf_make_sub(
                             flowlist.append("TRIMMING")
 
                         if works[j] == "DEDUP":
+                            deduptool = toolenv
                             if toolenv in ["umitools", "fgumi"]:
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
@@ -3101,11 +3105,18 @@ def nf_make_sub(
                                 " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
                             )
                         elif w == "DEDUPBAM":
-                            subjobs.append(
-                                " " * 4
-                                + w
-                                + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
-                            )
+                            if deduptool == "fgumi":
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai, DEDUPEXTRACT.out.ubam)\n"
+                                )
+                            else:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
+                                )
                         elif w == "QC_MAPPING":
                             if "DEDUPBAM" in flowlist:
                                 subjobs.append(
@@ -3205,6 +3216,7 @@ def nf_make_sub(
             subjobs = list()
             subconf = mu.NestedDefaultDict()
             tp = list()
+            deduptool = None
 
             for subwork in subworkflows:
                 log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
@@ -3292,6 +3304,7 @@ def nf_make_sub(
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.nf"
                     elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi"]:
+                        deduptool = toolenv
                         flowlist.append("PREDEDUP")
                         subconf["PREDEDUP"] = "enabled"
                         if "QC" in flowlist:
@@ -3440,11 +3453,18 @@ def nf_make_sub(
                         subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         subjobs.append(" " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n")
                     elif w == "DEDUPBAM":
-                        subjobs.append(
-                            " " * 4
-                            + w
-                            + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
-                        )
+                        if deduptool == "fgumi":
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai, DEDUPEXTRACT.out.ubam)\n"
+                            )
+                        else:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap, POSTMAPPING.out.postbai, POSTMAPPING.out.postmapuni, POSTMAPPING.out.postunibai)\n"
+                            )
                     elif w == "QC_MAPPING":
                         if "DEDUPBAM" in flowlist:
                             subjobs.append(
