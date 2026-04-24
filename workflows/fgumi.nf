@@ -104,7 +104,6 @@ process dedup_bam{
     $DEDUPBIN sort --order template-coordinate --input tmp/zippered.bam --output tmp/sorted.bam --threads ${task.cpus} --compression-level 1 >> dedup.log 2>&1
     $DEDUPBIN dedup $DEDUPPARAMS --input tmp/sorted.bam --output tmp/dedup.bam >> dedup.log 2>&1
     $DEDUPBIN sort --order coordinate --input tmp/dedup.bam --output ${mapped_bam.baseName}_dedup.bam --write-index --threads ${task.cpus} --compression-level 1 >> dedup.log 2>&1
-    rm $ubam
     """
 }
 
