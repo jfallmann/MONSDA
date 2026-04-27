@@ -1558,9 +1558,15 @@ def get_combo_name(combinations: list) -> mu.NestedDefaultDict:
             envs = list()
             works = list()
             for step in combi:
-                for work, env in step.items():
-                    envs.append(env)
-                    works.append(work)
+                if isinstance(step, list):
+                    for substep in step:
+                        for work, env in substep.items():
+                            envs.append(env)
+                            works.append(work)
+                else:
+                    for work, env in step.items():
+                        envs.append(env)
+                        works.append(work)
             combname[condition]["envs"].append(str.join("-", envs))
             combname[condition]["works"].append(str.join("-", works))
 
