@@ -94,7 +94,8 @@ process prepare_count_table{
 
     script:
     """
-    ${BINS}/Analysis/build_count_table.py $DEREPS --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
+    ${BINS}/Analysis/build_count_table.py $DEREPS -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
