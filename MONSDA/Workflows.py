@@ -2958,7 +2958,7 @@ def nf_make_sub(
                             if toolenv == "rustqc":
                                 # RustQC is post-alignment QC only
                                 if "MAPPING" in works:
-                                    flowlist.append("QC_MAPPING")
+                                    flowlist.append("RUSTQC_MAPPING")
                                 else:
                                     log.warning(
                                         logid
@@ -3103,7 +3103,14 @@ def nf_make_sub(
 
                 if "QC" in works:
                     flowlist.append("MULTIQC")
-                    _mqc_nf = "multiqc_rustqc.nf" if "QC_MAPPING" in flowlist and "QC_RAW" not in flowlist else "multiqc.nf"
+                    _mqc_nf = (
+                        "multiqc_rustqc.nf"
+                        if (
+                            ("QC_MAPPING" in flowlist or "RUSTQC_MAPPING" in flowlist)
+                            and "QC_RAW" not in flowlist
+                        )
+                        else "multiqc.nf"
+                    )
                     nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
                     with open(nfi, "r") as nf:
                         for line in mu.comment_remover(nf.readlines()):
@@ -3124,6 +3131,14 @@ def nf_make_sub(
                 # workflow merger
                 log.debug("FLOWLIST: " + str(flowlist))
 
+                map_qc_chan = "QC_MAPPING.out.qc"
+                if "RUSTQC_MAPPING" in flowlist:
+                    map_qc_chan = (
+                        "QC_MAPPING.out.qc.concat(RUSTQC_MAPPING.out.qc)"
+                        if "QC_MAPPING" in flowlist
+                        else "RUSTQC_MAPPING.out.qc"
+                    )
+
                 subjobs.append("\n\n" + "workflow {\n")
                 for w in [
                     "QC_RAW",
@@ -3134,6 +3149,7 @@ def nf_make_sub(
                     "MAPPING",
                     "DEDUPBAM",
                     "QC_MAPPING",
+                    "RUSTQC_MAPPING",
                     "MULTIQC",
                 ]:
                     if w in flowlist:
@@ -3185,17 +3201,33 @@ def nf_make_sub(
                                     + w
                                     + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                                 )
+                        elif w == "RUSTQC_MAPPING":
+                            if "DEDUPBAM" in flowlist:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
+                                )
+                            else:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                                )
                         elif w == "MULTIQC":
-                            if "QC_RAW" not in flowlist and "QC_MAPPING" in flowlist:
+                            if "QC_RAW" not in flowlist and (
+                                "QC_MAPPING" in flowlist
+                                or "RUSTQC_MAPPING" in flowlist
+                            ):
                                 # RustQC: only BAM-level QC, no FASTQ QC
                                 subjobs.append(
-                                    " " * 4 + w + "(QC_MAPPING.out.qc.collect())\n"
+                                    " " * 4 + w + f"({map_qc_chan}.collect())\n"
                                 )
                             elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs))).collect())\n"
+                                    + f"(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat({map_qc_chan}.concat(MAPPING.out.logs))).collect())\n"
                                 )
                             elif (
                                 "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist
@@ -3203,13 +3235,13 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs)).collect())\n"
+                                    + f"(QC_RAW.out.qc.concat({map_qc_chan}.concat(MAPPING.out.logs)).collect())\n"
                                 )
                             elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))).collect())\n"
+                                    + f"(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat({map_qc_chan}.concat(POSTMAPPING.out.postmapuni))).collect())\n"
                                 )
                             elif (
                                 "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist
@@ -3217,7 +3249,7 @@ def nf_make_sub(
                                 subjobs.append(
                                     " " * 4
                                     + w
-                                    + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni)).collect())\n"
+                                    + f"(QC_RAW.out.qc.concat({map_qc_chan}.concat(POSTMAPPING.out.postmapuni)).collect())\n"
                                 )
                             elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
@@ -3328,7 +3360,7 @@ def nf_make_sub(
                         if toolenv == "rustqc":
                             # RustQC is post-alignment QC only
                             if "MAPPING" in subworkflows:
-                                flowlist.append("QC_MAPPING")
+                                flowlist.append("RUSTQC_MAPPING")
                             else:
                                 log.warning(
                                     logid
@@ -3463,7 +3495,14 @@ def nf_make_sub(
 
             if "QC" in subworkflows:
                 flowlist.append("MULTIQC")
-                _mqc_nf = "multiqc_rustqc.nf" if "QC_MAPPING" in flowlist and "QC_RAW" not in flowlist else "multiqc.nf"
+                _mqc_nf = (
+                    "multiqc_rustqc.nf"
+                    if (
+                        ("QC_MAPPING" in flowlist or "RUSTQC_MAPPING" in flowlist)
+                        and "QC_RAW" not in flowlist
+                    )
+                    else "multiqc.nf"
+                )
                 nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
                 with open(nfi, "r") as nf:
                     for line in mu.comment_remover(nf.readlines()):
@@ -3484,6 +3523,14 @@ def nf_make_sub(
             # workflow merger
             log.debug("FLOWLIST: " + str(flowlist))
 
+            map_qc_chan = "QC_MAPPING.out.qc"
+            if "RUSTQC_MAPPING" in flowlist:
+                map_qc_chan = (
+                    "QC_MAPPING.out.qc.concat(RUSTQC_MAPPING.out.qc)"
+                    if "QC_MAPPING" in flowlist
+                    else "RUSTQC_MAPPING.out.qc"
+                )
+
             subjobs.append("\n\n" + "workflow {\n")
             for w in [
                 "QC_RAW",
@@ -3494,6 +3541,7 @@ def nf_make_sub(
                 "MAPPING",
                 "DEDUPBAM",
                 "QC_MAPPING",
+                "RUSTQC_MAPPING",
                 "MULTIQC",
             ]:
                 if w in flowlist:
@@ -3541,35 +3589,50 @@ def nf_make_sub(
                                 + w
                                 + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                             )
+                    elif w == "RUSTQC_MAPPING":
+                        if "DEDUPBAM" in flowlist:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
+                            )
+                        else:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                            )
                     elif w == "MULTIQC":
-                        if "QC_RAW" not in flowlist and "QC_MAPPING" in flowlist:
+                        if "QC_RAW" not in flowlist and (
+                            "QC_MAPPING" in flowlist or "RUSTQC_MAPPING" in flowlist
+                        ):
                             # RustQC: only BAM-level QC, no FASTQ QC
                             subjobs.append(
-                                " " * 4 + w + "(QC_MAPPING.out.qc.collect())\n"
+                                " " * 4 + w + f"({map_qc_chan}.collect())\n"
                             )
                         elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs))).collect())\n"
+                                + f"(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat({map_qc_chan}.concat(MAPPING.out.logs))).collect())\n"
                             )
                         elif "DEDUPBAM" in flowlist and "QC_TRIMMING" not in flowlist:
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(MAPPING.out.logs)).collect())\n"
+                                + f"(QC_RAW.out.qc.concat({map_qc_chan}.concat(MAPPING.out.logs)).collect())\n"
                             )
                         elif "MAPPING" in flowlist and "QC_TRIMMING" in flowlist:
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni))).collect())\n"
+                                + f"(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc.concat({map_qc_chan}.concat(POSTMAPPING.out.postmapuni))).collect())\n"
                             )
                         elif "MAPPING" in flowlist and "QC_TRIMMING" not in flowlist:
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(QC_RAW.out.qc.concat(QC_MAPPING.out.qc.concat(POSTMAPPING.out.postmapuni)).collect())\n"
+                                + f"(QC_RAW.out.qc.concat({map_qc_chan}.concat(POSTMAPPING.out.postmapuni)).collect())\n"
                             )
                         elif "TRIMMING" in flowlist and "QC_TRIMMING" in flowlist:
                             subjobs.append(

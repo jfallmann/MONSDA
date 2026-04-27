@@ -44,7 +44,7 @@ process rustqc_mapped{
     """
 }
 
-workflow QC_MAPPING{
+workflow RUSTQC_MAPPING{
     take: collection
 
     main:
