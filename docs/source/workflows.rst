@@ -75,8 +75,6 @@ QUALITY CONTROL I
 
 This workflow step can be run as preprocessing step if none of the processing workflows is defined in the config.json.
 
-*rustqc* is intended for mapped BAM-level QC and is therefore generally most useful in processing mode after mapping outputs are available.
-
 .. table:: 
   :widths: 10, 40, 10, 10, 10, 10, 10
   :class: tight-table
