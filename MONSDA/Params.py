@@ -1558,9 +1558,13 @@ def get_combo_name(combinations: list) -> mu.NestedDefaultDict:
             envs = list()
             works = list()
             for step in combi:
-                for work, env in step.items():
-                    envs.append(env)
-                    works.append(work)
+                # A step can be a single dict (default) or a list of dicts
+                # (QC all-tools grouping from get_combo).
+                grouped_steps = step if isinstance(step, list) else [step]
+                for grouped_step in grouped_steps:
+                    for work, env in grouped_step.items():
+                        envs.append(env)
+                        works.append(work)
             combname[condition]["envs"].append(str.join("-", envs))
             combname[condition]["works"].append(str.join("-", works))
 
