@@ -61,10 +61,12 @@
 # # __file__ fails if someone does os.chdir() before.
 # # sys.argv[0] also fails, because it doesn't not always contain the path.
 
+import csv
 import datetime
 import glob
 import inspect
 import itertools
+import json
 import os
 import re
 import shutil
@@ -73,6 +75,7 @@ import traceback as tb
 from collections import OrderedDict, defaultdict
 
 from natsort import natsorted
+from snakemake.common.configfile import load_configfile as _load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
@@ -99,6 +102,195 @@ except Exception:
         exc_tb,
     )
     print("".join(tbe.format()), file=sys.stderr)
+
+
+def samplesheet_to_settings(samplesheet_path: str) -> dict:
+    """Read a CSV/TSV samplesheet and return a SETTINGS dict compatible with MONSDA config.
+
+    Expected columns (case-insensitive header row):
+      CONDITION  - slash-separated condition path, e.g. ``Ecoli/WT`` or ``Ecoli/WT/dummylevel``
+      SAMPLE     - sample name / accession
+      GROUP      - group label for differential analysis
+      SEQUENCING - e.g. ``paired`` or ``single``
+      REFERENCE  - path to genome FASTA (.fa.gz)
+      GTF        - path to GTF annotation (.gtf.gz)  [optional]
+      GFF        - path to GFF annotation (.gff.gz)  [optional]
+      INDEX      - path to pre-built index            [optional]
+      PREFIX     - mapper index prefix                [optional]
+      DECOY      - path to decoy file                 [optional]
+      TYPE       - sample type label                  [optional]
+      BATCH      - batch label                        [optional]
+      IP         - IP protocol info (for PEAKS)       [optional]
+
+    Per-condition metadata (SEQUENCING, REFERENCE, …) only needs to be present
+    on the first row for that condition; subsequent rows may leave those cells
+    empty (fill-down behaviour).
+
+    Parameters
+    ----------
+    samplesheet_path : str
+        Absolute or relative path to the samplesheet file.
+
+    Returns
+    -------
+    dict
+        Nested dict suitable for assigning to ``config["SETTINGS"]``.
+    """
+    logid = scriptname + ".samplesheet_to_settings: "
+
+    # --- detect delimiter ---
+    with open(samplesheet_path, newline="") as fh:
+        sample = fh.read(4096)
+
+    delimiter = None
+    # 1. trust the file extension
+    ext = os.path.splitext(samplesheet_path)[1].lower()
+    if ext in (".tsv", ".txt"):
+        delimiter = "\t"
+    elif ext == ".csv":
+        delimiter = ","
+    else:
+        # 2. try the sniffer
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=",\t;")
+            delimiter = dialect.delimiter
+        except csv.Error:
+            pass
+        # 3. manual probe: whichever candidate appears more on the first line
+        if delimiter is None:
+            first_line = sample.splitlines()[0] if sample else ""
+            delimiter = "\t" if first_line.count("\t") >= first_line.count(",") else ","
+
+    settings: dict = {}
+
+    # per-condition accumulator for fill-down metadata
+    cond_meta: dict = {}
+
+    with open(samplesheet_path, newline="") as fh:
+        reader = csv.DictReader(fh, delimiter=delimiter)
+        # normalise header keys to upper-case
+        if reader.fieldnames is None:
+            raise ValueError(
+                "Samplesheet appears to be empty or has no header row: "
+                + samplesheet_path
+            )
+        reader.fieldnames = [f.strip().upper() for f in reader.fieldnames]
+
+        for row in reader:
+            row = {
+                k.strip().upper(): (v.strip() if v is not None else "")
+                for k, v in row.items()
+                if k
+            }
+
+            condition_str = row.get("CONDITION", "").strip()
+            sample_name = row.get("SAMPLE", "").strip()
+            if not condition_str or not sample_name:
+                log.warning(
+                    logid + "Skipping row with missing CONDITION or SAMPLE: " + str(row)
+                )
+                continue
+
+            # fill-down: carry over non-empty metadata from previous rows of same condition
+            if condition_str not in cond_meta:
+                cond_meta[condition_str] = {}
+            for key in (
+                "SEQUENCING",
+                "REFERENCE",
+                "GTF",
+                "GFF",
+                "INDEX",
+                "PREFIX",
+                "DECOY",
+                "IP",
+            ):
+                val = row.get(key, "")
+                if val:
+                    cond_meta[condition_str][key] = val
+
+            meta = cond_meta[condition_str]
+
+            # --- navigate / create nested dict path ---
+            path_parts = [p.strip() for p in condition_str.split("/") if p.strip()]
+            node = settings
+            for part in path_parts:
+                node = node.setdefault(part, {})
+
+            # --- initialise leaf node on first encounter ---
+            if "SAMPLES" not in node:
+                node["SAMPLES"] = []
+                node["GROUPS"] = []
+                node["TYPES"] = []
+                node["BATCHES"] = []
+                node["SEQUENCING"] = meta.get("SEQUENCING", "")
+                node["REFERENCE"] = meta.get("REFERENCE", "")
+                node["INDEX"] = meta.get("INDEX", "")
+                node["PREFIX"] = meta.get("PREFIX", "")
+                node["IP"] = meta.get("IP", "")
+                gtf = meta.get("GTF", "")
+                gff = meta.get("GFF", "")
+                node["ANNOTATION"] = {"GTF": gtf, "GFF": gff}
+                decoy = meta.get("DECOY", "")
+                node["DECOY"] = {decoy: ""} if decoy else {}
+
+            node["SAMPLES"].append(sample_name)
+            node["GROUPS"].append(row.get("GROUP", ""))
+            node["TYPES"].append(row.get("TYPE", ""))
+            node["BATCHES"].append(row.get("BATCH", ""))
+
+    log.info(logid + "Built SETTINGS from samplesheet: " + str(list(settings.keys())))
+    return settings
+
+
+def inject_samplesheet_settings(configfile: str, samplesheet_path: str) -> str:
+    """Load *configfile*, populate ``SETTINGS`` from *samplesheet_path* if absent,
+    write the augmented config to ``<base>_with_settings.json`` and return that path.
+
+    Parameters
+    ----------
+    configfile : str
+        Path to the original MONSDA JSON config.
+    samplesheet_path : str
+        Path to the CSV/TSV samplesheet.
+
+    Returns
+    -------
+    str
+        Path to the written (augmented) config file.
+    """
+    logid = scriptname + ".inject_samplesheet_settings: "
+
+    config = _load_configfile(configfile)
+
+    existing = config.get("SETTINGS", {})
+    # strip comment-only SETTINGS that have no SAMPLES anywhere
+    has_samples = (
+        any(
+            isinstance(v, dict) and "SAMPLES" in v
+            for cond in existing.values()
+            if isinstance(cond, dict)
+            for v in cond.values()
+        )
+        if existing
+        else False
+    )
+
+    if has_samples:
+        log.info(
+            logid
+            + "Config already contains SETTINGS with sample data; samplesheet will be ignored."
+        )
+        return configfile
+
+    log.info(logid + "Populating SETTINGS from samplesheet: " + samplesheet_path)
+    config["SETTINGS"] = samplesheet_to_settings(samplesheet_path)
+
+    base, ext = os.path.splitext(configfile)
+    out_path = base + "_with_settings" + (ext if ext else ".json")
+    with open(out_path, "w") as fh:
+        json.dump(config, fh, indent=4)
+    log.info(logid + "Augmented config written to: " + out_path)
+    return out_path
 
 
 @check_run

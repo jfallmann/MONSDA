@@ -129,6 +129,15 @@ def parseargs():
         action="store_true",
         help="Print version and exit",
     )
+    parser.add_argument(
+        "--samplesheet",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help="CSV or TSV samplesheet to populate the SETTINGS section. "
+             "Used when the config JSON lacks a SETTINGS block. "
+             "On the first run an augmented config (<config>_with_settings.json) is written for reuse.",
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -922,6 +931,13 @@ def main():
         if len(knownargs.config) > 1:
             for i in range(1, len(knownargs.config)):
                 optionalargs[0].extend(list(["-c", str(knownargs.config[i].pop())]))
+
+        # --- samplesheet injection (before any other config use) ---
+        if knownargs.samplesheet:
+            knownargs.configfile = mp.inject_samplesheet_settings(
+                knownargs.configfile,
+                os.path.abspath(knownargs.samplesheet),
+            )
 
         log.debug(
             f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"

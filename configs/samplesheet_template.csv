@@ -1,0 +1,7 @@
+CONDITION,SAMPLE,GROUP,SEQUENCING,REFERENCE,GTF,GFF,INDEX,PREFIX,DECOY,TYPE,BATCH,IP
+Ecoli/WT,SRR16324019,ctrl,paired,GENOMES/Ecoli/ecoli.fa.gz,GENOMES/Ecoli/ecoli.gtf.gz,GENOMES/Ecoli/ecoli.gff.gz,,,,,,
+Ecoli/WT,SRR16324018,ctrl,,,,,,,,,
+Ecoli/WT,SRR16324017,ctrl,,,,,,,,,
+Ecoli/KO,SRR16324016,ko,paired,GENOMES/Ecoli/ecoli.fa.gz,GENOMES/Ecoli/ecoli.gtf.gz,GENOMES/Ecoli/ecoli.gff.gz,,,,,,
+Ecoli/KO,SRR16324015,ko,,,,,,,,,
+Ecoli/KO,SRR16324014,ko,,,,,,,,,
