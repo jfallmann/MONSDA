@@ -192,7 +192,12 @@ def get_combo(wfs, config, conditions):
                     + " with Tool: "
                     + str(tools)
                 )
-            ret.append(tools)
+            # For QC, run all configured QC tools in the same workflow combo
+            # (instead of creating one combo per QC tool).
+            if subwork == "QC":
+                ret.append([tools])
+            else:
+                ret.append(tools)
 
         log.debug(f"{logid} Itertools {ret}")
         combos[condition] = itertools.product(*ret)
