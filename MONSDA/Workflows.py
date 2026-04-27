@@ -195,6 +195,14 @@ def get_combo(wfs, config, conditions):
             # Group all QC tools into a single combo position so pre-QC
             # (fastqc) and post-QC (rustqc) both appear in one combo name.
             if subwork == "QC" and len(tools) > 1:
+                qc_prio = {"fastqc": 0, "rustqc": 1}
+                tools = sorted(
+                    tools,
+                    key=lambda item: (
+                        qc_prio.get(list(item.values())[0], 99),
+                        list(item.values())[0],
+                    ),
+                )
                 ret.append([tools])  # one option = the entire list of QC tools
             else:
                 ret.append(tools)
