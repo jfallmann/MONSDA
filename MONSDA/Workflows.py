@@ -192,12 +192,7 @@ def get_combo(wfs, config, conditions):
                     + " with Tool: "
                     + str(tools)
                 )
-            # For QC, run all configured QC tools in the same workflow combo
-            # (instead of creating one combo per QC tool).
-            if subwork == "QC":
-                ret.append([tools])
-            else:
-                ret.append(tools)
+            ret.append(tools)
 
         log.debug(f"{logid} Itertools {ret}")
         combos[condition] = itertools.product(*ret)
@@ -569,8 +564,15 @@ def make_pre(
                         toolenv, toolbin = map(str, listoftools[a])
                         if toolenv != envs[j] or toolbin is None:
                             continue
-                        sconf[works[j] + "ENV"] = toolenv
-                        sconf[works[j] + "BIN"] = toolbin
+                        if works[j] == "QC":
+                            _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                            sconf[_qc_prefix + "ENV"] = toolenv
+                            sconf[_qc_prefix + "BIN"] = toolbin
+                            sconf.pop("QCENV", None)
+                            sconf.pop("QCBIN", None)
+                        else:
+                            sconf[works[j] + "ENV"] = toolenv
+                            sconf[works[j] + "BIN"] = toolbin
                         subconf.update(sconf)
                         subname = toolenv + ".smk"
 
@@ -695,8 +697,15 @@ def make_pre(
                 if toolenv is None or toolbin is None:
                     continue
                 subconf = mu.NestedDefaultDict()
-                sconf[subwork + "ENV"] = toolenv
-                sconf[subwork + "BIN"] = toolbin
+                if subwork == "QC":
+                    _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                    sconf[_qc_prefix + "ENV"] = toolenv
+                    sconf[_qc_prefix + "BIN"] = toolbin
+                    sconf.pop("QCENV", None)
+                    sconf.pop("QCBIN", None)
+                else:
+                    sconf[subwork + "ENV"] = toolenv
+                    sconf[subwork + "BIN"] = toolbin
                 subconf.update(sconf)
                 subname = toolenv + ".smk"
 
@@ -884,8 +893,15 @@ def make_sub(
                                 toolenv.replace("bisulfite", "_bisulfite") + ".smk"
                             )
 
-                        sconf[works[j] + "ENV"] = toolenv
-                        sconf[works[j] + "BIN"] = toolbin
+                        if works[j] == "QC":
+                            _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                            sconf[_qc_prefix + "ENV"] = toolenv
+                            sconf[_qc_prefix + "BIN"] = toolbin
+                            sconf.pop("QCENV", None)
+                            sconf.pop("QCBIN", None)
+                        else:
+                            sconf[works[j] + "ENV"] = toolenv
+                            sconf[works[j] + "BIN"] = toolbin
 
                         subconf.update(sconf)
                         log.debug(logid + f"SCONF:{sconf}, SUBCONF:{subconf}")
@@ -1071,8 +1087,15 @@ def make_sub(
                     ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
                         subname = toolenv.replace("bisulfite", "_bisulfite") + ".smk"
                     subconf = mu.NestedDefaultDict()
-                    sconf[subwork + "ENV"] = toolenv
-                    sconf[subwork + "BIN"] = toolbin
+                    if subwork == "QC":
+                        _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                        sconf[_qc_prefix + "ENV"] = toolenv
+                        sconf[_qc_prefix + "BIN"] = toolbin
+                        sconf.pop("QCENV", None)
+                        sconf.pop("QCBIN", None)
+                    else:
+                        sconf[subwork + "ENV"] = toolenv
+                        sconf[subwork + "BIN"] = toolbin
                     subconf.update(sconf)
 
                     # RustQC is post-alignment QC only; skip if no MAPPING
@@ -2475,8 +2498,15 @@ def nf_make_pre(
                             continue
 
                         subsamples = mp.get_samples(sconf)
-                        sconf[works[j] + "ENV"] = toolenv
-                        sconf[works[j] + "BIN"] = toolbin
+                        if works[j] == "QC":
+                            _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                            sconf[_qc_prefix + "ENV"] = toolenv
+                            sconf[_qc_prefix + "BIN"] = toolbin
+                            sconf.pop("QCENV", None)
+                            sconf.pop("QCBIN", None)
+                        else:
+                            sconf[works[j] + "ENV"] = toolenv
+                            sconf[works[j] + "BIN"] = toolbin
                         subconf.merge(sconf)
 
                         subconf[works[j]] = mu.add_to_innermost_key_by_list(
@@ -2666,8 +2696,15 @@ def nf_make_pre(
                 toolenv, toolbin = map(str, listoftools[i])
                 if toolenv is None or toolbin is None:
                     continue
-                sconf[subwork + "ENV"] = toolenv
-                sconf[subwork + "BIN"] = toolbin
+                if subwork == "QC":
+                    _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                    sconf[_qc_prefix + "ENV"] = toolenv
+                    sconf[_qc_prefix + "BIN"] = toolbin
+                    sconf.pop("QCENV", None)
+                    sconf.pop("QCBIN", None)
+                else:
+                    sconf[subwork + "ENV"] = toolenv
+                    sconf[subwork + "BIN"] = toolbin
                 subconf.merge(sconf)
 
                 subconf[subwork] = mu.add_to_innermost_key_by_list(
@@ -2888,8 +2925,15 @@ def nf_make_sub(
                         ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
                             subname = toolenv.replace("bisulfite", "_bisulfite") + ".nf"
                         subsamples = mp.get_samples(sconf)
-                        sconf[works[j] + "ENV"] = toolenv
-                        sconf[works[j] + "BIN"] = toolbin
+                        if works[j] == "QC":
+                            _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                            sconf[_qc_prefix + "ENV"] = toolenv
+                            sconf[_qc_prefix + "BIN"] = toolbin
+                            sconf.pop("QCENV", None)
+                            sconf.pop("QCBIN", None)
+                        else:
+                            sconf[works[j] + "ENV"] = toolenv
+                            sconf[works[j] + "BIN"] = toolbin
                         subconf.merge(sconf)
 
                         subconf[works[j]] = mu.add_to_innermost_key_by_list(
@@ -3054,7 +3098,8 @@ def nf_make_sub(
 
                 if "QC" in works:
                     flowlist.append("MULTIQC")
-                    nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
+                    _mqc_nf = "multiqc_rustqc.nf" if "QC_MAPPING" in flowlist and "QC_RAW" not in flowlist else "multiqc.nf"
+                    nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
                     with open(nfi, "r") as nf:
                         for line in mu.comment_remover(nf.readlines()):
                             line = re.sub(condapath, 'conda "' + envpath, line)
@@ -3250,8 +3295,15 @@ def nf_make_sub(
                     ):  # Here we can add tool specific extra cases, like e.g segehmehl bisulfite mode
                         subname = toolenv.replace("bisulfite", "_bisulfite") + ".nf"
 
-                    sconf[subwork + "ENV"] = toolenv
-                    sconf[subwork + "BIN"] = toolbin
+                    if subwork == "QC":
+                        _qc_prefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                        sconf[_qc_prefix + "ENV"] = toolenv
+                        sconf[_qc_prefix + "BIN"] = toolbin
+                        sconf.pop("QCENV", None)
+                        sconf.pop("QCBIN", None)
+                    else:
+                        sconf[subwork + "ENV"] = toolenv
+                        sconf[subwork + "BIN"] = toolbin
                     subconf.merge(sconf)
 
                     subconf[subwork] = mu.add_to_innermost_key_by_list(
@@ -3406,7 +3458,8 @@ def nf_make_sub(
 
             if "QC" in subworkflows:
                 flowlist.append("MULTIQC")
-                nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
+                _mqc_nf = "multiqc_rustqc.nf" if "QC_MAPPING" in flowlist and "QC_RAW" not in flowlist else "multiqc.nf"
+                nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
                 with open(nfi, "r") as nf:
                     for line in mu.comment_remover(nf.readlines()):
                         line = re.sub(condapath, 'conda "' + envpath, line)

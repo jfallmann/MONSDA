@@ -1,5 +1,5 @@
-QCENV = get_always('QCENV')
-QCBIN = get_always('QCBIN')
+QCENV = get_always('POSTQCENV')
+QCBIN = get_always('POSTQCBIN')
 QCPARAMS = get_always('rustqc_params_QC') ?: ''
 
 MAPANNO = get_always('MAPPINGANNO')

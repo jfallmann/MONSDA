@@ -1,4 +1,4 @@
-QCBIN, QCENV = env_bin_from_config(config, 'QC')
+QCBIN, QCENV = env_bin_from_config(config, 'POSTQC')
 
 # Map MONSDA strandedness to RustQC strandedness
 def rustqc_stranded(stranded):

@@ -1,4 +1,4 @@
-QCBIN, QCENV = env_bin_from_config(config, 'QC')
+QCBIN, QCENV = env_bin_from_config(config, 'PREQC')
 
 if paired == 'paired':
     log.info('Running paired mode QC')
