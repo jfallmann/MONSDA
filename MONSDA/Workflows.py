@@ -192,7 +192,12 @@ def get_combo(wfs, config, conditions):
                     + " with Tool: "
                     + str(tools)
                 )
-            ret.append(tools)
+            # Group all QC tools into a single combo position so pre-QC
+            # (fastqc) and post-QC (rustqc) both appear in one combo name.
+            if subwork == "QC" and len(tools) > 1:
+                ret.append([tools])  # one option = the entire list of QC tools
+            else:
+                ret.append(tools)
 
         log.debug(f"{logid} Itertools {ret}")
         combos[condition] = itertools.product(*ret)
