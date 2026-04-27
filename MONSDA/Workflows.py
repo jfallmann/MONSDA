@@ -2291,13 +2291,35 @@ def nf_tool_params(
             if toolenv
             else mu.sub_dict(config[subwork], x)["OPTIONS"]
         )
-        tp.append(
-            "--" + subwork + "ENV " + toolenv + " --" + subwork + "BIN " + toolbin + " "
-        )
+        if subwork == "QC":
+            qcprefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+            tp.append(
+                "--"
+                + qcprefix
+                + "ENV "
+                + toolenv
+                + " --"
+                + qcprefix
+                + "BIN "
+                + toolbin
+                + " "
+            )
+        else:
+            tp.append(
+                "--"
+                + subwork
+                + "ENV "
+                + toolenv
+                + " --"
+                + subwork
+                + "BIN "
+                + toolbin
+                + " "
+            )
 
         toolpar = list()
         if "star" in [toolenv, toolbin]:
-                np['INDEX'] = mp.fixRunParameters(config, toolenv, sample, None, 'MAPPING', 'INDEX', "--sjdbGTFfile", "--sjdbGTFfile tmp_anno")
+            np['INDEX'] = mp.fixRunParameters(config, toolenv, sample, None, 'MAPPING', 'INDEX', "--sjdbGTFfile", "--sjdbGTFfile tmp_anno")
         for key, val in np.items():
             pars = val if val and val != "" else None
             if pars:
@@ -2310,17 +2332,31 @@ def nf_tool_params(
                 toolenv, toolbin = map(str, [sd["ENV"], sd["BIN"]])
 
             np = sd[toolenv.split("_")[0]]["OPTIONS"] if toolenv else sd["OPTIONS"]
-            tp.append(
-                "--"
-                + subwork
-                + "ENV "
-                + toolenv
-                + " --"
-                + subwork
-                + "BIN "
-                + toolbin
-                + " "
-            )
+            if subwork == "QC":
+                qcprefix = "POSTQC" if toolenv == "rustqc" else "PREQC"
+                tp.append(
+                    "--"
+                    + qcprefix
+                    + "ENV "
+                    + toolenv
+                    + " --"
+                    + qcprefix
+                    + "BIN "
+                    + toolbin
+                    + " "
+                )
+            else:
+                tp.append(
+                    "--"
+                    + subwork
+                    + "ENV "
+                    + toolenv
+                    + " --"
+                    + subwork
+                    + "BIN "
+                    + toolbin
+                    + " "
+                )
 
             toolpar = list()
             for key, val in np.items():

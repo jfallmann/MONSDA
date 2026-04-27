@@ -1,6 +1,6 @@
-QCENV = get_always('POSTQCENV')
-QCBIN = get_always('POSTQCBIN')
-QCPARAMS = get_always('rustqc_params_QC') ?: ''
+RUSTQCENV = get_always('POSTQCENV')
+RUSTQCBIN = get_always('POSTQCBIN')
+RUSTQCPARAMS = get_always('rustqc_params_QC') ?: ''
 
 MAPANNO = get_always('MAPPINGANNO')
 
@@ -17,8 +17,8 @@ RUSTQC_PAIRED = (PAIRED == 'paired') ? '-p' : ''
 //RUSTQC on mapped BAMs
 
 process rustqc_mapped{
-    conda "$QCENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$QCENV"
+    conda "$RUSTQCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$RUSTQCENV"
     cpus THREADS
     cache 'lenient'
     label 'big_mem'
@@ -40,7 +40,7 @@ process rustqc_mapped{
     fn = file(bam).getSimpleName()
     anno = file("${workflow.workDir}/../${MAPANNO}")
     """
-    rustqc rna $bam --gtf $anno -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/rustqc_summary.json -o results/$fn $QCPARAMS
+    $RUSTQCBIN rna $bam --gtf $anno -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/rustqc_summary.json -o results/$fn $RUSTQCPARAMS
     """
 }
 
