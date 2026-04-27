@@ -1,6 +1,6 @@
-QCENV=get_always('PREQCENV')
-QCBIN=get_always('PREQCBIN')
-QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
+QCENV=get_always('POSTQCENV')
+QCBIN=get_always('POSTQCBIN')
+QCPARAMS = get_always('rustqc_params_MULTI') ?: ''
 
 process mqc{
     conda "$QCENV"+".yaml"
@@ -38,14 +38,11 @@ process mqc{
         dirname "\$i" >> "\$LIST"
     done
 
-    # If this is a rustqc combo and the corresponding fastqc combo exists,
-    # include the fastqc output directory in the same MultiQC report.
-    if [[ "\$COMBO_VAL" == *"rustqc"* ]]; then
-        FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
-        FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
-        if [[ -d "\$FQ_DIR" ]]; then
-            echo "\$FQ_DIR" >> "\$LIST"
-        fi
+    # If the corresponding fastqc combo exists, include its output in the MultiQC report.
+    FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
+    FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
+    if [[ -d "\$FQ_DIR" ]]; then
+        echo "\$FQ_DIR" >> "\$LIST"
     fi
 
     sort -u "\$LIST" > "\$TMP_LIST"
