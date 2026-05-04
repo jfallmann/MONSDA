@@ -128,7 +128,8 @@
         "TOOLS" :
         {
             "trimgalore": "trim_galore",
-            "cutadapt": "cutadapt"
+            "cutadapt": "cutadapt",
+            "fastp": "fastp"
         },
         "Ecoli": {
             "KO": {
@@ -142,6 +143,12 @@
                     "OPTIONS":
                     {
                         "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                    }
+                },
+                "fastp":{
+                    "OPTIONS":
+                    {
+                        "TRIM": "-q 15 -l 8"  # trimming options here, --KO is not required, will be resolved by rules
                     }
                 }
             },
@@ -157,6 +164,12 @@
                         "OPTIONS":
                         {
                             "TRIM": "-m 8 -e 0.15"  # trimming options here, --KO is not required, will be resolved by rules
+                        }
+                    },
+                    "fastp":{
+                        "OPTIONS":
+                        {
+                            "TRIM": "-q 15 -l 8"  # trimming options here, --KO is not required, will be resolved by rules
                         }
                     }
                 }
