@@ -90,6 +90,7 @@ def setup_logger(scriptname):
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
+    os.makedirs("LOGS", exist_ok=True)
     handler = logging.FileHandler("LOGS/MONSDA.log", mode="a")
     handler.setFormatter(
         logging.Formatter(

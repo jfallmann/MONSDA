@@ -28,12 +28,10 @@ try:
         os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
 except:
-    installpath = os.path.cwd()
+    installpath = os.getcwd()
 
 configpath = os.path.join(installpath, "MONSDA", "configs")
 current_path = os.getcwd()
-dir_path = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir_path)
 
 template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
 none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
@@ -68,6 +66,13 @@ parser.add_argument(
     type=str,
     default=False,
     help="takes configuration file to modify",
+)
+
+parser.add_argument(
+    "--samplesheet",
+    type=str,
+    default=False,
+    help="CSV or TSV samplesheet to populate SETTINGS and condition tree for new configs/projects",
 )
 
 args = parser.parse_args()
@@ -312,6 +317,21 @@ def get_conditions_from_dict(root, keylist=[]):
             yield ":".join(keylist)
         else:
             yield from get_conditions_from_dict(v, keylist)
+        keylist.pop()
+
+
+def get_conditions_from_settings(root, keylist=[]):
+    """Yield condition paths from SETTINGS leaves that contain a SAMPLES key."""
+    if not isinstance(root, dict):
+        return
+    if "SAMPLES" in root and isinstance(root.get("SAMPLES"), list):
+        yield ":".join(keylist)
+        return
+    for k, v in root.items():
+        if not isinstance(v, dict):
+            continue
+        keylist.append(k)
+        yield from get_conditions_from_settings(v, keylist)
         keylist.pop()
 
 
@@ -790,6 +810,8 @@ def create_condition_tree():
 def add_sample_dirs(only_conditions=None):
     pickle_unfinished("add_sample_dirs")
     # project.current_func_arg = only_conditions
+    if args.samplesheet and only_conditions is None and project.mode in ["project", "config"]:
+        return assign_samplesheet()
     if "FETCH" in project.workflowsDict.keys():
         return assign_SRA(only_conditions)
     print("\n  FASTQ files:")
@@ -874,6 +896,58 @@ def add_sample_dirs(only_conditions=None):
     counter = 1
     show_settings()
     return assign_samples(only_conditions)
+
+
+def assign_samplesheet():
+    pickle_unfinished("assign_samplesheet")
+    prCyan("\n  Sample Assignment: samplesheet\n")
+
+    samplesheet = str(args.samplesheet)
+    if not os.path.isfile(samplesheet):
+        prRed(f"Could not find samplesheet file: {samplesheet}")
+        exit(1)
+
+    cwd = os.getcwd()
+    try:
+        # Params initializes logging at import time via Utils.setup_logger and expects
+        # a writable LOGS/ directory in the current working directory.
+        os.makedirs(os.path.join(current_path, "LOGS"), exist_ok=True)
+        os.chdir(current_path)
+        from .Params import samplesheet_to_settings
+
+        sheet_settings = samplesheet_to_settings(samplesheet)
+    except Exception as e:
+        prRed(f"Failed to parse samplesheet '{samplesheet}': {e}")
+        exit(1)
+    finally:
+        os.chdir(cwd)
+
+    if not sheet_settings:
+        prRed(f"Samplesheet '{samplesheet}' did not produce SETTINGS entries")
+        exit(1)
+
+    project.settingsDict = decouple(sheet_settings)
+    project.conditionsDict = NestedDefaultDict()
+    project.samplesDict = NestedDefaultDict()
+
+    condition_paths = [
+        x.split(":") for x in get_conditions_from_settings(project.settingsDict)
+    ]
+    if not condition_paths:
+        prRed(
+            "No condition leaves with SAMPLES found in parsed samplesheet SETTINGS"
+        )
+        exit(1)
+
+    for path in condition_paths:
+        setInDict(project.conditionsDict, path, {})
+
+    prGreen("Loaded condition tree and SETTINGS from samplesheet:")
+    print_dict(project.conditionsDict, gap="      ")
+    print("")
+    print_dict(project.settingsDict, gap="      ")
+    show_settings()
+    return select_conditioning()
 
 
 def assign_SRA(only_conditions=None):
@@ -1882,6 +1956,14 @@ def main():
     global guide
     project = PROJECT()
     guide = GUIDE()
+    if args.samplesheet:
+        if not str(args.samplesheet).lower().endswith((".csv", ".tsv", ".txt")):
+            print("Samplesheet flag requires a .csv/.tsv/.txt file")
+            exit()
+        args.samplesheet = os.path.abspath(args.samplesheet)
+        if not os.path.isfile(args.samplesheet):
+            print(f"Samplesheet file not found: {args.samplesheet}")
+            exit()
     if args.test:
         guide.testing = True
     if args.config:
