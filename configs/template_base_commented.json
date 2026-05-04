@@ -58,22 +58,36 @@
   },
   "BASECALL": {
     "TOOLS": {
-      "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller"
+      "guppy": "~/.local/bin/guppy-cpu/bin/guppy_basecaller",
+      "dorado": "dorado"
     },
     "ENV" : "",
     "BIN" : "",
     "guppy": {
       "comment": {
-        "BASECALL": "Guppy options here if any, paired is not required, will be resolved by rules"
+        "BASECALL": "Guppy caller options here if any",
+        "MODEL": "Guppy model options here if any"
       },
       "OPTIONS": {
-        "BASECALL": ""
+        "BASECALL": "",
+        "MODEL": ""
+      }
+    },
+    "dorado": {
+      "comment": {
+        "CALLER": "Dorado caller options here if any",
+        "MODEL": "Dorado model options here if any"
+      },
+      "OPTIONS": {
+        "CALLER": "",
+        "MODEL": ""
       }
     }
   },
   "QC": {
     "TOOLS": {
-      "fastqc": "fastqc"
+      "fastqc": "fastqc",
+      "rustqc": "rustqc"
     },
     "ENV" : "",
     "BIN" : "",
@@ -86,13 +100,24 @@
         "QC": "",
         "MULTI": ""
       }
+    },
+    "rustqc": {
+      "comment": {
+        "QC": "RustQC options here if any, post-alignment QC",
+        "MULTI": "MultiQC options for rustqc if any"
+      },
+      "OPTIONS": {
+        "QC": "",
+        "MULTI": ""
+      }
     }
   },
   "TRIMMING": {
     "TOOLS": {
       "trimgalore": "trim_galore",
       "cutadapt": "cutadapt",
-      "bbduk": "bbmap"
+      "bbduk": "bbmap",
+      "fastp": "fastp"
     },
     "ENV" : "",
     "BIN" : "",
@@ -119,11 +144,20 @@
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
       }
+    },
+    "fastp": {
+      "comment": {
+        "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
+      },
+      "OPTIONS": {
+        "TRIM": "-q 15 -l 8"
+      }
     }
   },
   "DEDUP": {
     "TOOLS": {
       "umitools": "umi_tools",
+      "picard": "picard",
       "fgumi": "fgumi"
     },
     "ENV" : "",
