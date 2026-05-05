@@ -94,6 +94,27 @@ envpath = os.path.join(installpath, "MONSDA", "envs") + os.sep
 binpath = os.path.join(installpath, "MONSDA", "scripts")
 condapath = re.compile(r'conda:\s+"')
 logfix = re.compile(r'loglevel="INFO"')
+# Matches oras:// NOT already followed by a registry host (i.e. followed directly by a
+# Docker Hub namespace like "jfallmann/" without dots before the first slash)
+oraspath = re.compile(r'oras://(?![\w.-]+\.[\w.-]+/)')
+oras_registry = "docker.io"
+
+
+def set_oras_registry(registry: str):
+    """Set the ORAS registry used for container image URIs."""
+    global oras_registry
+    oras_registry = registry.strip().rstrip("/")
+
+
+def _fix_oras(line: str) -> str:
+    """Insert oras_registry into unqualified oras:// URIs."""
+    return re.sub(oraspath, "oras://" + oras_registry + "/", line)
+
+
+def _write_workflow(filepath, content):
+    """Write workflow file with ORAS registry fix applied."""
+    content = re.sub(oraspath, "oras://" + oras_registry + "/", content)
+    write_if_different(filepath, content)
 
 try:
     scriptname = (
@@ -642,7 +663,7 @@ def make_pre(
                         ),
                     )
                 )
-                write_if_different(smko, "".join(add) + "".join(subjobs))
+                _write_workflow(smko, "".join(add) + "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -783,7 +804,7 @@ def make_pre(
                     )
                 )
 
-                write_if_different(smko, str.join("", add) + str.join("", subjobs))
+                _write_workflow(smko, str.join("", add) + str.join("", subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -1036,7 +1057,7 @@ def make_sub(
                     )
                 )
 
-                write_if_different(smko, "".join(add) + "".join(subjobs))
+                _write_workflow(smko, "".join(add) + "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -1223,7 +1244,7 @@ def make_sub(
                 os.path.join(subdir, "_".join(["_".join(condition), "subsnake.smk"]))
             )
 
-            write_if_different(smko, str.join("", add) + str.join("", subjobs))
+            _write_workflow(smko, str.join("", add) + str.join("", subjobs))
             confo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
             )
@@ -1436,7 +1457,7 @@ def make_post(
                     )
                 )
 
-                write_if_different(smko, "".join(add) + "".join(subjobs))
+                _write_workflow(smko, "".join(add) + "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -1569,7 +1590,7 @@ def make_post(
                 )
             )
 
-            write_if_different(smko, "".join(add) + "".join(subjobs))
+            _write_workflow(smko, "".join(add) + "".join(subjobs))
 
             confo = os.path.abspath(
                 os.path.join(
@@ -1661,7 +1682,7 @@ def make_summary(config, subdir, loglevel, combinations=None):
         subjobs.append("\n\n")
 
     smko = os.path.abspath(os.path.join(subdir, "summary_subsnake.smk"))
-    write_if_different(smko, "".join(subjobs))
+    _write_workflow(smko, "".join(subjobs))
 
     subconf = mu.NestedDefaultDict()
     for key in ["BINS", "MAXTHREADS", "SETTINGS"]:
@@ -1769,6 +1790,7 @@ def fixinclude(
             for line in incl.readlines():
                 line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                 line = re.sub(condapath, condaline + envpath, line)
+                line = _fix_oras(line)
                 if includeline in line:
                     line = fixinclude(
                         line, loglevel, condapath, envpath, workflowpath, logfix
@@ -2657,7 +2679,7 @@ def nf_make_pre(
                             )
                         )
                         if writeout:
-                            write_if_different(nfo, "".join(subjobs))
+                            _write_workflow(nfo, "".join(subjobs))
 
                         confo = os.path.abspath(
                             os.path.join(
@@ -2862,7 +2884,7 @@ def nf_make_pre(
                     )
                 )
                 if writeout:
-                    write_if_different(nfo, "".join(subjobs))
+                    _write_workflow(nfo, "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -3324,7 +3346,7 @@ def nf_make_sub(
                     )
                 )
                 if writeout:
-                    write_if_different(nfo, "".join(add) + "".join(subjobs))
+                    _write_workflow(nfo, "".join(add) + "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -3702,7 +3724,7 @@ def nf_make_sub(
                 os.path.join(subdir, "_".join(["_".join(condition), "subflow.nf"]))
             )
             if writeout:
-                write_if_different(nfo, "".join(subjobs))
+                _write_workflow(nfo, "".join(subjobs))
 
             confo = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subconfig.json"]))
@@ -3902,7 +3924,7 @@ def nf_make_post(
                     )
                 )
                 if writeout:
-                    write_if_different(nfo, "".join(add) + "".join(subjobs))
+                    _write_workflow(nfo, "".join(add) + "".join(subjobs))
 
                 confo = os.path.abspath(
                     os.path.join(
@@ -4048,7 +4070,7 @@ def nf_make_post(
                 )
             )
             if writeout:
-                write_if_different(nfo, "".join(add) + "".join(subjobs))
+                _write_workflow(nfo, "".join(add) + "".join(subjobs))
 
             confo = os.path.abspath(
                 os.path.join(
@@ -4178,7 +4200,7 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
         subjobs.append("\n\n")
 
     nfo = os.path.abspath(os.path.join(subdir, "summary_subflow.nf"))
-    write_if_different(nfo, "".join(subjobs))
+    _write_workflow(nfo, "".join(subjobs))
 
     subconf = mu.NestedDefaultDict()
     for key in ["BINS", "MAXTHREADS", "SETTINGS"]:
