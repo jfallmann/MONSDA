@@ -10,7 +10,10 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from snakemake.common.configfile import load_configfile
 
+from . import _version
 from .Params import samplesheet_to_settings
+
+__version__ = _version.get_versions()["version"]
 
 TEMPLATE_FILE = "template_base_commented.json"
 NONE_WORKFLOW_KEYS = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
@@ -227,7 +230,7 @@ def build_config(req: BuildConfigRequest) -> Dict[str, Any]:
         "WORKFLOWS": ", ".join(workflows),
         "BINS": template.get("BINS", ""),
         "MAXTHREADS": str(req.maxthreads),
-        "VERSION": template.get("VERSION", ""),
+        "VERSION": __version__,
         "SETTINGS": settings,
     }
 
@@ -855,6 +858,7 @@ def root() -> str:
         <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 20px; display:flex; align-items:center; gap:10px;">
           <input id="browsePathInput" class="form-control form-control-sm" style="flex:1; border-radius:8px;" placeholder="Path..." />
           <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;" onclick="browseTo(document.getElementById('browsePathInput').value)">Go</button>
+          <button type="button" id="browseAddSelectedBtn" class="btn btn-sm btn-success" style="border-radius:8px; display:none;" onclick="addMultiselectedFiles()">Add selected</button>
           <button type="button" class="btn btn-sm btn-primary" style="border-radius:8px; min-width:120px;" onclick="chooseCurrentPath()">Select</button>
         </div>
       </div>
@@ -875,11 +879,13 @@ def root() -> str:
 <script>
 let templateFields = null;
 let lastConfig = null;
-let browserState = { target: '', mode: 'dirs', current: '' };
+let browserState = { target: '', mode: 'dirs', current: '', multiselect: false };
 let selectedToolsByWorkflow = {};
 let browserModalRef = null;
 let selectedBrowsePath = '';
 let currentOutputMode = 'config';
+let browserCallback = null;  // optional: called with path[] instead of filling input
+let browserMultiSelected = new Set(); // tracks checked paths in multiselect mode
 
 function switchOutputMode(mode) {
   currentOutputMode = mode;
@@ -1085,8 +1091,24 @@ async function browseTo(path) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'fb-entry';
-      btn.innerHTML = `<span class="fb-entry-icon file">${fileSvg}</span><span class="fb-entry-name">${escHtml(f.name)}</span>`;
-      btn.addEventListener('click', () => { markBrowseSelection(f.path, btn); choosePath(f.path); });
+      if (browserState.multiselect) {
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.style.cssText = 'width:auto;margin:0 2px 0 0;cursor:pointer;flex-shrink:0;';
+        chk.checked = browserMultiSelected.has(f.path);
+        chk.addEventListener('change', () => {
+          if (chk.checked) browserMultiSelected.add(f.path);
+          else browserMultiSelected.delete(f.path);
+          btn.classList.toggle('selected', chk.checked);
+          _updateMultiselectBtn();
+        });
+        btn.prepend(chk);
+        btn.innerHTML += `<span class="fb-entry-icon file">${fileSvg}</span><span class="fb-entry-name">${escHtml(f.name)}</span>`;
+        btn.addEventListener('click', (e) => { if (e.target !== chk) { chk.checked = !chk.checked; chk.dispatchEvent(new Event('change')); } });
+      } else {
+        btn.innerHTML = `<span class="fb-entry-icon file">${fileSvg}</span><span class="fb-entry-name">${escHtml(f.name)}</span>`;
+        btn.addEventListener('click', () => { markBrowseSelection(f.path, btn); choosePath(f.path); });
+      }
       list.appendChild(btn);
     });
 
@@ -1105,12 +1127,18 @@ function markBrowseSelection(path, el) {
   if (el) el.classList.add('selected');
 }
 
-function openPathBrowser(target, mode='dirs') {
+function openPathBrowser(target, mode='dirs', callback=null) {
   browserState.target = target;
-  browserState.mode = mode;
+  browserState.multiselect = mode === 'multifiles';
+  browserState.mode = browserState.multiselect ? 'all' : mode;
+  browserCallback = callback;
+  browserMultiSelected = new Set();
+  _updateMultiselectBtn();
   if (!browserModalRef) {
     const el = document.getElementById('browserModal');
     browserModalRef = new bootstrap.Modal(el, { backdrop: true, keyboard: true });
+    // Always clear callback if modal is dismissed without selection
+    el.addEventListener('hidden.bs.modal', () => { browserCallback = null; browserMultiSelected = new Set(); _updateMultiselectBtn(); });
   }
   browserModalRef.show();
   const start = (document.getElementById(target)?.value || '').trim();
@@ -1119,15 +1147,41 @@ function openPathBrowser(target, mode='dirs') {
   });
 }
 
+function _updateMultiselectBtn() {
+  const btn = document.getElementById('browseAddSelectedBtn');
+  if (!btn) return;
+  if (browserState.multiselect) {
+    btn.style.display = '';
+    btn.textContent = browserMultiSelected.size > 0 ? `Add selected (${browserMultiSelected.size})` : 'Add selected';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
 function closePathBrowser() {
   if (browserModalRef) browserModalRef.hide();
 }
 
 function choosePath(path) {
-  if (!browserState.target) return;
-  document.getElementById(browserState.target).value = path;
+  if (browserCallback) {
+    const cb = browserCallback;
+    browserCallback = null;
+    cb([path]);
+  } else if (browserState.target) {
+    document.getElementById(browserState.target).value = path;
+  }
   setStatus('browseStatus', `Selected: ${path}`, true);
-  closePathBrowser();
+  if (!browserState.multiselect) closePathBrowser();
+}
+
+function addMultiselectedFiles() {
+  if (browserCallback && browserMultiSelected.size > 0) {
+    const cb = browserCallback;
+    browserCallback = null;
+    cb([...browserMultiSelected]);
+    browserMultiSelected = new Set();
+    closePathBrowser();
+  }
 }
 
 function chooseCurrentPath() {
@@ -1422,35 +1476,27 @@ function toggleFqMode(id, mode) {
 }
 
 function addFastqFile(id) {
-  // Use the file browser targeting a hidden input, then on selection add to the list
-  const tempId = id + '_fqtemp';
-  let tempInput = document.getElementById(tempId);
-  if (!tempInput) {
-    tempInput = document.createElement('input');
-    tempInput.type = 'hidden';
-    tempInput.id = tempId;
-    document.body.appendChild(tempInput);
-  }
-  tempInput.value = '';
-  // Override choosePath temporarily to add to file list instead
-  const origChoose = choosePath;
-  choosePath = function(path) {
-    if (!browserState.target) return;
-    // Add to file list
+  openPathBrowser('', 'multifiles', (paths) => {
     const list = document.getElementById(id + '_filelist');
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${escHtml(path)}</span>`;
-    const rmBtn = document.createElement('button');
-    rmBtn.type = 'button';
-    rmBtn.textContent = '\u00d7';
-    rmBtn.addEventListener('click', () => li.remove());
-    li.appendChild(rmBtn);
-    li.dataset.path = path;
-    list.appendChild(li);
-    closePathBrowser();
-    choosePath = origChoose;
-  };
-  openPathBrowser(tempId, 'all');
+    paths.forEach(path => {
+      // Avoid duplicates
+      let exists = false;
+      list.querySelectorAll('li').forEach(li => { if (li.dataset.path === path) exists = true; });
+      if (exists) return;
+      const li = document.createElement('li');
+      const span = document.createElement('span');
+      span.textContent = path;
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.textContent = '\u00d7';
+      rmBtn.title = 'Remove';
+      rmBtn.addEventListener('click', () => li.remove());
+      li.appendChild(span);
+      li.appendChild(rmBtn);
+      li.dataset.path = path;
+      list.appendChild(li);
+    });
+  });
 }
 
 window.onload = () => {
