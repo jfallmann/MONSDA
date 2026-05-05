@@ -138,6 +138,14 @@ def parseargs():
              "Used when the config JSON lacks a SETTINGS block. "
              "On the first run an augmented config (<config>_with_settings.json) is written for reuse.",
     )
+    parser.add_argument(
+        "--oras-registry",
+        type=str,
+        default="docker.io",
+        metavar="HOST",
+        help="Container registry hostname for ORAS image pulls (default: docker.io). "
+             "Use e.g. ghcr.io for GitHub Container Registry.",
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -938,6 +946,9 @@ def main():
                 knownargs.configfile,
                 os.path.abspath(knownargs.samplesheet),
             )
+
+        # --- set ORAS registry for container image pulls ---
+        mw.set_oras_registry(knownargs.oras_registry)
 
         log.debug(
             f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
