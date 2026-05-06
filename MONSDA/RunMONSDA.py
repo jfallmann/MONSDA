@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -848,9 +849,19 @@ def run_nextflow(
 def runjob(jobtorun):
     try:
         logid = scriptname + ".runjob: "
+        run_cmd = jobtorun
+        if (
+            re.search(r"(^|\s)nextflow(\s|$)", jobtorun)
+            and "NXF_SYNTAX_PARSER" not in jobtorun
+        ):
+            run_cmd = "NXF_SYNTAX_PARSER=v1 " + jobtorun
+            log.warning(
+                logid
+                + "Nextflow 26.04+ strict parser detected; forcing legacy parser (NXF_SYNTAX_PARSER=v1) for compatibility with generated workflows."
+            )
         # return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(
-            jobtorun,
+            run_cmd,
             shell=True,
             universal_newlines=True,
             stdout=subprocess.PIPE,

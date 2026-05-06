@@ -7,8 +7,8 @@
 // ALWAYS COMMENT LINES WITH '//', DO NOT USE MULTI LINE COMMENTS AS THE PARSER WILL NOT IGNORE MIDDLE LINES AND THIS WILL CAUSE CHAOS
 
 //Version Check
-nextflowVersion = '>=20.01.0.5264'
 nextflow.enable.dsl=2
+//nextflowVersion = '>=20.01.0.5264'
 
 //define unset Params
 def get_always(parameter){
