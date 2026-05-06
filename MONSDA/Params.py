@@ -73,6 +73,7 @@ import shutil
 import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
+from typing import Optional
 
 from natsort import natsorted
 from snakemake.common.configfile import load_configfile as _load_configfile
@@ -102,6 +103,94 @@ except Exception:
         exc_tb,
     )
     print("".join(tbe.format()), file=sys.stderr)
+
+
+def _is_lane_split_file(filename: str, sample: Optional[str] = None) -> bool:
+    """Return True if filename matches lane split naming.
+
+    Accepted examples (both orderings):
+      Sample_L001_R1.fastq.gz
+      Sample_R1_L001.fastq.gz
+      Sample_R1_L001_001.fastq.gz
+    """
+
+    if sample:
+        # Match: SAMPLE_[L###_]R[12][_###] or SAMPLE_R[12][_L###][_###]
+        pattern = rf"^{re.escape(sample)}(?:_L\d{{1,3}})?_[Rr][12](?:_L\d{{1,3}})?(?:_\d+)?\.fastq\.gz$"
+    else:
+        pattern = r"^.+_[Rr][12]_L\d{1,3}(?:_\d+)?\.fastq\.gz$|^.+_L\d{1,3}_[Rr][12](?:_\d+)?\.fastq\.gz$"
+    return bool(re.match(pattern, filename))
+
+
+def _matches_sample_fastq(filename: str, sample: str) -> bool:
+    """Match configured sample against accepted FASTQ naming schemes.
+
+    Handles both lane orderings:
+      - SAMPLE_L###_R[12] (standard Illumina)
+      - SAMPLE_R[12]_L### (alternative)
+    """
+    return (
+        bool(
+            re.match(
+                rf"^{re.escape(sample)}(?:_L\d{{1,3}})?_[Rr][12](?:_L\d{{1,3}})?(?:_\d+)?\.fastq\.gz$",
+                filename,
+            )
+        )
+        or filename == sample + ".fastq.gz"
+    )
+
+
+def _strip_fastq_sample_name(filename: str) -> str:
+    """Strip read/lane suffix from FASTQ filename and return sample basename.
+
+    Handles both orderings:
+      - SAMPLE_L###_R[12][_###]
+      - SAMPLE_R[12]_L###[_###]
+    """
+    base = os.path.basename(filename)
+    return re.sub(
+        r"(?:_L\d{1,3})?_[Rr][12](?:_L\d{1,3})?(?:_\d+)?\.fastq\.gz$|\.fastq\.gz$",
+        "",
+        base,
+    )
+
+
+def _filter_lane_files_when_merged_exists(files: list) -> list:
+    """Drop lane-split FASTQs if canonical merged FASTQ exists for same sample/read.
+
+    Keeps existing behavior for non-lane files and for samples without merged targets.
+    Handles both lane orderings: SAMPLE_L###_R# and SAMPLE_R#_L###.
+    """
+    if not files:
+        return files
+
+    # Match both orderings: _L###_R# or _R#_L###
+    lane_patterns = [
+        re.compile(r"^(?P<sample>.+)_L\d{1,3}_[Rr](?P<read>[12])(?:_\d+)?\.fastq\.gz$"),
+        re.compile(r"^(?P<sample>.+)_[Rr](?P<read>[12])_L\d{1,3}(?:_\d+)?\.fastq\.gz$"),
+    ]
+    base_names = {os.path.basename(f) for f in files}
+    keep = []
+
+    for fp in files:
+        bn = os.path.basename(fp)
+        m = None
+        for pat in lane_patterns:
+            m = pat.match(bn)
+            if m:
+                break
+
+        if not m:
+            keep.append(fp)
+            continue
+
+        canonical_bn = f"{m.group('sample')}_R{m.group('read')}.fastq.gz"
+        canonical_fp = os.path.join(os.path.dirname(fp), canonical_bn)
+        if canonical_bn in base_names or os.path.exists(canonical_fp):
+            continue
+        keep.append(fp)
+
+    return keep
 
 
 def samplesheet_to_settings(samplesheet_path: str) -> dict:
@@ -294,6 +383,70 @@ def inject_samplesheet_settings(configfile: str, samplesheet_path: str) -> str:
 
 
 @check_run
+def prepare_lane_split_fastqs(config: dict) -> int:
+    """Concatenate lane-split FASTQs into canonical _R1/_R2 files when needed.
+
+    This is intentionally additive: existing canonical files are kept untouched.
+    """
+    logid = scriptname + ".Params_prepare_lane_split_fastqs: "
+    merged_files = 0
+
+    samples = [os.path.join(x) for x in sampleslong(config, nocheck="1")]
+    log.debug(logid + "Checking lane split files for samples: " + str(samples))
+
+    for sample in samples:
+        paired = checkpaired([sample], config)
+        if not paired or not any(x in paired for x in ["paired", "singlecell"]):
+            continue
+
+        sample_dir = os.path.join("FASTQ", os.path.dirname(sample))
+        sample_name = os.path.basename(sample).replace(".fastq.gz", "")
+        if not os.path.isdir(sample_dir):
+            continue
+
+        for read in ["1", "2"]:
+            # Find lane files in either format: SAMPLE_L###_R# or SAMPLE_R#_L###
+            lane_candidates = sorted(
+                set(
+                    f
+                    for pattern_glob in [
+                        os.path.join(sample_dir, f"{sample_name}_L*_R{read}*.fastq.gz"),
+                        os.path.join(sample_dir, f"{sample_name}_R{read}_L*.fastq.gz"),
+                    ]
+                    for f in glob.glob(pattern_glob)
+                    if _is_lane_split_file(os.path.basename(f), sample_name)
+                )
+            )
+
+            if len(lane_candidates) < 1:
+                continue
+
+            target = os.path.join(sample_dir, f"{sample_name}_R{read}.fastq.gz")
+            if os.path.exists(target):
+                log.info(
+                    logid
+                    + f"Found lane-split files for {sample_name} R{read}, but target already exists: {target} (keeping existing file)"
+                )
+                continue
+
+            log.info(
+                logid
+                + f"Concatenating {len(lane_candidates)} lane files into {target}"
+            )
+            with open(target, "wb") as outfh:
+                for lane_file in lane_candidates:
+                    with open(lane_file, "rb") as infh:
+                        shutil.copyfileobj(infh, outfh)
+            merged_files += 1
+
+    if merged_files > 0:
+        log.info(logid + f"Created {merged_files} concatenated lane-merged FASTQ files")
+    else:
+        log.debug(logid + "No lane-split FASTQ files required concatenation")
+    return merged_files
+
+
+@check_run
 def get_samples(config: dict) -> list():
     """Check and return samples according to sample list on config.json
 
@@ -321,6 +474,7 @@ def get_samples(config: dict) -> list():
         paired = checkpaired([SAMPLES[i]], config)
         log.debug(logid + "PAIRED: " + str(paired))
         f = glob.glob(s)
+        f = _filter_lane_files_when_merged_exists(f)
         log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f]))
@@ -393,6 +547,7 @@ def get_samples_postprocess(config: dict, subwork: str) -> list:
         paired = checkpaired([SAMPLES[i]], config)
         log.debug(logid + "PAIRED: " + str(paired))
         f = glob.glob(s)
+        f = _filter_lane_files_when_merged_exists(f)
         log.debug(logid + "SAMPLECHECK: " + str(f))
         if f:
             f = sorted(list(set([str.join(os.sep, s.split(os.sep)[1:]) for s in f])))
@@ -587,6 +742,7 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
         pat = os.sep.join(["FASTQ", os.sep.join(search[0:x]), "*.fastq.gz"])
         log.debug(logid + "REGEX: " + str(pat) + "\t" + "SAMPLES: " + str(samples))
         check = natsorted(glob.glob(pat), key=lambda y: y.lower())
+        check = _filter_lane_files_when_merged_exists(check)
         log.debug(logid + "check: " + str(check))
         if len(check) > 0:
             ret = list()
@@ -601,15 +757,12 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
                 for s in samples:
                     log.debug(logid + "x: " + str(x))
                     log.debug(logid + "sample: " + str(s))
-                    if re.match(f"^{s}_R", x) or x == s + ".fastq.gz":
+                    if _matches_sample_fastq(x, s):
                         log.debug(
                             logid
                             + "FOUND: "
                             + s
-                            + "_R"
-                            + " or "
-                            + s
-                            + ".fastq.gz"
+                            + " matching accepted FASTQ naming"
                             + " in "
                             + x
                         )
@@ -640,11 +793,7 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
                             os.sep.join(
                                 [
                                     os.sep.join(os.path.dirname(s).split(os.sep)[1:]),
-                                    re.sub(
-                                        r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
-                                        "",
-                                        os.path.basename(s),
-                                    ),
+                                    _strip_fastq_sample_name(os.path.basename(s)),
                                 ]
                             )
                             for s in clean
@@ -660,10 +809,8 @@ def get_samples_from_dir(search: str, config: dict, nocheck: str = None) -> list
                                         os.sep.join(
                                             os.path.dirname(s).split(os.sep)[1:]
                                         ),
-                                        re.sub(
-                                            r"_r1.fastq.gz|_R1.fastq.gz|_r2.fastq.gz|_R2.fastq.gz|.fastq.gz",
-                                            "",
-                                            os.path.basename(s),
+                                        _strip_fastq_sample_name(
+                                            os.path.basename(s)
                                         ),
                                     ]
                                 )
