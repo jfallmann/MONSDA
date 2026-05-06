@@ -292,6 +292,12 @@ def run_snakemake(
         ONCE FILES ARE DOWNLOADED WE CAN START OTHER PREPROCESSING STEPS
         """
         mu.makeoutdir("TMP")
+        merged_lane_fastqs = mp.prepare_lane_split_fastqs(config)
+        if merged_lane_fastqs:
+            log.info(
+                logid
+                + f"Prepared {merged_lane_fastqs} lane-merged FASTQ files before sample collection"
+            )
         SAMPLES = mp.get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
 
@@ -634,6 +640,12 @@ def run_nextflow(
         ONCE FILES ARE DOWNLOAD WE CAN START OTHER PREPROCESSING STEPS
         """
         mu.makeoutdir("TMP")
+        merged_lane_fastqs = mp.prepare_lane_split_fastqs(config)
+        if merged_lane_fastqs:
+            log.info(
+                logid
+                + f"Prepared {merged_lane_fastqs} lane-merged FASTQ files before sample collection"
+            )
         SAMPLES = mp.get_samples(config)
         log.info(logid + "SAMPLES: " + str(SAMPLES))
         conditions = mp.get_conditions(config)
