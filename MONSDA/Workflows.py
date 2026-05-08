@@ -3268,18 +3268,11 @@ def nf_make_sub(
                                     + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                                 )
                         elif w == "RUSTQC_MAPPING":
-                            if "DEDUPBAM" in flowlist:
-                                subjobs.append(
-                                    " " * 4
-                                    + w
-                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
-                                )
-                            else:
-                                subjobs.append(
-                                    " " * 4
-                                    + w
-                                    + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
-                                )
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                            )
                         elif w == "MULTIQC":
                             if "QC_RAW" not in flowlist and (
                                 "QC_MAPPING" in flowlist
@@ -3656,18 +3649,11 @@ def nf_make_sub(
                                 + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                             )
                     elif w == "RUSTQC_MAPPING":
-                        if "DEDUPBAM" in flowlist:
-                            subjobs.append(
-                                " " * 4
-                                + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni.concat(DEDUPBAM.out.dedup)))\n"
-                            )
-                        else:
-                            subjobs.append(
-                                " " * 4
-                                + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
-                            )
+                        subjobs.append(
+                            " " * 4
+                            + w
+                            + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                        )
                     elif w == "MULTIQC":
                         if "QC_RAW" not in flowlist and (
                             "QC_MAPPING" in flowlist or "RUSTQC_MAPPING" in flowlist
