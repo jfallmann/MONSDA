@@ -957,7 +957,7 @@ def make_sub(
                             and toolenv != "rustqc"
                         ):
                             if "DEDUP" in works and any(
-                                x in envs for x in ["umitools", "fgumi"]
+                                x in envs for x in ["umitools", "fgumi", "umicollapse"]
                             ):
                                 subname = toolenv + "_dedup_trim.smk"
                             else:
@@ -970,7 +970,7 @@ def make_sub(
                             and toolenv != "rustqc"
                         ):
                             if "DEDUP" in subworkflows and any(
-                                x in envs for x in ["umitools", "fgumi"]
+                                x in envs for x in ["umitools", "fgumi", "umicollapse"]
                             ):
                                 subname = toolenv + "_dedup.smk"
                             else:
@@ -980,7 +980,7 @@ def make_sub(
                         if works[j] == "DEDUP" and toolenv == "picard":
                             subname = toolenv + "_dedup.smk"
                             subconf.pop("PREDEDUP", None)
-                        elif works[j] == "DEDUP" and toolenv in ["umitools", "fgumi"]:
+                        elif works[j] == "DEDUP" and toolenv in ["umitools", "fgumi", "umicollapse"]:
                             subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
@@ -1160,7 +1160,7 @@ def make_sub(
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.smk"
                         subconf.pop("PREDEDUP", None)
-                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi"]:
+                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi", "umicollapse"]:
                         subconf["PREDEDUP"] = "enabled"
                     # Add rulethemall based on chosen workflows
                     add.append(
@@ -3040,7 +3040,7 @@ def nf_make_sub(
                             else:
                                 if "DEDUP" in subworkflows:
                                     flowlist.append("QC_RAW")
-                                    if toolenv in ["umitools", "fgumi"]:
+                                    if toolenv in ["umitools", "fgumi", "umicollapse"]:
                                         flowlist.append("DEDUPEXTRACT")
                                     if "MAPPING" in works:
                                         flowlist.append("QC_MAPPING")
@@ -3056,7 +3056,7 @@ def nf_make_sub(
 
                         if works[j] == "DEDUP":
                             deduptool = toolenv
-                            if toolenv in ["umitools", "fgumi"]:
+                            if toolenv in ["umitools", "fgumi", "umicollapse"]:
                                 flowlist.append("PREDEDUP")
                                 subconf["PREDEDUP"] = "enabled"
                                 if "QC" in flowlist:
@@ -3463,7 +3463,7 @@ def nf_make_sub(
                     # Dedup tools can be extended here
                     if subwork == "DEDUP" and toolenv == "picard":
                         subname = toolenv + "_dedup.nf"
-                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi"]:
+                    elif subwork == "DEDUP" and toolenv in ["umitools", "fgumi", "umicollapse"]:
                         deduptool = toolenv
                         flowlist.append("PREDEDUP")
                         subconf["PREDEDUP"] = "enabled"
