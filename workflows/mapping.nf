@@ -4,7 +4,7 @@ process sortsam{
     conda "samtools.yaml"
     container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
-    memory 16.GB
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     //validExitStatus 0,1
 
@@ -34,7 +34,7 @@ process sam2bam{
     conda "samtools.yaml"
     container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
-    memory 16.GB
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     //validExitStatus 0,1
 
@@ -66,7 +66,7 @@ process uniqsam{
     conda "samtools.yaml"
     container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
-    memory 16.GB
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     //validExitStatus 0,1
 
@@ -101,7 +101,7 @@ process sam2bamuniq{
     conda "samtools.yaml"
     container "oras://jfallmann/monsda:"+"samtools"
     cpus THREADS
-    memory 16.GB
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     //validExitStatus 0,1
 
