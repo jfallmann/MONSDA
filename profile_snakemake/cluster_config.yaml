@@ -1,6 +1,6 @@
 __default__:
-    account: user # your account name
-    partition: main # the partition to use
+    account: ${USER} # your account name
+    partition: c # the partition to use
     time: 1500 # default time (minutes)
     nodes: 1
     output: "/SLURMLOG/{rule}.{wildcards}.out"
@@ -13,3 +13,6 @@ generate_index:
 
 mapping:
     mem: 200GB
+
+multiqc:
+   mem: 30GB
