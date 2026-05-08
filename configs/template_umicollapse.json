@@ -1,0 +1,118 @@
+{
+  "WORKFLOWS": "QC,MAPPING,DEDUP,COUNTING",
+  "BINS": "",
+  "MAXTHREADS": "20",
+  "VERSION": "1.4.0",
+  "SETTINGS": {
+    "id": {
+      "condition": {
+        "SAMPLES": [
+          "rep_1",
+          "rep_2"
+        ],
+        "GROUPS": [
+          "WT",
+          "WT"
+        ],
+        "TYPES": [
+          "standard",
+          "standard"
+        ],
+        "BATCHES": [
+          "1",
+          "1"
+        ],
+        "SEQUENCING": "paired",
+        "REFERENCE": "GENOMES/Dm6/dm6.fa.gz",
+        "INDEX": "GENOMES/Dm6/INDICES/star",
+        "PREFIX": "idx",
+        "ANNOTATION": {
+          "GTF": "GENOMES/Dm6/dm6.gtf.gz",
+          "GFF": "GENOMES/Dm6/dm6.gff3.gz"
+        }
+      }
+    }
+  },
+  "QC": {
+    "TOOLS": {
+      "fastqc": "fastqc"
+    },
+    "id": {
+      "condition": {
+        "fastqc": {
+          "OPTIONS": {
+            "QC": "",
+            "MULTI": ""
+          }
+        }
+      }
+    }
+  },
+  "MAP": {
+    "TOOLS": {
+      "star": "STAR"
+    },
+    "id": {
+      "condition": {
+        "star": {
+          "OPTIONS": {
+            "INDEX": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",
+            "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",
+            "EXTENSION": ""
+          }
+        }
+      }
+    }
+  },
+  "DEDUP": {
+    "TOOLS": {
+      "umicollapse": "umicollapse",
+      "umitools": "umi_tools",
+      "fgumi": "fgumi",
+      "picard": "picard"
+    },
+    "id": {
+      "condition": {
+        "umicollapse": {
+          "OPTIONS": {
+            "DEDUP": "--algo dir --umi-sep _"
+          }
+        },
+        "umitools": {
+          "OPTIONS": {
+            "WHITELIST": "--extract-method string --bc-pattern 'XNNNNX'",
+            "EXTRACT": "--extract-umi-method read_id",
+            "DEDUP": ""
+          }
+        },
+        "fgumi": {
+          "OPTIONS": {
+            "EXTRACT": "",
+            "DEDUP": ""
+          }
+        },
+        "picard": {
+          "OPTIONS": {
+            "JAVA": "",
+            "DEDUP": ""
+          }
+        }
+      }
+    }
+  },
+  "COUNTING": {
+    "TOOLS": {
+      "salmon": "salmon"
+    },
+    "id": {
+      "condition": {
+        "salmon": {
+          "OPTIONS": {
+            "INDEX": "-k 31",
+            "COUNTING": "-l U --validateMappings"
+          }
+        }
+      }
+    }
+  }
+}
