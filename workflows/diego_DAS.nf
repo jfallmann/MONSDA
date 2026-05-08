@@ -24,7 +24,7 @@ process featurecount_diego{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
     cpus THREADS
-    memory 16.GB
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     //validExitStatus 0,1
 
