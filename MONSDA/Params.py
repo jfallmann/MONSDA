@@ -1,46 +1,4 @@
 # Params.py ---
-#
-# Filename: Params.py
-# Description:
-# Author: Joerg Fallmann
-# Maintainer:
-# Created: Tue Sep 18 15:39:06 2018 (+0200)
-# Version:
-# Package-Requires: ()
-# Last-Updated: Thu Feb  4 18:01:07 2021 (+0100)
-#           By: Joerg Fallmann
-#     Update #: 2888
-# URL:
-# Doc URL:
-# Keywords:
-# Compatibility:
-#
-#
-
-# Commentary:
-#
-#
-#
-
-# Change Log:
-#
-#
-#
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
 
 # Code:
 # import os, sys, inspect
@@ -73,6 +31,7 @@ import shutil
 import sys
 import traceback as tb
 from collections import OrderedDict, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
 from natsort import natsorted
@@ -383,16 +342,49 @@ def inject_samplesheet_settings(configfile: str, samplesheet_path: str) -> str:
 
 
 @check_run
-def prepare_lane_split_fastqs(config: dict) -> int:
+def _merge_lane_files(target: str, lane_candidates: list, logid: str) -> str:
+    """Concatenate *lane_candidates* gzip files into *target*.
+
+    Returns *target* on success; raises on any I/O error.
+    """
+    with open(target, "wb") as outfh:
+        for lane_file in lane_candidates:
+            with open(lane_file, "rb") as infh:
+                shutil.copyfileobj(infh, outfh)
+    return target
+
+
+def prepare_lane_split_fastqs(config: dict, max_workers: Optional[int] = None) -> int:
     """Concatenate lane-split FASTQs into canonical _R1/_R2 files when needed.
+
+    Merges are executed in parallel using a ``ThreadPoolExecutor`` so that all
+    samples/reads are processed concurrently (I/O-bound work, thread-safe).
+
+    Parameters
+    ----------
+    config : dict
+        Parsed MONSDA config.
+    max_workers : int, optional
+        Maximum number of parallel merge threads.  When ``None`` (default),
+        the value is taken from ``config["MAXTHREADS"]``; if that is also
+        absent the ``ThreadPoolExecutor`` built-in default is used.
 
     This is intentionally additive: existing canonical files are kept untouched.
     """
     logid = scriptname + ".Params_prepare_lane_split_fastqs: "
     merged_files = 0
 
+    if max_workers is None:
+        try:
+            max_workers = int(config["MAXTHREADS"])
+        except (KeyError, TypeError, ValueError):
+            max_workers = None  # fall back to ThreadPoolExecutor default
+
     samples = [os.path.join(x) for x in sampleslong(config, nocheck="1")]
     log.debug(logid + "Checking lane split files for samples: " + str(samples))
+
+    # --- collect all (target, lane_candidates) pairs first ---
+    merge_tasks: list = []  # list of (target, lane_candidates)
 
     for sample in samples:
         paired = checkpaired([sample], config)
@@ -433,16 +425,33 @@ def prepare_lane_split_fastqs(config: dict) -> int:
                 logid
                 + f"Concatenating {len(lane_candidates)} lane files into {target}"
             )
-            with open(target, "wb") as outfh:
-                for lane_file in lane_candidates:
-                    with open(lane_file, "rb") as infh:
-                        shutil.copyfileobj(infh, outfh)
-            merged_files += 1
+            merge_tasks.append((target, lane_candidates))
 
-    if merged_files > 0:
-        log.info(logid + f"Created {merged_files} concatenated lane-merged FASTQ files")
-    else:
+    if not merge_tasks:
         log.debug(logid + "No lane-split FASTQ files required concatenation")
+        return 0
+
+    # --- run all merges in parallel ---
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {
+            pool.submit(_merge_lane_files, target, lanes, logid): target
+            for target, lanes in merge_tasks
+        }
+        for future in as_completed(futures):
+            target = futures[future]
+            try:
+                future.result()
+                merged_files += 1
+            except Exception:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tbe = tb.TracebackException(exc_type, exc_value, exc_tb)
+                log.error(
+                    logid
+                    + f"Failed to merge lane files into {target}: "
+                    + "".join(tbe.format())
+                )
+
+    log.info(logid + f"Created {merged_files} concatenated lane-merged FASTQ files")
     return merged_files
 
 
