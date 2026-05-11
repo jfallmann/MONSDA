@@ -1,8 +1,8 @@
 executor: slurm
 
 default-resources:
-  slurm_account: "aob" # your account name
-  slurm_partition: "c" # the partition to use
+  slurm_account: "${SLURM_ACCOUNT}" # your account name
+  slurm_partition: "${SLURM_PARTITION}" # the partition to use
   nodes: 1
   mem_mb: "20000 * (2 ** (attempt - 1))"  
   runtime: "480 * (2 ** (attempt - 1))"   
