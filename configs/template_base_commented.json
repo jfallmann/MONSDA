@@ -322,8 +322,8 @@
       },
       "OPTIONS":
         {
-            "INDEX": "-l A --gencode",
-            "QUANT": "--gcBias"
+            "INDEX": "",
+            "QUANT": "--validateMappings --seqBias --gcBias"
         }
     }
   },
@@ -528,8 +528,8 @@
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
       },
       "OPTIONS": {
-          "INDEX": "-l A --gencode -d GENOMES/salmon_decoy",
-          "QUANT": "--gcBias",
+          "INDEX": "-d GENOMES/salmon_decoy",
+          "QUANT": "--validateMappings --seqBias --gcBias",
           "DTU": ""
       }
     },
@@ -540,8 +540,8 @@
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
       },
       "OPTIONS": {
-          "INDEX": "-l A --gencode -d GENOMES/salmon_decoy",
-          "QUANT": "--gcBias",
+          "INDEX": "-d GENOMES/salmon_decoy",
+          "QUANT": "--validateMappings --seqBias --gcBias",
           "DTU": ""
       }
     }

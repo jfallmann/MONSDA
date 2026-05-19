@@ -241,8 +241,8 @@
                                         "salmon": {
                                             "OPTIONS":
                                             {
-                                                "INDEX": "-l A --gencode",  # salmon index options
-                                                "QUANT": "--gcBias",  # salmon quant options
+                                                "INDEX": "",  # salmon index options
+                                                "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
                                             }
                                         }
                                     }
@@ -462,8 +462,8 @@
                     {
                         "OPTIONS":
                         {
-                            "INDEX": "-l A --gencode",  # salmon index options
-                            "QUANT": "--gcBias",  # salmon quant options
+                            "INDEX": "",  # salmon index options
+                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -471,8 +471,8 @@
                     {
                         "OPTIONS":
                         {
-                            "INDEX": "-l A --gencode",  # salmon index options
-                            "QUANT": "--gcBias",  # salmon quant options
+                            "INDEX": "",  # salmon index options
+                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     }

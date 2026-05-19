@@ -232,8 +232,8 @@
         "salmon": {
           "OPTIONS":
             {
-                "INDEX": "-l A --gencode",
-                "QUANT": "--gcBias"
+                "INDEX": "",
+                "QUANT": "--validateMappings --seqBias --gcBias"
             }
         }
       }
@@ -436,8 +436,8 @@
         {
             "OPTIONS":
             {
-                "INDEX": "-l A --gencode",
-                "QUANT": "--gcBias",
+                "INDEX": "",
+                "QUANT": "--validateMappings --seqBias --gcBias",
                 "DTU": ""
             }
         },
@@ -445,8 +445,8 @@
         {
             "OPTIONS":
             {
-                "INDEX": "-l A --gencode",
-                "QUANT": "--gcBias",
+                "INDEX": "",
+                "QUANT": "--validateMappings --seqBias --gcBias",
                 "DTU": ""
             }
         }
