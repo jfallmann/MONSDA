@@ -413,7 +413,8 @@
   "DTU": {
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
-      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+      "drimseq": "Analysis/DTU/DRIMSEQ.R",
+      "spit": "Analysis/DTU/SPIT.py"
     },
     "COMPARABLE": {
       "WTvsKO": [
@@ -442,6 +443,15 @@
             }
         },
         "drimseq": 
+        {
+            "OPTIONS":
+            {
+                "INDEX": "",
+                "QUANT": "--validateMappings --seqBias --gcBias",
+                "DTU": ""
+            }
+        },
+        "spit": 
         {
             "OPTIONS":
             {

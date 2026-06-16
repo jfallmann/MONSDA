@@ -504,7 +504,8 @@
         "TOOLS" :
         {
             "dexseq" : "Analysis/DTU/DEXSEQ.R",
-            "drimseq" : "Analysis/DTU/DRIMSEQ.R"
+            "drimseq" : "Analysis/DTU/DRIMSEQ.R",
+            "spit" : "Analysis/DTU/SPIT.py"
         },
         "COMPARABLE" :
         {
@@ -535,6 +536,17 @@
                             "QUANT": "",  # Options for read counting, independent of COUNTS workflows
                             "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
                         }
+                    },
+                    "spit": {
+                        "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                        "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                        "DECOY": "GENOMES/Ecoli/salmon_decoy",
+                        "OPTIONS":
+                        {
+                            "INDEX": "",
+                            "QUANT": "",  # Options for read counting, independent of COUNTS workflows
+                            "DTU": ""  # Options for DE Analysis
+                        }
                     }
                 }
             },
@@ -559,6 +571,17 @@
                         "INDEX": "",  
                         "QUANT": "", # Options for read counting, independent of COUNTS workflows
                         "DTU": "min_samps_feature_expr = 1, min_feature_expr = .1,  min_samps_gene_expr = 1, min_gene_expr = 1"  # Options for DE Analysis
+                    }
+                },
+                "spit": {
+                    "REFERENCE": "GENOMES/Ecoli/Ecoli_trans.fa.gz",
+                    "ANNOTATION": "GENOMES/Ecoli/Ecoli_trans_fix.gtf.gz",
+                    "DECOY": "GENOMES/Ecoli/salmon_decoy",
+                    "OPTIONS":
+                    {
+                        "INDEX": "",  
+                        "QUANT": "", # Options for read counting, independent of COUNTS workflows
+                        "DTU": ""  # Options for DE Analysis
                     }
                 }
             }
