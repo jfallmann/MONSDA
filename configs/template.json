@@ -440,7 +440,8 @@
         "TOOLS" :
         {
             "dexseq"  : "Analysis/DTU/DEXSEQ.R",
-            "drimseq"  : "Analysis/DTU/DRIMSEQ.R"
+            "drimseq"  : "Analysis/DTU/DRIMSEQ.R",
+            "spit"  : "Analysis/DTU/SPIT.py"
         },
         "COMPARABLE" :
         {
@@ -468,6 +469,15 @@
                         }
                     },
                     "drimseq":
+                    {
+                        "OPTIONS":
+                        {
+                            "INDEX": "",  # salmon index options
+                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "DTU": ""  # Options for Analysis
+                        }
+                    },
+                    "spit":
                     {
                         "OPTIONS":
                         {

@@ -507,7 +507,8 @@
   "DTU": {
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
-      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+      "drimseq": "Analysis/DTU/DRIMSEQ.R",
+      "spit": "Analysis/DTU/SPIT.py"
     },
     "ENV" : "",
     "BIN" : "",
@@ -538,6 +539,18 @@
           "INDEX": "salmon index options, e.g. path to decoy file",
           "QUANT": "salmon quant options",
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
+      },
+      "OPTIONS": {
+          "INDEX": "-d GENOMES/salmon_decoy",
+          "QUANT": "--validateMappings --seqBias --gcBias",
+          "DTU": ""
+      }
+    },
+    "spit": {
+      "comment": {
+          "INDEX": "salmon index options, e.g. path to decoy file",
+          "QUANT": "salmon quant options",
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
       },
       "OPTIONS": {
           "INDEX": "-d GENOMES/salmon_decoy",
