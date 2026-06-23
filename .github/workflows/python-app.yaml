@@ -89,6 +89,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -97,6 +98,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install build wheel setuptools versioneer
+      - name: Sync config versions
+        run: |
+          python scripts/update_config_versions.py configs/*.json tests/data/config_*.json
       - name: Build distribution
         run: |
           python -m build
@@ -126,6 +130,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
@@ -146,8 +151,7 @@ jobs:
       - name: Prepare integration test config
         run: |
           cd ${{ github.workspace }}
-          VERSION=$(monsda --version 2>&1 | sed 's/MONSDA version //g')
-          sed -i "s/\"VERSION\": \"FIXME\"/\"VERSION\": \"${VERSION}\"/g" tests/data/config_Test.json
+          python scripts/update_config_versions.py tests/data/config_Test.json
       - name: Run full pipeline test
         run: |
           cd ${{ github.workspace }}/tests
