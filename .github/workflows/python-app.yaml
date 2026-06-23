@@ -1,6 +1,10 @@
 name: MONSDA CI
 
 on:
+  push:
+    branches: [main, develop]
+    tags:
+      - "v*"
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
@@ -11,10 +15,35 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    name: Lint (flake8, isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install flake8 isort
+      - name: Check import sorting with isort
+        run: isort --check-only --diff MONSDA/ tests/
+        continue-on-error: true
+      - name: Lint with flake8
+        run: flake8 MONSDA/ tests/ --count --statistics --show-source
+        continue-on-error: true
+
   tests:
     name: Unit tests (pytest)
     runs-on: ubuntu-latest
+    needs: lint
     defaults:
       run:
         shell: bash -el {0}
@@ -34,16 +63,54 @@ jobs:
           show-channel-urls: true
           use-only-tar-bz2: false
           auto-activate-base: false
-      - name: build and install MONSDA
+      - name: Install dependencies
         run: |
           cd ${{ github.workspace }}
           python -m pip install --upgrade pip
           python -m pip install -e .
-          python -m pip install pytest
-      - name: run unit tests
+          python -m pip install pytest pytest-cov
+      - name: Run unit tests with coverage
         run: |          
           cd ${{ github.workspace }}
-          pytest -q tests/test_Utils.py
+          pytest tests/test_Utils.py -v --cov=MONSDA --cov-report=xml --cov-report=html
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build wheel setuptools versioneer
+      - name: Build distribution
+        run: |
+          python -m build
+      - name: Check build artifacts
+        run: |
+          ls -lh dist/
+          python -m pip install twine
+          twine check dist/*
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7
 
   full-pipeline:
     name: Full pipeline integration test
@@ -71,23 +138,23 @@ jobs:
           show-channel-urls: true
           use-only-tar-bz2: false
           auto-activate-base: false
-      - name: build and install MONSDA
+      - name: Build and install MONSDA
         run: |
           cd ${{ github.workspace }}
           python -m pip install --upgrade pip
           python -m pip install -e .
-      - name: prepare integration test config
+      - name: Prepare integration test config
         run: |
           cd ${{ github.workspace }}
           VERSION=$(monsda --version 2>&1 | sed 's/MONSDA version //g')
           sed -i "s/\"VERSION\": \"FIXME\"/\"VERSION\": \"${VERSION}\"/g" tests/data/config_Test.json
-      - name: run full pipeline test
+      - name: Run full pipeline test
         run: |
           cd ${{ github.workspace }}/tests
           ln -fs data/* .
           mkdir -p CONDALIB
           monsda -j 6 -c config_Test.json --directory ${PWD} --use-conda --conda-prefix CONDALIB --save
-      - name: upload test logs on failure
+      - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -101,3 +168,24 @@ jobs:
             ${{ github.workspace }}/tests/COUNTING
             ${{ github.workspace }}/tests/PEAKS
             ${{ github.workspace }}/tests/TRACKS
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: pypi
+      url: https://pypi.org/project/MONSDA
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://upload.pypi.org/legacy/
