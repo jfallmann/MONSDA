@@ -1,4 +1,4 @@
-.PHONY: help install install-dev lint lint-check format test test-cov build clean clean-build clean-pyc pre-commit deploy
+.PHONY: help install install-dev lint lint-check format test test-cov build clean clean-build clean-pyc pre-commit deploy sync-config-versions check-config-versions
 
 help:
 	@echo "MONSDA Development Commands:"
@@ -17,6 +17,10 @@ help:
 	@echo "  make test             Run unit tests"
 	@echo "  make test-cov         Run tests with coverage report"
 	@echo "  make test-integration Run integration tests (requires conda)"
+	@echo ""
+	@echo "Versioning:"
+	@echo "  make sync-config-versions   Stamp config VERSION fields with the git-tag version"
+	@echo "  make check-config-versions  Verify config VERSION fields match (CI mode)"
 	@echo ""
 	@echo "Building:"
 	@echo "  make build            Build distribution packages"
@@ -54,7 +58,13 @@ test-cov:
 test-integration:
 	cd tests && RUN_INTEGRATION_TESTS=1 bash cicd_test.sh
 
-build: clean
+sync-config-versions:
+	python scripts/update_config_versions.py configs/*.json tests/data/config_*.json
+
+check-config-versions:
+	python scripts/update_config_versions.py --check configs/*.json tests/data/config_*.json
+
+build: clean sync-config-versions
 	python -m pip install --upgrade pip
 	python -m pip install build wheel setuptools versioneer
 	python -m build

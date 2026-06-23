@@ -160,6 +160,10 @@ make build           # Build packages
 make clean           # Clean all artifacts
 make clean-pyc       # Remove Python cache files
 
+# Versioning
+make sync-config-versions   # Stamp config VERSION fields with the git-tag version
+make check-config-versions  # Verify config VERSION fields are in sync
+
 # Useful
 make help            # Show all commands
 ```
@@ -281,6 +285,35 @@ MONSDA uses **versioneer** for automatic version management:
 1. Create release tag: `git tag v1.0.0`
 2. Push tag: `git push --tags`
 3. GitHub Actions automatically builds and publishes to PyPI
+
+### Config Version Synchronization
+
+The `VERSION` field in the config files under `configs/` and `tests/data/`
+is kept in sync with the versioneer-derived version automatically, so that
+`monsda`'s runtime version check (`monsda_check_version`) always passes.
+
+This is handled by `scripts/update_config_versions.py`, which mirrors the same
+version source used at runtime (`MONSDA.__version__`, falling back to
+`python setup.py --version`). The script is comment-safe (config files contain
+`#` comments and are not strict JSON) and only rewrites empty, `FIXME`, or
+version-like `VERSION` values, leaving documentation strings untouched.
+
+It runs automatically in CI:
+- In the **build** job, before `python -m build`, so the published package ships
+  templates matching the release version.
+- In the **full-pipeline** job, before the integration test, replacing the old
+  `sed`-based patching.
+
+Both jobs use `fetch-depth: 0` on checkout so versioneer can resolve git tags.
+
+Run locally:
+```bash
+make sync-config-versions    # Stamp config VERSION fields with the git-tag version
+make check-config-versions   # Verify config VERSION fields are in sync (CI mode)
+
+# Or invoke the script directly with an explicit version
+python scripts/update_config_versions.py --version 1.5.0 configs/*.json
+```
 
 ## Best Practices
 
