@@ -76,8 +76,8 @@ cpm_matrix <- calc_cpm(countData_all)
 tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 
 # Write out CPM and TPM tables
-write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(cpm_matrix, rownames(cpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(tpm_matrix, rownames(tpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 # Normalize by spike in if available
 if (spike != "") {
@@ -91,17 +91,17 @@ if (spike != "") {
     counts_norm <- as.data.frame(normCounts(counts_norm))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
-     write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+     write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(counts_norm_clean, rownames(counts_norm_clean), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(countData_clean, rownames(countData_clean), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     # Calculate CPM and TPM
     cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
     tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
 
     # Write out CPM and TPM tables
-    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(cpm_norm_matrix, rownames(cpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(tpm_norm_matrix, rownames(tpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 }
 #### Now plot and print over-all comparisons
@@ -129,8 +129,8 @@ print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(labe
 dev.off()
 
 # We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+write.table(add_gene_coordinates(as.data.frame(assay(rld)), rownames(assay(rld)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+write.table(add_gene_coordinates(as.data.frame(assay(vsd)), rownames(assay(vsd)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 
 # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
 
@@ -261,8 +261,8 @@ for (contrast in comparison[[1]]) {
         dev.off()
 
         # We also write the normalized counts to file
-        write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-        write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+        write.table(add_gene_coordinates(as.data.frame(assay(rld_norm)), rownames(assay(rld_norm)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+        write.table(add_gene_coordinates(as.data.frame(assay(vsd_norm)), rownames(assay(vsd_norm)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
     }
 
     # Create DESeqDataSet
@@ -294,8 +294,8 @@ for (contrast in comparison[[1]]) {
     dev.off()
 
     # We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-    write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+    write.table(add_gene_coordinates(as.data.frame(assay(rld)), rownames(assay(rld)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+    write.table(add_gene_coordinates(as.data.frame(assay(vsd)), rownames(assay(vsd)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 
     tryCatch({
         # initialize empty objects
@@ -317,6 +317,7 @@ for (contrast in comparison[[1]]) {
         }))
         resOrdered$Gene_ID <- rownames(resOrdered)
         resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
+        resOrdered <- add_gene_coordinates(resOrdered, resOrdered$Gene_ID, gtf_gene, after = "Gene_ID")
 
         # plotVolcano
         pdf(
@@ -357,6 +358,7 @@ for (contrast in comparison[[1]]) {
         })
         res$Gene_ID <- rownames(res)
         res <- res[, c(8, 7, 1, 2, 3, 5, 6)]
+        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
         res <- as.data.frame(apply(res, 2, as.character))
 
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
@@ -388,6 +390,7 @@ for (contrast in comparison[[1]]) {
             }))
             resOrdered$Gene_ID <- rownames(resOrdered)
             resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
+            resOrdered <- add_gene_coordinates(resOrdered, resOrdered$Gene_ID, gtf_gene, after = "Gene_ID")
 
             # plot Volcano
             pdf(
@@ -428,6 +431,7 @@ for (contrast in comparison[[1]]) {
             })
             res$Gene_ID <- rownames(res)
             res <- res[, c(7, 6, 1, 2, 3, 4, 5)]
+            res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
             res <- as.data.frame(apply(res, 2, as.character))
 
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)

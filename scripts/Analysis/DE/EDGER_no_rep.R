@@ -101,6 +101,7 @@ colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
 ## create dummy file MDS-plot with and without summarized replicates
@@ -194,6 +195,7 @@ for (contrast in comparison[[1]]) {
         tmm_norm$ID <- dge_norm$genes$genes
         tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm) - 1)]
 
+        tmm_norm <- add_gene_coordinates(tmm_norm, tmm_norm$ID, gtf_gene, after = "ID")
         write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         ## create dummy file MDS-plot with and without summarized replicates
@@ -232,6 +234,7 @@ for (contrast in comparison[[1]]) {
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+    tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
     ## create dummy file MDS-plot with and without summarized replicates
@@ -283,6 +286,7 @@ for (contrast in comparison[[1]]) {
         qlf$table$Gene_ID <- rownames(qlf$table)
         res <- qlf$table[, c(5, 4, 2, 1, 3)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
+        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
 
         # plotVolcano
         pdf(
@@ -318,11 +322,13 @@ for (contrast in comparison[[1]]) {
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
         tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
         tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -366,6 +372,7 @@ for (contrast in comparison[[1]]) {
             qlf$table$Gene_ID <- rownames(qlf$table)
             res <- qlf$table[, c(5, 4, 2, 1, 3)]
             res$FDR <- p.adjust(res$PValue, method = "BH")
+            res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
 
             # plotVolcano
             pdf(
@@ -401,11 +408,13 @@ for (contrast in comparison[[1]]) {
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
             tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
             tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 

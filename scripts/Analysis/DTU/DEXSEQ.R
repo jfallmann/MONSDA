@@ -171,6 +171,7 @@ for (contrast in comparisons[[1]]) {
     toprint$transcripts <- vapply(toprint$featureID, paste, collapse = ", ", character(1L))
     toprint$genes <- vapply(toprint$Gene, paste, collapse = ", ", character(1L))
     toprint <- subset(toprint, select = -c(Gene, featureID))
+    toprint <- add_gene_coordinates(toprint, toprint$groupID, gtf.df, after = "groupID")
 
     write.table(toprint, gzfile(paste("Tables/DTU", "DEXSEQ", combi, contrast_name, "table", "results.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
