@@ -53,6 +53,7 @@ def parse_tx2gene(gtf):
     logid = scriptname + ".parse_tx2gene: "
     tx2gene = {}
     gene2name = {}
+    gene2coord = {}
     opn = gzip.open if str(gtf).endswith(".gz") else open
     with opn(gtf, "rt") as fh:
         for line in fh:
@@ -65,6 +66,9 @@ def parse_tx2gene(gtf):
             tid = re.search(r'transcript_id "?([^";]+)"?', attr)
             gid = re.search(r'gene_id "?([^";]+)"?', attr)
             gname = re.search(r'gene_name "?([^";]+)"?', attr)
+            if cols[2] == "gene" and gid:
+                g = re.sub(r"\.[0-9]+$", "", gid.group(1))
+                gene2coord[g] = cols[0] + ":" + cols[3] + ":" + cols[4] + ":" + cols[6]
             if tid and gid:
                 t = re.sub(r"\.[0-9]+$", "", tid.group(1))
                 g = re.sub(r"\.[0-9]+$", "", gid.group(1))
@@ -72,7 +76,7 @@ def parse_tx2gene(gtf):
                 if gname:
                     gene2name[g] = gname.group(1)
     log.debug(logid + "found " + str(len(tx2gene)) + " transcripts")
-    return tx2gene, gene2name
+    return tx2gene, gene2name, gene2coord
 
 
 def run_spit_cmd(subcmd, args_list):
@@ -112,7 +116,7 @@ def main(anname, gtf, outdir, cmp, combi, cores, spitopts):
         else:
             dtu_extra = spitopts.split()
 
-    tx2gene, gene2name = parse_tx2gene(gtf)
+    tx2gene, gene2name, gene2coord = parse_tx2gene(gtf)
 
     sampleData_all = pd.read_csv(anname, sep="\t", compression="gzip", dtype=str)
     sampleData_all["sample_id"] = sampleData_all["sample_id"].astype(str)
@@ -236,6 +240,8 @@ def main(anname, gtf, outdir, cmp, combi, cores, spitopts):
         gene_tab = gene_tab.sort_values("pvalue", na_position="last")
 
         prefix = "_".join(["DTU", "SPIT", combi, contrast_name, "table"])
+        gene_tab.insert(gene_tab.columns.get_loc("gene_id") + 1, "Coordinates", [gene2coord.get(g, "NA") for g in gene_tab["gene_id"]])
+        tx_tab.insert(tx_tab.columns.get_loc("gene_id") + 1, "Coordinates", [gene2coord.get(g, "NA") for g in tx_tab["gene_id"]])
         gene_tab.to_csv(
             os.path.join("Tables", prefix + "_genes.tsv.gz"),
             sep="\t", index=False, compression="gzip",
@@ -246,6 +252,7 @@ def main(anname, gtf, outdir, cmp, combi, cores, spitopts):
         )
         ifs_out = ifs_df.copy()
         ifs_out.insert(0, "feature_id", ifs_out.index)
+        ifs_out.insert(ifs_out.columns.get_loc("gene_id") + 1, "Coordinates", [gene2coord.get(g, "NA") for g in ifs_out["gene_id"]])
         ifs_out.to_csv(
             os.path.join("Tables", prefix + "_ifs.tsv.gz"),
             sep="\t", index=False, compression="gzip",
