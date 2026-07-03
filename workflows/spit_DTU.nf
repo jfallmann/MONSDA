@@ -11,6 +11,7 @@ DTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
 IDXPARAMS = get_always('spit_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('spit_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('spit_DTU_params_DTU') ?: ''
+RUNTERMINUS = get_always('spit_DTU_params_TERMINUS') ?: ''
 DTUREPS = get_always('DTUREPS') ?: ''
 DTUCOMP = get_always('DTUCOMP') ?: ''
 DTUCOMPS = get_always('DTUCOMPS') ?: ''
@@ -227,6 +228,32 @@ process collect_spit{
     """
 }
 
+process terminus_collapse{
+    conda "terminus.yaml"
+    container "oras://jfallmann/monsda:terminus"
+    cpus THREADS
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    saveAs: {filename ->
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/terminus/${CONDITION}/DTU/${file(filename).getName()}"
+        else                                    "DTU/${SCOMBO}/terminus/${file(filename).getName()}"
+    }
+
+    input:
+    path counts
+
+    output:
+    path "*.gz", emit: counts
+    path "*.log", emit: logs
+
+    script:
+    lf = "terminus_collapse.log"
+    """
+    mkdir -p termdirs; for f in *_counts.gz; do b=\${f%_counts.gz}; mkdir -p termdirs/\$b; zcat \$f > termdirs/\$b/quant.sf; done 2> $lf; dirs=\$(ls -d termdirs/*); for d in \$dirs; do terminus group $RUNTERMINUS -d \$d -o termout &>> $lf; done; terminus collapse -d \$dirs -o termout &>> $lf; for d in \$dirs; do b=\$(basename \$d); gzip -c termout/\$b/quant.sf > \${b}_counts.gz; done 2>> $lf
+    """
+}
+
 workflow DTU{ 
     take: collection
 
@@ -259,7 +286,14 @@ workflow DTU{
     }
 
     prepare_dtu_annotation()
-    run_spit(salmon_quant.out.counts.collect(), prepare_dtu_annotation.out.anno, annofile)
+    if (RUNTERMINUS?.length() > 0){
+        terminus_collapse(salmon_quant.out.counts.collect())
+        dtucounts = terminus_collapse.out.counts
+    }
+    else{
+        dtucounts = salmon_quant.out.counts
+    }
+    run_spit(dtucounts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_spit.out.tbls.concat(run_spit.out.figs.concat(run_spit.out.session)).collect())
     collect_spit(run_spit.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 

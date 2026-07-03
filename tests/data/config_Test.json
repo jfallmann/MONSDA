@@ -255,7 +255,7 @@
             "drimseq": {
                 "OPTIONS": {
                     "INDEX": "-d GENOMES/transcripts.fa.gz",
-                    "QUANT": "--validateMappings --seqBias --gcBias",
+                    "QUANT": "--seqBias --gcBias",
                     "DTU": ""
                 }
             }

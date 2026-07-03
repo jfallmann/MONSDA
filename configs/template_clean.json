@@ -233,7 +233,7 @@
           "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias"
+                "QUANT": "--seqBias --gcBias"
             }
         }
       }
@@ -438,7 +438,7 @@
             "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias",
+                "QUANT": "--seqBias --gcBias",
                 "DTU": ""
             }
         },
@@ -447,7 +447,7 @@
             "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias",
+                "QUANT": "--seqBias --gcBias",
                 "DTU": ""
             }
         },
@@ -456,7 +456,7 @@
             "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias",
+                "QUANT": "--seqBias --gcBias",
                 "DTU": ""
             }
         }

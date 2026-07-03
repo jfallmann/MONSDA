@@ -1,9 +1,7 @@
-name: minimap
+name: terminus
 channels:
   - conda-forge
   - bioconda
   - nodefaults
 dependencies:
-  - minimap2 >=2.28
-  - pigz =2.6
-  - samtools =1.21
+  - terminus

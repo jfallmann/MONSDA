@@ -34,6 +34,15 @@ You can always define differing ENV/BIN keys for each condition-tree leaf separa
 
 The next key-level is the *OPTIONS* key which is where you can define additional parameters for each tool. It is not needed to define anything related to *single-/paired-* end or *singlecell* sequencing, this is done automatically.  To add parameters simply add the *OPTION* key which defines a dict where you can set parameters for each defined subworkflow-step. Parameters are here defined as key/value pairs corresponding to the subworkflow-step, e.g. 'INDEX' to generate an index file for mapping and all settings similar to a command line call as values. This should become clear having a look at the different processing steps in the template json.  If there are no options just leave the 'OPTIONS' dict empty.
 
+.. note::
+
+  A few tool-specific options are worth highlighting:
+
+  * **salmon COUNTING from BAM**: in addition to the default FASTQ quantification, salmon can quantify directly from an alignment BAM by setting the ``BAM`` option to ``transcriptome`` (alignments against a transcriptome FASTA) or ``genome`` (alignments against the genome, requires the annotation GTF). Leave it empty/unset for the default FASTQ mode. Salmon indices are automatically rebuilt when the environment changes (salmon >= 2.3, ``--validateMappings`` is no longer needed).
+  * **long-read quantification**: use ``minimap`` with ``-x map-ont``/``-x map-pb`` (or ``rammap``) for mapping and ``oarfish`` for transcript quantification from the resulting transcriptome BAM.
+  * **single-cell**: use ``piscem`` as MAPPING tool (emits a RAD file, single-cell only, generic post-mapping is skipped) together with ``alevinfry`` as COUNTING tool, or use the self-contained ``simpleaf`` COUNTING tool.
+  * **DTU pre-grouping**: any DTU tool (drimseq/dexseq/spit) accepts an optional ``TERMINUS`` option to pre-group transcripts with terminus before analysis. It is disabled by default.
+
 
 .. literalinclude:: ../../configs/template.json
     :language: json

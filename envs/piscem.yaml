@@ -1,9 +1,8 @@
-name: minimap
+name: piscem
 channels:
   - conda-forge
   - bioconda
   - nodefaults
 dependencies:
-  - minimap2 >=2.28
-  - pigz =2.6
+  - piscem >=0.20
   - samtools =1.21

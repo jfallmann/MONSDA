@@ -1,9 +1,12 @@
-name: minimap
+name: rammap
 channels:
   - conda-forge
   - bioconda
   - nodefaults
 dependencies:
-  - minimap2 >=2.28
+  - rust >=1.75
+  - cargo
+  - git
+  - zlib
   - pigz =2.6
   - samtools =1.21
