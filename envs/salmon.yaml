@@ -2,5 +2,8 @@ name: salmon
 channels:
   - conda-forge
   - bioconda
+  - nodefaults
 dependencies:
-  - salmon =1.11.4
+  - salmon >=2.3
+  - samtools =1.21
+  - pigz =2.6

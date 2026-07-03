@@ -958,7 +958,9 @@ def make_sub(
                                 subjobs.append(line)
                             subjobs.append("\n\n")
 
-                if "MAPPING" in works:
+                if "MAPPING" in works and envs[works.index("MAPPING")] not in [
+                    "piscem"
+                ]:
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                     with open(smkf, "r") as smk:
                         for line in mu.comment_remover(smk.readlines()):
@@ -1152,16 +1154,21 @@ def make_sub(
                         subjobs.append("\n\n")
 
             if "MAPPING" in subworkflows:
-                smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line, loglevel, condapath, envpath, workflowpath, logfix
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                _map_tools, _ = create_subworkflow(config, "MAPPING", [condition])
+                _skip_postmap = _map_tools is not None and any(
+                    str(t[0]) in ["piscem"] for t in _map_tools
+                )
+                if not _skip_postmap:
+                    smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
+                    with open(smkf, "r") as smk:
+                        for line in mu.comment_remover(smk.readlines()):
+                            line = re.sub(condapath, 'conda: "' + envpath, line)
+                            if "include: " in line:
+                                line = fixinclude(
+                                    line, loglevel, condapath, envpath, workflowpath, logfix
+                                )
+                            subjobs.append(line)
+                        subjobs.append("\n\n")
                 if "QC" in subworkflows:
                     # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     _qc_tools, _ = create_subworkflow(config, "QC", [condition])
@@ -3106,6 +3113,7 @@ def nf_make_sub(
 
                     flowlist.append("MAPPING")
 
+                    maprad = envs[works.index("MAPPING")] in ["piscem"]
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     with open(nfi, "r") as nf:
                         for line in mu.comment_remover(nf.readlines()):
@@ -3197,9 +3205,10 @@ def nf_make_sub(
                             subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                         elif w == "MAPPING":
                             subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
-                            subjobs.append(
-                                " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
-                            )
+                            if not maprad:
+                                subjobs.append(
+                                    " " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n"
+                                )
                         elif w == "DEDUPBAM":
                             if deduptool == "fgumi":
                                 subjobs.append(
@@ -3471,6 +3480,10 @@ def nf_make_sub(
                     )
 
             if "MAPPING" in subworkflows:
+                _map_tools, _ = create_subworkflow(config, "MAPPING", [condition])
+                maprad = _map_tools is not None and any(
+                    str(t[0]) in ["piscem"] for t in _map_tools
+                )
                 if "QC" not in subworkflows:
                     log.debug(logid + "Mapping without QC!")
                 if "TRIMMING" not in subworkflows:
@@ -3580,7 +3593,8 @@ def nf_make_sub(
                         subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
                     elif w == "MAPPING":
                         subjobs.append(" " * 4 + w + "(TRIMMING.out.trimmed)\n")
-                        subjobs.append(" " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n")
+                        if not maprad:
+                            subjobs.append(" " * 4 + "POSTMAPPING(MAPPING.out.mapped)\n")
                     elif w == "DEDUPBAM":
                         if deduptool == "fgumi":
                             subjobs.append(

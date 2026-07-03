@@ -242,7 +242,7 @@
                                             "OPTIONS":
                                             {
                                                 "INDEX": "",  # salmon index options
-                                                "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                                                "QUANT": "--seqBias --gcBias",  # salmon quant options
                                             }
                                         }
                                     }
@@ -464,7 +464,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -473,7 +473,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -482,7 +482,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     }

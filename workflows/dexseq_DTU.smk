@@ -7,6 +7,10 @@ comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 
+TERMINUSENV = 'terminus'
+termpara = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('TERMINUS', None)
+runterminus = termpara is not None
+
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 keydict["DECOY"] = DECOY
@@ -92,8 +96,35 @@ else:
         shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 
 
+if runterminus:
+    rule terminus_group:
+        input:  ctsdir = rules.mapping.output.ctsdir
+        output: grp = "DTU/{combo}/terminus/{file}/groups.txt"
+        log:    "LOGS/{combo}/{file}/terminus_group.log"
+        conda:  ""+TERMINUSENV+".yaml"
+        container: "oras://jfallmann/monsda:"+TERMINUSENV+""
+        threads: MAXTHREAD
+        params: tpara = termpara,
+                outdir = lambda wildcards, output: os.path.dirname(os.path.dirname(str(output.grp)))
+        shell:  "terminus group {params.tpara} -d {input.ctsdir} -o {params.outdir} &> {log}"
+
+    rule terminus_collapse:
+        input:  grps = expand("DTU/{combo}/terminus/{file}/groups.txt", combo=combo, file=samplecond(SAMPLES, config)),
+                dirs = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config))
+        output: cnts = expand("DTU/{combo}/terminus/{file}/quant.sf.gz", combo=combo, file=samplecond(SAMPLES, config))
+        log:    expand("LOGS/DTU/{combo}/terminus_collapse.log", combo=combo)
+        conda:  ""+TERMINUSENV+".yaml"
+        container: "oras://jfallmann/monsda:"+TERMINUSENV+""
+        threads: MAXTHREAD
+        params: outdir = lambda wildcards, input: os.path.dirname(os.path.dirname(str(input.grps[0])))
+        shell:  "terminus collapse -d {input.dirs} -o {params.outdir} &> {log}; for d in {input.dirs}; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
+
+    ctsource = expand("DTU/{combo}/terminus/{file}", combo=combo, file=samplecond(SAMPLES, config))
+else:
+    ctsource = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config))
+
 rule create_annotation_table:
-    input:  dir  = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config)),
+    input:  dir  = ctsource,
     output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
     log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
     conda:  ""+COUNTENV+".yaml"
