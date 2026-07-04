@@ -45,7 +45,7 @@ try:
     installpath = os.path.dirname(__file__).replace(
         os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
-except:
+except Exception:
     installpath = os.getcwd()
 
 workflowpath = os.path.join(installpath, "MONSDA", "workflows")
@@ -57,6 +57,8 @@ logfix = re.compile(r'loglevel="INFO"')
 # Docker Hub namespace like "jfallmann/" without dots before the first slash)
 oraspath = re.compile(r'oras://(?![\w.-]+\.[\w.-]+/)')
 oras_registry = "docker.io"
+oras_default_namespace = "jfallmann/monsda"
+oras_namespace = oras_default_namespace
 
 
 def set_oras_registry(registry: str):
@@ -65,15 +67,52 @@ def set_oras_registry(registry: str):
     oras_registry = registry.strip().rstrip("/")
 
 
+def set_oras_namespace(namespace: str):
+    """Set the ORAS namespace/repository used for container image URIs."""
+    global oras_namespace
+    oras_namespace = namespace.strip().strip("/")
+
+
+def _rewrite_oras(content: str) -> str:
+    """Apply configured ORAS namespace and registry to oras:// URIs."""
+    if oras_namespace != oras_default_namespace:
+        content = content.replace(
+            "oras://" + oras_default_namespace, "oras://" + oras_namespace
+        )
+    return re.sub(oraspath, "oras://" + oras_registry + "/", content)
+
+
 def _fix_oras(line: str) -> str:
     """Insert oras_registry into unqualified oras:// URIs."""
-    return re.sub(oraspath, "oras://" + oras_registry + "/", line)
+    return _rewrite_oras(line)
 
 
 def _write_workflow(filepath, content):
     """Write workflow file with ORAS registry fix applied."""
-    content = re.sub(oraspath, "oras://" + oras_registry + "/", content)
+    content = _rewrite_oras(content)
     write_if_different(filepath, content)
+
+
+def _fill_template(path, loglevel, logfix, condapath, conda_repl, nfmode=False):
+    """Read a workflow template file, strip comments, and apply the standard
+    loglevel/conda/include substitutions. Returns the processed lines as a list."""
+    marker = "include {" if nfmode else "include: "
+    out = list()
+    with open(path, "r") as fh:
+        for line in mu.comment_remover(fh.readlines()):
+            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
+            line = re.sub(condapath, conda_repl, line)
+            if marker in line:
+                if nfmode:
+                    line = fixinclude(
+                        line, loglevel, condapath, envpath, workflowpath, logfix, "nfmode"
+                    )
+                else:
+                    line = fixinclude(
+                        line, loglevel, condapath, envpath, workflowpath, logfix
+                    )
+            out.append(line)
+    return out
 
 try:
     scriptname = (
@@ -298,7 +337,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
     for condition in list(set(conditions)):
         try:
             env = str(mu.sub_dict(config[subwork], condition)[stage + "ENV"])
-        except:
+        except (KeyError, TypeError):
             if "TOOLS" not in config[subwork]:
                 log.error(
                     "No tool environment found for "
@@ -310,7 +349,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
             env = ""
         try:
             exe = str(mu.sub_dict(config[subwork], condition)[stage + "BIN"])
-        except:
+        except (KeyError, TypeError):
             if "TOOLS" not in config[subwork]:
                 log.error(
                     "No tool binary found for "
@@ -494,15 +533,7 @@ def make_pre(
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda:  "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    add.append(line)
+            add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda:  "' + envpath, nfmode=False))
 
             for i in range(len(worklist)):
                 log.debug(
@@ -579,35 +610,12 @@ def make_pre(
                             subname = toolenv + "_raw.smk"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
-                        with open(smkf, "r") as smk:
-                            for line in mu.comment_remover(smk.readlines()):
-                                line = re.sub(
-                                    logfix, "loglevel='" + loglevel + "'", line
-                                )
-                                line = re.sub(condapath, 'conda: "' + envpath, line)
-                                if "include: " in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                        subjobs.append("\n\n")
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line, loglevel, condapath, envpath, workflowpath, logfix
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                subjobs.append("\n\n")
 
                 smko = os.path.abspath(
                     os.path.join(
@@ -645,16 +653,8 @@ def make_pre(
         for condition in conditions:
             add = list()
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    add.append(line)
-                add.append("\n\n")
+            add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+            add.append("\n\n")
 
             # Add variable for combination string
             add.append(
@@ -726,28 +726,12 @@ def make_pre(
                 )  # RuleThemAll for snakemake depending on chosen workflows
 
                 smkf = os.path.abspath(os.path.join(workflowpath, subname))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line, loglevel, condapath, envpath, workflowpath, logfix
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                subjobs.append("\n\n")
 
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line, loglevel, condapath, envpath, workflowpath, logfix
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                subjobs.append("\n\n")
 
                 smko = os.path.abspath(
                     os.path.join(
@@ -815,15 +799,7 @@ def make_sub(
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    add.append(line)
+            add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
 
             for i in range(len(worklist)):
                 log.debug(
@@ -943,39 +919,15 @@ def make_sub(
                             subconf["PREDEDUP"] = "enabled"
 
                         smkf = os.path.abspath(os.path.join(workflowpath, subname))
-                        with open(smkf, "r") as smk:
-                            for line in mu.comment_remover(smk.readlines()):
-                                line = re.sub(condapath, 'conda: "' + envpath, line)
-                                if "include: " in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                        subjobs.append("\n\n")
 
                 if "MAPPING" in works and envs[works.index("MAPPING")] not in [
                     "piscem"
                 ]:
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
-                    with open(smkf, "r") as smk:
-                        for line in mu.comment_remover(smk.readlines()):
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                    subjobs.append("\n\n")
                 if "QC" in subworkflows:
                     # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     qc_mqc = (
@@ -984,32 +936,13 @@ def make_sub(
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
-                    with open(smkf, "r") as smk:
-                        for line in mu.comment_remover(smk.readlines()):
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                    subjobs.append("\n\n")
 
                 # Append footer and write out subsnake and subconf per condition
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(condapath, 'conda: "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line, loglevel, condapath, envpath, workflowpath, logfix
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                subjobs.append("\n\n")
 
                 smko = os.path.abspath(
                     os.path.join(
@@ -1037,16 +970,8 @@ def make_sub(
             add = list()
 
             smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    add.append(line)
-                add.append("\n\n")
+            add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+            add.append("\n\n")
 
             # Add variable for combination string
             add.append(
@@ -1138,20 +1063,8 @@ def make_sub(
                     )
 
                     smkf = os.path.abspath(os.path.join(workflowpath, subname))
-                    with open(smkf, "r") as smk:
-                        for line in mu.comment_remover(smk.readlines()):
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                    subjobs.append("\n\n")
 
             if "MAPPING" in subworkflows:
                 _map_tools, _ = create_subworkflow(config, "MAPPING", [condition])
@@ -1160,15 +1073,8 @@ def make_sub(
                 )
                 if not _skip_postmap:
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
-                    with open(smkf, "r") as smk:
-                        for line in mu.comment_remover(smk.readlines()):
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line, loglevel, condapath, envpath, workflowpath, logfix
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                    subjobs.append("\n\n")
                 if "QC" in subworkflows:
                     # Use rustqc-specific multiqc whenever rustqc is part of this combo
                     _qc_tools, _ = create_subworkflow(config, "QC", [condition])
@@ -1179,32 +1085,12 @@ def make_sub(
                         else "multiqc.smk"
                     )
                     smkf = os.path.abspath(os.path.join(workflowpath, qc_mqc))
-                    with open(smkf, "r") as smk:
-                        for line in mu.comment_remover(smk.readlines()):
-                            line = re.sub(condapath, 'conda: "' + envpath, line)
-                            if "include: " in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+                    subjobs.append("\n\n")
 
             smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+            subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+            subjobs.append("\n\n")
 
             smko = os.path.abspath(
                 os.path.join(subdir, "_".join(["_".join(condition), "subsnake.smk"]))
@@ -1260,15 +1146,7 @@ def make_post(
         add = list()
 
         smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-        with open(smkf, "r") as smk:
-            for line in mu.comment_remover(smk.readlines()):
-                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                line = re.sub(condapath, 'conda: "' + envpath, line)
-                if "include: " in line:
-                    line = fixinclude(
-                        line, loglevel, condapath, envpath, workflowpath, logfix
-                    )
-                add.append(line)
+        add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
 
         for i in range(len(envlist)):
             envs = envlist[i].split("-")
@@ -1372,38 +1250,13 @@ def make_post(
                         os.path.abspath(os.path.join(workflowpath, toolenv))
                         + "_trim.smk"
                     )
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                        line = re.sub(condapath, 'conda:  "' + envpath, line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                            )
-                        subjobs.append(line)
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda:  "' + envpath, nfmode=False))
                 subjobs.append("\n\n")
 
                 # Append footer and write out subsnake and subconf for all conditions
                 smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-                with open(smkf, "r") as smk:
-                    for line in mu.comment_remover(smk.readlines()):
-                        line = re.sub(condapath, 'conda: "../', line)
-                        if "include: " in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "../', nfmode=False))
+                subjobs.append("\n\n")
 
                 te = (
                     toolenv.split("_")[0] if "_" in toolenv else toolenv
@@ -1449,15 +1302,7 @@ def make_post(
         add = list()
         subconf = mu.NestedDefaultDict()
         smkf = os.path.abspath(os.path.join(workflowpath, "header.smk"))
-        with open(smkf, "r") as smk:
-            for line in mu.comment_remover(smk.readlines()):
-                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                line = re.sub(condapath, 'conda: "' + envpath, line)
-                if "include: " in line:
-                    line = fixinclude(
-                        line, loglevel, condapath, envpath, workflowpath, logfix
-                    )
-                add.append(line)
+        add.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
 
         # Postprocessing runs across all conditions - collect configs from all conditions at once
         listoftools, listofconfigs = create_subworkflow(
@@ -1524,27 +1369,13 @@ def make_post(
                 smkf = (
                     os.path.abspath(os.path.join(workflowpath, toolenv)) + "_trim.smk"
                 )
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+            subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+            subjobs.append("\n\n")
 
             # Append footer and write out subsnake and subconf for all conditions
             smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
-            with open(smkf, "r") as smk:
-                for line in mu.comment_remover(smk.readlines()):
-                    line = re.sub(condapath, 'conda: "' + envpath, line)
-                    if "include: " in line:
-                        line = fixinclude(
-                            line, loglevel, condapath, envpath, workflowpath, logfix
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+            subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+            subjobs.append("\n\n")
 
             te = (
                 toolenv.split("_")[0] if "_" in toolenv else toolenv
@@ -1630,16 +1461,8 @@ def make_summary(config, subdir, loglevel, combinations=None):
         subjobs.append("\n\n")
 
     smkf = os.path.abspath(os.path.join(workflowpath, "summary.smk"))
-    with open(smkf, "r") as smk:
-        for line in mu.comment_remover(smk.readlines()):
-            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-            line = re.sub(condapath, 'conda: "' + envpath, line)
-            if "include: " in line:
-                line = fixinclude(
-                    line, loglevel, condapath, envpath, workflowpath, logfix
-                )
-            subjobs.append(line)
-        subjobs.append("\n\n")
+    subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
+    subjobs.append("\n\n")
 
     smkf = os.path.abspath(os.path.join(workflowpath, "footer.smk"))
     with open(smkf, "r") as smk:
@@ -1703,15 +1526,7 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         log.debug(logid + "Simulated read trimming only!")
         mu.makeoutdir("TRIMMED_FASTQ")
         smkf = os.path.abspath(os.path.join(workflowpath, "simulatetrim.smk"))
-        with open(smkf, "r") as smk:
-            for line in mu.comment_remover(smk.readlines()):
-                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                line = re.sub(condapath, 'conda:  "' + envpath, line)
-                if "include: " in line:
-                    line = fixinclude(
-                        line, loglevel, condapath, envpath, workflowpath, logfix
-                    )
-                todos.append(line)
+        todos.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda:  "' + envpath, nfmode=False))
         todos.append("\n\n")
 
     if (
@@ -1753,7 +1568,7 @@ def fixinclude(
         toinclude = str.split(line)[-1].replace('"', "")
         toinclude = str.join(os.sep, [workflowpath, toinclude])
         with open(toinclude, "r") as incl:
-            for line in incl.readlines():
+            for line in mu.comment_remover(incl.readlines()):
                 line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
                 line = re.sub(condapath, condaline + envpath, line)
                 line = _fix_oras(line)
@@ -2360,94 +2175,7 @@ def nf_tool_params(
 
 @check_run
 def nf_get_processes(config):
-    logid = scriptname + ".Workflows_nf_get_processes: "
-
-    preprocess = subworkflows = postprocess = []
-
-    # Define workflow stages
-    pre = ["QC", "FETCH", "BASECALL"]
-    sub = ["TRIMMING", "MAPPING", "QC", "DEDUP"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS"]
-
-    wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
-
-    if "WORKFLOWS" in config:
-        log.debug(
-            logid
-            + "CONFIG-WORKFLOWS: "
-            + str(wfs)
-            + "\t"
-            + str(pre)
-            + "\t"
-            + str(sub)
-            + "\t"
-            + str(post)
-        )
-        subworkflows = [str(x) for x in wfs if x in sub]
-        log.debug(logid + "Sub: " + str(subworkflows))
-        if len(subworkflows) == 0 or subworkflows[0] == "":
-            subworkflows = []
-        preprocess = [x for x in wfs if x in pre]
-        if len(preprocess) == 0 or preprocess[0] == "":
-            preprocess = None
-        log.debug(
-            logid
-            + "Intermediate-WORKFLOWS: "
-            + str([preprocess, subworkflows, postprocess])
-        )
-
-        if (
-            subworkflows
-            and any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
-            and preprocess
-            and "QC" in preprocess
-        ):
-            preprocess.remove("QC")
-
-        if (
-            preprocess
-            and "QC" in preprocess
-            and not any(w in subworkflows for w in ["TRIMMING", "MAPPING", "DEDUP"])
-        ):
-            subworkflows.remove("QC")
-
-        postprocess = [x for x in wfs if x in post]
-        if len(postprocess) == 0 or postprocess[0] == "":
-            postprocess = []
-    else:
-        log.error("NO WORKFLOWS DEFINED, NOTHING TO DO!")
-        sys.exit()
-
-    if preprocess:
-        try:
-            all([config[x] or x == "" for x in preprocess])
-        except KeyError:
-            log.warning(
-                logid
-                + "Not all required preprocessing steps have configuration in the config file"
-            )
-
-    if subworkflows:
-        try:
-            all([config[x] or x == "TRIMMING" or x == "" for x in subworkflows])
-        except KeyError:
-            log.warning(
-                logid
-                + "Not all required subworkflows have configuration in the config file"
-            )
-
-    if postprocess:
-        try:
-            all([config[x] or x == "" for x in postprocess])
-        except KeyError:
-            log.warning(
-                logid
-                + "Not all required postprocessing steps have configuration in the config file"
-            )
-
-    log.debug(logid + "WORKFLOWS: " + str([preprocess, subworkflows, postprocess]))
-
-    return [preprocess, subworkflows, postprocess]
+    return get_processes(config)
 
 
 @check_run
@@ -2484,22 +2212,8 @@ def nf_make_pre(
             add = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-            with open(nfi, "r") as nf:
-                for line in mu.comment_remover(nf.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include {" in line:
-                        line = fixinclude(
-                            line,
-                            loglevel,
-                            condapath,
-                            envpath,
-                            workflowpath,
-                            logfix,
-                            "nfmode",
-                        )
-                    add.append(line)
-                add.append("\n\n")
+            add.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+            add.append("\n\n")
 
             for i in range(len(worklist)):
                 log.debug(
@@ -2572,47 +2286,15 @@ def nf_make_pre(
                             flowlist.append("MULTIQC")
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                        with open(nfi, "r") as nf:
-                            for line in mu.comment_remover(nf.readlines()):
-                                line = re.sub(
-                                    logfix, "loglevel='" + loglevel + "'", line
-                                )
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include {" in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                        "nfmode",
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                        subjobs.append("\n\n")
 
                         if works[j] == "QC":
                             nfi = os.path.abspath(
                                 os.path.join(workflowpath, "multiqc.nf")
                             )
-                            with open(nfi, "r") as nf:
-                                for line in mu.comment_remover(nf.readlines()):
-                                    line = re.sub(
-                                        logfix, "loglevel='" + loglevel + "'", line
-                                    )
-                                    line = re.sub(condapath, 'conda "' + envpath, line)
-                                    if "include {" in line:
-                                        line = fixinclude(
-                                            line,
-                                            loglevel,
-                                            condapath,
-                                            envpath,
-                                            workflowpath,
-                                            logfix,
-                                            "nfmode",
-                                        )
-                                    subjobs.append(line)
-                                subjobs.append("\n\n")
+                            subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                            subjobs.append("\n\n")
 
                         # workflow merger
                         subjobs.append("\n\n" + "workflow {\n")
@@ -2689,22 +2371,8 @@ def nf_make_pre(
             log.debug(logid + "PREPARING " + str(subwork) + " " + str(condition))
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-            with open(nfi, "r") as nf:
-                for line in mu.comment_remover(nf.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include {" in line:
-                        line = fixinclude(
-                            line,
-                            loglevel,
-                            condapath,
-                            envpath,
-                            workflowpath,
-                            logfix,
-                            "nfmode",
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+            subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+            subjobs.append("\n\n")
 
             listoftools, listofconfigs = create_subworkflow(
                 config, subwork, [condition]
@@ -2775,21 +2443,8 @@ def nf_make_pre(
                     flowlist.append("BASECALL")
 
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                with open(nfi, "r") as nf:
-                    for line in mu.comment_remover(nf.readlines()):
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include {" in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                                "nfmode",
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                subjobs.append("\n\n")
 
                 if "DEDUP" in works:
                     flowlist.append("DEDUPBAM")
@@ -2809,21 +2464,8 @@ def nf_make_pre(
                 if subwork == "QC":
                     flowlist.append("MULTIQC")
                     nfi = os.path.abspath(os.path.join(workflowpath, "multiqc.nf"))
-                    with open(nfi, "r") as nf:
-                        for line in mu.comment_remover(nf.readlines()):
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include {" in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                    "nfmode",
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                    subjobs.append("\n\n")
 
                 # workflow merger
                 log.debug("FLOWLIST: " + str(flowlist))
@@ -2906,22 +2548,8 @@ def nf_make_sub(
             add = list()
 
             nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-            with open(nfi, "r") as nf:
-                for line in mu.comment_remover(nf.readlines()):
-                    line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                    line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include {" in line:
-                        line = fixinclude(
-                            line,
-                            loglevel,
-                            condapath,
-                            envpath,
-                            workflowpath,
-                            logfix,
-                            "nfmode",
-                        )
-                    add.append(line)
-                add.append("\n\n")
+            add.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+            add.append("\n\n")
 
             for i in range(len(worklist)):
                 log.debug(
@@ -3052,21 +2680,8 @@ def nf_make_sub(
                             subname = toolenv + "_dedup.nf"
 
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                        with open(nfi, "r") as nf:
-                            for line in mu.comment_remover(nf.readlines()):
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include {" in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                        "nfmode",
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                        subjobs.append("\n\n")
 
                         tp.append(
                             nf_tool_params(
@@ -3095,41 +2710,15 @@ def nf_make_sub(
                                 "simulatetrim.nf",
                             )
                         )
-                        with open(nfi, "r") as nf:
-                            for line in mu.comment_remover(nf.readlines()):
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include {" in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                        "nfmode",
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                        subjobs.append("\n\n")
 
                     flowlist.append("MAPPING")
 
                     maprad = envs[works.index("MAPPING")] in ["piscem"]
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
-                    with open(nfi, "r") as nf:
-                        for line in mu.comment_remover(nf.readlines()):
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include {" in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                    "nfmode",
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                    subjobs.append("\n\n")
 
                     if "DEDUP" in works:
                         flowlist.append("DEDUPBAM")
@@ -3145,21 +2734,8 @@ def nf_make_sub(
                         else "multiqc.nf"
                     )
                     nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
-                    with open(nfi, "r") as nf:
-                        for line in mu.comment_remover(nf.readlines()):
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include {" in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                    "nfmode",
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                    subjobs.append("\n\n")
 
                 # workflow merger
                 log.debug("FLOWLIST: " + str(flowlist))
@@ -3432,39 +3008,13 @@ def nf_make_sub(
                             flowlist.append("QC_DEDUP")
                         subname = toolenv + ".nf"
                         nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                        with open(nfi, "r") as nf:
-                            for line in mu.comment_remover(nf.readlines()):
-                                line = re.sub(condapath, 'conda "' + envpath, line)
-                                if "include {" in line:
-                                    line = fixinclude(
-                                        line,
-                                        loglevel,
-                                        condapath,
-                                        envpath,
-                                        workflowpath,
-                                        logfix,
-                                        "nfmode",
-                                    )
-                                subjobs.append(line)
-                            subjobs.append("\n\n")
+                        subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                        subjobs.append("\n\n")
                         subname = toolenv + "_dedup.nf"
 
                     nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                    with open(nfi, "r") as nf:
-                        for line in mu.comment_remover(nf.readlines()):
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include {" in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                    "nfmode",
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                    subjobs.append("\n\n")
 
                     tp.append(
                         nf_tool_params(
@@ -3490,39 +3040,13 @@ def nf_make_sub(
                     log.debug(logid + "Simulated read trimming only!")
                     flowlist.append("TRIMMING")
                     nfi = os.path.abspath(os.path.join(workflowpath, "simulatetrim.nf"))
-                    with open(nfi, "r") as nf:
-                        for line in mu.comment_remover(nf.readlines()):
-                            line = re.sub(condapath, 'conda "' + envpath, line)
-                            if "include {" in line:
-                                line = fixinclude(
-                                    line,
-                                    loglevel,
-                                    condapath,
-                                    envpath,
-                                    workflowpath,
-                                    logfix,
-                                    "nfmode",
-                                )
-                            subjobs.append(line)
-                        subjobs.append("\n\n")
+                    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                    subjobs.append("\n\n")
                 flowlist.append("MAPPING")
 
                 nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
-                with open(nfi, "r") as nf:
-                    for line in mu.comment_remover(nf.readlines()):
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include {" in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                                "nfmode",
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                subjobs.append("\n\n")
 
             if "QC" in subworkflows:
                 flowlist.append("MULTIQC")
@@ -3535,21 +3059,8 @@ def nf_make_sub(
                     else "multiqc.nf"
                 )
                 nfi = os.path.abspath(os.path.join(workflowpath, _mqc_nf))
-                with open(nfi, "r") as nf:
-                    for line in mu.comment_remover(nf.readlines()):
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include {" in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                                "nfmode",
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                subjobs.append("\n\n")
 
             # workflow merger
             log.debug("FLOWLIST: " + str(flowlist))
@@ -3740,22 +3251,8 @@ def nf_make_post(
         add = list()
 
         nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-        with open(nfi, "r") as nf:
-            for line in mu.comment_remover(nf.readlines()):
-                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                line = re.sub(condapath, 'conda "' + envpath, line)
-                if "include {" in line:
-                    line = fixinclude(
-                        line,
-                        loglevel,
-                        condapath,
-                        envpath,
-                        workflowpath,
-                        logfix,
-                        "nfmode",
-                    )
-                add.append(line)
-            add.append("\n\n")
+        add.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+        add.append("\n\n")
 
         for i in range(len(envlist)):
             envs = envlist[i].split("-")
@@ -3833,21 +3330,8 @@ def nf_make_post(
 
                 subname = toolenv + ".nf"
                 nfi = os.path.abspath(os.path.join(workflowpath, subname))
-                with open(nfi, "r") as nf:
-                    for line in mu.comment_remover(nf.readlines()):
-                        line = re.sub(condapath, 'conda "' + envpath, line)
-                        if "include {" in line:
-                            line = fixinclude(
-                                line,
-                                loglevel,
-                                condapath,
-                                envpath,
-                                workflowpath,
-                                logfix,
-                                "nfmode",
-                            )
-                        subjobs.append(line)
-                    subjobs.append("\n\n")
+                subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+                subjobs.append("\n\n")
 
                 tp.append(
                     nf_tool_params(
@@ -3923,22 +3407,8 @@ def nf_make_post(
         subwork = postworkflow
         add = list()
         nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-        with open(nfi, "r") as nf:
-            for line in mu.comment_remover(nf.readlines()):
-                line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-                line = re.sub(condapath, 'conda "' + envpath, line)
-                if "include {" in line:
-                    line = fixinclude(
-                        line,
-                        loglevel,
-                        condapath,
-                        envpath,
-                        workflowpath,
-                        logfix,
-                        "nfmode",
-                    )
-                add.append(line)
-            add.append("\n\n")
+        add.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+        add.append("\n\n")
 
         # Postprocessing runs across all conditions - collect configs from all conditions at once
         flowlist = list()
@@ -3980,21 +3450,8 @@ def nf_make_post(
             subconf.update(sconf)
             subname = toolenv + ".nf"
             nfi = os.path.abspath(os.path.join(workflowpath, subname))
-            with open(nfi, "r") as nf:
-                for line in mu.comment_remover(nf.readlines()):
-                    line = re.sub(condapath, 'conda "' + envpath, line)
-                    if "include {" in line:
-                        line = fixinclude(
-                            line,
-                            loglevel,
-                            condapath,
-                            envpath,
-                            workflowpath,
-                            logfix,
-                            "nfmode",
-                        )
-                    subjobs.append(line)
-                subjobs.append("\n\n")
+            subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+            subjobs.append("\n\n")
 
             tp.append(
                 nf_tool_params(
@@ -4124,39 +3581,12 @@ def nf_make_summary(config, subdir, loglevel, combinations=None):
     subjobs = list()
 
     nfi = os.path.abspath(os.path.join(workflowpath, "header.nf"))
-    with open(nfi, "r") as nf:
-        for line in mu.comment_remover(nf.readlines()):
-            line = re.sub(logfix, "loglevel='" + loglevel + "'", line)
-            line = re.sub(condapath, 'conda "' + envpath, line)
-            if "include {" in line:
-                line = fixinclude(
-                    line,
-                    loglevel,
-                    condapath,
-                    envpath,
-                    workflowpath,
-                    logfix,
-                    "nfmode",
-                )
-            subjobs.append(line)
-        subjobs.append("\n\n")
+    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+    subjobs.append("\n\n")
 
     nfi = os.path.abspath(os.path.join(workflowpath, "summary.nf"))
-    with open(nfi, "r") as nf:
-        for line in mu.comment_remover(nf.readlines()):
-            line = re.sub(condapath, 'conda "' + envpath, line)
-            if "include {" in line:
-                line = fixinclude(
-                    line,
-                    loglevel,
-                    condapath,
-                    envpath,
-                    workflowpath,
-                    logfix,
-                    "nfmode",
-                )
-            subjobs.append(line)
-        subjobs.append("\n\n")
+    subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
+    subjobs.append("\n\n")
 
     nfo = os.path.abspath(os.path.join(subdir, "summary_subflow.nf"))
     _write_workflow(nfo, "".join(subjobs))

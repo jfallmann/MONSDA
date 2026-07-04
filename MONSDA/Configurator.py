@@ -27,7 +27,7 @@ try:
     installpath = os.path.dirname(__file__).replace(
         os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
-except:
+except Exception:
     installpath = os.getcwd()
 
 configpath = os.path.join(installpath, "MONSDA", "configs")
@@ -179,7 +179,7 @@ class GUIDE:
                     [float(x) for x in a.split(",")]
                     self.answer = a
                     break
-                except:
+                except ValueError:
                     self.clear(2)
                     prRed("please enter integer or float")
                     continue
@@ -304,7 +304,7 @@ def setInDict(dataDict, maplist, value):
                 dataDict[first].append(value)
             else:
                 dataDict[first] = value
-        except:
+        except (KeyError, TypeError, AttributeError):
             dataDict[first] = value
 
 
@@ -579,7 +579,7 @@ def show_settings():
             var = json.dumps(var, indent=4)
         try:
             print(f"{name} = {var}")
-        except:
+        except Exception:
             print(f"{name} = NestedDefaultDict()")
     print("\n============")
 
@@ -1140,7 +1140,7 @@ def set_settings():
                 try:
                     if project.samplesDict[k]["cond"] == ":".join(maplist):
                         seq = project.samplesDict[k]["seq"]
-                except:
+                except (KeyError, TypeError):
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
             settings_to_make = ["REFERENCE", "DECOY", "GTF", "GFF"]
@@ -1257,7 +1257,7 @@ def modify(config=None):
             else:
                 print("")
             prCyan(f"   {config}")
-        except:
+        except Exception:
             er = 2
 
         condition_pathes = getPathesFromDict(modify_config, "SAMPLES")

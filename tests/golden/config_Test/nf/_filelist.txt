@@ -1,0 +1,12 @@
+Test_fastqc-bbduk-picard-bwa_subconfig.json
+Test_fastqc-bbduk-picard-bwa_subflow.nf
+Test_fastqc-bbduk-picard-star_subconfig.json
+Test_fastqc-bbduk-picard-star_subflow.nf
+Test_fastqc-cutadapt-picard-bwa_subconfig.json
+Test_fastqc-cutadapt-picard-bwa_subflow.nf
+Test_fastqc-cutadapt-picard-star_subconfig.json
+Test_fastqc-cutadapt-picard-star_subflow.nf
+Test_fastqc-trimgalore-picard-bwa_subconfig.json
+Test_fastqc-trimgalore-picard-bwa_subflow.nf
+Test_fastqc-trimgalore-picard-star_subconfig.json
+Test_fastqc-trimgalore-picard-star_subflow.nf

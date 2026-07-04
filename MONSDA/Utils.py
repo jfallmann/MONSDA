@@ -411,7 +411,7 @@ def merge_dicts(d:dict, u:dict) -> dict:
     # python 3.8+ compatibility
     try:
         collectionsAbc = collections.abc
-    except:
+    except AttributeError:
         collectionsAbc = collections
 
     for k, v in six.iteritems(u):
@@ -876,7 +876,9 @@ def toarray(file:str, ulim:int) -> np.array:
         usecols=(ulim),
         delimiter="\t",
         unpack=True,
-        converters={ulim: lambda s: convertcol(s.decode("utf-8"))},
+        converters={
+            ulim: lambda s: convertcol(s.decode("utf-8") if isinstance(s, bytes) else s)
+        },
     )
     return x
 

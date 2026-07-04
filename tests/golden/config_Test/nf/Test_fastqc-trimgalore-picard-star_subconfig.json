@@ -1,0 +1,87 @@
+{
+  "BINS": "<REPO>/MONSDA/MONSDA/scripts",
+  "DEDUP": {
+    "TOOLS": {
+      "picard": "picard"
+    },
+    "Test": {
+      "OPTIONS": {
+        "DEDUP": ""
+      }
+    }
+  },
+  "DEDUPBIN": "picard",
+  "DEDUPENV": "picard",
+  "MAPPING": {
+    "TOOLS": {
+      "star": "STAR"
+    },
+    "Test": {
+      "OPTIONS": {
+        "EXTENSION": "",
+        "INDEX": "",
+        "MAP": "--outSAMprimaryFlag AllBestScore"
+      }
+    }
+  },
+  "MAPPINGBIN": "STAR",
+  "MAPPINGENV": "star",
+  "MAXTHREADS": "4",
+  "PREQCBIN": "fastqc",
+  "PREQCENV": "fastqc",
+  "QC": {
+    "TOOLS": {
+      "fastqc": "fastqc"
+    },
+    "Test": {
+      "OPTIONS": {
+        "MULTI": "",
+        "QC": ""
+      }
+    }
+  },
+  "RUNDEDUP": "enabled",
+  "SAMPLES": [
+    "SRR6357070",
+    "SRR6357071",
+    "SRR6357072"
+  ],
+  "SETTINGS": {
+    "Test": {
+      "ANNOTATION": {
+        "GFF": "GENOME/genomic.gff.gz",
+        "GTF": "GENOME/genomic.gtf.gz"
+      },
+      "BATCHES": "",
+      "DECOY": "",
+      "GROUPS": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "INDEX": "",
+      "IP": "",
+      "PREFIX": "",
+      "REFERENCE": "GENOME/genome.fa.gz",
+      "SAMPLES": [
+        "SRR6357070",
+        "SRR6357071",
+        "SRR6357072"
+      ],
+      "SEQUENCING": "paired",
+      "TYPES": ""
+    }
+  },
+  "TRIMMING": {
+    "TOOLS": {
+      "trimgalore": "trim_galore"
+    },
+    "Test": {
+      "OPTIONS": {
+        "TRIM": "--length 8"
+      }
+    }
+  },
+  "TRIMMINGBIN": "trim_galore",
+  "TRIMMINGENV": "trimgalore"
+}
