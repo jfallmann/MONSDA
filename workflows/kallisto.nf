@@ -96,8 +96,8 @@ process kallisto_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/kallisto/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "COUNTS/${SCOMBO}/kallisto/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:

@@ -4,8 +4,8 @@ if paired == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
-        output: o1 = report("QC{combo}{rawfile}_{read}_fastqc.zip")
-        log:    "LOGS{combo}{rawfile}_fastqc_{read}_raw.log"
+        output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
+        log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -14,10 +14,10 @@ if paired == 'paired':
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo)
-        output: html = report("QC/Multi{combo}{condition}/multiqc_report.html", category="QC"),
-                tmp = temp("QC/Multi{combo}{condition}/tmp"),
-                lst = "QC/Multi{combo}{condition}/qclist_raw.txt"
-        log:    "LOGS{combo}{condition}_multiqc_raw.log"
+        output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                lst = "QC/Multi/{combo}/{condition}/qclist_raw.txt"
+        log:    "LOGS/{combo}/{condition}_multiqc_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: 1
@@ -27,8 +27,8 @@ if paired == 'paired':
 else:
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}.fastq.gz"
-        output: o1 = report("QC{combo}{rawfile}_fastqc.zip", category="QC")
-        log:    "LOGS{combo}{rawfile}_fastqc_raw.log"
+        output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
+        log:    "LOGS/{combo}/{rawfile}_fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -37,10 +37,10 @@ else:
 
     rule multiqc:
         input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo)
-        output: html = report("QC/Multi{combo}{condition}/multiqc_report.html", category="QC"),
-                tmp = temp("QC/Multi{combo}{condition}/tmp"),
-                lst = "QC/Multi{combo}{condition}/qclist_raw.txt"
-        log:    "LOGS{combo}{condition}_multiqc_raw.log"
+        output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
+                tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
+                lst = "QC/Multi/{combo}/{condition}/qclist_raw.txt"
+        log:    "LOGS/{combo}/{condition}_multiqc_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: 1
