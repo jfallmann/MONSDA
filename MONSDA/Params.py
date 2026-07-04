@@ -1390,7 +1390,7 @@ def runstate_from_sample(sample: list, config: dict) -> list:
         log.debug(logid + "SAMPLE: " + s)
         try:
             c = mu.get_from_dict(config["SETTINGS"], s.split(os.sep))[0]
-        except:
+        except (KeyError, IndexError, TypeError):
             c = None
         log.debug(logid + "SETTINGS: " + str(c))
         if mu.dict_inst(c):
@@ -1698,7 +1698,7 @@ def get_pairing(
                         log.debug(logid + "Match found: " + str(v) + " : " + str(x))
                         try:
                             matching = samplecond([x], config)[0].replace("MAPPED/", "")
-                        except:
+                        except (KeyError, IndexError):
                             matching = x
                         log.info(logid + "PAIRINGS: " + sample + ": " + str(matching))
         if not matching or matching == "":
@@ -1819,7 +1819,7 @@ def check_tool_params(
             return "std"
         else:
             return ""
-    except:
+    except (KeyError, IndexError, TypeError):
         if subconf == "MAPPING":
             return "std"
         else:

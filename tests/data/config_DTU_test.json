@@ -1,0 +1,128 @@
+{
+    "WORKFLOWS": "QC,TRIMMING,DEDUP,MAPPING,DTU",
+    "BINS": "",
+    "MAXTHREADS": "4",
+    "VERSION": "FIXME",
+    "SETTINGS": {
+        "Test": {
+            "SAMPLES": [
+                "SRR6357070",
+                "SRR6357071",
+                "SRR6357072"
+            ],
+            "SEQUENCING": "paired",
+            "REFERENCE": "GENOME/genome.fa.gz",
+            "DECOY": "",
+            "ANNOTATION": {
+                "GTF": "GENOME/genomic.gtf.gz",
+                "GFF": "GENOME/genomic.gff.gz"
+            },
+            "IP": "",
+            "GROUPS": [
+                "T1",
+                "T2",
+                "T3"
+            ],
+            "TYPES": "",
+            "BATCHES": "",
+            "INDEX": "",
+            "PREFIX": ""
+        }
+    },
+    "QC": {
+        "TOOLS": {
+            "fastqc": "fastqc"
+        },
+        "Test": {
+            "fastqc": {
+                "OPTIONS": {
+                    "QC": "",
+                    "MULTI": ""
+                }
+            }
+        }
+    },
+    "TRIMMING": {
+        "TOOLS": {
+            "trimgalore": "trim_galore"
+        },
+        "Test": {
+            "trimgalore": {
+                "OPTIONS": {
+                    "TRIM": "--length 8"
+                }
+            }
+        }
+    },
+    "DEDUP": {
+        "TOOLS": {
+            "picard": "picard"
+        },
+        "Test": {
+            "picard": {
+                "OPTIONS": {
+                    "DEDUP": ""
+                }
+            }
+        }
+    },
+    "MAPPING": {
+        "TOOLS": {
+            "star": "STAR"
+        },
+        "Test": {
+            "star": {
+                "OPTIONS": {
+                    "INDEX": "",
+                    "MAP": "--outSAMprimaryFlag AllBestScore",
+                    "EXTENSION": ""
+                }
+            }
+        }
+    },
+    "DTU": {
+        "TOOLS": {
+            "drimseq": "Analysis/DTU/DRIMSEQ.R",
+            "dexseq": "Analysis/DTU/DEXSEQ.R",
+            "spit": "Analysis/DTU/SPIT.py"
+        },
+        "CUTOFFS": {
+            "pvalue": "0.05",
+            "lfc": "1.5"
+        },
+        "COMPARABLE": {
+            "T1-VS-T2": [
+                [
+                    "T1"
+                ],
+                [
+                    "T2"
+                ]
+            ]
+        },
+        "EXCLUDE": [],
+        "Test": {
+            "drimseq": {
+                "OPTIONS": {
+                    "INDEX": "-d GENOMES/transcripts.fa.gz",
+                    "QUANT": "--seqBias --gcBias",
+                    "DTU": ""
+                }
+            },
+            "dexseq": {
+                "OPTIONS": {
+                    "INDEX": "-d GENOMES/transcripts.fa.gz",
+                    "QUANT": "--seqBias --gcBias",
+                    "DTU": ""
+                }
+            },
+            "spit": {
+                "OPTIONS": {
+                    "INDEX": "-d GENOMES/transcripts.fa.gz",
+                    "QUANT": "--seqBias --gcBias",
+                    "DTU": ""
+                }
+            }
+        }
+    }
+}

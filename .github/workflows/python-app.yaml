@@ -72,7 +72,7 @@ jobs:
       - name: Run unit tests with coverage
         run: |          
           cd ${{ github.workspace }}
-          pytest tests/test_Utils.py -v --cov=MONSDA --cov-report=xml --cov-report=html
+          pytest tests/ -v --cov=MONSDA --cov-report=xml --cov-report=html --cov-fail-under=25
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         if: always()

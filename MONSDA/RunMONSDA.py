@@ -147,6 +147,14 @@ def parseargs():
         help="Container registry hostname for ORAS image pulls (default: docker.io). "
              "Use e.g. ghcr.io for GitHub Container Registry.",
     )
+    parser.add_argument(
+        "--oras-namespace",
+        type=str,
+        default="jfallmann/monsda",
+        metavar="NAMESPACE",
+        help="Container namespace/repository for ORAS image pulls "
+             "(default: jfallmann/monsda). Use e.g. myuser/myrepo for a custom registry.",
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -207,7 +215,7 @@ def run_snakemake(
                     os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]),
                     "share",
                 )
-            except:
+            except Exception:
                 installpath = os.getcwd()
 
             workflowpath = os.path.join(installpath, "MONSDA", "workflows")
@@ -972,6 +980,7 @@ def main():
 
         # --- set ORAS registry for container image pulls ---
         mw.set_oras_registry(knownargs.oras_registry)
+        mw.set_oras_namespace(knownargs.oras_namespace)
 
         log.debug(
             f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
