@@ -98,9 +98,9 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
 
-        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
@@ -161,8 +161,8 @@ process salmon_quant_bam{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:

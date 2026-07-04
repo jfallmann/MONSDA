@@ -1495,10 +1495,10 @@ def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
         else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
     )
     allqc = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    allrawqc = 'rule themall:\n\tinput:\texpand("QC/Multi{combo}{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
-    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    allrawqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
+    alltrimqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
     alltrim = 'rule themall:\n\tinput: expand("TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
-    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi{combo}/{condition}/multiqc_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
+    alldedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_report.html", combo=combo, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))'
     alldedup = 'rule themall:\n\tinput: expand("DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz", combo=combo, file=samplecond(SAMPLES, config))'
     alltrimdedupqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
 

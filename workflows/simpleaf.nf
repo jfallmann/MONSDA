@@ -52,8 +52,8 @@ process simpleaf_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/simpleaf/${CONDITION}/COUNTING/${file(filename).getName()}"
-        else                                    "COUNTS/${SCOMBO}/simpleaf/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
