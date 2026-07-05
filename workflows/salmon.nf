@@ -7,7 +7,7 @@ COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
-COUNTDECOY = get_always('COUNTINDECOY')
+COUNTDECOY = get_always('COUNTINGDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
 IDXPARAMS = get_always('salmon_params_INDEX') ?: ''
@@ -78,8 +78,8 @@ process salmon_idx{
 
     script:    
     gen =  genome.getName()
-    if (${COUNTINGDECOY}){
-        decoy = "-d "+"${COUNTINGDECOY}" 
+    if (COUNTDECOY && COUNTDECOY != 'None'){
+        decoy = "-d "+"${COUNTDECOY}" 
     }else{
         decoy = ''
     }

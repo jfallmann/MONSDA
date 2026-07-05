@@ -12,10 +12,7 @@ nextflow.enable.dsl=2
 
 //define unset Params
 def get_always(parameter){
-    if (!params.containsKey(parameter)){
-        params.put(parameter, null)
-    }
-    return params[parameter]
+    return params.containsKey(parameter) ? params[parameter] : null
 }
 
 //Params from CL
