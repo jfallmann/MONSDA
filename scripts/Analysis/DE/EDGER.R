@@ -41,7 +41,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE, sep = "\t"))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$condition <- as.factor(sampleData_all$condition)
 sampleData_all$batch <- as.factor(sampleData_all$batch)

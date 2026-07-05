@@ -1173,7 +1173,7 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
         if (
             "BATCHES" in partconf
             and len(partconf["BATCHES"]) >= idx + 1
-            and partconf.get("BATCHES") != ""
+            and str(partconf["BATCHES"][idx]) != ""
         ):
             ret["batches"].append(str(partconf["BATCHES"][idx]).replace(",", "_"))
         else:
@@ -1181,7 +1181,7 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
         if (
             "TYPES" in partconf
             and len(partconf["TYPES"]) >= idx + 1
-            and partconf.get("TYPE") != ""
+            and str(partconf["TYPES"][idx]) != ""
         ):
             ret["types"].append(str(partconf["TYPES"][idx]).replace(",", "_"))
         else:
