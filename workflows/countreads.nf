@@ -12,6 +12,7 @@ COUNTUIDX?.replace('.idx','')
 COUNTPARAMS = get_always('featurecounts_params_COUNT') ?: ''
 FEAT = get_always('COUNTINGFEAT') ?: ''
 COUNTMAP = get_always('COUNTINGMAP') ?: ''
+DEREPS = get_always('DEREPS') ?: ''
 
 //COUNTING PROCESSES
 process count_fastq{
@@ -226,8 +227,8 @@ process featurecount{
 
 
 process prepare_count_table{
-    conda "$DEENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$DEENV"
+    conda "base.yaml"
+    container "oras://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1

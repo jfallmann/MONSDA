@@ -1,51 +1,74 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 def get_always(parameter){
-    if (!params.containsKey(parameter)){
-        params.put(parameter, null)
-    }
-    return params[parameter]
+    return params.containsKey(parameter) ? params[parameter] : null
 }
-REFERENCE = "${workflow.workDir}/../"+get_always('REFERENCE')
-REFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
-BINS = get_always('BINS')
-THREADS = get_always('MAXTHREAD')
-PAIRED = get_always('PAIRED') ?: null
-RUNDEDUP = get_always('RUNDEDUP') ?: null
-PREDEDUP = get_always('PREDEDUP') ?: null
-STRANDED = get_always('STRANDED') ?: null
-IP = get_always('IP') ?: null
-CONDITION = get_always('CONDITION') ?: null
-COMBO = get_always('COMBO') ?: ''
-SCOMBO = get_always('SCOMBO') ?: ''
-SAMPLES = get_always('SAMPLES').split(',') ?: null
-LONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
-SHORTSAMPLES = get_always('SHORTSAMPLES').split(',') ?: null
-SETS = get_always('SETS') ?: null
-dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
-if (PAIRED == 'paired' || PAIRED == 'singlecell'){
-    RSAMPLES = SAMPLES.collect{
+params.gREFERENCE = "${workflow.workDir}/../"+get_always('REFERENCE')
+params.gREFDIR = "${workflow.workDir}/../"+get_always('REFDIR')
+params.gBINS = get_always('BINS')
+params.gTHREADS = get_always('MAXTHREAD')
+params.gPAIRED = get_always('PAIRED') ?: null
+params.gRUNDEDUP = get_always('RUNDEDUP') ?: null
+params.gPREDEDUP = get_always('PREDEDUP') ?: null
+params.gSTRANDED = get_always('STRANDED') ?: null
+params.gIP = get_always('IP') ?: null
+params.gCONDITION = get_always('CONDITION') ?: null
+params.gCOMBO = get_always('COMBO') ?: ''
+params.gSCOMBO = get_always('SCOMBO') ?: ''
+params.gSAMPLES = get_always('SAMPLES').split(',') ?: null
+params.gLONGSAMPLES = get_always('LONGSAMPLES').split(',') ?: null
+params.gSHORTSAMPLES = get_always('SHORTSAMPLES').split(',') ?: null
+params.gSETS = get_always('SETS') ?: null
+def dummy(){
+    def dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
+    return dummy
+}
+def samples_ch(){
+    def samples_ch = Channel.fromPath(params.gRSAMPLES)
+    return samples_ch
+}
+params.gQCENV = { def QCENV = get_always('PREQCENV'); QCENV = get_always('PREQCENV'); return QCENV }()
+params.gQCBIN = { def QCBIN = get_always('PREQCBIN'); QCBIN = get_always('PREQCBIN'); return QCBIN }()
+params.gQCPARAMS = { def QCPARAMS = get_always('fastqc_params_QC') ?: ''; QCPARAMS = get_always('fastqc_params_MULTI') ?: ''; return QCPARAMS }()
+params.gTRIMENV = get_always('TRIMMINGENV')
+params.gTRIMBIN = get_always('TRIMMINGBIN')
+params.gTRIMPARAMS = get_always('trimgalore_params_TRIM') ?: ''
+params.gDEDUPENV = get_always('DEDUPENV')
+params.gDEDUPBIN = get_always('DEDUPBIN')
+params.gDEDUPPARAMS = get_always('picard_params_DEDUP') ?: ''
+params.gJAVAPARAMS = get_always('picard_params_JAVA') ?: ''
+params.gMAPENV = get_always('MAPPINGENV')
+params.gMAPBIN = get_always('MAPPINGBIN')
+params.gMAPIDX = get_always('MAPPINGIDX')
+params.gMAPUIDX = { def MAPUIDX = get_always('MAPPINGUIDX'); MAPUIDX = MAPUIDX.replace('.idx',''); return MAPUIDX }()
+params.gMAPUIDXNAME = get_always('MAPPINGUIDXNAME')
+params.gMAPREF = get_always('MAPPINGREF')
+params.gMAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
+params.gMAPANNO = get_always('MAPPINGANNO')
+params.gMAPPREFIX = get_always('MAPPINGPREFIX')
+params.gIDXPARAMS = get_always('star_params_INDEX') ?: ''
+params.gMAPPARAMS = get_always('star_params_MAP') ?: ''
+params.gRSAMPLES = {
+if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
+    return params.gSAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
     }
 }else{
-    RSAMPLES=SAMPLES.collect{
+    return params.gSAMPLES.collect{
         element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
     }
 }
-samples_ch = Channel.fromPath(RSAMPLES)
+}()
 
-QCENV=get_always('PREQCENV')
-QCBIN=get_always('PREQCBIN')
-QCPARAMS = get_always('fastqc_params_QC') ?: ''
 process qc_raw{
-    conda "<REPO>/envs/$QCENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$QCENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
     input:
@@ -54,26 +77,26 @@ process qc_raw{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
     """
 }
 workflow QC_RAW{
     take:
     collection
     main:
-    qc_raw(samples_ch)
+    qc_raw(samples_ch())
     emit:
     qc = qc_raw.out.fastqc_results
 }
 process qc_trimmed{
-    conda "<REPO>/envs/$QCENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$QCENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
     input:
@@ -82,7 +105,7 @@ process qc_trimmed{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
     """
 }
 workflow QC_TRIMMING{
@@ -93,14 +116,14 @@ workflow QC_TRIMMING{
     qc = qc_trimmed.out.fastqc_results
 }
 process qc_mapped{
-    conda "<REPO>/envs/$QCENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$QCENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
     input:
@@ -109,7 +132,7 @@ process qc_mapped{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS -f bam $map
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} -f bam $map
     """
 }
 workflow QC_MAPPING{
@@ -120,14 +143,14 @@ workflow QC_MAPPING{
     qc = qc_mapped.out.fastqc_results
 }
 process qc_dedup{
-    conda "<REPO>/envs/$QCENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$QCENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
+        if (filename.indexOf("zip") > 0)          "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.html"
         else null
     }
     input:
@@ -136,7 +159,7 @@ process qc_dedup{
     path "*.{zip,html}", emit: fastqc_results
     script:
     """
-    fastqc --quiet -t ${task.cpus} $QCPARAMS --noextract -f fastq $read
+    fastqc --quiet -t ${task.cpus} ${params.gQCPARAMS} --noextract -f fastq $read
     """
 }
 workflow QC_DEDUP{
@@ -148,18 +171,15 @@ workflow QC_DEDUP{
 }
 
 
-TRIMENV=get_always('TRIMMINGENV')
-TRIMBIN=get_always('TRIMMINGBIN')
-TRIMPARAMS = get_always('trimgalore_params_TRIM') ?: ''
 process trim{
-    conda "<REPO>/envs/$TRIMENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$TRIMENV"
+    conda "<REPO>/envs/${params.gTRIMENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gTRIMENV}"
     cpus 4
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
-        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
-        else if (filename.indexOf(".log") >0)              "LOGS/${COMBO}/${CONDITION}/TRIMMING/${file(filename).getSimpleName()}.log"
+        if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
+        else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
+        else if (filename.indexOf(".log") >0)              "LOGS/${params.gCOMBO}/${params.gCONDITION}/TRIMMING/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -168,16 +188,16 @@ process trim{
     path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
     script:
-    if (PAIRED == 'paired'){
+    if (params.gPAIRED == 'paired'){
         r1 = reads[0]
         r2 = reads[1]
         """
-        $TRIMBIN --cores ${task.cpus} --paired --gzip $TRIMPARAMS $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        ${params.gTRIMBIN} --cores ${task.cpus} --paired --gzip ${params.gTRIMPARAMS} $r1 $r2 &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/_R([1|2])_val_([1|2]).fq.gz/_R\\1_trimmed.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
     else{
         """
-        $TRIMBIN --cores ${task.cpus} --gzip $TRIMPARAMS $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
+        ${params.gTRIMBIN} --cores ${task.cpus} --gzip ${params.gTRIMPARAMS} $reads &> trim.log && rename 's/_dedup//g' *.fq.gz && rename 's/.fq.gz/.fastq.gz/g' *.fq.gz && rename 's/.fastq.gz_trimming/_trimming/g' *.txt
         """
     }
 }
@@ -185,13 +205,13 @@ workflow TRIMMING{
     take: 
     collection    
     main:
-    if ( PREDEDUP == 'enabled' ){  
+    if ( params.gPREDEDUP == 'enabled' ){  
         trim(collection)
     }else {        
-        if (PAIRED == 'paired'){
-            trim(samples_ch.collate(2))
+        if (params.gPAIRED == 'paired'){
+            trim(samples_ch().collate(2))
         } else{
-            trim(samples_ch.collate(1))
+            trim(samples_ch().collate(1))
         }
     }
     emit:
@@ -200,21 +220,17 @@ workflow TRIMMING{
 }
 
 
-DEDUPENV=get_always('DEDUPENV')
-DEDUPBIN=get_always('DEDUPBIN')
-DEDUPPARAMS = get_always('picard_params_DEDUP') ?: ''
-JAVAPARAMS = get_always('picard_params_JAVA') ?: ''
 process dedup_bam{
-    conda "<REPO>/envs/$DEDUPENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$DEDUPENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gDEDUPENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gDEDUPENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith("_dedup.bam"))              "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${COMBO}/${CONDITION}/DEDUP/${file(filename).getName()}"
-        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
+        if (filename.endsWith("_dedup.bam"))              "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
         else null
     }
     input:
@@ -232,7 +248,7 @@ process dedup_bam{
     outl = bams.getSimpleName()+"_dedup.log"
     outm = bams.getSimpleName()+"_dedup_metrix.txt"
     """
-    mkdir -p TMP && $DEDUPBIN $JAVAPARAMS MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR TMP --INPUT $bams --OUTPUT $outf --METRICS_FILE $outm $DEDUPPARAMS &> $outl && samtools index $outf &>> $outl
+    mkdir -p TMP && ${params.gDEDUPBIN} ${params.gJAVAPARAMS} MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR TMP --INPUT $bams --OUTPUT $outf --METRICS_FILE $outm ${params.gDEDUPPARAMS} &> $outl && samtools index $outf &>> $outl
     """
 }
 workflow DEDUPBAM{
@@ -250,18 +266,6 @@ workflow DEDUPBAM{
 }
 
 
-MAPENV = get_always('MAPPINGENV')
-MAPBIN = get_always('MAPPINGBIN')
-MAPIDX = get_always('MAPPINGIDX')
-MAPUIDX = get_always('MAPPINGUIDX')
-MAPUIDXNAME = get_always('MAPPINGUIDXNAME')
-MAPREF = get_always('MAPPINGREF')
-MAPREFDIR = "${workflow.workDir}/../"+get_always('MAPPINGREFDIR')
-MAPANNO = get_always('MAPPINGANNO')
-MAPPREFIX = get_always('MAPPINGPREFIX')
-MAPUIDX = MAPUIDX.replace('.idx','')
-IDXPARAMS = get_always('star_params_INDEX') ?: ''
-MAPPARAMS = get_always('star_params_MAP') ?: ''
 process collect_tomap{
     input:
     path check
@@ -273,44 +277,44 @@ process collect_tomap{
     """
 }
 process star_idx{
-    conda "<REPO>/envs/$MAPENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$MAPENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gMAPENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gMAPENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     label 'big_mem'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/star_index.log"
-        else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
-        else                                             "$MAPUIDX"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${params.gCOMBO}/${params.gCONDITION}/star_index.log"
+        else if (filename.indexOf(".idx") > 0)           "${params.gMAPIDX}"
+        else                                             "${params.gMAPUIDX}"
     }
     input:
     path genome
     path anno
     output:
-    path "$MAPUIDXNAME", emit: idx
+    path "${params.gMAPUIDXNAME}", emit: idx
     path "*.out", emit: idxlog
     path "*.idx", emit: tmpidx
     script:
     gen =  genome.getName()
     an  = anno.getName()
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* . && rm -rf STARTMP
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p ${params.gMAPUIDXNAME} && ${params.gMAPBIN} ${params.gIDXPARAMS} --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir ${params.gMAPUIDXNAME} --genomeFastaFiles tmp.fa && touch ${params.gMAPUIDXNAME} && ln -s ${params.gMAPUIDXNAME} star.idx && rm -f tmp.fa tmp_anno && ln -fs ${params.gMAPUIDXNAME}/* . && rm -rf STARTMP
     """
 }
 process star_mapping{
-    conda "<REPO>/envs/$MAPENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$MAPENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gMAPENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gMAPENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     label 'big_mem'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_unmapped") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getName()}"
-        else if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${file(filename).getName()}"
-        else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${file(filename).getName()}"
-        else if (filename.indexOf(".tab") >0)        "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
-        else                                         "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
+        if (filename.indexOf("_unmapped") > 0)       "UNMAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star_"+"${file(filename).getName()}"
+        else if (filename.indexOf(".out") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star_"+"${file(filename).getName()}"
+        else if (filename.indexOf(".tab") >0)        "MAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${filename}"
+        else                                         "MAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${filename}"
     }
     input:
     path reads
@@ -324,7 +328,7 @@ process star_mapping{
     script:
     idx = reads[0]
     idxdir = idx.toRealPath()
-    if (PAIRED == 'paired'){
+    if (params.gPAIRED == 'paired'){
         r1 = reads[1]
         r2 = reads[2]
         a = "Trimming_report.txt"
@@ -332,31 +336,31 @@ process star_mapping{
         of = fn+'.Aligned.out.sam'
         gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
         """
-        $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && cat ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && mv *Log.out ${fn}_mapping.log
+        ${params.gMAPBIN} ${params.gMAPPARAMS} --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2 --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && cat ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && mv *Log.out ${fn}_mapping.log
         """
     }
     else{
-        if (PAIRED != 'singlecell'){
+        if (params.gPAIRED != 'singlecell'){
             read = reads[1]
             fn = file(reads[1]).getSimpleName().replaceAll(/(_dedup)?_trimmed$/,"")+"."
             of = fn+'Aligned.out.sam'
             gf = of.replaceAll(/\Q.Aligned.out.sam\E/,"_mapped.sam.gz")
             """
-            $MAPBIN $MAPPARAMS --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && mv *Log.out ${fn}_mapping.log
+            ${params.gMAPBIN} ${params.gMAPPARAMS} --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $read --outFileNamePrefix $fn --outReadsUnmapped Fastx && gzip -c $of > $gf && rm -f $of && gzip *Unmapped.out* && for f in *mate*.gz; do mv "\$f" "\$(echo "\$f" | sed -r 's/\\.Unmapped.out.mate1.gz/_unmapped.fastq.gz/')"; done && mv *Log.out ${fn}_mapping.log
             """
         }
         else{
-            if (STRANDED == 'fr'){
+            if (params.gSTRANDED == 'fr'){
                 stranded = '--soloStrand Forward'
-            }else if (STRANDED == 'rf'){
+            }else if (params.gSTRANDED == 'rf'){
                 stranded = '--soloStrand Reverse'
             }else{
                 stranded = '--soloStrand Unstranded'
             }
             r1 = reads[1]
             fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
-            r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
-            if (MAPPARAMS.contains('--soloBarcodeMate 1')){
+            r2 = "${workflow.workDir}/../FASTQ/${params.gCONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
+            if (params.gMAPPARAMS.contains('--soloBarcodeMate 1')){
                 t = r2
                 r2 = r1
                 r1 = t
@@ -364,7 +368,7 @@ process star_mapping{
             of = fn+'.Aligned.sortedByCoord.out.bam'
             gf = of.replaceAll(/\Q.Aligned.sortedByCoord.out.bam\E/,"_mapped.sam.gz")
             """
-            $MAPBIN $MAPPARAMS $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2  --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && at ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && mv *Log.out ${fn}_mapping.log
+            ${params.gMAPBIN} ${params.gMAPPARAMS} $stranded --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN ${task.cpus} --genomeDir $idxdir --readFilesCommand zcat --readFilesIn $r1 $r2  --outFileNamePrefix ${fn}. --outReadsUnmapped Fastx && samtools view -h ${of} | gzip > $gf && rm -f $of && touch ${fn}.Unmapped.out.mate1 ${fn}.Unmapped.out.mate2 && cat ${fn}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R1_unmapped.fastq.gz && at ${fn}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > ${fn}_R2_unmapped.fastq.gz && mv *Log.out ${fn}_mapping.log
             """
         }
     }
@@ -372,14 +376,14 @@ process star_mapping{
 workflow MAPPING{
     take: collection
     main:
-    checkidx = file(MAPUIDX)
+    checkidx = file(params.gMAPUIDX)
     if (checkidx.exists()){
-        idxfile = Channel.fromPath(MAPUIDX)
+        idxfile = Channel.fromPath(params.gMAPUIDX)
         star_mapping(idxfile.combine(collection))
     }
     else{
-        genomefile = Channel.fromPath(MAPREF)
-        annofile = Channel.fromPath(MAPANNO)
+        genomefile = Channel.fromPath(params.gMAPREF)
+        annofile = Channel.fromPath(params.gMAPANNO)
         star_idx(genomefile, annofile)
         star_mapping(star_idx.out.idx.combine(collection))
     }
@@ -392,12 +396,12 @@ workflow MAPPING{
 process sortsam{
     conda "<REPO>/envs/samtools.yaml"
     container "oras://docker.io/jfallmann/monsda:"+"samtools"
-    cpus THREADS
+    cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".sam.gz") > 0)     "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.sam.gz"
+        if (filename.indexOf(".sam.gz") > 0)     "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.sam.gz"
         else null
     }
     input:
@@ -415,14 +419,14 @@ process sortsam{
 process sam2bam{
     conda "<REPO>/envs/samtools.yaml"
     container "oras://docker.io/jfallmann/monsda:"+"samtools"
-    cpus THREADS
+    cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith(".bam"))       "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.bam"
-        else if (filename.indexOf(".bai") > 0)  "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf(".log") > 0)  "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        if (filename.endsWith(".bam"))       "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam"
+        else if (filename.indexOf(".bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam.bai"
+        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -441,13 +445,13 @@ process sam2bam{
 process uniqsam{
     conda "<REPO>/envs/samtools.yaml"
     container "oras://docker.io/jfallmann/monsda:"+"samtools"
-    cpus THREADS
+    cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.sam.gz"
-        else if (filename.indexOf(".log") > 0)       "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.sam.gz"
+        else if (filename.indexOf(".log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -458,26 +462,26 @@ process uniqsam{
     script:
     fn = file(sam[0]).getSimpleName()
     uniq = fn+'_unique.sam.gz'
-    if (COMBO.indexOf('-bwa') > 0){
+    if (params.gCOMBO.indexOf('-bwa') > 0){
         bwa = 'bwa'
     } else{
         bwa = ''
     }
     """
-    $BINS/Shells/UniqueSam_woPicard.sh $sam $uniq ${task.cpus} $bwa 2> uniq.log
+    ${params.gBINS}/Shells/UniqueSam_woPicard.sh $sam $uniq ${task.cpus} $bwa 2> uniq.log
     """
 }
 process sam2bamuniq{
     conda "<REPO>/envs/samtools.yaml"
     container "oras://docker.io/jfallmann/monsda:"+"samtools"
-    cpus THREADS
+    cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.endsWith(".bam"))       "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.bam"
-        else if (filename.indexOf(".bai") > 0)  "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf(".log") > 0)  "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        if (filename.endsWith(".bam"))       "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam"
+        else if (filename.indexOf(".bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam.bai"
+        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -508,19 +512,16 @@ workflow POSTMAPPING{
 }
 
 
-QCENV=get_always('PREQCENV')
-QCBIN=get_always('PREQCBIN')
-QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 process mqc{
-    conda "<REPO>/envs/$QCENV"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"$QCENV"
-    cpus THREADS
+    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
+    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("zip") > 0)          "QC/Multi/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.zip"
-        else if (filename.indexOf("html") > 0)    "QC/Multi/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.html"
-        else "QC/Multi/${COMBO}/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf("zip") > 0)          "QC/Multi/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.zip"
+        else if (filename.indexOf("html") > 0)    "QC/Multi/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.html"
+        else "QC/Multi/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
     }
     input:
     path others, stageAs: 'mqc_input??/*'
@@ -534,8 +535,8 @@ process mqc{
     LIST=multiqc_inputs.txt
     TMP_LIST=multiqc_inputs_unique.txt
     BASE_QC_DIR="${workflow.workDir}/../QC"
-    COMBO_VAL="${COMBO}"
-    CONDITION_VAL="${CONDITION}"
+    COMBO_VAL="${params.gCOMBO}"
+    CONDITION_VAL="${params.gCONDITION}"
     for i in $others; do
         dirname "\$i" >> "\$LIST"
     done
@@ -567,8 +568,8 @@ workflow MULTIQC{
 
 
 workflow {
-    QC_RAW(dummy)
-    TRIMMING(dummy)
+    QC_RAW(dummy())
+    TRIMMING(dummy())
     QC_TRIMMING(TRIMMING.out.trimmed)
     MAPPING(TRIMMING.out.trimmed)
     POSTMAPPING(MAPPING.out.mapped)

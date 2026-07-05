@@ -87,8 +87,197 @@ def _fix_oras(line: str) -> str:
     return _rewrite_oras(line)
 
 
+_NF_KW = ("def ", "process", "workflow", "include", "params", "nextflow")
+
+_NF_PFX = "g"
+
+
+def _nf_is_channel(rhs_list):
+    return any("Channel." in r for r in rhs_list)
+
+
+def _nf_rw(text, scalars, channels, ex_s=None, ex_c=None):
+    """Rewrite bare references to global names: scalars -> params.gNAME,
+    channels -> NAME(). Interpolated forms handled as well."""
+    s_active = set(scalars) - ({ex_s} if ex_s else set())
+    c_active = set(channels) - ({ex_c} if ex_c else set())
+    alln = s_active | c_active
+    if not alln:
+        return text
+
+    def repl(name, interp):
+        if name in c_active:
+            return ("${" + name + "()}") if interp else (name + "()")
+        return (
+            ("${params." + _NF_PFX + name + "}")
+            if interp
+            else ("params." + _NF_PFX + name)
+        )
+
+    alt = "|".join(sorted(map(re.escape, alln), key=len, reverse=True))
+    text = re.sub(r"\$\{(" + alt + r")\}", lambda m: repl(m.group(1), True), text)
+    text = re.sub(r"\$(" + alt + r")(?![\w(])", lambda m: repl(m.group(1), True), text)
+    text = re.sub(
+        r"(?<![\w.$])(" + alt + r")\b(?!\s*=(?!=))(?!\s*\()",
+        lambda m: repl(m.group(1), False),
+        text,
+    )
+    return text
+
+
+def _nf_rewrite_samples_ch(body, scalars, channels):
+    """Rewrite the header global samples_ch to samples_ch(), but skip blocks
+    that locally reassign samples_ch (process/workflow bodies)."""
+    lines = body.split("\n")
+    out = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        ln = lines[i]
+        if re.match(r"^(process|workflow)\b.*\{\s*$", ln):
+            block = [ln]
+            i += 1
+            while i < n and not re.match(r"^\}", lines[i]):
+                block.append(lines[i])
+                i += 1
+            if i < n:
+                block.append(lines[i])
+                i += 1
+            btext = "\n".join(block)
+            if not re.search(r"^\s+samples_ch\s*=", btext, re.M):
+                btext = _nf_rw(btext, set(), {"samples_ch"})
+            out.append(btext)
+        else:
+            out.append(_nf_rw(ln, set(), {"samples_ch"}))
+            i += 1
+    return "\n".join(out)
+
+
+def nf_paramize(content):
+    """Rewrite col-0 global scalar assignments to params.NAME definitions
+    (folding multiple/derived assignments into a single definition) and
+    channel globals to getter functions, so the generated Nextflow file
+    parses and runs under the strict (default) Nextflow parser."""
+    content = re.sub(r"(\})[ \t]+(process\b|workflow\b)", r"\1\n\2", content)
+    lines = content.split("\n")
+    n = len(lines)
+    assign_re = re.compile(r"^([A-Za-z_]\w*)\s*=(?!=)\s*(.*)$")
+    order = []
+    assigns = {}
+    drop = set()
+    ifblocks = []
+    ifnames = []
+    i = 0
+    while i < n:
+        ln = lines[i]
+        if ln[:1] not in ("", " ", "\t"):
+            if ln.startswith(_NF_KW) or ln[:1] in ("}", ")", "/", "#", "@"):
+                i += 1
+                continue
+            m = assign_re.match(ln)
+            if m:
+                name, rhs = m.group(1), m.group(2)
+                assigns.setdefault(name, [])
+                if name not in order:
+                    order.append(name)
+                assigns[name].append(rhs)
+                drop.add(i)
+            elif re.match(r"^if\s*\(", ln):
+                start = i
+                buf = [ln]
+                depth = ln.count("{") - ln.count("}")
+                i += 1
+                while i < n and depth > 0:
+                    buf.append(lines[i])
+                    depth += lines[i].count("{") - lines[i].count("}")
+                    i += 1
+                for k in range(start, i):
+                    drop.add(k)
+                nm = None
+                for bl in buf:
+                    mm = re.match(r"^\s*([A-Za-z_]\w*)\s*=(?!=)", bl)
+                    if mm:
+                        nm = mm.group(1)
+                        break
+                if nm:
+                    ifblocks.append((nm, buf))
+                    ifnames.append(nm)
+                continue
+            else:
+                drop.add(i)
+        i += 1
+
+    channels = set(nm for nm in order if _nf_is_channel(assigns[nm]))
+    scalars = (set(order) - channels) | set(ifnames)
+
+    defs = []
+    for name in order:
+        rhs_list = assigns[name]
+        if name in channels:
+            block_body = []
+            for k, rhs in enumerate(rhs_list):
+                r = _nf_rw(rhs, scalars, channels, ex_c=name)
+                pre = "    def %s = %s" if k == 0 else "    %s = %s"
+                block_body.append(pre % (name, r))
+            block_body.append("    return %s" % name)
+            defs.append("def %s(){\n%s\n}" % (name, "\n".join(block_body)))
+        elif len(rhs_list) == 1:
+            r = _nf_rw(rhs_list[0], scalars, channels, ex_s=name)
+            defs.append("params.%s%s = %s" % (_NF_PFX, name, r))
+        else:
+            block_body = []
+            for k, rhs in enumerate(rhs_list):
+                r = _nf_rw(rhs, scalars, channels, ex_s=name)
+                pre = "def %s = %s" if k == 0 else "%s = %s"
+                block_body.append(pre % (name, r))
+            block_body.append("return %s" % name)
+            defs.append(
+                "params.%s%s = { %s }()" % (_NF_PFX, name, "; ".join(block_body))
+            )
+
+    for nm, buf in ifblocks:
+        tb = []
+        for bl in buf:
+            bl2 = re.sub(r"^(\s*)" + re.escape(nm) + r"\s*=\s*", r"\1return ", bl)
+            tb.append(bl2)
+        block = "\n".join(tb)
+        block = _nf_rw(block, scalars, channels, ex_s=nm)
+        defs.append("params.%s%s = {\n%s\n}()" % (_NF_PFX, nm, block))
+
+    kept = [ln for idx, ln in enumerate(lines) if idx not in drop]
+    body = "\n".join(kept)
+
+    body = _nf_rw(body, scalars, channels - {"samples_ch"})
+    if "samples_ch" in channels:
+        body = _nf_rewrite_samples_ch(body, scalars, channels)
+
+    def_txt = "\n".join(defs)
+    kl = body.split("\n")
+    out_lines = []
+    inserted = False
+    j = 0
+    while j < len(kl):
+        out_lines.append(kl[j])
+        if not inserted and kl[j].startswith("def get_always"):
+            k = j
+            while k < len(kl) and not kl[k].startswith("}"):
+                k += 1
+            for x in range(j + 1, k + 1):
+                out_lines.append(kl[x])
+            out_lines.append(def_txt)
+            j = k + 1
+            inserted = True
+            continue
+        j += 1
+    if not inserted:
+        out_lines = [def_txt] + kl
+    return "\n".join(out_lines)
+
+
 def _write_workflow(filepath, content):
     """Write workflow file with ORAS registry fix applied."""
+    if str(filepath).endswith(".nf"):
+        content = nf_paramize(content)
     content = _rewrite_oras(content)
     write_if_different(filepath, content)
 
@@ -3304,7 +3493,8 @@ def nf_make_post(
 
                 # Append subwork suffix for all applicable postprocess workflows
                 toolenv_orig = toolenv
-                toolenv = toolenv + "_" + subwork
+                if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in ["deseq", "diego"]:
+                    toolenv = toolenv + "_" + subwork
                 sconf[subwork + "ENV"] = toolenv
                 sconf[subwork + "BIN"] = toolbin
                 subsamples = mp.get_samples(sconf)
@@ -3437,8 +3627,9 @@ def nf_make_post(
             subjobs = list()
 
             toolenv, toolbin = map(str, listoftools[a])
-            # Append subwork suffix for all postprocessing workflows
-            toolenv = toolenv + "_" + subwork
+            # Append subwork suffix for all applicable postprocess workflows
+            if subwork in ["DE", "DEU", "DAS", "DTU"] and toolbin not in ["deseq", "diego"]:
+                toolenv = toolenv + "_" + subwork
 
             log.debug(logid + "toolenv: " + str(toolenv))
             sconf[subwork + "ENV"] = toolenv
