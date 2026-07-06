@@ -1,6 +1,6 @@
 {
   "comment":{
-    "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS",
+    "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS",
     "BINS": "Where to find the scripts used in the workflow, per default the scripts directory that comes with MONSDA. ONLY CHANGE IF YOU KNOW WHAT YOU ARE DOING!",
     "MAXTHREADS": "Maximum number of cores to use, make sure this fits your needs, acts as upper cap.",
     "VERSION": "Version of MONSDA to use, needs to match installed version"

@@ -14,5 +14,13 @@ generate_index:
 mapping:
     mem: 200GB
 
+generate_ctat_lib:
+    mem: 200GB
+    time: 2880
+
+starfusion:
+    mem: 100GB
+    time: 1500
+
 multiqc:
    mem: 30GB

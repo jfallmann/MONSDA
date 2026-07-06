@@ -431,7 +431,7 @@ def get_processes(config):
     # Define workflow stages
     pre = ["QC", "FETCH", "BASECALL"]
     sub = ["TRIMMING", "MAPPING", "DEDUP", "QC"]
-    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS"]
+    post = ["COUNTING", "TRACKS", "PEAKS", "DE", "DEU", "DAS", "DTU", "CIRCS", "FUSIONS"]
 
     wfs = [x.replace(" ", "") for x in config["WORKFLOWS"].split(",")]
 
@@ -643,6 +643,7 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 "COUNTING",
                                 "TRACKS",
                                 "CIRCS",
+                                "FUSIONS",
                             ]
                         ]
                     ):
@@ -1371,6 +1372,12 @@ def make_post(
                     if toolenv == "ciri2" and "bwa" not in envs:
                         log.warning(
                             "CIRI2 needs BWA mapped files, will skip input produced otherwise"
+                        )
+                        continue
+                if postworkflow == "FUSIONS":
+                    if toolenv == "starfusion" and "star" not in envs:
+                        log.warning(
+                            "STAR-Fusion needs STAR chimeric output, will skip input produced otherwise"
                         )
                         continue
 
@@ -2230,6 +2237,30 @@ def nf_fetch_params(
         retconf["CIRCSREF"] = REFERENCE
         retconf["CIRCSREFDIR"] = REFDIR
         retconf["CIRCSANNO"] = ANNOTATION
+
+    # FUSIONS Variables
+    if "FUSIONS" in config:
+        FUSCONF = mu.sub_dict(config["FUSIONS"], SETUP)
+        FUSBIN, FUSENV = mp.env_bin_from_config(config, "FUSIONS")
+        log.debug(logid + "FUSIONSCONFIG: " + str(SETUP) + "\t" + str(FUSCONF))
+        REF = FUSCONF.get("REFERENCE")
+        if REF:
+            REFERENCE = REF
+            REFDIR = str(os.path.dirname(REFERENCE))
+        FANNO = FUSCONF.get("ANNOTATION")
+        if FANNO:
+            ANNOTATION = FANNO
+        else:
+            ANNOTATION = (
+                ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
+            )  # by default GTF format will be used
+
+        retconf["FUSIONSREF"] = REFERENCE
+        retconf["FUSIONSREFDIR"] = REFDIR
+        retconf["FUSIONSANNO"] = ANNOTATION
+        retconf["FUSIONSLIB"] = (
+            FUSCONF.get(FUSENV, {}).get("OPTIONS", {}).get("INDEX", "")
+        )
 
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
@@ -3475,6 +3506,12 @@ def nf_make_post(
                     if toolenv == "ciri2" and "bwa" not in envs:
                         log.warning(
                             "CIRI2 needs BWA mapped files, will skip input produced otherwise"
+                        )
+                        continue
+                if subwork == "FUSIONS":
+                    if toolenv == "starfusion" and "star" not in envs:
+                        log.warning(
+                            "STAR-Fusion needs STAR chimeric output, will skip input produced otherwise"
                         )
                         continue
 

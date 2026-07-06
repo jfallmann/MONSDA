@@ -32,6 +32,8 @@ DTU -> Differential Transcript Usage Analysis
 
 CIRCS -> Circular RNA identification
 
+FUSIONS -> Fusion gene detection
+
 
 PREPROCESSING
 =============
@@ -304,3 +306,32 @@ Find circular RNAs in mapping data, CIRI2 needs to be installed locally.
   +=======+=========================================================================================================================================================================================================+========+====================+=======================================================================+========+==================+
   | CIRI2 | CIRI (circRNA identifier) is a novel chiastic clipping signal based algorithm,which can unbiasedly and accurately detect circRNAs from transcriptome data by employing multiple filtration strategies.  | ciri2  | $Path_to_CIRI2.pl  | `ciri2 <https://ciri-cookbook.readthedocs.io/en/latest/CIRI2.html>`_  | BAM    | BED/BEDG/BIGWIG  |
   +-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------+--------------------+-----------------------------------------------------------------------+--------+------------------+
+
+
+FUSIONS
+###############
+
+Detect fusion genes with STAR-Fusion. FUSIONS requires STAR in the MAPPING step and, by
+default, consumes the chimeric junctions produced by STAR. STAR does not emit chimeric output
+unless configured to do so, therefore add the chimeric options to the STAR ``MAP`` options in
+the MAPPING config, e.g. ``--chimSegmentMin 12 --chimOutType Junctions``. MONSDA then finds the
+resulting ``MAPPED/<combo>/<sample>.Chimeric.out.junction`` files and only runs STAR-Fusion when
+they exist. Set ``"FASTQ": "true"`` in the FUSIONS ``OPTIONS`` to run STAR-Fusion directly on the
+trimmed FASTQ files instead of the chimeric junctions.
+
+STAR-Fusion needs a CTAT genome resource library. Point ``INDEX`` to an existing
+``genome_lib_dir``; if it does not exist, it is built from ``REFERENCE`` and ``ANNOTATION`` with
+``prep_genome_lib.pl`` (extra build options can be passed via ``BUILD``). Building a CTAT library
+is resource intensive, so the bundled cluster profile sets a long runtime for the
+``generate_ctat_lib`` rule.
+
+.. table:: 
+  :widths: 10, 40, 10, 10, 10, 10, 10
+  :class: tight-table
+
+  +-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------+-------------+----------------------------------------------------------------+-------------------------------+---------+
+  | TOOL        | DESCRIPTION                                                                                                                                                                             | ENV        | BIN         | LINK                                                           | INPUT                         | OUTPUT  |
+  +=============+=========================================================================================================================================================================================+============+=============+================================================================+===============================+=========+
+  | STAR-Fusion | STAR-Fusion identifies candidate fusion transcripts from the chimeric alignments produced by the STAR aligner using a CTAT genome resource library.                                      | starfusion | STAR-Fusion | `starfusion <https://github.com/STAR-Fusion/STAR-Fusion/wiki>`_ | Chimeric.out.junction / FASTQ | TSV     |
+  +-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------+-------------+----------------------------------------------------------------+-------------------------------+---------+
+

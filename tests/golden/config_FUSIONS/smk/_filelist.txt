@@ -1,0 +1,2 @@
+allconditions_fastqc-trimgalore-picard-star_FUSIONS_starfusion_subconfig.json
+allconditions_fastqc-trimgalore-picard-star_FUSIONS_starfusion_subsnake.smk

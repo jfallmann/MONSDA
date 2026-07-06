@@ -482,4 +482,26 @@
             }
         }
     }
+  },
+  "FUSIONS" : {
+    "TOOLS" :
+    {
+      "starfusion" : "STAR-Fusion"
+    },
+    "id": {
+        "condition": {
+            "setting": {
+                "ENV" : "starfusion",
+                "BIN" : "STAR-Fusion",
+                "starfusion":{
+                    "OPTIONS":
+                    {  
+                        "INDEX": "PATH_TO_CTAT_genome_lib_dir",
+                        "BUILD": "",
+                        "FUSION": ""
+                    }
+                }
+            }
+        }
+    }
 }

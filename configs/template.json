@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS"
+    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS"
     "BINS": "", #where to find customscripts used in the workflow !!!ADVANCED USAGE ONLY!!!
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "VERSION": "1.4.0", #needs to be identical to the installed version for reproducibility reasons
@@ -504,6 +504,28 @@
                         "OPTIONS":
                         {
                             "CIRC": ""  # Additional options if needed
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "FUSIONS" : {
+        "TOOLS" :
+        {
+            "starfusion" : "STAR-Fusion"
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ENV" : "starfusion",
+                    "BIN" : "STAR-Fusion",
+                    "starfusion":{
+                        "OPTIONS":
+                        {
+                            "INDEX": "PATH_TO_CTAT_genome_lib_dir",  # Path to an existing CTAT genome resource library, will be built from REFERENCE/ANNOTATION if not present
+                            "BUILD": "",  # Additional options for prep_genome_lib.pl when building the CTAT library
+                            "FUSION": ""  # Additional options for STAR-Fusion; set "FASTQ": "true" to run in FASTQ mode instead of consuming STAR chimeric junctions
                         }
                     }
                 }
