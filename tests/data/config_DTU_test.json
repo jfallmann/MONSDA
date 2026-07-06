@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "QC,TRIMMING,DEDUP,MAPPING,DTU",
+    "WORKFLOWS": "QC,TRIMMING,DEDUP,MAPPING,DTU,FUSIONS",
     "BINS": "",
     "MAXTHREADS": "4",
     "VERSION": "FIXME",
@@ -121,6 +121,20 @@
                     "INDEX": "-d GENOMES/transcripts.fa.gz",
                     "QUANT": "--seqBias --gcBias",
                     "DTU": ""
+                }
+            }
+        }
+    },
+    "FUSIONS": {
+        "TOOLS": {
+            "starfusion": "STAR-Fusion"
+        },
+        "Test": {
+            "starfusion": {
+                "OPTIONS": {
+                    "INDEX": "GENOMES/ctat_genome_lib",
+                    "BUILD": "",
+                    "FUSION": ""
                 }
             }
         }

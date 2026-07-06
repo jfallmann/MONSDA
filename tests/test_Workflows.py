@@ -251,6 +251,59 @@ def test_make_post_dtu_file_set_stable(engine, workdir):
 
 
 # --------------------------------------------------------------------------- #
+# Golden-file snapshot for the FUSIONS postprocessing step (STAR-Fusion).
+# --------------------------------------------------------------------------- #
+
+
+def _generate_fusions(engine, workdir):
+    cfg = _load("config_DTU_test.json")
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples_postprocess(cfg, "FUSIONS")
+    if engine == "smk":
+        subdir = "SubFusionSnakes"
+        mp.create_skeleton(subdir, None)
+        mw.make_post(
+            "FUSIONS", cfg, samples, conditions, subdir, "INFO", combinations=combos
+        )
+    else:
+        subdir = "SubFusionFlows"
+        mp.create_skeleton(subdir, None)
+        mw.nf_make_post(
+            "FUSIONS", cfg, samples, conditions, subdir, "INFO", combinations=combos
+        )
+    return subdir
+
+
+@pytest.mark.parametrize("engine", ["smk", "nf"])
+def test_make_post_fusions_golden(engine, workdir):
+    subdir = _generate_fusions(engine, workdir)
+    produced = sorted(
+        os.path.relpath(p, workdir) for p in glob.glob(os.path.join(subdir, "*"))
+    )
+    assert produced, "generator produced no files"
+
+    for rel in produced:
+        raw = Path(workdir / rel).read_text()
+        if rel.endswith(".json"):
+            data = _sort_string_lists(json.loads(raw))
+            raw = json.dumps(data, indent=2, sort_keys=True)
+        content = _normalize(raw, workdir)
+        _check_golden(f"config_FUSIONS/{engine}/{os.path.basename(rel)}", content)
+
+
+@pytest.mark.parametrize("engine", ["smk", "nf"])
+def test_make_post_fusions_file_set_stable(engine, workdir):
+    subdir = _generate_fusions(engine, workdir)
+    names = sorted(
+        os.path.basename(p) for p in glob.glob(os.path.join(subdir, "*"))
+    )
+    _check_golden(f"config_FUSIONS/{engine}/_filelist.txt", "\n".join(names) + "\n")
+
+
+
+# --------------------------------------------------------------------------- #
 # Cross-engine consistency: the Snakemake and Nextflow generators must expose
 # the same tool matrix, env/bin selection and per-step OPTIONS for one config.
 # The on-disk nesting differs between engines (smk nests OPTIONS under the tool
