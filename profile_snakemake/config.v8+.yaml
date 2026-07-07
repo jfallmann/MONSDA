@@ -5,7 +5,9 @@ default-resources:
   slurm_partition: "${SLURM_PARTITION}" # the partition to use
   nodes: 1
   mem_mb: "20000 * (2 ** (attempt - 1))"  
-  runtime: "480 * (2 ** (attempt - 1))"   
+  runtime: "480 * (2 ** (attempt - 1))"  
+  partition: "('c_long' if min(480 * (2 ** (attempt - 1)), 960) > 2880 else 'c_medium' if min(480 * (2 ** (attempt - 1)), 960) > 1440 else 'c_short')"
+  qos: "('long' if min(480 * (2 ** (attempt - 1)), 960) > 2880 else 'medium' if min(480 * (2 ** (attempt - 1)), 960) > 1440 else 'short')" 
 set-resources:
   generate_index:
     mem_mb: "80000 * (2 ** (attempt - 1))"
@@ -41,6 +43,12 @@ set-resources:
   gridss_setupreference:
     mem_mb: "40000 * (2 ** (attempt - 1))"
     threads: 8
+  generate_ctat_lib:
+    mem_mb: "80000 * (2 ** (attempt - 1))"  
+    runtime: "24h"
+  starfusion:
+    mem_mb: "100000 * (2 ** (attempt - 1))"    
+    runtime: "24h"
 jobs: 1000
 keep-going: True
 rerun-incomplete: True
