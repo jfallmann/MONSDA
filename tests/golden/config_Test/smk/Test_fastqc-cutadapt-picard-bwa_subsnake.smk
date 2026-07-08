@@ -849,6 +849,6 @@ for _rule in workflow.rules:
 onsuccess:
     print("Workflow finished, no error")
 onerror:
-	print("ERROR: "+str({log}))
+	print("ERROR: "+str(log))
 
 
