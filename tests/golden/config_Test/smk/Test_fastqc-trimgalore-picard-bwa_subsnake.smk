@@ -271,6 +271,21 @@ if 'CIRCS' in config:
         ANNOTATION = CANNO
     else:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
+# FUSIONS Variables
+if 'FUSIONS' in config:
+    FUSCONF = sub_dict(config['FUSIONS'], SETUP)
+    XBIN, XENV = env_bin_from_config(config, 'FUSIONS')
+    log.debug(logid+'FUSCONFIG: '+str(SETUP)+'\t'+str(FUSCONF))
+    REF = FUSCONF.get('REFERENCE', FUSCONF[XENV].get('REFERENCE', config['FUSIONS'].get('REFERENCE')))
+    XANNO = FUSCONF.get('ANNOTATION', FUSCONF[XENV].get('ANNOTATION', config['FUSIONS'].get('ANNOTATION')))
+    if REF:
+        REFERENCE = REF
+        REFDIR = str(os.path.dirname(REFERENCE))
+    FANNO = FUSCONF.get('ANNOTATION')
+    if FANNO and FANNO != '':
+        ANNOTATION = FANNO
+    else:
+        ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
 combo = ''
 if ANNOTATION:
     log.info(logid+f'Using COMBO: {combo}, REF: {REFERENCE}, ANNO: {ANNOTATION}, DECOY: {DECOY}, INDEX: {INDEX}, INDEX2: {INDEX2}, PREFIX: {PREFIX}, IP: {IP}, SETUP: {SETUP}, SEQUENCING: {SEQUENCING}, STRANDED: {stranded}, PAIRED: {paired}, RUNDEDUP: {rundedup}, PREDEDUP: {prededup}, SAMPLES: {SAMPLES}, BINS: {BINS}, MAXTHREAD: {MAXTHREAD}')
