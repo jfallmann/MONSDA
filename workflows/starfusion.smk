@@ -26,7 +26,7 @@ rule generate_ctat_lib:
     threads: MAXTHREAD
     params: sf = FBIN,
             bpara = lambda wildcards: tool_params(SAMPLES[0], None, config, "FUSIONS", FENV)['OPTIONS'].get('BUILD', "")
-    shell:  "if [[ -f \"{output.lib}/ref_annot.gtf\" ]]; then echo \"Found CTAT genome lib, continue with STAR-Fusion\" &> {log} && touch {output.tmpfa} {output.tmpanno}; else zcat {input.fa} > {output.tmpfa} && zcat {input.anno} > {output.tmpanno} && mkdir -p {output.lib} && prep_genome_lib.pl --genome_fa {output.tmpfa} --gtf {output.tmpanno} --output_dir {output.lib} --CPU {threads} {params.bpara} &> {log}; fi"
+    shell:  "if [[ -f \"{output.lib}/ref_annot.gtf\" || -f \"{output.lib}/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then echo \"Found CTAT genome lib, continue with STAR-Fusion\" &> {log} && mkdir -p {output.lib} && touch {output.tmpfa} {output.tmpanno}; else ( zcat {input.fa} > {output.tmpfa} && zcat {input.anno} > {output.tmpanno} && mkdir -p {output.lib} && prep_genome_lib.pl --genome_fa {output.tmpfa} --gtf {output.tmpanno} --output_dir {output.lib} --CPU {threads} {params.bpara} ) &> {log}; fi"
 
 if not fastqmode:
     rule starfusion:
@@ -40,7 +40,7 @@ if not fastqmode:
         threads: MAXTHREAD
         params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                 sf = FBIN
-        shell:  "set +o pipefail; if [[ -s \"{input.junction}\" ]]; then {params.sf} --genome_lib_dir {input.lib} -J {input.junction} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; else mkdir -p {output.outdir}; echo \"File {input.junction} empty, no chimeric STAR output found\" >> {log}; fi; touch {output.fusions}"
+        shell:  "set +o pipefail; GLIB={input.lib}; if [[ -f \"$GLIB/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then GLIB=$GLIB/ctat_genome_lib_build_dir; fi; if [[ -s \"{input.junction}\" ]]; then {params.sf} --genome_lib_dir $GLIB -J {input.junction} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; else mkdir -p {output.outdir}; echo \"File {input.junction} empty, no chimeric STAR output found\" >> {log}; fi; touch {output.fusions}"
 else:
     if paired == 'paired':
         rule starfusion:
@@ -55,7 +55,7 @@ else:
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN
-            shell:  "{params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --right_fq {input.r2} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"
+            shell:  "GLIB={input.lib}; if [[ -f \"$GLIB/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then GLIB=$GLIB/ctat_genome_lib_build_dir; fi; {params.sf} --genome_lib_dir $GLIB --left_fq {input.r1} --right_fq {input.r2} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"
     else:
         rule starfusion:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
@@ -68,4 +68,4 @@ else:
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN
-            shell:  "{params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"
+            shell:  "GLIB={input.lib}; if [[ -f \"$GLIB/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then GLIB=$GLIB/ctat_genome_lib_build_dir; fi; {params.sf} --genome_lib_dir $GLIB --left_fq {input.r1} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"

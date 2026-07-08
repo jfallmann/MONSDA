@@ -70,7 +70,7 @@ process starfusion{
     of = fn+"_fusions"
     ol = fn+".log"
     """
-    if [[ -f \"${params.gFUSLIB}/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIB}\"; else CTAT=CTAT; mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} ${params.gFUSBUILD} &> log; fi; if [[ -s \"${junction}\" ]]; then ${params.gFUSBIN} --genome_lib_dir \$CTAT -J ${junction} --output_dir TMP --CPU ${task.cpus} ${params.gFUSPARAMS} &>> log && cp TMP/star-fusion.fusion_predictions.tsv ${of} 2>> log; else echo \"File ${junction} empty, no chimeric STAR output found\" >> log; fi; touch ${of}
+    if [[ -f \"${params.gFUSLIB}/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIB}\"; elif [[ -f \"${params.gFUSLIB}/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIB}/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} ${params.gFUSBUILD} ) &> log; fi; if [[ -s \"${junction}\" ]]; then ${params.gFUSBIN} --genome_lib_dir \$CTAT -J ${junction} --output_dir TMP --CPU ${task.cpus} ${params.gFUSPARAMS} &>> log && cp TMP/star-fusion.fusion_predictions.tsv ${of} 2>> log; else echo \"File ${junction} empty, no chimeric STAR output found\" >> log; fi; touch ${of}
     """
 }
 workflow FUSIONS{ 
