@@ -19,15 +19,15 @@ process starfusion{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("_fusions") > 0)      "FUSIONS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}"
+        if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
+        else      "FUSIONS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
     path fls
 
     output:
-    path "*_fusions", emit: fusions
+    path "${fn}_starfusion/*", emit: fusions
     path "log", emit: log
 
     script:
@@ -35,11 +35,11 @@ process starfusion{
     anno = fls[1]
     junction = fls[2]        
     fn = file(junction).getSimpleName()
-    of = fn+"_fusions"
+    od = fn+"_starfusion"
     ol = fn+".log"
     
     """
-    if [[ -f \"$FUSLIB/ref_annot.gtf\" ]]; then CTAT=\"$FUSLIB\"; elif [[ -f \"$FUSLIB/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"$FUSLIB/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} $FUSBUILD ) &> log; fi; if [[ -s \"${junction}\" ]]; then ctat_chr=\$(grep -v '^#' \$CTAT/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=\$(awk '!/^#/ && \$1!=\"chr_donorA\"{print \$1; exit}' ${junction} | grep -c '^chr' || true); if [[ \"\$ctat_chr\" == \"1\" && \"\$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {if(\$1!~/^chr/)\$1=\"chr\"\$1; if(\$4!~/^chr/)\$4=\"chr\"\$4; if(\$1==\"chrMT\")\$1=\"chrM\"; if(\$4==\"chrMT\")\$4=\"chrM\"; print}' ${junction} > ${fn}.norm.junction; elif [[ \"\$ctat_chr\" == \"0\" && \"\$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {sub(/^chr/,\"\",\$1); sub(/^chr/,\"\",\$4); if(\$1==\"M\")\$1=\"MT\"; if(\$4==\"M\")\$4=\"MT\"; print}' ${junction} > ${fn}.norm.junction; else cp ${junction} ${fn}.norm.junction; fi; $FUSBIN --genome_lib_dir \$CTAT -J ${fn}.norm.junction --output_dir TMP --CPU ${task.cpus} $FUSPARAMS &>> log && cp TMP/star-fusion.fusion_predictions.tsv ${of} 2>> log; else echo \"File ${junction} empty, no chimeric STAR output found\" >> log; fi; touch ${of}
+    if [[ -f \"$FUSLIB/ref_annot.gtf\" ]]; then CTAT=\"$FUSLIB\"; elif [[ -f \"$FUSLIB/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"$FUSLIB/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} $FUSBUILD ) &> log; fi; if [[ -s \"${junction}\" ]]; then ctat_chr=\$(grep -v '^#' \$CTAT/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=\$(awk '!/^#/ && \$1!=\"chr_donorA\"{print \$1; exit}' ${junction} | grep -c '^chr' || true); if [[ \"\$ctat_chr\" == \"1\" && \"\$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {if(\$1!~/^chr/)\$1=\"chr\"\$1; if(\$4!~/^chr/)\$4=\"chr\"\$4; if(\$1==\"chrMT\")\$1=\"chrM\"; if(\$4==\"chrMT\")\$4=\"chrM\"; print}' ${junction} > ${fn}.norm.junction; elif [[ \"\$ctat_chr\" == \"0\" && \"\$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {sub(/^chr/,\"\",\$1); sub(/^chr/,\"\",\$4); if(\$1==\"M\")\$1=\"MT\"; if(\$4==\"M\")\$4=\"MT\"; print}' ${junction} > ${fn}.norm.junction; else cp ${junction} ${fn}.norm.junction; fi; $FUSBIN --genome_lib_dir \$CTAT -J ${fn}.norm.junction --output_dir ${od} --CPU ${task.cpus} $FUSPARAMS &>> log; else mkdir -p ${od}; echo \"File ${junction} empty, no chimeric STAR output found\" >> log; fi; mkdir -p ${od}; touch ${od}/star-fusion.fusion_predictions.tsv ${od}/star-fusion.fusion_predictions.abridged.tsv
     """
 }
 

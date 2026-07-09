@@ -315,10 +315,10 @@ else:
     CTATGENOMEDIR = None
 if not rundedup:
     rule themall:
-        input:  expand("FUSIONS/{combo}/{file}_fusions", combo=combo, file=samplecond(SAMPLES, config))
+        input:  expand("FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv", combo=combo, file=samplecond(SAMPLES, config))
 else:
     rule themall:
-        input:  expand("FUSIONS/{combo}/{file}_{type}", combo=combo, file=samplecond(SAMPLES, config), type=['sorted', 'sorted_dedup'])
+        input:  expand("FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv", combo=combo, file=samplecond(SAMPLES, config))
 rule generate_ctat_lib:
     input:  fa = REFERENCE,
             anno = ANNOTATION
@@ -340,44 +340,44 @@ if not fastqmode:
     rule starfusion:
         input:  junction = expand("MAPPED/{scombo}/{{file}}.Chimeric.out.junction", scombo=scombo),
                 lib = ctat_lib_input
-        output: fusions = "FUSIONS/{combo}/{file}_fusions",
-                normjunc = "FUSIONS/{combo}/{file}.Chimeric.norm.junction",
-                outdir = temp(directory("FUSIONS/{combo}/{file}_tmp"))
+        output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
+                abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv",
+                normjunc = "FUSIONS/{combo}/{file}.Chimeric.norm.junction"
         log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
         conda:  "<REPO>/envs/"+FENV+".yaml"
         container: "oras://docker.io/jfallmann/monsda:"+FENV+""
         threads: MAXTHREAD
         params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                 sf = FBIN
-        shell:  "set +o pipefail; if [[ -s \"{input.junction}\" ]]; then ctat_chr=$(grep -v '^#' {input.lib}/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=$(awk '!/^#/ && $1!=\"chr_donorA\"{{print $1; exit}}' {input.junction} | grep -c '^chr' || true); if [[ \"$ctat_chr\" == \"1\" && \"$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{if($1!~/^chr/)$1=\"chr\"$1; if($4!~/^chr/)$4=\"chr\"$4; if($1==\"chrMT\")$1=\"chrM\"; if($4==\"chrMT\")$4=\"chrM\"; print}}' {input.junction} > {output.normjunc}; elif [[ \"$ctat_chr\" == \"0\" && \"$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{sub(/^chr/,\"\",$1); sub(/^chr/,\"\",$4); if($1==\"M\")$1=\"MT\"; if($4==\"M\")$4=\"MT\"; print}}' {input.junction} > {output.normjunc}; else cp {input.junction} {output.normjunc}; fi; {params.sf} --genome_lib_dir {input.lib} -J {output.normjunc} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; else mkdir -p {output.outdir}; touch {output.normjunc}; echo \"File {input.junction} empty, no chimeric STAR output found\" >> {log}; fi; touch {output.fusions}"
+        shell:  "set +o pipefail; OUTDIR=$(dirname {output.preds}); if [[ -s \"{input.junction}\" ]]; then ctat_chr=$(grep -v '^#' {input.lib}/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=$(awk '!/^#/ && $1!=\"chr_donorA\"{{print $1; exit}}' {input.junction} | grep -c '^chr' || true); if [[ \"$ctat_chr\" == \"1\" && \"$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{if($1!~/^chr/)$1=\"chr\"$1; if($4!~/^chr/)$4=\"chr\"$4; if($1==\"chrMT\")$1=\"chrM\"; if($4==\"chrMT\")$4=\"chrM\"; print}}' {input.junction} > {output.normjunc}; elif [[ \"$ctat_chr\" == \"0\" && \"$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{sub(/^chr/,\"\",$1); sub(/^chr/,\"\",$4); if($1==\"M\")$1=\"MT\"; if($4==\"M\")$4=\"MT\"; print}}' {input.junction} > {output.normjunc}; else cp {input.junction} {output.normjunc}; fi; {params.sf} --genome_lib_dir {input.lib} -J {output.normjunc} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; else mkdir -p $OUTDIR; touch {output.normjunc}; echo \"File {input.junction} empty, no chimeric STAR output found\" >> {log}; fi; touch {output.preds} {output.abridged}"
 else:
     if paired == 'paired':
         rule starfusion:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
                     lib = ctat_lib_input
-            output: fusions = "FUSIONS/{combo}/{file}_fusions",
-                    outdir = temp(directory("FUSIONS/{combo}/{file}_tmp"))
+            output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
+                    abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
             log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
             container: "oras://docker.io/jfallmann/monsda:"+FENV+""
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN
-            shell:  "{params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --right_fq {input.r2} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"
+            shell:  "OUTDIR=$(dirname {output.preds}); {params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --right_fq {input.r2} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; touch {output.preds} {output.abridged}"
     else:
         rule starfusion:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
                     lib = ctat_lib_input
-            output: fusions = "FUSIONS/{combo}/{file}_fusions",
-                    outdir = temp(directory("FUSIONS/{combo}/{file}_tmp"))
+            output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
+                    abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
             log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
             container: "oras://docker.io/jfallmann/monsda:"+FENV+""
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN
-            shell:  "{params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --output_dir {output.outdir} --CPU {threads} {params.fpara} &> {log} && cp {output.outdir}/star-fusion.fusion_predictions.tsv {output.fusions} 2>> {log}; touch {output.fusions}"
+            shell:  "OUTDIR=$(dirname {output.preds}); {params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; touch {output.preds} {output.abridged}"
 
 
 ## Queue-agnostic fallback resources for all rules.
