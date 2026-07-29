@@ -81,10 +81,18 @@
     "MAPPING": {
         "TOOLS": {
             "star": "STAR",
+            "rustar": "rustar",
             "bwa": "bwa mem"
         },
         "Test": {
             "star": {
+                "OPTIONS": {
+                    "INDEX": "",
+                    "MAP": "--outSAMprimaryFlag AllBestScore",
+                    "EXTENSION": ""
+                }
+            },
+            "rustar": {
                 "OPTIONS": {
                     "INDEX": "",
                     "MAP": "--outSAMprimaryFlag AllBestScore",
