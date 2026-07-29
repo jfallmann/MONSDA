@@ -157,6 +157,7 @@
     "MAPPING": { #options for mapping for each sample/condition
                  "TOOLS": {
                      "star": "STAR",
+                     "rustar": "rustar",
                      "segemehl3": "segemehl.x",
                      "segemehl": "segemehl.x",
                      "hisat2": "hisat2",
@@ -173,6 +174,14 @@
                              "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
                              "star":{
                                  "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                    {
+                                        "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
+                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
+                                        "EXTENSION" : ""
+                                    }
+                             },
+                             "rustar":{
+                                 "OPTIONS":  # drop-in STAR replacement (rustar-aligner), same options as star
                                     {
                                         "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
                                         "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
