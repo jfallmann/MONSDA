@@ -5,7 +5,6 @@ channels:
   - nodefaults
 dependencies:
   - rust >=1.75
-  - cargo
   - git
   - zlib
   - pigz =2.6
