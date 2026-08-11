@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,8 @@ from snakemake.common.configfile import load_configfile  # noqa: E402
 
 import MONSDA.Params as mp  # noqa: E402
 import MONSDA.Workflows as mw  # noqa: E402
+from MONSDA.Containers import normalize_container_version  # noqa: E402
+from scripts.container_matrix import environment_names  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 DATA = REPO / "tests" / "data"
@@ -20,7 +23,7 @@ UPDATE = bool(os.environ.get("UPDATE_GOLDEN"))
 
 
 @pytest.fixture(autouse=True)
-def _repo_template_paths():
+def _repo_template_paths(monkeypatch):
     """Point the generators at the in-repo workflow/env templates.
 
     In a dev checkout MONSDA is not pip-installed, so the module-level
@@ -30,6 +33,7 @@ def _repo_template_paths():
     old_wf, old_env = mw.workflowpath, mw.envpath
     mw.workflowpath = str(REPO / "workflows")
     mw.envpath = str(REPO / "envs") + os.sep
+    monkeypatch.setattr(mw, "normalize_container_version", lambda version=None: "VERSION")
     yield
     mw.workflowpath, mw.envpath = old_wf, old_env
 
@@ -394,17 +398,77 @@ def test_engines_expose_same_tools(both_engines):
             )
 
 
-def test_oras_namespace_and_registry_rewrite():
+@pytest.mark.parametrize(
+    "version,expected",
+    [
+        ("1.5.0", "1.5.0"),
+        ("1.5.0+12.gabcdef", "1.5.0-12.gabcdef"),
+        ("1.5.0+12.gabcdef.dirty", "1.5.0-12.gabcdef"),
+        ("v2.0.0/a", "2.0.0-a"),
+    ],
+)
+def test_normalize_container_version(version, expected):
+    assert normalize_container_version(version) == expected
+
+
+def test_normalize_container_version_rejects_empty_tag():
+    with pytest.raises(ValueError):
+        normalize_container_version("+++")
+
+
+def test_oras_namespace_registry_and_version_rewrite(monkeypatch):
     line = 'container: "oras://jfallmann/monsda:"+MAPPERENV'
+    monkeypatch.setattr(mw, "normalize_container_version", lambda version=None: "1.5.0")
     try:
         assert mw._rewrite_oras(line) == (
-            'container: "oras://docker.io/jfallmann/monsda:"+MAPPERENV'
+            'container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+"-1.5.0"'
         )
         mw.set_oras_namespace("myuser/myrepo")
-        mw.set_oras_registry("ghcr.io")
+        mw.set_oras_registry("registry.example.org")
         assert mw._rewrite_oras(line) == (
-            'container: "oras://ghcr.io/myuser/myrepo:"+MAPPERENV'
+            'container: "oras://registry.example.org/myuser/myrepo:"+MAPPERENV+"-1.5.0"'
         )
     finally:
         mw.set_oras_namespace(mw.oras_default_namespace)
-        mw.set_oras_registry("docker.io")
+        mw.set_oras_registry("ghcr.io")
+
+
+def test_oras_static_and_nextflow_containers_are_versioned(monkeypatch):
+    monkeypatch.setattr(mw, "normalize_container_version", lambda version=None: "1.5.0")
+    content = (
+        'container: "oras://jfallmann/monsda:perl"\n'
+        '    container "oras://jfallmann/monsda:"+"$QCENV"\n'
+    )
+    assert mw._rewrite_oras(content) == (
+        'container: "oras://ghcr.io/jfallmann/monsda:perl"+"-1.5.0"\n'
+        '    container "oras://ghcr.io/jfallmann/monsda:"+"$QCENV"+"-1.5.0"\n'
+    )
+
+
+def test_container_matrix_covers_every_environment():
+    expected = sorted(path.stem for path in (REPO / "envs").glob("*.yaml"))
+    assert environment_names(REPO) == expected
+
+
+def test_all_template_container_calls_are_versioned():
+    calls = list()
+    for pattern in ("*.smk", "*.nf"):
+        for path in (REPO / "workflows").glob(pattern):
+            calls.extend(
+                line for line in path.read_text().splitlines()
+                if "container" in line and "oras://" in line
+            )
+    assert calls
+    rewritten = [mw._rewrite_oras(line) for line in calls]
+    assert all(line.endswith('+"-VERSION"') for line in rewritten)
+
+
+def test_static_container_environments_exist():
+    static = set()
+    pattern = re.compile(r"oras://jfallmann/monsda:([A-Za-z0-9_.-]+)\"")
+    for suffix in ("*.smk", "*.nf"):
+        for path in (REPO / "workflows").glob(suffix):
+            static.update(pattern.findall(path.read_text()))
+    available = set(environment_names(REPO))
+    assert static
+    assert static <= available

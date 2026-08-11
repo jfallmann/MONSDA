@@ -49,7 +49,7 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
 
 process starfusion{
     conda "<REPO>/envs/${params.gFUSENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gFUSENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gFUSENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',

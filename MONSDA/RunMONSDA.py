@@ -141,10 +141,9 @@ def parseargs():
     parser.add_argument(
         "--oras-registry",
         type=str,
-        default="docker.io",
+        default="ghcr.io",
         metavar="HOST",
-        help="Container registry hostname for ORAS image pulls (default: docker.io). "
-             "Use e.g. ghcr.io for GitHub Container Registry.",
+        help="Container registry hostname for ORAS image pulls (default: ghcr.io).",
     )
     parser.add_argument(
         "--oras-namespace",
