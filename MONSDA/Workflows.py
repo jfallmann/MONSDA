@@ -37,6 +37,7 @@ from snakemake.common.configfile import load_configfile
 
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
+from MONSDA.Containers import normalize_container_version
 from MONSDA.Utils import check_run as check_run
 from MONSDA.Utils import dump_if_different, write_if_different
 
@@ -56,9 +57,22 @@ logfix = re.compile(r'loglevel="INFO"')
 # Matches oras:// NOT already followed by a registry host (i.e. followed directly by a
 # Docker Hub namespace like "jfallmann/" without dots before the first slash)
 oraspath = re.compile(r'oras://(?![\w.-]+\.[\w.-]+/)')
-oras_registry = "docker.io"
+oras_registry = "ghcr.io"
 oras_default_namespace = "jfallmann/monsda"
 oras_namespace = oras_default_namespace
+
+
+def _version_oras_containers(content: str, version: str = None) -> str:
+    """Append the MONSDA version to each generated ORAS container reference."""
+    tag = normalize_container_version(version)
+    lines = list()
+    for line in content.splitlines(keepends=True):
+        body = line.rstrip("\r\n")
+        ending = line[len(body):]
+        if "container" in body and "oras://" in body and f'-{tag}"' not in body:
+            body += f'+"-{tag}"'
+        lines.append(body + ending)
+    return "".join(lines)
 
 
 def set_oras_registry(registry: str):
@@ -74,7 +88,8 @@ def set_oras_namespace(namespace: str):
 
 
 def _rewrite_oras(content: str) -> str:
-    """Apply configured ORAS namespace and registry to oras:// URIs."""
+    """Version ORAS images and apply the configured namespace and registry."""
+    content = _version_oras_containers(content)
     if oras_namespace != oras_default_namespace:
         content = content.replace(
             "oras://" + oras_default_namespace, "oras://" + oras_namespace

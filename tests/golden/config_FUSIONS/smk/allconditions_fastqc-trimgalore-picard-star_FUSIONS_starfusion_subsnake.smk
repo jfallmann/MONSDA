@@ -327,7 +327,7 @@ rule generate_ctat_lib:
             tmpanno = temp(expand("TMP/{fenv}/ctat_ref.gtf", fenv=FENV))
     log:    expand("LOGS/{sets}/{fenv}.ctat.log", sets=SETS, fenv=FENV)
     conda:  "<REPO>/envs/"+FENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+FENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
     threads: MAXTHREAD
     params: sf = FBIN,
             bpara = lambda wildcards: tool_params(SAMPLES[0], None, config, "FUSIONS", FENV)['OPTIONS'].get('BUILD', "")
@@ -345,7 +345,7 @@ if not fastqmode:
                 normjunc = "FUSIONS/{combo}/{file}.Chimeric.norm.junction"
         log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
         conda:  "<REPO>/envs/"+FENV+".yaml"
-        container: "oras://docker.io/jfallmann/monsda:"+FENV+""
+        container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
         threads: MAXTHREAD
         params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                 sf = FBIN
@@ -360,7 +360,7 @@ else:
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
             log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
-            container: "oras://docker.io/jfallmann/monsda:"+FENV+""
+            container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN
@@ -373,7 +373,7 @@ else:
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
             log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
-            container: "oras://docker.io/jfallmann/monsda:"+FENV+""
+            container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
             threads: MAXTHREAD
             params: fpara = lambda wildcards: tool_params(wildcards.file, None, config, "FUSIONS", FENV)['OPTIONS'].get('FUSION', ""),
                     sf = FBIN

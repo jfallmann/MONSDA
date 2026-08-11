@@ -336,7 +336,7 @@ rule salmon_index:
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
     log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
     conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+COUNTENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
     threads: MAXTHREAD
     params: mapp = COUNTBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
@@ -370,7 +370,7 @@ if paired == 'paired':
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-        container: "oras://docker.io/jfallmann/monsda:"+COUNTENV+""
+        container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
@@ -386,7 +386,7 @@ else:
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
         log:    "LOGS/{combo}/{file}/salmonquant.log"
         conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-        container: "oras://docker.io/jfallmann/monsda:"+COUNTENV+""
+        container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                 mapp=COUNTBIN,
@@ -399,7 +399,7 @@ if runterminus:
         output: grp = "DTU/{combo}/terminus/{file}/groups.txt"
         log:    "LOGS/{combo}/{file}/terminus_group.log"
         conda:  "<REPO>/envs/"+TERMINUSENV+".yaml"
-        container: "oras://docker.io/jfallmann/monsda:"+TERMINUSENV+""
+        container: "oras://ghcr.io/jfallmann/monsda:"+TERMINUSENV+""+"-VERSION"
         threads: MAXTHREAD
         params: tpara = termpara,
                 outdir = lambda wildcards, output: os.path.dirname(os.path.dirname(str(output.grp)))
@@ -410,7 +410,7 @@ if runterminus:
         output: cnts = expand("DTU/{combo}/terminus/{file}/quant.sf.gz", combo=combo, file=samplecond(SAMPLES, config))
         log:    expand("LOGS/DTU/{combo}/terminus_collapse.log", combo=combo)
         conda:  "<REPO>/envs/"+TERMINUSENV+".yaml"
-        container: "oras://docker.io/jfallmann/monsda:"+TERMINUSENV+""
+        container: "oras://ghcr.io/jfallmann/monsda:"+TERMINUSENV+""+"-VERSION"
         threads: MAXTHREAD
         params: outdir = lambda wildcards, input: os.path.dirname(os.path.dirname(str(input.grps[0])))
         shell:  "terminus collapse -d {input.dirs} -o {params.outdir} &> {log}; for d in {input.dirs}; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
@@ -422,7 +422,7 @@ rule create_annotation_table:
     output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
     log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
     conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+COUNTENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
     threads: 1
     params: dereps = lambda wildcards, input: get_reps(input.dir, config, 'DTU'),
             bins = BINS
@@ -437,7 +437,7 @@ rule run_DTU:
             fig_W   = rules.themall.input.fig_W
     log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+DTUENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins   = str.join(os.sep,[BINS, DTUBIN]),
             compare = comparison,
@@ -457,7 +457,7 @@ rule filter_significant_spit:
             sig_ut  = rules.themall.input.sig_ut
     log:    "LOGS/DTU/filter_spitDTU.log"
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+DTUENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
@@ -478,7 +478,7 @@ rule create_summary_snippet:
     output: rules.themall.input.Rmd
     log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
-    container: "oras://docker.io/jfallmann/monsda:"+DTUENV+""
+    container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]

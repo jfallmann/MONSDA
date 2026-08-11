@@ -62,7 +62,7 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
 
 process qc_raw{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -90,7 +90,7 @@ workflow QC_RAW{
 }
 process qc_trimmed{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -117,7 +117,7 @@ workflow QC_TRIMMING{
 }
 process qc_mapped{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -144,7 +144,7 @@ workflow QC_MAPPING{
 }
 process qc_dedup{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -173,7 +173,7 @@ workflow QC_DEDUP{
 
 process trim{
     conda "<REPO>/envs/${params.gTRIMENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gTRIMENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gTRIMENV}"+"-VERSION"
     cpus 4
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
@@ -222,7 +222,7 @@ workflow TRIMMING{
 
 process dedup_bam{
     conda "<REPO>/envs/${params.gDEDUPENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gDEDUPENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gDEDUPENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -278,7 +278,7 @@ process collect_tomap{
 }
 process star_idx{
     conda "<REPO>/envs/${params.gMAPENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gMAPENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gMAPENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     label 'big_mem'
@@ -304,7 +304,7 @@ process star_idx{
 }
 process star_mapping{
     conda "<REPO>/envs/${params.gMAPENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gMAPENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gMAPENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     label 'big_mem'
@@ -395,7 +395,7 @@ workflow MAPPING{
 
 process sortsam{
     conda "<REPO>/envs/samtools.yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"samtools"
+    container "oras://ghcr.io/jfallmann/monsda:"+"samtools"+"-VERSION"
     cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
@@ -418,7 +418,7 @@ process sortsam{
 }
 process sam2bam{
     conda "<REPO>/envs/samtools.yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"samtools"
+    container "oras://ghcr.io/jfallmann/monsda:"+"samtools"+"-VERSION"
     cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
@@ -444,7 +444,7 @@ process sam2bam{
 }
 process uniqsam{
     conda "<REPO>/envs/samtools.yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"samtools"
+    container "oras://ghcr.io/jfallmann/monsda:"+"samtools"+"-VERSION"
     cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
@@ -473,7 +473,7 @@ process uniqsam{
 }
 process sam2bamuniq{
     conda "<REPO>/envs/samtools.yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"samtools"
+    container "oras://ghcr.io/jfallmann/monsda:"+"samtools"+"-VERSION"
     cpus params.gTHREADS
     memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
 	cache 'lenient'
@@ -514,7 +514,7 @@ workflow POSTMAPPING{
 
 process mqc{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gQCENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',

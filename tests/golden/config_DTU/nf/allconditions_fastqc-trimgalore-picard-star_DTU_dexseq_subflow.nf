@@ -62,7 +62,7 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
 
 process salmon_quant{
     conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gCOUNTENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gCOUNTENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -117,7 +117,7 @@ process salmon_quant{
 }
 process create_summary_snippet{
     conda "<REPO>/envs/${params.gDTUENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gDTUENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gDTUENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -138,7 +138,7 @@ process create_summary_snippet{
 }
 process terminus_collapse{
     conda "<REPO>/envs/terminus.yaml"
-    container "oras://docker.io/jfallmann/monsda:terminus"
+    container "oras://ghcr.io/jfallmann/monsda:terminus"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -159,7 +159,7 @@ process terminus_collapse{
 }
 process salmon_idx{
     conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gCOUNTENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gCOUNTENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
@@ -187,7 +187,7 @@ process salmon_idx{
 }
 process prepare_dtu_annotation{
     conda "<REPO>/envs/${params.gDTUENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gDTUENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gDTUENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -207,7 +207,7 @@ process prepare_dtu_annotation{
 }
 process run_dexseq{
     conda "<REPO>/envs/${params.gDTUENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gDTUENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gDTUENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -239,7 +239,7 @@ process run_dexseq{
 }
 process collect_dexseq{
     conda "<REPO>/envs/${params.gDTUENV}"+".yaml"
-    container "oras://docker.io/jfallmann/monsda:"+"${params.gDTUENV}"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gDTUENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     input:
