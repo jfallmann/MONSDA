@@ -5,8 +5,6 @@ keydict["DECOY"] = DECOY
 keydict["ENV"] = MAPPERENV
 unik = get_dict_hash(keydict)
 
-rammapbuild = 'command -v rammap >/dev/null 2>&1 || cargo install --git https://github.com/jwanglab/rammap --root ${{CONDA_PREFIX:-$PWD/.cargo}} >> {log} 2>&1; export PATH=${{CONDA_PREFIX:-$PWD/.cargo}}/bin:$PATH; '
-
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
@@ -18,7 +16,7 @@ rule generate_index:
     params: indexer=MAPPERBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell: rammapbuild + "{params.indexer} -t {threads} -d {output.uidx} {params.ipara} {input.fa} 2> {log} && ln -s {params.linkidx} {output.idx}"
+    shell: "{params.indexer} -t {threads} -d {output.uidx} {params.ipara} {input.fa} 2> {log} && ln -s {params.linkidx} {output.idx}"
 
 if paired == 'paired':
     rule mapping:
@@ -34,7 +32,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN
-        shell: rammapbuild + "{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.q1} {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell: "{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.q1} {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
@@ -48,4 +46,4 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN
-        shell: rammapbuild + "{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell: "{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"

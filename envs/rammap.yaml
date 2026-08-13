@@ -4,8 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - rust >=1.75
-  - git
+  - rammap =1.1.2
   - zlib
   - pigz =2.6
   - samtools =1.21
