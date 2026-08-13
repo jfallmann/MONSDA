@@ -1569,7 +1569,9 @@ def set_workflows(wf=None):
             if (
                 "FEATURES" in project.baseDict[workflow].keys()
                 and not project.workflowsDict[workflow]["FEATURES"]
+                and "countreads" in tools_to_use
             ):
+                opt_dict = NestedDefaultDict()
                 number = 1
                 for k in project.baseDict[workflow]["FEATURES"].keys():
                     opt_dict[number] = k
