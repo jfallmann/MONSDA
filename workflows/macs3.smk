@@ -88,7 +88,7 @@ if ANNOPEAK is not None:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
                 pa = rules.AnnotatePeak.output,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -104,7 +104,7 @@ if ANNOPEAK is not None:
 else:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -135,7 +135,7 @@ rule NormalizeBedg:
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),

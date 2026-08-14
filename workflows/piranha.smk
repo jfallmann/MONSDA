@@ -72,7 +72,7 @@ include: "manipulate_genome.smk"
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
-            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}_extendbed_{type}.log"
     conda:  "perl.yaml"
@@ -83,7 +83,7 @@ rule extendbed:
 
 rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
-            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}_revextendbed_{type}.log"
     conda:  "perl.yaml"
@@ -95,8 +95,8 @@ rule rev_extendbed:
 if IP == 'iCLIP':
      rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}.bed.gz", scombo=scombo),
-                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_{type}.log"
@@ -110,8 +110,8 @@ if IP == 'iCLIP':
 elif IP == 'revCLIP':
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}.bed.gz", scombo=scombo),
-                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
@@ -125,8 +125,8 @@ elif IP == 'revCLIP':
 else:
     rule BedToBedg:
         input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}.bed.gz", scombo=scombo),
-                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
         log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
@@ -191,7 +191,7 @@ if ANNOPEAK is not None:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
                 pa = rules.AnnotatePeak.output,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -207,7 +207,7 @@ if ANNOPEAK is not None:
 else:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -238,7 +238,7 @@ rule NormalizeBedg:
 rule PeakToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),

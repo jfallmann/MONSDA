@@ -187,10 +187,10 @@ class GUIDE:
                 if not a:
                     self.answer = a
                     break
-                ending = proof.replace("end_exist_", "") + "$"
-                if not re.findall(ending, a):
+                endings = proof.replace("end_exist_", "").split("|")
+                if not any(a.endswith(ending) for ending in endings):
                     self.clear(2)
-                    prRed(f"Nope, file has to end with '{ending.replace('$','')}'")
+                    prRed(f"Nope, file has to end with '{' or '.join(endings)}'")
                     continue
                 elif not os.path.isfile(a):
                     self.clear(2)
@@ -1169,7 +1169,10 @@ def set_settings():
                     else:
                         s = last_answer
                     if key in ["GTF", "GFF"]:
-                        p = f"end_exist_.{key.lower()}.gz"
+                        suffix = f".{key.lower()}"
+                        p = f"end_exist_{suffix}|{suffix}.gz|{suffix}.bgz"
+                    elif key == "REFERENCE":
+                        p = "end_exist_.fa|.fa.gz|.fa.bgz"
                     elif key == "IP":
                         p = None
                     else:

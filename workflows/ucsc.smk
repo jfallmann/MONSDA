@@ -47,8 +47,8 @@ for file in samplecond(SAMPLES, config):
 if not all(checklist):
     rule BedToBedg:
         input:  bed = "BED/{combo}/{file}_mapped_{type}.bed.gz",
-                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bedg.gz",
                 re = "TRACKS/{combo}/{file}_mapped_{type}.re.bedg.gz"
         log:    "LOGS/TRACKS/{combo}/{file}_{type}_ucscbedtobedgraph.log"
@@ -75,7 +75,7 @@ rule NormalizeBedg:
 rule BedgToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bw",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.bw",
             tfw = temp("TRACKS/{combo}/{file}_mapped_{type}.fw.tmp"),

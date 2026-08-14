@@ -1436,23 +1436,23 @@ function loadProjectConditions() {
           </select>
         </div>
         <div>
-          <label>Reference genome (.fa.gz)</label>
+          <label>Reference genome (.fa, .fa.gz or .fa.bgz)</label>
           <div class="pathline">
-            <input class="cond-reference" id="${id}_ref" value="${escHtml(c.reference)}" placeholder="/path/to/genome.fa.gz" />
+            <input class="cond-reference" id="${id}_ref" value="${escHtml(c.reference)}" placeholder="/path/to/genome.fa" />
             <button type="button" onclick="openPathBrowser('${id}_ref','all')">Browse&hellip;</button>
           </div>
         </div>
         <div>
-          <label>GTF annotation (.gtf.gz)</label>
+          <label>GTF annotation (.gtf, .gtf.gz or .gtf.bgz)</label>
           <div class="pathline">
-            <input class="cond-gtf" id="${id}_gtf" value="${escHtml(c.gtf)}" placeholder="/path/to/annotation.gtf.gz" />
+            <input class="cond-gtf" id="${id}_gtf" value="${escHtml(c.gtf)}" placeholder="/path/to/annotation.gtf" />
             <button type="button" onclick="openPathBrowser('${id}_gtf','all')">Browse&hellip;</button>
           </div>
         </div>
         <div>
-          <label>GFF annotation (optional)</label>
+          <label>GFF annotation (.gff, .gff.gz or .gff.bgz; optional)</label>
           <div class="pathline">
-            <input class="cond-gff" id="${id}_gff" value="${escHtml(c.gff)}" placeholder="(optional)" />
+            <input class="cond-gff" id="${id}_gff" value="${escHtml(c.gff)}" placeholder="/path/to/annotation.gff" />
             <button type="button" onclick="openPathBrowser('${id}_gff','all')">Browse&hellip;</button>
           </div>
         </div>

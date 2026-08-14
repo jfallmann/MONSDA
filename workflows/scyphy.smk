@@ -60,7 +60,7 @@ if not all(checklist):
     rule remove_softclip:
         input:  bam = "MAPPED/{scombo}/{file}_mapped_{type}.bam",
                 fa = REFERENCE,
-                refi = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
+                refi = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
         output: bam = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam",
                 bai = "MAPPED/{scombo}/{file}_mapped_{type}_nosoftclip.bam.bai"
         log:    "LOGS/PEAKS/{scombo}/{file}_removesoftclip_{type}.log"
@@ -97,7 +97,7 @@ if not all(checklist):
 
 rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz",
-            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}_nosoftclip.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}_extendbed_{type}.log"
     conda:  "perl.yaml"
@@ -108,7 +108,7 @@ rule extendbed:
 
 rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}_nosoftclip.bed.gz",
-            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}_nosoftclip.bed.gz"
     log:    "LOGS/PEAKS/{scombo}/{file}_revextendbed_{type}.log"
     conda:  "perl.yaml"
@@ -119,8 +119,8 @@ rule rev_extendbed:
 
 rule BedToBedg_ext:
     input:  bed = expand("BED/{scombo}/{{file}}_mapped_extended_{{type}}_nosoftclip.bed.gz", scombo=scombo),
-            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_ext.bedg.gz",
@@ -136,8 +136,8 @@ rule BedToBedg_ext:
 
 rule BedToBedg_rev:
     input:  bed = expand("BED/{scombo}/{{file}}_mapped_revtrimmed_{{type}}_nosoftclip.bed.gz", scombo=scombo),
-            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip_rev.bedg.gz",
@@ -153,8 +153,8 @@ rule BedToBedg_rev:
 
 rule BedToBedg:
     input:  bed = expand("BED/{scombo}/{{file}}_mapped_{{type}}_nosoftclip.bed.gz", scombo=scombo),
-            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: concat_fw = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.fw.bedg.gz",
             concat_re = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.re.bedg.gz",
             concat = "PEAKS/{combo}/{file}_mapped_{type}_nosoftclip.bedg.gz",
@@ -245,7 +245,7 @@ if ANNOPEAK is not None:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
                 pa = rules.AnnotatePeak.output,
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -261,7 +261,7 @@ if ANNOPEAK is not None:
 else:
     rule PeakToBedg:
         input:  pk = "PEAKS/{combo}/{file}_peak_{type}.bed.gz",
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.bedg.gz",
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
@@ -310,7 +310,7 @@ rule PeakToTRACKS:
             map_re_ext = rules.NormalizeBedg.output.map_re_ext,
             map_fw_rev = rules.NormalizeBedg.output.map_fw_rev,
             map_re_rev = rules.NormalizeBedg.output.map_re_rev,
-            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: fw = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw",
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             map_fw = "TRACKS/PEAKS/{combo}/{file}_mapped_{type}.fw.bw",
