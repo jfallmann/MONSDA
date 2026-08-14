@@ -1,0 +1,7 @@
+name: qc
+channels:
+- bioconda
+- conda-forge
+dependencies:
+- multiqc =1.21
+- rastqc =0.1.0
