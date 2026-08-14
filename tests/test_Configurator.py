@@ -68,3 +68,26 @@ def test_counting_features_only_prompted_for_countreads(
     assert bool(feature_prompts) is expect_features
     if expect_features:
         assert feature_prompts[0][1] == {1: "exon", 2: "gene"}
+
+
+@pytest.mark.parametrize(
+    ("suffix", "proof"),
+    [
+        (".fa", "end_exist_.fa|.fa.gz|.fa.bgz"),
+        (".fa.gz", "end_exist_.fa|.fa.gz|.fa.bgz"),
+        (".fa.bgz", "end_exist_.fa|.fa.gz|.fa.bgz"),
+        (".gtf", "end_exist_.gtf|.gtf.gz|.gtf.bgz"),
+        (".gtf.gz", "end_exist_.gtf|.gtf.gz|.gtf.bgz"),
+        (".gtf.bgz", "end_exist_.gtf|.gtf.gz|.gtf.bgz"),
+        (".gff", "end_exist_.gff|.gff.gz|.gff.bgz"),
+        (".gff.gz", "end_exist_.gff|.gff.gz|.gff.bgz"),
+        (".gff.bgz", "end_exist_.gff|.gff.gz|.gff.bgz"),
+    ],
+)
+def test_reference_and_annotation_formats(monkeypatch, tmp_path, suffix, proof):
+    path = tmp_path / f"input{suffix}"
+    path.write_text("test")
+    monkeypatch.setattr("builtins.input", lambda _: str(path))
+    guide = configurator.GUIDE()
+    guide.proof_input(False, proof)
+    assert guide.answer == str(path)

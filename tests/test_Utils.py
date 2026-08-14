@@ -245,11 +245,27 @@ class TestUtils(unittest.TestCase):
             os.remove(path)
 
     def test_check_ref(self):
-        reference = "test_ref"
-        with open(reference, "w") as f:
-            f.write("test")
-        self.assertEqual(check_ref(reference), reference)
-        os.remove(reference)
+        with tempfile.TemporaryDirectory() as directory:
+            reference = os.path.join(directory, "reference.fa")
+            with open(reference, "w") as f:
+                f.write("test")
+            self.assertEqual(check_ref(reference), reference)
+
+            gzip_reference = os.path.join(directory, "reference_gzip.fa.gz")
+            with open(gzip_reference, "w") as f:
+                f.write("test")
+            self.assertEqual(
+                check_ref(os.path.join(directory, "reference_gzip.fa")),
+                gzip_reference,
+            )
+
+            bgzip_reference = os.path.join(directory, "reference_bgzip.fa.bgz")
+            with open(bgzip_reference, "w") as f:
+                f.write("test")
+            self.assertEqual(
+                check_ref(os.path.join(directory, "reference_bgzip.fa")),
+                bgzip_reference,
+            )
 
     def test_multi_replace(self):
         repl = {"a": "1", "b": "2"}

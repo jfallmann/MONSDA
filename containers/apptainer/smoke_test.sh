@@ -12,6 +12,7 @@ fi
 
 "${runner[@]}" exec --cleanenv "$sif" sh -c '
     report=$(mktemp)
+    test -f /opt/MONSDA/scripts/Analysis/build_count_table_simple.py || exit 1
     found=0
     for bindir in /opt/conda/envs/*/bin; do
         test -d "$bindir" || continue

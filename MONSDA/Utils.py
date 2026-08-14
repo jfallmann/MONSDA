@@ -1130,6 +1130,8 @@ def check_ref(reference:str) -> str:
         return reference
     elif os.path.exists(os.path.abspath(reference + ".gz")):
         return reference + ".gz"
+    elif os.path.exists(os.path.abspath(reference + ".bgz")):
+        return reference + ".bgz"
 
 
 @check_run

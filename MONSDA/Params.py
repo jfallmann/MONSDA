@@ -160,9 +160,9 @@ def samplesheet_to_settings(samplesheet_path: str) -> dict:
       SAMPLE     - sample name / accession
       GROUP      - group label for differential analysis
       SEQUENCING - e.g. ``paired`` or ``single``
-      REFERENCE  - path to genome FASTA (.fa.gz)
-      GTF        - path to GTF annotation (.gtf.gz)  [optional]
-      GFF        - path to GFF annotation (.gff.gz)  [optional]
+      REFERENCE  - path to genome FASTA (.fa, .fa.gz or .fa.bgz)
+      GTF        - path to GTF annotation (.gtf, .gtf.gz or .gtf.bgz)  [optional]
+      GFF        - path to GFF annotation (.gff, .gff.gz or .gff.bgz)  [optional]
       INDEX      - path to pre-built index            [optional]
       PREFIX     - mapper index prefix                [optional]
       DECOY      - path to decoy file                 [optional]
