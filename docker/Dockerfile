@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba:2.0.5
+FROM mambaorg/micromamba:latest
 
 ARG ENVIRONMENT
 ARG MONSDA_VERSION
