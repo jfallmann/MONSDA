@@ -1938,7 +1938,7 @@ def fixRunParameters(
         return re.sub(paramToFix + " [0-9a-zA-Z\.\_\-\\\/]+", fixedParam, para)
     else:
         log.warning(
-            f"No parameter to fix {paramToFix} found or fix {fixedParam} defined for {para}!"
+            f"No parameter to fix {paramToFix} in INDEX options or fix {fixedParam} defined for {para}!"
         )
         return para
 
