@@ -8,7 +8,8 @@ unik = get_dict_hash(keydict)
 rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
-            uidx = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
+            uidx = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik),
+            tmpfa = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
@@ -16,7 +17,7 @@ rule generate_index:
     params: indexer=MAPPERBIN,
             ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('INDEX', ""),
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell: "{params.indexer} -t {threads} -d {output.uidx} {params.ipara} {input.fa} 2> {log} && ln -s {params.linkidx} {output.idx}"
+    shell: "gzip -cdfq {input.fa} > {output.tmpfa} && {params.indexer} -t {threads} -d {output.uidx} {params.ipara} {output.tmpfa} 2> {log} && ln -s {params.linkidx} {output.idx}"
 
 if paired == 'paired':
     rule mapping:
