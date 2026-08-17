@@ -174,7 +174,7 @@ def run_snakemake(
 ):
     try:
         logid = scriptname + ".run_snakemake: "
-        config = load_configfile(configfile)
+        config = mu.link_bgz_to_gz(load_configfile(configfile))
         subdir = "SubSnakes"
         mp.create_skeleton(subdir, skeleton)
 
@@ -498,7 +498,7 @@ def run_nextflow(
         logid = scriptname + ".run_nextflow: "
         argslist = list()
         writeout = True
-        config = load_configfile(configfile)
+        config = mu.link_bgz_to_gz(load_configfile(configfile))
         if useconda and not any(
             [
                 x in optionalargs
