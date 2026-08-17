@@ -38,7 +38,7 @@ process rammap_idx{
     script:
     gen =  genome.getName()
     """
-    $MAPBIN -t ${task.cpus} -d $MAPUIDXNAME $IDXPARAMS $gen &> index.log && ln -fs $MAPUIDXNAME rammap.idx
+    gzip -cdfq $gen > tmp_ref.fa && $MAPBIN -t ${task.cpus} -d $MAPUIDXNAME $IDXPARAMS tmp_ref.fa &> index.log && rm -f tmp_ref.fa && ln -fs $MAPUIDXNAME rammap.idx
     """
 
 }
