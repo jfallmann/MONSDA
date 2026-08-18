@@ -40,7 +40,7 @@ process rustqc_mapped{
     fn = file(bam).getSimpleName()
     anno = file("${workflow.workDir}/../${MAPANNO}")
     """
-    $RUSTQCBIN rna $bam --gtf $anno -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/rustqc_summary.json -o results/$fn $RUSTQCPARAMS
+    gzip -cdfq $anno > tmp_anno.gtf && $RUSTQCBIN rna $bam --gtf tmp_anno.gtf -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/rustqc_summary.json -o results/$fn $RUSTQCPARAMS && rm -f tmp_anno.gtf
     """
 }
 
