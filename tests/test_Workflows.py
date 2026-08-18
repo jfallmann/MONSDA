@@ -482,3 +482,15 @@ def test_rammap_is_provided_by_environment_without_runtime_install():
         assert "cargo install" not in workflow
         assert "RAMMAPBUILD" not in workflow
         assert "rammapbuild" not in workflow
+
+
+def test_container_builds_make_command_scripts_executable():
+    chmod_command = "find /opt/MONSDA/scripts -type f"
+    definitions = [
+        path
+        for path in (REPO / "containers" / "apptainer").glob("*.def")
+        if "scripts /opt/MONSDA" in path.read_text()
+    ]
+    assert definitions
+    assert all(chmod_command in path.read_text() for path in definitions)
+    assert chmod_command in (REPO / "docker" / "Dockerfile").read_text()
