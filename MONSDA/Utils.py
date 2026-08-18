@@ -1156,7 +1156,13 @@ def link_bgz_to_gz(config: dict) -> dict:
     logid = scriptname + ".Utils_link_bgz_to_gz: "
 
     def _fix(val):
-        if isinstance(val, str) and val.endswith(".bgz") and os.path.isfile(val):
+        if isinstance(val, str) and val.endswith(".bgz"):
+            if not os.path.isfile(val):
+                log.warning(
+                    logid
+                    + f"{val} is not a readable file (missing or dangling link?), cannot link to .gz"
+                )
+                return val
             gz = val[: -len(".bgz")] + ".gz"
             if os.path.isfile(gz):
                 log.info(logid + f"Using existing {gz} instead of {val}")
