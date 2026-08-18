@@ -11,7 +11,7 @@ rule call_base:
     output: fq = "FASTQ/{rawfile}.fastq.gz",
             summary = "FASTQ/{rawfile}_summary.txt",
             telemetry = "FASTQ/{rawfile}_telemetry.js"
-    log:    "LOGS/BASECALL/{rawfile}_guppy.log"
+    log:    "LOGS/{rawfile}/BASECALL/guppy/guppy.log"
     conda:  ""+CALLERENV+".yaml"
     container: "oras://jfallmann/monsda:"+CALLERENV+""
     threads: MAXTHREAD

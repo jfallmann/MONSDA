@@ -179,7 +179,7 @@ process trim{
     saveAs: {filename ->
         if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
         else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
-        else if (filename.indexOf(".log") >0)              "LOGS/${params.gCOMBO}/${params.gCONDITION}/TRIMMING/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") >0)              "LOGS/${params.gCOMBO}/${params.gCONDITION}/TRIMMING/trimgalore/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -229,10 +229,11 @@ process dedup_bam{
     saveAs: {filename ->
         if (filename.endsWith("_dedup.bam"))              "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
         else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/DEDUP/picard/${file(filename).getName()}"
         else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
         else null
     }
+    publishDir "${workflow.workDir}/../LOGS/${params.gCOMBO}/${params.gCONDITION}/DEDUP/picard" , mode: 'copy', pattern: "*_dedup_metrix.txt"
     input:
     path todedup
     path bami
@@ -284,7 +285,7 @@ process star_idx{
     label 'big_mem'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/${params.gCOMBO}/${params.gCONDITION}/star_index.log"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star/index.log"
         else if (filename.indexOf(".idx") > 0)           "${params.gMAPIDX}"
         else                                             "${params.gMAPUIDX}"
     }
@@ -299,7 +300,7 @@ process star_idx{
     gen =  genome.getName()
     an  = anno.getName()
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p ${params.gMAPUIDXNAME} && ${params.gMAPBIN} ${params.gIDXPARAMS} --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir ${params.gMAPUIDXNAME} --genomeFastaFiles tmp.fa && touch ${params.gMAPUIDXNAME} && ln -s ${params.gMAPUIDXNAME} star.idx && rm -f tmp.fa tmp_anno && ln -fs ${params.gMAPUIDXNAME}/* . && rm -rf STARTMP
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p ${params.gMAPUIDXNAME} && rm -rf STARTMP && ${params.gMAPBIN} ${params.gIDXPARAMS} --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir ${params.gMAPUIDXNAME} --genomeFastaFiles tmp.fa && touch ${params.gMAPUIDXNAME} && ln -s ${params.gMAPUIDXNAME} star.idx && rm -f tmp.fa tmp_anno && ln -fs ${params.gMAPUIDXNAME}/* . && rm -rf STARTMP
     """
 }
 process star_mapping{
@@ -311,8 +312,8 @@ process star_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_unmapped") > 0)       "UNMAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${file(filename).getName()}"
-        else if (filename.indexOf(".log") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star_"+"${file(filename).getName()}"
-        else if (filename.indexOf(".out") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star_"+"${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star/"+"${file(filename).getName()}"
+        else if (filename.indexOf(".out") >0)        "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/star/"+"${file(filename).getName()}"
         else if (filename.indexOf(".tab") >0)        "MAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${filename}"
         else                                         "MAPPED/${params.gCOMBO}/${params.gCONDITION}/"+"${filename}"
     }
@@ -426,7 +427,7 @@ process sam2bam{
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/samtools/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -451,7 +452,7 @@ process uniqsam{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("unique.sam.gz") > 0)   "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.sam.gz"
-        else if (filename.indexOf(".log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)       "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/samtools/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -481,7 +482,7 @@ process sam2bamuniq{
     saveAs: {filename ->
         if (filename.endsWith(".bam"))       "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam"
         else if (filename.indexOf(".bai") > 0)  "MAPPED/${params.gCOMBO}/${params.gCONDITION}/${file(filename).getSimpleName()}.bam.bai"
-        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") > 0)  "LOGS/${params.gCOMBO}/${params.gCONDITION}/MAPPING/samtools/${file(filename).getSimpleName()}.log"
         else null
     }
     input:
@@ -532,27 +533,31 @@ process mqc{
     """
     touch $others
     OUT=\${PWD}
-    LIST=multiqc_inputs.txt
-    TMP_LIST=multiqc_inputs_unique.txt
+    LOGDIR="${workflow.workDir}/../LOGS"
+    SCAN="\${LOGDIR}/${params.gCOMBO}/${params.gCONDITION}"
+    COLLECT="\${SCAN}/MULTIQC/collect"
+    VERSIONS="\${LOGDIR}/versions.txt"
+    EXTRA=""
     BASE_QC_DIR="${workflow.workDir}/../QC"
     COMBO_VAL="${params.gCOMBO}"
     CONDITION_VAL="${params.gCONDITION}"
+    mkdir -p "\$COLLECT"
     for i in $others; do
-        dirname "\$i" >> "\$LIST"
+        cp -f "\$i" "\$COLLECT"/
     done
-    # If this is a rustqc combo and the corresponding fastqc combo exists,
-    # include the fastqc output directory in the same MultiQC report.
-    if [[ "\$COMBO_VAL" == *"rustqc"* ]]; then
-        FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
-        FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
-        if [[ -d "\$FQ_DIR" ]]; then
-            echo "\$FQ_DIR" >> "\$LIST"
-        fi
+    # If the corresponding fastqc combo exists, include its output in the MultiQC report.
+    FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
+    FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
+    if [[ "\$FQ_COMBO" != "\$COMBO_VAL" && -d "\$FQ_DIR" ]]; then
+        EXTRA="\$FQ_DIR"
     fi
-    sort -u "\$LIST" > "\$TMP_LIST"
-    export LC_ALL=en_US.utf8
+    MODS=""
+    if [[ -f "\$VERSIONS" ]]; then
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        cp -f "\$VERSIONS" "\$OUT"/
+    fi
     export LC_ALL=C.UTF-8
-    multiqc -f --exclude picard --exclude gatk -k json -z -s -o "\$OUT" -l "\$TMP_LIST"
+    multiqc -f \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
     """
 }
 workflow MULTIQC{

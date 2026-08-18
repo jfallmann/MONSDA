@@ -35,7 +35,7 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/spit_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/spit/index.log"
         else if (filename == "spit.idx")           "$DTUIDX"
         else                                          "$DTUUIDX"
     }
@@ -71,7 +71,7 @@ process prepare_dtu_annotation{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".gz") > 0)       "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DTU/${SCOMBO}/featurecount_spit_annotation.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/DTU/spit/featurecount_spit_annotation.log"
     }
 
     output:
@@ -98,7 +98,7 @@ process run_spit{
         if (filename.indexOf("_table") > 0)      "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DTU/${SCOMBO}/Figures/${file(filename).getName()}" 
         else if (filename.indexOf("SESSION") > 0)      "DTU/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/${SCOMBO}/run_spit.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DTU/spit/run_spit.log"
     }
 
     input:

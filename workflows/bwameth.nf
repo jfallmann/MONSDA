@@ -40,7 +40,7 @@ process bwameth_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/bwameth_index.log"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/bwameth/index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
         else                                             "$MAPUIDX"
     }
@@ -74,7 +74,7 @@ process bwameth_mapping{
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/bwameth/${file(filename).getName()}"
         else null
     }
 

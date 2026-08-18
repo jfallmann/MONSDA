@@ -16,7 +16,7 @@ process prefetch_sra{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/Prefetch_SRA.log"
+        if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/sra/Prefetch_SRA.log"
         else null
     }
 
@@ -44,7 +44,7 @@ process download_sra{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)                "FASTQ/$CONDITION/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/SRA.log"
+        else if (filename.indexOf(".log") >0)              "LOGS/$CONDITION/FETCH/sra/SRA.log"
         else null
     }
 

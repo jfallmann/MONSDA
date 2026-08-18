@@ -41,7 +41,7 @@ process bwa_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "bwa.idx")                          "$MAPIDX"
-        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa_index.log"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/MAPPING/bwa/index.log"
         else                                                "$MAPUIDX"
     }
 
@@ -72,7 +72,7 @@ process bwa_mapping{
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/bwa/${file(filename).getName()}"
         else null
     }
 

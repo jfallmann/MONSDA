@@ -39,7 +39,24 @@ process premultiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s 
+    OUT=\${PWD}
+    LOGDIR="${workflow.workDir}/../LOGS"
+    SCAN="\${LOGDIR}/${CONDITION}"
+    COLLECT="\${SCAN}/MULTIQC/collect"
+    VERSIONS="\${LOGDIR}/versions.txt"
+    mkdir -p "\$COLLECT"
+
+    for i in $samples; do
+        cp -f "\$i" "\$COLLECT"/
+    done
+
+    MODS=""
+    if [[ -f "\$VERSIONS" ]]; then
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        cp -f "\$VERSIONS" "\$OUT"/
+    fi
+    export LC_ALL=C.UTF-8
+    multiqc -f \$MODS -k json -z -s -o "\$OUT" "\$SCAN"
     """
 }
 
@@ -50,7 +67,7 @@ workflow PREMULTIQC{
     main:
 
     //SAMPLE CHANNELS
-    multiqc(otherqcs.collect())
+    premultiqc(otherqcs.collect())
 
     emit:
     mqcres = premultiqc.out.multiqc_results

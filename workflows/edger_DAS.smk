@@ -25,7 +25,7 @@ rule featurecount_unique:
             tmph = temp("DAS/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DAS/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DAS/{combo}/{file}_featurecounts_edger_unique.log"
+    log:    "LOGS/{combo}/{file}/DAS/edger/featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -42,7 +42,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DAS/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DAS/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DAS/edger/{scombo}_prepare_count_table.log"
     conda:   ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -61,7 +61,7 @@ rule run_edger:
             list    = rules.themall.input.list,
             resS    = rules.themall.input.resS,
             resE    = rules.themall.input.resE
-    log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
+    log:    expand("LOGS/{combo}/DAS/edger/run_edger.log", combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -78,7 +78,7 @@ rule filter_significant_edger:
     output: sig= rules.themall.input.sig,
             sig_d= rules.themall.input.sig_d,
             sig_u= rules.themall.input.sig_u,
-    log:    "LOGS/DAS/filter_edgerDAS.log"
+    log:    expand("LOGS/{combo}/DAS/edger/filter_edgerDAS.log", combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -99,7 +99,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_u,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/{combo}/DAS/edger/create_summary_snippet.log",combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

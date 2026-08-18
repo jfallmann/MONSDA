@@ -8,7 +8,7 @@ process make_rmd{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename == 'SUMMARY.html')         "REPORTS/SUMMARY/SUMMARY.html"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/REPORTS/SUMMARY/make_rmd.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/SUMMARY/summary/make_rmd.log"
     }
 
     input:

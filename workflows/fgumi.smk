@@ -11,7 +11,7 @@ if paired == 'paired':
                 o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                 ubam = "TMP/FGEX/{combo}/{file}_extracted.bam",
                 td = temp(directory("TMP/FGEX/{combo}/{file}"))
-        log:   "LOGS/{combo}/{file}_dedup_extract.log"
+        log:   "LOGS/{combo}/{file}/DEDUP/fgumi/dedup_extract.log"
         conda: ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 1
@@ -25,7 +25,7 @@ else:
         output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                 ubam = "TMP/FGEX/{combo}/{file}_extracted.bam",
                 td = temp(directory("TMP/FGEX/{combo}/{file}"))
-        log:   "LOGS/{combo}/{file}_dedup_extract.log"
+        log:   "LOGS/{combo}/{file}/DEDUP/fgumi/dedup_extract.log"
         conda: ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 1
@@ -41,7 +41,7 @@ if paired == 'paired':
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        log:    "LOGS/{combo}/{file}/DEDUP/fgumi/dedupbam_{type}.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 4
@@ -67,7 +67,7 @@ else:
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        log:    "LOGS/{combo}/{file}/DEDUP/fgumi/dedupbam_{type}.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 4

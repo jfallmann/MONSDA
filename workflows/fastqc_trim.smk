@@ -16,7 +16,7 @@ if paired == 'paired':
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
-        log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
+        log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -26,7 +26,7 @@ if paired == 'paired':
     rule qc_trimmed:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{file}_{read}_fastqc_trimmed.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -39,7 +39,7 @@ if paired == 'paired':
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                 lst = "QC/Multi/{combo}/{condition}/qclist_trimmed_raw.txt"
-        log:    "LOGS/{combo}/{condition}_multiqc_trimmed_raw.log"
+        log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc_trimmed_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: 1
@@ -50,7 +50,7 @@ else:
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}.fastq.gz"
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
-        log:    "LOGS/QC/{combo}/{rawfile}_fastqc_raw.log"
+        log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -60,7 +60,7 @@ else:
     rule qc_trimmed:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
-        log:    "LOGS/QC/{combo}/{file}_fastqc_trimmed.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: MAXTHREAD
@@ -73,7 +73,7 @@ else:
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                 tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                 lst = "QC/Multi/{combo}/{condition}/qclist_trimmed_raw.txt"
-        log:    "LOGS/{combo}/{condition}_multiqc_trimmed_raw.log"
+        log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc_trimmed_raw.log"
         conda:  ""+QCENV+".yaml"
         container: "oras://jfallmann/monsda:"+QCENV+""
         threads: 1

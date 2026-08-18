@@ -310,7 +310,7 @@ if paired == 'paired':
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
-        log:    "LOGS/{combo}/{rawfile}_fastqc_{read}_raw.log"
+        log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_{read}_raw.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -320,7 +320,7 @@ if paired == 'paired':
     rule qc_dedup:
         input:  r1 = "DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{file}_{read}_fastqc_dedup.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_dedup.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -330,7 +330,7 @@ if paired == 'paired':
     rule qc_trimmed:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{file}_{read}_fastqc_trimmed.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_trimmed.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -341,7 +341,7 @@ else:
     rule qc_raw:
         input:  r1 = "FASTQ/{rawfile}.fastq.gz"
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{rawfile}_fastqc_raw.log"
+        log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_raw.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -351,7 +351,7 @@ else:
     rule qc_dedup:
         input:  r1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{file}_fastqc_dedup.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_dedup.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -361,7 +361,7 @@ else:
     rule qc_trimmed:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
-        log:    "LOGS/{combo}/{file}_fastqc_trimmed.log"
+        log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_trimmed.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -371,7 +371,7 @@ else:
 rule qc_mapped:
     input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"
     output:  o1 = report("QC/{combo}/{file}_mapped_sorted_fastqc.zip", category="QC")
-    log:     "LOGS/{combo}/{file}_fastqc_mapped.log"
+    log:     "LOGS/{combo}/{file}/QC/fastqc/fastqc_mapped.log"
     conda: "<REPO>/envs/"+QCENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -381,7 +381,7 @@ rule qc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_fastqc.zip", category="QC")
-    log:    "LOGS/{combo}/{file}_fastqc_uniquemapped.log"
+    log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_uniquemapped.log"
     conda: "<REPO>/envs/"+QCENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -391,7 +391,7 @@ rule qc_dedupmapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_dedup.bam.bai"
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_dedup_fastqc.zip", category="QC")
-    log:    "LOGS/{combo}/{file}_fastqc_dedupmapped.log"
+    log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_dedupmapped.log"
     conda: "<REPO>/envs/"+QCENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -401,7 +401,7 @@ rule qc_uniquededup:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam",
             r2 = "MAPPED/{combo}/{file}_mapped_sorted_unique_dedup.bam.bai"
     output: o1 = report("QC/{combo}/{file}_mapped_sorted_unique_dedup_fastqc.zip", category="QC")
-    log:    "LOGS/{combo}/{file}_fastqc_uniquededup.log"
+    log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_uniquededup.log"
     conda: "<REPO>/envs/"+QCENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+QCENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -416,7 +416,7 @@ if paired == 'paired':
                 r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
         output: o1 = "TRIMMED_FASTQ/{combo}/{file}_R1_val_1.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_R1_dedup_val_1.fq.gz",
                 o2 = "TRIMMED_FASTQ/{combo}/{file}_R2_val_2.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_R2_dedup_val_2.fq.gz"
-        log:    "LOGS/{combo}/{file}_trim.log"
+        log:    "LOGS/{combo}/{file}/TRIMMING/cutadapt/trim.log"
         conda: "<REPO>/envs/"+TRIMENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+TRIMENV+""+"-VERSION"
         threads: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/8),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
@@ -437,7 +437,7 @@ else:
     rule cutadapt_trim:
         input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
         output: o1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_dedup_trimmed.fq.gz"
-        log:    "LOGS/{combo}/{file}_trim.log"
+        log:    "LOGS/{combo}/{file}/TRIMMING/cutadapt/trim.log"
         conda: "<REPO>/envs/"+TRIMENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+TRIMENV+""+"-VERSION"
         threads: min(int(MAXTHREAD/8),4) if min(int(MAXTHREAD/2),4) >= 1 else (4 if int(MAXTHREAD) >= 4 else 1)
@@ -461,7 +461,7 @@ rule dedupbam:
             bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
             met = report("MAPPED/{combo}/{file}_mapped_{type}_dedup_metrics.txt", category="DEDUP"),
             td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-    log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+    log:    "LOGS/{combo}/{file}/DEDUP/picard/dedupbam_{type}.log"
     conda: "<REPO>/envs/"+DEDUPENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+DEDUPENV+""+"-VERSION"
     threads: 1
@@ -469,7 +469,7 @@ rule dedupbam:
     params: jpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('JAVA', ""),
             dpara = lambda wildcards: tool_params(wildcards.file, None, config, "DEDUP", DEDUPENV)['OPTIONS'].get('DEDUP', ""),
             dedup = DEDUPBIN
-    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR {output.td} --INPUT {input.bam} --OUTPUT {output.bam} --METRICS_FILE {output.met} {params.dpara} 2> {log} && samtools index {output.bam} 2>> {log}"
+    shell: "mkdir -p {output.td} && {params.dedup} {params.jpara} MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR {output.td} --INPUT {input.bam} --OUTPUT {output.bam} --METRICS_FILE {output.met} {params.dpara} 2> {log} && samtools index {output.bam} 2>> {log} && cp -f {output.met} $(dirname {log})/"
 
 MAPPERBIN, MAPPERENV = env_bin_from_config(config,'MAPPING')
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'MAPPING', MAPPERENV)['OPTIONS'], ['INDEX'])
@@ -482,9 +482,9 @@ rule generate_index:
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=unik)),
             idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX),
-            tmpfa = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV)),
-            tmpref = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+            tmpfa = temp(expand("TMP/{mape}_{unikey}/ref.fa", mape=MAPPERENV, unikey=unik)),
+            tmpref = temp(expand("TMP/{mape}_{unikey}/ref.anno", mape=MAPPERENV, unikey=unik))
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda: "<REPO>/envs/"+MAPPERENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -492,8 +492,9 @@ rule generate_index:
             ipara = lambda w,output: fixRunParameters(config, MAPPERENV, SAMPLES[0], None, 'MAPPING', 'INDEX', "--sjdbGTFfile", f"--sjdbGTFfile {output.tmpref}"),
             anno = ANNOTATION,                        
             pref = PREFIX,
-            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir TMP/star_generate_index --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf TMP/star_generate_index"
+            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
+            stmp = expand("TMP/{mape}_{unikey}/generate_index", mape=MAPPERENV, unikey=unik)[0]
+    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf {params.stmp} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.stmp} --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf {params.stmp}"
 if paired == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
@@ -504,10 +505,10 @@ if paired == 'paired':
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
-                log = "LOGS/{combo}/{file}/Log.out",
-                log_final = "LOGS/{combo}/{file}/Log.final.out",
+                log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
         conda: "<REPO>/envs/"+MAPPERENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -526,10 +527,10 @@ else:
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
-                    log = "LOGS/{combo}/{file}/Log.out",
-                    log_final = "LOGS/{combo}/{file}/Log.final.out",
+                    log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                     tmp = temp("TMP/STAROUT/{combo}/{file}")                    
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda: "<REPO>/envs/"+MAPPERENV+".yaml"
             container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+""+"-VERSION"
             threads: MAXTHREAD
@@ -549,10 +550,10 @@ else:
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
-                    log = "LOGS/{combo}/{file}/Log.out",
-                    log_final = "LOGS/{combo}/{file}/Log.final.out",
+                    log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                     tmp = temp("TMP/STAROUT/{combo}/{file}")
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda: "<REPO>/envs/"+MAPPERENV+".yaml"
             container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+""+"-VERSION"
             threads: MAXTHREAD
@@ -572,7 +573,7 @@ rule sortsam:
     output: sortedsam = report("MAPPED/{combo}/{file}_mapped_sorted.sam.gz", category="SORTING"),
             tmphead = temp("MAPPED/{combo}/{file}_mapped_header.gz"),
             tmpfile = temp("TMP/{combo}/{file}")
-    log:    "LOGS/{combo}/{file}/sortsam.log"
+    log:    "LOGS/{combo}/{file}/MAPPING/samtools/sortsam.log"
     conda: "<REPO>/envs/samtools.yaml"
     container: "oras://ghcr.io/jfallmann/monsda:samtools"+"-VERSION"
     threads: MAXTHREAD
@@ -584,7 +585,7 @@ rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam
     output: bam = report("MAPPED/{combo}/{file}_mapped_sorted.bam", category="2BAM"),
             bamindex = "MAPPED/{combo}/{file}_mapped_sorted.bam.bai"
-    log:    "LOGS/{combo}/{file}/sam2bam.log"
+    log:    "LOGS/{combo}/{file}/MAPPING/samtools/sam2bam.log"
     conda: "<REPO>/envs/samtools.yaml"
     container: "oras://ghcr.io/jfallmann/monsda:samtools"+"-VERSION"
     threads: MAXTHREAD
@@ -594,7 +595,7 @@ rule uniqsam:
     input:  sortedsam = rules.sortsam.output.sortedsam,
             bam = rules.sam2bam.output
     output: uniqsam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
-    log: "LOGS/{combo}/{file}/uniqsam.log"
+    log: "LOGS/{combo}/{file}/MAPPING/samtools/uniqsam.log"
     conda: "<REPO>/envs/samtools.yaml"
     container: "oras://ghcr.io/jfallmann/monsda:samtools"+"-VERSION"
     threads: MAXTHREAD
@@ -605,7 +606,7 @@ rule sam2bamuniq:
            bam = rules.sam2bam.output
     output:  uniqbam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", category="2BAM"),
              uniqbamindex = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
-    log:     "LOGS/{combo}/{file}/sam2bamuniq.log"
+    log:     "LOGS/{combo}/{file}/MAPPING/samtools/sam2bamuniq.log"
     conda: "<REPO>/envs/samtools.yaml"
     container: "oras://ghcr.io/jfallmann/monsda:samtools"+"-VERSION"
     threads: MAXTHREAD
@@ -627,16 +628,17 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-                log:    "LOGS/{combo}/{condition}_multiqc.log"
+                log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
                 conda: "<REPO>/envs/qc.yaml"
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
         else:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
@@ -647,16 +649,17 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-                log:    "LOGS/{combo}/{condition}_multiqc.log"
+                log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
                 conda: "<REPO>/envs/qc.yaml"
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
     else:
         if prededup:
             rule multiqc:
@@ -669,16 +672,17 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo,type=["sorted", "sorted_unique"])  
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo,type=["sorted", "sorted_unique"]),
+                        versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-                log:    "LOGS/{combo}/{condition}_multiqc.log"
+                log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
                 conda: "<REPO>/envs/qc.yaml"
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"                    
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"                    
         else:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
@@ -689,16 +693,17 @@ if rundedup:
                         expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
+                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                         tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                         lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-                log:    "LOGS/{combo}/{condition}_multiqc.log"
+                log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
                 conda: "<REPO>/envs/qc.yaml"
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 else:
     if paired == 'paired':
         rule multiqc:
@@ -707,16 +712,17 @@ else:
                     expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
+                    versions = "LOGS/versions.txt"
             output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-            log:    "LOGS/{combo}/{condition}_multiqc.log"
+            log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
             conda: "<REPO>/envs/qc.yaml"
             container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
             threads: 1
             params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
     else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
@@ -724,16 +730,17 @@ else:
                     expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
+                    expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo),
+                    versions = "LOGS/versions.txt"
             output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC"),
                     tmp = temp("QC/Multi/{combo}/{condition}/tmp"),
                     lst = "QC/Multi/{combo}/{condition}/qclist.txt"
-            log:    "LOGS/{combo}/{condition}_multiqc.log"
+            log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
             conda: "<REPO>/envs/qc.yaml"
             container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
             threads: 1
             params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-            shell:  "OUT=$(dirname {output.html}); for i in {input};do echo $(dirname \"${{i}}\") >> {output.tmp};done; cat {output.tmp} |sort -u > {output.lst};export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT -l {output.lst} 2> {log}"
+            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 
 
 ## Queue-agnostic fallback resources for all rules.

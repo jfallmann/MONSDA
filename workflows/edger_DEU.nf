@@ -30,7 +30,7 @@ process featurecount_edger{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
-        else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DEU/edger/featurecounts_edger_unique.log"
     }
 
     input:
@@ -79,7 +79,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DEU/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DEU/edger/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -111,7 +111,7 @@ process run_edger{
         if (filename.indexOf("_table") > 0)      "DEU/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DEU/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DEU/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/${SCOMBO}/run_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/edger/run_edger.log"
     }
 
     input:
@@ -145,7 +145,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DEU/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/edger/filter_deseq2.log"
     }
 
     input:
@@ -171,7 +171,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/edger/filter_edger.log"
     }
 
     input:

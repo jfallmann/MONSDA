@@ -19,7 +19,7 @@ process starfusion{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/FUSIONS/starfusion/${file(filename).getName()}"
         else      "FUSIONS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 

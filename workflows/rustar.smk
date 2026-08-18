@@ -12,7 +12,7 @@ rule generate_index:
             idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX),
             tmpfa = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV)),
             tmpref = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: MAXTHREAD
@@ -33,10 +33,10 @@ if paired == 'paired':
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
-                log = "LOGS/{combo}/{file}/Log.out",
-                log_final = "LOGS/{combo}/{file}/Log.final.out",
+                log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                 tmp = temp("TMP/RUSTAROUT/{combo}/{file}")
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
@@ -56,10 +56,10 @@ else:
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
-                    log = "LOGS/{combo}/{file}/Log.out",
-                    log_final = "LOGS/{combo}/{file}/Log.final.out",
+                    log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                     tmp = temp("TMP/RUSTAROUT/{combo}/{file}")                    
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -79,10 +79,10 @@ else:
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
-                    log = "LOGS/{combo}/{file}/Log.out",
-                    log_final = "LOGS/{combo}/{file}/Log.final.out",
+                    log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
                     tmp = temp("TMP/RUSTAROUT/{combo}/{file}")
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD

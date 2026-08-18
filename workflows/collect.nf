@@ -5,7 +5,7 @@ process collect_stuff{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->        
-        "LOGS/COLLECT/${COMBO}/${CONDITION}/${file(filename).getName()}"
+        "LOGS/${COMBO}/${CONDITION}/COLLECT/collect/${file(filename).getName()}"
     }
     input:
     path check

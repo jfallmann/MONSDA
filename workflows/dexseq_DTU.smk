@@ -31,7 +31,7 @@ rule run_DTU:
     input:  anno = expand(rules.create_annotation_table.output.anno, combo=combo, scombo=scombo)
     output: session = expand(rules.themall.input.session, combo=combo, scombo=scombo),
             res = rules.themall.input.res
-    log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
+    log:    expand("LOGS/{combo}_{scombo}_{comparison}/DTU/dexseq/run_DTU.log", combo=combo, scombo=scombo, comparison=compstr)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: 1  # Due to BPPARAM errors, else int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -50,7 +50,7 @@ rule run_DTU:
 #     output: sig   = rules.themall.input.sig,
 #             sig_d = rules.themall.input.sig_d,
 #             sig_u = rules.themall.input.sig_u
-#     log:    expand("LOGS/DTU/{combo}_{scombo}_{comparison}/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
+#     log:    expand("LOGS/{combo}_{scombo}_{comparison}/DTU/dexseq/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
 #     conda:  ""+DTUENV+".yaml"
 #     threads: 1
 #     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
@@ -64,7 +64,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u,
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/dexseq/create_summary_snippet.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

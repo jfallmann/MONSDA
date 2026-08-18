@@ -67,7 +67,7 @@ process salmon_quant{
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${params.gSCOMBO}/salmon/${params.gCONDITION}/DTU/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/DTU/salmon/${file(filename).getName()}"
         else                                    "DTU/${params.gSCOMBO}/salmon/${params.gCONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
     input:
@@ -123,7 +123,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${params.gSCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/create_summary_snippet.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${params.gSCOMBO}/DTU/salmon/create_summary_snippet.log"
     }
     input:
     path de
@@ -143,7 +143,7 @@ process terminus_collapse{
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${params.gSCOMBO}/terminus/${params.gCONDITION}/DTU/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/DTU/terminus/${file(filename).getName()}"
         else                                    "DTU/${params.gSCOMBO}/terminus/${file(filename).getName()}"
     }
     input:
@@ -164,7 +164,7 @@ process salmon_idx{
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)    "LOGS/${params.gCOMBO}/${params.gCONDITION}/DTU/dexseq_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${params.gCOMBO}/${params.gCONDITION}/DTU/dexseq/index.log"
         else if (filename == "dexseq.idx")            "${params.gDTUIDX}"
         else                                          "${params.gDTUUIDX}"
     }
@@ -193,7 +193,7 @@ process prepare_dtu_annotation{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".gz") > 0)       "DTU/${params.gSCOMBO}/Tables/${file(filename).getName()}"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DTU/${params.gSCOMBO}/featurecount_dexseq_annotation.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${params.gSCOMBO}/DTU/dexseq/featurecount_dexseq_annotation.log"
     }
     output:
     path "*.gz", emit: anno
@@ -216,7 +216,7 @@ process run_dexseq{
         else if (filename.indexOf("_figure") > 0)      "DTU/${params.gSCOMBO}/Figures/${file(filename).getName()}" 
         else if (filename.indexOf(".html") > 0)      "DTU/${params.gSCOMBO}/DEXSeqReport_${params.gCOMBO}_${params.gDTUCOMP}/${file(filename).getName()}"
         else if (filename.indexOf("SESSION") > 0)      "DTU/${params.gSCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/${params.gSCOMBO}/run_dexseq.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${params.gSCOMBO}/DTU/dexseq/run_dexseq.log"
     }
     input:path counts
     path anno
