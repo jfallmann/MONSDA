@@ -11,7 +11,7 @@ rule themall:
 rule generate_t2g:
     input:  anno = ANNOTATION
     output: t2g = expand("{refd}/INDICES/{cenv}_{unikey}/t2g.tsv", refd=REFDIR, cenv=COUNTENV, unikey=unik)
-    log:    expand("LOGS/{sets}/{cenv}.t2g.log", sets=SETS, cenv=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cenv}/t2g.log", sets=SETS, cenv=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: 1
@@ -23,7 +23,7 @@ rule counting:
             t2g = rules.generate_t2g.output.t2g
     output: cnts = report("COUNTS/{combo}/{file}/alevin/quants_mat.mtx.gz", category="COUNTING"),
             ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-    log:    "LOGS/{combo}/{file}/alevinfryquant.log"
+    log:    "LOGS/{combo}/{file}/COUNTING/alevinfry/alevinfryquant.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD

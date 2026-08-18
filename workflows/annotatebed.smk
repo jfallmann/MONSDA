@@ -12,7 +12,7 @@ if all(checklist):
     rule BamToBed:
         input:  "TRACKS/{combo}/{file}_mapped_{type}.bed.gz"
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/Bed/linkbed{file}_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/bedtools/linkbed{type}.log"
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
@@ -22,7 +22,7 @@ elif all(checklist2):
     rule BamToBed:
         input:  "PEAKS/{combo}/{file}_mapped_{type}.bed.gz"
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
-        log:    "LOGS/Bed/linkbed{file}_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/bedtools/linkbed{type}.log"
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
@@ -35,7 +35,7 @@ else:
                     "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
             output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/Bed/createbed{file}.log"
+            log:    "LOGS/{combo}/{file}/PEAKS/bedtools/createbed.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -47,7 +47,7 @@ else:
                     "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
             output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
-            log:    "LOGS/Bed/createbed{file}.log"
+            log:    "LOGS/{combo}/{file}/PEAKS/bedtools/createbed.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -56,7 +56,7 @@ else:
 rule AnnotateBed:
     input:  rules.BamToBed.output
     output: "BED/{combo}/{file}_anno_{type}.bed.gz"
-    log:    "LOGS/Bed/annobeds_{type}_{file}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/bedtools/annobeds_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -71,7 +71,7 @@ rule UnzipGenome:
     output: fa = expand("{ref}.fa", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
             fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
             fas = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    log:    expand("LOGS/{combo}/PEAKS/bedtools/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: 1
@@ -83,7 +83,7 @@ rule UnzipGenome_no_us:
     output: fa = expand("{ref}_us.fa", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
             fai = expand("{ref}_us.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
             fas = expand("{ref}_us.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
-    log:    expand("LOGS/PEAKS/{combo}/indexfa.log", combo=combo)
+    log:    expand("LOGS/{combo}/PEAKS/bedtools/indexfa.log", combo=combo)
     conda:  "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: 1
@@ -97,7 +97,7 @@ rule AddSequenceToBed:
     output: bed = "BED/{combo}/{file}_anno_seq_{type}.bed.gz",
             bt = temp("BED/{combo}/{file}_bed_chr_{type}.tmp"),
             bs = temp("BED/{combo}/{file}_bed_seq_{type}.tmp")
-    log:    "LOGS/BED/seq2bed{type}_{file}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/bedtools/seq2bed{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
@@ -108,7 +108,7 @@ rule AddSequenceToBed:
 rule MergeAnnoBed:
     input:  rules.AddSequenceToBed.output
     output: "BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz"
-    log:    "LOGS/Bed/mergebeds_{type}_{file}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/bedtools/mergebeds_{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1

@@ -54,7 +54,7 @@ process starfusion{
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf(".log") > 0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
+        if (filename.indexOf(".log") > 0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/FUSIONS/starfusion/${file(filename).getName()}"
         else      "FUSIONS/${params.gSCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
     }
     input:

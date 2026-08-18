@@ -37,7 +37,7 @@ process piscem_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "piscem.idx")                  "$MAPIDX"
-        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/piscem_index.log"
+        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/piscem/index.log"
         else                                            "$MAPUIDXNAME"
     }
 
@@ -65,7 +65,7 @@ process piscem_mapping{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
-        if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/piscem/${file(filename).getName()}"
         else                                       "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
     }
 

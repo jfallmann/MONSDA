@@ -27,7 +27,7 @@ rule featurecount_unique:
             tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DE/{combo}/{file}_featurecounts_edger_unique.log"
+    log:    "LOGS/{combo}/{file}/DE/edger/featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -43,7 +43,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DE/edger/{scombo}_prepare_count_table.log"
     conda:   ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
@@ -63,7 +63,7 @@ rule run_edger:
             allN    = rules.themall.input.allN,
             res     = rules.themall.input.res,
             sort    = rules.themall.input.sort
-    log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
+    log:    expand("LOGS/{combo}/DE/edger/run_edger.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -80,7 +80,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    "LOGS/DE/filter_edgerDE.log"
+    log:    expand("LOGS/{combo}/DE/edger/filter_edgerDE.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
@@ -103,7 +103,7 @@ rule create_summary_snippet:
             rules.filter_significant.output.sig_d,
             rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DE/edger/create_summary_snippet.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

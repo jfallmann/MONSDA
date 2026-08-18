@@ -25,7 +25,7 @@ process count_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/countfastq.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/countfastq.log"
     }
 
     input:
@@ -68,7 +68,7 @@ process count_trimmed_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_trimmedreads.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_trimmedreads.log"
     }
 
     input:
@@ -111,7 +111,7 @@ process count_dedup_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_dedupreads.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_dedupreads.log"
     }
 
     input:
@@ -155,7 +155,7 @@ process count_mappers{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_mappers.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_mappers.log"
 
     }
 
@@ -187,9 +187,11 @@ process featurecount{
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
         else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/featurecount_${FEAT}s.log"
 
     }
+
+    publishDir "${workflow.workDir}/../LOGS/${SCOMBO}/${CONDITION}/COUNTING/countreads" , mode: 'copy', pattern: "*.summary"
 
     input:
     path fls
@@ -238,7 +240,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DE/countreads/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -269,7 +271,7 @@ process summarize_counts{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename == "summary")      "COUNTS/${SCOMBO}/${CONDITION}/summary"
-        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
+        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/COUNTING/countreads/summarize_counts.log"
     }
 
     input:

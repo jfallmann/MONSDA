@@ -10,7 +10,7 @@ rule call_base:
     input:  p5 = "RAW/{rawfile}.pod5"
     output: fq = "FASTQ/{rawfile}.fastq.gz",
             bam = temp("FASTQ/{rawfile}.bam")
-    log:    "LOGS/BASECALL/{rawfile}_dorado.log"
+    log:    "LOGS/{rawfile}/BASECALL/dorado/dorado.log"
     conda:  ""+CALLERENV+".yaml"
     container: "oras://jfallmann/monsda:"+CALLERENV+""
     threads: MAXTHREAD

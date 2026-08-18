@@ -28,7 +28,7 @@ rule featurecount_unique:
             tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
+    log:    "LOGS/{combo}/{file}/DE/deseq2/featurecounts_deseq2_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -44,7 +44,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DE/deseq2/{scombo}_prepare_count_table.log"
     conda:   ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
@@ -65,7 +65,7 @@ rule run_deseq2:
             vst    = rules.themall.input.vst,
             heat   = rules.themall.input.heat,
             heats  = rules.themall.input.heats
-    log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
+    log:    expand("LOGS/{combo}/DE/deseq2/run_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -82,7 +82,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    "LOGS/DE/filter_deseq2.log"
+    log:    expand("LOGS/{combo}/DE/deseq2/filter_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
@@ -105,7 +105,7 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DE/deseq2/create_summary_snippet.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

@@ -9,7 +9,7 @@ rule generate_index:
     input:  ref = REFERENCE
     output: idx = directory(INDEX),
             uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX+os.path.basename(REFERENCE).replace(".gz", ""))
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: 1
@@ -26,7 +26,7 @@ if paired == 'paired':
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/bwameth.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/bwameth/bwameth.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
@@ -39,7 +39,7 @@ else:
                 uidx = rules.generate_index.output.uidx[0],
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/bwameth/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD

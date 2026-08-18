@@ -42,7 +42,7 @@ rule run_DTU:
             res_i   = rules.themall.input.res_i,
             fig_PV  = rules.themall.input.fig_PV,
             fig_W   = rules.themall.input.fig_W
-    log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/spit/run_DTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -63,7 +63,7 @@ rule filter_significant_spit:
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    "LOGS/DTU/filter_spitDTU.log"
+    log:    expand("LOGS/{combo}/DTU/spit/filter_spitDTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: 1
@@ -85,7 +85,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_ut,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/spit/create_summary_snippet.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

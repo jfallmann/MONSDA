@@ -48,7 +48,7 @@ rule run_DTU:
             fig_P   = rules.themall.input.fig_P,
             fig_PV  = rules.themall.input.fig_PV,
             fig_files = rules.themall.input.fig_files
-    log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/run_DTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -69,7 +69,7 @@ rule filter_significant_drimseq:
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    "LOGS/DTU/filter_drimseqDTU.log"
+    log:    expand("LOGS/{combo}/DTU/drimseq/filter_drimseqDTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: 1
@@ -93,7 +93,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_ut,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/create_summary_snippet.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

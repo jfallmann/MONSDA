@@ -11,7 +11,7 @@ rule generate_index:
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=unik)),
             idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}.sshash", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX),
             tmpfa = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV))
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: MAXTHREAD
@@ -28,7 +28,7 @@ rule mapping:
             dummy = rules.generate_index.output.idxfile
     output: rad = directory("MAPPED/{combo}/{file}"),
             radfile = "MAPPED/{combo}/{file}/map.rad"
-    log:    "LOGS/{combo}/{file}/mapping.log"
+    log:    "LOGS/{combo}/{file}/MAPPING/piscem/mapping.log"
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: MAXTHREAD

@@ -15,7 +15,7 @@ rule generate_index:
             idxfile = expand("{refd}/INDICES/{cenv}_{unikey}/index/info.json", refd=REFDIR, cenv=COUNTENV, unikey=unik),
             tmpfa = temp(expand("TMP/{cenv}/ref.fa", cenv=COUNTENV)),
             tmpanno = temp(expand("TMP/{cenv}/ref.gtf", cenv=COUNTENV))
-    log:    expand("LOGS/{sets}/{cenv}.idx.log", sets=SETS, cenv=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cenv}/idx.log", sets=SETS, cenv=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -32,7 +32,7 @@ if paired == 'paired' or paired == 'singlecell':
                 dummy = rules.generate_index.output.idxfile
         output: cnts = report("COUNTS/{combo}/{file}/af_quant/alevin/quants_mat.mtx.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/simpleafquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/simpleaf/simpleafquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD

@@ -10,7 +10,7 @@ process UnzipGenome{
         if (filename.indexOf(".fa.fai") > 0)      "${REFDIR}/${file(filename).getName()}"
         else if (filename.indexOf(".fa") > 0)      "${REFDIR}/${file(filename).getName()}"
         else if (filename.indexOf(".chrom.sizes") > 0)      "${REFDIR}/${file(filename).getName()}"
-        else if (filename == "log")      "LOGS/${SCOMBO}/${COMBO}_indexfa.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/MAPPING/samtools/${COMBO}_indexfa.log"
     }
 
     input:
@@ -45,7 +45,7 @@ process UnzipGenome_no_us{
         if (filename.indexOf("_us.fa.fai") > 0)      "${REFDIR}/${file(filename).getName()}"
         else if (filename.indexOf("_us.fa") > 0)      "${REFDIR}/${file(filename).getName()}"
         else if (filename.indexOf("_us.chrom.sizes") > 0)      "${REFDIR}/${file(filename).getName()}"
-        else if (filename == "log")      "LOGS/${SCOMBO}/${COMBO}_indexfa_us.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/MAPPING/samtools/${COMBO}_indexfa_us.log"
     }
 
     input:

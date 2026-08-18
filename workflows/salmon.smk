@@ -14,7 +14,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cape}/idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -31,7 +31,7 @@ if bammode == 'transcriptome':
                 fa = REFERENCE
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -48,7 +48,7 @@ elif bammode == 'genome':
                 fa = REFERENCE
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -63,7 +63,7 @@ elif paired == 'paired':
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -79,7 +79,7 @@ else:
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD

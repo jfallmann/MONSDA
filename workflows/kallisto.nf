@@ -64,7 +64,7 @@ process kallisto_idx{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename == "kallisto.idx")            "$COUNTIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/kallisto_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/kallisto/index.log"
         else                                        "$COUNTUIDX"
     }
 
@@ -96,7 +96,7 @@ process kallisto_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/kallisto/${file(filename).getName()}"
         else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 

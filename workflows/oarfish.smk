@@ -14,7 +14,7 @@ rule mapping:
             fa = REFERENCE
     output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
             ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-    log:    "LOGS/{combo}/{file}/oarfishquant.log"
+    log:    "LOGS/{combo}/{file}/COUNTING/oarfish/oarfishquant.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD

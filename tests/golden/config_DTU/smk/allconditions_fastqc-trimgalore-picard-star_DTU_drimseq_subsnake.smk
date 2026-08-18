@@ -337,7 +337,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    log:    expand("LOGS/{sets}/DTU/{cape}/idx.log", sets=SETS, cape=COUNTENV)
     conda:  "<REPO>/envs/"+COUNTENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -348,8 +348,8 @@ rule salmon_index:
     shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 if paired == 'paired':
     rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
         output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
         threads: 1
@@ -358,7 +358,7 @@ if paired == 'paired':
         shell:  "ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}"
 else:
     rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
         output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
         threads: 1
         params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
@@ -371,7 +371,7 @@ if paired == 'paired':
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
         conda:  "<REPO>/envs/"+COUNTENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -387,7 +387,7 @@ else:
                 uix = rules.salmon_index.output.uidx
         output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
         conda:  "<REPO>/envs/"+COUNTENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -400,7 +400,7 @@ if runterminus:
     rule terminus_group:
         input:  ctsdir = rules.mapping.output.ctsdir
         output: grp = "DTU/{combo}/terminus/{file}/groups.txt"
-        log:    "LOGS/{combo}/{file}/terminus_group.log"
+        log:    "LOGS/{combo}/{file}/DTU/salmon/terminus_group.log"
         conda:  "<REPO>/envs/"+TERMINUSENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+TERMINUSENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -411,7 +411,7 @@ if runterminus:
         input:  grps = expand("DTU/{combo}/terminus/{file}/groups.txt", combo=combo, file=samplecond(SAMPLES, config)),
                 dirs = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config))
         output: cnts = expand("DTU/{combo}/terminus/{file}/quant.sf.gz", combo=combo, file=samplecond(SAMPLES, config))
-        log:    expand("LOGS/DTU/{combo}/terminus_collapse.log", combo=combo)
+        log:    expand("LOGS/{combo}/DTU/salmon/terminus_collapse.log", combo=combo)
         conda:  "<REPO>/envs/"+TERMINUSENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+TERMINUSENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -423,7 +423,7 @@ else:
 rule create_annotation_table:
     input:  dir  = ctsource,
     output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
-    log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/salmon/create_DTU_table.log", combo=combo)
     conda:  "<REPO>/envs/"+COUNTENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
     threads: 1
@@ -441,7 +441,7 @@ rule run_DTU:
             fig_P   = rules.themall.input.fig_P,
             fig_PV  = rules.themall.input.fig_PV,
             fig_files = rules.themall.input.fig_files
-    log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/run_DTU.log", combo=combo)
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -461,7 +461,7 @@ rule filter_significant_drimseq:
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    "LOGS/DTU/filter_drimseqDTU.log"
+    log:    expand("LOGS/{combo}/DTU/drimseq/filter_drimseqDTU.log", combo=combo)
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: 1
@@ -484,7 +484,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_ut,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/create_summary_snippet.log", combo=combo)
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

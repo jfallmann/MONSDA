@@ -17,7 +17,7 @@ rule rustqc_mapped:
     output:  o1 = directory("QC/{combo}/{file}_mapped_sorted"),
              js = "QC/{combo}/{file}_mapped_sorted/rustqc_summary.json",
              tmpanno = temp("TMP/QC/{combo}/{file}_ms_anno.gtf")
-    log:     "LOGS/{combo}/{file}_rustqc_mapped.log"
+    log:     "LOGS/{combo}/{file}/QC/rustqc/rustqc_mapped.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD
@@ -33,7 +33,7 @@ rule rustqc_uniquemapped:
     output: o1 = directory("QC/{combo}/{file}_mapped_sorted_unique"),
         js = "QC/{combo}/{file}_mapped_sorted_unique/rustqc_summary.json",
         tmpanno = temp("TMP/QC/{combo}/{file}_msu_anno.gtf")
-    log:    "LOGS/{combo}/{file}_rustqc_uniquemapped.log"
+    log:    "LOGS/{combo}/{file}/QC/rustqc/rustqc_uniquemapped.log"
     conda:  ""+QCENV+".yaml"
     container: "oras://jfallmann/monsda:"+QCENV+""
     threads: MAXTHREAD

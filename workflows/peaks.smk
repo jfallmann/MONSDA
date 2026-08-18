@@ -50,7 +50,7 @@ if not all(checklist):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            log:    "LOGS/{scombo}/{file}/PEAKS/peaks/bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -61,7 +61,7 @@ if not all(checklist):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            log:    "LOGS/{scombo}/{file}/PEAKS/peaks/bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -74,7 +74,7 @@ rule extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_extended_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}_extendbed_{type}.log"
+    log:    "LOGS/{scombo}/{file}/PEAKS/peaks/extendbed_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -85,7 +85,7 @@ rule rev_extendbed:
     input:  pks = "BED/{scombo}/{file}_mapped_{type}.bed.gz",
             ref = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: ext = "BED/{scombo}/{file}_mapped_revtrimmed_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{scombo}/{file}_revextend_{type}.log"
+    log:    "LOGS/{scombo}/{file}/PEAKS/peaks/revextend_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -99,7 +99,7 @@ if IP == 'iCLIP':
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
-        log:    "LOGS/PEAKS/{combo}/{file}bed2bedgraph_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
         container: "oras://jfallmann/monsda:bedtools"
         threads: 1
@@ -114,7 +114,7 @@ elif IP == 'revCLIP':
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
-        log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
         container: "oras://jfallmann/monsda:bedtools"
         threads: 1
@@ -129,7 +129,7 @@ else:
                 sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: concat = "PEAKS/{combo}/{file}_mapped_{type}.bedg.gz",
                 tosrt = temp("PEAKS/{combo}/{file}_mapped_{type}.unsrt")
-        log:    "LOGS/PEAKS/{combo}/bed2bedgraph_{type}_{file}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/bed2bedgraph_{type}.log"
         conda:  "bedtools.yaml"
         container: "oras://jfallmann/monsda:bedtools"
         threads: 1
@@ -141,7 +141,7 @@ else:
 rule PreprocessPeaks:
     input:  bedg = rules.BedToBedg.output.concat
     output: pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}/prepeak_{type}_{file}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/prepeak_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -153,7 +153,7 @@ rule PreprocessPeaks:
 rule FindPeaks:
     input:  pre = "PEAKS/{combo}/{file}_prepeak_{type}.bed.gz"
     output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"
-    log:    "LOGS/PEAKS/{combo}/{file}_findpeaks_{type}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/findpeaks_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -177,7 +177,7 @@ rule AddSequenceToPeak:
     output: peak = "PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz",
             pt = temp("PEAKS/{combo}/{file}_peak_chr_{type}.tmp"),
             ps = temp("PEAKS/{combo}/{file}_peak_seq_{type}.tmp")
-    log:    "LOGS/PEAKS/{combo}/seq2peaks_{type}_{file}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/seq2peaks_{type}.log"
     conda:  "bedtools.yaml"
     container: "oras://jfallmann/monsda:bedtools"
     threads: 1
@@ -189,7 +189,7 @@ if ANNOPEAK is not None:
     rule AnnotatePeak:
         input:  "PEAKS/{combo}/{file}_peak_seq_{type}.bed.gz"
         output: "PEAKS/{combo}/{file}_peak_anno_{type}.bed.gz"
-        log:    "LOGS/PEAKS/{combo}/{file}annotatepeaks_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/annotatepeaks_{type}.log"
         conda:  "perl.yaml"
         container: "oras://jfallmann/monsda:perl"
         threads: 1
@@ -205,7 +205,7 @@ if ANNOPEAK is not None:
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}/{file}peak2bedg_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/peak2bedg_{type}.log"
         conda:  "perl.yaml"
         container: "oras://jfallmann/monsda:perl"
         threads: 1
@@ -221,7 +221,7 @@ else:
                 re = "PEAKS/{combo}/{file}_peak_{type}.re.bedg.gz",
                 tfw = temp("PEAKS/{combo}/{file}_peak_{type}.fw.tmp.gz"),
                 tre = temp("PEAKS/{combo}/{file}_peak_{type}.re.tmp.gz"),
-        log:    "LOGS/PEAKS/{combo}/{file}peak2bedg_{type}.log"
+        log:    "LOGS/{combo}/{file}/PEAKS/peaks/peak2bedg_{type}.log"
         conda:  "perl.yaml"
         container: "oras://jfallmann/monsda:perl"
         threads: 1
@@ -235,7 +235,7 @@ rule NormalizeBedg:
             re = rules.PeakToBedg.output.re
     output: fw = "PEAKS/{combo}/{file}_peak_{type}.fw.norm.bedg.gz",
             re = "PEAKS/{combo}/{file}_peak_{type}.re.norm.bedg.gz"
-    log:    "LOGS/PEAKS/{combo}/{file}_peaknormalizebedgraph_{type}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/peaknormalizebedgraph_{type}.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -252,7 +252,7 @@ rule PeakToTRACKS:
             re = "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw",
             tfw = temp("TRACKS/PEAKS/{combo}/{file}_{type}fw_tmp"),
             tre = temp("TRACKS/PEAKS/{combo}/{file}_{type}re_tmp")
-    log:    "LOGS/PEAKS/{combo}/{file}_peak2ucsc_{type}.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/peak2ucsc_{type}.log"
     conda:  "ucsc.yaml"
     container: "oras://jfallmann/monsda:ucsc"
     threads: 1
@@ -263,7 +263,7 @@ rule GenerateTrack:
             re = rules.PeakToTRACKS.output.re
     output: "TRACKS/PEAKS/{combo}/{file}_peak_{type}.fw.bw.trackdone",
             "TRACKS/PEAKS/{combo}/{file}_peak_{type}.re.bw.trackdone"
-    log:    "LOGS/PEAKS/{combo}/{file}_generatetrack_{type}_peak.log"
+    log:    "LOGS/{combo}/{file}/PEAKS/peaks/generatetrack_{type}_peak.log"
     conda:  "base.yaml"
     container: "oras://jfallmann/monsda:base"
     threads: MAXTHREAD

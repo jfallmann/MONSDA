@@ -35,7 +35,7 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/drimseq_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/drimseq/index.log"
         else if (filename == "drimseq.idx")           "$DTUIDX"
         else                                          "$DTUUIDX"
     }
@@ -71,7 +71,7 @@ process prepare_dtu_annotation{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".gz") > 0)       "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DTU/${SCOMBO}/featurecount_drimseq_annotation.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/DTU/drimseq/featurecount_drimseq_annotation.log"
     }
 
     output:
@@ -99,7 +99,7 @@ process run_drimseq{
         else if (filename.indexOf("_figure") > 0)      "DTU/${SCOMBO}/Figures/${file(filename).getName()}" 
         else if (filename.indexOf(".html") > 0)      "DTU/${SCOMBO}/drimseqReport_${COMBO}_${DTUCOMP}/${file(filename).getName()}"
         else if (filename.indexOf("SESSION") > 0)      "DTU/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/${SCOMBO}/run_drimseq.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DTU/drimseq/run_drimseq.log"
     }
 
     input:

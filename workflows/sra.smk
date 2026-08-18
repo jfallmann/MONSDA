@@ -7,7 +7,7 @@ if paired == 'paired':
         
     rule fetch_from_sra:
         output: prefetch = temp("TMP/{srafile}.sra")
-        log:    "LOGS/FETCH/prefetch_{srafile}.log"
+        log:    "LOGS/{srafile}/FETCH/sra/prefetch.log"
         conda:  ""+FETCHENV+".yaml"
         container: "oras://jfallmann/monsda:"+FETCHENV+""
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
@@ -17,7 +17,7 @@ if paired == 'paired':
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
         output: fq = expand("FASTQ/{{srafile}}_{read}.fastq.gz", read=['R1','R2'])
-        log:    "LOGS/FETCH/{srafile}.log"
+        log:    "LOGS/{srafile}/FETCH/sra/run.log"
         conda:  ""+FETCHENV+".yaml"
         container: "oras://jfallmann/monsda:"+FETCHENV+""
         threads: min(MAXTHREAD, 6)
@@ -36,7 +36,7 @@ else:
 
     rule fetch_from_sra:
         output: prefetch = temp("TMP/{srafile}.sra")
-        log:    "LOGS/FETCH/prefetch_{srafile}.log"
+        log:    "LOGS/{srafile}/FETCH/sra/prefetch.log"
         conda:  ""+FETCHENV+".yaml"
         container: "oras://jfallmann/monsda:"+FETCHENV+""
         params: ids = lambda wildcards: os.path.splitext(os.path.basename(wildcards.srafile))[0],
@@ -46,7 +46,7 @@ else:
     rule get_from_sra:
         input: prefetch = rules.fetch_from_sra.output.prefetch
         output: fq = "FASTQ/{srafile}.fastq.gz"
-        log:    "LOGS/FETCH/{srafile}.log"
+        log:    "LOGS/{srafile}/FETCH/sra/run.log"
         conda:  ""+FETCHENV+".yaml"
         container: "oras://jfallmann/monsda:"+FETCHENV+""
         threads: min(MAXTHREAD, 6)

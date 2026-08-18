@@ -11,7 +11,7 @@ rule generate_index:
             idx2 = INDEX2,
             uidx1 = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik),
             uidx2 = expand("{refd}/INDICES/{mape}_{unikey}.idx2", refd=REFDIR, mape=MAPPERENV, unikey=unik+'_bs')
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
     threads: MAXTHREAD
@@ -31,7 +31,7 @@ if paired == 'paired':
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/segemehl3/mapping.log"
         conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
         threads: MAXTHREAD
@@ -46,7 +46,7 @@ else:
                 fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/segemehl3/mapping.log"
         conda:  ""+MAPPERENV.replace('bisulfite', '')+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+".replace('bisulfite','')"
         threads: MAXTHREAD

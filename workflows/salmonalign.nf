@@ -26,7 +26,7 @@ process salmonalign_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "salmonalign.idx")              "$MAPIDX"
-        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/salmonalign_index.log"
+        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/salmon/salmonalign_index.log"
         else                                            "$MAPUIDX"
     }
 
@@ -55,7 +55,7 @@ process salmonalign_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/salmon/${file(filename).getName()}"
         else null
     }
 

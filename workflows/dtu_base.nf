@@ -9,7 +9,7 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/DTU/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/${CONDITION}/DTU/salmon/${file(filename).getName()}"
         else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
     }
 
@@ -72,7 +72,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/create_summary_snippet.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DTU/salmon/create_summary_snippet.log"
     }
 
     input:
@@ -98,7 +98,7 @@ process terminus_collapse{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/terminus/${CONDITION}/DTU/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/${CONDITION}/DTU/terminus/${file(filename).getName()}"
         else                                    "DTU/${SCOMBO}/terminus/${file(filename).getName()}"
     }
 

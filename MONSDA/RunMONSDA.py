@@ -36,6 +36,12 @@ else:
         "LOGS" + os.sep + scriptname + ".log",
         "LOGS" + os.sep + scriptname + "_" + ts + ".log",
     )
+    # keep tool versions of the archived run with the same timestamp as its log
+    if os.path.isfile(os.path.abspath("LOGS" + os.sep + "versions.txt")):
+        shutil.copy2(
+            "LOGS" + os.sep + "versions.txt",
+            "LOGS" + os.sep + "versions_" + ts + ".txt",
+        )
 
 log = setup_logger(
     name=scriptname.lower(),
@@ -52,6 +58,7 @@ log = setup_logger(
 
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
+import MONSDA.Versions as mv
 import MONSDA.Workflows as mw
 
 
@@ -230,6 +237,15 @@ def run_snakemake(
         # Get processes to work on
         preprocess, subworkflows, postprocess = mw.get_processes(config)
         conditions = mp.get_conditions(config)
+
+        # Export versions of all tools configured to run for provenance and MultiQC
+        mv.write_versions(
+            config,
+            (preprocess or []) + (subworkflows or []) + (postprocess or []),
+            mw.envpath,
+            __version__,
+            configfile,
+        )
 
         """
         START TO PREPROCESS
@@ -563,6 +579,15 @@ def run_nextflow(
         # Get processes to work on
         preprocess, subworkflows, postprocess = mw.nf_get_processes(config)
         conditions = mp.get_conditions(config)
+
+        # Export versions of all tools configured to run for provenance and MultiQC
+        mv.write_versions(
+            config,
+            (preprocess or []) + (subworkflows or []) + (postprocess or []),
+            mw.envpath,
+            __version__,
+            configfile,
+        )
 
         """
         START TO PROCESS

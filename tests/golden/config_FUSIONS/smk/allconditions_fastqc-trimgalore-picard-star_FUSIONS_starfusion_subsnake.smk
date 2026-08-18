@@ -325,7 +325,7 @@ rule generate_ctat_lib:
     output: lib = directory(CTATLIB),
             tmpfa = temp(expand("TMP/{fenv}/ctat_ref.fa", fenv=FENV)),
             tmpanno = temp(expand("TMP/{fenv}/ctat_ref.gtf", fenv=FENV))
-    log:    expand("LOGS/{sets}/{fenv}.ctat.log", sets=SETS, fenv=FENV)
+    log:    expand("LOGS/{sets}/FUSIONS/{fenv}/ctat.log", sets=SETS, fenv=FENV)
     conda:  "<REPO>/envs/"+FENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
     threads: MAXTHREAD
@@ -343,7 +343,7 @@ if not fastqmode:
         output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
                 abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv",
                 normjunc = "FUSIONS/{combo}/{file}.Chimeric.norm.junction"
-        log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
+        log:    "LOGS/{combo}/{file}/FUSIONS/starfusion/starfusion.log"
         conda:  "<REPO>/envs/"+FENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
         threads: MAXTHREAD
@@ -358,7 +358,7 @@ else:
                     lib = ctat_lib_input
             output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
-            log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
+            log:    "LOGS/{combo}/{file}/FUSIONS/starfusion/starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
             container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
             threads: MAXTHREAD
@@ -371,7 +371,7 @@ else:
                     lib = ctat_lib_input
             output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
-            log:    "LOGS/FUSIONS/{combo}/{file}_starfusion.log"
+            log:    "LOGS/{combo}/{file}/FUSIONS/starfusion/starfusion.log"
             conda:  "<REPO>/envs/"+FENV+".yaml"
             container: "oras://ghcr.io/jfallmann/monsda:"+FENV+""+"-VERSION"
             threads: MAXTHREAD

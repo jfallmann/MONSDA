@@ -5,7 +5,7 @@ rule dedupbam:
     output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
             bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
             td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-    log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+    log:    "LOGS/{combo}/{file}/DEDUP/fgumi/dedupbam_{type}.log"
     conda:  ""+DEDUPENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEDUPENV+""
     threads: 1

@@ -23,7 +23,7 @@ process simpleaf_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "simpleaf.idx")            "$COUNTIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/simpleaf_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/simpleaf/index.log"
         else                                      "$COUNTUIDX"
     }
 
@@ -52,7 +52,7 @@ process simpleaf_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/simpleaf/${file(filename).getName()}"
         else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
