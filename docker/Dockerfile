@@ -11,6 +11,7 @@ LABEL org.opencontainers.image.title="MONSDA ${ENVIRONMENT} environment"
 
 COPY --chown=$MAMBA_USER:$MAMBA_USER envs/${ENVIRONMENT}.yaml /tmp/environment.yaml
 COPY --chown=$MAMBA_USER:$MAMBA_USER scripts /opt/MONSDA/scripts
+RUN find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
 
 RUN micromamba create --yes --prefix /opt/conda/envs/monsda --file /tmp/environment.yaml \
     && micromamba clean --all --yes
