@@ -10,8 +10,8 @@ rule generate_index:
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=MAPPERENV, unikey=unik)),
             idxfile = expand("{refd}/INDICES/{mape}_{unikey}/{pref}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX),
-            tmpfa = temp(expand("TMP/{mape}/ref.fa", mape=MAPPERENV)),
-            tmpref = temp(expand("TMP/{mape}/ref.anno", mape=MAPPERENV))
+            tmpfa = temp(expand("TMP/{mape}_{unikey}/ref.fa", mape=MAPPERENV, unikey=unik)),
+            tmpref = temp(expand("TMP/{mape}_{unikey}/ref.anno", mape=MAPPERENV, unikey=unik))
     log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
@@ -20,8 +20,9 @@ rule generate_index:
             ipara = lambda w,output: fixRunParameters(config, MAPPERENV, SAMPLES[0], None, 'MAPPING', 'INDEX', "--sjdbGTFfile", f"--sjdbGTFfile {output.tmpref}"),
             anno = ANNOTATION,                        
             pref = PREFIX,
-            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf TMP/star_generate_index && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir TMP/star_generate_index --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf TMP/star_generate_index"
+            lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
+            stmp = expand("TMP/{mape}_{unikey}/generate_index", mape=MAPPERENV, unikey=unik)[0]
+    shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf {params.stmp} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.stmp} --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf {params.stmp}"
 
 if paired == 'paired':
     rule mapping:
