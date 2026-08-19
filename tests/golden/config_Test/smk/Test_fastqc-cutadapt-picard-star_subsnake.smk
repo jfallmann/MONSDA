@@ -638,7 +638,7 @@ if rundedup:
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
         else:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
@@ -659,7 +659,7 @@ if rundedup:
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
     else:
         if prededup:
             rule multiqc:
@@ -682,7 +682,7 @@ if rundedup:
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"                    
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"                    
         else:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
@@ -703,7 +703,7 @@ if rundedup:
                 container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
                 threads: 1
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+                shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 else:
     if paired == 'paired':
         rule multiqc:
@@ -722,7 +722,7 @@ else:
             container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
             threads: 1
             params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
     else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
@@ -740,7 +740,7 @@ else:
             container: "oras://ghcr.io/jfallmann/monsda:qc"+"-VERSION"
             threads: 1
             params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
-            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+            shell:  "OUT=$(dirname {output.html}); SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; COLLECT=$SCAN/MULTIQC/collect; mkdir -p $COLLECT $OUT; for i in {input};do case \"${{i}}\" in *versions.txt) continue;; esac; echo $(dirname \"${{i}}\") >> {output.tmp}; ln -sfnr \"${{i}}\" $COLLECT/ 2>> {log} || cp -f \"${{i}}\" $COLLECT/ 2>> {log};done; cat {output.tmp} |sort -u > {output.lst}; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 
 
 ## Queue-agnostic fallback resources for all rules.
