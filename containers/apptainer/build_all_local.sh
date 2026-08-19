@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-repo=${HOME}/Gits/Monsda
-out=${HOME}/Work2/Container/MONSDA
+repo=${1:-${HOME}/Gits/Monsda}
+out=${2:-${HOME}/Work2/Container/MONSDA}
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 version=$(cd "$repo" && python scripts/container_matrix.py --version | cut -d= -f2)
 revision=$(cd "$repo" && git rev-parse HEAD)
