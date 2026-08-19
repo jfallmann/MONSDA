@@ -501,6 +501,7 @@ process mqc{
     output:
     path "*.zip", emit: mqc
     path "*.html", emit: html
+    path "versions.txt", emit: versions, optional: true
     script:
     """
     touch $others
