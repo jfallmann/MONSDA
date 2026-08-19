@@ -2,7 +2,7 @@
 set -uo pipefail
 
 repo=${HOME}/Gits/Monsda
-out=${HOME}/Work/Container/MONSDA
+out=${HOME}/Work22/Container/MONSDA
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 version=$(cd "$repo" && python scripts/container_matrix.py --version | cut -d= -f2)
 revision=$(cd "$repo" && git rev-parse HEAD)
