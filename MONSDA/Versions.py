@@ -25,16 +25,17 @@ SKIP_PACKAGES = frozenset(
 )
 
 # Mapping of tool/package name to the corresponding MultiQC module name,
-# None means MultiQC has no module for this tool
+# names have to match the modules of MultiQC exactly, including case,
+# tools without a MultiQC module are not listed
 MULTIQC_MODULES = {
     "bbmap": "bbmap",
-    "bbduk": "bbmap",
+    "bbduk": "bbduk",
     "bismark": "bismark",
     "bowtie2": "bowtie2",
     "cutadapt": "cutadapt",
     "fastp": "fastp",
     "fastqc": "fastqc",
-    "featurecounts": "featurecounts",
+    "featurecounts": "featureCounts",
     "hisat2": "hisat2",
     "htseq": "htseq",
     "kallisto": "kallisto",
@@ -45,11 +46,10 @@ MULTIQC_MODULES = {
     "salmon": "salmon",
     "samtools": "samtools",
     "star": "star",
-    "subread": "featurecounts",
+    "subread": "featureCounts",
     "trimgalore": "cutadapt",
     "trim-galore": "cutadapt",
     "trimmomatic": "trimmomatic",
-    "umicollapse": "umicollapse",
     "umitools": "umitools",
     "umi_tools": "umitools",
 }
@@ -272,6 +272,13 @@ def collect_versions(config, steps, envdir):
                 + str(yamlfile)
             )
             packages = {env: "unknown"}
+        # tools shipped by a differently named package, e.g. bbduk by bbmap,
+        # need their own MultiQC module to be reported
+        envmod = multiqc_module(env)
+        if envmod and envmod not in [multiqc_module(pkg) for pkg in packages]:
+            packages[env] = (
+                list(packages.values())[0] if len(packages) == 1 else "unknown"
+            )
         for pkg, version in packages.items():
             tools.setdefault(pkg, [version, set()])
             tools[pkg][0] = version
