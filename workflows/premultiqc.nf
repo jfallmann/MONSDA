@@ -1,7 +1,7 @@
 
-QCENV=get_always('QCENV')
-QCBIN=get_always('QCBIN')
-QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
+MQCENV=get_always('MQCENV')
+MQCBIN=get_always('MQCBIN')
+MQCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
 process collect_multi{
     input:
@@ -18,8 +18,8 @@ process collect_multi{
 
 
 process premultiqc{
-    conda "$QCENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$QCENV"
+    conda "$MQCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$MQCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -52,11 +52,11 @@ process premultiqc{
 
     MODS=""
     if [[ -f "\$VERSIONS" ]]; then
-        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | tr ',' '\\n' | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f \$MODS -k json -z -s -o "\$OUT" "\$SCAN"
+    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" "\$SCAN"
     """
 }
 

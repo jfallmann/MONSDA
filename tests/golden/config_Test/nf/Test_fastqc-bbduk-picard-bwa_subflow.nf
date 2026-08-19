@@ -27,9 +27,9 @@ def samples_ch(){
     def samples_ch = Channel.fromPath(params.gRSAMPLES)
     return samples_ch
 }
-params.gQCENV = { def QCENV = get_always('PREQCENV'); QCENV = get_always('PREQCENV'); return QCENV }()
-params.gQCBIN = { def QCBIN = get_always('PREQCBIN'); QCBIN = get_always('PREQCBIN'); return QCBIN }()
-params.gQCPARAMS = { def QCPARAMS = get_always('fastqc_params_QC') ?: ''; QCPARAMS = get_always('fastqc_params_MULTI') ?: ''; return QCPARAMS }()
+params.gQCENV = get_always('PREQCENV')
+params.gQCBIN = get_always('PREQCBIN')
+params.gQCPARAMS = get_always('fastqc_params_QC') ?: ''
 params.gTRIMENV = get_always('TRIMMINGENV')
 params.gTRIMBIN = get_always('TRIMMINGBIN')
 params.gTRIMPARAMS = get_always('bbduk_params_TRIM') ?: ''
@@ -49,6 +49,9 @@ params.gMAPPREFIX = get_always('MAPPINGPREFIX')
 params.gIDXPARAMS = get_always('bwa_params_INDEX') ?: ''
 params.gMAPPARAMS = get_always('bwa_params_MAP') ?: ''
 params.gIDXBIN = params.gMAPBIN.split('_')[0]
+params.gMQCENV = get_always('PREQCENV')
+params.gMQCBIN = get_always('PREQCBIN')
+params.gMQCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 params.gRSAMPLES = {
 if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     return params.gSAMPLES.collect{
@@ -488,8 +491,8 @@ workflow POSTMAPPING{
 
 
 process mqc{
-    conda "<REPO>/envs/${params.gQCENV}"+".yaml"
-    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gQCENV}"+"-VERSION"
+    conda "<REPO>/envs/${params.gMQCENV}"+".yaml"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gMQCENV}"+"-VERSION"
     cpus params.gTHREADS
 	cache 'lenient'
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -527,11 +530,11 @@ process mqc{
     fi
     MODS=""
     if [[ -f "\$VERSIONS" ]]; then
-        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | tr ',' '\\n' | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
+    multiqc -f ${params.gMQCPARAMS} \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
     """
 }
 workflow MULTIQC{

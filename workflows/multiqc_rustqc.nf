@@ -1,10 +1,10 @@
-QCENV=get_always('POSTQCENV')
-QCBIN=get_always('POSTQCBIN')
-QCPARAMS = get_always('rustqc_params_MULTI') ?: ''
+MQCENV=get_always('POSTQCENV')
+MQCBIN=get_always('POSTQCBIN')
+MQCPARAMS = get_always('rustqc_params_MULTI') ?: ''
 
 process mqc{
-    conda "$QCENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$QCENV"
+    conda "$MQCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$MQCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -51,11 +51,11 @@ process mqc{
 
     MODS=""
     if [[ -f "\$VERSIONS" ]]; then
-        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | tr ',' '\\n' | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
+    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
     """
 }
 

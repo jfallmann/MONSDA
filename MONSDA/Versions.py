@@ -24,9 +24,10 @@ SKIP_PACKAGES = frozenset(
     ]
 )
 
-# Mapping of tool/package name to the corresponding MultiQC module name,
+# Mapping of tool/package name to the corresponding MultiQC module name(s),
 # names have to match the modules of MultiQC exactly, including case,
-# tools without a MultiQC module are not listed
+# tools without a MultiQC module are not listed, tools reporting the output of
+# several other tools, like rustqc, map to all modules they produce output for
 MULTIQC_MODULES = {
     "bbmap": "bbmap",
     "bbduk": "bbduk",
@@ -43,6 +44,16 @@ MULTIQC_MODULES = {
     "macs3": "macs2",
     "picard": "picard",
     "qualimap": "qualimap",
+    "rastqc": "fastqc",
+    "rseqc": "rseqc",
+    "rustqc": (
+        "custom_content",
+        "featureCounts",
+        "preseq",
+        "qualimap",
+        "rseqc",
+        "samtools",
+    ),
     "salmon": "salmon",
     "samtools": "samtools",
     "star": "star",
@@ -56,7 +67,7 @@ MULTIQC_MODULES = {
 
 
 def multiqc_module(tool):
-    """Return the MultiQC module name for a tool or None if there is none
+    """Return the MultiQC module(s) for a tool or None if there is none
 
     Parameters
     ----------
@@ -66,8 +77,14 @@ def multiqc_module(tool):
     Returns
     -------
     str or None
+        module name, comma separated if the tool reports for several modules
     """
-    return MULTIQC_MODULES.get(str(tool).lower().replace("_", "").replace("-", "")) or MULTIQC_MODULES.get(str(tool).lower())
+    module = MULTIQC_MODULES.get(
+        str(tool).lower().replace("_", "").replace("-", "")
+    ) or MULTIQC_MODULES.get(str(tool).lower())
+    if isinstance(module, tuple):
+        return ",".join(module)
+    return module
 
 
 def envs_from_config(config, steps):
