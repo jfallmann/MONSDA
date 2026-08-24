@@ -25,8 +25,7 @@ process rustqc_mapped{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("rustqc_summary.json") > 0)      "QC/${COMBO}/${CONDITION}/${file(filename).getParent().getName()}/rustqc_summary.json"
-        else                                                    "QC/${COMBO}/${CONDITION}/${filename}"
+        "QC/${COMBO}/${CONDITION}/"+filename.replaceFirst('^results/', '')
     }
 
     input:
@@ -34,13 +33,13 @@ process rustqc_mapped{
 
     output:
     path "results/**", emit: rustqc_results
-    path "results/rustqc_summary.json", emit: rustqc_json
+    path "results/*/rustqc_summary.json", emit: rustqc_json
 
     script:
     fn = file(bam).getSimpleName()
     anno = file("${workflow.workDir}/../${MAPANNO}")
     """
-    gzip -cdfq $anno > tmp_anno.gtf && $RUSTQCBIN rna $bam --gtf tmp_anno.gtf -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/rustqc_summary.json -o results/$fn $RUSTQCPARAMS && rm -f tmp_anno.gtf
+    mkdir -p results/$fn && gzip -cdfq $anno > tmp_anno.gtf && $RUSTQCBIN rna $bam --gtf tmp_anno.gtf -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/$fn/rustqc_summary.json -o results/$fn $RUSTQCPARAMS && rm -f tmp_anno.gtf
     """
 }
 

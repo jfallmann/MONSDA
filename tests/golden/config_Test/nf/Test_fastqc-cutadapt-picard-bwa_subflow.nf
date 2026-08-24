@@ -512,22 +512,20 @@ process mqc{
     touch $others
     OUT=\${PWD}
     LOGDIR="${workflow.workDir}/../LOGS"
-    SCAN="\${LOGDIR}/${params.gCOMBO}/${params.gCONDITION}"
-    COLLECT="\${SCAN}/MULTIQC/collect"
-    VERSIONS="\${LOGDIR}/versions.txt"
-    EXTRA=""
     BASE_QC_DIR="${workflow.workDir}/../QC"
     COMBO_VAL="${params.gCOMBO}"
     CONDITION_VAL="${params.gCONDITION}"
-    mkdir -p "\$COLLECT"
-    for i in $others; do
-        cp -f "\$i" "\$COLLECT"/
-    done
+    VERSIONS="\${LOGDIR}/versions.txt"
+    SCAN="\${LOGDIR}/\${COMBO_VAL}/\${CONDITION_VAL}"
+    # All QC results of this combo are reported, no need to collect them first.
+    QC_DIR="\${BASE_QC_DIR}/\${COMBO_VAL}/\${CONDITION_VAL}"
+    if [[ -d "\$QC_DIR" ]]; then
+        SCAN="\$SCAN \$QC_DIR"
+    fi
     # If the corresponding fastqc combo exists, include its output in the MultiQC report.
-    FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
-    FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
-    if [[ "\$FQ_COMBO" != "\$COMBO_VAL" && -d "\$FQ_DIR" ]]; then
-        EXTRA="\$FQ_DIR"
+    FQ_DIR="\${BASE_QC_DIR}/\${COMBO_VAL/rustqc/fastqc}/\${CONDITION_VAL}"
+    if [[ "\$FQ_DIR" != "\$QC_DIR" && -d "\$FQ_DIR" ]]; then
+        SCAN="\$SCAN \$FQ_DIR"
     fi
     MODS=""
     if [[ -f "\$VERSIONS" ]]; then
@@ -535,7 +533,7 @@ process mqc{
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f ${params.gMQCPARAMS} \$MODS -k json -z -s -o "\$OUT" "\$SCAN" \$EXTRA
+    multiqc -f ${params.gMQCPARAMS} \$MODS -k json -z -s -o "\$OUT" \$SCAN
     """
 }
 workflow MULTIQC{

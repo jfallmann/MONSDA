@@ -494,3 +494,27 @@ def test_container_builds_make_command_scripts_executable():
     assert definitions
     assert all(chmod_command in path.read_text() for path in definitions)
     assert chmod_command in (REPO / "docker" / "Dockerfile").read_text()
+
+
+def test_scripts_called_without_interpreter_are_executable():
+    called = re.compile(
+        r"(?<![\w./])(?:\{params\.bins\}|\$\{?BINS\}?|\$\{params\.gBINS\})"
+        r"/([\w/]+\.(?:py|pl|sh|R))"
+    )
+    interpreted = re.compile(r"(?:python3?|perl|Rscript|bash|sh)\s+$")
+    direct = set()
+    templates = sorted(
+        set((REPO / "workflows").glob("*.smk")) | set((REPO / "workflows").glob("*.nf"))
+    )
+    for template in templates:
+        text = template.read_text()
+        for match in called.finditer(text):
+            if not interpreted.search(text[: match.start()].rsplit("\n", 1)[-1]):
+                direct.add(match.group(1))
+    assert direct
+    not_executable = sorted(
+        name
+        for name in direct
+        if not os.access(REPO / "scripts" / name, os.X_OK)
+    )
+    assert not_executable == []

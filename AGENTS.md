@@ -83,5 +83,8 @@ Put configs written for a test into `TESTCONFIGS/` so they can be reused:
   argv, and checks the module list from `LOGS/versions.txt`, the scanned
   directories and the published files. `nextflow lint` and `-preview` do not
   render script bodies, so this is the only local check of that bash.
+- `mqc_smk_test.py <generated_subsnake.smk> [combo] [condition]`: same idea for
+  the snakemake side, formats the generated `multiqc` rule's `shell:` string and
+  runs it against a fake `multiqc`.
 
 Do not run tests in the test root itself, generate into a subdirectory.
