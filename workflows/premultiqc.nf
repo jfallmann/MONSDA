@@ -42,13 +42,13 @@ process premultiqc{
     OUT=\${PWD}
     LOGDIR="${workflow.workDir}/../LOGS"
     SCAN="\${LOGDIR}/${CONDITION}"
-    COLLECT="\${SCAN}/MULTIQC/collect"
     VERSIONS="\${LOGDIR}/versions.txt"
-    mkdir -p "\$COLLECT"
 
-    for i in $samples; do
-        cp -f "\$i" "\$COLLECT"/
-    done
+    # All QC results of this condition are reported, no need to collect them first.
+    QC_DIR="${workflow.workDir}/../QC/${CONDITION}"
+    if [[ -d "\$QC_DIR" ]]; then
+        SCAN="\$SCAN \$QC_DIR"
+    fi
 
     MODS=""
     if [[ -f "\$VERSIONS" ]]; then
@@ -56,7 +56,7 @@ process premultiqc{
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" "\$SCAN"
+    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" \$SCAN
     """
 }
 
