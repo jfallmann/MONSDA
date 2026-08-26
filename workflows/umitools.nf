@@ -71,7 +71,27 @@ process extract_fq{
     path "ex.log", emit: logs
 
     script:
-    if (PAIRED == 'paired'){
+    if (EXTRACTPARAMS == ''){
+        if (PAIRED == 'paired'){
+            r1 = samples[0]
+            r2 = samples[1]
+            outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
+            outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
+            """
+                echo 'EXTRACT unset, linking input fastq(s) as-is' > ex.log
+                ln -sf \$(readlink -f $r1) $outf
+                ln -sf \$(readlink -f $r2) $outf2
+            """
+        }
+        else{
+            outf = samples.getSimpleName()+"_dedup.fastq.gz"
+            """
+                echo 'EXTRACT unset, linking input fastq(s) as-is' > ex.log
+                ln -sf \$(readlink -f $samples) $outf
+            """
+        }
+    }
+    else if (PAIRED == 'paired'){
         r1 = samples[0]
         r2 = samples[1]
         outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
