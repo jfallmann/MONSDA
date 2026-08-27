@@ -29,6 +29,16 @@ print(args)
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
 source(libp)
 
+## plotMDS needs at least 3 samples/columns, fall back to a placeholder plot otherwise
+safe_plotMDS <- function(dgeobj, ...) {
+    if (ncol(dgeobj) < 3) {
+        plot.new()
+        text(0.5, 0.5, paste0("MDS plot skipped: only ", ncol(dgeobj), " sample(s), need at least 3"), cex = 0.8)
+    } else {
+        plotMDS(dgeobj, ...)
+    }
+}
+
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
 
@@ -132,7 +142,7 @@ write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataS
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
 png(out, width=1900, height=1200, res=300)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
 ## estimate Dispersion
@@ -238,7 +248,7 @@ for (contrast in comparison[[1]]) {
         ## create file MDS-plot with and without summarized replicates
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
-        print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
+        print(safe_plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
         dev.off()
 
         ## estimate Dispersion
@@ -286,7 +296,7 @@ for (contrast in comparison[[1]]) {
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
+    print(safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
     ## estimate Dispersion
