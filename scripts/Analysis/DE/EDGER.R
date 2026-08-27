@@ -39,6 +39,15 @@ safe_plotMDS <- function(dgeobj, ...) {
     }
 }
 
+## When a contrast has no residual degrees of freedom (e.g. two groups with a single sample each),
+## edgeR cannot estimate dispersion from the data at all (estimateDisp/glmQLFit fail with
+## "No residual df"/"NA dispersions not allowed"/"Could not estimate prior df"). Fall back to a
+## fixed, typical BCV and edgeR's classic exactTest for that contrast only, same as EDGER_no_rep.R.
+FALLBACK_BCV <- 0.4
+no_residual_df <- function(design) {
+    (nrow(design) - qr(design)$rank) <= 0
+}
+
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
 
@@ -299,22 +308,39 @@ for (contrast in comparison[[1]]) {
     print(safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
-    ## estimate Dispersion
-    dge <- estimateDisp(dge, design, robust = TRUE)
+    no_rep <- no_residual_df(design)
+    if (no_rep) {
+        print(paste0("No residual degrees of freedom for contrast ", contrast_name, ": at least one group has no replicates, dispersion cannot be estimated from the data. Falling back to a fixed BCV of ", FALLBACK_BCV, " (edgeR exactTest) for this contrast."))
+    } else {
+        ## estimate Dispersion
+        dge <- estimateDisp(dge, design, robust = TRUE)
+    }
 
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "BCV.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotBCV(dge))
+    if (no_rep) {
+        plot.new()
+        text(0.5, 0.5, paste0("BCV plot skipped: no replicates, using fixed BCV = ", FALLBACK_BCV), cex = 0.8)
+    } else {
+        print(plotBCV(dge))
+    }
     dev.off()
 
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit <- glmQLFit(dge, design, robust = TRUE)
+    if (!no_rep) {
+        ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+        fit <- glmQLFit(dge, design, robust = TRUE)
+    }
 
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "QLDisp.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotQLDisp(fit))
+    if (no_rep) {
+        plot.new()
+        text(0.5, 0.5, "QLDisp plot skipped: no replicates", cex = 0.8)
+    } else {
+        print(plotQLDisp(fit))
+    }
     dev.off()
 
     tryCatch({
@@ -332,8 +358,14 @@ for (contrast in comparison[[1]]) {
         # }
         # contrast <- as.numeric(contrast[,1])
         
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-        qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+        if (no_rep) {
+            qlf <- exactTest(dge, pair = c(B[1], A[1]), dispersion = FALLBACK_BCV^2, prior.count = 2) ## no replicates: fixed-BCV exact test
+            qlf$table$F <- NA
+            qlf$table <- qlf$table[, c("logFC", "logCPM", "F", "PValue")]
+        } else {
+            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+            qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+        }
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
