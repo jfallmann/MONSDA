@@ -25,7 +25,9 @@ SKIP_PACKAGES = frozenset(
 )
 
 # Mapping of tool/package name to the corresponding MultiQC module name(s),
-# names have to match the modules of MultiQC exactly, including case,
+# names have to match the modules of MultiQC exactly, including case, since
+# MultiQC 1.35 all module names are lowercase, e.g. featurecounts not
+# featureCounts,
 # tools without a MultiQC module are not listed, tools reporting the output of
 # several other tools, like rustqc, map to all modules they produce output for
 MULTIQC_MODULES = {
@@ -36,7 +38,7 @@ MULTIQC_MODULES = {
     "cutadapt": "cutadapt",
     "fastp": "fastp",
     "fastqc": "fastqc",
-    "featurecounts": "featureCounts",
+    "featurecounts": "featurecounts",
     "hisat2": "hisat2",
     "htseq": "htseq",
     "kallisto": "kallisto",
@@ -48,7 +50,7 @@ MULTIQC_MODULES = {
     "rseqc": "rseqc",
     "rustqc": (
         "custom_content",
-        "featureCounts",
+        "featurecounts",
         "preseq",
         "qualimap",
         "rseqc",
@@ -57,7 +59,7 @@ MULTIQC_MODULES = {
     "salmon": "salmon",
     "samtools": "samtools",
     "star": "star",
-    "subread": "featureCounts",
+    "subread": "featurecounts",
     "trimgalore": "cutadapt",
     "trim-galore": "cutadapt",
     "trimmomatic": "trimmomatic",
