@@ -27,7 +27,7 @@ rule salmon_index:
 
 if bammode == 'transcriptome':
     rule mapping:
-        input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam",
+        input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
                 fa = REFERENCE
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
@@ -43,7 +43,7 @@ if bammode == 'transcriptome':
 
 elif bammode == 'genome':
     rule mapping:
-        input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam",
+        input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
                 anno = ANNOTATION,
                 fa = REFERENCE
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
@@ -59,6 +59,8 @@ elif bammode == 'genome':
         shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} quant -p {threads} -a {params.nbam} --annotation {input.anno} --genome {input.fa} {params.cpara} -o {output.ctsdir} &>> {log} && rm -f {params.nbam} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 
 elif paired == 'paired':
+    rule mapping:
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                 r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),

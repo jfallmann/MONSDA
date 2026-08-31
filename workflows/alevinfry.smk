@@ -18,8 +18,8 @@ rule generate_t2g:
     shell:  "mkdir -p $(dirname {output.t2g}); zcat {input.anno} | awk 'BEGIN{{FS=\"\\t\";OFS=\"\\t\"}} $3==\"transcript\"{{match($9,/transcript_id \"[^\"]+\"/); t=substr($9,RSTART+15,RLENGTH-16); match($9,/gene_id \"[^\"]+\"/); g=substr($9,RSTART+9,RLENGTH-10); print t,g}}' > {output.t2g} 2> {log}"
 
 rule counting:
-    input:  rad = "MAPPED/{combo}/{file}",
-            radfile = "MAPPED/{combo}/{file}/map.rad",
+    input:  rad = expand("MAPPED/{scombo}/{{file}}", scombo=scombo),
+            radfile = expand("MAPPED/{scombo}/{{file}}/map.rad", scombo=scombo),
             t2g = rules.generate_t2g.output.t2g
     output: cnts = report("COUNTS/{combo}/{file}/alevin/quants_mat.mtx.gz", category="COUNTING"),
             ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
