@@ -9,7 +9,7 @@ rule themall:
     input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", combo=combo, file=samplecond(SAMPLES, config))
 
 rule mapping:
-    input:  bam = "MAPPED/{combo}/{file}_mapped_sorted.bam",
+    input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
             anno = ANNOTATION,
             fa = REFERENCE
     output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),

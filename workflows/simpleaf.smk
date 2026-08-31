@@ -26,8 +26,8 @@ rule generate_index:
 
 if paired == 'paired' or paired == 'singlecell':
     rule counting:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
+        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
+                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 idx = rules.generate_index.output.idx,
                 dummy = rules.generate_index.output.idxfile
         output: cnts = report("COUNTS/{combo}/{file}/af_quant/alevin/quants_mat.mtx.gz", category="COUNTING"),

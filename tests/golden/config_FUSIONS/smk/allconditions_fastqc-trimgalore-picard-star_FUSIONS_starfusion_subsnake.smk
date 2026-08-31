@@ -353,8 +353,8 @@ if not fastqmode:
 else:
     if paired == 'paired':
         rule starfusion:
-            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
-                    r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
+            input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
+                    r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                     lib = ctat_lib_input
             output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
@@ -367,7 +367,7 @@ else:
             shell:  "OUTDIR=$(dirname {output.preds}); {params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --right_fq {input.r2} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; touch {output.preds} {output.abridged}"
     else:
         rule starfusion:
-            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
                     lib = ctat_lib_input
             output: preds = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.tsv",
                     abridged = "FUSIONS/{combo}/{file}/star-fusion.fusion_predictions.abridged.tsv"
