@@ -1,38 +1,38 @@
 rule themall:
-    input: expand("BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz", file=samplecond(SAMPLES, config), type=['sorted','unique'])
+    input: expand("BED/{combo}/{file}_anno_seq_{type}_merged.bed.gz", combo=combo, file=samplecond(SAMPLES, config), type=['sorted','unique'])
 
 checklist = list()
 checklist2 = list()
 for file in samplecond(SAMPLES, config):
     for type in ['sorted','unique']:
-        checklist.append(os.path.isfile(os.path.abspath('TRACKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('TRACKS/'+file+'_mapped_'+type+'.bed.gz')))
-        checklist2.append(os.path.isfile(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')) and not os.path.islink(os.path.abspath('PEAKS/'+file+'_mapped_'+type+'.bed.gz')))
+        checklist.append(os.path.isfile(os.path.abspath(os.path.join('TRACKS', scombo, file+'_mapped_'+type+'.bed.gz'))) and not os.path.islink(os.path.abspath(os.path.join('TRACKS', scombo, file+'_mapped_'+type+'.bed.gz'))))
+        checklist2.append(os.path.isfile(os.path.abspath(os.path.join('PEAKS', scombo, file+'_mapped_'+type+'.bed.gz'))) and not os.path.islink(os.path.abspath(os.path.join('PEAKS', scombo, file+'_mapped_'+type+'.bed.gz'))))
 
 if all(checklist):
     rule BamToBed:
-        input:  "TRACKS/{combo}/{file}_mapped_{type}.bed.gz"
+        input:  expand("TRACKS/{scombo}/{{file}}_mapped_{{type}}.bed.gz", scombo=scombo)
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/{combo}/{file}/PEAKS/bedtools/linkbed{type}.log"
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('TRACKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards, input: os.path.abspath(input[0])
         shell:  "ln -s {params.abs} {output}"
 elif all(checklist2):
     rule BamToBed:
-        input:  "PEAKS/{combo}/{file}_mapped_{type}.bed.gz"
+        input:  expand("PEAKS/{scombo}/{{file}}_mapped_{{type}}.bed.gz", scombo=scombo)
         output: "BED/{combo}/{file}_mapped_{type}.bed.gz"
         log:    "LOGS/{combo}/{file}/PEAKS/bedtools/linkbed{type}.log"
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params: abs = lambda wildcards: os.path.abspath('PEAKS/'+wildcards.file+'_mapped_'+wildcards.type+'.bed.gz')
+        params: abs = lambda wildcards, input: os.path.abspath(input[0])
         shell:  "ln -s {params.abs} {output}"
 else:
     if not stranded or stranded == 'fr':
         rule BamToBed:
-            input:  "MAPPED/{combo}/{file}_mapped_sorted.bam",
-                    "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+            input:  expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                    expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
             output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/{combo}/{file}/PEAKS/bedtools/createbed.log"
@@ -42,9 +42,8 @@ else:
             shell:  "bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}"
     elif stranded and stranded == 'rf':
         rule BamToBed:
-        rule BamToBed:
-            input:  "MAPPED/{combo}/{file}_mapped_sorted.bam",
-                    "MAPPED/{combo}/{file}_mapped_sorted_unique.bam"
+            input:  expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                    expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo)
             output: "BED/{combo}/{file}_mapped_sorted.bed.gz",
                     "BED/{combo}/{file}_mapped_unique.bed.gz"
             log:    "LOGS/{combo}/{file}/PEAKS/bedtools/createbed.log"

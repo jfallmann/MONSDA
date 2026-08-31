@@ -63,10 +63,15 @@ workflow COUNTING{
 
     main:
 
-    radsamples = collection.filter(~/map.rad/)
+    RADSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"/map.rad"
+    }
+
+    radsamples_ch = Channel.fromPath(RADSAMPLES.sort())
+
     annofile = Channel.fromPath(COUNTANNO)
     generate_t2g(annofile)
-    alevinfry_quant(generate_t2g.out.t2g.combine(radsamples.map{it -> file(it).getParent()}))
+    alevinfry_quant(generate_t2g.out.t2g.combine(radsamples_ch.map{it -> file(it).getParent()}))
 
     emit:
     counts = alevinfry_quant.out.counts

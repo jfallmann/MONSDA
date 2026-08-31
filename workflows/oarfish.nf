@@ -44,8 +44,13 @@ workflow COUNTING{
 
     main:
 
-    bamsamples = collection.filter(~/.bam/)
-    oarfish_quant(bamsamples)
+    MAPPEDSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
+    }
+
+    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+
+    oarfish_quant(mapsamples_ch.collate(1))
 
     emit:
     counts = oarfish_quant.out.counts
