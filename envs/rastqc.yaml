@@ -3,5 +3,5 @@ channels:
 - bioconda
 - conda-forge
 dependencies:
-- multiqc =1.21
+- multiqc =1.35
 - rastqc =0.1.0
