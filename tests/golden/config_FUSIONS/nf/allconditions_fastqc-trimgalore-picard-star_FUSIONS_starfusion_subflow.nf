@@ -33,8 +33,10 @@ params.gFUSREF = get_always('FUSIONSREF')
 params.gFUSREFDIR = "${workflow.workDir}/../"+get_always('FUSIONSREFDIR')
 params.gFUSANNO = get_always('FUSIONSANNO')
 params.gFUSLIB = get_always('FUSIONSLIB')
+params.gFUSLIBDIR = params.gFUSLIB.startsWith('/') ? params.gFUSLIB : "${workflow.workDir}/../"+params.gFUSLIB
 params.gFUSPARAMS = get_always('starfusion_params_FUSION') ?: ''
 params.gFUSBUILD = get_always('starfusion_params_BUILD') ?: ''
+params.gFUSFASTQ = (get_always('starfusion_params_FASTQ') ?: '').toString().toLowerCase() in ['1', 'true', 'yes']
 params.gRSAMPLES = {
 if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     return params.gSAMPLES.collect{
@@ -55,13 +57,13 @@ process starfusion{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".log") > 0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/FUSIONS/starfusion/${file(filename).getName()}"
-        else      "FUSIONS/${params.gSCOMBO}/${params.gCONDITION}/${file(filename).getName()}"
+        else      "FUSIONS/${params.gSCOMBO}/${params.gCONDITION}/"+filename.toString().replace('_starfusion/', '/')
     }
     input:
     path fls
     output:
     path "${fn}_starfusion/*", emit: fusions
-    path "log", emit: log
+    path "*.log", emit: log
     script:
     ref = fls[0]
     anno = fls[1]
@@ -70,22 +72,77 @@ process starfusion{
     od = fn+"_starfusion"
     ol = fn+".log"
     """
-    if [[ -f \"${params.gFUSLIB}/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIB}\"; elif [[ -f \"${params.gFUSLIB}/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIB}/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} ${params.gFUSBUILD} ) &> log; fi; if [[ -s \"${junction}\" ]]; then ctat_chr=\$(grep -v '^#' \$CTAT/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=\$(awk '!/^#/ && \$1!=\"chr_donorA\"{print \$1; exit}' ${junction} | grep -c '^chr' || true); if [[ \"\$ctat_chr\" == \"1\" && \"\$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {if(\$1!~/^chr/)\$1=\"chr\"\$1; if(\$4!~/^chr/)\$4=\"chr\"\$4; if(\$1==\"chrMT\")\$1=\"chrM\"; if(\$4==\"chrMT\")\$4=\"chrM\"; print}' ${junction} > ${fn}.norm.junction; elif [[ \"\$ctat_chr\" == \"0\" && \"\$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> log; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {sub(/^chr/,\"\",\$1); sub(/^chr/,\"\",\$4); if(\$1==\"M\")\$1=\"MT\"; if(\$4==\"M\")\$4=\"MT\"; print}' ${junction} > ${fn}.norm.junction; else cp ${junction} ${fn}.norm.junction; fi; ${params.gFUSBIN} --genome_lib_dir \$CTAT -J ${fn}.norm.junction --output_dir ${od} --CPU ${task.cpus} ${params.gFUSPARAMS} &>> log; else mkdir -p ${od}; echo \"File ${junction} empty, no chimeric STAR output found\" >> log; fi; mkdir -p ${od}; touch ${od}/star-fusion.fusion_predictions.tsv ${od}/star-fusion.fusion_predictions.abridged.tsv
+    if [[ -f \"${params.gFUSLIBDIR}/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIBDIR}\"; elif [[ -f \"${params.gFUSLIBDIR}/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIBDIR}/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} ${params.gFUSBUILD} ) &> ${ol}; fi; if [[ -s \"${junction}\" ]]; then ctat_chr=\$(grep -v '^#' \$CTAT/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=\$(awk '!/^#/ && \$1!=\"chr_donorA\"{print \$1; exit}' ${junction} | grep -c '^chr' || true); if [[ \"\$ctat_chr\" == \"1\" && \"\$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> ${ol}; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {if(\$1!~/^chr/)\$1=\"chr\"\$1; if(\$4!~/^chr/)\$4=\"chr\"\$4; if(\$1==\"chrMT\")\$1=\"chrM\"; if(\$4==\"chrMT\")\$4=\"chrM\"; print}' ${junction} > ${fn}.norm.junction; elif [[ \"\$ctat_chr\" == \"0\" && \"\$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> ${ol}; awk 'BEGIN{OFS=\"\\t\"} /^#/{print;next} \$1==\"chr_donorA\"{print;next} {sub(/^chr/,\"\",\$1); sub(/^chr/,\"\",\$4); if(\$1==\"M\")\$1=\"MT\"; if(\$4==\"M\")\$4=\"MT\"; print}' ${junction} > ${fn}.norm.junction; else cp ${junction} ${fn}.norm.junction; fi; ${params.gFUSBIN} --genome_lib_dir \$CTAT -J ${fn}.norm.junction --output_dir ${od} --CPU ${task.cpus} ${params.gFUSPARAMS} &>> ${ol}; else mkdir -p ${od}; echo \"File ${junction} empty, no chimeric STAR output found\" >> ${ol}; fi; mkdir -p ${od}; touch ${od}/star-fusion.fusion_predictions.tsv ${od}/star-fusion.fusion_predictions.abridged.tsv
+    """
+}
+process starfusion_fastq{
+    conda "<REPO>/envs/${params.gFUSENV}"+".yaml"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gFUSENV}"+"-VERSION"
+    cpus params.gTHREADS
+	cache 'lenient'
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".log") > 0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/FUSIONS/starfusion/${file(filename).getName()}"
+        else      "FUSIONS/${params.gSCOMBO}/${params.gCONDITION}/"+filename.toString().replace('_starfusion/', '/')
+    }
+    input:
+    path fls
+    output:
+    path "${fn}_starfusion/*", emit: fusions
+    path "*.log", emit: log
+    script:
+    ref = fls[0]
+    anno = fls[1]
+    if (params.gPAIRED == 'paired'){
+        rs = fls[2..3].sort{ it.getName() }
+        reads = "--left_fq "+rs[0]+" --right_fq "+rs[1]
+        fn = file(rs[0]).getSimpleName().replaceAll(/_R[12]_trimmed/, "")
+    } else{
+        reads = "--left_fq "+fls[2]
+        fn = file(fls[2]).getSimpleName().replaceAll(/_trimmed/, "")
+    }
+    od = fn+"_starfusion"
+    ol = fn+".log"
+    """
+    if [[ -f \"${params.gFUSLIBDIR}/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIBDIR}\"; elif [[ -f \"${params.gFUSLIBDIR}/ctat_genome_lib_build_dir/ref_annot.gtf\" ]]; then CTAT=\"${params.gFUSLIBDIR}/ctat_genome_lib_build_dir\"; else CTAT=CTAT; ( mkdir -p \$CTAT && zcat ${ref} > ctat_ref.fa && zcat ${anno} > ctat_ref.gtf && prep_genome_lib.pl --genome_fa ctat_ref.fa --gtf ctat_ref.gtf --output_dir \$CTAT --CPU ${task.cpus} ${params.gFUSBUILD} ) &> ${ol}; fi; ${params.gFUSBIN} --genome_lib_dir \$CTAT ${reads} --output_dir ${od} --CPU ${task.cpus} ${params.gFUSPARAMS} &>> ${ol}; mkdir -p ${od}; touch ${od}/star-fusion.fusion_predictions.tsv ${od}/star-fusion.fusion_predictions.abridged.tsv
     """
 }
 workflow FUSIONS{ 
     take: collection
     main:
-    MAPPEDSAMPLES = params.gLONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../MAPPED/${params.gCOMBO}/"+element+"*.Chimeric.out.junction"
-    }
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())  
     annofile = Channel.fromPath(params.gFUSANNO)
     genomefile = Channel.fromPath(params.gFUSREF)
-    starfusion(genomefile.combine(annofile.combine(mapsamples_ch.collate(1))))
+    if (params.gFUSFASTQ){
+        if (params.gPAIRED == 'paired'){
+            TRIMSAMPLES = params.gLONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+            }
+        } else{
+            TRIMSAMPLES = params.gLONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_trimmed.fastq.gz"
+            }
+        }
+        trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
+        if (params.gPAIRED == 'paired'){
+            starfusion_fastq(genomefile.combine(annofile.combine(trimsamples_ch.collate(2))))
+        } else{
+            starfusion_fastq(genomefile.combine(annofile.combine(trimsamples_ch.collate(1))))
+        }
+        outfusions = starfusion_fastq.out.fusions
+        outlogs = starfusion_fastq.out.log
+    }
+    else{
+        MAPPEDSAMPLES = params.gLONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../MAPPED/${params.gCOMBO}/"+element+"*.Chimeric.out.junction"
+        }
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+        starfusion(genomefile.combine(annofile.combine(mapsamples_ch.collate(1))))
+        outfusions = starfusion.out.fusions
+        outlogs = starfusion.out.log
+    }
     emit:
-    fusions = starfusion.out.fusions
-    logs = starfusion.out.log
+    fusions = outfusions
+    logs = outlogs
 }
 
 

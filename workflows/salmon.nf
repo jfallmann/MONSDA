@@ -38,9 +38,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        rs = reads[1..2].sort()
-        r1 = rs[1]
-        r2 = rs[2]
+        rs = reads[0..1].sort{ it.getName() }
+        r1 = rs[0]
+        r2 = rs[1]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
@@ -196,30 +196,56 @@ workflow COUNTING{
     main:
    
     if (BAMMODE?.length() > 0){
-        bamsamples = collection.filter(~/.bam/)
-        salmon_quant_bam(bamsamples)
+        MAPPEDSAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
+        }
+
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+
+        salmon_quant_bam(mapsamples_ch.collate(1))
         outcounts = salmon_quant_bam.out.counts
         outlogs = salmon_quant_bam.out.logs
     }
     else{
         checkidx = file(COUNTUIDX)
-        collection.filter(~/.fastq.gz/)
+        checktrim = file("${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}")
+
+        if (PAIRED == 'paired'){
+            TRIMSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+            }
+        } else{
+            TRIMSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_trimmed.fastq.gz"
+            }
+        }
+
+        if (checktrim.exists()){
+            trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
+        } else{
+            if (PAIRED == 'paired'){
+                trim(samples_ch.collate(2))
+            } else{
+                trim(samples_ch.collate(1))
+            }
+            trimsamples_ch = trim.out.trim.flatten()
+        }
 
         if (checkidx.exists()){
             idxfile = Channel.fromPath(COUNTUIDX)
             if (PAIRED == 'paired'){
-                salmon_quant(idxfile.combine(samples_ch.collate(2)))
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
             } else{
-                salmon_quant(idxfile.combine(samples_ch.collate(1)))
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
             }        
         }
         else{
             genomefile = Channel.fromPath(COUNTREF)
             salmon_idx(genomefile)
             if (PAIRED == 'paired'){
-                salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
             } else{
-                salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
             }
         }
         outcounts = salmon_quant.out.counts

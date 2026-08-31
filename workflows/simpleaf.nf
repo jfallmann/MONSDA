@@ -82,17 +82,22 @@ workflow COUNTING{
     main:
 
     checkidx = file(COUNTUIDX)
-    collection.filter(~/.fastq.gz/)
+
+    TRIMSAMPLES = LONGSAMPLES.collect{
+        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+    }
+
+    trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
 
     if (checkidx.exists()){
         idxfile = Channel.fromPath(COUNTUIDX)
-        simpleaf_quant(idxfile.combine(samples_ch.collate(2)))
+        simpleaf_quant(idxfile.combine(trimsamples_ch.collate(2)))
     }
     else{
         genomefile = Channel.fromPath(COUNTREF)
         annofile = Channel.fromPath(COUNTANNO)
         simpleaf_idx(genomefile, annofile)
-        simpleaf_quant(simpleaf_idx.out.idx.combine(samples_ch.collate(2)))
+        simpleaf_quant(simpleaf_idx.out.idx.combine(trimsamples_ch.collate(2)))
     }
 
     emit:

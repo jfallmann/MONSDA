@@ -2102,7 +2102,7 @@ def nf_fetch_params(
             if REF:
                 REFERENCE = REF
                 REFDIR = str(os.path.dirname(REFERENCE))
-            if XENV in ["salmon", "kallisto"]:
+            if XENV in ["salmon", "kallisto", "simpleaf"]:
                 IDX = XCONF.get("INDEX")
                 if IDX:
                     INDEX = IDX
@@ -2273,9 +2273,9 @@ def nf_fetch_params(
         retconf["FUSIONSREF"] = REFERENCE
         retconf["FUSIONSREFDIR"] = REFDIR
         retconf["FUSIONSANNO"] = ANNOTATION
-        retconf["FUSIONSLIB"] = (
-            FUSCONF.get(FUSENV, {}).get("OPTIONS", {}).get("INDEX", "")
-        )
+        retconf["FUSIONSLIB"] = FUSCONF.get(FUSENV, {}).get("OPTIONS", {}).get(
+            "INDEX", ""
+        ) or os.path.join(REFDIR, "CTAT", FUSENV)
 
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
