@@ -4,7 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - simpleaf >=0.25
-  - piscem >=0.20
-  - alevin-fry >=0.11
+  - simpleaf =0.30.0
+  - piscem =0.23.0
+  - alevin-fry =0.18.1
   - pyroe
