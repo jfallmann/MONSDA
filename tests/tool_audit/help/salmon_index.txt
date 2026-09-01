@@ -1,0 +1,24 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Build a salmon index from a transcriptome FASTA
+
+Usage: salmon index [OPTIONS] --transcripts <TRANSCRIPTS>... --index <INDEX>
+
+Options:
+  -t, --transcripts <TRANSCRIPTS>...   Transcript FASTA file(s)
+  -i, --index <INDEX>                  Output index directory
+  -k, --kmerLen <KMER_LEN>             K-mer length (odd, ≤ 31 recommended) [default: 31]
+  -m, --minimizerLen <MINIMIZER_LEN>   Minimizer length (0 = auto; 19 for the default k=31) [default: 0]
+  -p, --threads <THREADS>              Worker threads (0 = all cores) [default: 0]
+      --keepIntermediate               Keep the intermediate compacted-dBG files
+      --keepFixedFasta                 Keep the post-cleaning ("fixed") reference FASTA (non-ACGT bases replaced) instead of deleting it after the index is built
+  -q, --quiet                          Reduce logging to warnings and errors only
+      --filterSize <FILTER_SIZE>       [accepted for salmon compatibility; no effect] TwoPaCo bloom-filter size — the Rust index builder (cf1-rs) does not expose this knob
+      --no-version-check               Accepted for compatibility with C++ salmon. salmon 2.0 never contacts the network to check for a newer release, so this flag (and the `SALMON_NO_VERSION_CHECK` environment variable) is a no-op
+      --tmpdir <TMPDIR>                Directory for build intermediates (cleaned FASTA + cDBG files); the final index still lands in --index. Defaults to the index dir. (salmon's --tmpdir)
+      --sshashTmpDir <SSHASH_TMP_DIR>  Directory for sshash's external minimizer-sort scratch. Defaults to a `sshash_tmp` subdirectory of --tmpdir (or the index dir when --tmpdir is unset). Override to place the sort scratch on a separate/fast disk; the directory is created before the build and removed afterwards
+      --ramLimit <RAM_LIMIT_GIB>       RAM ceiling, in GiB, for sshash's external minimizer sort (the main build-time memory/disk trade-off). Default is 8; a smaller value uses less RAM but spills to disk sooner
+      --keepDuplicates                 Retain exact-duplicate transcript sequences instead of collapsing them (salmon collapses duplicates by default)
+      --gencode                        GENCODE-format references: truncate each transcript name at the first `|` (e.g. `ENST...|ENSG...|...` -> `ENST...`)
+  -d, --decoys <DECOYS>                File of decoy sequence names (one per line). The named records (which must appear last in the FASTA) are indexed but flagged as decoys
+  -n, --no-clip                        Don't clip poly-A tails from the ends of target sequences. By default (matching salmon/pufferfish `FixFasta`), a reference ending in a run of at least 10 `A`s has its trailing `A`s trimmed before indexing (an all-`A` reference is dropped)
+  -h, --help                           Print help

@@ -1,0 +1,60 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Generate a permit list of barcodes from a RAD file
+
+Usage: alevin-fry generate-permit-list [OPTIONS] --input <INPUT> --expected-ori <EXPECTEDORI> --output-dir <OUTPUTDIR> <--knee-distance|--expect-cells <EXPECTCELLS>|--force-cells <FORCECELLS>|--valid-bc <VALIDBC>|--unfiltered-pl <UNFILTEREDPL>>
+
+Options:
+  -i, --input <INPUT>
+          input directory containing the map.rad RAD file
+  -d, --expected-ori <EXPECTEDORI>
+          the expected orientation of alignments [possible values: fw, rc, both, either]
+  -o, --output-dir <OUTPUTDIR>
+          output directory
+  -k, --knee-distance
+          attempt to determine the number of barcodes to keep using the knee distance method.
+  -t, --threads <THREADS>
+          number of threads to use for the first phase of permit-list generation (minimum: 2; lower
+          values use 2) [default: 8]
+  -e, --expect-cells <EXPECTCELLS>
+          defines the expected number of cells to use in determining the (read, not UMI) based
+          cutoff
+  -f, --force-cells <FORCECELLS>
+          select the top-k most-frequent barcodes, based on read count, as valid (true)
+  -b, --valid-bc <VALIDBC>
+          uses true barcode collected from a provided file
+  -u, --unfiltered-pl <UNFILTEREDPL>
+          uses an unfiltered external permit list
+  -m, --min-reads <MINREADS>
+          minimum read count threshold; only used with --unfiltered-pl [default: 10]
+      --sample-bc-list <SAMPLELIST>
+          file containing known sample/library barcodes (one per line); triggers multi-barcode mode
+      --sample-names <SAMPLENAMES>
+          file mapping sample barcodes to human-readable names (TSV: barcode\tname)
+      --sample-bc-correction <SCMODE>
+          sample-barcode correction policy [possible values: exact, unique, frequency]
+      --cell-bc-correction <STRATEGY>
+          cell-barcode collision policy: `unique` accepts one canonical target; `frequency` uses
+          frozen exact counts and a confidence threshold [default: unique] [possible values: unique,
+          frequency]
+      --cell-bc-neighborhood <NEIGHBORHOOD>
+          cell-barcode neighbourhood; edit-1 is a compatibility alias for substitution-or-shift-1
+          [possible values: hamming-1, substitution-or-shift-1, edit-1]
+      --sample-bc-neighborhood <NEIGHBORHOOD>
+          sample-barcode neighbourhood for non-exact correction [default: hamming-1] [possible
+          values: hamming-1, substitution-or-shift-1, edit-1]
+      --cell-bc-confidence <CONFIDENCE>
+          Frequency confidence as a decimal or exact fraction [default: 0.975]
+      --sample-bc-confidence <CONFIDENCE>
+          sample-Frequency confidence as a decimal or exact fraction [default: 0.975]
+      --memory-limit <MEMORY>
+          memory available to deferred GPL correction buffers [default: 512MiB]
+      --tmp-dir <TMPDIR>
+          directory for temporary GPL correction spools (default: output directory)
+      --sample-bc-ori <SBCORI>
+          orientation of sample barcodes in the whitelist relative to the read (forward = whitelist
+          matches read as-is; reverse = reverse-complement the whitelist before lookup, e.g. 10x
+          Flex v2) [default: forward] [possible values: forward, reverse]
+  -h, --help
+          Print help
+  -V, --version
+          Print version
