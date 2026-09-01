@@ -36,7 +36,7 @@ if paired == 'paired':
                 mapp = MAPPERBIN,
                 stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
                 outdir = lambda wildcards: "MAPPED/"+wildcards.combo+"/"+wildcards.file+"_salmonalign"
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings -o {params.outdir} -1 {input.q1} -2 {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -1 {input.q1} -2 {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
@@ -52,4 +52,4 @@ else:
                 mapp = MAPPERBIN,
                 stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
                 outdir = lambda wildcards: "MAPPED/"+wildcards.combo+"/"+wildcards.file+"_salmonalign"
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings -o {params.outdir} -r {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -r {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
