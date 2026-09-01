@@ -23,4 +23,4 @@ rule mapping:
             nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
             prefix = lambda wildcards, output: os.path.join(str(output.ctsdir), "oarfish"),
             linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-    shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {input.anno} --reference {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} && gzip -c {params.prefix}.quant > {output.ctsdir}/quant.sf.gz ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+    shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {input.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} && gzip -c {params.prefix}.quant > {output.ctsdir}/quant.sf.gz ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"

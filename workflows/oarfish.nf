@@ -35,7 +35,7 @@ process oarfish_quant{
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $COUNTANNO --reference $COUNTREF $COUNTPARAMS --output $fn/oarfish &>> $lf && rm -f namecollated.bam && gzip -c $fn/oarfish.quant > $oz && ln -fs $oz $ol
+    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $COUNTANNO --genome-fasta $COUNTREF $COUNTPARAMS --output $fn/oarfish &>> $lf && rm -f namecollated.bam && gzip -c $fn/oarfish.quant > $oz && ln -fs $oz $ol
     """
 }
 
