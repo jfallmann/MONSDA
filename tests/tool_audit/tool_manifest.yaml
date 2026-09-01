@@ -1,0 +1,380 @@
+# Ground-truth manifest for tests/tool_audit/audit_tool_flags.py
+#
+# Declares, per external tool used by MONSDA workflows, the container it
+# ships in and the exact CLI flags MONSDA hardcodes into workflows/*.smk and
+# workflows/*.nf, so a container/tool version bump can be checked against
+# reality without re-running the whole manual investigation from
+# tests/tool_audit/README.md.
+#
+# This file is the reviewable source of truth: update it by hand whenever a
+# workflow's hardcoded flags change, using
+# `python tests/tool_audit/extract_workflow_commands.py` to regenerate the
+# raw shell-command dumps as a reference while doing so.
+#
+# Schema per tool entry:
+#   container:    .sif basename (without the version suffix), under
+#                 --container-dir
+#   binary:       real on-disk binary name inside the container (may differ
+#                 from the container/env name, e.g. segemehl3 -> segemehl.x)
+#   known_gap:    true if the binary is already known to be missing from the
+#                 container as of this manifest; such gaps are reported as
+#                 informational, not a failure, unless --strict is passed
+#   gap_reason:   human-readable note, required when known_gap is true
+#   na:           true if MONSDA never hardcodes flags for this tool (all
+#                 parameters are user-config-driven); audit is skipped
+#   na_reason:    human-readable note, required when na is true
+#   invocations:  list of checks to run against the tool
+#     name:                 short label for reporting
+#     args:                 argv passed to the binary (help-mode)
+#     expected_flags:       list of flag spellings that must appear in the
+#                           combined stdout+stderr of the invocation
+#     expected_text:        list of arbitrary substrings that must appear
+#                           (for multi-word tokens like SAM attribute tags)
+#     expect_exit:          list of acceptable exit codes (default: [0])
+#     expect_value_required: true if the flag must NOT parse as a
+#                           bare/valueless option (regression check for the
+#                           salmon --writeMappings bug); verified by
+#                           actually invoking the flag with no value and
+#                           asserting a "value required" style error
+#     mode:                 "help" (default) or "minimal_run"
+#     fixture:              (minimal_run) file under fixtures/ to bind in
+#     args_template:        (minimal_run) argv with {fixture}/{tmpdir}
+#                           placeholders
+#     expect_output_exists: (minimal_run) {tmpdir}-templated path that must
+#                           exist after a successful run
+#     source_refs:          workflows/*.smk or *.nf files this backs
+
+tools:
+  oarfish:
+    container: oarfish
+    binary: oarfish
+    invocations:
+      - name: genome-alignments
+        args: ["--help"]
+        expected_flags: ["--genome-alignments", "--annotation", "--genome-fasta", "--threads"]
+        source_refs: [workflows/oarfish.smk, workflows/oarfish.nf]
+        note: >
+          Regression check for the fixed bug: older oarfish used
+          --reference instead of --genome-fasta; --genome-fasta must
+          remain present.
+
+  salmon:
+    container: salmon
+    binary: salmon
+    invocations:
+      - name: index
+        args: ["index", "--help"]
+        expected_flags: ["-d", "--decoys", "-p", "--threads", "-t", "-i"]
+        source_refs: [workflows/salmon.smk, workflows/salmonalign.smk, workflows/kallisto.smk]
+      - name: quant-counting
+        args: ["quant", "--help"]
+        expected_flags: ["-a", "--alignments", "--annotation", "--genome", "--deterministic"]
+        source_refs: [workflows/salmon.smk]
+      - name: quant-writeMappings
+        args: ["quant", "--help"]
+        expected_flags: ["--writeMappings"]
+        expect_value_required: true
+        source_refs: [workflows/salmonalign.smk, workflows/salmonalign.nf]
+        note: >
+          Regression check for the fixed bug: salmon 2.5.1's
+          --writeMappings requires an explicit value (MONSDA passes
+          --writeMappings=/dev/stdout); must fail loudly again if it ever
+          silently becomes value-optional (old behaviour) or is removed.
+
+  kallisto:
+    container: kallisto
+    binary: kallisto
+    invocations:
+      - name: index
+        args: ["index"]
+        expect_exit: [0, 1]
+        expected_flags: ["-d", "--d-list", "-i", "-t", "-k"]
+        source_refs: [workflows/kallisto.smk, workflows/kallisto_trim.smk]
+      - name: quant
+        args: ["quant"]
+        expect_exit: [0, 1]
+        expected_flags: ["-i", "-o", "--single", "-t"]
+        source_refs: [workflows/kallisto.smk, workflows/kallisto_trim.smk]
+
+  bwameth:
+    container: bwameth
+    binary: bwameth.py
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["--reference"]
+        source_refs: [workflows/bwameth.smk]
+        note: "--reference is correct/current here, unlike oarfish/salmon."
+
+  fgumi:
+    container: fgumi
+    binary: fgumi
+    invocations:
+      - name: extract
+        args: ["extract", "--help"]
+        expected_flags: ["--inputs", "--sample", "--library", "--output"]
+        source_refs: [workflows/fgumi.smk]
+
+  piscem:
+    container: piscem
+    binary: piscem
+    invocations:
+      - name: build
+        args: ["build", "--help"]
+        expected_flags: ["-o", "--output", "--decoy-paths", "-k", "-t", "--threads"]
+        source_refs: [workflows/piscem.smk]
+      - name: map-sc
+        args: ["map-sc", "--help"]
+        expected_flags: ["-t", "--threads", "-i", "--index", "-1", "--read1", "-2", "--read2", "-o", "--output"]
+        source_refs: [workflows/piscem.smk]
+
+  alevinfry:
+    container: alevinfry
+    binary: alevin-fry
+    invocations:
+      - name: generate-permit-list
+        args: ["generate-permit-list", "--help"]
+        expected_flags: ["-i", "--input", "-d", "--expected-ori", "-o", "--output-dir", "-t", "--threads", "-m", "--min-reads"]
+        source_refs: [workflows/alevinfry.smk]
+      - name: collate
+        args: ["collate", "--help"]
+        expected_flags: ["-i", "--input-dir", "-r", "--rad-dir", "-t", "--threads"]
+        source_refs: [workflows/alevinfry.smk]
+      - name: quant
+        args: ["quant", "--help"]
+        expected_flags: ["-i", "--input-dir", "-m", "--tg-map", "-o", "--output-dir", "-t", "--threads", "--use-mtx", "-r", "--resolution"]
+        source_refs: [workflows/alevinfry.smk]
+
+  star:
+    container: star
+    binary: STAR
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags:
+          - "runThreadN"
+          - "runMode"
+          - "genomeDir"
+          - "genomeFastaFiles"
+          - "outFileNamePrefix"
+          - "outTmpDir"
+          - "readFilesCommand"
+          - "readFilesIn"
+          - "outReadsUnmapped"
+          - "outSAMtype"
+          - "outSAMattributes"
+        expected_text:
+          - "CR CY UR UY"
+          - "GX GN"
+          - "CB UB"
+          - "sM"
+          - "sS"
+          - "sQ"
+        source_refs: [workflows/star.smk]
+        note: >
+          outSAMattributes tags used by MONSDA (NH HI nM AS CR UR CB UB GX
+          GN sS sQ sM) are documented under the "STARsolo"/"Alignment"
+          sections of the same --help text; matched via expected_text.
+
+  hisat2:
+    container: hisat2
+    binary: hisat2
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["--un-conc", "--summary-file", "--new-summary", "-p", "--threads"]
+        source_refs: [workflows/hisat2.smk]
+        note: "--un-conc-gz is the base --un-conc flag + '-gz' suffix, documented in the same help text."
+
+  macs2:
+    container: macs2
+    binary: macs2
+    invocations:
+      - name: callpeak
+        args: ["callpeak", "--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["-t", "--treatment", "--outdir", "-n", "--name", "-f"]
+        source_refs: [workflows/macs2.smk]
+
+  macs3:
+    container: macs3
+    binary: macs3
+    invocations:
+      - name: callpeak
+        args: ["callpeak", "--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["-t", "--treatment", "--outdir", "-n", "--name", "-f"]
+        source_refs: [workflows/macs3.smk]
+
+  umitools:
+    container: umitools
+    binary: umi_tools
+    invocations:
+      - name: whitelist
+        args: ["whitelist", "--help"]
+        expected_flags: ["--stdin", "--stdout", "--read2-in", "--temp-dir", "--log"]
+        source_refs: [workflows/umicollapse.smk]
+      - name: extract
+        args: ["extract", "--help"]
+        expected_flags: ["--stdin", "--stdout", "--read2-in", "--read2-out", "--error-correct-cell", "--whitelist", "--temp-dir", "--log"]
+        source_refs: [workflows/umicollapse.smk]
+      - name: dedup
+        args: ["dedup", "--help"]
+        expected_flags: ["--stdin", "--stdout", "--paired", "--log", "--temp-dir"]
+        source_refs: [workflows/umitools.smk]
+
+  umicollapse:
+    container: umicollapse
+    binary: umicollapse
+    invocations:
+      - name: bam-dedup
+        mode: minimal_run
+        fixture: tiny.bam
+        args_template: ["bam", "-i", "{fixture}", "-o", "{tmpdir}/out.bam", "--paired"]
+        expect_exit: [0]
+        expect_output_exists: "{tmpdir}/out.bam"
+        source_refs: [workflows/umicollapse.smk]
+        note: >
+          umicollapse's --help exits non-zero with "Missing input file!"
+          before printing usage, so this is checked by actually running a
+          minimal dedup instead of parsing --help text.
+
+  rustqc:
+    container: rustqc
+    binary: rustqc
+    invocations:
+      - name: rna
+        args: ["rna", "--help"]
+        expected_flags: ["--gtf", "-t", "--threads", "-s", "--stranded", "-p", "--paired", "-o", "--outdir", "-j", "--json-summary", "--skip-dup-check"]
+        source_refs: [workflows/rustqc.smk]
+
+  trimgalore:
+    container: trimgalore
+    binary: trim_galore
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["--cores", "--paired", "--gzip", "-o", "--output_dir"]
+        source_refs: [workflows/trimgalore.smk]
+
+  cutadapt:
+    container: cutadapt
+    binary: cutadapt
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["-j", "--cores", "-o", "--output", "-p", "--paired-output"]
+        source_refs: [workflows/cutadapt.smk]
+
+  fastp:
+    container: fastp
+    binary: fastp
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["--in1", "--in2", "--out1", "--out2", "--thread"]
+        source_refs: [workflows/fastp.smk]
+
+  bbduk:
+    container: bbmap
+    binary: bbduk.sh
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["in=", "in2=", "out=", "out2=", "threads="]
+        source_refs: [workflows/bbduk.smk]
+
+  segemehl:
+    container: segemehl
+    binary: segemehl.x
+    invocations:
+      - name: help
+        args: ["--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["-d", "--database", "-x", "--generate", "-q", "--query", "-p", "--mate", "-t", "--threads"]
+        source_refs: [workflows/segemehl.smk]
+
+  segemehl3:
+    container: segemehl3
+    binary: segemehl.x
+    invocations:
+      - name: help
+        args: ["--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["-d", "--database", "-x", "--generate", "-q", "--query", "-p", "--mate", "-t", "--threads"]
+        source_refs: [workflows/segemehl3.smk]
+        note: >
+          The segemehl3 container/env does not ship a binary literally
+          named "segemehl3"; it ships segemehl.x, same as the segemehl
+          container. Not a bug: MONSDA resolves the binary via config
+          (MAPPERBIN), never hardcodes the name "segemehl3".
+
+  minimap:
+    container: minimap
+    binary: minimap2
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["-d", "-t"]
+        source_refs: [workflows/minimap.smk]
+
+  sra:
+    container: sra
+    binary: fasterq-dump
+    invocations:
+      - name: help
+        args: ["--help"]
+        expected_flags: ["-O", "--outdir", "-e", "--threads", "-S", "--split-files"]
+        source_refs: [workflows/sra.smk]
+
+  picard:
+    container: picard
+    binary: picard
+    invocations:
+      - name: MarkDuplicates
+        args: ["MarkDuplicates", "--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["--REMOVE_DUPLICATES", "--ASSUME_SORT_ORDER", "--TMP_DIR", "--INPUT", "--OUTPUT", "--METRICS_FILE"]
+        source_refs: [workflows/picard_dedup.smk]
+
+  piranha:
+    container: piranha
+    binary: Piranha
+    na: true
+    na_reason: >
+      workflows/piranha.smk never hardcodes Piranha CLI flags; all
+      peak-calling parameters come from user config ({params.ppara}).
+
+  # --- Known gaps: containers confirmed missing their expected binary as of
+  # this manifest's creation (see tests/tool_audit/README.md). Reported as
+  # informational unless --strict is passed. Fix by rebuilding the
+  # container, then flip known_gap to false and add real invocations above.
+  scyphy:
+    container: scyphy
+    binary: scyphy
+    known_gap: true
+    gap_reason: "no 'scyphy' binary found in /opt/conda/envs/monsda/bin inside scyphy-1.5.0.sif"
+
+  dorado:
+    container: dorado
+    binary: dorado
+    known_gap: true
+    gap_reason: "no 'dorado' binary found inside dorado-1.5.0.sif"
+
+  guppy:
+    container: guppy
+    binary: guppy_basecaller
+    known_gap: true
+    gap_reason: "no 'guppy_basecaller' binary found inside guppy-1.5.0.sif (env only has gettext tools)"
+
+  ciri2:
+    container: ciri2
+    binary: CIRI2.pl
+    known_gap: true
+    gap_reason: "no 'CIRI2.pl' binary found inside ciri2-1.5.0.sif"
+
+  rustar:
+    container: rustar
+    binary: rustar
+    known_gap: true
+    gap_reason: "no rustar-named binary found inside rustar-1.5.0.sif (only the rust toolchain itself)"

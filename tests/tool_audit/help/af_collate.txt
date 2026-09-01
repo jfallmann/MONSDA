@@ -1,0 +1,15 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Collate a RAD file by corrected cell barcode
+
+Usage: alevin-fry collate [OPTIONS] --input-dir <INPUTDIR> --rad-dir <RADFILE>
+
+Options:
+  -i, --input-dir <INPUTDIR>  input directory made by generate-permit-list
+  -r, --rad-dir <RADFILE>     the directory containing the RAD file to be collated
+  -t, --threads <THREADS>     number of threads to use for processing (minimum: 2; lower values use
+                              2) [default: 16]
+  -c, --compress              compress the output collated RAD file
+      --memory-limit <SIZE>   collation buffer budget, excluding indexes and page cache (for example
+                              2GiB or 4GB; default: 2GiB)
+  -h, --help                  Print help
+  -V, --version               Print version

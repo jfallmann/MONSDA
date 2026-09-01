@@ -1,0 +1,39 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+usage: macs3 [-h] [--version]
+             {callpeak,bdgpeakcall,bdgbroadcall,bdgcmp,bdgopt,cmbreps,bdgdiff,filterdup,predictd,pileup,randsample,refinepeak,callvar,hmmratac}
+             ...
+
+macs3 -- Model-based Analysis for ChIP-Sequencing
+
+positional arguments:
+  {callpeak,bdgpeakcall,bdgbroadcall,bdgcmp,bdgopt,cmbreps,bdgdiff,filterdup,predictd,pileup,randsample,refinepeak,callvar,hmmratac}
+    callpeak            Main MACS3 Function: Call peaks from alignment
+                        results.
+    bdgpeakcall         Call peaks from bedGraph file.
+    bdgbroadcall        Call nested broad peaks from bedGraph file.
+    bdgcmp              Comparing two signal tracks in bedGraph format.
+    bdgopt              Operate the score column of bedGraph file.
+    cmbreps             Combine bedGraph files of scores from replicates.
+    bdgdiff             Differential peak detection based on paired four
+                        bedGraph files.
+    filterdup           Remove duplicate reads, then save in BED/BEDPE format
+                        file.
+    predictd            Predict d or fragment size from alignment results. In
+                        case of PE data, report the average insertion/fragment
+                        size from all pairs.
+    pileup              Pileup aligned reads (single-end) or fragments
+                        (paired-end).
+    randsample          Randomly choose a number/percentage of total reads,
+                        then save in BED/BEDPE format file.
+    refinepeak          Take raw reads alignment, refine peak summits.
+                        Inspired by SPP.
+    callvar             Call variants in given peak regions from the alignment
+                        BAM files.
+    hmmratac            Dedicated peak calling based on Hidden Markov Model
+                        for ATAC-seq data.
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+For command line options of each command, type: macs3 COMMAND -h

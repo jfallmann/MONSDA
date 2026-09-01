@@ -1,0 +1,2 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+FATAL:   "CIRI2.pl": executable file not found in $PATH

@@ -1,0 +1,27 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Usage: fgumi [OPTIONS] <COMMAND>
+
+Commands:
+  extract          [UMI EXTRACTION] Extract UMIs from FASTQ and create unmapped BAM
+  correct          [UMI EXTRACTION] Correct UMIs in a BAM file to a fixed set of UMIs
+  fastq            [ALIGNMENT]      Convert BAM to FASTQ format
+  zipper           [ALIGNMENT]      Zip unmapped BAM with aligned BAM
+  sort             [ALIGNMENT]      Sort BAM file by coordinate, queryname, or template-coordinate
+  merge            [ALIGNMENT]      Merge pre-sorted BAM files into a single sorted BAM
+  group            [GROUP]          Group reads by UMI to identify reads from the same original molecule
+  dedup            [DEDUP]         Mark or remove PCR duplicates using UMI information
+  simplex          [CONSENSUS]      Call simplex consensus sequences from UMI-grouped reads
+  duplex           [CONSENSUS]      Call duplex consensus sequences from UMI-grouped reads
+  codec            [CONSENSUS]      Call CODEC consensus reads from grouped BAM
+  filter           [POST-CONSENSUS] Filter consensus reads based on quality metrics
+  clip             [POST-CONSENSUS] Clip overlapping reads in BAM files
+  duplex-metrics   [POST-CONSENSUS] Collect QC metrics for duplex consensus reads
+  simplex-metrics  [POST-CONSENSUS] Collect QC metrics for simplex sequencing data
+  review           [POST-CONSENSUS] Extract data to review variant calls from consensus reads
+  downsample       [UTILITIES]      Downsample BAM by UMI family using streaming
+  help             Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose  Enable verbose (debug-level) logging. Equivalent to setting `RUST_LOG=debug`
+  -h, --help     Print help
+  -V, --version  Print version

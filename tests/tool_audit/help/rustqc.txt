@@ -1,0 +1,12 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Fast RNA-seq QC in a single pass: dupRadar, featureCounts, 8 RSeQC tools, preseq, samtools stats, and Qualimap — reimplemented in Rust
+
+Usage: rustqc-avx512 <COMMAND>
+
+Commands:
+  rna   RNA-Seq QC — single-pass analysis of BAM/SAM/CRAM files
+  help  Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
