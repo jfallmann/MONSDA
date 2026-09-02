@@ -157,12 +157,35 @@ def check_help_invocation(tool, container_name, binary, sif, inv, timeout):
     return Result(tool, name, STATUS_PASS, "ok")
 
 
+def run_prep_steps(prep, tmpdir, fixture_path):
+    """Execute manifest-declared `prep` steps (write/gzip) before a
+    minimal_run invocation, so fixtures needing more than one static file
+    (e.g. the oarfish gzipped-GTF regression probe) don't need to be
+    checked into fixtures/ as binary blobs."""
+    for step in prep or []:
+        if "write" in step:
+            target = Path(step["write"].format(fixture=str(fixture_path) if fixture_path else "", tmpdir=tmpdir))
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(step.get("content", ""))
+        elif "gzip" in step:
+            import gzip as gzip_module
+
+            src = Path(step["gzip"].format(fixture=str(fixture_path) if fixture_path else "", tmpdir=tmpdir))
+            dest = Path(step["dest"].format(fixture=str(fixture_path) if fixture_path else "", tmpdir=tmpdir))
+            with open(src, "rb") as fh_in, gzip_module.open(dest, "wb") as fh_out:
+                fh_out.write(fh_in.read())
+        else:
+            raise ValueError(f"unknown prep step: {step}")
+
+
 def check_minimal_run_invocation(tool, container_name, binary, sif, inv, timeout, fixtures_dir):
     name = inv.get("name", "minimal_run")
     fixture = inv.get("fixture")
     expect_exit = inv.get("expect_exit", [0])
     args_template = inv.get("args_template", [])
     expect_output_exists = inv.get("expect_output_exists")
+    expect_stderr_contains = inv.get("expect_stderr_contains", [])
+    prep = inv.get("prep")
 
     fixture_path = fixtures_dir / fixture if fixture else None
     if fixture_path is not None and not fixture_path.exists():
@@ -171,6 +194,11 @@ def check_minimal_run_invocation(tool, container_name, binary, sif, inv, timeout
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        try:
+            run_prep_steps(prep, tmpdir, fixture_path)
+        except Exception as e:
+            return Result(tool, name, STATUS_GAP, f"prep step failed: {e}")
+
         args = [
             a.format(fixture=str(fixture_path) if fixture_path else "", tmpdir=tmpdir)
             for a in args_template
@@ -199,6 +227,18 @@ def check_minimal_run_invocation(tool, container_name, binary, sif, inv, timeout
             if not out_path.exists() or out_path.stat().st_size == 0:
                 return Result(
                     tool, name, STATUS_DRIFT, f"expected output not created: {out_path}"
+                )
+
+        if expect_stderr_contains:
+            missing_text = [t for t in expect_stderr_contains if t not in err]
+            if missing_text:
+                return Result(
+                    tool,
+                    name,
+                    STATUS_DRIFT,
+                    f"expected stderr text not found (message may have changed "
+                    f"or the underlying issue may be fixed upstream): {missing_text}; "
+                    f"stderr head: {err.strip()[:300]!r}",
                 )
 
     return Result(tool, name, STATUS_PASS, "ok")

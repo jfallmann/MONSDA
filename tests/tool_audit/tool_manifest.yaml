@@ -57,6 +57,44 @@ tools:
           Regression check for the fixed bug: older oarfish used
           --reference instead of --genome-fasta; --genome-fasta must
           remain present.
+      - name: gzipped-annotation-unsupported
+        mode: minimal_run
+        fixture: tiny_namecollated.bam
+        args_template:
+          - "--genome-alignments"
+          - "{fixture}"
+          - "--annotation"
+          - "{tmpdir}/annotation.gtf.gz"
+          - "--genome-fasta"
+          - "{tmpdir}/genome.fa.gz"
+          - "--output"
+          - "{tmpdir}/oarfish_gz_probe"
+        prep:
+          - write: "{tmpdir}/annotation.gtf"
+            content: |
+              chr1	test	transcript	1	100	.	+	.	gene_id "g1"; transcript_id "t1";
+              chr1	test	exon	1	100	.	+	.	gene_id "g1"; transcript_id "t1";
+          - gzip: "{tmpdir}/annotation.gtf"
+            dest: "{tmpdir}/annotation.gtf.gz"
+          - write: "{tmpdir}/genome.fa"
+            content: ">chr1\nACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+          - gzip: "{tmpdir}/genome.fa"
+            dest: "{tmpdir}/genome.fa.gz"
+        expect_exit: [1]
+        expect_stderr_contains: ["unable to detect annotation format from extension"]
+        source_refs: [workflows/oarfish.smk, workflows/oarfish.nf]
+        note: >
+          Documents/tracks a real (non-CLI-flag) bug found this session:
+          oarfish 0.10.3 cannot load a gzipped GTF/GFF for --annotation in
+          genome mode ("unable to detect annotation format from extension:
+          .gz"), even though --genome-fasta happily accepts gzipped FASTA.
+          workflows/oarfish.smk/.nf now decompress the annotation to a
+          plain .gtf via `zcat -f` before invoking oarfish. This probe
+          documents the upstream limitation so it is easy to notice (via a
+          DRIFT going away, i.e. exit code no longer 1 / message text
+          changing) if/when a future oarfish release adds native gzip
+          support for --annotation, at which point the manifest and the
+          decompression workaround in the workflows can both be reverted.
 
   salmon:
     container: salmon
