@@ -11,7 +11,7 @@ rule make_rmd:
     input:  os.path.join(outdir,'summary.Rmd')
     output: rules.themall.input.summary_all
             # rules.themall.input.summarys
-    log:    expand("LOGS/{outdir}/make_rmd.log", outdir=outdir)
+    log:    expand("LOGS/{outdir}/SUMMARY/summary/make_rmd.log", outdir=outdir)
     conda:  "summary.yaml"
     container: "oras://jfallmann/monsda:summary"
     params: outdir = outdir,

@@ -10,8 +10,8 @@ rule themall:
 
 if paired == 'paired':
     rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
+                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
         output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
         threads: 1
@@ -21,7 +21,7 @@ if paired == 'paired':
 
 else:
     rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
         output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
         threads: 1
         params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
@@ -31,7 +31,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cape}/idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -48,7 +48,7 @@ if paired == 'paired':
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -65,7 +65,7 @@ else:
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD

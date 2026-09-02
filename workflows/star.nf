@@ -37,7 +37,7 @@ process star_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/star_index.log"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/star/index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
         else                                             "$MAPUIDX"
     }
@@ -56,7 +56,7 @@ process star_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* . && rm -rf STARTMP
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && rm -rf STARTMP && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir STARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME star.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* . && rm -rf STARTMP
     """
 }
 
@@ -72,8 +72,8 @@ process star_mapping{
     saveAs: {filename ->
         if (filename.indexOf("_unmapped") > 0)       "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)     "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/\Q.Aligned.out.sam.gz\E/,"")}_mapped.sam.gz"
-        else if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${file(filename).getName()}"
-        else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star_"+"${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star/"+"${file(filename).getName()}"
+        else if (filename.indexOf(".out") >0)        "LOGS/${COMBO}/${CONDITION}/MAPPING/star/"+"${file(filename).getName()}"
         else if (filename.indexOf(".tab") >0)        "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
         else                                         "MAPPED/${COMBO}/${CONDITION}/"+"${filename}"
     }

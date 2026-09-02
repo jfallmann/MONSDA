@@ -1,6 +1,6 @@
 {
   "comment":{
-    "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS",
+    "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS",
     "BINS": "Where to find the scripts used in the workflow, per default the scripts directory that comes with MONSDA. ONLY CHANGE IF YOU KNOW WHAT YOU ARE DOING!",
     "MAXTHREADS": "Maximum number of cores to use, make sure this fits your needs, acts as upper cap.",
     "VERSION": "Version of MONSDA to use, needs to match installed version"
@@ -15,12 +15,12 @@
       "TYPES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
       "BATCHES": "Please enter a comma separated list for this setting matching your sample list, i.e. each sample should have a matching entry. Can be left blank.",
       "SEQUENCING": "single or paired or singlecell and stranded info [rf,fr,ff,unstranded (or empty)] comma separated",
-      "REFERENCE": "set path to reference, '.fa.gz' ending expected",
+      "REFERENCE": "set path to reference, '.fa', '.fa.gz' or '.fa.bgz' ending expected",
       "DECOY": "set path to decoy file if tool for mapping/counting needs decoys, like e.g. salmon",
       "INDEX": "set path to index, default index to use for mapping with this settings",
       "PREFIX": "if needed, prefix for mapping software can be set here",
-      "GTF": "set path to gtf, '.gtf.gz' ending expected, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
-      "GFF": "set path to gff, '.gff.gz' ending expected. THIS WILL BE USED WHEN GTF IS NOT AVAILABLE BUT ANNOTATION IS REQUIRED OR IF TOOL REQUIRES GFF FORMAT",
+      "GTF": "set path to gtf, '.gtf', '.gtf.gz' or '.gtf.bgz' ending expected, THIS WILL BE USED WHENEVER POSSIBLE OR NOT DEFINED OTHERWISE",
+      "GFF": "set path to gff, '.gff', '.gff.gz' or '.gff.bgz' ending expected. THIS WILL BE USED WHEN GTF IS NOT AVAILABLE BUT ANNOTATION IS REQUIRED OR IF TOOL REQUIRES GFF FORMAT",
       "IP": "OPTIONAL if PEAKS is run and files need specific processing, eg. for iCLIP protocol"
     },
     "SAMPLES": [],
@@ -207,7 +207,10 @@
       "hisat2": "hisat2",
       "bwa": "bwa mem",
       "bwameth": "bwameth.py",
-      "minimap": "minimap2"
+      "minimap": "minimap2",
+      "salmonalign": "salmon",
+      "rammap": "rammap",
+      "piscem": "piscem"
     },
     "ENV" : "",
     "BIN" : "",
@@ -286,20 +289,53 @@
     "minimap": {
       "comment": {
         "INDEX" : "Indexing options",
-        "MAP": "Mapping options",
+        "MAP": "Mapping options, for long reads set the appropriate preset, e.g. -x map-ont (Nanopore) or -x map-pb (PacBio)",
         "EXTENSION" : "Prefix for index name, can be left empty."
       },
       "OPTIONS": {
           "INDEX" : "",
-          "MAP": "",
+          "MAP": "-x map-ont",
           "EXTENSION" : ""
+      }
+    },
+    "salmonalign": {
+      "comment": {
+        "INDEX" : "salmon index options, uses the salmon environment/container",
+        "MAP": "salmon quant options; salmon is run as a selective-alignment mapper (--writeMappings) emitting SAM for downstream postprocessing"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": ""
+      }
+    },
+    "rammap": {
+      "comment": {
+        "INDEX" : "minimap2 index options (rammap wraps a minimap2 index)",
+        "MAP": "rammap mapping options for long-read alignment"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": ""
+      }
+    },
+    "piscem": {
+      "comment": {
+        "INDEX" : "piscem build options (single-cell only)",
+        "MAP": "piscem map-sc options, requires single-cell read setup (R1 = barcode+UMI, R2 = cDNA)"
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": ""
       }
     },
   },
   "COUNTING": {
     "TOOLS": {
       "countreads": "featureCounts",
-      "salmon": "salmon"
+      "salmon": "salmon",
+      "oarfish": "oarfish",
+      "alevinfry": "alevin-fry",
+      "simpleaf": "simpleaf"
     },
     "ENV" : "",
     "BIN" : "",
@@ -318,12 +354,45 @@
     "salmon": {
       "comment": {
           "INDEX": "salmon index options",
-          "QUANT": "salmon quant options"
+          "QUANT": "salmon quant options",
+          "BAM": "Optional: quantify from an aligned BAM instead of FASTQ. Leave empty for standard FASTQ mode. Set to 'transcriptome' for transcriptome-aligned BAMs or 'genome' for genome-aligned BAMs (requires GTF annotation)."
       },
       "OPTIONS":
         {
             "INDEX": "",
-            "QUANT": "--validateMappings --seqBias --gcBias"
+            "QUANT": "--seqBias --gcBias",
+            "BAM": ""
+        }
+    },
+    "oarfish": {
+      "comment": {
+          "COUNT": "oarfish options for long-read transcript quantification from a transcriptome-aligned BAM"
+      },
+      "OPTIONS":
+        {
+            "COUNT": ""
+        }
+    },
+    "alevinfry": {
+      "comment": {
+          "PERMIT": "alevin-fry generate-permit-list options (single-cell only, consumes piscem RAD output)",
+          "COUNT": "alevin-fry quant options"
+      },
+      "OPTIONS":
+        {
+            "PERMIT": "-d fw --unfiltered-pl",
+            "COUNT": "-r cr-like --use-mtx"
+        }
+    },
+    "simpleaf": {
+      "comment": {
+          "INDEX": "simpleaf index options (single-cell, self-contained index + quant from FASTQ)",
+          "COUNT": "simpleaf quant options"
+      },
+      "OPTIONS":
+        {
+            "INDEX": "",
+            "COUNT": ""
         }
     }
   },
@@ -507,7 +576,8 @@
   "DTU": {
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
-      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+      "drimseq": "Analysis/DTU/DRIMSEQ.R",
+      "spit": "Analysis/DTU/SPIT.py"
     },
     "ENV" : "",
     "BIN" : "",
@@ -525,11 +595,12 @@
       "comment": {
           "INDEX": "salmon index options, e.g. path to decoy file",
           "QUANT": "salmon quant options",
-          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
       },
       "OPTIONS": {
           "INDEX": "-d GENOMES/salmon_decoy",
-          "QUANT": "--validateMappings --seqBias --gcBias",
+          "QUANT": "--seqBias --gcBias",
           "DTU": ""
       }
     },
@@ -537,11 +608,25 @@
       "comment": {
           "INDEX": "salmon index options, e.g. path to decoy file",
           "QUANT": "salmon quant options",
-          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ..."
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
       },
       "OPTIONS": {
           "INDEX": "-d GENOMES/salmon_decoy",
-          "QUANT": "--validateMappings --seqBias --gcBias",
+          "QUANT": "--seqBias --gcBias",
+          "DTU": ""
+      }
+    },
+    "spit": {
+      "comment": {
+          "INDEX": "salmon index options, e.g. path to decoy file",
+          "QUANT": "salmon quant options",
+          "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
+      },
+      "OPTIONS": {
+          "INDEX": "-d GENOMES/salmon_decoy",
+          "QUANT": "--seqBias --gcBias",
           "DTU": ""
       }
     }

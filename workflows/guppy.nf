@@ -18,7 +18,7 @@ process guppy{
         if (filename.indexOf(".fastq.gz") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf("_summary.txt") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf("_telemetry.js") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".log") > 0)        "LOGS/BASECALL/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${CONDITION}/BASECALL/guppy/${file(filename).getName()}"
     }
 
     input:

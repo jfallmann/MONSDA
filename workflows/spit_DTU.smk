@@ -1,0 +1,94 @@
+logid = 'spit_DTU.smk '
+DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
+log.debug(logid+"DTUENV: "+str(DTUENV))
+COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config(SAMPLES, config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+
+comparison = comparable_as_string(config,'DTU')
+compstr = [i.split(":")[0] for i in comparison.split(",")]
+usededup = config.get('RUNDEDUP', False)
+
+TERMINUSENV = 'terminus'
+termpara = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('TERMINUS', None)
+runterminus = termpara is not None
+
+keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
+keydict["REF"] = REFERENCE
+keydict["DECOY"] = DECOY
+keydict["ENV"] = DTUENV
+unik = get_dict_hash(keydict)
+
+rule themall:
+    input:  session = expand("DTU/{combo}/DTU_SPIT_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
+            res_t   = expand("DTU/{combo}/Tables/DTU_SPIT_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            res_g   = expand("DTU/{combo}/Tables/DTU_SPIT_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            res_i   = expand("DTU/{combo}/Tables/DTU_SPIT_{scombo}_{comparison}_table_ifs.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            fig_PV  = expand("DTU/{combo}/Figures/DTU_SPIT_{scombo}_{comparison}_figure_PValues.png", combo=combo, comparison=compstr, scombo=scombo),
+            fig_W   = expand("DTU/{combo}/Figures/DTU_SPIT_{scombo}_{comparison}_figure_Wasserstein.png", combo=combo, comparison=compstr, scombo=scombo),
+            sig_t    = expand("DTU/{combo}/Tables/Sig_DTU_SPIT_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_dt   = expand("DTU/{combo}/Tables/SigDOWN_DTU_SPIT_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_ut   = expand("DTU/{combo}/Tables/SigUP_DTU_SPIT_{scombo}_{comparison}_table_transcripts.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_g    = expand("DTU/{combo}/Tables/Sig_DTU_SPIT_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_dg   = expand("DTU/{combo}/Tables/SigDOWN_DTU_SPIT_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            sig_ug   = expand("DTU/{combo}/Tables/SigUP_DTU_SPIT_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
+            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
+
+include: "dtu_base.smk"
+
+rule run_DTU:
+    input:  anno = expand(rules.create_annotation_table.output.anno, combo=combo, scombo=scombo)
+    output: session = rules.themall.input.session,
+            res_t   = rules.themall.input.res_t,
+            res_g   = rules.themall.input.res_g,
+            res_i   = rules.themall.input.res_i,
+            fig_PV  = rules.themall.input.fig_PV,
+            fig_W   = rules.themall.input.fig_W
+    log:    expand("LOGS/{combo}/DTU/spit/run_DTU.log", combo=combo)
+    conda:  ""+DTUENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DTUENV+""
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    params: bins   = str.join(os.sep,[BINS, DTUBIN]),
+            compare = comparison,
+            pcombo = scombo if scombo != '' else 'none',
+            outdir = 'DTU/'+combo,
+            ref = os.path.abspath(ANNOTATION),
+            dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', "")
+    shell: "python3 {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}"
+
+rule filter_significant_spit:
+    input:  res_g = rules.themall.input.res_g,
+            res_t = rules.themall.input.res_t
+    output: sig_g   = rules.themall.input.sig_g,
+            sig_dg  = rules.themall.input.sig_dg,
+            sig_ug  = rules.themall.input.sig_ug,
+            sig_t   = rules.themall.input.sig_t,
+            sig_dt  = rules.themall.input.sig_dt,
+            sig_ut  = rules.themall.input.sig_ut
+    log:    expand("LOGS/{combo}/DTU/spit/filter_spitDTU.log", combo=combo)
+    conda:  ""+DTUENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DTUENV+""
+    threads: 1
+    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
+            lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
+    shell:  "set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orru[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orru[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orrt[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtu[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtu[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}"
+
+rule create_summary_snippet:
+    input:  rules.run_DTU.output.res_t,
+            rules.run_DTU.output.res_g,
+            rules.run_DTU.output.res_i,
+            rules.run_DTU.output.fig_PV,
+            rules.run_DTU.output.fig_W,
+            rules.themall.input.sig_g,
+            rules.themall.input.sig_dg,
+            rules.themall.input.sig_ug,
+            rules.themall.input.sig_t,
+            rules.themall.input.sig_dt,
+            rules.themall.input.sig_ut,
+            rules.themall.input.session
+    output: rules.themall.input.Rmd
+    log:    expand("LOGS/{combo}/DTU/spit/create_summary_snippet.log", combo=combo)
+    conda:  ""+DTUENV+".yaml"
+    container: "oras://jfallmann/monsda:"+DTUENV+""
+    threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
+    params: bins = BINS,
+            abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
+    shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DTUENV} --loglevel DEBUG 2>> {log}"

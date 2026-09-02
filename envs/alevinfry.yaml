@@ -1,0 +1,7 @@
+name: alevinfry
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - alevin-fry =0.18.1

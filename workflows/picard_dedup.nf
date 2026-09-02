@@ -14,10 +14,12 @@ process dedup_bam{
     saveAs: {filename ->
         if (filename.endsWith("_dedup.bam"))              "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf("_dedup.bam.bai") > 0)  "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${COMBO}/${CONDITION}/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)       "LOGS/${COMBO}/${CONDITION}/DEDUP/picard/${file(filename).getName()}"
         else if (filename.indexOf("metrix.txt") > 0)      "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else null
     }
+
+    publishDir "${workflow.workDir}/../LOGS/${COMBO}/${CONDITION}/DEDUP/picard" , mode: 'copy', pattern: "*_dedup_metrix.txt"
 
     input:
     path todedup

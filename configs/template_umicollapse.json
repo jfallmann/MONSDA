@@ -109,7 +109,7 @@
         "salmon": {
           "OPTIONS": {
             "INDEX": "-k 31",
-            "COUNTING": "-l U --validateMappings"
+            "COUNTING": "-l U"
           }
         }
       }

@@ -1,7 +1,7 @@
 
-QCENV=get_always('QCENV')
-QCBIN=get_always('QCBIN')
-QCPARAMS = get_always('fastqc_params_MULTI') ?: ''
+MQCENV=get_always('MQCENV')
+MQCBIN=get_always('MQCBIN')
+MQCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 
 process collect_multi{
     input:
@@ -18,8 +18,8 @@ process collect_multi{
 
 
 process premultiqc{
-    conda "$QCENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$QCENV"
+    conda "$MQCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$MQCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -39,7 +39,24 @@ process premultiqc{
 
     script:
     """
-    export LC_ALL=en_US.utf8; export LC_ALL=C.UTF-8; multiqc -f --exclude picard --exclude gatk -k json -z -s 
+    OUT=\${PWD}
+    LOGDIR="${workflow.workDir}/../LOGS"
+    SCAN="\${LOGDIR}/${CONDITION}"
+    VERSIONS="\${LOGDIR}/versions.txt"
+
+    # All QC results of this condition are reported, no need to collect them first.
+    QC_DIR="${workflow.workDir}/../QC/${CONDITION}"
+    if [[ -d "\$QC_DIR" ]]; then
+        SCAN="\$SCAN \$QC_DIR"
+    fi
+
+    MODS=""
+    if [[ -f "\$VERSIONS" ]]; then
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | tr ',' '\\n' | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        cp -f "\$VERSIONS" "\$OUT"/
+    fi
+    export LC_ALL=C.UTF-8
+    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" \$SCAN
     """
 }
 
@@ -50,7 +67,7 @@ workflow PREMULTIQC{
     main:
 
     //SAMPLE CHANNELS
-    multiqc(otherqcs.collect())
+    premultiqc(otherqcs.collect())
 
     emit:
     mqcres = premultiqc.out.multiqc_results

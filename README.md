@@ -129,6 +129,39 @@ To also run the heavier pipeline smoke test from the helper script:
 RUN_INTEGRATION_TESTS=1 bash tests/cicd_test.sh
 ```
 
+## Troubleshooting
+
+### `gzip`/`zcat: No such file or directory` for a `.gz` reference when running in a container (apptainer/singularity)
+
+MONSDA links `.bgz` reference files (genome, GTF/GFF, decoy) into `GENOMES/`
+with a `.gz` sibling symlink, so tools that expect the `.gz` extension keep
+working (bgzip output is gzip compatible). This symlink chain typically looks
+like:
+
+```
+GENOMES/hg38p14_softmasked.fa.gz -> hg38p14_softmasked.fa.bgz -> /path/to/original/hg38p14_softmasked.fa.bgz
+```
+
+The final target is an absolute path outside the run/project directory,
+pointing at wherever the reference was originally located. When a rule runs
+inside `apptainer`/`singularity`, only the run/project directory (and any
+paths you explicitly bind) are visible inside the container. If the original
+reference lives elsewhere on the host, resolving the symlink chain inside the
+container fails with an error such as:
+
+```
+gzip: GENOMES/hg38p14_softmasked.fa.gz: No such file or directory
+```
+
+even though the file exists and is readable outside the container.
+
+**Fix:** bind-mount the directory that holds the original reference file(s)
+into the container, in addition to the run directory, e.g. via
+`--singularity-args`/`--use-apptainer` bind options passed to snakemake, or
+the equivalent nextflow container options, so the symlink target is reachable
+from inside the container. For example, if your reference lives under
+`/scratch/arctic/GENOMES/human`, add that path (or its parent) as an
+additional bind path for the container run.
 
 ## Contribute
 If you like this project, are missing features, want to contribute or
@@ -144,4 +177,3 @@ workflows directory. Do not forget to also extend the template.json
 and add some documentation.
 
 PRs always welcome.
-

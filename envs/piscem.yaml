@@ -1,0 +1,8 @@
+name: piscem
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - piscem =0.23.0
+  - samtools =1.21

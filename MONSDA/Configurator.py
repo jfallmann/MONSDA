@@ -27,7 +27,7 @@ try:
     installpath = os.path.dirname(__file__).replace(
         os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]), "share"
     )
-except:
+except Exception:
     installpath = os.getcwd()
 
 configpath = os.path.join(installpath, "MONSDA", "configs")
@@ -179,7 +179,7 @@ class GUIDE:
                     [float(x) for x in a.split(",")]
                     self.answer = a
                     break
-                except:
+                except ValueError:
                     self.clear(2)
                     prRed("please enter integer or float")
                     continue
@@ -187,10 +187,10 @@ class GUIDE:
                 if not a:
                     self.answer = a
                     break
-                ending = proof.replace("end_exist_", "") + "$"
-                if not re.findall(ending, a):
+                endings = proof.replace("end_exist_", "").split("|")
+                if not any(a.endswith(ending) for ending in endings):
                     self.clear(2)
-                    prRed(f"Nope, file has to end with '{ending.replace('$','')}'")
+                    prRed(f"Nope, file has to end with '{' or '.join(endings)}'")
                     continue
                 elif not os.path.isfile(a):
                     self.clear(2)
@@ -304,7 +304,7 @@ def setInDict(dataDict, maplist, value):
                 dataDict[first].append(value)
             else:
                 dataDict[first] = value
-        except:
+        except (KeyError, TypeError, AttributeError):
             dataDict[first] = value
 
 
@@ -579,7 +579,7 @@ def show_settings():
             var = json.dumps(var, indent=4)
         try:
             print(f"{name} = {var}")
-        except:
+        except Exception:
             print(f"{name} = NestedDefaultDict()")
     print("\n============")
 
@@ -1140,7 +1140,7 @@ def set_settings():
                 try:
                     if project.samplesDict[k]["cond"] == ":".join(maplist):
                         seq = project.samplesDict[k]["seq"]
-                except:
+                except (KeyError, TypeError):
                     continue
             setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
             settings_to_make = ["REFERENCE", "DECOY", "GTF", "GFF"]
@@ -1169,7 +1169,10 @@ def set_settings():
                     else:
                         s = last_answer
                     if key in ["GTF", "GFF"]:
-                        p = f"end_exist_.{key.lower()}.gz"
+                        suffix = f".{key.lower()}"
+                        p = f"end_exist_{suffix}|{suffix}.gz|{suffix}.bgz"
+                    elif key == "REFERENCE":
+                        p = "end_exist_.fa|.fa.gz|.fa.bgz"
                     elif key == "IP":
                         p = None
                     else:
@@ -1257,7 +1260,7 @@ def modify(config=None):
             else:
                 print("")
             prCyan(f"   {config}")
-        except:
+        except Exception:
             er = 2
 
         condition_pathes = getPathesFromDict(modify_config, "SAMPLES")
@@ -1569,7 +1572,9 @@ def set_workflows(wf=None):
             if (
                 "FEATURES" in project.baseDict[workflow].keys()
                 and not project.workflowsDict[workflow]["FEATURES"]
+                and "countreads" in tools_to_use
             ):
+                opt_dict = NestedDefaultDict()
                 number = 1
                 for k in project.baseDict[workflow]["FEATURES"].keys():
                     opt_dict[number] = k

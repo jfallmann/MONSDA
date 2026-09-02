@@ -32,7 +32,7 @@ process featurecount_diego{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DAS/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DAS/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
-        else if (filename.indexOf(".log") > 0)        "LOGS/DAS/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_diego_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DAS/diego/featurecounts_diego_unique.log"
     }
 
     input:
@@ -81,7 +81,7 @@ process create_samplemaps{
     saveAs: {filename ->
         if (filename == "samplemap.txt")      "DAS/${SCOMBO}/Tables/${COMBO}_samplemap.txt"
         else if (filename == "groupings.txt")      "DAS/${SCOMBO}/Tables/${COMBO}_grouping.txt"
-        else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_create_samplemaps.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DAS/diego/${COMBO}_create_samplemaps.log"
     }
 
     output: 
@@ -107,7 +107,7 @@ process prepare_junction_usage_matrix{
     saveAs: {filename ->
         if (filename == "junction_table.txt.gz")      "DAS/${SCOMBO}/Tables/${COMBO}_junction_table_dexdas.txt.gz"
         else if (filename == "ANNOTATION.gz")      "DAS/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
-        else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_junction_usage_matrix.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DAS/diego/${COMBO}_junction_usage_matrix.log"
     }
 
     input:
@@ -136,7 +136,7 @@ process create_contrast_files{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("contrast.txt") > 0 )      "DAS/${SCOMBO}/Tables/${COMBO}_contrast.txt"
-        else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_create_contrast_files.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DAS/diego/${COMBO}_create_contrast_files.log"
     }
 
     input:
@@ -163,7 +163,7 @@ process run_diego{
     saveAs: {filename ->
         if (filename.indexOf("csv") > 0)      "DAS/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("dendrogram") > 0)      "DAS/${SCOMBO}/Figures/${file(filename).getName()}"                
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/${SCOMBO}_${COMBO}_${COMPSTR}/run_diego.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}_${COMBO}_${COMPSTR}/DAS/diego/run_diego.log"
     }
 
     input:
@@ -194,7 +194,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DAS/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DAS/diego/filter_deseq2.log"
     }
 
     input:
@@ -246,7 +246,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_diego.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DAS/diego/filter_diego.log"
     }
 
     input:

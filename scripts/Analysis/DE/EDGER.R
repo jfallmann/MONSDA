@@ -29,6 +29,25 @@ print(args)
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
 source(libp)
 
+## plotMDS needs at least 3 samples/columns, fall back to a placeholder plot otherwise
+safe_plotMDS <- function(dgeobj, ...) {
+    if (ncol(dgeobj) < 3) {
+        plot.new()
+        text(0.5, 0.5, paste0("MDS plot skipped: only ", ncol(dgeobj), " sample(s), need at least 3"), cex = 0.8)
+    } else {
+        plotMDS(dgeobj, ...)
+    }
+}
+
+## When a contrast has no residual degrees of freedom (e.g. two groups with a single sample each),
+## edgeR cannot estimate dispersion from the data at all (estimateDisp/glmQLFit fail with
+## "No residual df"/"NA dispersions not allowed"/"Could not estimate prior df"). Fall back to a
+## fixed, typical BCV and edgeR's classic exactTest for that contrast only, same as EDGER_no_rep.R.
+FALLBACK_BCV <- 0.4
+no_residual_df <- function(design) {
+    (nrow(design) - qr(design)$rank) <= 0
+}
+
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
 
@@ -41,7 +60,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE, sep = "\t"))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$condition <- as.factor(sampleData_all$condition)
 sampleData_all$batch <- as.factor(sampleData_all$batch)
@@ -74,8 +93,8 @@ cpm_matrix <- calc_cpm(countData_all)
 tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 
 ## Write out CPM and TPM tables
-write.table(cpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-write.table(tpm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(cpm_matrix, rownames(cpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(tpm_matrix, rownames(tpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 ## Normalize by spike in if available
 if (spike != "") {
@@ -89,17 +108,17 @@ if (spike != "") {
     counts_norm <- as.data.frame(normCounts(counts_norm))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
-    write.table(counts_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(countData_clean, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(counts_norm_clean, rownames(counts_norm_clean), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(countData_clean, rownames(countData_clean), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     write.table(sampleData_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     # Calculate CPM and TPM
     cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
     tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
 
     # Write out CPM and TPM tables
-    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(cpm_norm_matrix, rownames(cpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(tpm_norm_matrix, rownames(tpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 }
 
 ## Create design-table considering different types (paired, unpaired) and batches
@@ -126,12 +145,13 @@ colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
 png(out, width=1900, height=1200, res=300)
-plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
 dev.off()
 
 ## estimate Dispersion
@@ -231,12 +251,13 @@ for (contrast in comparison[[1]]) {
         tmm_norm$ID <- dge_norm$genes$genes
         tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm) - 1)]
 
+        tmm_norm <- add_gene_coordinates(tmm_norm, tmm_norm$ID, gtf_gene, after = "ID")
         write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         ## create file MDS-plot with and without summarized replicates
         out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS_norm.png", sep = "_")
         png(out, width=1900, height=1200, res=300)
-        print(plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
+        print(safe_plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
         dev.off()
 
         ## estimate Dispersion
@@ -278,30 +299,48 @@ for (contrast in comparison[[1]]) {
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+    tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
     ## create file MDS-plot with and without summarized replicates
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
+    print(safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1))
     dev.off()
 
-    ## estimate Dispersion
-    dge <- estimateDisp(dge, design, robust = TRUE)
+    no_rep <- no_residual_df(design)
+    if (no_rep) {
+        print(paste0("No residual degrees of freedom for contrast ", contrast_name, ": at least one group has no replicates, dispersion cannot be estimated from the data. Falling back to a fixed BCV of ", FALLBACK_BCV, " (edgeR exactTest) for this contrast."))
+    } else {
+        ## estimate Dispersion
+        dge <- estimateDisp(dge, design, robust = TRUE)
+    }
 
     ## create file BCV-plot - visualizing estimated dispersions
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "BCV.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotBCV(dge))
+    if (no_rep) {
+        plot.new()
+        text(0.5, 0.5, paste0("BCV plot skipped: no replicates, using fixed BCV = ", FALLBACK_BCV), cex = 0.8)
+    } else {
+        print(plotBCV(dge))
+    }
     dev.off()
 
-    ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-    fit <- glmQLFit(dge, design, robust = TRUE)
+    if (!no_rep) {
+        ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
+        fit <- glmQLFit(dge, design, robust = TRUE)
+    }
 
     ## create file quasi-likelihood-dispersion-plot
     out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "QLDisp.png", sep = "_")
     png(out, width=1900, height=1200, res=300)
-    print(plotQLDisp(fit))
+    if (no_rep) {
+        plot.new()
+        text(0.5, 0.5, "QLDisp plot skipped: no replicates", cex = 0.8)
+    } else {
+        print(plotQLDisp(fit))
+    }
     dev.off()
 
     tryCatch({
@@ -319,8 +358,14 @@ for (contrast in comparison[[1]]) {
         # }
         # contrast <- as.numeric(contrast[,1])
         
-        AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
-        qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+        if (no_rep) {
+            qlf <- exactTest(dge, pair = c(B[1], A[1]), dispersion = FALLBACK_BCV^2, prior.count = 2) ## no replicates: fixed-BCV exact test
+            qlf$table$F <- NA
+            qlf$table <- qlf$table[, c("logFC", "logCPM", "F", "PValue")]
+        } else {
+            AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
+            qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+        }
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
 
@@ -331,6 +376,7 @@ for (contrast in comparison[[1]]) {
         qlf$table$Gene_ID <- rownames(qlf$table)
         res <- qlf$table[, c(6, 5, 2, 1, 3, 4)]
         res$FDR <- p.adjust(res$PValue, method = "BH")
+        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
 
         # plotVolcano
         pdf(
@@ -366,11 +412,13 @@ for (contrast in comparison[[1]]) {
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
         tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
         tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -412,6 +460,7 @@ for (contrast in comparison[[1]]) {
             qlf$table$Gene_ID <- rownames(qlf$table)
             res <- qlf$table[, c(6, 5, 1, 2, 3, 4)]
             res$FDR <- p.adjust(res$PValue, method = "BH")
+            res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
 
             # plotVolcano
             pdf(
@@ -447,11 +496,13 @@ for (contrast in comparison[[1]]) {
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
             tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
             tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 

@@ -1,6 +1,12 @@
 DEUBIN, DEUENV = env_bin_from_config(config,'DEU')
 COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
+
+def annotation_output(path, suffix):
+    compression = ".gz" if path.endswith((".gz", ".bgz")) else ""
+    return re.sub(r"\.(?:gtf|gff)(?:\.(?:gz|bgz))?$", "", path) + suffix + compression
+
+
 comparison = comparable_as_string(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
@@ -19,25 +25,25 @@ rule themall:
 
 rule prepare_deu_annotation:
     input:  anno = ANNOTATION
-    output: countgtf = expand("{countanno}", countanno=ANNOTATION.replace('.gtf','_fc_dexseq.gtf')),
-            deugtf   = expand("{deuanno}", deuanno=ANNOTATION.replace('.gtf','_dexseq.gtf'))
-    log:    expand("LOGS/DEU/{combo}/featurecount_dexseq_annotation.log", combo=combo)
+    output: countgtf = expand("{countanno}", countanno=annotation_output(ANNOTATION, '_fc_dexseq.gtf')),
+            deugtf   = expand("{deuanno}", deuanno=annotation_output(ANNOTATION, '_dexseq.gtf'))
+    log:    expand("LOGS/{combo}/DEU/dexseq/featurecount_dexseq_annotation.log", combo=combo)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
     params: bins = BINS,
             countstrand = lambda x: '-s' if stranded == 'fr' or stranded == 'rf' else ''
-    shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation.py -f {output.countgtf} {params.countstrand} {input.anno} {output.deugtf} 2>> {log}"
+    shell:  "{params.bins}/Analysis/DEU/prepare_deu_annotation.py -f {output.countgtf} {params.countstrand} <(gzip -cdfq {input.anno}) {output.deugtf} 2>> {log}"
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo),
-            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=ANNOTATION.replace('.gtf','.fc_dexseq.gtf')),
-            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=ANNOTATION.replace('.gtf','.dexseq.gtf'))
+            countgtf = expand(rules.prepare_deu_annotation.output.countgtf, countanno=annotation_output(ANNOTATION, '_fc_dexseq.gtf')),
+            deugtf = expand(rules.prepare_deu_annotation.output.deugtf, deuanno=annotation_output(ANNOTATION, '_dexseq.gtf'))
     output: tmp   = temp("DEU/{combo}/Featurecounts/{file}_tmp.counts"),
             tmph = temp("DEU/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DEU/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DEU/{combo}/{file}_featurecounts_dexseq_unique.log"
+    log:    "LOGS/{combo}/{file}/DEU/dexseq/featurecounts_dexseq_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -53,7 +59,7 @@ rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DEU/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DEU/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DEU/dexseq/{scombo}_prepare_count_table.log"
     conda:   ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: 1
@@ -71,7 +77,7 @@ rule run_dexseq:
             siglist = rules.themall.input.siglist,
             tbl     = rules.themall.input.tbl,
             session = rules.themall.input.session
-    log:    expand("LOGS/DEU/{combo}_{scombo}_{comparison}/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/{combo}_{scombo}_{comparison}/DEU/dexseq/run_dexseq.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: 1  # Due to BPPARAM errors, else int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -88,7 +94,7 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    "LOGS/DEU/filter_dexseq.log"
+    log:    expand("LOGS/{combo}/DEU/dexseq/filter_dexseq.log", combo=combo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: 1
@@ -106,7 +112,7 @@ rule create_summary_snippet:
             rules.filter_significant.output.sig_u,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log" ,combo=combo)
+    log:    expand("LOGS/{combo}/DEU/dexseq/create_summary_snippet.log" ,combo=combo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

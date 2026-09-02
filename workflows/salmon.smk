@@ -5,6 +5,8 @@ keydict["DECOY"] = DECOY
 keydict["ENV"] = COUNTENV
 unik = get_dict_hash(keydict)
 
+bammode = tool_params(SAMPLES[0], None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('BAM', "").lower()
+
 rule themall:
     input:  expand("COUNTS/{combo}/{file}_counts.sf.gz", combo=combo, file=samplecond(SAMPLES, config))
 
@@ -12,7 +14,7 @@ rule salmon_index:
     input:  fa = REFERENCE
     output: idx = directory(INDEX),
             uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cape}/idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -23,14 +25,47 @@ rule salmon_index:
     shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 
 
-if paired == 'paired':
+if bammode == 'transcriptome':
+    rule mapping:
+        input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                fa = REFERENCE
+        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+                ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
+        conda:  ""+COUNTENV+".yaml"
+        container: "oras://jfallmann/monsda:"+COUNTENV+""
+        threads: MAXTHREAD
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+                mapp=COUNTBIN,
+                nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
+                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
+        shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} quant -p {threads} -t {input.fa} -a {params.nbam} --deterministic {params.cpara} -o {output.ctsdir} &>> {log} && rm -f {params.nbam} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+
+elif bammode == 'genome':
+    rule mapping:
+        input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                anno = ANNOTATION,
+                fa = REFERENCE
+        output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
+                ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
+        conda:  ""+COUNTENV+".yaml"
+        container: "oras://jfallmann/monsda:"+COUNTENV+""
+        threads: MAXTHREAD
+        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'COUNTING', COUNTENV)['OPTIONS'].get('COUNT', ""),
+                mapp=COUNTBIN,
+                nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
+                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
+        shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} quant -p {threads} -a {params.nbam} --annotation {input.anno} --genome {input.fa} {params.cpara} -o {output.ctsdir} &>> {log} && rm -f {params.nbam} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+
+elif paired == 'paired':
     rule mapping:
         input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                 r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -46,7 +81,7 @@ else:
                 uidx = rules.salmon_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.sf.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/salmon/salmonquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD

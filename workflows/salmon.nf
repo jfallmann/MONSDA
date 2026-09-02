@@ -7,11 +7,12 @@ COUNTUIDXNAME = get_always('COUNTINGUIDXNAME')
 COUNTREF = get_always('COUNTINGREF')
 COUNTREFDIR = "${workflow.workDir}/../"+get_always('COUNTINGREFDIR')
 COUNTANNO = get_always('COUNTINGANNO')
-COUNTDECOY = get_always('COUNTINDECOY')
+COUNTDECOY = get_always('COUNTINGDECOY')
 COUNTPREFIX = get_always('COUNTINGPREFIX') ?: COUNTBIN.split(' ')[0]
 
 IDXPARAMS = get_always('salmon_params_INDEX') ?: ''
 COUNTPARAMS = get_always('salmon_params_COUNT') ?: ''
+BAMMODE = get_always('salmon_params_BAM') ?: ''
 
 //COUNTING PROCESSES
 
@@ -37,9 +38,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        rs = reads[1..2].sort()
-        r1 = rs[1]
-        r2 = rs[2]
+        rs = reads[0..1].sort{ it.getName() }
+        r1 = rs[0]
+        r2 = rs[1]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
@@ -65,7 +66,7 @@ process salmon_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "salmon.idx")            "$COUNTIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon/index.log"
         else                                      "$COUNTUIDX"
     }
 
@@ -77,8 +78,8 @@ process salmon_idx{
 
     script:    
     gen =  genome.getName()
-    if (${COUNTINGDECOY}){
-        decoy = "-d "+"${COUNTINGDECOY}" 
+    if (COUNTDECOY && COUNTDECOY != 'None'){
+        decoy = "-d "+"${COUNTDECOY}" 
     }else{
         decoy = ''
     }
@@ -97,9 +98,9 @@ process salmon_quant{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/COUNTING/${file(filename).getName()}"
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon/${file(filename).getName()}"
 
-        else                                    "COUNTS/${SCOMBO}/salmon/${CONDITION}/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
     }
 
     input:
@@ -152,33 +153,106 @@ process salmon_quant{
     }
 }
 
+process salmon_quant_bam{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus THREADS
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    saveAs: {filename ->
+        if (filename.indexOf(".log") >0)        "LOGS/${COMBO}/${CONDITION}/COUNTING/salmon/${file(filename).getName()}"
+        else                                    "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
+    }
+
+    input:
+    path bam
+
+    output:
+    path "*.gz", includeInputs:false, emit: counts
+    path "*.log", emit: logs
+    path "*", includeInputs:false, emit: rest
+
+    script:
+    fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
+    lf = "salmon_"+fn+".log"
+    of = fn+"/quant.sf"
+    oz = fn+"/quant.sf.gz"
+    ol = fn+"_counts.gz"
+    if (BAMMODE == 'genome'){
+        """
+        mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN quant -p ${task.cpus} -a namecollated.bam --annotation $COUNTANNO --genome $COUNTREF $COUNTPARAMS -o $fn &>> $lf && rm -f namecollated.bam && gzip $of && ln -fs $oz $ol
+        """
+    }else{
+        """
+        mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN quant -p ${task.cpus} -t $COUNTREF -a namecollated.bam --deterministic $COUNTPARAMS -o $fn &>> $lf && rm -f namecollated.bam && gzip $of && ln -fs $oz $ol
+        """
+    }
+}
+
 workflow COUNTING{
     take: collection
 
     main:
    
-    checkidx = file(COUNTUIDX)
-    collection.filter(~/.fastq.gz/)
-    
-    if (checkidx.exists()){
-        idxfile = Channel.fromPath(COUNTUIDX)
-        if (PAIRED == 'paired'){
-            salmon_quant(idxfile.combine(samples_ch.collate(2)))
-        } else{
-            salmon_quant(idxfile.combine(samples_ch.collate(1)))
-        }        
+    if (BAMMODE?.length() > 0){
+        MAPPEDSAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
+        }
+
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+
+        salmon_quant_bam(mapsamples_ch.collate(1))
+        outcounts = salmon_quant_bam.out.counts
+        outlogs = salmon_quant_bam.out.logs
     }
     else{
-        genomefile = Channel.fromPath(COUNTREF)
-        salmon_idx(genomefile)
+        checkidx = file(COUNTUIDX)
+        checktrim = file("${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}")
+
         if (PAIRED == 'paired'){
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(2)))
+            TRIMSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+            }
         } else{
-            salmon_quant(salmon_idx.out.idx.combine(samples_ch.collate(1)))
+            TRIMSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_trimmed.fastq.gz"
+            }
         }
+
+        if (checktrim.exists()){
+            trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())
+        } else{
+            if (PAIRED == 'paired'){
+                trim(samples_ch.collate(2))
+            } else{
+                trim(samples_ch.collate(1))
+            }
+            trimsamples_ch = trim.out.trim.flatten()
+        }
+
+        if (checkidx.exists()){
+            idxfile = Channel.fromPath(COUNTUIDX)
+            if (PAIRED == 'paired'){
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
+            }        
+        }
+        else{
+            genomefile = Channel.fromPath(COUNTREF)
+            salmon_idx(genomefile)
+            if (PAIRED == 'paired'){
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
+            }
+        }
+        outcounts = salmon_quant.out.counts
+        outlogs = salmon_quant.out.logs
     }
 
     emit:
-    counts = salmon_quant.out.counts
-    logs = salmon_quant.out.logs
+    counts = outcounts
+    logs = outlogs
 }

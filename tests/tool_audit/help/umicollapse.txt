@@ -1,0 +1,4 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Arguments	[--help]
+Exception in thread "main" java.lang.IllegalArgumentException: Missing input file!
+	at umicollapse.main.Main.main(Main.java:115)

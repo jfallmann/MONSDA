@@ -32,6 +32,8 @@ DTU -> Differential Transcript Usage Analysis
 
 CIRCS -> Circular RNA identification
 
+FUSIONS -> Fusion gene detection
+
 
 PREPROCESSING
 =============
@@ -147,6 +149,8 @@ Maps sequences to reference genomes or transcriptomes
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | STAR         | Spliced Transcripts Alignment to a Reference                                                                               | star                 | STAR        | `star <https://github.com/alexdobin/STAR>`_                         | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+  | rustar       | Pure-Rust reimplementation of STAR, drop-in replacement with STAR-compatible CLI and index                                 | rustar               | rustar      | `rustar-aligner <https://github.com/scverse/rustar-aligner>`_       | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
+  +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | STARsolo        | STARsolo: mapping, demultiplexing and quantification for single cell RNA-seq                                                                               | star                 | STAR        | `STARsolo <https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md>`_                         | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | Segemehl2|3  | Segemehl is a software to map short sequencer reads to reference genomes.                                                  | segemehl2/segemehl3  | segemehl.x  | `segemehl <https://www.bioinf.uni-leipzig.de/Software/segemehl/>`_  | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
@@ -159,8 +163,14 @@ Maps sequences to reference genomes or transcriptomes
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
   | BWA-Meth          | BWA-meth, Fast and accurante alignment of BS-Seq reads.                             | bwameth               | bwameth.py     | `bwa-meth <https://github.com/brentp/bwa-meth>`_                            | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
-  | Minimap2     | Minimap2 is a versatile sequence alignment program that aligns DNA or mRNA sequences against a large reference database.   | minimap              | minimap2    | `minimap <https://github.com/lh3/minimap2>`_                        | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
-  +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+   | Minimap2     | Minimap2 is a versatile sequence alignment program that aligns DNA or mRNA sequences against a large reference database. Use ``-x map-ont``/``-x map-pb`` for long-read (Nanopore/PacBio) mapping.   | minimap              | minimap2    | `minimap <https://github.com/lh3/minimap2>`_                        | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
+   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+   | salmonalign  | Salmon selective-alignment used as a mapper (``salmon quant --writeMappings``). Reuses the salmon environment/container.   | salmonalign          | salmon      | `salmon <https://salmon.readthedocs.io/en/latest/salmon.html>`_     | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
+   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+   | rammap       | Rust-accelerated long-read (Nanopore/PacBio) mapper (cargo-built, not on bioconda).                                        | rammap               | rammap      | `rammap <https://github.com/jwanglab/rammap>`_                      | FASTQ/TRIMMED_FASTQ  | SAM.gz/BAM  |
+   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
+   | piscem       | Fast single-cell/bulk mapper producing a RAD file for downstream alevin-fry quantification (single-cell only).             | piscem               | piscem      | `piscem <https://github.com/COMBINE-lab/piscem>`_                   | FASTQ/TRIMMED_FASTQ  | RAD         |
+   +--------------+----------------------------------------------------------------------------------------------------------------------------+----------------------+-------------+---------------------------------------------------------------------+----------------------+-------------+
 
 
 DEDUP
@@ -200,10 +210,16 @@ Count (unique) mapped reads and how often they map to defined features
   +================+=======================================================================================================================+=============+================+==================================================================+======================+=========+
   | FeatureCounts  | A software program developed for counting reads to genomic features such as genes, exons, promoters and genomic bins  | countreads  | featureCounts  | `featurecounts <http://subread.sourceforge.net/>`_               | BAM/FASTQ            | TEXT    |
   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
-  | Salmon         | Salmon is a tool for wicked-fast transcript quantification from RNA-seq data.                                         | salmon      | salmon         | `salmon <https://salmon.readthedocs.io/en/latest/salmon.html>`_  | FASTQ/TRIMMED_FASTQ  | TEXT    |
-  +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
-  | Kallisto         | Kallisto is a program for quantifying abundances of transcripts from bulk and single-cell RNA-Seq data, or more generally of target sequences using high-throughput sequencing reads. | kallisto      | kallisto         | `kallisto <https://pachterlab.github.io/kallisto/manual>`_  | FASTQ/TRIMMED_FASTQ  | TEXT    |
-  +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+   | Salmon         | Salmon is a tool for wicked-fast transcript quantification from RNA-seq data. Also supports quantification directly from an alignment BAM via the ``BAM`` option (``transcriptome`` or ``genome``).  | salmon      | salmon         | `salmon <https://salmon.readthedocs.io/en/latest/salmon.html>`_  | FASTQ/TRIMMED_FASTQ/BAM  | TEXT    |
+   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+   | Kallisto         | Kallisto is a program for quantifying abundances of transcripts from bulk and single-cell RNA-Seq data, or more generally of target sequences using high-throughput sequencing reads. | kallisto      | kallisto         | `kallisto <https://pachterlab.github.io/kallisto/manual>`_  | FASTQ/TRIMMED_FASTQ  | TEXT    |
+   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+   | oarfish        | Long-read (Nanopore/PacBio) transcript quantification from a transcriptome-aligned BAM.                               | oarfish     | oarfish        | `oarfish <https://github.com/COMBINE-lab/oarfish>`_             | BAM                  | TEXT    |
+   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+   | alevin-fry     | Single-cell quantification consuming a piscem RAD file to produce a count matrix.                                     | alevinfry   | alevin-fry     | `alevin-fry <https://github.com/COMBINE-lab/alevin-fry>`_       | RAD                  | MATRIX  |
+   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
+   | simpleaf       | Self-contained single-cell quantification wrapper (index + map + quant) around salmon/alevin-fry.                     | simpleaf    | simpleaf       | `simpleaf <https://github.com/COMBINE-lab/simpleaf>`_           | FASTQ/TRIMMED_FASTQ  | MATRIX  |
+   +----------------+-----------------------------------------------------------------------------------------------------------------------+-------------+----------------+------------------------------------------------------------------+----------------------+---------+
 
 
 Differential Analyses
@@ -231,9 +247,15 @@ Includes DE, DEU, DAS and DTU
   +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
   | DIEGO     | Differential Alternative Splicing   |                  |                 |                | Mann-Whitney U test             | pValue         | results                                              |                                         | Sig                                     | Dendrogram-plot   |                                                                   | ✓     |
   +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
-  | DRIMSeq   | Differential Transcript Usage       | dmFilter()       |                 | DM             |                                 | pValue, LFC    | results(transcript, genes)                           | Proportions-table, genewise precision   | Sig, SigUP, SigDOWN (transcipt, gene)   |                   | FeatPerGene, precision, Pvalues (per comparison)                  | ✓     |
-  +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
-  
+   | DRIMSeq   | Differential Transcript Usage       | dmFilter()       |                 | DM             |                                 | pValue, LFC    | results(transcript, genes)                           | Proportions-table, genewise precision   | Sig, SigUP, SigDOWN (transcipt, gene)   |                   | FeatPerGene, precision, Pvalues (per comparison)                  | ✓     |
+   +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
+   | SPIT      | Differential Transcript Usage       | IF-dominance     |                 | KDE            | Mann-Whitney U                  | pValue, LFC    | results(transcript, genes, ifs)                      | IF-table                                | Sig, SigUP, SigDOWN (transcipt, gene)   |                   | PValues, Wasserstein (per comparison)                             | ✓     |
+    +-----------+-------------------------------------+------------------+-----------------+----------------+---------------------------------+----------------+------------------------------------------------------+-----------------------------------------+-----------------------------------------+-------------------+-------------------------------------------------------------------+-------+
+
+.. note::
+
+  For DTU analyses, transcripts can optionally be pre-grouped with `terminus <https://github.com/COMBINE-lab/terminus>`_ to collapse transcripts that cannot be confidently distinguished. This is disabled by default and enabled per DTU tool via the ``TERMINUS`` option.
+
 TRACKS
 ###############
 
@@ -286,3 +308,32 @@ Find circular RNAs in mapping data, CIRI2 needs to be installed locally.
   +=======+=========================================================================================================================================================================================================+========+====================+=======================================================================+========+==================+
   | CIRI2 | CIRI (circRNA identifier) is a novel chiastic clipping signal based algorithm,which can unbiasedly and accurately detect circRNAs from transcriptome data by employing multiple filtration strategies.  | ciri2  | $Path_to_CIRI2.pl  | `ciri2 <https://ciri-cookbook.readthedocs.io/en/latest/CIRI2.html>`_  | BAM    | BED/BEDG/BIGWIG  |
   +-------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------+--------------------+-----------------------------------------------------------------------+--------+------------------+
+
+
+FUSIONS
+###############
+
+Detect fusion genes with STAR-Fusion. FUSIONS requires STAR in the MAPPING step and, by
+default, consumes the chimeric junctions produced by STAR. STAR does not emit chimeric output
+unless configured to do so, therefore add the chimeric options to the STAR ``MAP`` options in
+the MAPPING config, e.g. ``--chimSegmentMin 12 --chimOutType Junctions``. MONSDA then finds the
+resulting ``MAPPED/<combo>/<sample>.Chimeric.out.junction`` files and only runs STAR-Fusion when
+they exist. Set ``"FASTQ": "true"`` in the FUSIONS ``OPTIONS`` to run STAR-Fusion directly on the
+trimmed FASTQ files instead of the chimeric junctions.
+
+STAR-Fusion needs a CTAT genome resource library. Point ``INDEX`` to an existing
+``genome_lib_dir``; if it does not exist, it is built from ``REFERENCE`` and ``ANNOTATION`` with
+``prep_genome_lib.pl`` (extra build options can be passed via ``BUILD``). Building a CTAT library
+is resource intensive, so the bundled cluster profile sets a long runtime for the
+``generate_ctat_lib`` rule.
+
+.. table:: 
+  :widths: 10, 40, 10, 10, 10, 10, 10
+  :class: tight-table
+
+  +-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------+-------------+----------------------------------------------------------------+-------------------------------+---------+
+  | TOOL        | DESCRIPTION                                                                                                                                                                             | ENV        | BIN         | LINK                                                           | INPUT                         | OUTPUT  |
+  +=============+=========================================================================================================================================================================================+============+=============+================================================================+===============================+=========+
+  | STAR-Fusion | STAR-Fusion identifies candidate fusion transcripts from the chimeric alignments produced by the STAR aligner using a CTAT genome resource library.                                      | starfusion | STAR-Fusion | `starfusion <https://github.com/STAR-Fusion/STAR-Fusion/wiki>`_ | Chimeric.out.junction / FASTQ | TSV     |
+  +-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------+-------------+----------------------------------------------------------------+-------------------------------+---------+
+

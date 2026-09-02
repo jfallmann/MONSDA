@@ -9,7 +9,7 @@ rule generate_index:
     input:  ref = REFERENCE
     output: idx = directory(INDEX),
             uidx = expand("{refd}/INDICES/{mape}_{unikey}/{pref}", refd=REFDIR, mape=MAPPERENV, unikey=unik, pref=PREFIX)
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: 1
@@ -31,7 +31,7 @@ if bwaalg == 'mem':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -47,7 +47,7 @@ if bwaalg == 'mem':
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -67,7 +67,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -85,7 +85,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #                    sai2 = report("MAPPED/{combo}/{file}_mapped.R2.sai", category="MAPPING"),
 #                    mapped = "UNMAPPED/{combo}/{file}_mapped.sam",
 #                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-#            log:    "LOGS/{combo}/{file}/mapping.log"
+#            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
 #            conda:  ""+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING')['OPTIONS'][1].items()),
@@ -99,7 +99,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -115,7 +115,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 #            output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
 #                    mapped = "UNMAPPED/{combo}/{file}_mapped.sam",
 #                    unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-#            log:    "LOGS/{combo}/{file}/mapping.log"
+#            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
 #            conda:  ""+MAPPERENV+".yaml"
 #            threads: MAXTHREAD
 #            params: mpara = lambda wildcards: ' '.join("{!s} {!s}".format(key, val) for (key, val) in tool_params(wildcards.file, None, config, 'MAPPING')['OPTIONS'][1].items()),
@@ -129,7 +129,7 @@ elif bwaalg == 'samse':
         output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
@@ -148,7 +148,7 @@ elif bwaalg == 'sampe':
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
@@ -166,7 +166,7 @@ elif bwaalg == 'bwasw':
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
@@ -180,7 +180,7 @@ elif bwaalg == 'bwasw':
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
-            log:    "LOGS/{combo}/{file}/mapping.log"
+            log:    "LOGS/{combo}/{file}/MAPPING/bwa/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD

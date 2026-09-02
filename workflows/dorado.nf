@@ -16,7 +16,7 @@ process dorado{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".fastq.gz") > 0)      "FASTQ/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".log") > 0)        "LOGS/BASECALL/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${CONDITION}/BASECALL/dorado/${file(filename).getName()}"
     }
 
     input:

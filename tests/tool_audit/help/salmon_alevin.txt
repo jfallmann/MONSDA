@@ -1,0 +1,8 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+salmon alevin is not available in salmon 2.0.
+
+Single-cell quantification has moved to the alevin-fry ecosystem:
+  - piscem / salmon (this tool) for mapping → RAD
+  - alevin-fry for cell-barcode/UMI resolution and counting
+
+See https://github.com/COMBINE-lab/alevin-fry and https://alevin-fry.readthedocs.io

@@ -1,6 +1,11 @@
 #temps
 *~
 \#*
+
+# generated tool-audit run reports (tool_manifest.yaml and the *.txt dumps
+# under tests/tool_audit/ ARE tracked and reviewed, this is not)
+tests/tool_audit/*.json
+tests/tool_audit/.last_report.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -108,3 +113,6 @@ venv.bak/
 
 # singularity
 *.sif
+
+# AI
+.abacusai/

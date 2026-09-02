@@ -43,7 +43,7 @@ process segemehl3_idx{
     saveAs: {filename ->
         if (filename == "segemehl3bisulfite.idx")                  "$MAPIDX"
         else if (filename == "segemehl3bisulfite_bs.idx2")          "$BISIDX"
-        else if (filename.indexOf(".log") >0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/segemehl3/${file(filename).getName()}"
         else if (filename == "$MAPUIDX2NAME")             "$MAPUIDX2"
         else                                              "$MAPUIDX"
         
@@ -77,7 +77,7 @@ process segemehl3_mapping{
     publishDir "${workflow.workDir}/../" , mode: 'link',
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/segemehl3/${file(filename).getName()}"
         else null
     }
 

@@ -20,7 +20,7 @@ rule featurecount_unique:
             tmph = temp("DAS/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DAS/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DAS/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DAS/{combo}/{file}_featurecounts_diego_unique.log"
+    log:    "LOGS/{combo}/{file}/DAS/diego/featurecounts_diego_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -37,7 +37,7 @@ rule create_samplemaps:
     input:  cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output: smap = "DAS/{combo}/Tables/{scombo}_samplemap.txt",
             cmap = "DAS/{combo}/Tables/{scombo}_groupings.txt"
-    log:    "LOGS/DAS/{combo}/{scombo}_create_samplemaps.log"
+    log:    "LOGS/{combo}/DAS/diego/{scombo}_create_samplemaps.log"
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -52,7 +52,7 @@ rule prepare_junction_usage_matrix:
             cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output: tbl = "DAS/{combo}/Tables/{scombo}_junction_table_dexdas.txt.gz",
             anno = "DAS/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:    "LOGS/DAS/{combo}/prepare_{scombo}_junction_usage_matrix.log"
+    log:    "LOGS/{combo}/DAS/diego/prepare_{scombo}_junction_usage_matrix.log"
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -64,7 +64,7 @@ rule prepare_junction_usage_matrix:
 rule create_contrast_files:
     input:  anno = expand(rules.prepare_junction_usage_matrix.output.anno, combo=combo, scombo=scombo)
     output: contrast = expand("DAS/{combo}/Tables/{scombo}_{comparison}_contrast.txt", combo=combo, scombo=scombo, comparison=compstr)
-    log:    expand("LOGS/DAS/{combo}/create_contrast_files.log", combo=combo)
+    log:    expand("LOGS/{combo}/DAS/diego/create_contrast_files.log", combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -80,7 +80,7 @@ rule run_diego:
             contrast = expand(rules.create_contrast_files.output.contrast, combo=combo, scombo=scombo)
     output: dendrogram = rules.themall.input.dendrogram,
             csv = rules.themall.input.csv
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/{combo}_{scombo}_{comparison}/DAS/diego/run_diego.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: MAXTHREAD
@@ -94,7 +94,7 @@ rule run_diego:
 rule filter_significant:
     input:  csv = rules.run_diego.output.csv
     output: sig = rules.themall.input.sig
-    log:    "LOGS/DAS/filter_diegoDAS.log"
+    log:    expand("LOGS/{combo}/DAS/diego/filter_diegoDAS.log", combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
@@ -106,7 +106,7 @@ rule filter_significant:
 rule convertPDF:
     input: rules.run_diego.output.dendrogram
     output: dendrogram = expand("DAS/{combo}/Figures/DAS_DIEGO_{scombo}_{comparison}_figure_dendrogram.png", combo=combo, scombo=scombo, comparison=compstr)
-    log:    expand("LOGS/DAS/{combo}_{scombo}_{comparison}/convertPDF.log", combo=combo, comparison=compstr, scombo=scombo)
+    log:    expand("LOGS/{combo}_{scombo}_{comparison}/DAS/diego/convertPDF.log", combo=combo, comparison=compstr, scombo=scombo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: MAXTHREAD
@@ -120,7 +120,7 @@ rule create_summary_snippet:
             #rules.run_diego.output.sig_d,
             #rules.run_diego.output.sig_u
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DAS/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DAS/diego/create_summary_snippet.log", combo=combo)
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

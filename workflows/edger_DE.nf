@@ -30,7 +30,7 @@ process featurecount_edger{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
-        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DE/edger/featurecounts_edger_unique.log"
     }
 
     input:
@@ -63,7 +63,7 @@ process featurecount_edger{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(gzip -cdfq $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -79,7 +79,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DE/edger/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -111,7 +111,7 @@ process run_edger{
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/run_edger.log"
     }
 
     input:
@@ -145,7 +145,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/filter_deseq2.log"
     }
 
     input:
@@ -171,7 +171,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/filter_edger.log"
     }
 
     input:

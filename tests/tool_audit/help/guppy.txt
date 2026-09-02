@@ -1,0 +1,2 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+FATAL:   "guppy_basecaller": executable file not found in $PATH

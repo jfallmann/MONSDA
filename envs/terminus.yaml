@@ -1,0 +1,7 @@
+name: terminus
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - terminus

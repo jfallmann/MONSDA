@@ -1,0 +1,2 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Error: $ALEVIN_FRY_HOME is unset environment variable not found, please set this environment variable to continue.

@@ -11,6 +11,7 @@ DTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
 IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
+RUNTERMINUS = get_always('dexseq_DTU_params_TERMINUS') ?: ''
 DTUREPS = get_always('DTUREPS') ?: ''
 DTUCOMP = get_always('DTUCOMP') ?: ''
 DTUCOMPS = get_always('DTUCOMPS') ?: ''
@@ -23,6 +24,8 @@ COUNTENV = 'salmon'
 
 //DTU PROCESSES
 
+include { salmon_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
+
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -32,7 +35,7 @@ process salmon_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
-        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/dexseq_index.log"
+        if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/DTU/dexseq/index.log"
         else if (filename == "dexseq.idx")            "$DTUIDX"
         else                                          "$DTUUIDX"
     }
@@ -58,68 +61,6 @@ process salmon_idx{
 
 }
 
-process salmon_quant{
-    conda "$COUNTENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$COUNTENV"
-    cpus THREADS
-	cache 'lenient'
-    //validExitStatus 0,1
-
-    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
-    saveAs: {filename ->
-        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/salmon/${CONDITION}/DTU/${file(filename).getName()}"
-        else                                    "DTU/${SCOMBO}/salmon/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-    }
-
-    input:
-    path reads
-
-    output:
-    path "*.gz", emit: counts
-    path "*.log", emit: logs
-
-    script:
-
-    idx = reads[0]
-    if (PAIRED == 'paired'){
-        if (STRANDED == 'fr' || STRANDED == 'ISF'){
-            stranded = '-l ISF'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
-            stranded = '-l ISR'
-        }else{
-            stranded = '-l IU'
-        }
-        rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
-        r1 = rs[0]
-        r2 = rs[1]
-        fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-        lf = "salmon_"+fn+".log"
-        of = fn+"/quant.sf"
-        oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.gz"
-        """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
-        """
-    }else{
-        if (STRANDED == 'fr' || STRANDED == 'SF'){
-            stranded = '-l SF'
-        }else if (STRANDED == 'rf' || STRANDED == 'SR'){
-            stranded = '-l SR'
-        }else{
-            stranded = '-l U'
-        }
-        read = reads[1]
-        fn = file(reads[1]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
-        lf = "salmon_"+fn+".log"
-        of = fn+"/quant.sf"
-        oz = fn+"/quant.sf.gz"
-        ol = fn+"_counts.gz"
-        """
-        $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
-        """
-    }
-}
-
 process prepare_dtu_annotation{
     conda "$DTUENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$DTUENV"
@@ -130,7 +71,7 @@ process prepare_dtu_annotation{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".gz") > 0)       "DTU/${SCOMBO}/Tables/${file(filename).getName()}"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DTU/${SCOMBO}/featurecount_dexseq_annotation.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/DTU/dexseq/featurecount_dexseq_annotation.log"
     }
 
     output:
@@ -158,7 +99,7 @@ process run_dexseq{
         else if (filename.indexOf("_figure") > 0)      "DTU/${SCOMBO}/Figures/${file(filename).getName()}" 
         else if (filename.indexOf(".html") > 0)      "DTU/${SCOMBO}/DEXSeqReport_${COMBO}_${DTUCOMP}/${file(filename).getName()}"
         else if (filename.indexOf("SESSION") > 0)      "DTU/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/${SCOMBO}/run_dexseq.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DTU/dexseq/run_dexseq.log"
     }
 
     input:path counts
@@ -181,34 +122,6 @@ process run_dexseq{
     """
     mkdir -p Figures Tables
     Rscript --no-environ --no-restore --no-save $bin $anno $ref . $DTUCOMP $PCOMBO ${task.cpus} $dparams &> log ; ln -f Tables/* . && touch Figures/dummy && ln -f Figures/* .
-    """
-}
-
-process create_summary_snippet{
-    conda "$DTUENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$DTUENV"
-    cpus THREADS
-	cache 'lenient'
-    //validExitStatus 0,1
-
-    publishDir "${workflow.workDir}/../" , mode: 'link',
-    saveAs: {filename ->
-        if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DTU/create_summary_snippet.log"
-    }
-
-    input:
-    path de
-
-    output:
-    path "*.Rmd", emit: snps
-    path "log", emit: log
-
-    script:
-    inlist = de.toString()
-    // inlist = de.toList()  // { $workflow.projectDir += "$it.code,"  }
-    """
-    touch log; python3 $BINS/Analysis/RmdCreator.py --files $inlist --output out.Rmd --env $DTUENV --loglevel DEBUG 2>> log
     """
 }
 
@@ -260,7 +173,14 @@ workflow DTU{
     }
 
     prepare_dtu_annotation()
-    run_dexseq(salmon_quant.out.counts.collect(), prepare_dtu_annotation.out.anno, annofile)
+    if (RUNTERMINUS?.length() > 0){
+        terminus_collapse(salmon_quant.out.counts.collect())
+        dtucounts = terminus_collapse.out.counts
+    }
+    else{
+        dtucounts = salmon_quant.out.counts
+    }
+    run_dexseq(dtucounts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
     collect_dexseq(run_dexseq.out.tbls.collect().concat(create_summary_snippet.out.snps.collect()))
 

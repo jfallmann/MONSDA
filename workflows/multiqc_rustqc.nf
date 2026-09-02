@@ -1,10 +1,10 @@
-QCENV=get_always('POSTQCENV')
-QCBIN=get_always('POSTQCBIN')
-QCPARAMS = get_always('rustqc_params_MULTI') ?: ''
+MQCENV=get_always('POSTQCENV')
+MQCBIN=get_always('POSTQCBIN')
+MQCPARAMS = get_always('rustqc_params_MULTI') ?: ''
 
 process mqc{
-    conda "$QCENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$QCENV"
+    conda "$MQCENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$MQCENV"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -23,32 +23,38 @@ process mqc{
     output:
     path "*.zip", emit: mqc
     path "*.html", emit: html
+    path "versions.txt", emit: versions, optional: true
 
     script:
     """
     touch $others
     OUT=\${PWD}
-    LIST=multiqc_inputs.txt
-    TMP_LIST=multiqc_inputs_unique.txt
+    LOGDIR="${workflow.workDir}/../LOGS"
     BASE_QC_DIR="${workflow.workDir}/../QC"
     COMBO_VAL="${COMBO}"
     CONDITION_VAL="${CONDITION}"
+    VERSIONS="\${LOGDIR}/versions.txt"
+    SCAN="\${LOGDIR}/\${COMBO_VAL}/\${CONDITION_VAL}"
 
-    for i in $others; do
-        dirname "\$i" >> "\$LIST"
-    done
-
-    # If the corresponding fastqc combo exists, include its output in the MultiQC report.
-    FQ_COMBO="\${COMBO_VAL/rustqc/fastqc}"
-    FQ_DIR="\${BASE_QC_DIR}/\${FQ_COMBO}/\${CONDITION_VAL}"
-    if [[ -d "\$FQ_DIR" ]]; then
-        echo "\$FQ_DIR" >> "\$LIST"
+    # All QC results of this combo are reported, no need to collect them first.
+    QC_DIR="\${BASE_QC_DIR}/\${COMBO_VAL}/\${CONDITION_VAL}"
+    if [[ -d "\$QC_DIR" ]]; then
+        SCAN="\$SCAN \$QC_DIR"
     fi
 
-    sort -u "\$LIST" > "\$TMP_LIST"
-    export LC_ALL=en_US.utf8
+    # If the corresponding fastqc combo exists, include its output in the MultiQC report.
+    FQ_DIR="\${BASE_QC_DIR}/\${COMBO_VAL/rustqc/fastqc}/\${CONDITION_VAL}"
+    if [[ "\$FQ_DIR" != "\$QC_DIR" && -d "\$FQ_DIR" ]]; then
+        SCAN="\$SCAN \$FQ_DIR"
+    fi
+
+    MODS=""
+    if [[ -f "\$VERSIONS" ]]; then
+        MODS=\$(grep -v '^#' "\$VERSIONS" | cut -f3 | tr ',' '\\n' | grep -vx '-' | sort -u | sed 's/^/-m /' | tr '\\n' ' ')
+        cp -f "\$VERSIONS" "\$OUT"/
+    fi
     export LC_ALL=C.UTF-8
-    multiqc -f --exclude picard --exclude gatk -k json -z -s -o "\$OUT" -l "\$TMP_LIST"
+    multiqc -f $MQCPARAMS \$MODS -k json -z -s -o "\$OUT" \$SCAN
     """
 }
 
