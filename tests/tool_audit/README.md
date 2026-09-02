@@ -55,6 +55,24 @@ findings into the prose sections below by hand after fixing them.
 `error: unexpected argument '--reference' found`.
 Fixed in workflows/oarfish.smk and workflows/oarfish.nf.
 
+### oarfish - gzipped GTF annotation not supported (fixed)
+Separately from the flag rename above: oarfish 0.10.3's genome-mode
+annotation loader cannot infer the format of a `.gtf.gz`/`.gff.gz` file
+and fails with `Error: failed to load annotation ...` /
+`unable to detect annotation format from extension: .gz`, even though
+`--genome-fasta` happily accepts a gzipped genome FASTA in the same run.
+Reproduced with a minimal name-collated BAM + gzipped GTF + gzipped FASTA
+in the container; confirmed the identical run succeeds once the GTF is
+decompressed to plain `.gtf` first. MONSDA's GENOMES/ dir stores
+`genes.gtf.gz`, so every real run hit this. Fixed by decompressing the
+annotation with `zcat -f` into the job's output dir before invoking
+oarfish, and cleaning it up afterwards, in both workflows/oarfish.smk and
+workflows/oarfish.nf. Tracked as a regression probe in
+tool_manifest.yaml's `oarfish.gzipped-annotation-unsupported` invocation
+(uses tests/tool_audit/fixtures/tiny_namecollated.bam) so a future oarfish
+release adding native gzip support for `--annotation` shows up as that
+probe's expected error text going away.
+
 ### salmonalign (fixed)
 salmon in the container (salmon-1.5.0.sif) is salmon 2.5.1, a full Rust
 rewrite. `--writeMappings` now REQUIRES an explicit filename value

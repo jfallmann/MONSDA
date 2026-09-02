@@ -23,3 +23,16 @@ Verified this dedups to 2 reads via:
 
     apptainer exec --bind $PWD:$PWD ~/Work2/Container/MONSDA/umicollapse-1.5.0.sif \
         umicollapse bam -i $PWD/tiny.bam -o $PWD/out.bam --paired
+
+## tiny_namecollated.bam
+
+Same 3 reads as tiny.bam, but collated by read name (not coordinate-sorted)
+via `samtools collate`, since oarfish's `--genome-alignments` genome-mode
+projection refuses coordinate-sorted input ("oarfish cannot project a
+coordinate-sorted genome BAM"). Used by the oarfish
+`gzipped-annotation-unsupported` regression probe.
+
+Regenerate with (inside the `apptainer` conda env):
+
+    apptainer exec ~/Work2/Container/MONSDA/umicollapse-1.5.0.sif \
+        samtools collate -o tiny_namecollated.bam tiny.bam
