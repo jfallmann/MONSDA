@@ -35,7 +35,7 @@ if paired == 'paired':
                 unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                 unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                 log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
-                log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
+                log_final = "LOGS/{combo}/{file}/MAPPING/star/{file}_Log.final.out",
                 tmp = temp("TMP/STAROUT/{combo}/{file}")
         log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
@@ -58,7 +58,7 @@ else:
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz",
                     log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
-                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/{file}_Log.final.out",
                     tmp = temp("TMP/STAROUT/{combo}/{file}")                    
             log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
@@ -81,7 +81,7 @@ else:
                     unmapped_r1 = "UNMAPPED/{combo}/{file}_R1_unmapped.fastq.gz",
                     unmapped_r2 = "UNMAPPED/{combo}/{file}_R2_unmapped.fastq.gz",
                     log = "LOGS/{combo}/{file}/MAPPING/star/Log.out",
-                    log_final = "LOGS/{combo}/{file}/MAPPING/star/Log.final.out",
+                    log_final = "LOGS/{combo}/{file}/MAPPING/star/{file}_Log.final.out",
                     tmp = temp("TMP/STAROUT/{combo}/{file}")
             log:    "LOGS/{combo}/{file}/MAPPING/star/mapping.log"
             conda:  ""+MAPPERENV+".yaml"
