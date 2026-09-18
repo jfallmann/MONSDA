@@ -1,6 +1,7 @@
 MQCENV=get_always('POSTQCENV')
 MQCBIN=get_always('POSTQCBIN')
 MQCPARAMS = get_always('rustqc_params_MULTI') ?: ''
+PREQCENV = get_always('PREQCENV') ?: 'fastqc'
 
 process mqc{
     conda "$MQCENV"+".yaml"
@@ -42,8 +43,8 @@ process mqc{
         SCAN="\$SCAN \$QC_DIR"
     fi
 
-    # If the corresponding fastqc combo exists, include its output in the MultiQC report.
-    FQ_DIR="\${BASE_QC_DIR}/\${COMBO_VAL/rustqc/fastqc}/\${CONDITION_VAL}"
+    # If the corresponding pre-QC combo (fastqc/rastqc/...) exists, include its output in the MultiQC report.
+    FQ_DIR="\${BASE_QC_DIR}/\${COMBO_VAL/rustqc/${PREQCENV}}/\${CONDITION_VAL}"
     if [[ "\$FQ_DIR" != "\$QC_DIR" && -d "\$FQ_DIR" ]]; then
         SCAN="\$SCAN \$FQ_DIR"
     fi
