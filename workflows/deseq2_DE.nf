@@ -122,6 +122,7 @@ process run_deseq2{
 
     output:
     path "*_table*", emit: tbls
+    path "*_table_results*.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
     path "log", emit: log
@@ -227,7 +228,7 @@ workflow DE{
     featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_deseq.out.fc_cts.collect())
     run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_deseq2.out.tbls)
+    filter_significant(run_deseq2.out.result_tbls)
     create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)).collect())
     collect_deseq(filter_significant.out.sigtbls.collect())
 
