@@ -51,7 +51,8 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Combinations of conditions
-comparison <- strsplit(cmp, ",")
+comparison <- parse_comparisons(cmp)
+validate_comparisons(comparison, levels(sampleData_all$condition))
 
 ## check combi
 if (combi == "none") {
@@ -114,7 +115,7 @@ print(design)
 dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
 
 # filter low counts
-smallestGroupSize <- length(unique(sampleData_all$condition))
+smallestGroupSize <- min_group_size(sampleData_all$condition)
 keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
 dds <- dds[keep, ]
 
@@ -194,19 +195,18 @@ dev.off()
 
 ### Now we run comparisons
 
-for (contrast in comparison[[1]]) {
-    contrast_name <- strsplit(contrast, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
+for (contrast in comparison) {
+    contrast_name <- contrast$name
     print(paste("Comparing ", contrast_name, sep = ""))
 
     # determine contrast
-    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names = FALSE)
-    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)
+    A <- contrast$A
+    B <- contrast$B
 
-    # subset Datasets for pairwise comparison
-    countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
-    rownames(countData) <- rownames(countData_all)
-    sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
+    # subset Datasets for pairwise comparison: metadata-based selection, B then A order
+    sel <- select_contrast_samples(sampleData_all, countData_all, A, B)
+    sampleData <- sel$sampleData
+    countData <- sel$countData
 
     ## Create design-table considering different types (paired, unpaired) and batches
     if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1) {
@@ -241,7 +241,7 @@ for (contrast in comparison[[1]]) {
 
         dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
         # filter low counts
-        smallestGroupSize <- length(unique(sampleData_norm$condition))
+        smallestGroupSize <- min_group_size(sampleData_norm$condition)
         keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
         dds_norm <- dds_norm[keep_norm, ]
 
@@ -269,7 +269,7 @@ for (contrast in comparison[[1]]) {
     dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
 
     # filter low counts
-    smallestGroupSize <- length(unique(sampleData$condition))
+    smallestGroupSize <- min_group_size(sampleData$condition)
     keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
     dds <- dds[keep, ]
 
@@ -312,12 +312,7 @@ for (contrast in comparison[[1]]) {
         resOrdered <- res_shrink[order(res_shrink$log2FoldChange), ]
 
         # # Add gene names  (check how gene_id col is named )
-        resOrdered$Gene <- unlist(lapply(rownames(resOrdered), function(x) {
-            get_gene_name(x, gtf_gene)
-        }))
-        resOrdered$Gene_ID <- rownames(resOrdered)
-        resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
-        resOrdered <- add_gene_coordinates(resOrdered, resOrdered$Gene_ID, gtf_gene, after = "Gene_ID")
+        resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE)
 
         # plotVolcano
         pdf(
@@ -353,12 +348,11 @@ for (contrast in comparison[[1]]) {
         # sort and output
         res <- resn[order(resn$log2FoldChange), ]
 
-        res$Gene <- lapply(rownames(res), function(x) {
+        res$Gene <- unlist(lapply(rownames(res), function(x) {
             get_gene_name(x, gtf_gene)
-        })
+        }))
         res$Gene_ID <- rownames(res)
-        res <- res[, c(8, 7, 1, 2, 3, 5, 6)]
-        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+        res <- format_deseq2_results(res, gtf_gene, shrink = FALSE)
         res <- as.data.frame(apply(res, 2, as.character))
 
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
@@ -385,12 +379,7 @@ for (contrast in comparison[[1]]) {
             resOrdered <- res_shrink[order(res_shrink$log2FoldChange), ]
 
             # # Add gene names  (check how gene_id col is named )
-            resOrdered$Gene <- unlist(lapply(rownames(resOrdered), function(x) {
-                get_gene_name(x, gtf_gene)
-            }))
-            resOrdered$Gene_ID <- rownames(resOrdered)
-            resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
-            resOrdered <- add_gene_coordinates(resOrdered, resOrdered$Gene_ID, gtf_gene, after = "Gene_ID")
+            resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE)
 
             # plot Volcano
             pdf(
@@ -426,12 +415,11 @@ for (contrast in comparison[[1]]) {
             # sort and output
             res <- resn[order(resn$log2FoldChange), ]
 
-            res$Gene <- lapply(rownames(res), function(x) {
+            res$Gene <- unlist(lapply(rownames(res), function(x) {
                 get_gene_name(x, gtf_gene)
-            })
+            }))
             res$Gene_ID <- rownames(res)
-            res <- res[, c(7, 6, 1, 2, 3, 4, 5)]
-            res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+            res <- format_deseq2_results(res, gtf_gene, shrink = FALSE)
             res <- as.data.frame(apply(res, 2, as.character))
 
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)

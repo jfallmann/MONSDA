@@ -68,7 +68,8 @@ sampleData_all$type <- as.factor(sampleData_all$type)
 samples <- rownames(sampleData_all)
 
 ## Combinations of conditions
-comparison <- strsplit(cmp, ",")
+comparison <- parse_comparisons(cmp)
+validate_comparisons(comparison, levels(sampleData_all$condition))
 
 ## check combi
 if (combi == "none") {
@@ -173,20 +174,19 @@ plotQLDisp(fit)
 dev.off()
 
 ## Analyze according to comparison groups
-for (contrast in comparison[[1]]) {
-    contrast_name <- strsplit(contrast, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
+for (contrast in comparison) {
+    contrast_name <- contrast$name
 
     print(paste("Comparing ", contrast_name, sep = ""))
 
     # determine contrast
-    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names = FALSE)
-    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)
+    A <- contrast$A
+    B <- contrast$B
 
-    # subset Datasets for pairwise comparison
-    countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
-    rownames(countData) <- rownames(countData_all)
-    sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
+    # subset Datasets for pairwise comparison: metadata-based selection, B then A order
+    sel <- select_contrast_samples(sampleData_all, countData_all, A, B)
+    sampleData <- sel$sampleData
+    countData <- sel$countData
     sampleData$condition <- relevel(sampleData$condition, ref = B)
 
     samples <- rownames(sampleData)
@@ -261,6 +261,9 @@ for (contrast in comparison[[1]]) {
         dev.off()
 
         ## estimate Dispersion
+        if (no_residual_df(design_norm)) {
+            stop(paste0("Spike-in normalized design for contrast ", contrast_name, " has no residual degrees of freedom (", nrow(design_norm), " samples, design rank ", qr(design_norm)$rank, "). The nuisance-adjusted model cannot be fit; refusing to fall back to an unadjusted test that ignores the covariates."))
+        }
         dge_norm <- estimateDisp(dge_norm, design_norm, robust = TRUE)
 
         ## create file BCV-plot - visualizing estimated dispersions
@@ -448,7 +451,12 @@ for (contrast in comparison[[1]]) {
 
             ## Testing
             # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            AvsB <- makeContrasts(TreatvsUntreat = paste("W_1 + condition", A, sep = ""), levels = design_norm)
+            contrast_col <- paste0("condition", A)
+            if (!contrast_col %in% colnames(design_norm)) {
+                stop(paste0("Spike-in design has no column '", contrast_col, "' (columns: ", paste(colnames(design_norm), collapse = ", "), ")"))
+            }
+            AvsB <- setNames(numeric(ncol(design_norm)), colnames(design_norm))
+            AvsB[contrast_col] <- 1
             qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             comparison_objs <- append(comparison_objs, qlf)
