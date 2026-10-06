@@ -170,7 +170,8 @@ for (contrast in comparison) {
         ctrlgenes <- readLines(spiken)
         setwd(outdir)
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        counts_norm_mat <- counts(counts_norm)[!(rownames(counts(counts_norm)) %in% ctrlgenes), , drop = FALSE] # removing spike-ins for actual DE testing
+        ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived normalization factors
+        counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
         genes <- rownames(counts_norm_mat)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
 
@@ -180,15 +181,20 @@ for (contrast in comparison) {
 
         dge_norm <- DGEList(counts = counts_norm_mat, group = sampleData$condition, samples = samples, genes = genes)
 
-        ## filter low counts
+        ## filter low counts; keep original (pre-filter) lib sizes since the spike-in-derived
+        ## normalization factors below are only valid relative to them
         keep <- filterByExpr(dge_norm)
-        dge_norm <- dge_norm[keep, , keep.lib.sizes = FALSE]
+        dge_norm <- dge_norm[keep, , keep.lib.sizes = TRUE]
 
         # relevel to base condition B
         dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
 
-        ## normalize with TMM
-        dge_norm <- calcNormFactors(dge_norm, method = "TMM", BPPARAM = BPPARAM)
+        ## normalize using the spike-in (control gene) counts rather than TMM on the endogenous
+        ## genes: this is what actually puts the spike-in scale into the normalized results, the
+        ## W_1 covariate alone only adjusts for unwanted variation, not scale.
+        spike_counts <- counts(counts_norm)[ctrl_idx, , drop = FALSE]
+        dge_spike <- calcNormFactors(DGEList(counts = spike_counts), method = "TMM")
+        dge_norm$samples$norm.factors <- dge_spike$samples$norm.factors
 
         ## create file normalized table
         tmm_norm <- as.data.frame(cpm(dge_norm))
