@@ -256,14 +256,21 @@ for (contrast in comparison) {
         setwd(outdir)
 
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        counts_norm_mat <- counts(counts_norm)[!(rownames(counts(counts_norm)) %in% ctrlgenes), , drop = FALSE] # removing spike-ins for actual DE testing
+        ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived size factors
+        counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))  # Last argument is variable of interest
         #design_norm <- as.formula(paste(deparse(design), " + W_1"), collapse = "")
         print(paste0("Design with spike-in normalization: ", paste(all.vars(design_norm), collapse = ", ")))
 
-        dds_norm <- DESeqDataSetFromMatrix(countData = counts_norm_mat, colData = sampleData_norm, design = design_norm)
+        # Build with the full (incl. spike-in) counts so that size factors can be derived from the
+        # spike-ins themselves (controlGenes); this is what puts the spike-in scale into the
+        # normalized results, the W_1 covariate alone only adjusts for unwanted variation, not scale.
+        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
+        dds_norm <- estimateSizeFactors(dds_norm, controlGenes = ctrl_idx)
+        dds_norm <- dds_norm[!ctrl_idx, ] # drop spike-ins from testing, size factors are retained
+
         # filter low counts
         smallestGroupSize <- min_group_size(sampleData_norm$condition)
         keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
