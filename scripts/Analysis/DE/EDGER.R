@@ -249,15 +249,16 @@ for (contrast in comparison) {
         ctrlgenes <- readLines(spiken)
         setwd(outdir)
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        genes <- rownames(counts(counts_norm))
+        counts_norm_mat <- counts(counts_norm)[!(rownames(counts(counts_norm)) %in% ctrlgenes), , drop = FALSE] # removing spike-ins for actual DE testing
+        genes <- rownames(counts_norm_mat)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))        
         des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))  # Last argument is variable of interest
         # des_norm <- as.formula(paste(deparse(des), " + W_1"), collapse = "")
         design_norm <- model.matrix(des_norm, data = sampleData_norm)
-        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))        
+        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
 
-        dge_norm <- DGEList(counts = counts(counts_norm), group = sampleData$condition, samples = samples, genes = genes)
+        dge_norm <- DGEList(counts = counts_norm_mat, group = sampleData$condition, samples = samples, genes = genes)
         ## filter low counts
         keep <- filterByExpr(dge_norm)
         dge_norm <- dge_norm[keep, , keep.lib.sizes = FALSE]
@@ -440,13 +441,13 @@ for (contrast in comparison) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "F", "PValue", "FDR")]
         tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c(7, 6, 3, 2, 4, 5, 8)]
+        tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "F", "PValue", "FDR")]
         tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
@@ -486,9 +487,9 @@ for (contrast in comparison) {
             qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
             if (postde_enabled) {
-                postde_capture(engine = "edger", id = paste0(contrast_name, "_norm"), A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = as.matrix(counts(counts_norm)), expression = cpm(dge_norm, log = TRUE), formula = des_norm, results = postde_results_edger(qlf), mean_scale = "logCPM")
+                postde_capture(engine = "edger", id = paste0(contrast_name, "_norm"), A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = counts_norm_mat, expression = cpm(dge_norm, log = TRUE), formula = des_norm, results = postde_results_edger(qlf), mean_scale = "logCPM")
             }
-            comparison_objs <- append(comparison_objs, qlf)
+            comparison_objs[[paste0(contrast_name, "_norm")]] <- qlf
 
             # # Add gene names  (check how gene_id col is named )
             qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
@@ -532,13 +533,13 @@ for (contrast in comparison) {
 
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c("Gene_ID", "Gene", "logFC", "logCPM", "F", "PValue", "FDR")]
             tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- tops$table[, c(7, 6, 4, 2, 3, 5, 8)]
+            tops <- tops$table[, c("Gene_ID", "Gene", "logFC", "logCPM", "F", "PValue", "FDR")]
             tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
@@ -554,6 +555,8 @@ for (contrast in comparison) {
         # cleanup
         rm(qlf, res, tops)
         print(paste("cleanup done for ", contrast_name, sep = ""))
+    }, error = function(e) {
+        message(paste0("Error while processing contrast ", contrast_name, ": ", conditionMessage(e), ". Skipping this contrast."))
     })
 }
 
