@@ -12,6 +12,7 @@ DECOMPS = get_always('DECOMPS') ?: ''
 PVAL = get_always('DEPVAL') ?: ''
 LFC = get_always('DELFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
+PCOMBO_NORM = PCOMBO == 'none' ? '' : PCOMBO
 POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
 POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
 POSTDE_FLAG = POSTDE_ENABLED ? '1' : '0'
@@ -129,7 +130,7 @@ process run_edger{
     path "*_table_results*.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
-    path "*_postde.rds", emit: bundle, optional: true
+    path "DE_edger_${PCOMBO_NORM}_postde.rds", emit: bundle, optional: !POSTDE_ENABLED
     path "log", emit: log
 
     script:    
@@ -219,8 +220,8 @@ process postde{
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename.indexOf("manifest.json") > 0)      "POSTDE/${SCOMBO}/${file(filename).getName()}"
-        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/postde.log"
+        if (filename == "log")      "LOGS/${SCOMBO}/DE/edger/postde.log"
+        else if (filename == "postde")      "POSTDE/${SCOMBO}"
     }
 
     input:
@@ -228,12 +229,15 @@ process postde{
     path 'postde_inputs'
 
     output:
-    path "postde/manifest.json", emit: manifest
+    path "postde", emit: postde_out
     path "log", emit: log
 
     script:
+    bundle = "${task.workDir}/bundle"
+    outdir = "${task.workDir}/postde"
+    logfile = "${task.workDir}/log"
     """
-    cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "../bundle" --config "config.json" --output "../postde" 2> log
+    (cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "$bundle" --config "config.json" --output "$outdir") 2> "$logfile" && test -s "$outdir/manifest.json"
     """
 }
 
@@ -265,7 +269,7 @@ workflow DE{
     collect_edger(filter_significant.out.sigtbls.collect())
 
     if (POSTDE_ENABLED) {
-        postde(run_edger.out.bundle, Channel.fromPath(POSTDE_INPUTS))
+        postde(run_edger.out.bundle, Channel.fromPath(POSTDE_INPUTS, checkIfExists: true, type: 'dir'))
     }
 
     emit:
