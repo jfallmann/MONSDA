@@ -1,4 +1,3 @@
-import filecmp
 import hashlib
 import json
 import math
@@ -319,6 +318,19 @@ def _staged_name(method, key, full):
     return method + "_" + key + ext
 
 
+def _same_content(path_a, path_b):
+    """Compare file contents directly (readbytes), immune to stat-based
+    caching that can miss same-size/same-mtime content mutations."""
+    with open(path_a, "rb") as fh_a, open(path_b, "rb") as fh_b:
+        return fh_a.read() == fh_b.read()
+
+
+def _same_text(path, text):
+    """Compare a file's bytes against an expected text string."""
+    with open(path, "rb") as fh:
+        return fh.read() == text.encode("utf-8")
+
+
 def prepare_postde(config, subdir):
     section = load_postde_config(config.get("POSTDE"), config=config)
     if section is None or not section.get("enabled"):
@@ -338,22 +350,31 @@ def prepare_postde(config, subdir):
         (method, key): _staged_name(method, key, full)
         for method, key, full in resources
     }
+    staged_analysis = json.loads(json.dumps(analysis))
+    for method, key, full in resources:
+        staged_analysis[method][key] = names[(method, key)]
+    expected_config = json.dumps(staged_analysis, indent=2)
     if os.path.isdir(staged):
-        expected = [os.path.join(staged, names[(m, k)]) for m, k, _ in resources]
-        expected.append(os.path.join(staged, "config.json"))
-        if all(os.path.isfile(p) for p in expected) and all(
-            filecmp.cmp(full, os.path.join(staged, names[(m, k)]), shallow=False)
+        staged_config = os.path.join(staged, "config.json")
+        config_ok = os.path.isfile(staged_config) and _same_text(
+            staged_config, expected_config
+        )
+        resources_ok = all(
+            os.path.isfile(os.path.join(staged, names[(m, k)]))
+            and _same_content(full, os.path.join(staged, names[(m, k)]))
             for m, k, full in resources
-        ):
+        )
+        if config_ok and resources_ok:
             return staged
     os.makedirs(staged, exist_ok=True)
     for method, key, full in resources:
         dst = os.path.join(staged, names[(method, key)])
-        if not os.path.exists(dst) or not filecmp.cmp(full, dst, shallow=False):
+        if not os.path.exists(dst) or not _same_content(full, dst):
             shutil.copy2(full, dst)
-    staged_analysis = json.loads(json.dumps(analysis))
-    for method, key, full in resources:
-        staged_analysis[method][key] = names[(method, key)]
-    with open(os.path.join(staged, "config.json"), "w") as fh:
-        json.dump(staged_analysis, fh, indent=2)
+    staged_config = os.path.join(staged, "config.json")
+    if not os.path.isfile(staged_config) or not _same_text(
+        staged_config, expected_config
+    ):
+        with open(staged_config, "w") as fh:
+            fh.write(expected_config)
     return staged
