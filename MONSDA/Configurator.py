@@ -17,6 +17,7 @@ from functools import reduce
 from snakemake.common.configfile import load_configfile
 
 from MONSDA.Logger import *
+from MONSDA.PostDE import load_postde_config
 
 from . import _version
 
@@ -34,7 +35,7 @@ configpath = os.path.join(installpath, "MONSDA", "configs")
 current_path = os.getcwd()
 
 template = load_configfile(os.sep.join([configpath, "template_base_commented.json"]))
-none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+none_workflow_keys = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION", "POSTDE"]
 comparable_workflows = ["DE", "DEU", "DAS", "DTU", "PEAKS"]
 quantifying_workflows = ["COUNTING"]
 IP_workflows = ["PEAKS"]
@@ -108,6 +109,7 @@ class PROJECT:
         self.workflowsDict = NestedDefaultDict()
         self.settingsDict = NestedDefaultDict()
         self.settingsList = []
+        self.postde = {"enabled": False, "config": ""}
 
 
 class GUIDE:
@@ -753,10 +755,12 @@ def add_workflows(existing_workflows=None):
     prGreen("\nADD WORKFLOWS\n")
     possible_workflows = list(project.baseDict.keys())
     for e in none_workflow_keys:
-        possible_workflows.remove(e)
+        if e in possible_workflows:
+            possible_workflows.remove(e)
     if existing_workflows:
         for e in existing_workflows:
-            possible_workflows.remove(e)
+            if e in possible_workflows:
+                possible_workflows.remove(e)
     posWorkDict = NestedDefaultDict()
     counter = 1
     for w in possible_workflows:
@@ -1275,11 +1279,16 @@ def modify(config=None):
         active_workflows = modify_config["WORKFLOWS"].split(",")
         inactive_workflows = list(modify_config.keys())
         for e in none_workflow_keys:
-            inactive_workflows.remove(e)
+            if e in inactive_workflows:
+                inactive_workflows.remove(e)
         for wf in inactive_workflows:
             project.workflowsDict[wf] = decouple(modify_config[wf])
         for e in modify_config["WORKFLOWS"].split(","):
-            inactive_workflows.remove(e)
+            if e in inactive_workflows:
+                inactive_workflows.remove(e)
+        project.postde = modify_config.get(
+            "POSTDE", {"enabled": False, "config": ""}
+        )
         prRed("\n   Following configuration was found :\n")
         prRed("   Condition-Tree:\n")
         print_dict(project.conditionsDict, gap="      ")
@@ -1300,7 +1309,8 @@ def modify(config=None):
         opts["2"] = "remove workflows"
         opts["3"] = "add conditions"
         opts["4"] = "remove conditions"
-        opts["5"] = "choose another file"
+        opts["5"] = "configure PostDE"
+        opts["6"] = "choose another file"
         guide.display(question="choose an option", options=opts, proof=opts.keys())
         guide.clear(3)
         if guide.answer == "1":
@@ -1312,6 +1322,8 @@ def modify(config=None):
         if guide.answer == "4":
             return remove_conditions()
         if guide.answer == "5":
+            return finalize()
+        if guide.answer == "6":
             project.settingsDict = NestedDefaultDict()
             project.conditionsDict = NestedDefaultDict()
             project.workflowsDict = NestedDefaultDict()
@@ -1752,6 +1764,43 @@ def set_cores():
     return finalize()
 
 
+def configure_postde(final_dict):
+    workflows = [
+        w.strip()
+        for w in str(final_dict.get("WORKFLOWS", "")).split(",")
+        if w.strip()
+    ]
+    if "DE" not in workflows:
+        final_dict["POSTDE"] = {"enabled": False, "config": ""}
+        return
+    current = getattr(project, "postde", {"enabled": False, "config": ""})
+    guide.display(
+        question="Enable PostDE analysis (GO/GSEA/GSVA/decoupleR/dream) after DE?",
+        proof=["yes", "no"],
+        spec="yes" if current.get("enabled") else "no",
+    )
+    if guide.answer.strip().lower() not in ("yes", "y"):
+        final_dict["POSTDE"] = {"enabled": False, "config": ""}
+        return
+    while True:
+        guide.display(
+            question="Enter the absolute path to the PostDE analysis JSON",
+            whitespace=True,
+            spec=current.get("config", ""),
+        )
+        path = guide.answer.strip()
+        if not path:
+            path = current.get("config", "")
+        try:
+            final_dict["POSTDE"] = load_postde_config(
+                {"enabled": True, "config": path}, config=final_dict
+            )
+            return
+        except ValueError as err:
+            prRed("PostDE config invalid: " + str(err))
+            continue
+
+
 def finalize():
     pickle_unfinished("finalize")
     final_dict = NestedDefaultDict()
@@ -1762,6 +1811,7 @@ def finalize():
     final_dict["VERSION"] = __version__
     final_dict["SETTINGS"] = project.settingsDict
     final_dict.update(project.workflowsDict)
+    configure_postde(final_dict)
 
     if project.subname:
         configfile = f"config_{'_'.join([project.name,project.subname])}.json"

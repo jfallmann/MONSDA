@@ -10,7 +10,7 @@ DECOMP = get_always('DECOMP') ?: ''
 DECOMPS = get_always('DECOMPS') ?: ''
 PVAL = get_always('DEPVAL') ?: ''
 LFC = get_always('DELFC') ?: ''
-PCOMBO = COMBO ?: 'none'
+PCOMBO = get_always('COMBO') ?: 'none'
 PCOMBO_NORM = PCOMBO == 'none' ? '' : PCOMBO
 POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
 POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''

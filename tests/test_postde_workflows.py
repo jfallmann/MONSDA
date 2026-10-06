@@ -1,12 +1,11 @@
+import hashlib
 import json
 import os
 import re
-import shlex
 import shutil
-import string
 import subprocess
 import sys
-import types
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -89,19 +88,23 @@ def _generate_de(engine, workdir, cfg):
     return subdir
 
 
-def _extract_nf_script(subflow, process_name):
+def _extract_nf_process(subflow, process_name):
     match = re.search(r"process\s+" + process_name + r"\s*\{", subflow)
     assert match, f"process {process_name} not found in generated subflow"
-    start = match.end()
+    start = match.start()
     depth = 1
-    i = start
+    i = match.end()
     while i < len(subflow) and depth > 0:
         if subflow[i] == "{":
             depth += 1
         elif subflow[i] == "}":
             depth -= 1
         i += 1
-    body = subflow[start:i]
+    return subflow[start:i]
+
+
+def _extract_nf_script(subflow, process_name):
+    body = _extract_nf_process(subflow, process_name)
     block = re.search(r'script:\s*"""\n(.*?)\n\s*"""', body, re.S)
     assert block, f"script block not found in process {process_name}"
     return block.group(1)
@@ -164,38 +167,95 @@ def _write_real_bundle(rscript, outdir, engine):
 def _extract_smk_rule_body(smk, rule_name):
     match = re.search(r"^\s*rule\s+" + rule_name + r"\s*:\s*$", smk, re.M)
     assert match, f"rule {rule_name} not found in generated snakefile"
-    rest = smk[match.end():]
     body = []
-    for ln in rest.split("\n"):
-        if body and re.match(
-            r"^\s*(rule|if|include|configfile|import|from|onsuccess|onerror)\b", ln
-        ):
+    for ln in smk[match.start():].split("\n"):
+        if body and not ln.strip():
+            continue
+        if body and not ln[0].isspace():
             break
         body.append(ln)
     return "\n".join(body)
 
 
-def _smk_params_shell(body):
-    params_m = re.search(r"params:\s*(.*?)(?=\n\s*shell:)", body, re.S)
-    assert params_m, "params block not found in rule body"
-    shell_m = re.search(r'shell:\s*"(.*?)"', body, re.S)
-    assert shell_m, "shell block not found in rule body"
-    lines = params_m.group(1).split("\n")
-    code = "\n".join(
-        [lines[0].strip().rstrip(",")]
-        + [ln.strip().rstrip(",") for ln in lines[1:] if ln.strip()]
+def _write_smk_launcher(launch, smk_text, detool, bundle_path, staged, combo):
+    body = textwrap.dedent(_extract_smk_rule_body(smk_text, "postde"))
+    stub = (
+        "import os\n"
+        f"BINS = {str(REPO / 'scripts')!r}\n"
+        f"combo = {combo!r}\n"
+        f"postde_inputs = {str(staged)!r}\n"
+        "postde_enabled = True\n"
+        "\n"
+        f"rule run_{detool}:\n"
+        "    output:\n"
+        f"        bundle = [{str(bundle_path)!r}]\n"
+        "\n"
     )
-    return code, shell_m.group(1)
+    (launch / "Snakefile").write_text(stub + body)
 
 
-def _format_shell(template, **fields):
-    class _QFmt(string.Formatter):
-        def format_field(self, value, spec):
-            if spec == "q":
-                return shlex.quote(str(value))
-            return super().format_field(value, spec)
+def _write_nf_launcher(launch, subflow_text, bundle_path, staged, combo):
+    process = _extract_nf_process(subflow_text, "postde")
+    wrapper = (
+        "nextflow.enable.dsl=2\n"
+        "params.gTHREADS = 1\n"
+        f"params.gBINS = {str(REPO / 'scripts')!r}\n"
+        f"params.gSCOMBO = {combo!r}\n"
+        "\n"
+        + process
+        + "\n"
+        "workflow {\n"
+        f"    postde(Channel.value(file({str(bundle_path)!r})), Channel.value(file({str(staged)!r})))\n"
+        "}\n"
+    )
+    (launch / "main.nf").write_text(wrapper)
 
-    return _QFmt().format(template, **fields)
+
+def _check_manifest(outdir, bundle_path, config_path):
+    manifest = json.loads((outdir / "manifest.json").read_text())
+    assert manifest["output"] == "."
+    assert manifest["bundle_checksum"] == hashlib.md5(
+        Path(bundle_path).read_bytes()
+    ).hexdigest()
+    assert manifest["config_checksum"] == hashlib.md5(
+        Path(config_path).read_bytes()
+    ).hexdigest()
+    entry = manifest["entries"]["A-VS-B"]
+    assert entry["id"] == "A-VS-B"
+    assert entry["dir"] == "A-VS-B"
+    decoupler = entry["analyses"]["regulatory"]["decoupler"]
+    for method in ("ulm", "mlm"):
+        for kind in ("activities", "differential"):
+            rel = decoupler[method][kind]
+            assert not os.path.isabs(rel), rel
+            assert (outdir / rel).exists(), rel
+    return manifest
+
+
+POSTDE_R_PACKAGES = ("decoupleR", "limma", "jsonlite", "dplyr", "tidyr")
+
+
+@pytest.fixture
+def postde_r_packages(tmp_path):
+    rscript = shutil.which("Rscript")
+    if not rscript:
+        pytest.skip("Rscript not found on PATH")
+    probe = tmp_path / "probe_packages.R"
+    probe.write_text(
+        "pkgs <- c("
+        + ", ".join(repr(p) for p in POSTDE_R_PACKAGES)
+        + ")\n"
+        "missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]\n"
+        "if (length(missing) > 0) cat('MISSING:', paste(missing, collapse = ' '), '\\n')\n"
+    )
+    result = subprocess.run([rscript, str(probe)], capture_output=True, text=True)
+    if "MISSING:" in result.stdout:
+        missing = result.stdout.split("MISSING:", 1)[1].strip()
+        pytest.skip(
+            "R packages required for the postde decoupler run are not installed: "
+            + missing
+        )
+    return rscript
 
 
 class TestLoadPostdeConfig:
@@ -625,12 +685,12 @@ class TestPostdeDefaults:
 class TestPostdeExecutable:
     @pytest.mark.parametrize("engine", ["smk", "nf"])
     @pytest.mark.parametrize("detool", ["deseq2", "edger"])
-    def test_postde_runs_real_run_r(self, workdir, tmp_path, engine, detool):
+    def test_postde_runs_real_run_r(
+        self, workdir, tmp_path, engine, detool, postde_r_packages
+    ):
         """Run the generated postde process/rule unmodified against the real
         run.R with an offline decoupleR ULM/MLM analysis on a tiny bundle."""
-        rscript = shutil.which("Rscript")
-        if not rscript:
-            pytest.skip("Rscript not found on PATH")
+        rscript = postde_r_packages
         resdir = tmp_path / "res dir"
         resdir.mkdir()
         (resdir / "network.tsv").write_text(
@@ -658,75 +718,58 @@ class TestPostdeExecutable:
             open(workdir / subdir / f"allconditions_DE_{detool}_subconfig.json")
         )
         assert confo["POSTDE"]["enabled"] is True
-        staged = confo["POSTDE"]["inputs"]
+        staged = Path(confo["POSTDE"]["inputs"])
         launch = workdir / "launch dir"
         launch.mkdir()
-        bundle_src = _write_real_bundle(rscript, launch, detool)
-        if engine == "nf":
-            subflow = (
-                workdir / subdir / f"allconditions_DE_{detool}_subflow.nf"
-            ).read_text()
-            script = _extract_nf_script(subflow, "postde")
-            script = script.replace("\\$", "$")
-            script = script.replace("${params.gBINS}", str(REPO / "scripts"))
-            shutil.copy2(bundle_src, launch / "bundle")
-            os.symlink(workdir / staged, launch / "postde_inputs")
-            result = subprocess.run(
-                script, shell=True, cwd=str(launch), capture_output=True, text=True
-            )
-            assert result.returncode == 0, result.stderr[-2000:]
-            outdir = launch / "postde"
-            log = launch / "log"
-        else:
+        bundle = _write_real_bundle(rscript, launch, detool)
+        combo = f"{detool}_DE"
+        if engine == "smk":
             smk = (
                 workdir / subdir / f"allconditions_DE_{detool}_subsnake.smk"
             ).read_text()
-            body = _extract_smk_rule_body(smk, "postde")
-            params_code, shell_tpl = _smk_params_shell(body)
-            combo = f"{detool}_DE"
-            ns = {"os": os, "combo": combo}
-            exec(params_code, ns)
-            fake_input = {
-                "bundle": [str(bundle_src)],
-                "staged": str(workdir / staged),
-                "config": str(workdir / staged / "config.json"),
-                "script": str(REPO / "scripts" / "Analysis" / "PostDE" / "run.R"),
-                "common": str(REPO / "scripts" / "Analysis" / "PostDE" / "common.R"),
-                "enrichment": str(
-                    REPO / "scripts" / "Analysis" / "PostDE" / "enrichment.R"
-                ),
-                "regulatory": str(
-                    REPO / "scripts" / "Analysis" / "PostDE" / "regulatory.R"
-                ),
-            }
-            old = os.getcwd()
-            os.chdir(launch)
-            try:
-                params = {
-                    "bundle": ns["bundle"](
-                        None, types.SimpleNamespace(**fake_input)
-                    ),
-                    "outdir": ns["outdir"](None),
-                }
-                log = os.path.abspath(
-                    os.path.join("LOGS", combo, "DE", detool, "postde.log")
-                )
-            finally:
-                os.chdir(old)
-            shell = _format_shell(
-                shell_tpl,
-                input=types.SimpleNamespace(**fake_input),
-                params=types.SimpleNamespace(**params),
-                log=log,
-            )
+            _write_smk_launcher(launch, smk, detool, bundle, staged, combo)
             result = subprocess.run(
-                shell, shell=True, cwd=str(launch), capture_output=True, text=True
+                [
+                    sys.executable,
+                    "-m",
+                    "snakemake",
+                    "-j1",
+                    "-s",
+                    str(launch / "Snakefile"),
+                    "POSTDE/" + combo,
+                ],
+                cwd=str(launch),
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PYTHONPATH": str(REPO)},
             )
             assert result.returncode == 0, result.stderr[-2000:]
-            outdir = launch / "POSTDE" / combo
-            log = launch / "LOGS" / combo / "DE" / detool / "postde.log"
+        else:
+            subflow = (
+                workdir / subdir / f"allconditions_DE_{detool}_subflow.nf"
+            ).read_text()
+            _write_nf_launcher(launch, subflow, bundle, staged, combo)
+            result = subprocess.run(
+                [
+                    "nextflow",
+                    "run",
+                    "-ansi-log",
+                    "false",
+                    str(launch / "main.nf"),
+                    "-work-dir",
+                    str(launch / "work"),
+                ],
+                cwd=str(launch),
+                capture_output=True,
+                text=True,
+                env={**os.environ, "NXF_HOME": str(launch / ".nextflow")},
+                timeout=600,
+            )
+            assert result.returncode == 0, result.stderr[-2000:]
+        outdir = launch / "POSTDE" / combo
         assert (outdir / "manifest.json").exists()
         assert (outdir / "report_data.rds").exists()
+        _check_manifest(outdir, bundle, staged / "config.json")
         entry = outdir / "A-VS-B"
         for name in (
             "decoupler_ulm_activities.tsv",
@@ -738,11 +781,22 @@ class TestPostdeExecutable:
             "decoupler_contrast.tsv",
         ):
             assert (entry / name).exists(), name
+        for method in ("ulm", "mlm"):
+            diff = (
+                entry / f"decoupler_{method}_differential.tsv"
+            ).read_text().splitlines()
+            assert len(diff) >= 2, f"{method} differential has no data rows"
+            acts = (
+                entry / f"decoupler_{method}_activities.tsv"
+            ).read_text().splitlines()
+            assert len(acts) >= 2, f"{method} activities has no data rows"
+        log = launch / "LOGS" / combo / "DE" / detool / "postde.log"
         assert log.exists()
 
 
 class TestCliSave:
-    def test_cli_save_generates_postde(self, tmp_path):
+    @pytest.mark.parametrize("engine", ["smk", "nf"])
+    def test_cli_save_generates_postde(self, tmp_path, engine):
         for item in ("FASTQ", "GENOME"):
             os.symlink(DATA / item, tmp_path / item)
         (tmp_path / "sitecustomize.py").write_text(
@@ -763,15 +817,21 @@ class TestCliSave:
         }
         (tmp_path / "config_Test.json").write_text(json.dumps(cfg))
         env = {**os.environ, "PYTHONPATH": str(REPO) + os.pathsep + str(tmp_path)}
+        cmd = [
+            sys.executable,
+            "-m",
+            "MONSDA.RunMONSDA",
+            "--save",
+            "-c",
+            "config_Test.json",
+            "-d",
+            "tmp",
+            "-j2",
+        ]
+        if engine == "nf":
+            cmd.append("--nextflow")
         result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "MONSDA.RunMONSDA",
-                "--save",
-                "-c",
-                "config_Test.json",
-            ],
+            cmd,
             cwd=str(tmp_path),
             env=env,
             capture_output=True,
@@ -779,10 +839,13 @@ class TestCliSave:
             timeout=300,
         )
         assert result.returncode == 0, result.stderr[-2000:]
-        subdir = tmp_path / "SubSnakes"
+        subdir = tmp_path / ("SubFlows" if engine == "nf" else "SubSnakes")
         confo = json.load(open(subdir / "allconditions_DE_deseq2_subconfig.json"))
         assert confo["POSTDE"]["enabled"] is True
         staged = confo["POSTDE"]["inputs"]
         assert (tmp_path / staged / "config.json").exists()
         commands = (tmp_path / "JOBS" / "MONSDA.commands").read_text()
-        assert "allconditions_DE_deseq2_subsnake.smk" in commands
+        if engine == "nf":
+            assert "allconditions_DE_deseq2_subflow.nf" in commands
+        else:
+            assert "allconditions_DE_deseq2_subsnake.smk" in commands

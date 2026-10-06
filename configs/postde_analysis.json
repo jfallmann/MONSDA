@@ -1,0 +1,52 @@
+{
+  "padj": 0.05,
+  "lfc": 1,
+  "seed": 42,
+  "min_size": 10,
+  "max_size": 500,
+  "gprofiler": {
+    "enabled": true,
+    "organism": "hsapiens",
+    "domain_scope": "custom",
+    "allow_network": true,
+    "sources": ["GO:BP", "GO:MF", "GO:CC", "REAC"],
+    "correction_method": "g_SCS",
+    "background": null
+  },
+  "clusterprofiler": {
+    "enabled": false,
+    "go_expand": false,
+    "term2gene": null,
+    "term2name": null,
+    "background": null
+  },
+  "gsva": {
+    "enabled": false,
+    "method": "gsva"
+  },
+  "decoupler": {
+    "enabled": false,
+    "resource": "collectri",
+    "organism": "human",
+    "top": 500,
+    "min_size": 10,
+    "methods": ["ulm", "mlm"],
+    "contrast_activity": false,
+    "allow_network": false,
+    "network": null
+  },
+  "dream": {
+    "enabled": false,
+    "formula": "~condition + (1|subject)",
+    "metadata": null
+  },
+  "plots": {
+    "enabled": false
+  },
+  "report": {
+    "enabled": false
+  },
+  "shiny": {
+    "enabled": false
+  }
+}

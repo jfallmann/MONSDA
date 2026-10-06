@@ -23,7 +23,7 @@ rule themall:
             sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo),
-            postde = directory(expand("POSTDE/{combo}", combo=combo)) if postde_enabled else []
+            postde = expand("POSTDE/{combo}", combo=combo) if postde_enabled else []
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
