@@ -12,6 +12,9 @@ DECOMPS = get_always('DECOMPS') ?: ''
 PVAL = get_always('DEPVAL') ?: ''
 LFC = get_always('DELFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
+POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
+POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
+POSTDE_FLAG = POSTDE_ENABLED ? '1' : '0'
 
 COUNTBIN = 'featureCounts'
 COUNTENV = 'countreads_de'
@@ -111,6 +114,7 @@ process run_edger{
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                     
+        else if (filename.indexOf("_postde") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"
         else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/run_edger.log"
     }
 
@@ -125,6 +129,7 @@ process run_edger{
     path "*_table_results*.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
+    path "*_postde.rds", emit: bundle, optional: true
     path "log", emit: log
 
     script:    
@@ -132,7 +137,7 @@ process run_edger{
     bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO ${task.cpus} $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
+    MONSDA_POSTDE=${POSTDE_FLAG} Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO ${task.cpus} $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
     """
 }
 
@@ -206,6 +211,32 @@ process collect_edger{
     """
 }
 
+process postde{
+    conda "postde.yaml"
+    container "oras://jfallmann/monsda:postde"
+    cpus THREADS
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("manifest.json") > 0)      "POSTDE/${SCOMBO}/${file(filename).getName()}"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/postde.log"
+    }
+
+    input:
+    path 'bundle'
+    path 'postde_inputs'
+
+    output:
+    path "postde/manifest.json", emit: manifest
+    path "log", emit: log
+
+    script:
+    """
+    cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "../bundle" --config "config.json" --output "../postde" 2> log
+    """
+}
+
 workflow DE{ 
     take: collection
 
@@ -232,6 +263,10 @@ workflow DE{
     filter_significant(run_edger.out.result_tbls)
     create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)).collect())
     collect_edger(filter_significant.out.sigtbls.collect())
+
+    if (POSTDE_ENABLED) {
+        postde(run_edger.out.bundle, Channel.fromPath(POSTDE_INPUTS))
+    }
 
     emit:
     tbls = run_edger.out.tbls
