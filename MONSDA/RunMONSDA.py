@@ -1007,7 +1007,8 @@ def main():
             + "{}".format(" ".join([shlex.quote(s) for s in sys.argv[1:]]))
         )
 
-        required_version = load_configfile(knownargs.configfile).get("VERSION")
+        config = load_configfile(knownargs.configfile)
+        required_version = config.get("VERSION")
         if not required_version:
             sys.exit(
                 "Can not check version needed, please add VERSION key to config file"
@@ -1030,6 +1031,13 @@ def main():
             )
         else:
             log.info("Running MONSDA version " + __version__ + " as configured")
+
+        postde_section = config.get("POSTDE")
+        if postde_section and postde_section.get("enabled"):
+            try:
+                mw.load_postde_config(postde_section, config=config)
+            except ValueError as err:
+                sys.exit("POSTDE config invalid: " + str(err))
 
         MIN_PYTHON = (3, 11)
         if sys.version_info < MIN_PYTHON:

@@ -38,6 +38,7 @@ from snakemake.common.configfile import load_configfile
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
 from MONSDA.Containers import normalize_container_version
+from MONSDA.PostDE import load_postde_config, prepare_postde
 from MONSDA.Utils import check_run as check_run
 from MONSDA.Utils import dump_if_different, write_if_different
 
@@ -698,6 +699,9 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
             )
             log.error("".join(tbe.format()))
 
+        if config.get("POSTDE", {}).get("enabled") and subwork == "DE":
+            tempconf["POSTDE"] = config["POSTDE"]
+
         (
             configs.append(tempconf)
             if tempconf.get("SETTINGS", False)
@@ -1327,6 +1331,16 @@ def make_post(
     logid = scriptname + ".Workflows_make_post: "
 
     log.debug(logid + f"STARTING POSTPROCESSING {postworkflow} FOR {conditions}")
+
+    if postworkflow == "DE":
+        postde_inputs = prepare_postde(config, subdir)
+        if postde_inputs:
+            config = dict(config)
+            config["POSTDE"] = {
+                "enabled": True,
+                "config": config["POSTDE"]["config"],
+                "inputs": postde_inputs,
+            }
 
     jobs = list()
     condapath = re.compile(r'conda:\s+"')
@@ -2276,6 +2290,11 @@ def nf_fetch_params(
         retconf["FUSIONSLIB"] = FUSCONF.get(FUSENV, {}).get("OPTIONS", {}).get(
             "INDEX", ""
         ) or os.path.join(REFDIR, "CTAT", FUSENV)
+
+    postde = config.get("POSTDE")
+    if postde and postde.get("enabled"):
+        retconf["POSTDE_ENABLED"] = True
+        retconf["POSTDE_INPUTS"] = postde.get("inputs", "")
 
     retconf["REFERENCE"] = REFERENCE
     retconf["REFDIR"] = REFDIR
@@ -3462,6 +3481,16 @@ def nf_make_post(
     logid = scriptname + ".Workflows_nf_make_post: "
 
     log.debug(logid + f"STARTING POSTPROCESSING {postworkflow} FOR {conditions}")
+
+    if postworkflow == "DE":
+        postde_inputs = prepare_postde(config, subdir)
+        if postde_inputs:
+            config = dict(config)
+            config["POSTDE"] = {
+                "enabled": True,
+                "config": config["POSTDE"]["config"],
+                "inputs": postde_inputs,
+            }
 
     jobs = list()
     condapath = re.compile(r'conda\s+"')

@@ -5,6 +5,9 @@ comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
+postde_enabled = config.get('POSTDE', {}).get('enabled', False)
+postde_inputs = config.get('POSTDE', {}).get('inputs', '') if postde_enabled else ''
+postde_flag = '1' if postde_enabled else '0'
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_EDGER_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -19,7 +22,8 @@ rule themall:
             sig     = expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/Sig_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_u   = expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
             sig_d   = expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison = compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_EDGER_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison = compstr, scombo=scombo),
-            Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
+            Rmd     = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo),
+            postde = expand("POSTDE/{combo}/manifest.json", combo=combo) if postde_enabled else []
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
@@ -62,7 +66,8 @@ rule run_edger:
             vulcan  = rules.themall.input.vulcan,
             allN    = rules.themall.input.allN,
             res     = rules.themall.input.res,
-            sort    = rules.themall.input.sort
+            sort    = rules.themall.input.sort,
+            bundle = expand("DE/{combo}/DE_edger_{scombo}_postde.rds", combo=combo, scombo=scombo) if postde_enabled else []
     log:    expand("LOGS/{combo}/DE/edger/run_edger.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
@@ -73,7 +78,7 @@ rule run_edger:
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION,
             depara = lambda wildcards: tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "")
-    shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}"
+    shell: "MONSDA_POSTDE={postde_flag} Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.run_edger.output.sort
@@ -110,3 +115,17 @@ rule create_summary_snippet:
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEENV} --loglevel DEBUG 2>> {log}"
+
+if postde_enabled:
+    rule postde:
+        input:  bundle = rules.run_edger.output.bundle,
+                staged = postde_inputs
+        output: manifest = expand("POSTDE/{combo}/manifest.json", combo=combo)
+        log:    expand("LOGS/{combo}/DE/edger/postde.log", combo=combo)
+        conda:  "postde.yaml"
+        container: "oras://jfallmann/monsda:postde"
+        threads: 1
+        params: bins = BINS,
+                bundle = lambda w, input: os.path.abspath(input.bundle[0]),
+                outdir = lambda w: os.path.abspath(os.path.join('POSTDE', combo))
+        shell:  "cd {input.staged} && Rscript {params.bins}/Analysis/PostDE/run.R --bundle {params.bundle} --config config.json --output {params.outdir} 2> {log}"
