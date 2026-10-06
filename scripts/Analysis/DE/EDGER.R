@@ -27,7 +27,30 @@ print(args)
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+if (!file.exists(libp)) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("Rscript --file path not found in commandArgs")
+    }
+    libp <- file.path(dirname(normalizePath(postde_file)), "..", "..", "lib", "_lib.R")
+}
 source(libp)
+
+postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
+if (postde_enabled) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("MONSDA_POSTDE=1 but Rscript --file path not found in commandArgs")
+    }
+    postde_lib <- file.path(dirname(normalizePath(postde_file)), "..", "PostDE", "export.R")
+    if (!file.exists(postde_lib)) {
+        stop(paste0("MONSDA_POSTDE=1 but export.R not found at ", postde_lib))
+    }
+    source(postde_lib)
+    postde_bundles <- list()
+}
 
 ## plotMDS needs at least 3 samples/columns, fall back to a placeholder plot otherwise
 safe_plotMDS <- function(dgeobj, ...) {
@@ -370,6 +393,9 @@ for (contrast in comparison) {
             qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
         }
         # add comp object to list for image
+        if (postde_enabled) {
+            postde_capture(engine = "edger", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = cpm(dge, log = TRUE), formula = des, results = postde_results_edger(qlf), mean_scale = "logCPM")
+        }
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
@@ -459,6 +485,9 @@ for (contrast in comparison) {
             AvsB[contrast_col] <- 1
             qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
             # add comp object to list for image
+            if (postde_enabled) {
+                postde_capture(engine = "edger", id = paste0(contrast_name, "_norm"), A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = as.matrix(counts(counts_norm)), expression = cpm(dge_norm, log = TRUE), formula = des_norm, results = postde_results_edger(qlf), mean_scale = "logCPM")
+            }
             comparison_objs <- append(comparison_objs, qlf)
 
             # # Add gene names  (check how gene_id col is named )
@@ -528,5 +557,9 @@ for (contrast in comparison) {
     })
 }
 
+
+if (postde_enabled) {
+    postde_write(outdir, combi, "edger")
+}
 
 save.image(file = paste("DE_EDGER", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

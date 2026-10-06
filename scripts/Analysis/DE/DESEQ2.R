@@ -32,7 +32,30 @@ print(args)
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+if (!file.exists(libp)) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("Rscript --file path not found in commandArgs")
+    }
+    libp <- file.path(dirname(normalizePath(postde_file)), "..", "..", "lib", "_lib.R")
+}
 source(libp)
+
+postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
+if (postde_enabled) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("MONSDA_POSTDE=1 but Rscript --file path not found in commandArgs")
+    }
+    postde_lib <- file.path(dirname(normalizePath(postde_file)), "..", "PostDE", "export.R")
+    if (!file.exists(postde_lib)) {
+        stop(paste0("MONSDA_POSTDE=1 but export.R not found at ", postde_lib))
+    }
+    source(postde_lib)
+    postde_bundles <- list()
+}
 
 ## set thread-usage
 BPPARAM <- MulticoreParam(workers = availablecores)
@@ -306,6 +329,9 @@ for (contrast in comparison) {
         res_shrink <- lfcShrink(dds = dds, coef = paste("condition", A, "vs", B, sep = "_"), res = res, type = "apeglm")
 
         # add comp object to list for image
+        if (postde_enabled) {
+            postde_capture(engine = "deseq2", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = assay(vsd), formula = design, results = postde_results_deseq2(res), mean_scale = "baseMean")
+        }
         comparison_objs[[contrast_name]] <- res
 
         # sort and output
@@ -373,6 +399,9 @@ for (contrast in comparison) {
 
             # add comp object to list for image
             listname <- paste(contrast_name, "_norm", sep = "")
+            if (postde_enabled) {
+                postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = as.matrix(counts(counts_norm)), expression = assay(vsd_norm), formula = design_norm, results = postde_results_deseq2(res), mean_scale = "baseMean")
+            }
             comparison_objs[[listname]] <- res
 
             # sort and output
@@ -437,5 +466,9 @@ for (contrast in comparison) {
 
 
 ##############################
+
+if (postde_enabled) {
+    postde_write(outdir, combi, "deseq2")
+}
 
 save.image(file = paste("DE", "DESEQ2", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
