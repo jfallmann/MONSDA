@@ -256,13 +256,14 @@ for (contrast in comparison) {
         setwd(outdir)
 
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
+        counts_norm_mat <- counts(counts_norm)[!(rownames(counts(counts_norm)) %in% ctrlgenes), , drop = FALSE] # removing spike-ins for actual DE testing
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))  # Last argument is variable of interest
         #design_norm <- as.formula(paste(deparse(design), " + W_1"), collapse = "")
-        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
+        print(paste0("Design with spike-in normalization: ", paste(all.vars(design_norm), collapse = ", ")))
 
-        dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
+        dds_norm <- DESeqDataSetFromMatrix(countData = counts_norm_mat, colData = sampleData_norm, design = design_norm)
         # filter low counts
         smallestGroupSize <- min_group_size(sampleData_norm$condition)
         keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
@@ -400,7 +401,7 @@ for (contrast in comparison) {
             # add comp object to list for image
             listname <- paste(contrast_name, "_norm", sep = "")
             if (postde_enabled) {
-                postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = as.matrix(counts(counts_norm)), expression = assay(vsd_norm), formula = design_norm, results = postde_results_deseq2(res), mean_scale = "baseMean")
+                postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = counts_norm_mat, expression = assay(vsd_norm), formula = design_norm, results = postde_results_deseq2(res), mean_scale = "baseMean")
             }
             comparison_objs[[listname]] <- res
 
