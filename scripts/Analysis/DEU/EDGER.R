@@ -17,7 +17,6 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-spike <- if (argsLen > 7) args[8] else ""
 
 print(args)
 
