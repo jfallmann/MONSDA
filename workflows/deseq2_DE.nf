@@ -10,7 +10,7 @@ DECOMP = get_always('DECOMP') ?: ''
 DECOMPS = get_always('DECOMPS') ?: ''
 PVAL = get_always('DEPVAL') ?: ''
 LFC = get_always('DELFC') ?: ''
-PCOMBO = get_always('COMBO') ?: 'none'
+PCOMBO = COMBO ?: 'none'
 PCOMBO_NORM = PCOMBO == 'none' ? '' : PCOMBO
 POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
 POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
@@ -232,11 +232,9 @@ process postde{
     path "log", emit: log
 
     script:
-    bundle = "${task.workDir}/bundle"
-    outdir = "${task.workDir}/postde"
-    logfile = "${task.workDir}/log"
     """
-    (cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "$bundle" --config "config.json" --output "$outdir") 2> "$logfile" && test -s "$outdir/manifest.json"
+    postde_workdir=\$PWD
+    (cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "\$postde_workdir/bundle" --config "config.json" --output "\$postde_workdir/postde") 2> "\$postde_workdir/log" && test -s "\$postde_workdir/postde/manifest.json"
     """
 }
 
