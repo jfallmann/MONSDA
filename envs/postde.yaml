@@ -1,0 +1,28 @@
+name: postde
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - r-base=4.5.3
+  - r-jsonlite=2.0.0
+  - r-gprofiler2=0.2.4
+  - bioconductor-clusterprofiler=4.18.4
+  - bioconductor-deseq2=1.50.2
+  - bioconductor-decoupler=2.16.0
+  - bioconductor-edger=4.8.2
+  - bioconductor-fgsea=1.36.2
+  - bioconductor-glimma=2.20.0
+  - bioconductor-go.db=3.22.0
+  - bioconductor-gsva=2.4.9
+  - bioconductor-limma=3.66.0
+  - bioconductor-variancepartition=1.40.2
+  - bioconductor-biocparallel=1.44.0
+  - r-plotly=4.12.1
+  - r-htmlwidgets=1.6.4
+  - r-shiny=1.14.0
+  - r-dt=0.34.0
+  - r-rmarkdown=2.32
+  - r-knitr=1.52
+  - r-lme4=2.0_6
+  - quarto=1.9.38
