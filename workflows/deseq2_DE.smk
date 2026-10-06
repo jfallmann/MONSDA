@@ -24,7 +24,7 @@ rule themall:
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo),
-            postde = expand("POSTDE/{combo}/manifest.json", combo=combo) if postde_enabled else []
+            postde = directory(expand("POSTDE/{combo}", combo=combo)) if postde_enabled else []
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
@@ -122,13 +122,17 @@ rule create_summary_snippet:
 if postde_enabled:
     rule postde:
         input:  bundle = rules.run_deseq2.output.bundle,
-                staged = postde_inputs
-        output: manifest = expand("POSTDE/{combo}/manifest.json", combo=combo)
-        log:    expand("LOGS/{combo}/DE/deseq2/postde.log", combo=combo)
+                staged = postde_inputs,
+                config = os.path.join(postde_inputs, "config.json"),
+                script = os.path.join(BINS, "Analysis", "PostDE", "run.R"),
+                common = os.path.join(BINS, "Analysis", "PostDE", "common.R"),
+                enrichment = os.path.join(BINS, "Analysis", "PostDE", "enrichment.R"),
+                regulatory = os.path.join(BINS, "Analysis", "PostDE", "regulatory.R")
+        output: outdir = directory(expand("POSTDE/{combo}", combo=combo))
+        log:    os.path.abspath(os.path.join("LOGS", combo, "DE", "deseq2", "postde.log"))
         conda:  "postde.yaml"
         container: "oras://jfallmann/monsda:postde"
         threads: 1
-        params: bins = BINS,
-                bundle = lambda w, input: os.path.abspath(input.bundle[0]),
-                outdir = lambda w: os.path.abspath(os.path.join('POSTDE', combo))
-        shell:  "cd {input.staged} && Rscript {params.bins}/Analysis/PostDE/run.R --bundle {params.bundle} --config config.json --output {params.outdir} 2> {log}"
+        params: bundle = lambda w, input: os.path.abspath(input.bundle[0]),
+                outdir = lambda w: os.path.abspath(os.path.join("POSTDE", combo))
+        shell:  "(cd {input.staged:q} && Rscript {input.script:q} --bundle {params.bundle:q} --config config.json --output {params.outdir:q}) 2> {log:q} && test -s {params.outdir:q}/manifest.json"

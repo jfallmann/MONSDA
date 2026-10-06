@@ -1033,7 +1033,7 @@ def main():
             log.info("Running MONSDA version " + __version__ + " as configured")
 
         postde_section = config.get("POSTDE")
-        if postde_section and postde_section.get("enabled"):
+        if postde_section is not None:
             try:
                 mw.load_postde_config(postde_section, config=config)
             except ValueError as err:

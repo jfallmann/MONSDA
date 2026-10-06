@@ -1,5 +1,7 @@
+import filecmp
 import hashlib
 import json
+import math
 import os
 import shutil
 
@@ -64,6 +66,11 @@ POSTDE_RESOURCE_KEYS = {
     "decoupler": ("network",),
     "dream": ("metadata",),
 }
+POSTDE_BOOL_FLAGS = {
+    "gprofiler": ("allow_network",),
+    "clusterprofiler": ("go_expand",),
+    "decoupler": ("allow_network", "contrast_activity"),
+}
 POSTDE_SUPPORTED_DE_TOOLS = frozenset({"deseq2", "edger"})
 POSTDE_DOMAIN_SCOPES = ("annotated", "known", "custom", "custom_annotated")
 POSTDE_CORRECTION_METHODS = (
@@ -80,7 +87,15 @@ POSTDE_DECOUPLER_METHODS = ("ulm", "mlm")
 
 
 def _is_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+    )
+
+
+def _is_integral(value):
+    return _is_number(value) and value == int(value)
 
 
 def _validate_analysis_config(analysis, base_dir):
@@ -98,17 +113,17 @@ def _validate_analysis_config(analysis, base_dir):
         not _is_number(analysis["lfc"]) or analysis["lfc"] < 0
     ):
         raise ValueError("POSTDE config lfc must be numeric >= 0")
-    if "seed" in analysis and not _is_number(analysis["seed"]):
-        raise ValueError("POSTDE config seed must be numeric")
+    if "seed" in analysis and not _is_integral(analysis["seed"]):
+        raise ValueError("POSTDE config seed must be a finite integer")
     if "min_size" in analysis and (
-        not _is_number(analysis["min_size"]) or analysis["min_size"] < 1
+        not _is_integral(analysis["min_size"]) or analysis["min_size"] < 1
     ):
-        raise ValueError("POSTDE config min_size must be numeric >= 1")
+        raise ValueError("POSTDE config min_size must be an integer >= 1")
     if "max_size" in analysis and (
-        not _is_number(analysis["max_size"])
+        not _is_integral(analysis["max_size"])
         or analysis["max_size"] < analysis.get("min_size", 1)
     ):
-        raise ValueError("POSTDE config max_size must be numeric >= min_size")
+        raise ValueError("POSTDE config max_size must be an integer >= min_size")
     for method, keys in POSTDE_METHOD_KEYS.items():
         sub = analysis.get(method)
         if sub is None:
@@ -127,6 +142,11 @@ def _validate_analysis_config(analysis, base_dir):
             raise ValueError(
                 "POSTDE config " + method + ".enabled must be a boolean"
             )
+        for flag in POSTDE_BOOL_FLAGS.get(method, ()):
+            if flag in sub and not isinstance(sub[flag], bool):
+                raise ValueError(
+                    "POSTDE config " + method + "." + flag + " must be a boolean"
+                )
     for vis in ("plots", "report", "shiny"):
         if analysis.get(vis, {}).get("enabled"):
             raise ValueError(
@@ -167,14 +187,14 @@ def _validate_analysis_config(analysis, base_dir):
             "POSTDE config gsva.method must be one of " + ", ".join(POSTDE_GSVA_METHODS)
         )
     if "min_size" in gs and (
-        not _is_number(gs["min_size"]) or gs["min_size"] < 1
+        not _is_integral(gs["min_size"]) or gs["min_size"] < 1
     ):
-        raise ValueError("POSTDE config gsva.min_size must be numeric >= 1")
+        raise ValueError("POSTDE config gsva.min_size must be an integer >= 1")
     if "max_size" in gs and (
-        not _is_number(gs["max_size"])
+        not _is_integral(gs["max_size"])
         or gs["max_size"] < gs.get("min_size", analysis.get("min_size", 1))
     ):
-        raise ValueError("POSTDE config gsva.max_size must be numeric >= min_size")
+        raise ValueError("POSTDE config gsva.max_size must be an integer >= min_size")
     dc = analysis.get("decoupler", {})
     if dc.get("enabled"):
         if not dc.get("network") and not dc.get("allow_network"):
@@ -198,11 +218,11 @@ def _validate_analysis_config(analysis, base_dir):
                     + ", ".join(POSTDE_DECOUPLER_METHODS)
                 )
         if "min_size" in dc and (
-            not _is_number(dc["min_size"]) or dc["min_size"] < 1
+            not _is_integral(dc["min_size"]) or dc["min_size"] < 1
         ):
-            raise ValueError("POSTDE config decoupler.min_size must be numeric >= 1")
-        if "top" in dc and (not _is_number(dc["top"]) or dc["top"] < 1):
-            raise ValueError("POSTDE config decoupler.top must be numeric >= 1")
+            raise ValueError("POSTDE config decoupler.min_size must be an integer >= 1")
+        if "top" in dc and (not _is_integral(dc["top"]) or dc["top"] < 1):
+            raise ValueError("POSTDE config decoupler.top must be an integer >= 1")
     dm = analysis.get("dream", {})
     if dm.get("enabled"):
         if not isinstance(dm.get("metadata"), str) or not dm["metadata"].strip():
@@ -294,18 +314,9 @@ def _collect_resources(analysis, base_dir):
     return resources
 
 
-def _staged_names(resources):
-    by_basename = {}
-    for method, key, full in resources:
-        by_basename.setdefault(os.path.basename(full), []).append((method, key, full))
-    names = {}
-    for bn, items in by_basename.items():
-        if len(items) == 1:
-            names[(items[0][0], items[0][1])] = bn
-        else:
-            for method, key, full in items:
-                names[(method, key)] = key + "_" + bn
-    return names
+def _staged_name(method, key, full):
+    ext = os.path.splitext(os.path.basename(full))[1]
+    return method + "_" + key + ext
 
 
 def prepare_postde(config, subdir):
@@ -322,14 +333,23 @@ def prepare_postde(config, subdir):
     for method, key, full in sorted(resources):
         with open(full, "rb") as fh:
             digest.update(fh.read())
-    staged = os.path.join(subdir, "POSTDE_" + digest.hexdigest()[:12])
-    if os.path.isdir(staged) and os.path.isfile(os.path.join(staged, "config.json")):
-        return staged
+    staged = os.path.join(os.path.abspath(subdir), "POSTDE_" + digest.hexdigest()[:12])
+    names = {
+        (method, key): _staged_name(method, key, full)
+        for method, key, full in resources
+    }
+    if os.path.isdir(staged):
+        expected = [os.path.join(staged, names[(m, k)]) for m, k, _ in resources]
+        expected.append(os.path.join(staged, "config.json"))
+        if all(os.path.isfile(p) for p in expected) and all(
+            filecmp.cmp(full, os.path.join(staged, names[(m, k)]), shallow=False)
+            for m, k, full in resources
+        ):
+            return staged
     os.makedirs(staged, exist_ok=True)
-    names = _staged_names(resources)
     for method, key, full in resources:
         dst = os.path.join(staged, names[(method, key)])
-        if not os.path.exists(dst) or not shutil.cmp(full, dst):
+        if not os.path.exists(dst) or not filecmp.cmp(full, dst, shallow=False):
             shutil.copy2(full, dst)
     staged_analysis = json.loads(json.dumps(analysis))
     for method, key, full in resources:
