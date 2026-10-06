@@ -22,6 +22,7 @@ process rustqc_mapped{
     cpus THREADS
     cache 'lenient'
     label 'big_mem'
+    errorStrategy { task.exitStatus == 2 ? 'terminate' : 'retry' }
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
@@ -39,7 +40,7 @@ process rustqc_mapped{
     fn = file(bam).getSimpleName()
     anno = file("${workflow.workDir}/../${MAPANNO}")
     """
-    mkdir -p results/$fn && gzip -cdfq $anno > tmp_anno.gtf && $RUSTQCBIN rna $bam --gtf tmp_anno.gtf -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j results/$fn/rustqc_summary.json -o results/$fn $RUSTQCPARAMS && rm -f tmp_anno.gtf
+    mkdir -p "results/$fn" && gzip -cdfq "$anno" > tmp_anno.gtf && $RUSTQCBIN rna "$bam" --gtf tmp_anno.gtf -t ${task.cpus} $RUSTQC_PAIRED -s $RUSTQC_STRANDED --skip-dup-check -j "results/$fn/rustqc_summary.json" -o "results/$fn" $RUSTQCPARAMS && python "${BINS}/Analysis/check_strandedness.py" --qc-dir "results/$fn" --expected "$RUSTQC_STRANDED" --sample "$fn" --report "results/$fn/strandedness_check.json" && rm -f tmp_anno.gtf
     """
 }
 

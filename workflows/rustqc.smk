@@ -24,8 +24,9 @@ rule rustqc_mapped:
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', ""),
              anno = ANNOTATION,
              paired = RUSTQC_PAIRED,
-             stranded = RUSTQC_STRANDED
-    shell: "gzip -cdfq {params.anno} > {output.tmpanno} && rustqc rna {input.r1} --gtf {output.tmpanno} -t {threads} {params.paired} -s {params.stranded} --skip-dup-check -j {output.js} -o {output.o1} {params.qpara} 2> {log}"
+             stranded = RUSTQC_STRANDED,
+             bins = BINS
+    shell: "(gzip -cdfq {params.anno:q} > {output.tmpanno:q} && rustqc rna {input.r1:q} --gtf {output.tmpanno:q} -t {threads} {params.paired} -s {params.stranded:q} --skip-dup-check -j {output.js:q} -o {output.o1:q} {params.qpara} && python {params.bins:q}/Analysis/check_strandedness.py --qc-dir {output.o1:q} --expected {params.stranded:q} --sample {wildcards.file:q} --report {output.o1:q}/strandedness_check.json) 2> {log:q}"
 
 rule rustqc_uniquemapped:
     input:  r1 = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam",
@@ -40,5 +41,6 @@ rule rustqc_uniquemapped:
     params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', ""),
              anno = ANNOTATION,
              paired = RUSTQC_PAIRED,
-             stranded = RUSTQC_STRANDED
-    shell: "gzip -cdfq {params.anno} > {output.tmpanno} && rustqc rna {input.r1} --gtf {output.tmpanno} -t {threads} {params.paired} -s {params.stranded} --skip-dup-check -j {output.js} -o {output.o1} {params.qpara} 2> {log}"
+             stranded = RUSTQC_STRANDED,
+             bins = BINS
+    shell: "(gzip -cdfq {params.anno:q} > {output.tmpanno:q} && rustqc rna {input.r1:q} --gtf {output.tmpanno:q} -t {threads} {params.paired} -s {params.stranded:q} --skip-dup-check -j {output.js:q} -o {output.o1:q} {params.qpara} && python {params.bins:q}/Analysis/check_strandedness.py --qc-dir {output.o1:q} --expected {params.stranded:q} --sample {wildcards.file:q} --report {output.o1:q}/strandedness_check.json) 2> {log:q}"

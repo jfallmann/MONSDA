@@ -110,6 +110,32 @@ If any of the below listed processing steps is defined in the config.json, quali
   | RustQC (includes MULTIQC) | High-performance RNA-seq QC suite with MultiQC-compatible outputs. | rustqc | rustqc | `rustqc <https://github.com/seqeralabs/RustQC>`_                       | BAM       | TEXT/TSV/LOG |
   +---------------------------+--------------------------------------------------------------------+--------+--------+------------------------------------------------------------------------+-----------+--------------+
 
+RustQC runs on mapped BAM files and includes a strandedness guard: after the
+RustQC command finishes, the inferred strand assignment from its
+``infer_experiment`` report is compared against the ``SEQUENCING`` setting
+(``paired,fr``, ``paired,rf`` or ``single,fr``/``single,rf``) configured for
+the sample. A confident mismatch aborts the QC job with an error instead of
+silently accepting a conflicting configuration. No extra config switch is
+needed when RustQC is selected. ``fr`` means forward, ``rf`` means reverse,
+and omitting either strand suffix means unstranded.
+
+The check requires at least 50% of reads to have a strand assignment. Among
+assigned reads, at least 80% forward or reverse support identifies that strand;
+40--60% forward support identifies an unstranded library. Intermediate ratios
+or insufficient assignments produce a warning (``NOT validated``), not a
+mismatch. These are fraction-based heuristics, not a statistical confidence
+test or a minimum-read-count check. Missing or malformed inference reports
+fail the task rather than silently bypassing validation.
+
+The verdict is written to ``strandedness_check.json`` inside the RustQC output
+directory. On failure, Snakemake may remove failed outputs; the error remains
+in ``LOGS/<combo>/<sample>/QC/rustqc/``. Nextflow retains the error and verdict
+in the failed task's work directory. MONSDA exits nonzero and does not proceed
+to subsequent analysis workflows. Already-running independent tasks may have
+produced outputs before the QC failure is detected; this is not a pre-mapping
+check. Verify the library protocol and annotation, correct ``SEQUENCING`` if
+needed, and regenerate the workflows before resuming.
+
 
 Trimming
 ########

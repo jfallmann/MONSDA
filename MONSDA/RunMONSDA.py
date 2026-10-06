@@ -911,7 +911,7 @@ def runjob(jobtorun):
                         log.error(logid + "STOPPING: " + str(output))
                     log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
-                    sys.exit()
+                    sys.exit(1)
                 else:
                     log.info(logid + str(output))
             if outerr and outerr != "":
@@ -926,7 +926,7 @@ def runjob(jobtorun):
                     log.error(logid + "STOPPING: " + str(outerr))
                     log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
-                    sys.exit()
+                    sys.exit(1)
                 else:
                     log.info(logid + str(outerr))
             if job.poll() is not None:
@@ -956,7 +956,7 @@ def runjob(jobtorun):
             exc_tb,
         )
         log.error("".join(tbe.format()))
-        sys.exit()
+        sys.exit(1)
 
 
 def main():
