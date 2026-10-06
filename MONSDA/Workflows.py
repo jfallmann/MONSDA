@@ -112,14 +112,30 @@ def _nf_is_channel(rhs_list):
     return any("Channel." in r for r in rhs_list)
 
 
+_GA_LITERAL = re.compile(r"get_always\(\s*(['\"])((?:\\.|(?!\1)[^\\])*?)\1\s*\)")
+
+
 def _nf_rw(text, scalars, channels, ex_s=None, ex_c=None):
     """Rewrite bare references to global names: scalars -> params.gNAME,
-    channels -> NAME(). Interpolated forms handled as well."""
+    channels -> NAME(). Interpolated forms handled as well. Literal
+    get_always('KEY')/get_always("KEY") lookups are preserved byte-exact;
+    dynamic get_always(KEY) and GString arguments are rewritten as usual."""
     s_active = set(scalars) - ({ex_s} if ex_s else set())
     c_active = set(channels) - ({ex_c} if ex_c else set())
     alln = s_active | c_active
     if not alln:
         return text
+
+    ga = []
+
+    def _mask_ga(m):
+        if m.group(1) == '"' and "$" in m.group(2):
+            return m.group(0)
+        token = "\x00%d\x00" % len(ga)
+        ga.append(m.group(0))
+        return token
+
+    text = _GA_LITERAL.sub(_mask_ga, text)
 
     def repl(name, interp):
         if name in c_active:
@@ -138,6 +154,8 @@ def _nf_rw(text, scalars, channels, ex_s=None, ex_c=None):
         lambda m: repl(m.group(1), False),
         text,
     )
+    for i, orig in enumerate(ga):
+        text = text.replace("\x00%d\x00" % i, orig)
     return text
 
 

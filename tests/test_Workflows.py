@@ -138,6 +138,81 @@ class TestGetCombo:
         assert all(n >= 1 for n in counts.values())
 
 
+class TestNfRwGetAlways:
+    """Literal get_always('KEY')/get_always(\"KEY\") lookups must survive
+    _nf_rw byte-exact; only dynamic get_always(KEY) and GString arguments
+    are rewritten."""
+
+    def test_plain_literal_protected(self):
+        text = "PCOMBO = get_always('COMBO') ?: 'none'"
+        assert mw._nf_rw(text, {"COMBO"}, set()) == text
+
+    def test_double_quoted_literal_protected(self):
+        text = 'PCOMBO = get_always("COMBO") ?: "none"'
+        assert mw._nf_rw(text, {"COMBO"}, set()) == text
+
+    def test_whitespace_and_escaping_preserved(self):
+        text = "X = get_always( 'KEY\\'S' )"
+        assert mw._nf_rw(text, {"KEY"}, set()) == text
+
+    def test_surrounding_bare_and_interpolation_rewritten(self):
+        text = "X = COMBO + get_always('COMBO') + $COMBO"
+        assert mw._nf_rw(text, {"COMBO"}, set()) == (
+            "X = params.gCOMBO + get_always('COMBO') + ${params.gCOMBO}"
+        )
+
+    def test_dynamic_args_rewritten(self):
+        assert mw._nf_rw("Y = get_always(COMBO)", {"COMBO"}, set()) == (
+            "Y = get_always(params.gCOMBO)"
+        )
+
+    def test_gstring_arg_rewritten(self):
+        assert mw._nf_rw('Z = get_always("$COMBO")', {"COMBO"}, set()) == (
+            'Z = get_always("${params.gCOMBO}")'
+        )
+
+    def test_template_literal_keys_preserved(self):
+        """Every literal get_always lookup in a workflow template must stay
+        byte-exact even when its key is itself a rewritten global name (the
+        key/global intersection that broke PCOMBO)."""
+        calls = set()
+        for path in (REPO / "workflows").glob("*.nf"):
+            for m in mw._GA_LITERAL.finditer(path.read_text()):
+                if m.group(1) == '"' and "$" in m.group(2):
+                    continue
+                calls.add((path.name, m.group(0), m.group(2)))
+        assert calls
+        for name, call, key in calls:
+            assert mw._nf_rw(call, {key}, set()) == call, (
+                f"{name}: literal lookup {call!r} rewritten"
+            )
+
+
+def test_nf_make_workflow_pcombo_preserves_key(workdir):
+    """The full header+template generation must keep the literal
+    get_always('COMBO') lookup in PCOMBO byte-exact instead of rewriting
+    the key to params.gCOMBO."""
+    cfg = _load("config_DTU_test.json")
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples_postprocess(cfg, "DTU")
+    subdir = "SubPostFlows"
+    mp.create_skeleton(subdir, None)
+    mw.nf_make_post(
+        "DTU", cfg, samples, conditions, subdir, "INFO", combinations=combos
+    )
+    produced = sorted(
+        os.path.relpath(p, workdir)
+        for p in glob.glob(os.path.join(subdir, "*_subflow.nf"))
+    )
+    assert produced, "generator produced no subflows"
+    for rel in produced:
+        text = Path(workdir / rel).read_text()
+        assert "params.gPCOMBO = get_always('COMBO') ?: 'none'" in text, rel
+        assert "get_always('params.gCOMBO')" not in text, rel
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file / snapshot tests: file-emitting generators
 # --------------------------------------------------------------------------- #

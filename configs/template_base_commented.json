@@ -3,12 +3,17 @@
     "WORKFLOWS": "Select workflows you want to run, possible values: FETCH, MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS",
     "BINS": "Where to find the scripts used in the workflow, per default the scripts directory that comes with MONSDA. ONLY CHANGE IF YOU KNOW WHAT YOU ARE DOING!",
     "MAXTHREADS": "Maximum number of cores to use, make sure this fits your needs, acts as upper cap.",
-    "VERSION": "Version of MONSDA to use, needs to match installed version"
+    "VERSION": "Version of MONSDA to use, needs to match installed version",
+    "POSTDE": "Optional post-DE enrichment/regulatory analysis (GO/GSEA/GSVA/decoupleR/dream). Disabled by default. When enabled, 'config' must point to a PostDE analysis JSON (see configs/postde_analysis.json). Only supported with the DE workflow and the deseq2/edger DE tools."
   },
   "WORKFLOWS": "",
   "BINS": "MONSDA/scripts",
   "MAXTHREADS": "",
   "VERSION": "",
+  "POSTDE": {
+    "enabled": false,
+    "config": ""
+  },
   "SETTINGS": {
     "comment": {
       "GROUPS": "Please enter a comma separated list of the groups your samples belong to. This does not have to be in any relation with the condition-tree but is used solely to establish contrasts for differential analysis. Each sample needs a matching entry. Can be left blank to run all-vs-all comparison.",

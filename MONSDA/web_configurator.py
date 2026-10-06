@@ -12,11 +12,12 @@ from snakemake.common.configfile import load_configfile
 
 from . import _version
 from .Params import samplesheet_to_settings
+from .PostDE import load_postde_config
 
 __version__ = _version.get_versions()["version"]
 
 TEMPLATE_FILE = "template_base_commented.json"
-NONE_WORKFLOW_KEYS = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION"]
+NONE_WORKFLOW_KEYS = ["WORKFLOWS", "BINS", "MAXTHREADS", "SETTINGS", "VERSION", "POSTDE"]
 
 app = FastAPI(title="MONSDA Configurator Web")
 
@@ -41,6 +42,7 @@ class BuildConfigRequest(BaseModel):
     maxthreads: str = "16"
     settings: Optional[Dict[str, Any]] = None
     samplesheet_path: Optional[str] = None
+    postde: Optional[Dict[str, Any]] = None
 
 
 class ConditionFiles(BaseModel):
@@ -243,6 +245,16 @@ def build_config(req: BuildConfigRequest) -> Dict[str, Any]:
             req.tools.get(wf, []),
         )
 
+    if req.postde is None:
+        final_config["POSTDE"] = {"enabled": False, "config": ""}
+    else:
+        try:
+            final_config["POSTDE"] = load_postde_config(
+                req.postde, config=final_config
+            )
+        except ValueError as err:
+            raise HTTPException(status_code=400, detail=str(err))
+
     return final_config
 
 
@@ -355,9 +367,16 @@ def save_config(req: SaveConfigRequest) -> Dict[str, Any]:
     if not os.path.isdir(output_dir):
         raise HTTPException(status_code=400, detail="Output directory does not exist.")
 
+    config = copy.deepcopy(req.config)
+    if "POSTDE" in config:
+        try:
+            config["POSTDE"] = load_postde_config(config["POSTDE"], config=config)
+        except ValueError as err:
+            raise HTTPException(status_code=400, detail=str(err))
+
     path = os.path.join(output_dir, f"config_{config_name}.json")
     with open(path, "w") as fh:
-        json.dump(req.config, fh, indent=4)
+        json.dump(config, fh, indent=4)
 
     return {"message": "Config written.", "path": path}
 
@@ -366,6 +385,15 @@ def save_config(req: SaveConfigRequest) -> Dict[str, Any]:
 def create_project(req: ProjectRequest) -> Dict[str, Any]:
     base_dir = os.path.abspath(req.project_dir.strip())
     project_name = req.project_name.strip() or "monsda"
+
+    # Validate POSTDE before any creation/writes
+    if req.config and "POSTDE" in req.config:
+        try:
+            req.config["POSTDE"] = load_postde_config(
+                req.config["POSTDE"], config=req.config
+            )
+        except ValueError as err:
+            raise HTTPException(status_code=400, detail=str(err))
 
     # Project name becomes a subdirectory under the chosen path
     project_dir = os.path.join(base_dir, project_name)
@@ -734,6 +762,16 @@ def root() -> str:
     <div id="templateStatus" class="muted"></div>
     <div id="workflowSummary" class="muted"></div>
     <div id="workflowChooser" class="workflow-grid"></div>
+    <div style="margin-top:14px; border-top:1px solid #e2e8f0; padding-top:12px;">
+      <label class="wf-chip" style="display:inline-flex; margin-bottom:6px;">
+        <input type="checkbox" id="postdeEnabled" /> PostDE (GO/GSEA/GSVA/decoupleR/dream)
+      </label>
+      <div class="muted" style="margin-bottom:8px;">Runs enrichment/regulatory analysis on DE results. DESeq2/edgeR only, requires the DE workflow.</div>
+      <div class="pathline">
+        <input id="postdeConfig" placeholder="/abs/path/to/postde_analysis.json" />
+        <button type="button" onclick="openPathBrowser('postdeConfig','all')">Browse...</button>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -946,7 +984,7 @@ async function loadTemplate() {
     holder.innerHTML = '';
 
     const workflows = Object.keys(data)
-      .filter(k => !['WORKFLOWS','BINS','MAXTHREADS','SETTINGS','VERSION'].includes(k))
+      .filter(k => !['WORKFLOWS','BINS','MAXTHREADS','SETTINGS','VERSION','POSTDE'].includes(k))
       .sort();
 
     workflows.forEach(wf => {
@@ -1256,7 +1294,11 @@ async function previewConfig() {
       tools: tools,
       maxthreads: document.getElementById('maxthreads').value.trim(),
       settings: settings,
-      samplesheet_path: document.getElementById('samplesheetPath').value.trim() || null
+      samplesheet_path: document.getElementById('samplesheetPath').value.trim() || null,
+      postde: {
+        enabled: document.getElementById('postdeEnabled').checked,
+        config: document.getElementById('postdeConfig').value.trim()
+      }
     };
 
     const r = await fetch('/config/preview', {
