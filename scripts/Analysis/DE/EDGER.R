@@ -127,9 +127,16 @@ if (spike != "") {
     setwd(WD)
     ctrlgenes <- readLines(spiken)
     setwd(outdir)
-    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
-    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
-    counts_norm <- as.data.frame(normCounts(counts_norm))
+    counts_norm_set <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm_set))
+    ctrl_idx_all <- rownames(counts(counts_norm_set)) %in% ctrlgenes # for spike-in-derived normalization factors
+    # Derive the scale from the spike-ins (TMM on control genes) rather than RUVg's normCounts(),
+    # which only removes unwanted variation (W_1) and does not carry the spike-in scale.
+    spike_counts_all <- counts(counts_norm_set)[ctrl_idx_all, , drop = FALSE]
+    dge_spike_all <- calcNormFactors(DGEList(counts = spike_counts_all), method = "TMM")
+    eff_lib_all <- dge_spike_all$samples$lib.size * dge_spike_all$samples$norm.factors
+    size_factor_all <- eff_lib_all / exp(mean(log(eff_lib_all)))
+    counts_norm <- as.data.frame(sweep(counts(counts_norm_set), 2, size_factor_all, FUN = "/"))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
     write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
