@@ -110,9 +110,14 @@ if (spike != "") {
     setwd(WD)
     ctrlgenes <- readLines(spiken)
     setwd(outdir)
-    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
-    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
-    counts_norm <- as.data.frame(normCounts(counts_norm))
+    counts_norm_set <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm_set))
+    ctrl_idx_all <- rownames(counts(counts_norm_set)) %in% ctrlgenes # for spike-in-derived size factors
+    # Derive size factors from the spike-ins themselves (controlGenes); normCounts() from RUVg
+    # only removes unwanted variation (W_1) and does not carry the spike-in scale.
+    dds_sf <- DESeqDataSetFromMatrix(countData = counts(counts_norm_set), colData = sampleData_norm, design = ~1)
+    dds_sf <- estimateSizeFactors(dds_sf, controlGenes = ctrl_idx_all)
+    counts_norm <- as.data.frame(counts(dds_sf, normalized = TRUE))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
      write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
