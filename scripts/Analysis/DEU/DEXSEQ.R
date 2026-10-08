@@ -179,6 +179,13 @@ for (contrast in comparisons[[1]]) {
 
         toprint <- as.data.frame(dxr1)
         toprint$transcripts <- vapply(toprint$transcripts, paste, collapse = ", ", character(1L))
+        # DEXSeq names the fold change log2fold_<numerator>_<denominator>, give it a
+        # stable name so the filter can address it, the contrast is in the file name
+        lfc_col <- grep("^log2fold_", colnames(toprint))
+        if (length(lfc_col) != 1) {
+            stop(paste("DEXSeq results: expected exactly one log2fold_* column, found", length(lfc_col)))
+        }
+        colnames(toprint)[lfc_col] <- "log2FoldChange"
         toprint <- add_gene_coordinates(toprint, toprint$groupID, gtf.df, after = "groupID")
         write.table(toprint, gzfile(paste("Tables/DEU", "DEXSEQ", combi, contrast_name, "table", "results.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
 
