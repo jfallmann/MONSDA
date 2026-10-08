@@ -2210,7 +2210,7 @@ def nf_fetch_params(
             compstr = ",".join([i.split(":")[0] for i in comparison.split(",")])
             retconf[x + "COMP"] = comparison
             retconf[x + "COMPS"] = compstr
-            pval = mp.get_cutoff_as_string(config, x, "pval")
+            pval = mp.get_cutoff_as_string(config, x, "padj")
             lfc = mp.get_cutoff_as_string(config, x, "lfc")
             retconf[x + "PVAL"] = pval
             retconf[x + "LFC"] = lfc

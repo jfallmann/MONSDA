@@ -87,7 +87,7 @@
             "spit": "Analysis/DTU/SPIT.py"
         },
         "CUTOFFS": {
-            "pvalue": "0.05",
+            "padj": "0.05",
             "lfc": "1.5"
         },
         "COMPARABLE": {

@@ -478,7 +478,7 @@
       ]
     },
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "deseq2": {
@@ -516,7 +516,7 @@
       ]
     },
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "dexseq": {
@@ -554,7 +554,7 @@
       ]
     },
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "diego": {
@@ -593,7 +593,7 @@
       ]
     },
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "drimseq": {

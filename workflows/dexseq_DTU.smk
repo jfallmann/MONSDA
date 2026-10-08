@@ -41,7 +41,7 @@ rule run_DTU:
             outdir = 'DTU/'+combo,
             ref = os.path.abspath(ANNOTATION),
             dtuopt = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('DTU', "")
-            # pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
+            # pv_cut = get_cutoff_as_string(config, 'DTU', 'padj'),
             # lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
     shell: "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}"
 
@@ -53,7 +53,7 @@ rule run_DTU:
 #     log:    expand("LOGS/{combo}_{scombo}_{comparison}/DTU/dexseq/filter_drimseq.log", combo=combo, scombo=scombo, comparison=compstr)
 #     conda:  ""+DTUENV+".yaml"
 #     threads: 1
-#     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pval'),
+#     params: pv_cut = get_cutoff_as_string(config, 'DTU', 'padj'),
 #             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
 #     shell: "set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn; else touch DTU/{combo}/Sig_$fn DTU/{combo}/SigUP_$fn DTU/{combo}/SigDOWN_$fn; fi; done 2> {log}"
 
