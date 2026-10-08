@@ -147,7 +147,7 @@ workflow DTU{
     main:
     
     TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
 
     trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())

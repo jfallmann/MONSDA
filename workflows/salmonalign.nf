@@ -71,6 +71,7 @@ process salmonalign_mapping{
     idxfile = reads[0]
     idx = idxfile.getName()
     if (PAIRED == 'paired'){
+        rds = sort_reads(reads[1..2])
         if (STRANDED == 'fr' || STRANDED == 'ISF'){
             stranded = '-l ISF'
         }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
@@ -78,8 +79,8 @@ process salmonalign_mapping{
         }else{
             stranded = '-l IU'
         }
-        r1 = reads[1]
-        r2 = reads[2]
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

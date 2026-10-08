@@ -8,6 +8,8 @@ process dedup_bam{
     container "oras://jfallmann/monsda:"+"$DEDUPENV"
     cpus 1
 	cache 'lenient'
+    memory { 20.GB * (1 << ((task.attempt ?: 1) - 1)) }
+    time { 8.h * (1 << ((task.attempt ?: 1) - 1)) }
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
@@ -26,9 +28,6 @@ process dedup_bam{
     path "*_dedup.bam", emit: bam
     path "*_dedup.bam.bai", emit: bai
     path "*_dedup.log", emit: logs
-
-    memory { 20.GB * (1 << ((task.attempt ?: 1) - 1)) }
-    time { 8.h * (1 << ((task.attempt ?: 1) - 1)) }
 
     script:
     bams = todedup[0]

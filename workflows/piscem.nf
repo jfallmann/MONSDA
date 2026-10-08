@@ -78,8 +78,9 @@ process piscem_mapping{
 
     script:
     idxdir = reads[0]
-    r1 = reads[1]
-    r2 = reads[2]
+    rds = sort_reads(reads[1..2])
+    r1 = rds[0]
+    r2 = rds[1]
     fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
     of = fn+"_map"
     lf = "piscem_"+fn+".log"

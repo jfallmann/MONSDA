@@ -93,9 +93,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DEUREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DEUREPS --ids -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --ids --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
