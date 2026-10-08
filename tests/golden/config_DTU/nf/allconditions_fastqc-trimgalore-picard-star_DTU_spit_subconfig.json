@@ -13,7 +13,7 @@
     },
     "CUTOFFS": {
       "lfc": "1.5",
-      "pvalue": "0.05"
+      "padj": "0.05"
     },
     "Test": {
       "dexseq": {

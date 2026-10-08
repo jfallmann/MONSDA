@@ -82,7 +82,7 @@ rule filter_significant_edger:
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
+    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'padj'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc'),
             bins = BINS
     shell: "set +o pipefail; arr=({input.sort}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column logFC --adjusted-p-column FDR --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orrr[$i]}}\" --output-down \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"

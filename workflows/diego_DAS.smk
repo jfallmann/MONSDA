@@ -98,7 +98,7 @@ rule filter_significant:
     conda:  ""+DASENV+".yaml"
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
+    params: pv_cut = get_cutoff_as_string(config, 'DAS', 'padj'),
             lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc'),
             bins = BINS
     shell: "set +o pipefail; arr=({input.csv}); orr=({output.sig}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --flag-column significant --flag-value yes --input \"$a\" --output-sig \"${{orr[$i]}}\"; else touch \"${{orr[$i]}}\"; fi; done 2> {log}"

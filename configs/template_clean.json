@@ -306,7 +306,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -345,7 +345,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -386,7 +386,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -428,7 +428,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {

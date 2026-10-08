@@ -89,7 +89,7 @@ rule filter_significant:
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'padj'),
             lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc'),
             bins = BINS
     shell: "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column log2FoldChange --adjusted-p-column padj --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orrr[$i]}}\" --output-down \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"

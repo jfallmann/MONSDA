@@ -923,7 +923,7 @@ def get_cutoff_as_string(config: dict, subwork: str, cf: str) -> str:
     subwork : str
         workflow part
     cf : str
-        cutoff
+        cutoff, either 'padj' or 'lfc'
 
     Returns
     -------
@@ -931,11 +931,30 @@ def get_cutoff_as_string(config: dict, subwork: str, cf: str) -> str:
         configured cutoffs or defaults
     """
     logid = scriptname + ".get_cutoff: "
-    cutoff = (
-        str(config[subwork]["CUTOFFS"].get(cf))
-        if config[subwork].get("CUTOFFS")
-        else ".05" if cf == "pval" else "1.5"
-    )
+    defaults = {"padj": ".05", "lfc": "1.5"}
+    deprecated = {"padj": ["pvalue", "pval"]}
+    cutoffs = config[subwork].get("CUTOFFS") or dict()
+    cutoff = cutoffs.get(cf)
+    if cutoff is None:
+        for alias in deprecated.get(cf, []):
+            if cutoffs.get(alias) is not None:
+                cutoff = cutoffs[alias]
+                log.warning(
+                    logid
+                    + "CUTOFFS key '"
+                    + alias
+                    + "' in "
+                    + str(subwork)
+                    + " is deprecated, cutoffs are applied to adjusted p-values, please rename it to '"
+                    + cf
+                    + "'"
+                )
+                break
+    if cutoff is None:
+        if cf not in defaults:
+            log.error(logid + "No default cutoff known for " + str(cf))
+        cutoff = defaults.get(cf, "1.5")
+    cutoff = str(cutoff)
     log.info(logid + "CUTOFFS: " + str(cf) + ":" + cutoff)
     return cutoff
 

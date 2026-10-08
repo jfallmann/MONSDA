@@ -465,7 +465,7 @@ rule filter_significant_drimseq:
     conda:  "<REPO>/envs/"+DTUENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+DTUENV+""+"-VERSION"
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
+    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'padj'),
             lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc'),
             bins = BINS
     shell:  "set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column lfc --adjusted-p-column adj_pvalue --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orru[$i]}}\" --output-down \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column lfc --adjusted-p-column adj_pvalue --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orrt[$i]}}\" --output-up \"${{orrtu[$i]}}\" --output-down \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}"

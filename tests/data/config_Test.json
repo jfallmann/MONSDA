@@ -166,7 +166,7 @@
             "edger": "Analysis/DE/EDGER.R"
         },
         "CUTOFFS": {
-            "pvalue": "0.05",
+            "padj": "0.05",
             "lfc": "1.5"
         },
         "COMPARABLE": {
@@ -216,7 +216,7 @@
             "edger": "Analysis/DEU/EDGER.R"
         },
         "CUTOFFS": {
-            "pvalue": "0.05",
+            "padj": "0.05",
             "lfc": "1.5"
         },
         "COMPARABLE": {},
@@ -235,7 +235,7 @@
             "edger": "Analysis/DAS/EDGER.R"
         },
         "CUTOFFS": {
-            "pvalue": "0.05",
+            "padj": "0.05",
             "lfc": "1.5"
         },
         "COMPARABLE": {},
@@ -254,7 +254,7 @@
             "drimseq": "Analysis/DTU/DRIMSEQ.R"
         },
         "CUTOFFS": {
-            "pvalue": "0.05",
+            "padj": "0.05",
             "lfc": "1.5"
         },
         "COMPARABLE": {},
