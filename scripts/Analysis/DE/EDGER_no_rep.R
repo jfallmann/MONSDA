@@ -287,13 +287,7 @@ for (contrast in comparison) {
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
-        qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
-            get_gene_name(x, gtf_gene)
-        }))
-        qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(5, 4, 2, 1, 3)]
-        res$FDR <- p.adjust(res$PValue, method = "BH")
-        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+        res <- format_edger_results(qlf$table, gtf_gene)
 
         # plotVolcano
         pdf(
@@ -301,8 +295,8 @@ for (contrast in comparison) {
         )
         print(EnhancedVolcano(res,
             lab = res$Gene,
-            x = "logFC",
-            y = "FDR",
+            x = "log2FoldChange",
+            y = "padj",
             title = paste0(contrast_name, "_p005_lfc15", sep = ""),
             pCutoff = 0.05,
             FCcutoff = 1.5,
@@ -328,14 +322,12 @@ for (contrast in comparison) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "PValue", "FDR")]
-        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
+        tops <- format_edger_results(tops$table, gtf_gene)
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "PValue", "FDR")]
-        tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
+        tops <- format_edger_results(tops$table, gtf_gene)
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -373,13 +365,7 @@ for (contrast in comparison) {
             comparison_objs[[paste0(contrast_name, "_norm")]] <- qlf
 
             # # Add gene names  (check how gene_id col is named )
-            qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
-                get_gene_name(x, gtf_gene)
-            }))
-            qlf$table$Gene_ID <- rownames(qlf$table)
-            res <- qlf$table[, c(5, 4, 2, 1, 3)]
-            res$FDR <- p.adjust(res$PValue, method = "BH")
-            res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+            res <- format_edger_results(qlf$table, gtf_gene, center = TRUE)
 
             # plotVolcano
             pdf(
@@ -387,8 +373,8 @@ for (contrast in comparison) {
             )
             print(EnhancedVolcano(res,
                 lab = res$Gene,
-                x = "logFC",
-                y = "FDR",
+                x = "log2FoldChange",
+                y = "padj",
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),
                 pCutoff = 0.05,
                 FCcutoff = 1.5,
@@ -414,14 +400,12 @@ for (contrast in comparison) {
 
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "PValue", "FDR")]
-            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
+            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- tops$table[, c("Gene_ID", "Gene", "logCPM", "logFC", "PValue", "FDR")]
-            tops <- add_gene_coordinates(tops, tops$Gene_ID, gtf_gene, after = "Gene_ID")
+            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 

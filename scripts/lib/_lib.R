@@ -171,10 +171,26 @@ select_contrast_samples <- function(sampleData_all, countData_all, A, B) {
     list(sampleData = sampleData, countData = countData)
 }
 
+## Global shift of a contrast: the median log fold change over all tested genes.
+## Under spike-in normalization this offset is the overall expression change
+## between the two conditions, which conventional normalization would have
+## scaled away. Subtracting it leaves each gene's own deviation from that shift.
+lfc_global_shift <- function(lfc) {
+    vals <- lfc[is.finite(lfc)]
+    if (length(vals) == 0) {
+        message("WARNING: no finite log fold changes, global shift set to 0")
+        return(0)
+    }
+    median(vals)
+}
+
 ## Format a DESeq2 results object for export: add gene name and ID, select the
 ## canonical column order by name and append genomic coordinates after Gene_ID.
 ## Shrunk tables carry no stat column; raw (unshrunk) tables append stat last.
-format_deseq2_results <- function(res, gtf_gene, shrink = TRUE) {
+## With center = TRUE a log2FoldChange_centered column is appended last, holding
+## the deviation from the contrast's global shift. It is appended rather than
+## inserted because the significance filters address columns by position.
+format_deseq2_results <- function(res, gtf_gene, shrink = TRUE, center = FALSE) {
     res$Gene <- unlist(lapply(rownames(res), function(x) {
         get_gene_name(x, gtf_gene)
     }))
@@ -184,5 +200,50 @@ format_deseq2_results <- function(res, gtf_gene, shrink = TRUE) {
     } else {
         res <- res[, c("Gene_ID", "Gene", "baseMean", "log2FoldChange", "lfcSE", "pvalue", "padj", "stat")]
     }
+    if (center) {
+        shift <- lfc_global_shift(res$log2FoldChange)
+        message(paste0("Global shift (median log2FoldChange) subtracted in log2FoldChange_centered: ", shift))
+        res$log2FoldChange_centered <- res$log2FoldChange - shift
+    }
     add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+}
+
+## Format an edgeR result table (qlf$table or a topTags table) for export.
+## Column names follow the DESeq2 template so both engines emit the same header:
+## logFC -> log2FoldChange, PValue -> pvalue, BH-adjusted p -> padj, and the test
+## statistic (F for quasi-likelihood, LR for likelihood ratio) -> stat. logCPM
+## keeps its own name on purpose: it is a log-scale mean and is not the same
+## quantity as DESeq2's baseMean. Tests without a statistic column (exactTest)
+## simply omit stat. With center = TRUE the deviation from the contrast's global
+## shift is appended last as log2FoldChange_centered.
+format_edger_results <- function(tbl, gtf_gene, center = FALSE) {
+    tbl <- as.data.frame(tbl)
+    for (required in c("logFC", "logCPM", "PValue")) {
+        if (!required %in% colnames(tbl)) {
+            stop(paste0("format_edger_results: missing required column ", required))
+        }
+    }
+    gene_ids <- rownames(tbl)
+    out <- data.frame(
+        Gene_ID = gene_ids,
+        Gene = unlist(lapply(gene_ids, function(x) {
+            get_gene_name(x, gtf_gene)
+        })),
+        logCPM = tbl$logCPM,
+        log2FoldChange = tbl$logFC,
+        pvalue = tbl$PValue,
+        padj = if ("FDR" %in% colnames(tbl)) tbl$FDR else p.adjust(tbl$PValue, method = "BH"),
+        stringsAsFactors = FALSE
+    )
+    rownames(out) <- gene_ids
+    stat_col <- intersect(c("F", "LR"), colnames(tbl))
+    if (length(stat_col) > 0) {
+        out$stat <- tbl[[stat_col[1]]]
+    }
+    if (center) {
+        shift <- lfc_global_shift(out$log2FoldChange)
+        message(paste0("Global shift (median log2FoldChange) subtracted in log2FoldChange_centered: ", shift))
+        out$log2FoldChange_centered <- out$log2FoldChange - shift
+    }
+    add_gene_coordinates(out, out$Gene_ID, gtf_gene, after = "Gene_ID")
 }
