@@ -421,7 +421,7 @@ for (contrast in comparison) {
             resOrdered <- res_shrink[order(res_shrink$log2FoldChange), ]
 
             # # Add gene names  (check how gene_id col is named )
-            resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE)
+            resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE, center = TRUE)
 
             # plot Volcano
             pdf(
@@ -461,7 +461,7 @@ for (contrast in comparison) {
                 get_gene_name(x, gtf_gene)
             }))
             res$Gene_ID <- rownames(res)
-            res <- format_deseq2_results(res, gtf_gene, shrink = FALSE)
+            res <- format_deseq2_results(res, gtf_gene, shrink = FALSE, center = TRUE)
             res <- as.data.frame(apply(res, 2, as.character))
 
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
