@@ -253,7 +253,9 @@ for (compare in comparisons[[1]]) {
         })
         qlf$table$Gene_ID <- qlf$genes$genes
         qlf$table$ExonPos <- qlf$genes$exons
-        res <- qlf$table[, c(6, 5, 7, 1, 2, 3, 4)]
+        # edgeR reports raw PValue only, add the BH adjusted p-value the filter works on
+        qlf$table$FDR <- p.adjust(qlf$table$PValue, method = "BH")
+        res <- qlf$table[, c(6, 5, 7, 1, 2, 3, 4, 8)]
         res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
         res <- as.data.frame(apply(res, 2, as.character))
 

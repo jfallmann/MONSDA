@@ -99,8 +99,9 @@ rule filter_significant:
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: pv_cut = get_cutoff_as_string(config, 'DAS', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc')
-    shell: "set +o pipefail; arr=({input.csv}); orr=({output.sig}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a|head -n1 > \"${{orr[$i]}}\"; cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' >> \"${{orr[$i]}}\" &>> {log}; else touch \"${{orr[$i]}}\"; fi; done"
+            lfc_cut = get_cutoff_as_string(config, 'DAS', 'lfc'),
+            bins = BINS
+    shell: "set +o pipefail; arr=({input.csv}); orr=({output.sig}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --flag-column significant --flag-value yes --input \"$a\" --output-sig \"${{orr[$i]}}\"; else touch \"${{orr[$i]}}\"; fi; done 2> {log}"
 
 
 rule convertPDF:

@@ -206,7 +206,7 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; arr=($tabs); for i in \${!arr[@]}; do a=\${arr[\$i]}; fn=\${a##*/}; if [[ -s \"\$a\" ]];then cat \$a|head -n1 > Sig_\$a; cat \$a| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[10]);if (\$F[10] eq \"yes\") {print}' >> Sig_\$a &>> log; else touch \${orr[\$i]}; fi; done
+    set +o pipefail; arr=($tabs); for i in \${!arr[@]}; do a=\${arr[\$i]}; if [[ -s \"\$a\" ]];then python3 $BINS/Analysis/filter_significant.py --flag-column significant --flag-value yes --input \"\$a\" --output-sig Sig_\$a; else touch Sig_\$a; fi; done 2> log
     """
 }
 
