@@ -151,7 +151,11 @@ def env_yaml(env, step, envdir):
     str or None
         path to yaml file
     """
-    for name in [env, "_".join([env, step]), "_".join([env, str(step).lower()])]:
+    names = [env, "_".join([env, step]), "_".join([env, str(step).lower()])]
+    # bisulfite mapping runs out of the plain mapper env, see segemehl_bisulfite.smk
+    if "segemehl" in env and "bisulfite" in env:
+        names.append(env.replace("bisulfite", ""))
+    for name in names:
         path = os.path.join(envdir, name + ".yaml")
         if os.path.isfile(path):
             return path
