@@ -38,7 +38,7 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        rs = reads[0..1].sort{ it.getName() }
+        rs = sort_reads(reads[0..1])
         r1 = rs[0]
         r2 = rs[1]
         a="Trimming_report.txt"
@@ -122,7 +122,7 @@ process salmon_quant{
         }else{
             stranded = '-l IU'
         }
-        rs = reads[1..2].sort { a,b -> a[0] <=> b[0] == 0 ? (a[1..-1] as int) <=> (b[1..-1] as int) : a[0] <=> b[0] }
+        rs = sort_reads(reads[1..2])
         r1 = rs[0]
         r2 = rs[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
@@ -212,7 +212,7 @@ workflow COUNTING{
 
         if (PAIRED == 'paired'){
             TRIMSAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}_trimmed.fastq.gz"
             }
         } else{
             TRIMSAMPLES = LONGSAMPLES.collect{

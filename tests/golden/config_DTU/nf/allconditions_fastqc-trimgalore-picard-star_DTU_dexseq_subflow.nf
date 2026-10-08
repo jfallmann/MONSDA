@@ -51,7 +51,7 @@ params.gCOUNTENV = 'salmon'
 params.gRSAMPLES = {
 if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
     }
 }else{
     return params.gSAMPLES.collect{
@@ -59,6 +59,36 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     }
 }
 }()
+def sort_reads(rds){
+    def rdslist = (rds instanceof Collection) ? rds.toList() : [rds]
+    return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }
+}
+def rep_basename(f){
+    return f.toString().split('/')[-1]
+}
+def rep_key(f){
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+}
+def rep_args(repsargs, staged){
+    def mt = (repsargs =~ /(^|\s)-r\s+(\S+)/)
+    if (!mt.find()){
+        throw new Exception("rep_args: no '-r' list found in REPS arguments '"+repsargs+"'")
+    }
+    def have = [:]
+    def stagedlist = (staged instanceof Collection) ? staged.toList() : [staged]
+    stagedlist.each{ f -> have[rep_key(f)] = rep_basename(f) }
+    def ordered = mt.group(2).split(',').collect{ w ->
+        def k = rep_key(w.trim())
+        if (!have.containsKey(k)){
+            throw new Exception("rep_args: no staged count file for replicate '"+w.trim()+"' (key '"+k+"'), staged keys: "+have.keySet())
+        }
+        return have[k]
+    }
+    if (ordered.size() != stagedlist.size()){
+        throw new Exception("rep_args: "+stagedlist.size()+" staged count files but "+ordered.size()+" replicates in REPS arguments '"+repsargs+"'")
+    }
+    return repsargs.replaceFirst(/(^|\s)-r\s+\S+/, '$1-r '+ordered.join(','))
+}
 
 process salmon_quant{
     conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
@@ -253,7 +283,7 @@ workflow DTU{
     take: collection
     main:
     TRIMSAMPLES = params.gLONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
     trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
     annofile = Channel.fromPath(params.gDTUANNO)

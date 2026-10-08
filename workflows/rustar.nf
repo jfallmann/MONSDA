@@ -93,8 +93,9 @@ process rustar_mapping{
     idx = reads[0]
     idxdir = idx.toRealPath()
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[2]
+        rds = sort_reads(reads[1..2])
+        r1 = rds[0]
+        r2 = rds[1]
         a = "Trimming_report.txt"
         fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
         of = fn+'.Aligned.out.sam'
@@ -121,9 +122,10 @@ process rustar_mapping{
             }else{
                 stranded = '--soloStrand Unstranded'
             }
-            r1 = reads[1]
+            rds = sort_reads(reads[1..2])
+            r1 = rds[0]
             fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
-            r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(reads[2]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
+            r2 = "${workflow.workDir}/../FASTQ/${CONDITION}/"+file(rds[1]).getSimpleName().replaceAll(/\QR2_trimmed\E/,"R2.fastq.gz")
             if (MAPPARAMS.contains('--soloBarcodeMate 1')){
                 t = r2
                 r2 = r1

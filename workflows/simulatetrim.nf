@@ -23,8 +23,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired' || PAIRED == 'singlecell'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         a="Trimming_report.txt"
         b=file(r1).getName().replace(".fastq.gz", "_trimmed.fastq.gz")
         c=file(r2).getName().replace(".fastq.gz", "_trimmed.fastq.gz")

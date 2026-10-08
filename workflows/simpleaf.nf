@@ -65,7 +65,7 @@ process simpleaf_quant{
 
     script:
     idx = reads[0]
-    rs = reads[1..2].sort()
+    rs = sort_reads(reads[1..2])
     r1 = rs[0]
     r2 = rs[1]
     fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
@@ -84,7 +84,7 @@ workflow COUNTING{
     checkidx = file(COUNTUIDX)
 
     TRIMSAMPLES = LONGSAMPLES.collect{
-        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+        element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}_trimmed.fastq.gz"
     }
 
     trimsamples_ch = Channel.fromPath(TRIMSAMPLES.sort())

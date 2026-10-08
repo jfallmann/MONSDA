@@ -55,7 +55,7 @@ params.gMQCPARAMS = get_always('fastqc_params_MULTI') ?: ''
 params.gRSAMPLES = {
 if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
     }
 }else{
     return params.gSAMPLES.collect{
@@ -63,6 +63,36 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     }
 }
 }()
+def sort_reads(rds){
+    def rdslist = (rds instanceof Collection) ? rds.toList() : [rds]
+    return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }
+}
+def rep_basename(f){
+    return f.toString().split('/')[-1]
+}
+def rep_key(f){
+    return rep_basename(f).replaceFirst(/\.counts\.gz$/, '').replaceFirst(/_dedup$/, '')
+}
+def rep_args(repsargs, staged){
+    def mt = (repsargs =~ /(^|\s)-r\s+(\S+)/)
+    if (!mt.find()){
+        throw new Exception("rep_args: no '-r' list found in REPS arguments '"+repsargs+"'")
+    }
+    def have = [:]
+    def stagedlist = (staged instanceof Collection) ? staged.toList() : [staged]
+    stagedlist.each{ f -> have[rep_key(f)] = rep_basename(f) }
+    def ordered = mt.group(2).split(',').collect{ w ->
+        def k = rep_key(w.trim())
+        if (!have.containsKey(k)){
+            throw new Exception("rep_args: no staged count file for replicate '"+w.trim()+"' (key '"+k+"'), staged keys: "+have.keySet())
+        }
+        return have[k]
+    }
+    if (ordered.size() != stagedlist.size()){
+        throw new Exception("rep_args: "+stagedlist.size()+" staged count files but "+ordered.size()+" replicates in REPS arguments '"+repsargs+"'")
+    }
+    return repsargs.replaceFirst(/(^|\s)-r\s+\S+/, '$1-r '+ordered.join(','))
+}
 
 process qc_raw{
     conda "<REPO>/envs/${params.gQCENV}"+".yaml"
@@ -193,8 +223,9 @@ process trim{
     path "*trimming_report.txt", emit: rep
     script:
     if (params.gPAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         o = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
@@ -330,8 +361,9 @@ process bwa_mapping{
     script:
     idx = reads[0]
     if (params.gPAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[2]
+        rds = sort_reads(reads[1..2])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

@@ -68,7 +68,7 @@ process starfusion_fastq{
     ref = fls[0]
     anno = fls[1]
     if (PAIRED == 'paired'){
-        rs = fls[2..3].sort{ it.getName() }
+        rs = sort_reads(fls[2..3])
         reads = "--left_fq "+rs[0]+" --right_fq "+rs[1]
         fn = file(rs[0]).getSimpleName().replaceAll(/_R[12]_trimmed/, "")
     } else{
@@ -94,7 +94,7 @@ workflow FUSIONS{
     if (FUSFASTQ){
         if (PAIRED == 'paired'){
             TRIMSAMPLES = LONGSAMPLES.collect{
-                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}_trimmed.fastq.gz"
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}_trimmed.fastq.gz"
             }
         } else{
             TRIMSAMPLES = LONGSAMPLES.collect{

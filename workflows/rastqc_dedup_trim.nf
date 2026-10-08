@@ -42,7 +42,7 @@ workflow QC_RAW{
     //SAMPLE CHANNELS
     if (PAIRED == 'paired'){
         SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
         }
     }else{
         SAMPLES=SAMPLES.collect{

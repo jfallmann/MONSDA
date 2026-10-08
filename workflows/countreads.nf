@@ -37,8 +37,9 @@ process count_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1\E/,"")    
         oo = fn+"_raw_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2\E/,"")    
@@ -80,8 +81,9 @@ process count_trimmed_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")    
         oo = fn+"_trimmed_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2_trimmed\E/,"")    
@@ -123,8 +125,9 @@ process count_dedup_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_dedup\E/,"")    
         oo = fn+"_dedup_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2_dedup\E/,"")    
@@ -254,9 +257,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DEREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DEREPS -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -295,13 +298,13 @@ workflow COUNTING{
 
     if (PAIRED == 'paired'){
         RAWSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
     }else{
         RAWSAMPLES = SAMPLES.collect{
@@ -337,7 +340,7 @@ workflow COUNTING{
     }        
     count_mappers(mapsamples_ch.collate(1))
     featurecount(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_count_table(featurecount.out.fc_cts.collate(1))
+    prepare_count_table(featurecount.out.fc_cts.collect())
     summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts))).collect())
 
     emit:

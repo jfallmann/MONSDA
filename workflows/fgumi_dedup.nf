@@ -70,7 +70,7 @@ workflow DEDUPBAM{
         def key = n
             .replaceFirst(/_fgumi_extract\.bam$/, '')
             .replaceFirst(/_extracted\.bam$/, '')
-            .replaceFirst(/_R1$/, '')
+            .replaceFirst(/_R[12]$/, '')
         tuple(key, u)
     }
     paired_ch = mapped_ch.combine(ubam_ch, by: 0).map { key, mb, ub -> tuple(key, mb, ub) }

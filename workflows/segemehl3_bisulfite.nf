@@ -98,8 +98,9 @@ process segemehl3_mapping{
     idx2 = idxfile2.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[3]
-        r2 = reads[4]
+        rds = sort_reads(reads[3..4])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"
