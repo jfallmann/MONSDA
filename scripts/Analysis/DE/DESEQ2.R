@@ -274,6 +274,7 @@ for (contrast in comparison) {
         # normalized results, the W_1 covariate alone only adjusts for unwanted variation, not scale.
         dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
         dds_norm <- estimateSizeFactors(dds_norm, controlGenes = ctrl_idx)
+        write_scaling_log(sizeFactors(dds_norm), colnames(dds_norm), paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "scaling.log", sep = "_"))
         dds_norm <- dds_norm[!ctrl_idx, ] # drop spike-ins from testing, size factors are retained
 
         # filter low counts
