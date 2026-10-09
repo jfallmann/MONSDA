@@ -27,6 +27,10 @@ set-resources:
     mem_mb: "40000 * (2 ** (attempt - 1))"
     slurm_qos: "medium"
     runtime: "18h"
+  postde:
+    mem_mb: "24000 * (2 ** (attempt - 1))"
+    slurm_qos: "medium"
+    runtime: "6h"
   salmon_index:
     mem_mb: "40000 * (2 ** (attempt - 1))"
   sortsam:
