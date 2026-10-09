@@ -196,6 +196,10 @@ for (contrast in comparison) {
         dge_spike <- calcNormFactors(DGEList(counts = spike_counts), method = "TMM")
         dge_norm$samples$norm.factors <- dge_spike$samples$norm.factors
 
+        eff_lib_norm <- dge_norm$samples$lib.size * dge_norm$samples$norm.factors
+        scaling_factors <- eff_lib_norm / exp(mean(log(eff_lib_norm)))
+        write_scaling_log(scaling_factors, dge_norm$samples$samples, paste("Tables/DE", "EDGER", combi, contrast_name, "table", "scaling.log", sep = "_"))
+
         ## create file normalized table
         tmm_norm <- as.data.frame(cpm(dge_norm))
         colnames(tmm_norm) <- t(dge_norm$samples$samples)

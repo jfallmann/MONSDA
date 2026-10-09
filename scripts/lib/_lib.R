@@ -184,6 +184,15 @@ lfc_global_shift <- function(lfc) {
     median(vals)
 }
 
+## Write the per-sample scaling factor spike-in normalization derived for a
+## contrast (geometric-mean-centered, 1 = no rescaling relative to the other
+## samples in the contrast), so that shift is traceable independent of the DE
+## results table.
+write_scaling_log <- function(scaling_factors, samples, path) {
+    log_df <- data.frame(sample = samples, spikein_scaling_factor = scaling_factors)
+    write.table(log_df, path, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+
 ## Format a DESeq2 results object for export: add gene name and ID, select the
 ## canonical column order by name and append genomic coordinates after Gene_ID.
 ## Shrunk tables carry no stat column; raw (unshrunk) tables append stat last.
