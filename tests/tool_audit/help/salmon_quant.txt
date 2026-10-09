@@ -1,0 +1,428 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Quantify transcript abundances from FASTQ reads
+
+Usage: salmon quant [OPTIONS] --output <OUTPUT>
+
+Options:
+  -i, --index <INDEX>
+          Salmon index directory (reads mode)
+
+  -a, --alignments <ALIGNMENTS>
+          Alignment-based mode: a BAM of reads aligned to the transcriptome
+
+      --rad <RAD>
+          RAD-input mode: a RAD file of mappings (from `salmon quant --writeRad` or `piscem map-bulk`) to quantify directly, in parallel
+
+  -t, --targets <TARGETS>
+          Transcriptome FASTA (alignment mode `-a`): enables the alignment error model
+
+      --noErrorModel
+          Disable the alignment error model (alignment mode)
+
+      --errorModel
+          Opt in to the order-independent alignment error model in deterministic mode (`-a --deterministic`, requires `-t`). Off by default: deterministic mode scores by the BAM `AS` tag, which benchmarks at least as accurately against ground truth and needs only a single BAM pass; `--errorModel` adds a second pass to train the model. Use it for parity with salmon's classic error-modeled quant, or when the aligner's `AS` is absent/unreliable
+
+      --annotation <GTF|GFF>
+          Genome-alignment mode: a GTF/GFF annotation. Given with `-a <genome.bam>`, salmon projects the spliced genome alignments into transcriptome coordinates (via bramble) and quantifies the projected placements. The transcript set is taken from the annotation
+
+  -q, --quiet
+          Reduce logging to warnings and errors only
+
+      --genome <FASTA>
+          Genome FASTA (genome-alignment mode) — needed only for bias correction, to reconstruct transcript sequences from the annotation's exons
+
+      --no-version-check
+          Accepted for compatibility with C++ salmon. salmon 2.0 never contacts the network to check for a newer release, so this flag (and the `SALMON_NO_VERSION_CHECK` environment variable) is a no-op
+
+      --juncMissDiscount <F>
+          Genome-alignment projection: penalty multiplier per junction mismatch (bramble `junc_miss_discount`; default 1.0 = no penalty)
+
+  -l, --libType <LIB_TYPE>
+          Library type (e.g. IU, ISR, A for auto)
+          
+          [default: A]
+
+  -1, --mates1 <MATES1>...
+          Mate-1 FASTQ file(s) for paired-end reads
+
+  -2, --mates2 <MATES2>...
+          Mate-2 FASTQ file(s) for paired-end reads
+
+  -r, --unmatedReads <UNMATED>...
+          Single-end FASTQ file(s)
+
+  -o, --output <OUTPUT>
+          Output directory
+
+  -g, --geneMap <FILE>
+          Transcript-to-gene map (GTF/GFF, or a 2-column TSV), optionally compressed (gzip, BGZF, bzip2, xz, zstd); also writes gene-level estimates to `quant.genes.sf`
+
+      --ignoreTxVersion
+          Ignore trailing transcript-version suffixes when joining `--geneMap` entries to quantified transcripts, so `ENST00000456328.2` matches `ENST00000456328`. Matches tximport's option of the same name. Needed when the index was built from an Ensembl cDNA FASTA, which carries the version in the identifier, and the annotation is an Ensembl GTF, which puts it in a separate `transcript_version` attribute
+
+  -p, --threads <THREADS>
+          Worker threads (0 = all cores). salmon also runs one auxiliary thread for FASTQ parsing/decompression, so total CPU use can slightly exceed this value; on schedulers that enforce the limit, request one extra core
+          
+          [default: 0]
+
+      --decoder <DECODER>
+          Which gzip decoder to use: `auto` (default), `serial`, `parallel`, or `parallel=N` to pin N slots per decodable input.
+          
+          `-p` is one budget shared between inflating the input and mapping it, so engaging the parallel decoder costs mapping threads. `auto` engages it only when the budget is large enough for it to add decode concurrency rather than merely move threads around -- a threshold that is higher in selective-alignment mode than in sketch, because more work per fragment means a smaller share of the budget should be decoding.
+          
+          [default: auto]
+
+      --threadPolicy <FILE>
+          JSON file overriding thread and decoder policy.
+          
+          Every field is optional and an unknown field is an error rather than a silent no-op, so a typo refuses to load instead of leaving the run looking configured while behaving as if it were not. Example: `{"parallel_decode": {"min_threads_per_stream": 16}}`.
+
+      --sketch
+          Use the alignment-free pseudoalignment path
+
+      --sketchStrictOrphans
+          Sketch mode: only emit an orphan when the mate had no matching k-mers at all (strict). Default orphans whenever the mate has no consistent target, which tracks selective alignment more closely
+
+      --useEM
+          Use the standard EM optimizer instead of VBEM
+
+      --no-progress
+          Disable the live mapping progress spinner (it is shown only on an interactive terminal and never when `--quiet`)
+
+      --meta
+          Metagenomic preset (salmon's `--meta`): use plain EM (not VBEM), disable range-factorized/rich equivalence classes, and initialize abundances uniformly — settings better suited to metagenomic references. Overrides `--useEM`/`--rangeFactorizationBins`
+
+      --rangeFactorizationBins <RANGE_FACTORIZATION_BINS>
+          Range-factorization bins for equivalence classes (0 disables)
+          
+          [default: 4]
+
+      --incompatPrior <INCOMPAT_PRIOR>
+          Prior weight for strand-incompatible mappings (0 drops them)
+          
+          [default: 0]
+
+      --dumpEq
+          Dump equivalence classes to aux_info/eq_classes.txt.gz (salmon format)
+
+      --dumpEqWeights
+          Like --dumpEq, but also write per-transcript weights in each class
+
+      --writeUnmappedNames
+          Write the names of unmapped fragments to aux_info/unmapped_names.txt
+
+  -z, --writeMappings <WRITE_MAPPINGS>
+          Write per-mapping SAM records to this file (spoofed CIGAR, like salmon's standard `--writeMappings`). `--writeSam` is an accepted alias, naming the format explicitly to pair with `--writeBam`
+          
+          [alias: --writeSam]
+
+      --writeBam <WRITE_BAM>
+          Write per-mapping BAM records to this file. Mutually exclusive with --writeMappings/--writeSam
+
+      --bamCompressThreads <BAM_COMPRESS_THREADS>
+          BGZF compression workers for --writeBam [default: about one per 3 mapping threads, at most 8].
+          
+          These threads run alongside the -p mapping threads and do nothing but compress BGZF blocks. The default balances the two stages from measured throughput: one worker compresses ~165 MiB/s of BAM records, while one mapping thread produces at most ~52 MiB/s of them, so roughly one worker per 3 mapping threads keeps compression from becoming the bottleneck. The result is capped at 8, which is already about 3x the fastest record production measured at any thread count.
+          
+          The cost is very lopsided, so the default errs upward: one worker too few can halve throughput, whereas surplus workers just block on an empty queue and cost nothing measurable. It stops at the balance point rather than going higher, because past that these cores do more good mapping reads. Raise it if you are writing BAM to unusually fast storage and can spare the cores; there is no reason to lower it.
+
+      --writeRad <WRITE_RAD>
+          Write per-fragment mappings to a RAD file at this path. Sketch or selective-alignment profile is chosen automatically from the mapping mode. Quantification still runs; add --skipQuant to map only. The file is piscem map-bulk compatible and can be re-quantified with `--rad`
+
+      --deterministic
+          Deterministic quantification (reads/FASTQ input): map once to an intermediate RAD, then quantify from it with a fixed fragment-length distribution, so the result is byte-identical across runs and thread counts. Avoids a second mapping pass. The intermediate RAD is written under the output directory and deleted on success unless --keepRad (or use --writeRad PATH to choose its location and keep it)
+
+      --keepRad
+          Keep the intermediate RAD produced by --deterministic (by default it is deleted once quantification finishes). Ignored without --deterministic
+
+      --seqBias
+          Enable sequence-specific bias correction
+
+      --gcBias
+          Enable fragment-GC bias correction
+
+      --posBias
+          Enable positional bias correction
+
+      --radCompress <RAD_COMPRESS>
+          Compression codec for RAD output (`--writeRad` and the `--deterministic` intermediate): `lz4` (default), `zstd` (better ratio), or `none`
+          
+          [default: lz4]
+          [possible values: lz4, zstd, none]
+
+      --noCompressRad
+          Write uncompressed RAD chunks (overrides --radCompress)
+
+      --numBootstraps <NUM_BOOTSTRAPS>
+          Number of bootstrap replicates for posterior uncertainty
+          
+          [default: 0]
+
+      --numGibbsSamples <NUM_GIBBS_SAMPLES>
+          Number of Gibbs posterior samples (mutually exclusive with bootstraps).
+          
+          `conflicts_with` makes that exclusivity real. It was previously only stated in this doc comment and resolved silently by dispatch order, so passing both ran the bootstrap and ignored the Gibbs request without saying so.
+          
+          [default: 0]
+
+      --thinningFactor <THINNING_FACTOR>
+          Gibbs thinning factor
+          
+          [default: 16]
+
+      --ont
+          (Long reads) Oxford Nanopore model — not supported; use oarfish instead
+
+      --noLengthCorrection
+          Disable effective-length correction (use raw reference length)
+
+      --minScoreFraction <MIN_SCORE_FRACTION>
+          Minimum alignment score as a fraction of the perfect score
+          
+          [default: 0.65]
+
+      --orphanChainSubThresh <ORPHAN_CHAIN_SUB_THRESH>
+          Orphan chain sub-optimality threshold (salmon's `orphanChainSubThresh`). `0.0` (default) aligns every orphan candidate (more sensitive than salmon's 0.95, which prunes low-chain-coverage orphans before alignment)
+          
+          [default: 0]
+
+      --fullLengthAlignment
+          Score the full read with one DP instead of PuffAligner-style inter-MEM-gap scoring
+
+      --sparseSeeds
+          Seed with sparse fixed-k k-mer anchors instead of the default unitig-constrained uni-MEMs
+
+      --refMEMs
+          Seed with reference-extended MEMs (cross unitig boundaries)
+
+      --uniMEMs
+          Seed with true unitig-constrained uni-MEMs (pufferfish-style). This is the default; the flag is accepted for explicitness/back-compat
+
+      --ma <MA>
+          Match score for selective alignment (reads mode)
+          
+          [default: 2]
+
+      --mp <MP>
+          Mismatch penalty for selective alignment (reads mode)
+          
+          [default: 4]
+
+      --go <GO>
+          Gap-open penalty for selective alignment (reads mode)
+          
+          [default: 6]
+
+      --ge <GE>
+          Gap-extend penalty for selective alignment (reads mode)
+          
+          [default: 2]
+
+      --consensusSlack <CONSENSUS_SLACK>
+          Consensus slack: a target is kept only if its best chain score is at least `(1 - slack)` of the max chain score for that mate (salmon default 0.35; `1.0` keeps every target)
+          
+          [default: 0.35]
+
+      --maxOccsPerHit <MAX_OCCS_PER_HIT>
+          Skip k-mers whose unitig occurs in more than this many references (repetitive-hit guard; salmon's `maxOccsPerHit`)
+          
+          [default: 1000]
+
+      --vbPrior <VB_PRIOR>
+          VBEM per-feature Dirichlet prior weight
+          
+          [default: 0.01]
+
+      --emAccel <EM_ACCEL>
+          EM/VBEM convergence acceleration. `squarem` reaches the same abundances in far fewer M-steps but is not byte-identical to the default `none`
+
+          Possible values:
+          - none:    Plain fixed-point iteration; output unchanged from historical salmon
+          - squarem: SQUAREM acceleration (same fixpoint, far fewer M-steps; not byte-identical)
+          - daarem:  DAAREM: damped Anderson acceleration over a window of past iterates; faster than SQUAREM on high-dimensional problems. Same fixpoint; not byte-identical
+          
+          [default: none]
+
+      --fldMean <FLD_MEAN>
+          Mean of the fragment-length distribution prior [default: 250].
+          
+          A prior, not an override: wherever fragment lengths are observed, this seeds the distribution with weight 1 and the observations dominate. With `--rad` it is ignored entirely unless `--fldPolicy` says otherwise, since a salmon RAD carries a baked distribution.
+
+      --fldSD <FLD_SD>
+          Standard deviation of the fragment-length distribution prior [default: 25].
+          
+          Same prior semantics as `--fldMean`.
+
+      --fldMax <FLD_MAX>
+          Maximum fragment length tracked by the fragment-length distribution [default: 1000]
+
+      --fldPolicy <FLD_POLICY>
+          Where the fragment-length distribution comes from when quantifying a RAD (`--rad` only) [default: baked].
+          
+          salmon's RAD writer always bakes its fragment-length distribution into the header, so by default a requant reproduces the writing run exactly and `--fldMean`/`--fldSD` have no effect. Use `derive` to re-derive the distribution from the RAD's own fragment lengths, or `prior` to use `--fldMean`/`--fldSD` alone — `prior` is the setting that makes a fragment-length sensitivity analysis actually vary anything.
+
+          Possible values:
+          - baked:  Prefer the distribution baked into the RAD header (exact parity with the run that wrote it); otherwise derive it, or fall back to the prior
+          - derive: Ignore any baked distribution; re-derive it from this RAD's own uniquely-mapped proper pairs
+          - prior:  Ignore both the baked distribution and the RAD's fragment lengths; use `--fldMean`/`--fldSD` alone
+          
+          [default: baked]
+
+  -f, --forgettingFactor <FORGETTING_FACTOR>
+          Online-phase forgetting factor in (0.5, 1.0]
+          
+          [default: 0.65]
+
+      --initUniform
+          Initialize the optimizer uniformly instead of from the online estimates
+
+      --perTranscriptPrior
+          Interpret --vbPrior as a per-transcript prior (salmon's default)
+
+      --perNucleotidePrior
+          Interpret --vbPrior as a per-nucleotide prior (scaled by effective length)
+
+      --sigDigits <SIG_DIGITS>
+          Significant digits for the EffectiveLength and NumReads columns of quant.sf
+          
+          [default: 3]
+
+  -w, --maxReadOcc <MAX_READ_OCC>
+          Discard a read/fragment that maps to more than this many places — counting the total set of distinct mappings (concordant + orphan union) (reads mode)
+          
+          [default: 250]
+
+      --orphansRequireUnmappedMate
+          Only emit a single-mate (orphan) mapping when the read's mate is entirely unmapped. By default, when a pair has no concordant mapping, orphans are reported for both mates (their union); with this flag a read that maps only because its mate also mapped (to a disjoint set) is not reported as an orphan
+
+      --allowDovetail
+          Allow dovetailed mappings (mates extending past each other) as concordant
+
+      --bandwidth <BANDWIDTH>
+          ksw2 DP bandwidth for selective alignment (reads mode)
+          
+          [default: 15]
+
+      --recoverOrphans
+          Attempt to recover the mate of an orphaned read near its mapped partner (selective-alignment mode). Off by default
+
+      --discardOrphansQuasi
+          Discard orphan mappings in selective-alignment (reads) mode: only concordantly-paired fragments are kept
+
+      --decoyThreshold <DECOY_THRESHOLD>
+          An alignment to an annotated transcript is invalid if its score is `< decoyThreshold * bestDecoyScore` (selective-alignment mode)
+          
+          [default: 1]
+
+      --minAlnProb <MIN_ALN_PROB>
+          Drop any mapping whose alignment probability `exp(-scoreExp * (best - score))` is below this (selective-alignment mode)
+          
+          [default: 0.00001]
+
+      --scoreExp <SCORE_EXP>
+          Soft-weight decay: a mapping's probability is proportional to `exp(-scoreExp * (bestScore - score))`. Larger downweights sub-optimal mappings more steeply. (salmon's --scoreExp; default 1.0)
+          
+          [default: 1]
+
+      --hardFilter
+          Instead of soft-weighting multimapping locations by alignment score, keep only the best-scoring mapping(s), each with equal weight
+
+      --allowDecoyOrphans
+          When a fragment's best transcript alignment is outscored by a decoy (genome) alignment, keep the transcript placement instead of discarding the fragment. Off by default (decoy-dominated fragments are dropped, matching salmon). Increases the reported mapping rate on decoy-aware indices at the cost of retaining transcript mappings for fragments better explained by the genome; only affects fragments that retain a transcript candidate
+
+      --softclip
+          Allow soft-clipping of read ends during selective alignment: unaligned read-end bases are clipped rather than penalized. (salmon's --softclip)
+
+      --softclipOverhangs
+          Allow soft-clipping only of read bases that overhang a transcript end (a restricted form of --softclip). (salmon's --softclipOverhangs)
+
+      --preMergeChainSubThresh <PRE_MERGE_CHAIN_SUB_THRESH>
+          Per-target pre-merge chain sub-optimality threshold: keep chains scoring `>= best_chain_score * thresh` (selective-alignment mode). Range [0,1]. Rust default 0.8 (salmon's default is 0.75)
+          
+          [default: 0.8]
+
+      --postMergeChainSubThresh <POST_MERGE_CHAIN_SUB_THRESH>
+          Post-merge concordant chain-pair sub-optimality threshold: after pairing, keep pairs whose read-coverage is `>= best_pair_coverage * thresh` (paired-end, selective-alignment mode). Range [0,1]. Default 0.0 (off); salmon's default is 0.9, thresholded on chain score rather than coverage
+          
+          [default: 0]
+
+      --biasSpeedSamp <BIAS_SPEED_SAMP>
+          Fragment-length sampling stride for the GC bias eff-length convolution. Larger = faster bias correction, coarser. (salmon's --biasSpeedSamp)
+          
+          [default: 5]
+
+      --numAuxModelSamples <NUM_AUX_MODEL_SAMPLES>
+          Number of leading fragments used to train the auxiliary models (fragment-length / bias / error); they are fixed afterward
+          
+          [default: 5000000]
+
+      --noBiasLengthThreshold
+          Disable the lower threshold on how short bias correction may make an effective length (increases precision, reduces robustness). Experimental
+
+      --numErrorBins <NUM_ERROR_BINS>
+          Number of read-position bins in the alignment error model (alignment mode only). (salmon's --numErrorBins)
+          
+          [default: 4]
+
+      --numGCBins <NUM_GC_BINS>
+          Number of fragment-GC bins for the GC bias model. (salmon's --numGCBins)
+          
+          [default: 25]
+
+      --conditionalGCBins <CONDITIONAL_GC_BINS>
+          Number of conditioning (context) bins for the GC bias model. (salmon's --conditionalGCBins)
+          
+          [default: 3]
+
+      --discardOrphans
+          Discard orphan (single-mate) alignments in a paired library (alignment mode). Reads mode uses --discardOrphansQuasi
+
+      --mappingCacheMemoryLimit <MAPPING_CACHE_MEMORY_LIMIT>
+          [accepted for salmon compatibility; no effect] alignment-mode mapping cache size — the Rust align path streams with bounded buffers
+
+      --disableChainingHeuristic
+          [accepted for salmon compatibility; no effect] the Rust chainer uses a loss-less ref-distance early-break, not salmon's numRounds heuristic
+
+      --mismatchSeedSkip <MISMATCH_SEED_SKIP>
+          [accepted for salmon compatibility; no effect yet] bases to skip after a k-mer miss during seeding — lives in the piscem-rs seed-walk; not yet tunable
+
+      --reduceGCMemory
+          [accepted for salmon compatibility; now the default] the rank-bitvector GC representation it selects is used unconditionally — it is faster and ~2x leaner than the dense representation with identical results
+
+      --skipQuant
+          Skip transcript quantification (EM + Gibbs/bootstrap) and quant.sf, while still mapping, building equivalence classes (use with --dumpEq), detecting library type, and writing metadata. (salmon's --skipQuant)
+
+      --eqclasses <EQCLASSES>
+          [not yet implemented] quantify from a previously-written equivalence-class file instead of mapping/alignments (an input mode, not the --dumpEq output)
+
+      --numPreAuxModelSamples <NUM_PRE_AUX_MODEL_SAMPLES>
+          Fragments processed before the auxiliary (fragment-length) model is applied during online inference. (salmon's --numPreAuxModelSamples; salmon's default is 1000000, this port's is 5000.)
+          
+          [default: 5000]
+
+      --noFragLengthDist
+          [accepted; not yet implemented] disable fragment-length-distribution concordance in the per-fragment probability
+
+      --noSingleFragProb
+          [accepted; not yet implemented] disable the single-end/orphan fragment-length probability estimate
+
+  -s, --sampleOut
+          [accepted; not yet implemented] write a BAM of posterior-sampled alignments (alignment mode)
+
+  -u, --sampleUnaligned
+          [accepted; not yet implemented] also include unaligned reads in the sampled BAM (requires --sampleOut)
+
+      --writeQualities
+          [accepted; not yet implemented] write qualities into the sampled BAM (only meaningful with --sampleOut / --writeMappings)
+
+      --hitFilterPolicy <HIT_FILTER_POLICY>
+          [accepted; not yet implemented] hit-filtering policy (BEFORE/AFTER/BOTH/ NONE) for selective alignment; the Rust port filters after chaining
+
+      --maxRecoverReadOcc <MAX_RECOVER_READ_OCC>
+          [accepted; not yet implemented] cap on candidate mappings during orphan recovery (salmon's --maxRecoverReadOcc)
+
+      --validateMappings
+          [accepted; no effect] deprecated in salmon too — selective alignment is the default mapping mode (use --sketch for pseudoalignment)
+
+  -h, --help
+          Print help (see a summary with '-h')

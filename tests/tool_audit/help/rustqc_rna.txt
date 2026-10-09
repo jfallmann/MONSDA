@@ -1,0 +1,195 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+RNA-Seq QC — single-pass analysis of BAM/SAM/CRAM files.
+
+Runs featureCounts, dupRadar, Qualimap, samtools stats, and RSeQC analyses in one pass. Requires a GTF annotation and duplicate-marked (not removed) alignments.
+
+Usage: rustqc-avx512 rna [OPTIONS] --gtf <GTF> <INPUT>...
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
+
+Input / Output:
+  -g, --gtf <GTF>
+          GTF gene annotation (plain or .gz)
+          
+          [env: RUSTQC_GTF=]
+
+  -r, --reference <FASTA>
+          Reference FASTA (required for CRAM)
+          
+          [env: RUSTQC_REFERENCE=]
+
+  -o, --outdir <OUTDIR>
+          Output directory [default: .]
+          
+          [env: RUSTQC_OUTDIR=]
+
+      --sample-name <NAME>
+          Override sample name for output filenames (default: derived from BAM filename)
+          
+          [env: RUSTQC_SAMPLE_NAME=]
+
+      --flat-output
+          Write outputs to a flat directory (no subdirs)
+          
+          [env: RUSTQC_FLAT_OUTPUT=]
+
+  -c, --config <CONFIG>
+          YAML configuration file (see also: RUSTQC_CONFIG env var)
+
+  -j, --json-summary [<PATH>]
+          JSON summary path (use "-" for stdout)
+          
+          [env: RUSTQC_JSON_SUMMARY=]
+
+  <INPUT>...
+          Duplicate-marked alignment file(s)
+
+Library:
+  -s, --stranded <STRANDED>
+          Strandedness: unstranded, forward, reverse
+
+          Possible values:
+          - unstranded: Count reads on either strand (library is not strand-specific)
+          - forward:    Forward stranded: read 1 maps to the transcript strand
+          - reverse:    Reverse stranded: read 2 maps to the transcript strand (e.g. dUTP)
+          
+          [env: RUSTQC_STRANDED=]
+
+  -p, --paired
+          Paired-end reads
+          
+          [env: RUSTQC_PAIRED=]
+
+General:
+  -t, --threads <THREADS>
+          Number of threads [default: 1]
+          
+          [env: RUSTQC_THREADS=]
+
+  -Q, --mapq <MAPQ_CUT>
+          MAPQ cutoff for quality filtering [default: 30]
+          
+          [env: RUSTQC_MAPQ=]
+
+      --biotype-attribute <ATTR>
+          GTF attribute for biotype grouping
+          
+          [env: RUSTQC_BIOTYPE_ATTRIBUTE=]
+
+      --skip-dup-check
+          Skip duplicate-marking check
+          
+          [env: RUSTQC_SKIP_DUP_CHECK=]
+
+  -q, --quiet
+          Suppress output except warnings/errors
+          
+          [env: RUSTQC_QUIET=]
+
+  -v, --verbose
+          Show additional detail
+          
+          [env: RUSTQC_VERBOSE=]
+
+Tool parameters:
+      --infer-experiment-sample-size <N>
+          infer_experiment: sample size [default: 200000]
+          
+          [env: RUSTQC_INFER_EXPERIMENT_SAMPLE_SIZE=]
+
+      --min-intron <N>
+          junction_annotation: min intron size [default: 50]
+          
+          [env: RUSTQC_MIN_INTRON=]
+
+      --junction-saturation-seed <N>
+          junction_saturation: random seed for reproducible results
+          
+          [env: RUSTQC_JUNCTION_SATURATION_SEED=]
+
+      --junction-saturation-min-coverage <N>
+          junction_saturation: min coverage [default: 1]
+          
+          [env: RUSTQC_JUNCTION_SATURATION_MIN_COVERAGE=]
+
+      --junction-saturation-percentile-floor <N>
+          junction_saturation: start % [default: 5]
+          
+          [env: RUSTQC_JUNCTION_SATURATION_PERCENTILE_FLOOR=]
+
+      --junction-saturation-percentile-ceiling <N>
+          junction_saturation: end % [default: 100]
+          
+          [env: RUSTQC_JUNCTION_SATURATION_PERCENTILE_CEILING=]
+
+      --junction-saturation-percentile-step <N>
+          junction_saturation: step % [default: 5]
+          
+          [env: RUSTQC_JUNCTION_SATURATION_PERCENTILE_STEP=]
+
+      --inner-distance-sample-size <N>
+          inner_distance: sample size [default: 1000000]
+          
+          [env: RUSTQC_INNER_DISTANCE_SAMPLE_SIZE=]
+
+      --inner-distance-lower-bound <N>
+          inner_distance: lower bound [default: -250]
+          
+          [env: RUSTQC_INNER_DISTANCE_LOWER_BOUND=]
+
+      --inner-distance-upper-bound <N>
+          inner_distance: upper bound [default: 250]
+          
+          [env: RUSTQC_INNER_DISTANCE_UPPER_BOUND=]
+
+      --inner-distance-step <N>
+          inner_distance: bin width [default: 5]
+          
+          [env: RUSTQC_INNER_DISTANCE_STEP=]
+
+      --tin-seed <N>
+          TIN: random seed for reproducible results
+          
+          [env: RUSTQC_TIN_SEED=]
+
+      --skip-tin
+          Skip TIN analysis
+          
+          [env: RUSTQC_SKIP_TIN=]
+
+      --skip-read-duplication
+          Skip read duplication analysis
+          
+          [env: RUSTQC_SKIP_READ_DUPLICATION=]
+
+      --skip-preseq
+          Skip preseq library complexity analysis
+          
+          [env: RUSTQC_SKIP_PRESEQ=]
+
+      --preseq-seed <N>
+          preseq: random seed for bootstrap CIs
+          
+          [env: RUSTQC_PRESEQ_SEED=]
+
+      --preseq-max-extrap <N>
+          preseq: max extrapolation depth
+          
+          [env: RUSTQC_PRESEQ_MAX_EXTRAP=]
+
+      --preseq-step-size <N>
+          preseq: step size between points
+          
+          [env: RUSTQC_PRESEQ_STEP_SIZE=]
+
+      --preseq-n-bootstraps <N>
+          preseq: bootstrap replicates for CIs
+          
+          [env: RUSTQC_PRESEQ_N_BOOTSTRAPS=]
+
+      --preseq-seg-len <N>
+          preseq: max segment length for PE merging
+          
+          [env: RUSTQC_PRESEQ_SEG_LEN=]

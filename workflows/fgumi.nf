@@ -13,7 +13,7 @@ process extract_fq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf("log") > 0)             "LOGS/${COMBO}/${CONDITION}/DEDUP/dedup_extract.log"
+        else if (filename.indexOf("log") > 0)             "LOGS/${COMBO}/${CONDITION}/DEDUP/fgumi/extract.log"
         else null
     }
 
@@ -27,12 +27,13 @@ process extract_fq{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = samples[0]
-        r2 = samples[1]
-        sn = samples[0].getSimpleName().replace("_R1","")
+        reads = sort_reads(samples)
+        r1 = reads[0]
+        r2 = reads[1]
+        sn = reads[0].getSimpleName().replace("_R1","")
         ubam = sn+"_fgumi_extract.bam"
-        outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
-        outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
+        outf = reads[0].getSimpleName()+"_dedup.fastq.gz"
+        outf2 = reads[1].getSimpleName()+"_dedup.fastq.gz"
         """
             mkdir -p tmp && $DEDUPBIN extract $EXTRACTPARAMS --inputs $r1 $r2 --sample $sn --library $sn --output $ubam > ex.log 2>&1 && samtools fastq -n -1 $outf -2 $outf2 -0 /dev/null -s /dev/null $ubam >> ex.log 2>&1
         """

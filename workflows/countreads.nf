@@ -12,6 +12,7 @@ COUNTUIDX?.replace('.idx','')
 COUNTPARAMS = get_always('featurecounts_params_COUNT') ?: ''
 FEAT = get_always('COUNTINGFEAT') ?: ''
 COUNTMAP = get_always('COUNTINGMAP') ?: ''
+DEREPS = get_always('DEREPS') ?: ''
 
 //COUNTING PROCESSES
 process count_fastq{
@@ -24,7 +25,7 @@ process count_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/countfastq.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/countfastq.log"
     }
 
     input:
@@ -36,8 +37,9 @@ process count_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1\E/,"")    
         oo = fn+"_raw_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2\E/,"")    
@@ -67,7 +69,7 @@ process count_trimmed_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_trimmedreads.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_trimmedreads.log"
     }
 
     input:
@@ -79,8 +81,9 @@ process count_trimmed_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")    
         oo = fn+"_trimmed_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2_trimmed\E/,"")    
@@ -110,7 +113,7 @@ process count_dedup_fastq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"   
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_dedupreads.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_dedupreads.log"
     }
 
     input:
@@ -122,8 +125,9 @@ process count_dedup_fastq{
 
     script:    
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_dedup\E/,"")    
         oo = fn+"_dedup_R1_fq.count"        
         ft = file(r2).getSimpleName().replaceAll(/\Q_R2_dedup\E/,"")    
@@ -154,7 +158,7 @@ process count_mappers{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.count"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/count_mappers.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/count_mappers.log"
 
     }
 
@@ -186,9 +190,11 @@ process featurecount{
     saveAs: {filename ->
         if (filename.indexOf(".count") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.gz"        
         else if (filename.indexOf(".summary") > 0)      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}.counts.summary"        
-        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/featurecount_${FEAT}s.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/COUNTING/countreads/featurecount_${FEAT}s.log"
 
     }
+
+    publishDir "${workflow.workDir}/../LOGS/${SCOMBO}/${CONDITION}/COUNTING/countreads" , mode: 'copy', pattern: "*.summary"
 
     input:
     path fls
@@ -220,14 +226,14 @@ process featurecount{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded $COUNTMAP -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded $COUNTMAP -a <(gzip -cdfq $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
 
 process prepare_count_table{
-    conda "$DEENV"+".yaml"
-    container "oras://jfallmann/monsda:"+"$DEENV"
+    conda "base.yaml"
+    container "oras://jfallmann/monsda:"+"base"
     cpus THREADS
 	cache 'lenient'
     //validExitStatus 0,1
@@ -237,7 +243,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DE/countreads/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -251,9 +257,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DEREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DEREPS -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -268,7 +274,7 @@ process summarize_counts{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename == "summary")      "COUNTS/${SCOMBO}/${CONDITION}/summary"
-        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/summarize_counts.log"
+        else if (filename == "log")        "LOGS/${SCOMBO}/${CONDITION}/COUNTING/countreads/summarize_counts.log"
     }
 
     input:
@@ -292,13 +298,13 @@ workflow COUNTING{
 
     if (PAIRED == 'paired'){
         RAWSAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R2,R1}.*fastq.gz"
+            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
         }
         TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
         DEDUPSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_{R2,R1}*.fastq.gz"
+            element -> return "${workflow.workDir}/../DEDUP_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
         }
     }else{
         RAWSAMPLES = SAMPLES.collect{
@@ -334,7 +340,7 @@ workflow COUNTING{
     }        
     count_mappers(mapsamples_ch.collate(1))
     featurecount(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_count_table(featurecount.out.fc_cts.collate(1))
+    prepare_count_table(featurecount.out.fc_cts.collect())
     summarize_counts(count_fastq.out.fq_cts.concat(count_dedup_fastq.out.fqd_cts.concat(count_trimmed_fastq.out.fqt_cts.concat(count_mappers.out.map_cts))).collect())
 
     emit:

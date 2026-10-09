@@ -40,7 +40,7 @@ process bwameth_idx{
 
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
-        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/bwameth_index.log"
+        if (filename.indexOf("Log.out") > 0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/bwameth/index.log"
         else if (filename.indexOf(".idx") > 0)           "$MAPIDX"
         else                                             "$MAPUIDX"
     }
@@ -74,7 +74,7 @@ process bwameth_mapping{
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/bwameth/${file(filename).getName()}"
         else null
     }
 
@@ -89,8 +89,9 @@ process bwameth_mapping{
     script:
     idx = reads[0]
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[2]
+        rds = sort_reads(reads[1..2])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

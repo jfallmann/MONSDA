@@ -14,7 +14,7 @@ if paired == 'paired':
             unmatched_r1 = temp("FASTQ/{combo}/{file}_unmatched_R1.fastq.gz"),
             unmatched_r2 = temp("FASTQ/{combo}/{file}_unmatched_R2.fastq.gz")
         log:
-            "LOGS/{combo}/{file}_multx_first.log"
+            "LOGS/{combo}/{file}/TRIMMING/multx/multx_first.log"
         conda: ""+MULTXENV+".yaml"
         container: "oras://jfallmann/monsda:"+MULTXENV+""
         threads: MAXTHREAD
@@ -45,7 +45,7 @@ if paired == 'paired':
             o1 = temp("FASTQ/{combo}/{file}_R1_demux_second.fastq.gz"),
             o2 = temp("FASTQ/{combo}/{file}_R2_demux_second.fastq.gz")
         log:
-            "LOGS/{combo}/{file}_multx_second.log"
+            "LOGS/{combo}/{file}/TRIMMING/multx/multx_second.log"
         conda: ""+MULTXENV+".yaml"
         container: "oras://jfallmann/monsda:"+MULTXENV+""
         threads: MAXTHREAD

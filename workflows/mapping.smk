@@ -3,7 +3,7 @@ rule sortsam:
     output: sortedsam = report("MAPPED/{combo}/{file}_mapped_sorted.sam.gz", category="SORTING"),
             tmphead = temp("MAPPED/{combo}/{file}_mapped_header.gz"),
             tmpfile = temp("TMP/{combo}/{file}")
-    log:    "LOGS/{combo}/{file}/sortsam.log"
+    log:    "LOGS/{combo}/{file}/MAPPING/samtools/sortsam.log"
     conda: "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
@@ -16,7 +16,7 @@ rule sam2bam:
     input:  sortedsam = rules.sortsam.output.sortedsam
     output: bam = report("MAPPED/{combo}/{file}_mapped_sorted.bam", category="2BAM"),
             bamindex = "MAPPED/{combo}/{file}_mapped_sorted.bam.bai"
-    log:    "LOGS/{combo}/{file}/sam2bam.log"
+    log:    "LOGS/{combo}/{file}/MAPPING/samtools/sam2bam.log"
     conda: "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
@@ -27,7 +27,7 @@ rule uniqsam:
     input:  sortedsam = rules.sortsam.output.sortedsam,
             bam = rules.sam2bam.output
     output: uniqsam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.sam.gz", category="UNIQUE")
-    log: "LOGS/{combo}/{file}/uniqsam.log"
+    log: "LOGS/{combo}/{file}/MAPPING/samtools/uniqsam.log"
     conda: "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD
@@ -39,7 +39,7 @@ rule sam2bamuniq:
            bam = rules.sam2bam.output
     output:  uniqbam = report("MAPPED/{combo}/{file}_mapped_sorted_unique.bam", category="2BAM"),
              uniqbamindex = "MAPPED/{combo}/{file}_mapped_sorted_unique.bam.bai"
-    log:     "LOGS/{combo}/{file}/sam2bamuniq.log"
+    log:     "LOGS/{combo}/{file}/MAPPING/samtools/sam2bamuniq.log"
     conda:   "samtools.yaml"
     container: "oras://jfallmann/monsda:samtools"
     threads: MAXTHREAD

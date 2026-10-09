@@ -15,7 +15,7 @@ process trim{
     saveAs: {filename ->
         if (filename.indexOf("_trimmed.fastq.gz") > 0)     "TRIMMED_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_val_\d{1}|_trimmed|_dedup/,"")}_trimmed.fastq.gz"
         else if (filename.indexOf("report.txt") >0)        "TRIMMED_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/.fastq.gz/,"")}_trimming_report.txt"
-        else if (filename.indexOf(".log") >0)              "LOGS/${COMBO}/${CONDITION}/TRIMMING/${file(filename).getSimpleName()}.log"
+        else if (filename.indexOf(".log") >0)              "LOGS/${COMBO}/${CONDITION}/TRIMMING/fastp/${file(filename).getSimpleName()}.log"
         else null
     }
 
@@ -28,8 +28,9 @@ process trim{
 
     script:
     if (PAIRED == 'paired'){
-        r1 = reads[0]
-        r2 = reads[1]
+        rds = sort_reads(reads)
+        r1 = rds[0]
+        r2 = rds[1]
         o = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         p = file(r2).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
         r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"

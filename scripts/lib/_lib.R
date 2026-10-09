@@ -36,6 +36,49 @@ get_exon_name <- function(id, df) {
     }
 }
 
+get_gene_coords <- function(id, df) {
+    if (!"gene_id" %in% colnames(df)) {
+        message("WARNING: gene_id not found as colname, will be replaced by first match of colname with ID")
+        colnames(df)[grepl("id$", names(df), ignore.case = TRUE)][1] <- "gene_id"
+    }
+    coord_rows <- df[df["type"] == "gene" & df["gene_id"] == id, ]
+    if (nrow(coord_rows) == 0) {
+        return(NA_character_)
+    }
+    coord_list <- paste(coord_rows$seqnames, coord_rows$start, coord_rows$end, coord_rows$strand, sep = ":")
+    if (length(unique(coord_list)) == 1) {
+        return(coord_list[1])
+    } else {
+        message(paste("WARNING: ambigous gene id: ", id))
+        return(paste(unique(coord_list), collapse = "|"))
+    }
+}
+
+
+add_gene_coordinates <- function(df, gene_ids, gtf_df, after = NULL) {
+    if (!"gene_id" %in% colnames(gtf_df)) {
+        message("WARNING: gene_id not found as colname, will be replaced by first match of colname with ID")
+        colnames(gtf_df)[grepl("id$", names(gtf_df), ignore.case = TRUE)][1] <- "gene_id"
+    }
+    df <- as.data.frame(df)
+    g <- gtf_df[gtf_df["type"] == "gene", ]
+    coords <- paste(g$seqnames, g$start, g$end, g$strand, sep = ":")
+    names(coords) <- as.character(g$gene_id)
+    df$Coordinates <- unname(coords[as.character(gene_ids)])
+    cols <- colnames(df)
+    cols <- cols[cols != "Coordinates"]
+    if (!is.null(after) && !is.na(after) && after %in% cols) {
+        pos <- match(after, cols)
+        new_order <- append(cols, "Coordinates", after = pos)
+    } else {
+        if (!is.null(after) && !is.na(after)) {
+            message(paste("WARNING: column", after, "not found, placing Coordinates first"))
+        }
+        new_order <- c("Coordinates", cols)
+    }
+    df[, new_order, drop = FALSE]
+}
+
 fpkmToTpm <- function(fpkm){
     exp(log(fpkm) - log(sum(fpkm)) + log(1e6))
 }
@@ -58,4 +101,158 @@ calc_tpm <- function(counts, gtf) {
     scaling_factors <- colSums(rpk)
     tpm <- t(t(rpk) / scaling_factors * 1e6)
     return(tpm)
+}
+
+## Minimum number of samples in any non-empty condition group, used for the
+## low-count prefilter. Empty factor levels are dropped first so that a group
+## without samples cannot silently keep every gene.
+min_group_size <- function(cond) {
+    tab <- table(droplevels(factor(cond)))
+    if (length(tab) == 0) {
+        stop("No non-empty condition groups available for the low-count filter")
+    }
+    min(tab)
+}
+
+## Parse a MONSDA comparison string ("name:A+B-vs-C+D,...") into a list of
+## contrasts with named A (numerator) and B (denominator) group vectors.
+parse_comparisons <- function(cmp) {
+    lapply(strsplit(cmp, ",")[[1]], function(contrast) {
+        name <- strsplit(contrast, ":")[[1]][1]
+        groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")[[1]]
+        list(
+            name = name,
+            A = unlist(strsplit(groups[1], "\\+"), use.names = FALSE),
+            B = unlist(strsplit(groups[2], "\\+"), use.names = FALSE)
+        )
+    })
+}
+
+## Validate that every comparison is a pairwise contrast between two distinct,
+## existing condition groups. Compound groups (pooled or weighted semantics)
+## are not supported and rejected with a clear error before any fit runs.
+validate_comparisons <- function(parsed, condition_levels) {
+    for (cmp in parsed) {
+        if (length(cmp$A) != 1 || length(cmp$B) != 1) {
+            stop(paste0("Comparison '", cmp$name, "' uses compound groups (", paste(cmp$A, collapse = "+"), "-vs-", paste(cmp$B, collapse = "+"), "); only one group per side is supported"))
+        }
+        if (!cmp$A %in% condition_levels) {
+            stop(paste0("Comparison '", cmp$name, "' references unknown group '", cmp$A, "' (available: ", paste(condition_levels, collapse = ", "), ")"))
+        }
+        if (!cmp$B %in% condition_levels) {
+            stop(paste0("Comparison '", cmp$name, "' references unknown group '", cmp$B, "' (available: ", paste(condition_levels, collapse = ", "), ")"))
+        }
+        if (cmp$A == cmp$B) {
+            stop(paste0("Comparison '", cmp$name, "' compares group '", cmp$A, "' against itself"))
+        }
+    }
+    invisible(parsed)
+}
+
+## Select the samples of a pairwise contrast from the full annotation and count
+## tables. Samples are chosen via the metadata condition column (never by regex
+## on sample names) and ordered B then A; the count matrix is subset by the
+## ordered sample rownames so metadata and counts stay exactly aligned.
+select_contrast_samples <- function(sampleData_all, countData_all, A, B) {
+    if (length(A) != 1 || length(B) != 1) {
+        stop("select_contrast_samples requires exactly one group per side")
+    }
+    if (anyDuplicated(colnames(countData_all))) {
+        stop(paste0("Duplicate sample IDs in count table: ", paste(colnames(countData_all)[duplicated(colnames(countData_all))], collapse = ", ")))
+    }
+    sampleData <- droplevels(rbind(subset(sampleData_all, condition == B), subset(sampleData_all, condition == A)))
+    if (anyDuplicated(rownames(sampleData))) {
+        stop(paste0("Duplicate sample IDs in comparison: ", paste(rownames(sampleData)[duplicated(rownames(sampleData))], collapse = ", ")))
+    }
+    if (!all(rownames(sampleData) %in% colnames(countData_all))) {
+        stop("Count file does not correspond to the annotation file for this comparison")
+    }
+    countData <- countData_all[, rownames(sampleData), drop = FALSE]
+    list(sampleData = sampleData, countData = countData)
+}
+
+## Global shift of a contrast: the median log fold change over all tested genes.
+## Under spike-in normalization this offset is the overall expression change
+## between the two conditions, which conventional normalization would have
+## scaled away. Subtracting it leaves each gene's own deviation from that shift.
+lfc_global_shift <- function(lfc) {
+    vals <- lfc[is.finite(lfc)]
+    if (length(vals) == 0) {
+        message("WARNING: no finite log fold changes, global shift set to 0")
+        return(0)
+    }
+    median(vals)
+}
+
+## Write the per-sample scaling factor spike-in normalization derived for a
+## contrast (geometric-mean-centered, 1 = no rescaling relative to the other
+## samples in the contrast), so that shift is traceable independent of the DE
+## results table.
+write_scaling_log <- function(scaling_factors, samples, path) {
+    log_df <- data.frame(sample = samples, spikein_scaling_factor = scaling_factors)
+    write.table(log_df, path, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+
+## Format a DESeq2 results object for export: add gene name and ID, select the
+## canonical column order by name and append genomic coordinates after Gene_ID.
+## Shrunk tables carry no stat column; raw (unshrunk) tables append stat last.
+## With center = TRUE a log2FoldChange_centered column is appended last, holding
+## the deviation from the contrast's global shift. It is appended rather than
+## inserted because the significance filters address columns by position.
+format_deseq2_results <- function(res, gtf_gene, shrink = TRUE, center = FALSE) {
+    res$Gene <- unlist(lapply(rownames(res), function(x) {
+        get_gene_name(x, gtf_gene)
+    }))
+    res$Gene_ID <- rownames(res)
+    if (shrink) {
+        res <- res[, c("Gene_ID", "Gene", "baseMean", "log2FoldChange", "lfcSE", "pvalue", "padj")]
+    } else {
+        res <- res[, c("Gene_ID", "Gene", "baseMean", "log2FoldChange", "lfcSE", "pvalue", "padj", "stat")]
+    }
+    if (center) {
+        shift <- lfc_global_shift(res$log2FoldChange)
+        message(paste0("Global shift (median log2FoldChange) subtracted in log2FoldChange_centered: ", shift))
+        res$log2FoldChange_centered <- res$log2FoldChange - shift
+    }
+    add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+}
+
+## Format an edgeR result table (qlf$table or a topTags table) for export.
+## Column names follow the DESeq2 template so both engines emit the same header:
+## logFC -> log2FoldChange, PValue -> pvalue, BH-adjusted p -> padj, and the test
+## statistic (F for quasi-likelihood, LR for likelihood ratio) -> stat. logCPM
+## keeps its own name on purpose: it is a log-scale mean and is not the same
+## quantity as DESeq2's baseMean. Tests without a statistic column (exactTest)
+## simply omit stat. With center = TRUE the deviation from the contrast's global
+## shift is appended last as log2FoldChange_centered.
+format_edger_results <- function(tbl, gtf_gene, center = FALSE) {
+    tbl <- as.data.frame(tbl)
+    for (required in c("logFC", "logCPM", "PValue")) {
+        if (!required %in% colnames(tbl)) {
+            stop(paste0("format_edger_results: missing required column ", required))
+        }
+    }
+    gene_ids <- rownames(tbl)
+    out <- data.frame(
+        Gene_ID = gene_ids,
+        Gene = unlist(lapply(gene_ids, function(x) {
+            get_gene_name(x, gtf_gene)
+        })),
+        logCPM = tbl$logCPM,
+        log2FoldChange = tbl$logFC,
+        pvalue = tbl$PValue,
+        padj = if ("FDR" %in% colnames(tbl)) tbl$FDR else p.adjust(tbl$PValue, method = "BH"),
+        stringsAsFactors = FALSE
+    )
+    rownames(out) <- gene_ids
+    stat_col <- intersect(c("F", "LR"), colnames(tbl))
+    if (length(stat_col) > 0) {
+        out$stat <- tbl[[stat_col[1]]]
+    }
+    if (center) {
+        shift <- lfc_global_shift(out$log2FoldChange)
+        message(paste0("Global shift (median log2FoldChange) subtracted in log2FoldChange_centered: ", shift))
+        out$log2FoldChange_centered <- out$log2FoldChange - shift
+    }
+    add_gene_coordinates(out, out$Gene_ID, gtf_gene, after = "Gene_ID")
 }

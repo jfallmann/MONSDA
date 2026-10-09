@@ -8,13 +8,15 @@ process dedup_bam{
     container "oras://jfallmann/monsda:"+"$DEDUPENV"
     cpus 1
 	cache 'lenient'
+    memory { 20.GB * (1 << ((task.attempt ?: 1) - 1)) }
+    time { 8.h * (1 << ((task.attempt ?: 1) - 1)) }
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.endsWith("_dedup.bam"))          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf("_dedup.bam.bai") > 0) "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
-        else if (filename.indexOf("dedup.log") > 0)           "LOGS/${COMBO}/${CONDITION}/DEDUP/${file(filename).getName()}"
+        else if (filename.indexOf("dedup.log") > 0)           "LOGS/${COMBO}/${CONDITION}/DEDUP/umicollapse/${file(filename).getName()}"
         else null
     }
 
@@ -26,9 +28,6 @@ process dedup_bam{
     path "*_dedup.bam", emit: bam
     path "*_dedup.bam.bai", emit: bai
     path "*_dedup.log", emit: logs
-
-    memory { 20.GB * (1 << ((task.attempt ?: 1) - 1)) }
-    time { 8.h * (1 << ((task.attempt ?: 1) - 1)) }
 
     script:
     bams = todedup[0]

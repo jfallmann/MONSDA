@@ -318,6 +318,9 @@ for (contrast in comparisons[[1]]) {
         get_gene_name(x, gtf.df)
     })
 
+    res <- add_gene_coordinates(res, res$gene_id, gtf.df, after = "gene_id")
+    res.txp <- add_gene_coordinates(res.txp, res.txp$gene_id, gtf.df, after = "gene_id")
+
     res <- res[order(res$adj_pvalue), ]
     res.txp <- res.txp[order(res$adj_pvalue), ]
     proportions <- proportions[order(proportions$lfc), ]
@@ -326,6 +329,7 @@ for (contrast in comparisons[[1]]) {
     for (c in 3:(length(colnames(proportions.print)) - 4)) {
         colnames(proportions.print)[c] <- sampleData$original_sample_id[sampleData$sample_id == colnames(proportions.print)[c]]
     }
+    proportions.print <- add_gene_coordinates(proportions.print, proportions.print$gene_id, gtf.df, after = "gene_id")
     res.print <- as.data.frame(apply(res, 2, as.character))
     res.txp.print <- as.data.frame(apply(res.txp, 2, as.character))
 

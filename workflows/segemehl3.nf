@@ -39,7 +39,7 @@ process segemehl3_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
     saveAs: {filename ->
         if (filename == "segemehl3.idx")                  "$MAPIDX"
-        else if (filename.indexOf(".log") >0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)             "LOGS/${COMBO}/${CONDITION}/MAPPING/segemehl3/${file(filename).getName()}"
         else                                              "$MAPUIDX"
     }
 
@@ -71,7 +71,7 @@ process segemehl3_mapping{
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".bed") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
         else if (filename.indexOf(".txt") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/\Q_R1\E/,"").replaceAll(/\Q_trimmed.fastq\E/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/segemehl3/${file(filename).getName()}"
         else null
     }
 
@@ -92,8 +92,9 @@ process segemehl3_mapping{
     idx = idxfile.getName()
 
     if (PAIRED == 'paired'){
-        r1 = reads[2]
-        r2 = reads[3]
+        rds = sort_reads(reads[2..3])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

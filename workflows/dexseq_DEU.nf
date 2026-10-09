@@ -28,7 +28,7 @@ process prepare_deu_annotation{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".gtf.gz") > 0)      "${DEUREFDIR}/${file(filename).getName().replaceAll(/\Qdexseqflat\E/,"dexseq")}"
-        else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/featurecount_dexseq_annotation.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/DEU/dexseq/featurecount_dexseq_annotation.log"
     }
 
     input:
@@ -69,7 +69,7 @@ process featurecount_dexseq{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DEU/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"                
-        else if (filename.indexOf(".log") > 0)        "LOGS/DEU/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_dexseq_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DEU/dexseq/featurecounts_dexseq_unique.log"
     }
 
     input:
@@ -102,7 +102,7 @@ process featurecount_dexseq{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(zcat $fcanno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(gzip -cdfq $fcanno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -118,7 +118,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DEU/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DEU/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DEU/dexseq/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -132,9 +132,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DEUREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DEUREPS -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -151,7 +151,7 @@ process run_dexseq{
         else if (filename.indexOf("_figure") > 0)      "DEU/${SCOMBO}/Figures/${file(filename).getName()}" 
         else if (filename.indexOf(".html") > 0)      "DEU/${SCOMBO}/DEXSeqReport_${COMBO}_${DEUCOMP}/${file(filename).getName()}"
         else if (filename.indexOf("SESSION") > 0)      "DEU/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/${SCOMBO}/run_dexseq.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/dexseq/run_dexseq.log"
     }
 
     input:
@@ -189,7 +189,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DEU/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/dexseq/filter_deseq2.log"
     }
 
     input:
@@ -201,7 +201,7 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
+    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then python3 $BINS/Analysis/filter_significant.py --effect-column log2FoldChange --adjusted-p-column padj --p-cutoff $PVAL --lfc-cutoff $LFC --input \"\${i}\" --output-sig Sig_\${i} --output-up SigUP_\${i} --output-down SigDOWN_\${i}; else touch Sig_\${i} SigUP_\${i} SigDOWN_\${i}; fi;done 2> log
     """
 }
 
@@ -215,7 +215,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DEU/filter_dexseq.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DEU/dexseq/filter_dexseq.log"
     }
 
     input:

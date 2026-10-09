@@ -1,0 +1,109 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+usage: /opt/conda/envs/monsda/bin/segemehl.x 
+                    [-sbcKVTYCO] -d <file> [<file>] [-q <file>] 
+                    [-p <file>] [-i <file>] [-j <file>] 
+                    [-x <file>] [-y <file>] [-B <string>] [-F <n>] 
+                    [-m <n>] [-t <n>] [-o <string>] [-u <file>] 
+                    [-D <n>] [-J <n>] [-E <double>] [-w <double>] 
+                    [-M <n>] [-r <n>] [-S] [--nohead] [-e <n>] 
+                    [-n <n>] [-X <n>] [-A <n>] [-W <n>] [-U <n>] 
+                    
+                    [-Z <n>] [-l <f>] [-H] [--showalign] [-P <string>] [-Q <string>] [-R <n>] [-I <n>] 
+  Heuristic mapping of short sequences
+
+ [INPUT]                         
+ -d, --database <file> [<file>]  list of path/filename(s) of 
+                                 database sequence(s)
+ -q, --query <file>              path/filename of query sequences 
+                                 (default:none)
+ -p, --mate <file>               path/filename of mate pair 
+                                 sequences (default:none)
+ -i, --index <file>              path/filename of db index 
+                                 (default:none)
+ -j, --index2 <file>             path/filename of second db index 
+                                 (default:none)
+ -x, --generate <file>           generate db index and store to disk 
+                                 (default:none)
+ -y, --generate2 <file>          generate second db index and store 
+                                 to disk (default:none)
+ -B, --filebins <string>         file bins with basename <string> 
+                                 for easier data handling 
+                                 (default:none)
+ -F, --bisulfite <n>             bisulfite mapping with 
+                                 methylC-seq/Lister et al. (=1) or 
+                                 bs-seq/Cokus et al. protocol (=2) 
+                                 (default:0)
+ [GENERAL]                       
+ -m, --minsize <n>               minimum size of queries (default:12)
+ -s, --silent                    shut up!
+ -b, --brief                     brief output
+ -c, --checkidx                  check index
+ -t, --threads <n>               start <n> threads (default:1)
+ -o, --outfile <string>          outputfile (default:none)
+ -u, --nomatchfilename <file>    filename for unmatched reads 
+                                 (default:none)
+ [SEEDPARAMS]                    
+ -D, --differences <n>           search seeds initially with <n> 
+                                 differences (default:1)
+ -J, --jump <n>                  search seeds with jump size <n> 
+                                 (0=automatic) (default:0)
+ -E, --evalue <double>           max evalue (default:5.000000)
+ -w, --maxsplitevalue <double>   max evalue for splits 
+                                 (default:50.000000)
+ -M, --maxinterval <n>           maximum width of a suffix array 
+                                 interval, i.e. a query seed will 
+                                 be omitted if it matches more 
+                                 than <n> times (default:100)
+ -r, --maxout <n>                maximum number of alignments that 
+                                 will be reported. If set to zero, 
+                                 all alignments will be reported 
+                                 (default:0)
+ -S, --splits                    detect split/spliced reads 
+                                 (default:none)
+ -K, --SEGEMEHL                  output SEGEMEHL format (needs to be 
+                                 selected for brief)
+ -V, --MEOP                      output MEOP field for easier 
+                                 variance calling in SAM (XE:Z:)
+ --nohead                        do not output header
+ [SEEDEXTENSIONPARAMS]           
+ -e, --extensionscore <n>        score of a match during extension 
+                                 (default:2)
+ -n, --extensionpenalty <n>      penalty for a mismatch during 
+                                 extension (default:4)
+ -X, --dropoff <n>               dropoff parameter for extension 
+                                 (default:8)
+ [ALIGNPARAMS]                   
+ -A, --accuracy <n>              min percentage of matches per read 
+                                 in semi-global alignment 
+                                 (default:90)
+ -W, --minsplicecover <n>        min coverage for spliced 
+                                 transcripts (default:80)
+ -U, --minfragscore <n>          min score of a spliced fragment 
+                                 (default:18)
+ -Z, --minfraglen <n>            min length of a spliced fragment 
+                                 (default:20)
+ -l, --splicescorescale <f>      report spliced alignment with score 
+                                 s only if <f>*s is larger than 
+                                 next best spliced alignment 
+                                 (default:1.000000)
+ -H, --hitstrategy               report only best scoring hits (=1) 
+                                 or all (=0) (default:1)
+ --showalign                     show alignments
+ -P, --prime5 <string>           add 5' adapter (default:none)
+ -Q, --prime3 <string>           add 3' adapter (default:none)
+ -R, --clipacc <n>               clipping accuracy (default:70)
+ -T, --polyA                     clip polyA tail
+ -Y, --autoclip                  autoclip unknown 3prime adapter
+ -C, --hardclip                  enable hard clipping
+ -O, --order                     sorts the output by chromsome and 
+                                 position (might take a while!)
+ -I, --maxinsertsize <n>         maximum size of the inserts (paired 
+                                 end) (default:5000)
+ [VERSION]
+  0.2.0-418 (2015-01-05 05:17:35 -0500 (Mon, 05 Jan 2015))
+ [BUGS]
+  Please report bugs to steve@bioinf.uni-leipzig.de
+ [REFERENCES]
+  SEGEMEHL is free software for non-commercial use 
+  (C) 2008 Bioinformatik Leipzig
+

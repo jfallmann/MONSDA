@@ -140,7 +140,7 @@
       }
     }
   },
-  "MAP": {
+  "MAPPING": {
     "TOOLS": {
       "star": "STAR",
       "segemehl3": "segemehl.x",
@@ -233,7 +233,7 @@
           "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias"
+                "QUANT": "--seqBias --gcBias"
             }
         }
       }
@@ -306,7 +306,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -345,7 +345,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -386,7 +386,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -413,7 +413,8 @@
   "DTU": {
     "TOOLS": {
       "dexseq": "Analysis/DTU/DEXSEQ.R",
-      "drimseq": "Analysis/DTU/DRIMSEQ.R"
+      "drimseq": "Analysis/DTU/DRIMSEQ.R",
+      "spit": "Analysis/DTU/SPIT.py"
     },
     "COMPARABLE": {
       "WTvsKO": [
@@ -427,7 +428,7 @@
     },
     "EXCLUDE": [],
     "CUTOFFS": {
-      "pvalue": "0.05",
+      "padj": "0.05",
       "lfc": "1.5"
     },
     "id": {
@@ -437,7 +438,7 @@
             "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias",
+                "QUANT": "--seqBias --gcBias",
                 "DTU": ""
             }
         },
@@ -446,7 +447,16 @@
             "OPTIONS":
             {
                 "INDEX": "",
-                "QUANT": "--validateMappings --seqBias --gcBias",
+                "QUANT": "--seqBias --gcBias",
+                "DTU": ""
+            }
+        },
+        "spit": 
+        {
+            "OPTIONS":
+            {
+                "INDEX": "",
+                "QUANT": "--seqBias --gcBias",
                 "DTU": ""
             }
         }
@@ -472,4 +482,27 @@
             }
         }
     }
+  },
+  "FUSIONS" : {
+    "TOOLS" :
+    {
+      "starfusion" : "STAR-Fusion"
+    },
+    "id": {
+        "condition": {
+            "setting": {
+                "ENV" : "starfusion",
+                "BIN" : "STAR-Fusion",
+                "starfusion":{
+                    "OPTIONS":
+                    {  
+                        "INDEX": "PATH_TO_CTAT_genome_lib_dir",
+                        "BUILD": "",
+                        "FUSION": ""
+                    }
+                }
+            }
+        }
+    }
+  }
 }

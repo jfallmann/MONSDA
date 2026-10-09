@@ -32,14 +32,37 @@ print(args)
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+if (!file.exists(libp)) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("Rscript --file path not found in commandArgs")
+    }
+    libp <- file.path(dirname(normalizePath(postde_file)), "..", "..", "lib", "_lib.R")
+}
 source(libp)
+
+postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
+if (postde_enabled) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("MONSDA_POSTDE=1 but Rscript --file path not found in commandArgs")
+    }
+    postde_lib <- file.path(dirname(normalizePath(postde_file)), "..", "PostDE", "export.R")
+    if (!file.exists(postde_lib)) {
+        stop(paste0("MONSDA_POSTDE=1 but export.R not found at ", postde_lib))
+    }
+    source(postde_lib)
+    postde_bundles <- list()
+}
 
 ## set thread-usage
 BPPARAM <- MulticoreParam(workers = availablecores)
 
 ### SCRIPT
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE, sep = "\t"))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$batch <- as.factor(sampleData_all$batch)
 sampleData_all$type <- as.factor(sampleData_all$type)
@@ -51,7 +74,8 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Combinations of conditions
-comparison <- strsplit(cmp, ",")
+comparison <- parse_comparisons(cmp)
+validate_comparisons(comparison, levels(sampleData_all$condition))
 
 ## check combi
 if (combi == "none") {
@@ -76,8 +100,8 @@ cpm_matrix <- calc_cpm(countData_all)
 tpm_matrix <- calc_tpm(countData_all, gtf_gene)
 
 # Write out CPM and TPM tables
-write.table(cpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-write.table(tpm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(cpm_matrix, rownames(cpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+write.table(add_gene_coordinates(tpm_matrix, rownames(tpm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 # Normalize by spike in if available
 if (spike != "") {
@@ -86,22 +110,27 @@ if (spike != "") {
     setwd(WD)
     ctrlgenes <- readLines(spiken)
     setwd(outdir)
-    counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
-    sampleData_norm <- cbind(sampleData_all, pData(counts_norm))
-    counts_norm <- as.data.frame(normCounts(counts_norm))
+    counts_norm_set <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
+    sampleData_norm <- cbind(sampleData_all, pData(counts_norm_set))
+    ctrl_idx_all <- rownames(counts(counts_norm_set)) %in% ctrlgenes # for spike-in-derived size factors
+    # Derive size factors from the spike-ins themselves (controlGenes); normCounts() from RUVg
+    # only removes unwanted variation (W_1) and does not carry the spike-in scale.
+    dds_sf <- DESeqDataSetFromMatrix(countData = counts(counts_norm_set), colData = sampleData_norm, design = ~1)
+    dds_sf <- estimateSizeFactors(dds_sf, controlGenes = ctrl_idx_all)
+    counts_norm <- as.data.frame(counts(dds_sf, normalized = TRUE))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
-     write.table(counts_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(counts_norm_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(countData_clean, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+     write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(counts_norm_clean, rownames(counts_norm_clean), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(countData_clean, rownames(countData_clean), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     write.table(sampleData_norm, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     # Calculate CPM and TPM
     cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
     tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
 
     # Write out CPM and TPM tables
-    write.table(cpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(tpm_norm_matrix, gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(cpm_norm_matrix, rownames(cpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "cpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(add_gene_coordinates(tpm_norm_matrix, rownames(tpm_norm_matrix), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "tpm_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
 
 }
 #### Now plot and print over-all comparisons
@@ -114,7 +143,7 @@ print(design)
 dds <- DESeqDataSetFromMatrix(countData = countData_all, colData = sampleData_all, design = design)
 
 # filter low counts
-smallestGroupSize <- length(unique(sampleData_all$condition))
+smallestGroupSize <- min_group_size(sampleData_all$condition)
 keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
 dds <- dds[keep, ]
 
@@ -129,8 +158,8 @@ print(DESeq2::plotPCA(vsd, intgroup = c("condition")) + geom_text_repel(aes(labe
 dev.off()
 
 # We also write the normalized counts to file
-write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+write.table(add_gene_coordinates(as.data.frame(assay(rld)), rownames(assay(rld)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+write.table(add_gene_coordinates(as.data.frame(assay(vsd)), rownames(assay(vsd)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, "DataSet", "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 
 # Here we choose blind so that the initial conditions setting does not influence the outcome, ie we want to see if the conditions cluster based purely on the individual datasets, in an unbiased way. According to the documentation, the rlogTransformation method that converts counts to log2 values is apparently better than the old varienceStabilisation method when the data size factors vary by large amounts.
 
@@ -194,19 +223,18 @@ dev.off()
 
 ### Now we run comparisons
 
-for (contrast in comparison[[1]]) {
-    contrast_name <- strsplit(contrast, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
+for (contrast in comparison) {
+    contrast_name <- contrast$name
     print(paste("Comparing ", contrast_name, sep = ""))
 
     # determine contrast
-    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names = FALSE)
-    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)
+    A <- contrast$A
+    B <- contrast$B
 
-    # subset Datasets for pairwise comparison
-    countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
-    rownames(countData) <- rownames(countData_all)
-    sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
+    # subset Datasets for pairwise comparison: metadata-based selection, B then A order
+    sel <- select_contrast_samples(sampleData_all, countData_all, A, B)
+    sampleData <- sel$sampleData
+    countData <- sel$countData
 
     ## Create design-table considering different types (paired, unpaired) and batches
     if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1) {
@@ -233,15 +261,24 @@ for (contrast in comparison[[1]]) {
         setwd(outdir)
 
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
+        ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived size factors
+        counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(design)), collapse = ""))  # Last argument is variable of interest
         #design_norm <- as.formula(paste(deparse(design), " + W_1"), collapse = "")
-        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
+        print(paste0("Design with spike-in normalization: ", paste(all.vars(design_norm), collapse = ", ")))
 
+        # Build with the full (incl. spike-in) counts so that size factors can be derived from the
+        # spike-ins themselves (controlGenes); this is what puts the spike-in scale into the
+        # normalized results, the W_1 covariate alone only adjusts for unwanted variation, not scale.
         dds_norm <- DESeqDataSetFromMatrix(countData = counts(counts_norm), colData = sampleData_norm, design = design_norm)
+        dds_norm <- estimateSizeFactors(dds_norm, controlGenes = ctrl_idx)
+        write_scaling_log(sizeFactors(dds_norm), colnames(dds_norm), paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "scaling.log", sep = "_"))
+        dds_norm <- dds_norm[!ctrl_idx, ] # drop spike-ins from testing, size factors are retained
+
         # filter low counts
-        smallestGroupSize <- length(unique(sampleData_norm$condition))
+        smallestGroupSize <- min_group_size(sampleData_norm$condition)
         keep_norm <- rowSums(counts(dds_norm) >= 10) >= smallestGroupSize
         dds_norm <- dds_norm[keep_norm, ]
 
@@ -261,15 +298,15 @@ for (contrast in comparison[[1]]) {
         dev.off()
 
         # We also write the normalized counts to file
-        write.table(as.data.frame(assay(rld_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-        write.table(as.data.frame(assay(vsd_norm)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+        write.table(add_gene_coordinates(as.data.frame(assay(rld_norm)), rownames(assay(rld_norm)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+        write.table(add_gene_coordinates(as.data.frame(assay(vsd_norm)), rownames(assay(vsd_norm)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
     }
 
     # Create DESeqDataSet
     dds <- DESeqDataSetFromMatrix(countData = countData, colData = sampleData, design = design)
 
     # filter low counts
-    smallestGroupSize <- length(unique(sampleData$condition))
+    smallestGroupSize <- min_group_size(sampleData$condition)
     keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
     dds <- dds[keep, ]
 
@@ -294,8 +331,8 @@ for (contrast in comparison[[1]]) {
     dev.off()
 
     # We also write the normalized counts to file
-    write.table(as.data.frame(assay(rld)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
-    write.table(as.data.frame(assay(vsd)), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+    write.table(add_gene_coordinates(as.data.frame(assay(rld)), rownames(assay(rld)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "rld.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
+    write.table(add_gene_coordinates(as.data.frame(assay(vsd)), rownames(assay(vsd)), gtf_gene), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "vsd.tsv.gz", sep = "_")), sep = "\t", col.names = NA)
 
     tryCatch({
         # initialize empty objects
@@ -306,17 +343,16 @@ for (contrast in comparison[[1]]) {
         res_shrink <- lfcShrink(dds = dds, coef = paste("condition", A, "vs", B, sep = "_"), res = res, type = "apeglm")
 
         # add comp object to list for image
+        if (postde_enabled) {
+            postde_capture(engine = "deseq2", id = contrast_name, A = A, B = B, normalized = FALSE, metadata = sampleData, counts = countData, expression = assay(vsd), formula = design, results = postde_results_deseq2(res), mean_scale = "baseMean")
+        }
         comparison_objs[[contrast_name]] <- res
 
         # sort and output
         resOrdered <- res_shrink[order(res_shrink$log2FoldChange), ]
 
         # # Add gene names  (check how gene_id col is named )
-        resOrdered$Gene <- unlist(lapply(rownames(resOrdered), function(x) {
-            get_gene_name(x, gtf_gene)
-        }))
-        resOrdered$Gene_ID <- rownames(resOrdered)
-        resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
+        resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE)
 
         # plotVolcano
         pdf(
@@ -352,11 +388,11 @@ for (contrast in comparison[[1]]) {
         # sort and output
         res <- resn[order(resn$log2FoldChange), ]
 
-        res$Gene <- lapply(rownames(res), function(x) {
+        res$Gene <- unlist(lapply(rownames(res), function(x) {
             get_gene_name(x, gtf_gene)
-        })
+        }))
         res$Gene_ID <- rownames(res)
-        res <- res[, c(8, 7, 1, 2, 3, 5, 6)]
+        res <- format_deseq2_results(res, gtf_gene, shrink = FALSE)
         res <- as.data.frame(apply(res, 2, as.character))
 
         write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
@@ -377,17 +413,16 @@ for (contrast in comparison[[1]]) {
 
             # add comp object to list for image
             listname <- paste(contrast_name, "_norm", sep = "")
+            if (postde_enabled) {
+                postde_capture(engine = "deseq2", id = listname, A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = counts_norm_mat, expression = assay(vsd_norm), formula = design_norm, results = postde_results_deseq2(res), mean_scale = "baseMean")
+            }
             comparison_objs[[listname]] <- res
 
             # sort and output
             resOrdered <- res_shrink[order(res_shrink$log2FoldChange), ]
 
             # # Add gene names  (check how gene_id col is named )
-            resOrdered$Gene <- unlist(lapply(rownames(resOrdered), function(x) {
-                get_gene_name(x, gtf_gene)
-            }))
-            resOrdered$Gene_ID <- rownames(resOrdered)
-            resOrdered <- resOrdered[, c(7, 6, 1, 2, 3, 4, 5)]
+            resOrdered <- format_deseq2_results(resOrdered, gtf_gene, shrink = TRUE, center = TRUE)
 
             # plot Volcano
             pdf(
@@ -423,11 +458,11 @@ for (contrast in comparison[[1]]) {
             # sort and output
             res <- resn[order(resn$log2FoldChange), ]
 
-            res$Gene <- lapply(rownames(res), function(x) {
+            res$Gene <- unlist(lapply(rownames(res), function(x) {
                 get_gene_name(x, gtf_gene)
-            })
+            }))
             res$Gene_ID <- rownames(res)
-            res <- res[, c(7, 6, 1, 2, 3, 4, 5)]
+            res <- format_deseq2_results(res, gtf_gene, shrink = FALSE, center = TRUE)
             res <- as.data.frame(apply(res, 2, as.character))
 
             write.table(as.data.frame(res), gzfile(paste("Tables/DE", "DESEQ2", combi, contrast_name, "table", "results_norm_noshrink.tsv.gz", sep = "_")), sep = "\t", row.names = FALSE, quote = F)
@@ -445,5 +480,9 @@ for (contrast in comparison[[1]]) {
 
 
 ##############################
+
+if (postde_enabled) {
+    postde_write(outdir, combi, "deseq2")
+}
 
 save.image(file = paste("DE", "DESEQ2", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)

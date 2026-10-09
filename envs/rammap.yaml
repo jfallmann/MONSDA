@@ -1,0 +1,10 @@
+name: rammap
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - rammap =1.1.2
+  - zlib
+  - pigz =2.6
+  - samtools =1.21

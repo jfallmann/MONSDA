@@ -8,6 +8,7 @@ From: continuumio/miniconda3
 %environment
    
 %post
+    find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
     ls -alrt /opt/envs
     chmod -R +x /opt/envs/fastqc.yaml
     

@@ -160,9 +160,9 @@ def samplesheet_to_settings(samplesheet_path: str) -> dict:
       SAMPLE     - sample name / accession
       GROUP      - group label for differential analysis
       SEQUENCING - e.g. ``paired`` or ``single``
-      REFERENCE  - path to genome FASTA (.fa.gz)
-      GTF        - path to GTF annotation (.gtf.gz)  [optional]
-      GFF        - path to GFF annotation (.gff.gz)  [optional]
+      REFERENCE  - path to genome FASTA (.fa, .fa.gz or .fa.bgz)
+      GTF        - path to GTF annotation (.gtf, .gtf.gz or .gtf.bgz)  [optional]
+      GFF        - path to GFF annotation (.gff, .gff.gz or .gff.bgz)  [optional]
       INDEX      - path to pre-built index            [optional]
       PREFIX     - mapper index prefix                [optional]
       DECOY      - path to decoy file                 [optional]
@@ -923,7 +923,7 @@ def get_cutoff_as_string(config: dict, subwork: str, cf: str) -> str:
     subwork : str
         workflow part
     cf : str
-        cutoff
+        cutoff, either 'padj' or 'lfc'
 
     Returns
     -------
@@ -931,11 +931,30 @@ def get_cutoff_as_string(config: dict, subwork: str, cf: str) -> str:
         configured cutoffs or defaults
     """
     logid = scriptname + ".get_cutoff: "
-    cutoff = (
-        str(config[subwork]["CUTOFFS"].get(cf))
-        if config[subwork].get("CUTOFFS")
-        else ".05" if cf == "pval" else "1.5"
-    )
+    defaults = {"padj": ".05", "lfc": "1.5"}
+    deprecated = {"padj": ["pvalue", "pval"]}
+    cutoffs = config[subwork].get("CUTOFFS") or dict()
+    cutoff = cutoffs.get(cf)
+    if cutoff is None:
+        for alias in deprecated.get(cf, []):
+            if cutoffs.get(alias) is not None:
+                cutoff = cutoffs[alias]
+                log.warning(
+                    logid
+                    + "CUTOFFS key '"
+                    + alias
+                    + "' in "
+                    + str(subwork)
+                    + " is deprecated, cutoffs are applied to adjusted p-values, please rename it to '"
+                    + cf
+                    + "'"
+                )
+                break
+    if cutoff is None:
+        if cf not in defaults:
+            log.error(logid + "No default cutoff known for " + str(cf))
+        cutoff = defaults.get(cf, "1.5")
+    cutoff = str(cutoff)
     log.info(logid + "CUTOFFS: " + str(cf) + ":" + cutoff)
     return cutoff
 
@@ -1173,7 +1192,7 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
         if (
             "BATCHES" in partconf
             and len(partconf["BATCHES"]) >= idx + 1
-            and partconf.get("BATCHES") != ""
+            and str(partconf["BATCHES"][idx]) != ""
         ):
             ret["batches"].append(str(partconf["BATCHES"][idx]).replace(",", "_"))
         else:
@@ -1181,7 +1200,7 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
         if (
             "TYPES" in partconf
             and len(partconf["TYPES"]) >= idx + 1
-            and partconf.get("TYPE") != ""
+            and str(partconf["TYPES"][idx]) != ""
         ):
             ret["types"].append(str(partconf["TYPES"][idx]).replace(",", "_"))
         else:
@@ -1390,7 +1409,7 @@ def runstate_from_sample(sample: list, config: dict) -> list:
         log.debug(logid + "SAMPLE: " + s)
         try:
             c = mu.get_from_dict(config["SETTINGS"], s.split(os.sep))[0]
-        except:
+        except (KeyError, IndexError, TypeError):
             c = None
         log.debug(logid + "SETTINGS: " + str(c))
         if mu.dict_inst(c):
@@ -1698,7 +1717,7 @@ def get_pairing(
                         log.debug(logid + "Match found: " + str(v) + " : " + str(x))
                         try:
                             matching = samplecond([x], config)[0].replace("MAPPED/", "")
-                        except:
+                        except (KeyError, IndexError):
                             matching = x
                         log.info(logid + "PAIRINGS: " + sample + ": " + str(matching))
         if not matching or matching == "":
@@ -1819,7 +1838,7 @@ def check_tool_params(
             return "std"
         else:
             return ""
-    except:
+    except (KeyError, IndexError, TypeError):
         if subconf == "MAPPING":
             return "std"
         else:
@@ -1938,7 +1957,7 @@ def fixRunParameters(
         return re.sub(paramToFix + " [0-9a-zA-Z\.\_\-\\\/]+", fixedParam, para)
     else:
         log.warning(
-            f"No parameter to fix {paramToFix} found or fix {fixedParam} defined for {para}!"
+            f"No parameter to fix {paramToFix} in INDEX options or fix {fixedParam} defined for {para}!"
         )
         return para
 

@@ -46,7 +46,7 @@ gtf.df <- as.data.frame(gtf.rtl)
 gtf_gene <- droplevels(subset(gtf.df, type == "gene"))
 
 ## Annotation
-sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE))
+sampleData_all <- as.data.frame(read.table(gzfile(anname), row.names = 1, check.names = FALSE, sep = "\t"))
 colnames(sampleData_all) <- c("condition", "type", "batch")
 sampleData_all$condition <- as.factor(sampleData_all$condition)
 sampleData_all$batch <- as.factor(sampleData_all$batch)
@@ -54,7 +54,8 @@ sampleData_all$type <- as.factor(sampleData_all$type)
 samples <- rownames(sampleData_all)
 
 ## Combinations of conditions
-comparison <- strsplit(cmp, ",")
+comparison <- parse_comparisons(cmp)
+validate_comparisons(comparison, levels(sampleData_all$condition))
 
 ## check combi
 if (combi == "none") {
@@ -101,6 +102,7 @@ colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
 ## create dummy file MDS-plot with and without summarized replicates
@@ -116,20 +118,19 @@ out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQL
 png::writePNG(array(0, dim = c(1,1,4)), out)
 
 ## Analyze according to comparison groups
-for (contrast in comparison[[1]]) {
-    contrast_name <- strsplit(contrast, ":")[[1]][1]
-    contrast_groups <- strsplit(strsplit(contrast, ":")[[1]][2], "-vs-")
+for (contrast in comparison) {
+    contrast_name <- contrast$name
 
     print(paste("Comparing ", contrast_name, sep = ""))
 
     # determine contrast
-    A <- unlist(strsplit(contrast_groups[[1]][1], "\\+"), use.names = FALSE)
-    B <- unlist(strsplit(contrast_groups[[1]][2], "\\+"), use.names = FALSE)
+    A <- contrast$A
+    B <- contrast$B
 
-    # subset Datasets for pairwise comparison
-    countData <- cbind(countData_all[, grepl(paste("^", B, "_", sep = ""), colnames(countData_all))], countData_all[, grepl(paste("^", A, "_", sep = ""), colnames(countData_all))])
-    rownames(countData) <- rownames(countData_all)
-    sampleData <- droplevels(rbind(subset(sampleData_all, B == condition), subset(sampleData_all, A == condition)))
+    # subset Datasets for pairwise comparison: metadata-based selection, B then A order
+    sel <- select_contrast_samples(sampleData_all, countData_all, A, B)
+    sampleData <- sel$sampleData
+    countData <- sel$countData
     sampleData$condition <- relevel(sampleData$condition, ref = B)
 
     samples <- rownames(sampleData)
@@ -164,29 +165,40 @@ for (contrast in comparison[[1]]) {
     ## check genes and spike-ins
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spike <- strsplit(spike, "=")[[1]][2]
+        spiken <- strsplit(spike, "=")[[1]][2]
         setwd(WD)
-        ctrlgenes <- readLines(spike)
+        ctrlgenes <- readLines(spiken)
         setwd(outdir)
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        genes <- rownames(countData)
+        ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived normalization factors
+        counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
+        genes <- rownames(counts_norm_mat)
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
 
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
         design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
         # colnames(design_norm) <- c(colnames(design),"W_1")
 
-        dge_norm <- DGEList(counts = counts(counts_norm), group = sampleData$condition, samples = samples, genes = genes)
+        dge_norm <- DGEList(counts = counts_norm_mat, group = sampleData$condition, samples = samples, genes = genes)
 
-        ## filter low counts
+        ## filter low counts; keep original (pre-filter) lib sizes since the spike-in-derived
+        ## normalization factors below are only valid relative to them
         keep <- filterByExpr(dge_norm)
-        dge_norm <- dge_norm[keep, , keep.lib.sizes = FALSE]
+        dge_norm <- dge_norm[keep, , keep.lib.sizes = TRUE]
 
         # relevel to base condition B
         dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
 
-        ## normalize with TMM
-        dge_norm <- calcNormFactors(dge_norm, method = "TMM", BPPARAM = BPPARAM)
+        ## normalize using the spike-in (control gene) counts rather than TMM on the endogenous
+        ## genes: this is what actually puts the spike-in scale into the normalized results, the
+        ## W_1 covariate alone only adjusts for unwanted variation, not scale.
+        spike_counts <- counts(counts_norm)[ctrl_idx, , drop = FALSE]
+        dge_spike <- calcNormFactors(DGEList(counts = spike_counts), method = "TMM")
+        dge_norm$samples$norm.factors <- dge_spike$samples$norm.factors
+
+        eff_lib_norm <- dge_norm$samples$lib.size * dge_norm$samples$norm.factors
+        scaling_factors <- eff_lib_norm / exp(mean(log(eff_lib_norm)))
+        write_scaling_log(scaling_factors, dge_norm$samples$samples, paste("Tables/DE", "EDGER", combi, contrast_name, "table", "scaling.log", sep = "_"))
 
         ## create file normalized table
         tmm_norm <- as.data.frame(cpm(dge_norm))
@@ -194,6 +206,7 @@ for (contrast in comparison[[1]]) {
         tmm_norm$ID <- dge_norm$genes$genes
         tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm) - 1)]
 
+        tmm_norm <- add_gene_coordinates(tmm_norm, tmm_norm$ID, gtf_gene, after = "ID")
         write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         ## create dummy file MDS-plot with and without summarized replicates
@@ -232,6 +245,7 @@ for (contrast in comparison[[1]]) {
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+    tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
     ## create dummy file MDS-plot with and without summarized replicates
@@ -277,12 +291,7 @@ for (contrast in comparison[[1]]) {
         comparison_objs[[contrast_name]] <- qlf
 
         # # Add gene names  (check how gene_id col is named )
-        qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
-            get_gene_name(x, gtf_gene)
-        }))
-        qlf$table$Gene_ID <- rownames(qlf$table)
-        res <- qlf$table[, c(5, 4, 2, 1, 3)]
-        res$FDR <- p.adjust(res$PValue, method = "BH")
+        res <- format_edger_results(qlf$table, gtf_gene)
 
         # plotVolcano
         pdf(
@@ -290,8 +299,8 @@ for (contrast in comparison[[1]]) {
         )
         print(EnhancedVolcano(res,
             lab = res$Gene,
-            x = "logFC",
-            y = "FDR",
+            x = "log2FoldChange",
+            y = "padj",
             title = paste0(contrast_name, "_p005_lfc15", sep = ""),
             pCutoff = 0.05,
             FCcutoff = 1.5,
@@ -317,12 +326,12 @@ for (contrast in comparison[[1]]) {
 
         # create sorted results Tables
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+        tops <- format_edger_results(tops$table, gtf_gene)
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
         tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-        tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+        tops <- format_edger_results(tops$table, gtf_gene)
         tops <- as.data.frame(apply(tops, 2, as.character))
         write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -357,15 +366,10 @@ for (contrast in comparison[[1]]) {
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
             qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
             # add comp object to list for image
-            comparison_objs <- append(comparison_objs, qlf)
+            comparison_objs[[paste0(contrast_name, "_norm")]] <- qlf
 
             # # Add gene names  (check how gene_id col is named )
-            qlf$table$Gene <- unlist(lapply(rownames(qlf$table), function(x) {
-                get_gene_name(x, gtf_gene)
-            }))
-            qlf$table$Gene_ID <- rownames(qlf$table)
-            res <- qlf$table[, c(5, 4, 2, 1, 3)]
-            res$FDR <- p.adjust(res$PValue, method = "BH")
+            res <- format_edger_results(qlf$table, gtf_gene, center = TRUE)
 
             # plotVolcano
             pdf(
@@ -373,8 +377,8 @@ for (contrast in comparison[[1]]) {
             )
             print(EnhancedVolcano(res,
                 lab = res$Gene,
-                x = as.numeric("logFC"),
-                y = as.numeric("FDR"),
+                x = "log2FoldChange",
+                y = "padj",
                 title = paste0(contrast_name, "_p005_lfc15", sep = ""),
                 pCutoff = 0.05,
                 FCcutoff = 1.5,
@@ -400,12 +404,12 @@ for (contrast in comparison[[1]]) {
 
             # create sorted results Tables
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
             tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- tops$table[, c(6, 5, 3, 2, 4, 7)]
+            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
             tops <- as.data.frame(apply(tops, 2, as.character))
             write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
@@ -420,6 +424,8 @@ for (contrast in comparison[[1]]) {
         # cleanup
         rm(qlf, res, tops)
         print(paste("cleanup done for ", contrast_name, sep = ""))
+    }, error = function(e) {
+        message(paste0("Error while processing contrast ", contrast_name, ": ", conditionMessage(e), ". Skipping this contrast."))
     })
 }
 

@@ -12,7 +12,7 @@ rule kallisto_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
             uidx = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=COUNTENV, unikey=unik)
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
+    log:    expand("LOGS/{sets}/COUNTING/{cape}/idx.log", sets=SETS, cape=COUNTENV)
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -30,7 +30,7 @@ if paired == 'paired':
                 uidx = rules.kallisto_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/kallistoquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/kallisto/kallistoquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
@@ -46,7 +46,7 @@ else:
                 uidx = rules.kallisto_index.output.uidx[0]
         output: cnts = report("COUNTS/{combo}/{file}_counts.gz", category="COUNTING"),
                 ctsdir = report(directory("COUNTS/{combo}/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/kallistoquant.log"
+        log:    "LOGS/{combo}/{file}/COUNTING/kallisto/kallistoquant.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD

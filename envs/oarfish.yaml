@@ -1,0 +1,8 @@
+name: oarfish
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - oarfish =0.10.3
+  - samtools =1.21

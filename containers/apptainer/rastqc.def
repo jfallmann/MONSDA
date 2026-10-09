@@ -1,0 +1,24 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+   
+%files
+    /home/fall/MONSDA/envs/rastqc.yaml /opt/envs/
+    ${HOME}/MONSDA/scripts /opt/MONSDA/
+
+%environment
+   
+%post
+    find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
+    ls -alrt /opt/envs
+    chmod -R +x /opt/envs/rastqc.yaml
+    
+    ENV_NAME=rastqc
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+    echo "conda activate $ENV_NAME" >> $APPTAINER_ENVIRONMENT
+   
+    . /opt/conda/etc/profile.d/conda.sh
+    conda env create -f /opt/envs/rastqc.yaml -p /opt/conda/envs/$ENV_NAME
+    conda clean --all
+   
+%runscript
+    exec "$@"

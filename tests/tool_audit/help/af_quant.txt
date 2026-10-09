@@ -1,0 +1,32 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Quantify expression from a collated RAD file
+
+Usage: alevin-fry quant [OPTIONS] --input-dir <INPUTDIR> --tg-map <TGMAP> --output-dir <OUTPUTDIR> --resolution <RESOLUTION>
+
+Options:
+  -i, --input-dir <INPUTDIR>            input directory containing collated RAD file
+  -m, --tg-map <TGMAP>                  transcript to gene map
+  -o, --output-dir <OUTPUTDIR>          output directory where quantification results will be
+                                        written
+  -t, --threads <THREADS>               number of threads to use for processing (minimum: 2; lower
+                                        values use 2) [default: 16]
+  -d, --dump-eqclasses                  flag for dumping equivalence classes
+  -b, --num-bootstraps <NUMBOOTSTRAPS>  number of bootstraps to use [default: 0]
+      --init-uniform                    flag for uniform sampling
+      --summary-stat                    flag for storing only summary statistics
+      --use-mtx                         flag for writing output matrix in matrix market format
+                                        (default, kept for compatibility)
+      --quant-subset <SFILE>            file containing list of barcodes to quantify, those not in
+                                        this list will be ignored
+  -r, --resolution <RESOLUTION>         the resolution strategy by which molecules will be counted
+                                        [possible values: trivial, cr-like, cr-like-em,
+                                        parsimony-em, parsimony, parsimony-gene-em, parsimony-gene]
+      --small-thresh <SMALLTHRESH>      cells with fewer than this many reads are resolved by a fast
+                                        path that applies cr-like (winner-take-all) semantics
+                                        regardless of --resolution; pass 0 to resolve every cell
+                                        with the requested strategy [default: 100]
+      --multi-sample-output <MSOUTPUT>  output mode for multi-sample data: separate per-sample
+                                        matrices, one combined matrix, or both [default: separate]
+                                        [possible values: separate, combined, both]
+  -h, --help                            Print help
+  -V, --version                         Print version

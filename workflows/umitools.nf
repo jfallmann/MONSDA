@@ -14,7 +14,7 @@ process whitelist{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_whitelist") > 0)         "DEDUP_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}_whitelist"
-        else if (filename.indexOf("log") > 0)           "LOGS/${COMBO}/${CONDITION}/DEDUP/dedup_whitelist.log"
+        else if (filename.indexOf("log") > 0)           "LOGS/${COMBO}/${CONDITION}/DEDUP/umitools/whitelist.log"
         else null
     }
 
@@ -26,15 +26,17 @@ process whitelist{
 
     script:    
     if (WHITELISTPARAMS == ''){    
-        outf = samples[0].getSimpleName().replace("_R1","")+"_dummy_whitelist"
+        smpls = sort_reads(samples)
+        outf = smpls[0].getSimpleName().replace("_R1","")+"_dummy_whitelist"
         """
         touch $outf
         """
     } else {
         if (PAIRED == 'paired'){
-            r1 = samples[0]
-            r2 = samples[1]
-            outf = samples[0].getSimpleName().replace("_R1","")+"_whitelist"
+            smpls = sort_reads(samples)
+            r1 = smpls[0]
+            r2 = smpls[1]
+            outf = smpls[0].getSimpleName().replace("_R1","")+"_whitelist"
             """
                 mkdir tmp && $DEDUPBIN whitelist $WHITELISTPARAMS --temp-dir tmp --log=wl.log --stdin=$r1 --read2-in=$r2 --stdout=$outf
             """
@@ -58,7 +60,7 @@ process extract_fq{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_dedup.fastq.gz") > 0)      "DEDUP_FASTQ/${COMBO}/${CONDITION}/${file(filename).getSimpleName()}.fastq.gz"
-        else if (filename.indexOf("log") > 0)             "LOGS/${COMBO}/${CONDITION}/DEDUP/dedup_extract.log"
+        else if (filename.indexOf("log") > 0)             "LOGS/${COMBO}/${CONDITION}/DEDUP/umitools/extract.log"
         else null
     }
 
@@ -71,11 +73,33 @@ process extract_fq{
     path "ex.log", emit: logs
 
     script:
-    if (PAIRED == 'paired'){
-        r1 = samples[0]
-        r2 = samples[1]
-        outf = samples[0].getSimpleName()+"_dedup.fastq.gz"
-        outf2 = samples[1].getSimpleName()+"_dedup.fastq.gz"
+    if (EXTRACTPARAMS == ''){
+        if (PAIRED == 'paired'){
+            smpls = sort_reads(samples)
+            r1 = smpls[0]
+            r2 = smpls[1]
+            outf = smpls[0].getSimpleName()+"_dedup.fastq.gz"
+            outf2 = smpls[1].getSimpleName()+"_dedup.fastq.gz"
+            """
+                echo 'EXTRACT unset, linking input fastq(s) as-is' > ex.log
+                ln -sf \$(readlink -f $r1) $outf
+                ln -sf \$(readlink -f $r2) $outf2
+            """
+        }
+        else{
+            outf = samples.getSimpleName()+"_dedup.fastq.gz"
+            """
+                echo 'EXTRACT unset, linking input fastq(s) as-is' > ex.log
+                ln -sf \$(readlink -f $samples) $outf
+            """
+        }
+    }
+    else if (PAIRED == 'paired'){
+        smpls = sort_reads(samples)
+        r1 = smpls[0]
+        r2 = smpls[1]
+        outf = smpls[0].getSimpleName()+"_dedup.fastq.gz"
+        outf2 = smpls[1].getSimpleName()+"_dedup.fastq.gz"
         if (!!(wl =~ /dummy_whitelist/)){
             """
                 mkdir tmp && $DEDUPBIN extract $EXTRACTPARAMS --temp-dir tmp --log=ex.log --stdin=$r1 --read2-in=$r2 --stdout=$outf --read2-out=$outf2

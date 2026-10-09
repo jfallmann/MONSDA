@@ -1,0 +1,62 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+/opt/conda/envs/monsda/bin/bwameth.py:317: SyntaxWarning: "\d" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\d"? A raw string is also an option.
+  def longest_match(self, patt=re.compile("\d+M")):
+usage: 
+map bisulfite converted reads to an insilico converted genome using bwa mem OR bwa mem2.
+A command to this program like:
+
+    python bwameth.py --reference ref.fa A.fq B.fq
+
+Gets converted to:
+
+    bwa mem -pCMR ref.fa.bwameth.c2t '<python bwameth.py c2t A.fq B.fq'
+    OR
+    bwa-mem2 mem -pCMR ref.fa.bwameth.c2t '<python bwameth.py c2t A.fq B.fq'
+
+So that A.fq has C's converted to T's and B.fq has G's converted to A's
+and both are streamed directly to the aligner without a temporary file
+producing standard SAM output. 
+
+Index from BWA-MEM or BWA-MEM2 is auto detected and the corresponding aligner is chosen.
+
+Indexing:
+bwa-meth supports indexes from BWA-MEM and BWA-MEM2.
+
+    bwameth.py index $REF #For BWA-MEM (default)
+    OR
+    bwameth.py index-mem2 $REF #For BWA-MEM2
+
+       [-h] --reference REFERENCE [-t THREADS] [--read-group READ_GROUP]
+       [--set-as-failed {f,r}] [-p] [--version] [--do-not-penalize-chimeras]
+       fastqs [fastqs ...]
+
+positional arguments:
+  fastqs                bs-seq fastqs to align. Runmultiple sets separated by
+                        commas, e.g. ... a_R1.fastq,b_R1.fastq
+                        a_R2.fastq,b_R2.fastq note that the order must be
+                        maintained.
+
+options:
+  -h, --help            show this help message and exit
+  --reference REFERENCE
+                        reference fasta
+  -t, --threads THREADS
+  --read-group READ_GROUP
+                        read-group to add to bam in same format as to bwa:
+                        '@RG\tID:foo\tSM:bar'
+  --set-as-failed {f,r}
+                        flag alignments to this strand as not passing QC
+                        (0x200). Targetted BS-Seq libraries are often to a
+                        single strand, so we can flag them as QC failures.
+                        Note f == OT, r == OB. Likely, this will be 'f' as we
+                        will expect reads to align to the original-bottom (OB)
+                        strand and will flag as failed those aligning to the
+                        forward, or original top (OT).
+  -p, --interleaved     fastq files have 4 lines of read1 followed by 4 lines
+                        of read2 (e.g. seqtk mergepe output)
+  --version             show program's version number and exit
+  --do-not-penalize-chimeras
+                        do not use the heuristic that if the longest match is
+                        not 44% of the sequence length, we mark it as failed
+                        QC and un-pair it, and set all members of pair to
+                        unmapped

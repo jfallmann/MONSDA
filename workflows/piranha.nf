@@ -21,7 +21,7 @@ process BamToBed{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/${file(filename).getName()}_bam2bed.log"
     }
 
     input:
@@ -58,7 +58,7 @@ process ExtendBed{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bed.gz") > 0)      "BED/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bam2bed.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/${file(filename).getName()}_bam2bed.log"
     }
 
     input:
@@ -100,7 +100,7 @@ process BedToBedg{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bedg.gz") > 0)      "TRACKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_bedtobedgraph.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/TRACKS/piranha/${file(filename).getName()}_bedtobedgraph.log"
     }
 
     input:
@@ -135,7 +135,7 @@ process PreprocessPeaks{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bed.gz") > 0)      "PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/prepeak_${file(filename).getName()}.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/prepeak_${file(filename).getName()}.log"
     }
 
     input:
@@ -165,7 +165,7 @@ process FindPeaks{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bed.gz") > 0)      "PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/findpeaks_${file(filename).getName()}.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/findpeaks_${file(filename).getName()}.log"
     }
 
     input:
@@ -196,7 +196,7 @@ process PeakToBedg{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bedg.gz") > 0)      "PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_peaktobedgraph.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/${file(filename).getName()}_peaktobedgraph.log"
     }
 
     input:
@@ -233,7 +233,7 @@ process NormalizeBedg{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".norm.bedg.gz") > 0)      "PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_ucscpeaknormalizebedgraph.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/PEAKS/piranha/${file(filename).getName()}_ucscpeaknormalizebedgraph.log"
     }
 
     input:
@@ -267,7 +267,7 @@ process PeakToTRACKS{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".bw") > 0)      "TRACKS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"                
-        else if (filename == ".log")        "LOGS/TRACKS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}_peaktoucsc.log"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/TRACKS/piranha/${file(filename).getName()}_peaktoucsc.log"
     }
 
     input:
@@ -302,7 +302,7 @@ process GenerateTrack{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".txt") > 0)      "TRACKS/PEAKS/${file(filename).getName()}"
-        else if (filename == ".log")        "LOGS/TRACKS/PEAKS/${SCOMBO}/${CONDITION}/${file(filename).getName()}"
+        else if (filename == ".log")        "LOGS/${SCOMBO}/${CONDITION}/TRACKS/piranha/${file(filename).getName()}"
     }
 
     input:

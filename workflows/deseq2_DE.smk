@@ -5,6 +5,9 @@ comparison = comparable_as_string(config,'DE')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 usespike = True if "controlgenes=" in tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "") else False
+postde_enabled = config.get('POSTDE', {}).get('enabled', False)
+postde_inputs = config.get('POSTDE', {}).get('inputs', '') if postde_enabled else ''
+postde_flag = '1' if postde_enabled else '0'
 
 rule themall:
     input:  session = expand("DE/{combo}/DE_DESEQ2_{scombo}_SESSION.gz", combo=combo, scombo=scombo),
@@ -20,7 +23,8 @@ rule themall:
             sig   = expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/Sig_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_d = expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigDOWN_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_u = expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results.tsv.gz", combo=combo, comparison=compstr, scombo=scombo) if not usespike else expand("DE/{combo}/Tables/SigUP_DE_DESEQ2_{scombo}_{comparison}_table_results_norm.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
-            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
+            Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo),
+            postde = expand("POSTDE/{combo}", combo=combo) if postde_enabled else []
 
 rule featurecount_unique:
     input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
@@ -28,7 +32,7 @@ rule featurecount_unique:
             tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DE/{combo}/{file}_featurecounts_deseq2_unique.log"
+    log:    "LOGS/{combo}/{file}/DE/deseq2/featurecounts_deseq2_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -38,13 +42,13 @@ rule featurecount_unique:
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = get_sortmem
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DE/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DE/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DE/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DE/deseq2/{scombo}_prepare_count_table.log"
     conda:   ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
@@ -64,8 +68,9 @@ rule run_deseq2:
             vulcan = rules.themall.input.vulcan,
             vst    = rules.themall.input.vst,
             heat   = rules.themall.input.heat,
-            heats  = rules.themall.input.heats
-    log:    expand("LOGS/DE/{combo}/run_deseq2.log", combo=combo)
+            heats  = rules.themall.input.heats,
+            bundle = expand("DE/{combo}/DE_deseq2_{scombo}_postde.rds", combo=combo, scombo=scombo) if postde_enabled else []
+    log:    expand("LOGS/{combo}/DE/deseq2/run_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -75,20 +80,21 @@ rule run_deseq2:
             pcombo = scombo if scombo != '' else 'none',
             ref = ANNOTATION,
             depara = lambda wildcards: tool_params(samplecond(SAMPLES, config)[0], None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('DE', "")
-    shell:  "Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}"
+    shell:  "MONSDA_POSTDE={postde_flag} Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}"
 
 rule filter_significant:
     input:  tbl = rules.run_deseq2.output.tbl
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    "LOGS/DE/filter_deseq2.log"
+    log:    expand("LOGS/{combo}/DE/deseq2/filter_deseq2.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DE', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc')
-    shell: "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DE', 'padj'),
+            lfc_cut = get_cutoff_as_string(config, 'DE', 'lfc'),
+            bins = BINS
+    shell: "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column log2FoldChange --adjusted-p-column padj --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orrr[$i]}}\" --output-down \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_deseq2.output.pca,
@@ -105,10 +111,28 @@ rule create_summary_snippet:
             # rules.filter_significant.output.sig_d,
             # rules.filter_significant.output.sig_u
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DE/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DE/deseq2/create_summary_snippet.log", combo=combo)
     conda:  ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
     params: bins = BINS,
             abspathfiles = lambda w, input: [os.path.abspath(x) for x in input]
     shell:  "python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEENV} --loglevel DEBUG 2>> {log}"
+
+if postde_enabled:
+    rule postde:
+        input:  bundle = rules.run_deseq2.output.bundle,
+                staged = postde_inputs,
+                config = os.path.join(postde_inputs, "config.json"),
+                script = os.path.join(BINS, "Analysis", "PostDE", "run.R"),
+                common = os.path.join(BINS, "Analysis", "PostDE", "common.R"),
+                enrichment = os.path.join(BINS, "Analysis", "PostDE", "enrichment.R"),
+                regulatory = os.path.join(BINS, "Analysis", "PostDE", "regulatory.R")
+        output: outdir = directory(expand("POSTDE/{combo}", combo=combo))
+        log:    os.path.abspath(os.path.join("LOGS", combo, "DE", "deseq2", "postde.log"))
+        conda:  "postde.yaml"
+        container: "oras://jfallmann/monsda:postde"
+        threads: 1
+        params: bundle = lambda w, input: os.path.abspath(input.bundle[0]),
+                outdir = lambda w: os.path.abspath(os.path.join("POSTDE", combo))
+        shell:  "(cd {input.staged:q} && Rscript {input.script:q} --bundle {params.bundle:q} --config config.json --output {params.outdir:q}) 2> {log:q} && test -s {params.outdir:q}/manifest.json"

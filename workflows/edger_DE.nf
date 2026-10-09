@@ -12,6 +12,10 @@ DECOMPS = get_always('DECOMPS') ?: ''
 PVAL = get_always('DEPVAL') ?: ''
 LFC = get_always('DELFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
+PCOMBO_NORM = PCOMBO == 'none' ? '' : PCOMBO
+POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
+POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
+POSTDE_FLAG = POSTDE_ENABLED ? '1' : '0'
 
 COUNTBIN = 'featureCounts'
 COUNTENV = 'countreads_de'
@@ -30,7 +34,7 @@ process featurecount_edger{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
-        else if (filename.indexOf(".log") > 0)        "LOGS/DE/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DE/edger/featurecounts_edger_unique.log"
     }
 
     input:
@@ -63,7 +67,7 @@ process featurecount_edger{
             stranded = ''
     }
     """
-    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(zcat $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(gzip -cdfq $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -79,7 +83,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DE/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DE/edger/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -93,9 +97,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DEREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DEREPS -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -111,7 +115,8 @@ process run_edger{
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DE/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/${SCOMBO}/run_edger.log"
+        else if (filename.indexOf("_postde") > 0)      "DE/${SCOMBO}/${file(filename).getName()}"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/run_edger.log"
     }
 
     input:
@@ -122,8 +127,10 @@ process run_edger{
 
     output:
     path "*_table*", emit: tbls
+    path "*_table_results*.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
+    path "DE_edger_${PCOMBO_NORM}_postde.rds", emit: bundle, optional: !POSTDE_ENABLED
     path "log", emit: log
 
     script:    
@@ -131,7 +138,7 @@ process run_edger{
     bin = "${BINS}"+File.separatorChar+"${DEBIN}"
     """
     mkdir -p Figures Tables
-    Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO ${task.cpus} $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
+    MONSDA_POSTDE=${POSTDE_FLAG} Rscript --no-environ --no-restore --no-save $bin $anno $cts $deanno . $DECOMP $PCOMBO ${task.cpus} $DEPARAMS 2> log && mv Tables/* . && mv Figures/* .
     """
 }
 
@@ -145,7 +152,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DE/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/filter_deseq2.log"
     }
 
     input:
@@ -157,7 +164,7 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
+    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then python3 $BINS/Analysis/filter_significant.py --effect-column log2FoldChange --adjusted-p-column padj --p-cutoff $PVAL --lfc-cutoff $LFC --input \"\${i}\" --output-sig Sig_\${i} --output-up SigUP_\${i} --output-down SigDOWN_\${i}; else touch Sig_\${i} SigUP_\${i} SigDOWN_\${i}; fi;done 2> log
     """
 }
 
@@ -171,7 +178,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DE/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/edger/filter_edger.log"
     }
 
     input:
@@ -205,6 +212,33 @@ process collect_edger{
     """
 }
 
+process postde{
+    conda "postde.yaml"
+    container "oras://jfallmann/monsda:postde"
+    cpus THREADS
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename == "log")      "LOGS/${SCOMBO}/DE/edger/postde.log"
+        else if (filename == "postde")      "POSTDE/${SCOMBO}"
+    }
+
+    input:
+    path 'bundle'
+    path 'postde_inputs'
+
+    output:
+    path "postde", emit: postde_out
+    path "log", emit: log
+
+    script:
+    """
+    postde_workdir=\$PWD
+    (cd postde_inputs && Rscript "${BINS}/Analysis/PostDE/run.R" --bundle "\$postde_workdir/bundle" --config "config.json" --output "\$postde_workdir/postde") 2> "\$postde_workdir/log" && test -s "\$postde_workdir/postde/manifest.json"
+    """
+}
+
 workflow DE{ 
     take: collection
 
@@ -228,9 +262,13 @@ workflow DE{
     featurecount_edger(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_edger.out.fc_cts.collect())
     run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_edger.out.tbls)
+    filter_significant(run_edger.out.result_tbls)
     create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)).collect())
     collect_edger(filter_significant.out.sigtbls.collect())
+
+    if (POSTDE_ENABLED) {
+        postde(run_edger.out.bundle, Channel.fromPath(POSTDE_INPUTS, checkIfExists: true, type: 'dir'))
+    }
 
     emit:
     tbls = run_edger.out.tbls

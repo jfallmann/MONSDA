@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+   
+%files
+    /home/fall/MONSDA/envs/rustar.yaml /opt/envs/
+    ${HOME}/MONSDA/scripts /opt/MONSDA/
+
+%environment
+   
+%post
+    find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
+    ls -alrt /opt/envs
+    chmod -R +x /opt/envs/rustar.yaml
+    
+    ENV_NAME=rustar
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $APPTAINER_ENVIRONMENT
+    echo "conda activate $ENV_NAME" >> $APPTAINER_ENVIRONMENT
+   
+    . /opt/conda/etc/profile.d/conda.sh
+    conda env create -f /opt/envs/rustar.yaml -p /opt/conda/envs/$ENV_NAME
+    conda activate $ENV_NAME
+   
+    # rustar-aligner is not distributed via conda/crates.io, so build it from source
+    # using the Rust toolchain provided by the conda environment.
+    cargo install --git https://github.com/scverse/rustar-aligner --locked --root /opt/conda/envs/$ENV_NAME
+    # MONSDA expects the mapper binary to be called "rustar"
+    ln -fs /opt/conda/envs/$ENV_NAME/bin/rustar-aligner /opt/conda/envs/$ENV_NAME/bin/rustar
+   
+    conda clean --all
+   
+%runscript
+    exec "$@"

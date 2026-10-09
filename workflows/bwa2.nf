@@ -41,7 +41,7 @@ process bwa2_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "bwa2.idx")                          "$MAPIDX"
-        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/bwa2_index.log"
+        else if (filename.indexOf("Log.out") > 0)           "LOGS/${COMBO}/${CONDITION}/MAPPING/bwa2/index.log"
         else                                                "$MAPUIDX"
     }
 
@@ -72,7 +72,7 @@ process bwa2_mapping{
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/bwa2/${file(filename).getName()}"
         else null
     }
 
@@ -87,8 +87,9 @@ process bwa2_mapping{
     script:
     idx = reads[0]
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[2]
+        rds = sort_reads(reads[1..2])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

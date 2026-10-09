@@ -1,0 +1,1116 @@
+### alevinfry.smk
+mkdir -p $(dirname {output.t2g}); zcat {input.anno} | awk 'BEGIN{{FS=\"\\t\";OFS=\"\\t\"}} $3==\"transcript\"{{match($9,/transcript_id \"[^\"]+\"/); t=substr($9,RSTART+15,RLENGTH-16); match($9,/gene_id \"[^\"]+\"/); g=substr($9,RSTART+9,RLENGTH-10); print t,g}}' > {output.t2g} 2> {log}
+
+### alevinfry.smk
+{params.mapp} generate-permit-list -i {input.rad} -d fw {params.ppara} -o {params.quantdir} &> {log}; {params.mapp} collate -i {params.quantdir} -r {input.rad} -t {threads} &>> {log}; {params.mapp} quant -i {params.quantdir} -m {input.t2g} -t {threads} -r cr-like {params.cpara} -o {params.quantdir} --use-mtx &>> {log} && mkdir -p $(dirname {output.cnts}) && gzip -c {params.quantdir}/alevin/quants_mat.mtx > {output.cnts} 2>> {log}
+
+### annotatebed.smk
+ln -s {params.abs} {output}
+
+### annotatebed.smk
+ln -s {params.abs} {output}
+
+### annotatebed.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}
+
+### annotatebed.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[0]} 2> {log} && bedtools bamtobed -split -i {input[1]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |gzip > {output[1]} 2>> {log}
+
+### annotatebed.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b {input[0]} -a {params.anno} {params.annof} {params.annop} |gzip > {output[0]}
+
+### annotatebed.smk
+set +o pipefail; gzip -cdfq {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### annotatebed.smk
+set +o pipefail; gzip -cdfq {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### annotatebed.smk
+export LC_ALL=C; zcat {input.bd} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.bt} && bedtools getfasta -fi {input.fa} -bed {output.bt} -name+ -tab -s -fullHeader -fo {output.bs} && cut -d$'\t' -f2 {output.bs}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.bd}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.bed}
+
+### annotatebed.smk
+export LC_ALL=C; zcat {input[0]}|perl -wlane 'print join(\"\t\",@F[0..6],$F[-3],$F[-2])' |bedtools merge -s -c 7,8,9 -o distinct -delim \"|\" |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output[0]}
+
+### bbduk.smk
+{params.trim} t={threads} in1={input.r1} in2={input.r2} out1={output.o1} out2={output.o2} {params.tpara}
+
+### bbduk.smk
+mv {input.o1} {output.r1} && mv {input.o2} {output.r2}
+
+### bbduk.smk
+{params.trim} t={threads} in={input.r1} out={output.o1} {params.tpara}
+
+### bbduk.smk
+mv {input.o1} {output.r1}
+
+### bwa.smk
+if [[ -f \"{output.uidx}\\/*\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\" ; else {params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### bwa.smk
+{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} > {output.sai1} 2>> {log} && {params.mapp} {params.mpara} -t {threads} {input.ref} {input.r2} > {output.sai2} 2>> {log} && touch {output.unmapped} && touch {output.mapped}
+
+### bwa.smk
+{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} 2>> {log} && touch {output.unmapped} && touch {output.mapped}
+
+### bwa.smk
+{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### bwa.smk
+{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwa.smk
+{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### bwa2.smk
+if [[ -f \"{output.uidx}\\/*\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\" ; else {params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi
+
+### bwa2.smk
+{params.mapp} mem {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwa2.smk
+{params.mapp} mem {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### bwameth.smk
+if [[ -f \"{output.uidx}\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\";else zcat {input.ref} > {output.uidx} && {params.indexer} {output.uidx} {params.ipara} 2> {log} && ln -fs {params.linkidx} {output.idx};fi
+
+### bwameth.smk
+{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### bwameth.smk
+{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### ciri2.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.sam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then mkdir -p {output.tmp} && zcat {input.sam}|samtools sort -n -@ {threads} -u -O sam -T {output.tmp} > {output.ts} && zcat {input.anno} > {output.ta} && zcat {input.ref} > {output.tf} && perl {params.circ} -I {output.ts} -O {output.circs} -F {output.tf} -T {threads} -A {output.ta} -G {log} {params.cpara} &>> {log}; else gzip < /dev/null > {output.circs}; echo \"File {input.sam} empty\" >> {log}; fi; touch CIRIerror.log && cat CIRIerror.log >> {log} && echo '' > CIRIerror.log && touch {output.circs} && mkdir -p {output.tmp}
+
+### countreads.smk
+arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log} && arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}
+
+### countreads.smk
+arr=({input.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r1};done 2>> {log}; arr=({input.r2}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > {output.r2};done 2>> {log}
+
+### countreads.smk
+arr=({input.r1}); orr=({output.r1});alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}
+
+### countreads.smk
+arr=({input.r1}); orr=({output.r1}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do a=$(zcat ${{arr[$i]}}|wc -l ); echo $((a/4)) > ${{orr[$i]}};done 2>> {log}
+
+### countreads.smk
+export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}G -T TMP -u |wc -l > {output.m} ;done 2>> {log}
+
+### countreads.smk
+export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}G -T TMP -u |wc -l > {output.u} ;done 2>> {log}
+
+### countreads.smk
+export LC_ALL=C; arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}G -T TMP -u |wc -l > {output.m} ;done 2>> {log}
+
+### countreads.smk
+export LC_ALL=C; arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do samtools view -F 260 ${{arr[$i]}} | cut -d$'\t' -f1|sort --parallel={threads} -S {params.sortmem}G -T TMP -u |wc -l > {output.u} ;done 2>> {log}
+
+### countreads.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/
+
+### countreads.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/
+
+### countreads.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/
+
+### countreads.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/
+
+### countreads.smk
+arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}
+
+### countreads.smk
+{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_d} --table {output.tbl_d} --anno {output.anno_d} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_ud} --table {output.tbl_ud} --anno {output.anno_ud} 2> {log}
+
+### countreads.smk
+arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}
+
+### countreads.smk
+{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log}
+
+### countreads.smk
+Rscript {params.bins} {input.counts} {output.cpm} {output.tpm} 2> {log}
+
+### cutadapt.smk
+{params.trim} {params.tpara} --cores {threads} -o {output.o1} -p {output.o2} {input.r1} {input.r2} &> {log}
+
+### cutadapt.smk
+mv {input.o1} {output.r1} && mv {input.o2} {output.r2}
+
+### cutadapt.smk
+{params.trim} {params.tpara} --cores {threads} -o {output.o1} {input.r1} > {log}
+
+### cutadapt.smk
+mv {input.o1} {output.r1}
+
+### deseq2_DE.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### deseq2_DE.smk
+{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}
+
+### deseq2_DE.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}
+
+### deseq2_DE.smk
+set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}
+
+### deseq2_DE.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEENV} --loglevel DEBUG 2>> {log}
+
+### dexseq_DEU.smk
+{params.bins}/Analysis/DEU/prepare_deu_annotation.py -f {output.countgtf} {params.countstrand} <(gzip -cdfq {input.anno}) {output.deugtf} 2>> {log}
+
+### dexseq_DEU.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {input.countgtf}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k2,2 -k3,3n -k4,4n -k1,1 -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### dexseq_DEU.smk
+{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}
+
+### dexseq_DEU.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.cnt} {params.ref} {input.flat} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.deupara}\' 2> {log}
+
+### dexseq_DEU.smk
+set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[9] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut} ||$F[9] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[9] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[9] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[9] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[9] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}
+
+### dexseq_DEU.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEUENV} --loglevel DEBUG 2>> {log}
+
+### dexseq_DTU.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}
+
+### dexseq_DTU.smk
+set +o pipefail; for i in {input};do fn=\"${{i##*/}}\"; if [[ -s \"$i\" ]]; then zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane ' next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut})){{print}}' |gzip > DTU/{combo}/SigUP_$fn && zcat $i| grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[1] || !$F[2]);if ($F[1] =~ /adj_pvalue/ || $F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut})){{print}}' |gzip > DTU/{combo}/Sig_$fn; else touch DTU/{combo}/Sig_$fn DTU/{combo}/SigUP_$fn DTU/{combo}/SigDOWN_$fn; fi; done 2> {log}
+
+### dexseq_DTU.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DTUENV} --loglevel DEBUG 2>> {log}
+
+### diego_DAS.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### diego_DAS.smk
+echo \'{params.slist}\' 1> {output.smap} 2>> {log} && echo \'{params.clist}\' 1> {output.cmap} 2>> {log}
+
+### diego_DAS.smk
+{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}
+
+### diego_DAS.smk
+python3 {params.bins}/Analysis/DAS/diego_contrast_files.py -a <(zcat {input.anno}) -b {params.pcombo} -c {params.compare} -o {params.outdir} 2> {log}
+
+### diego_DAS.smk
+set +euo pipefail; arr=({input.contrast}); orr=({params.outfile}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond -e -f ${{orr[$i]}} &> ${{orrt[$i]}};done && arr=({input.contrast}); orr=({output.csv}); orrt=({log}); for i in ${{!arr[@]}}; do basecond=$(head -n 1 ${{arr[$i]}} | awk \'{{print $1}}\'); {params.bins} -a <(zcat {input.tbl}) -b ${{arr[$i]}} -x $basecond {params.dpara} 1> ${{orr[$i]}} 2>> ${{orrt[$i]}};done
+
+### diego_DAS.smk
+set +o pipefail; arr=({input.csv}); orr=({output.sig}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then cat $a|head -n1 > \"${{orr[$i]}}\"; cat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[10]);if ($F[10] eq \"yes\") {{print}}' >> \"${{orr[$i]}}\" &>> {log}; else touch \"${{orr[$i]}}\"; fi; done
+
+### diego_DAS.smk
+for pdfile in {input} ; do convert -verbose -density 500 -resize '800' $pdfile ${{pdfile%pdf}}png; done
+
+### diego_DAS.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DASENV} --loglevel DEBUG 2>> {log}
+
+### dorado.smk
+{params.caller} download --directory {params.p5dir} --model {params.cmodel} &> {log} && {params.caller} basecaller {params.cpara} {params.p5dir}/{params.cmodel} {params.p5dir}/ 2>> {log} 1> {output.bam} && samtools view -h {output.bam}|samtools fastq -n - | pigz > {output.fq}
+
+### drimseq_DTU.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}
+
+### drimseq_DTU.smk
+set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orru[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orru[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orrt[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtu[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtu[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}
+
+### drimseq_DTU.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DTUENV} --loglevel DEBUG 2>> {log}
+
+### dtu_base.smk
+set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### dtu_base.smk
+ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}
+
+### dtu_base.smk
+ln -s {params.filetolink} {output.r1}
+
+### dtu_base.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### dtu_base.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### dtu_base.smk
+terminus group {params.tpara} -d {input.ctsdir} -o {params.outdir} &> {log}
+
+### dtu_base.smk
+terminus collapse -d {input.dirs} -o {params.outdir} &> {log}; for d in {input.dirs}; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}
+
+### dtu_base.smk
+python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}
+
+### edger_DAS.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### edger_DAS.smk
+{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} 2> {log}
+
+### edger_DAS.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.daspara}\' 2> {log} 
+
+### edger_DAS.smk
+set +o pipefail; arr=({input.sort}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut} ||$F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[6] || !$F[3]);if ($F[3] < {params.pv_cut} && ($F[6] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}
+
+### edger_DAS.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DASENV} --loglevel DEBUG 2>> {log}
+
+### edger_DE.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### edger_DE.smk
+{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}
+
+### edger_DE.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.depara}\' 2> {log}
+
+### edger_DE.smk
+set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}
+
+### edger_DE.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEENV} --loglevel DEBUG 2>> {log}
+
+### edger_DEU.smk
+{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary
+
+### edger_DEU.smk
+{params.bins}/Analysis/build_count_table.py {params.dereps} --ids --table {output.tbl} --anno {output.anno} 2> {log}
+
+### edger_DEU.smk
+Rscript --no-environ --no-restore --no-save {params.bins} {input.anno} {input.tbl} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.deupara}\' 2> {log}
+
+### edger_DEU.smk
+set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}
+
+### edger_DEU.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DEUENV} --loglevel DEBUG 2>> {log}
+
+### fastp.smk
+{params.trim} --thread {threads} --in1 {input.r1} --in2 {input.r2} --out1 {output.o1} --out2 {output.o2} {params.tpara}
+
+### fastp.smk
+mv {input.o1} {output.r1} && mv {input.o2} {output.r2}
+
+### fastp.smk
+{params.trim} --thread {threads} -i {input.r1} -o {output.o1} {params.tpara}
+
+### fastp.smk
+mv {input.o1} {output.r1}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}
+
+### fastqc.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f bam {input.r1} 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT $SCAN 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_dedup_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT $SCAN 2> {log}
+
+### fastqc_raw.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_raw.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fastqc_raw.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_raw.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}
+
+### fastqc_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### fgumi.smk
+mkdir -p {output.td} && {params.dedup} extract {params.epara} --inputs {input.r1} {input.r2} --sample {params.sname} --library {params.sname} --output {output.ubam} > {log} 2>&1 && samtools fastq -n -1 {output.o1} -2 {output.o2} -0 /dev/null -s /dev/null {output.ubam} >> {log} 2>&1
+
+### fgumi.smk
+mkdir -p {output.td} && {params.dedup} extract {params.epara} --inputs {input.r1} --sample {params.sname} --library {params.sname} --output {output.ubam} > {log} 2>&1 && samtools fastq -n {output.ubam} | gzip -c > {output.o1} && echo done >> {log}
+
+### fgumi.smk
+
+
+### fgumi.smk
+
+
+### fgumi_dedup.smk
+mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --input {input.bam} --output {output.bam} 2> {log} && samtools index {output.bam} 2>> {log}
+
+### guppy.smk
+ echo \"{params.f5file}\" > {params.f5dir}/f5list && {params.caller} {params.cpara} -c {params.cmodel} --compress_fastq -i {params.f5dir} --input_file_list {params.f5dir}/f5list -s {params.f5dir}/BASECALL 2> {log} && cat {params.f5dir}/BASECALL/pass/fastq_runid_*.fastq.gz > {output.fq} && rm -f {params.f5dir}/BASECALL/pass/fastq_runid_*.fastq.gz && cat {params.f5dir}/BASECALL/*.log >> {log} && rm -f {params.f5dir}/BASECALL/*.log && mv -f {params.f5dir}/BASECALL/sequencing_summary.txt {output.summary} &&  mv -f {params.f5dir}/BASECALL/sequencing_telemetry.js {output.telemetry} && rm -f {params.f5dir}/f5list
+
+### hisat2.smk
+if [[ -f \"{output.idxfile}\" ]]; then ln -fs {params.lnkidx} {output.idx} && mkdir -p {output.uidx} && touch {output.tmp} {output.idxfile} && echo \"Found hisat index, continue with mapping\" ; else zcat {input.fa} > {output.tmp} && mkdir -p {output.uidx} ;{params.indexer}-build {params.ipara} -p {threads} {output.tmp} {output.uidx}/{params.pref} 2> {log} && ln -fs {params.lnkidx} {output.idx} && touch {output.uidx} && touch {output.idxfile};fi
+
+### hisat2.smk
+set +euo pipefail; {params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -1 {input.r1} -2 {input.r2} --new-summary --summary-file {output.summary} --un-conc-gz {params.umn}.unmapped -S {params.muz} &> {log} && gzip {params.muz} && touch {params.umn}.unmapped.1.gz {params.umn}.unmapped.2.gz; rename 's/.unmapped.([1|2]).gz/_R$1_unmapped.fastq.gz/' {params.umn}.unmapped.*.gz; touch {output.unmapped_r1} {output.unmapped_r2} &>> {log}
+
+### hisat2.smk
+set +euo pipefail; {params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -U {input.query} --new-summary --summary-file {output.summary} --un-gz {output.unmapped} -S {params.muz} &> {log} && gzip {params.muz} && touch {output.unmapped}
+
+### kallisto.smk
+set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -t {threads} -i {output.uidx} {input.fa} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### kallisto.smk
+set +euo pipefail; {params.mapp} quant -t {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} {input.r1} {input.r2} &>> {log} && gzip {output.ctsdir}/abundance.tsv && ln -fs {params.linksf}/abundance.tsv.gz {output.cnts} &>> {log}
+
+### kallisto.smk
+set +euo pipefail; {params.mapp} quant -t {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} --single {input.r1} &>> {log} && gzip {output.ctsdir}/abundance.tsv && ln -fs {params.linksf}/abundance.tsv.gz {output.cnts} &>> {log}
+
+### kallisto_trim.smk
+ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}
+
+### kallisto_trim.smk
+ln -s {params.filetolink} {output.r1}
+
+### kallisto_trim.smk
+set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -t {threads} -i {output.uidx} {input.fa} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### kallisto_trim.smk
+set +euo pipefail; {params.mapp} quant -t {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} {input.r1} {input.r2} &>> {log} && gzip {output.ctsdir}/abundance.tsv && ln -fs {params.linksf}/abundance.tsv.gz {output.cnts} &>> {log}
+
+### kallisto_trim.smk
+set +euo pipefail; {params.mapp} quant -t {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} --single {input.r1} &>> {log} && gzip {output.ctsdir}/abundance.tsv && ln -fs {params.linksf}/abundance.tsv.gz {output.cnts} &>> {log}
+
+### macs2.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f {params.mapmode} {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi
+
+### macs2.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi
+
+### macs2.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}
+
+### macs2.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### macs2.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### macs2.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re}) | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### macs2.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### macs2.smk
+echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}
+
+### macs3.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(samtools view {input.bam} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} callpeak -t {input.bam} {params.pairing} --outdir {params.outdir} -n {params.outname} -f {params.mapmode} {params.ppara} 2> {log} && gzip {params.outdir}/{params.outname}_peaks.narrowPeak 2>> {log} && ln -s {params.outname}_peaks.narrowPeak.gz {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.bam} empty\" >> {log}; fi
+
+### macs3.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi
+
+### macs3.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b {input} -a {params.anno} |gzip > {output} 2> {log}
+
+### macs3.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### macs3.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### macs3.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw}) | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re}) | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### macs3.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### macs3.smk
+echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}
+
+### manipulate_genome.smk
+set +o pipefail; gzip -cdfq {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### manipulate_genome.smk
+set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1);chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### manipulate_genome.smk
+set +o pipefail; gzip -cdfq {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### manipulate_genome.smk
+set +o pipefail; zcat {input[0]} |perl -F\\\\040 -wane 'if($_ =~ /^>/){{$F[0] = $F[0] =~ /^>chr/ ? $F[0] : \">chr\".substr($F[0],1))=~ s/\_/\./g;chomp($F[0]);print \"\\n\".$F[0].\"\\n\"}} else{{($line=$_)=~s/\\r[\\n]*/\\n/gm; chomp($line=$_); print $line}}' |tail -n+2 > {output.fa} && {params.bins}/Preprocessing/indexfa.sh {output.fa} 2> {log} && cut -f1,2 {output.fai} > {output.fas}
+
+### mapping.smk
+set +o pipefail; export LC_ALL=C; samtools view -H {input.mapps}|grep '^@HD' |pigz -p 1 -f > {output.tmphead} 2> {log}; samtools view -H {input.mapps}|grep '^@SQ'|sort -t$'\t' -k1,1 -k2,2V |pigz -p 1 -f >> {output.tmphead} 2>> {log}; samtools view -H {input.mapps}|grep '^@RG'|pigz -p 1 -f >> {output.tmphead} 2>> {log}; samtools view -H {input.mapps}|grep -P '^@PG'|pigz -p {threads} -f >> {output.tmphead} 2>> {log}; samtools view -h {input.mapps} | grep -v \"^@\"|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k3,3V -k4,4n - |pigz -p {threads} -f > {output.tmpfile} 2>> {log}; cat {output.tmphead} {output.tmpfile} > {output.sortedsam} 2>> {log}
+
+### mapping.smk
+zcat {input.sortedsam} | samtools view -bS - > {output.bam} && samtools index {output.bam} 2> {log}
+
+### mapping.smk
+{params.bins}/Shells/UniqueSam_woPicard.sh {input.sortedsam} {output.uniqsam} {threads} 2> {log}
+
+### mapping.smk
+zcat {input.uniqsam} | samtools view -bS - > {output.uniqbam} && samtools index {output.uniqbam} 2> {log}
+
+### minimap.smk
+{params.indexer} -t {threads} -d {output.uidx} {params.ipara} {input.fa} 2> {log} && ln -s {params.linkidx} {output.idx}
+
+### minimap.smk
+{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.q1} {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### minimap.smk
+{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc_rustqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multiqc_rustqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### multx.smk
+{params.multx} -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o %_R1_demux.fastq.gz -o %_R2_demux.fastq.gz {params.tpara} 2>&1 > {log} 
+
+### multx.smk
+fastp --in1 {input.r1} --out1 {output.r1_trimmed} --trim_front1 1 --disable_adapter_trimming --disable_quality_filtering --disable_trim_poly_g --disable_length_filtering --dont_eval_duplication --thread {threads}
+
+### multx.smk
+{params.multx}  -B {input.whitelist} -b <(zcat {input.r1}) <(zcat {input.r2}) -o %_R1_demux.fastq.gz -o %_R2_demux.fastq.gz {params.tpara} 2>&1 > {log} > {log} 2>&1
+
+### multx.smk
+cat {input.o1_first} {input.o1_second} > {output.o1} && cat {input.o2_first} {input.o2_second} > {output.o2}
+
+### oarfish.smk
+set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {input.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} && gzip -c {params.prefix}.quant > {output.ctsdir}/quant.sf.gz ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### peaks.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### peaks.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### peaks.smk
+{params.bins}/Universal/ExtendBed.pl -u 1 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}
+
+### peaks.smk
+{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}
+
+### peaks.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### peaks.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### peaks.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### peaks.smk
+perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}
+
+### peaks.smk
+perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}
+
+### peaks.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi
+
+### peaks.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}
+
+### peaks.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### peaks.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f <(zcat {input.pk}) -c {input.sizes} -p peak -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### peaks.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### peaks.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### peaks.smk
+echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}
+
+### picard_dedup.smk
+mkdir -p {output.td} && {params.dedup} {params.jpara} MarkDuplicates --REMOVE_DUPLICATES true --ASSUME_SORT_ORDER coordinate --TMP_DIR {output.td} --INPUT {input.bam} --OUTPUT {output.bam} --METRICS_FILE {output.met} {params.dpara} 2> {log} && samtools index {output.bam} 2>> {log} && cp -f {output.met} $(dirname {log})/
+
+### piranha.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### piranha.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### piranha.smk
+{params.bins}/Universal/ExtendBed.pl -u 1 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}
+
+### piranha.smk
+{params.bins}/Universal/ExtendBed.pl -d 1 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}
+
+### piranha.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### piranha.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### piranha.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' >> {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat} 2>> {log}
+
+### piranha.smk
+perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6| gzip > {output.pre} 2> {log}
+
+### piranha.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}|sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6) 2> {log}|tail -n+2| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi
+
+### piranha.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then export LC_ALL=C; zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi
+
+### piranha.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}
+
+### piranha.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### piranha.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### piranha.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### piranha.smk
+zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log} && zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}
+
+### piranha.smk
+echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone 2> {log}
+
+### piscem.smk
+if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found index, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && mkdir -p {output.uidx} && {params.indexer} build -t {threads} {params.ipara} -s {output.tmpfa} -o {output.uidx}/{params.pref} &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx};fi
+
+### piscem.smk
+{params.mapp} map-sc -t {threads} {params.mpara} -i {params.idxpref} -1 {input.r1} -2 {input.r2} -o {output.rad} &> {log}
+
+### premultiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.condition}; if [ -d QC/{wildcards.condition} ]; then SCAN=\"$SCAN QC/{wildcards.condition}\"; fi; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### premultiqc.smk
+OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.condition}; if [ -d QC/{wildcards.condition} ]; then SCAN=\"$SCAN QC/{wildcards.condition}\"; fi; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/
+
+### rammap.smk
+gzip -cdfq {input.fa} > {output.tmpfa} && {params.indexer} -t {threads} -d {output.uidx} {params.ipara} {output.tmpfa} 2> {log} && ln -s {params.linkidx} {output.idx}
+
+### rammap.smk
+{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.q1} {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### rammap.smk
+{params.mapp} -t {threads} {params.mpara} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT $SCAN 2> {log}
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_dedup_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -o $OUT $SCAN 2> {log}
+
+### rastqc_raw.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_raw.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rastqc_raw.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_raw.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rastqc_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rastqc_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_trim.smk
+OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")
+
+### rastqc_trim.smk
+OUT=$(dirname {output.html}); SCAN=QC/{wildcards.combo}/{wildcards.condition}; mkdir -p $OUT; export LC_ALL=C.UTF-8; multiqc -f {params.qpara} --exclude picard --exclude gatk -k json -z -s -o $OUT $SCAN 2> {log}
+
+### rustar.smk
+if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir TMP/rustar_generate_index --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf TMP/rustar_generate_index
+
+### rustar.smk
+{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} 
+
+### rustar.smk
+{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} touch {output.tmp}.Unmapped.out.mate && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}
+
+### rustar.smk
+{params.mapp} {params.mpara} {params.stranded} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {params.r1} {params.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} 
+
+### rustqc.smk
+gzip -cdfq {params.anno} > {output.tmpanno} && rustqc rna {input.r1} --gtf {output.tmpanno} -t {threads} {params.paired} -s {params.stranded} --skip-dup-check -j {output.js} -o {output.o1} {params.qpara} 2> {log}
+
+### rustqc.smk
+gzip -cdfq {params.anno} > {output.tmpanno} && rustqc rna {input.r1} --gtf {output.tmpanno} -t {threads} {params.paired} -s {params.stranded} --skip-dup-check -j {output.js} -o {output.o1} {params.qpara} 2> {log}
+
+### salmon.smk
+set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### salmon.smk
+set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} quant -p {threads} -t {input.fa} -a {params.nbam} --deterministic {params.cpara} -o {output.ctsdir} &>> {log} && rm -f {params.nbam} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmon.smk
+set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; {params.mapp} quant -p {threads} -a {params.nbam} --annotation {input.anno} --genome {input.fa} {params.cpara} -o {output.ctsdir} &>> {log} && rm -f {params.nbam} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmon.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmon.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmon_trim.smk
+ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}
+
+### salmon_trim.smk
+ln -s {params.filetolink} {output.r1}
+
+### salmon_trim.smk
+set +euo pipefail; {params.mapp} index {params.ipara} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### salmon_trim.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmon_trim.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}
+
+### salmonalign.smk
+set +euo pipefail; {params.indexer} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}
+
+### salmonalign.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -1 {input.q1} -2 {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### salmonalign.smk
+set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -r {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### scyphy.smk
+python {params.bins}/Analysis/RemoveSoftClip.py -f {input.fa} -b {input.bam} {params.opts} -o \'-\' | samtools sort -T {params.tmpidx}/SAMSORT -o {output.bam} --threads {threads} \'-\' 2>> {log} && samtools index {output.bam} 2>> {log} && rm -rf TMP/{params.tmpidx}
+
+### scyphy.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### scyphy.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### scyphy.smk
+{params.bins}/Universal/ExtendBed.pl -u 0 -b {input.pks} -o {output.ext} -g {input.ref} 2> {log}
+
+### scyphy.smk
+{params.bins}/Universal/ExtendBed.pl -d 0 -b {input.pks} -o {output.ext} -g {input.ref}  2> {log}
+
+### scyphy.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}
+
+### scyphy.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}
+
+### scyphy.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"+\")' > {output.tosrt} 2> {log} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_fw} 2>> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |perl -wlane 'print join(\"\t\",@F[0..2],\".\",$F[3],\"-\")' > {output.tosrt} && cat {output.tosrt}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat_re} 2>> {log} && zcat {output.concat_fw} {output.concat_re} | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.concat}
+
+### scyphy.smk
+perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}
+
+### scyphy.smk
+perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}
+
+### scyphy.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pre} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then {params.peak} {params.ppara} <(zcat {input.pre}|sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6) 2> {log}|tail -n+2| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |grep -v 'nan'| gzip > {output.peak} 2>> {log}; else gzip < /dev/null > {output.peak}; echo \"File {input.pre} empty\" >> {log}; fi
+
+### scyphy.smk
+perl {params.bins}/Analysis/FindPeaks.pl {params.opts} -p <(zcat {input.pre}) 2> {log}| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.peak} 2>> {log}
+
+### scyphy.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.pk} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.pk} | perl -wlane '$F[0] = $F[0] =~ /^chr/ ? $F[0] : \"chr\".$F[0]; print join(\"\\t\",@F[0..5])' > {output.pt} && bedtools getfasta -fi {input.fa} -bed {output.pt} -name -tab -s -fullHeader -fo {output.ps} && cut -d$'\t' -f2 {output.ps}|sed 's/t/u/ig'|paste -d$'\t' <(zcat {input.pk}) - |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip  > {output.peak} 2> {log}; else gzip < /dev/null > {output.peak} && touch {output.pt} {output.ps}; fi
+
+### scyphy.smk
+perl {params.bins}/Universal/AnnotateBed.pl -b <(zcat {input}) -a {params.anno} |gzip > {output} 2> {log}
+
+### scyphy.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### scyphy.smk
+perl {params.bins}/Universal/Bed2Bedgraph.pl -f {input.pk} -c {input.sizes} -p score -x {output.tfw} -y {output.tre} -a track 2>> {log} && zcat {output.tfw}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n  |gzip > {output.fw} 2>> {log} &&  zcat {output.tre}|sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### scyphy.smk
+set +o pipefail; export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw} 2> {log}; else gzip < /dev/null > {output.map_fw}; echo \"File {input.map_fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re} 2> {log}; else gzip < /dev/null > {output.map_re}; echo \"File {input.map_re} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw_ext} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw_ext}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw_ext})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw_ext} 2> {log}; else gzip < /dev/null > {output.map_fw_ext}; echo \"File {input.map_fw_ext} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re_ext} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re_ext}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re_ext})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re_ext} 2> {log}; else gzip < /dev/null > {output.map_re_ext}; echo \"File {input.map_re_ext} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_fw_rev} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_fw_rev}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_fw_rev})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_fw_rev} 2> {log}; else gzip < /dev/null > {output.map_fw_rev}; echo \"File {input.map_fw_rev} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.map_re_rev} | head -c 1 | tr \'\\0\\n\' __)\" ]]; then scale=$(bc <<< \"scale=6;$(zcat {input.map_re_rev}|cut -f5|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..2]),\"\t\",$F[4]/$sc' <(zcat {input.map_re_rev})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.map_re_rev} 2> {log}; else gzip < /dev/null > {output.map_re_rev}; echo \"File {input.map_re_rev} empty\" >> {log}; fi
+
+### scyphy.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} 2>> {log} && bedGraphToBigWig {output.tfw} {input.fas} {output.fw} 2>> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} 2>> {log} && bedGraphToBigWig {output.tre} {input.fas} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi && zcat {input.map_fw} > {output.tmapfw} 2>> {log} && bedGraphToBigWig {output.tmapfw} {input.fas} {output.map_fw} 2>> {log} && zcat {input.map_re} > {output.tmapre} 2>> {log} && bedGraphToBigWig {output.tmapre} {input.fas} {output.map_re} 2>> {log} && zcat {input.map_fw_ext} > {output.tmapfw_ext} 2>> {log} && bedGraphToBigWig {output.tmapfw_ext} {input.fas} {output.map_fw_ext} 2>> {log} && zcat {input.map_re_ext} > {output.tmapre_ext} 2>> {log} && bedGraphToBigWig {output.tmapre_ext} {input.fas} {output.map_re_ext} 2>> {log} && zcat {input.map_fw_rev} > {output.tmapfw_rev} 2>> {log} && bedGraphToBigWig {output.tmapfw_rev} {input.fas} {output.map_fw_rev} 2>> {log} && zcat {input.map_re_rev} > {output.tmapre_rev} 2>> {log} && bedGraphToBigWig {output.tmapre_rev} {input.fas} {output.map_re_rev} 2>> {log}
+
+### scyphy.smk
+echo -e \"{input.fw}\\n{input.re}\\n{input.map_fw}\\n{input.map_re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}.trackdone && touch {input.re}.trackdone && touch {input.map_fw}.trackdone && touch {input.map_re}.trackdone 2> {log} && touch {input.map_fw_ext}.trackdone && touch {input.map_re_ext}.trackdone 2> {log} && touch {input.map_fw_rev}.trackdone && touch {input.map_re_rev}.trackdone 2> {log}
+
+### segemehl.smk
+{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx} &> {log} && ln -fs {params.linkidx} {output.idx}
+
+### segemehl.smk
+{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### segemehl.smk
+{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### segemehl3.smk
+{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx} &> {log} && ln -fs {params.linkidx} {output.idx}
+
+### segemehl3.smk
+set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2} && touch {output.txt} {output.sngl} {output.mult} {params.split}
+
+### segemehl3.smk
+set +o pipefail; {params.mapp} {params.mpara} -d {input.ref} -i {input.uidx} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped} && touch {output.txt} {output.sngl} {output.mult} {params.split}
+
+### segemehl3_bisulfite.smk
+{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} &> {log} && ln -fs {params.linkidx1} {output.idx1} && ln -fs {params.linkidx2} {output.idx2}
+
+### segemehl3_bisulfite.smk
+set +o pipefail;{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### segemehl3_bisulfite.smk
+set +o pipefail; {params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n --verbosity 0 - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### segemehl_bisulfite.smk
+{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} &> {log} && ln -fs {params.linkidx1} {output.idx1} && ln -fs {params.linkidx2} {output.idx2}
+
+### segemehl_bisulfite.smk
+{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}
+
+### segemehl_bisulfite.smk
+{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}
+
+### simpleaf.smk
+if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && echo \"Found index, continue with quant\" ; else export ALEVIN_FRY_HOME={params.afhome}; mkdir -p {params.afhome}; {params.mapp} set-paths &>> {log}; zcat {input.fa} > {output.tmpfa} && zcat {input.anno} > {output.tmpanno} && {params.mapp} index --fasta {output.tmpfa} --gtf {output.tmpanno} -t {threads} {params.ipara} -o {output.idx} &> {log};fi
+
+### simpleaf.smk
+export ALEVIN_FRY_HOME={params.afhome}; mkdir -p {output.ctsdir}; {params.mapp} quant --index {input.idx}/index --reads1 {input.r1} --reads2 {input.r2} -t {threads} {params.cpara} -o {params.quantdir} &> {log} && gzip -c {params.quantdir}/alevin/quants_mat.mtx > {output.cnts} 2>> {log}
+
+### simulatetrim.smk
+ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}
+
+### simulatetrim.smk
+ln -s {params.filetolink} {output.r1}
+
+### spit_DTU.smk
+python3 {params.bins} {input.anno} {params.ref} {params.outdir} {params.compare} {params.pcombo} {threads} \'{params.dtuopt}\' 2> {log}
+
+### spit_DTU.smk
+set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orru[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orru[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orrt[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtu[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtu[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}
+
+### spit_DTU.smk
+python3 {params.bins}/Analysis/RmdCreator.py --files {params.abspathfiles} --output {output} --env {DTUENV} --loglevel DEBUG 2>> {log}
+
+### sra.smk
+export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}
+
+### sra.smk
+set +euo pipefail; export NCBI_SETTINGS=\"{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} --split-files {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq;do gzip $i &>> {params.wd}{log};done ; exit 0
+
+### sra.smk
+export NCBI_SETTINGS=\"{params.fpara}\"; prefetch {params.ids} -o {output.prefetch} &> {log}
+
+### sra.smk
+set +euo pipefail; export NCBI_SETTINGS=\"{params.fpara}\"; fasterq-dump -O {params.outdir[0]} -e {threads} -t TMP {params.spara} {params.ids} &> {params.wd}{log} ; cd {params.outdir[0]} ; rename 's/(.sra)*_([1|2])/_R$2/' {params.sra}*.fastq &>> {params.wd}{log} ; for i in {params.sra}*.fastq; do gzip $i &>> {params.wd}{log};done ; exit 0
+
+### star.smk
+if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf {params.stmp} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.stmp} --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf {params.stmp}
+
+### star.smk
+{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} 
+
+### star.smk
+{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} touch {output.tmp}.Unmapped.out.mate && gzip {output.tmp}.Unmapped.out.mate* && mv {output.tmp}.Unmapped.out.mate*.gz {output.unmapped} 2>> {log} && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>>{log} && touch {output.tmp}
+
+### star.smk
+{params.mapp} {params.mpara} {params.stranded} --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM --outSAMtype BAM SortedByCoordinate --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {params.r1} {params.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && samtools view -h {output.tmp}.Aligned.sortedByCoord.out.bam | gzip > {output.mapped} && rm -f {output.tmp}.Aligned.sortedByCoord.out.bam; touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} 
+
+### starfusion.smk
+( zcat {input.fa} > {output.tmpfa} && zcat {input.anno} > {output.tmpanno} && mkdir -p {output.lib} && prep_genome_lib.pl --genome_fa {output.tmpfa} --gtf {output.tmpanno} --output_dir {output.lib} --CPU {threads} {params.bpara} ) &> {log}
+
+### starfusion.smk
+set +o pipefail; OUTDIR=$(dirname {output.preds}); if [[ -s \"{input.junction}\" ]]; then ctat_chr=$(grep -v '^#' {input.lib}/ref_annot.gtf 2>/dev/null | head -1 | cut -f1 | grep -c '^chr' || true); junc_chr=$(awk '!/^#/ && $1!=\"chr_donorA\"{{print $1; exit}}' {input.junction} | grep -c '^chr' || true); if [[ \"$ctat_chr\" == \"1\" && \"$junc_chr\" == \"0\" ]]; then echo \"Adding chr prefix to junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{if($1!~/^chr/)$1=\"chr\"$1; if($4!~/^chr/)$4=\"chr\"$4; if($1==\"chrMT\")$1=\"chrM\"; if($4==\"chrMT\")$4=\"chrM\"; print}}' {input.junction} > {output.normjunc}; elif [[ \"$ctat_chr\" == \"0\" && \"$junc_chr\" == \"1\" ]]; then echo \"Stripping chr prefix from junction to match CTAT lib\" >> {log}; awk 'BEGIN{{OFS=\"\\t\"}} /^#/{{print;next}} $1==\"chr_donorA\"{{print;next}} {{sub(/^chr/,\"\",$1); sub(/^chr/,\"\",$4); if($1==\"M\")$1=\"MT\"; if($4==\"M\")$4=\"MT\"; print}}' {input.junction} > {output.normjunc}; else cp {input.junction} {output.normjunc}; fi; {params.sf} --genome_lib_dir {input.lib} -J {output.normjunc} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; else mkdir -p $OUTDIR; touch {output.normjunc}; echo \"File {input.junction} empty, no chimeric STAR output found\" >> {log}; fi; touch {output.preds} {output.abridged}
+
+### starfusion.smk
+OUTDIR=$(dirname {output.preds}); {params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --right_fq {input.r2} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; touch {output.preds} {output.abridged}
+
+### starfusion.smk
+OUTDIR=$(dirname {output.preds}); {params.sf} --genome_lib_dir {input.lib} --left_fq {input.r1} --output_dir $OUTDIR --CPU {threads} {params.fpara} &> {log}; touch {output.preds} {output.abridged}
+
+### summary.smk
+Rscript --vanilla -e \"rmarkdown::render('{input}',params=list(root='{params.currentpath}/'),output_file='{params.currentpath}/{params.outdir}/SUMMARY.html', quiet=TRUE)\" 2> {log}
+
+### trimgalore.smk
+{params.trim} --cores {threads} --paired --gzip {params.tpara} -o {params.odir} {input.r1} {input.r2} &> {log}
+
+### trimgalore.smk
+mv {input.o1} {output.r1} && mv {input.o2} {output.r2}
+
+### trimgalore.smk
+{params.trim} --cores {threads} --gzip {params.tpara} -o {params.odir} {input.r1} &> {log}
+
+### trimgalore.smk
+mv {input.o1} {output.r1}
+
+### ucsc.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/2$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### ucsc.smk
+bedtools bamtobed -split -i {input[0]} |sed 's/ /\_/g'|perl -wl -a -F\'\\t\' -n -e '$F[0] =~ s/\s/_/g;if($F[3]=~/\\/1$/){{if ($F[5] eq \"+\"){{$F[5] = \"-\"}}elsif($F[5] eq \"-\"){{$F[5] = \"+\"}}}} print join(\"\t\",@F[0..$#F])' |sort -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output[0]} 2> {log}
+
+### ucsc.smk
+export LC_ALL=C; export LC_COLLATE=C; bedtools genomecov -i {input.bed} -bg -split -strand + -g {input.sizes} | sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log} && bedtools genomecov -i {input.bed} -bg -split -strand - -g {input.sizes} |sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.re} 2>> {log}
+
+### ucsc.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.fw}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.fw})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n |gzip > {output.fw} 2> {log}; else gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then scale=$(bc <<< \"scale=6;$(zcat {input.re}|cut -f4|perl -wne '{{$x+=$_;}}END{{if ($x == 0){{$x=1}} print $x}}')/1000000\") perl -wlane '$sc=$ENV{{scale}};print join(\"\t\",@F[0..$#F-1]),\"\t\",$F[-1]/$sc' <(zcat {input.re})| sort --parallel={threads} -S {params.sortmem}G -T TMP -t$'\t' -k1,1 -k2,2n|gzip > {output.re} 2> {log}; else gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### ucsc.smk
+export LC_ALL=C; if [[ -n \"$(zcat {input.fw} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.fw} > {output.tfw} && bedGraphToBigWig {output.tfw} {input.sizes} {output.fw} 2> {log}; else touch {output.tfw}; gzip < /dev/null > {output.fw}; echo \"File {input.fw} empty\" >> {log}; fi && if [[ -n \"$(zcat {input.re} | head -c 1 | tr \'\\0\\n\' __)\" ]] ;then zcat {input.re} > {output.tre} && bedGraphToBigWig {output.tre} {input.sizes} {output.re} 2>> {log}; else touch {output.tre}; gzip < /dev/null > {output.re}; echo \"File {input.re} empty\" >> {log}; fi
+
+### ucsc.smk
+echo -e \"{input.fw}\\n{input.re}\"|python3 {params.bins}/Analysis/GenerateTrackDb.py -i {params.uid} -e 1 -f STDIN -u '' -g {params.gen} {params.options} && touch {input.fw}\.trackdone && touch {input.re}.trackdone 2> {log}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} bam -i {input.bam} -o {output.td}/dedup.unsorted.bam --paired {params.dpara} > {log} 2>&1 && samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.unsorted.bam >> {log} 2>&1 && samtools index {output.bam} >> {log} 2>&1
+
+### umicollapse.smk
+mkdir -p {output.td} && {params.dedup} bam -i {input.bam} -o {output.td}/dedup.unsorted.bam {params.dpara} > {log} 2>&1 && samtools sort -@ {threads} -o {output.bam} {output.td}/dedup.unsorted.bam >> {log} 2>&1 && samtools index {output.bam} >> {log} 2>&1
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.wl}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}
+
+### umitools.smk
+mkdir -p {output.td} && echo 'EXTRACT unset, linking input fastq(s) as-is' > {log} && ln -sf $(readlink -f {input.r1}) {output.o1} 2>> {log} && ln -sf $(readlink -f {input.r2}) {output.o2} 2>> {log}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}
+
+### umitools.smk
+mkdir -p {output.td} && echo 'EXTRACT unset, linking input fastq(s) as-is' > {log} && ln -sf $(readlink -f {input.r1}) {output.o1} 2>> {log} && ln -sf $(readlink -f {input.r2}) {output.o2} 2>> {log}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} whitelist {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.wl}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}
+
+### umitools.smk
+mkdir -p {output.td} && echo 'EXTRACT unset, linking input fastq(s) as-is' > {log} && ln -sf $(readlink -f {input.r1}) {output.o1} 2>> {log}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}
+
+### umitools.smk
+mkdir -p {output.td} && echo 'EXTRACT unset, linking input fastq(s) as-is' > {log} && ln -sf $(readlink -f {input.r1}) {output.o1} 2>> {log}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --paired --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}
+
+### umitools.smk
+mkdir -p {output.td} && {params.dedup} dedup {params.dpara} --temp-dir {output.td} --stdin={input.bam} --log={log} --stdout={output.bam} 2>> {log} && samtools index {output.bam} 2>> {log}
+

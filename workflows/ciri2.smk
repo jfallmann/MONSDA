@@ -19,7 +19,7 @@ rule FindCircs:
             ts = temp("CIRCS/{combo}/{file}_tmp.sam"),
             ta = temp("CIRCS/{combo}/{file}_tmp.gtf"),
             tf = temp("CIRCS/{combo}/{file}_tmp.fa")
-    log:    "LOGS/CIRCS/{combo}/{file}_ciri2.log"
+    log:    "LOGS/{combo}/{file}/CIRCS/ciri2/ciri2.log"
     conda:  ""+CENV+".yaml"
     container: "oras://jfallmann/monsda:"+CENV+""
     threads: MAXTHREAD

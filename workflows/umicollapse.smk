@@ -15,7 +15,7 @@ if paired == 'paired':
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -33,7 +33,7 @@ if paired == 'paired':
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                     o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_extract.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -50,7 +50,7 @@ if paired == 'paired':
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                     o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_extract.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -67,7 +67,7 @@ else:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_whitelist.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_whitelist.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -83,7 +83,7 @@ else:
                     wl = rules.whitelist.output.wl
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_extract.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -99,7 +99,7 @@ else:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
             output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                     td = temp(directory("TMP/UMIEX/{combo}/{file}"))
-            log:   "LOGS/{combo}/{file}_dedup_extract.log"
+            log:   "LOGS/{combo}/{file}/DEDUP/umicollapse/dedup_extract.log"
             conda: ""+DEDUPENV+".yaml"
             container: "oras://jfallmann/monsda:"+DEDUPENV+""
             threads: 1
@@ -116,7 +116,7 @@ if paired == 'paired':
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        log:    "LOGS/{combo}/{file}/DEDUP/umicollapse/dedupbam_{type}.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 1
@@ -133,7 +133,7 @@ else:
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),
                 bai = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam.bai", category="DEDUP"),
                 td = temp(directory("TMP/UMIDD/{combo}/{file}_{type}"))
-        log:    "LOGS/{combo}/{file}_{type}/dedupbam.log"
+        log:    "LOGS/{combo}/{file}/DEDUP/umicollapse/dedupbam_{type}.log"
         conda:  ""+DEDUPENV+".yaml"
         container: "oras://jfallmann/monsda:"+DEDUPENV+""
         threads: 1

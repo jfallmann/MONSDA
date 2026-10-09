@@ -30,7 +30,7 @@ process featurecount_edger{
     saveAs: {filename ->
         if (filename.indexOf(".counts.gz") > 0)      "DAS/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
         else if (filename.indexOf(".counts.summary") > 0)      "DAS/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"               
-        else if (filename.indexOf(".log") > 0)        "LOGS/DAS/${SCOMBO}/${file(filename).getSimpleName()}/featurecounts_edger_unique.log"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${file(filename).getSimpleName()}/DAS/edger/featurecounts_edger_unique.log"
     }
 
     input:
@@ -79,7 +79,7 @@ process prepare_count_table{
         if (filename == "COUNTS.gz")      "DAS/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
         else if (filename == "ANNOTATION.gz")      "DAS/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
         else if (filename == "SampleDict.gz")      "DAS/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/DAS/${SCOMBO}/${COMBO}_prepare_count_table.log"
+        else if (filename == "log")      "LOGS/${SCOMBO}/DAS/edger/${COMBO}_prepare_count_table.log"
     }
 
     input:
@@ -93,9 +93,9 @@ process prepare_count_table{
     path "log", emit: log
 
     script:
+    repargs = rep_args(DASREPS, reps)
     """
-    reps_csv=\$(for f in $reps; do basename "\$f"; done | paste -sd, -)
-    ${BINS}/Analysis/build_count_table.py $DASREPS --ids -r \$reps_csv --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    ${BINS}/Analysis/build_count_table.py $repargs --ids --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
     """
 }
 
@@ -111,7 +111,7 @@ process run_edger{
         if (filename.indexOf("_table") > 0)      "DAS/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("_figure") > 0)      "DAS/${SCOMBO}/Figures/${file(filename).getName()}"                
         else if (filename.indexOf("SESSION") > 0)      "DAS/${SCOMBO}/${file(filename).getName()}"                     
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/${SCOMBO}/run_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DAS/edger/run_edger.log"
     }
 
     input:
@@ -146,7 +146,7 @@ process filter_significant{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf("_table") > 0)      "DAS/${SCOMBO}/Tables/${file(filename).getName()}"                                
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_deseq2.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DAS/edger/filter_deseq2.log"
     }
 
     input:
@@ -158,7 +158,7 @@ process filter_significant{
 
     script:  
     """
-    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then zcat \${i}| head -n1 |gzip > Sig_\${i};cp -f Sig_\${i} SigUP_\${i}; cp -f Sig_\${i} SigDOWN_\${i}; zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC ||\$F[3] >= $LFC) ){{print}}' |gzip >> Sig_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] >= $LFC) ){{print}}' |gzip >> SigUP_\${i} && zcat \${i}| tail -n+2 |grep -v -w 'NA'|perl -F'\\t' -wlane 'next if (!\$F[6] || !\$F[3]);if (\$F[6] < $PVAL && (\$F[3] <= -$LFC) ){{print}}' |gzip >> SigDOWN_\${i}; else touch Sig_\${i} SigUP\${i} SigDOWN_\${i}; fi;done 2> log
+    set +o pipefail; for i in $tabs; do if [[ -s \"\${i}\" ]];then python3 $BINS/Analysis/filter_significant.py --effect-column logFC --adjusted-p-column FDR --p-cutoff $PVAL --lfc-cutoff $LFC --input \"\${i}\" --output-sig Sig_\${i} --output-up SigUP_\${i} --output-down SigDOWN_\${i}; else touch Sig_\${i} SigUP_\${i} SigDOWN_\${i}; fi;done 2> log
     """
 }
 
@@ -172,7 +172,7 @@ process create_summary_snippet{
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
         if (filename.indexOf(".Rmd") > 0)         "REPORTS/SUMMARY/RmdSnippets/${SCOMBO}.Rmd"                               
-        else if (filename.indexOf("log") > 0)        "LOGS/DAS/filter_edger.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DAS/edger/filter_edger.log"
     }
 
     input:

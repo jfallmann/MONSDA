@@ -38,7 +38,7 @@ process hisat2_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "hisat2.idx")            "$MAPIDX"
-        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/MAPPING/hisat2_index.log"
+        else if (filename.indexOf(".log") >0)    "LOGS/${COMBO}/${CONDITION}/MAPPING/hisat2/index.log"
         else                                     "$MAPUIDX"
     }
 
@@ -72,7 +72,7 @@ process hisat2_mapping{
     saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)     "UNMAPPED/${COMBO}/${CONDITION}/"+"${file(filename).getName()}"
         else if (filename.indexOf(".summary") >0)            "MAPPED/${COMBO}/${CONDITION}/"+"${filename.replaceAll(/trimmed./,"")}"
-        else if (filename.indexOf(".log") >0)               "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)               "LOGS/${COMBO}/${CONDITION}/MAPPING/hisat2/${file(filename).getName()}"
         else null
     }
 
@@ -93,6 +93,7 @@ process hisat2_mapping{
     
     idx = reads[0]
     if (PAIRED == 'paired'){
+        rds = sort_reads(reads[1..2])
         if (STRANDED == 'fr'){
             stranded = '--rna-strandness FR --fr'
         }else if (STRANDED == 'rf'){
@@ -103,8 +104,8 @@ process hisat2_mapping{
             stranded = ''
         }
 
-        r1 = reads[1]
-        r2 = reads[2]
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/_R1(_dedup)?_trimmed$/,"")
         pf = fn+"_mapped.sam"
         ufo = fn+"_R1_unmapped.fastq.gz"

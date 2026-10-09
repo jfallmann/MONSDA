@@ -17,7 +17,6 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-spike <- if (argsLen > 7) args[8] else ""
 
 print(args)
 
@@ -97,6 +96,7 @@ colnames(tmm) <- t(dge$samples$samples)
 tmm$ID <- dge$genes$genes
 tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
 ## create file MDS-plot with and without summarized replicates
@@ -198,6 +198,7 @@ for (compare in comparisons[[1]]) {
     tmm$ID <- dge$genes$genes
     tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 
+    tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
     write.table(as.data.frame(tmm), gzfile(paste("Tables/DEU", "EDGER", combi, contrast_name, "DataSet", "table", "Normalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
     ## create file MDS-plot with and without summarized replicates
@@ -252,7 +253,10 @@ for (compare in comparisons[[1]]) {
         })
         qlf$table$Gene_ID <- qlf$genes$genes
         qlf$table$ExonPos <- qlf$genes$exons
-        res <- qlf$table[, c(6, 5, 7, 1, 2, 3, 4)]
+        # edgeR reports raw PValue only, add the BH adjusted p-value the filter works on
+        qlf$table$FDR <- p.adjust(qlf$table$PValue, method = "BH")
+        res <- qlf$table[, c(6, 5, 7, 1, 2, 3, 4, 8)]
+        res <- add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
         res <- as.data.frame(apply(res, 2, as.character))
 
         # create results table

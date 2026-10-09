@@ -1,5 +1,5 @@
 {
-    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS"
+    "WORKFLOWS": "", #which workflows do you want to run "MAPPING, QC, DEDUP, TRIMMING, COUNTING, TRACKS, PEAKS, DE, DEU, DAS, DTU, CIRCS, FUSIONS"
     "BINS": "", #where to find customscripts used in the workflow !!!ADVANCED USAGE ONLY!!!
     "MAXTHREADS": "20", #maximum number of cores to use, make sure this fits your needs
     "VERSION": "1.4.0", #needs to be identical to the installed version for reproducibility reasons
@@ -157,6 +157,7 @@
     "MAPPING": { #options for mapping for each sample/condition
                  "TOOLS": {
                      "star": "STAR",
+                     "rustar": "rustar",
                      "segemehl3": "segemehl.x",
                      "segemehl": "segemehl.x",
                      "hisat2": "hisat2",
@@ -173,6 +174,14 @@
                              "ANNOTATION": "$PATHTO/genome_or_other.gtfgff.gz",  #Path to the gzipped annotation file in gtf/gff format, overwrites SETTINGS
                              "star":{
                                  "OPTIONS":  # first entry in list is a dict of options for indexing, second for mapping, third can be e.g. appendix to index name, useful especially with minimap if using different kmer sizes
+                                    {
+                                        "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
+                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
+                                        "EXTENSION" : ""
+                                    }
+                             },
+                             "rustar":{
+                                 "OPTIONS":  # drop-in STAR replacement (rustar-aligner), same options as star
                                     {
                                         "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
                                         "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
@@ -242,7 +251,7 @@
                                             "OPTIONS":
                                             {
                                                 "INDEX": "",  # salmon index options
-                                                "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                                                "QUANT": "--seqBias --gcBias",  # salmon quant options
                                             }
                                         }
                                     }
@@ -440,7 +449,8 @@
         "TOOLS" :
         {
             "dexseq"  : "Analysis/DTU/DEXSEQ.R",
-            "drimseq"  : "Analysis/DTU/DRIMSEQ.R"
+            "drimseq"  : "Analysis/DTU/DRIMSEQ.R",
+            "spit"  : "Analysis/DTU/SPIT.py"
         },
         "COMPARABLE" :
         {
@@ -463,7 +473,7 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     },
@@ -472,7 +482,16 @@
                         "OPTIONS":
                         {
                             "INDEX": "",  # salmon index options
-                            "QUANT": "--validateMappings --seqBias --gcBias",  # salmon quant options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
+                            "DTU": ""  # Options for Analysis
+                        }
+                    },
+                    "spit":
+                    {
+                        "OPTIONS":
+                        {
+                            "INDEX": "",  # salmon index options
+                            "QUANT": "--seqBias --gcBias",  # salmon quant options
                             "DTU": ""  # Options for Analysis
                         }
                     }
@@ -494,6 +513,28 @@
                         "OPTIONS":
                         {
                             "CIRC": ""  # Additional options if needed
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "FUSIONS" : {
+        "TOOLS" :
+        {
+            "starfusion" : "STAR-Fusion"
+        },
+        "id": {
+            "condition": {
+                "setting": {
+                    "ENV" : "starfusion",
+                    "BIN" : "STAR-Fusion",
+                    "starfusion":{
+                        "OPTIONS":
+                        {
+                            "INDEX": "PATH_TO_CTAT_genome_lib_dir",  # Path to an existing CTAT genome resource library, will be built from REFERENCE/ANNOTATION if not present
+                            "BUILD": "",  # Additional options for prep_genome_lib.pl when building the CTAT library
+                            "FUSION": ""  # Additional options for STAR-Fusion; set "FASTQ": "true" to run in FASTQ mode instead of consuming STAR chimeric junctions
                         }
                     }
                 }

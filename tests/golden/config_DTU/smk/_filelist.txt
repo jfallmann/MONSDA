@@ -1,0 +1,6 @@
+allconditions_fastqc-trimgalore-picard-star_DTU_dexseq_subconfig.json
+allconditions_fastqc-trimgalore-picard-star_DTU_dexseq_subsnake.smk
+allconditions_fastqc-trimgalore-picard-star_DTU_drimseq_subconfig.json
+allconditions_fastqc-trimgalore-picard-star_DTU_drimseq_subsnake.smk
+allconditions_fastqc-trimgalore-picard-star_DTU_spit_subconfig.json
+allconditions_fastqc-trimgalore-picard-star_DTU_spit_subsnake.smk

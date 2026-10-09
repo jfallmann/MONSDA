@@ -39,7 +39,7 @@ process minimap_idx{
     publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow', overwrite: true,
     saveAs: {filename ->
         if (filename == "minimap.idx")                  "$MAPIDX"
-        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/minimap_index.log"
+        else if (filename.indexOf("index.log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/minimap/index.log"
         else                                            "$MAPUIDX"
     }
 
@@ -70,7 +70,7 @@ process minimap_mapping{
         saveAs: {filename ->
         if (filename.indexOf("_unmapped.fastq.gz") > 0)   "UNMAPPED/${COMBO}/${CONDITION}/${file(filename).getName()}"
         //else if (filename.indexOf(".sam.gz") >0)          "MAPPED/${COMBO}/${CONDITION}/${file(filename).getSimpleName().replaceAll(/_trimmed/,"")}"
-        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/${file(filename).getName()}"
+        else if (filename.indexOf(".log") >0)          "LOGS/${COMBO}/${CONDITION}/MAPPING/minimap/${file(filename).getName()}"
         else null
     }
 
@@ -86,8 +86,9 @@ process minimap_mapping{
     idxfile = reads[0]
     idx = idxfile.getName()
     if (PAIRED == 'paired'){
-        r1 = reads[1]
-        r2 = reads[2]
+        rds = sort_reads(reads[1..2])
+        r1 = rds[0]
+        r2 = rds[1]
         fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
         pf = fn+"_mapped.sam.gz"
         uf1 = fn+"_R1_unmapped.fastq.gz"

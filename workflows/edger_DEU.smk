@@ -25,7 +25,7 @@ rule featurecount_unique:
             tmph = temp("DEU/{combo}/Featurecounts/{file}_tmp.head.gz"),
             tmpc = temp("DEU/{combo}/Featurecounts/{file}_tmp.count.gz"),
             cts   = "DEU/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
-    log:    "LOGS/DEU/{combo}/{file}_featurecounts_edger_unique.log"
+    log:    "LOGS/{combo}/{file}/DEU/edger/featurecounts_edger_unique.log"
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: MAXTHREAD
@@ -35,14 +35,14 @@ rule featurecount_unique:
             paired   = lambda x: '-p' if paired == 'paired' else '',
             stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
             sortmem = get_sortmem
-    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(zcat {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+    shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
     
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
     output:  tbl  = "DEU/{combo}/Tables/{scombo}_COUNTS.gz",
              anno = "DEU/{combo}/Tables/{scombo}_ANNOTATION.gz"
-    log:     "LOGS/DEU/{combo}/{scombo}_prepare_count_table.log"
+    log:     "LOGS/{combo}/DEU/edger/{scombo}_prepare_count_table.log"
     conda:   ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: 1
@@ -60,7 +60,7 @@ rule run_edger:
             rules.themall.input.MDplot,
             rules.themall.input.allN,
             rules.themall.input.res,
-    log:    expand("LOGS/DE/{combo}/run_edger.log", combo=combo)
+    log:    expand("LOGS/{combo}/DEU/edger/run_edger.log", combo=combo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -77,13 +77,14 @@ rule filter_significant:
     output: sig = rules.themall.input.sig,
             sig_d = rules.themall.input.sig_d,
             sig_u = rules.themall.input.sig_u
-    log:    "LOGS/DEU/filter_edgerDEU.log"
+    log:    expand("LOGS/{combo}/DEU/edger/filter_edgerDEU.log", combo=combo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DEU', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc')
-    shell:  "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrt[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrr[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut} ||$F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[3] || !$F[6]);if ($F[6] < {params.pv_cut} && ($F[3] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DEU', 'padj'),
+            lfc_cut = get_cutoff_as_string(config, 'DEU', 'lfc'),
+            bins = BINS
+    shell:  "set +o pipefail; arr=({input.tbl}); orr=({output.sig}); orrt=({output.sig_d}); orrr=({output.sig_u}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column logFC --adjusted-p-column FDR --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orrr[$i]}}\" --output-down \"${{orrt[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrt[$i]}}\" \"${{orrr[$i]}}\"; fi;done 2> {log}"
 
 
 rule create_summary_snippet:
@@ -98,7 +99,7 @@ rule create_summary_snippet:
             rules.filter_significant.output.sig_u,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DEU/{combo}/create_summary_snippet.log",combo=combo)
+    log:    expand("LOGS/{combo}/DEU/edger/create_summary_snippet.log",combo=combo)
     conda:  ""+DEUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1

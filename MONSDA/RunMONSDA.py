@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import re
 import shlex
 import shutil
 import subprocess
@@ -37,6 +36,12 @@ else:
         "LOGS" + os.sep + scriptname + ".log",
         "LOGS" + os.sep + scriptname + "_" + ts + ".log",
     )
+    # keep tool versions of the archived run with the same timestamp as its log
+    if os.path.isfile(os.path.abspath("LOGS" + os.sep + "versions.txt")):
+        shutil.copy2(
+            "LOGS" + os.sep + "versions.txt",
+            "LOGS" + os.sep + "versions_" + ts + ".txt",
+        )
 
 log = setup_logger(
     name=scriptname.lower(),
@@ -53,6 +58,7 @@ log = setup_logger(
 
 import MONSDA.Params as mp
 import MONSDA.Utils as mu
+import MONSDA.Versions as mv
 import MONSDA.Workflows as mw
 
 
@@ -142,10 +148,17 @@ def parseargs():
     parser.add_argument(
         "--oras-registry",
         type=str,
-        default="docker.io",
+        default="ghcr.io",
         metavar="HOST",
-        help="Container registry hostname for ORAS image pulls (default: docker.io). "
-             "Use e.g. ghcr.io for GitHub Container Registry.",
+        help="Container registry hostname for ORAS image pulls (default: ghcr.io).",
+    )
+    parser.add_argument(
+        "--oras-namespace",
+        type=str,
+        default="jfallmann/monsda",
+        metavar="NAMESPACE",
+        help="Container namespace/repository for ORAS image pulls "
+             "(default: jfallmann/monsda). Use e.g. myuser/myrepo for a custom registry.",
     )
 
     if len(sys.argv) == 1:
@@ -168,7 +181,7 @@ def run_snakemake(
 ):
     try:
         logid = scriptname + ".run_snakemake: "
-        config = load_configfile(configfile)
+        config = mu.link_bgz_to_gz(load_configfile(configfile))
         subdir = "SubSnakes"
         mp.create_skeleton(subdir, skeleton)
 
@@ -207,7 +220,7 @@ def run_snakemake(
                     os.sep.join(["lib", pythonversion, "site-packages", "MONSDA"]),
                     "share",
                 )
-            except:
+            except Exception:
                 installpath = os.getcwd()
 
             workflowpath = os.path.join(installpath, "MONSDA", "workflows")
@@ -224,6 +237,15 @@ def run_snakemake(
         # Get processes to work on
         preprocess, subworkflows, postprocess = mw.get_processes(config)
         conditions = mp.get_conditions(config)
+
+        # Export versions of all tools configured to run for provenance and MultiQC
+        mv.write_versions(
+            config,
+            (preprocess or []) + (subworkflows or []) + (postprocess or []),
+            mw.envpath,
+            __version__,
+            configfile,
+        )
 
         """
         START TO PREPROCESS
@@ -492,7 +514,7 @@ def run_nextflow(
         logid = scriptname + ".run_nextflow: "
         argslist = list()
         writeout = True
-        config = load_configfile(configfile)
+        config = mu.link_bgz_to_gz(load_configfile(configfile))
         if useconda and not any(
             [
                 x in optionalargs
@@ -557,6 +579,15 @@ def run_nextflow(
         # Get processes to work on
         preprocess, subworkflows, postprocess = mw.nf_get_processes(config)
         conditions = mp.get_conditions(config)
+
+        # Export versions of all tools configured to run for provenance and MultiQC
+        mv.write_versions(
+            config,
+            (preprocess or []) + (subworkflows or []) + (postprocess or []),
+            mw.envpath,
+            __version__,
+            configfile,
+        )
 
         """
         START TO PROCESS
@@ -849,19 +880,9 @@ def run_nextflow(
 def runjob(jobtorun):
     try:
         logid = scriptname + ".runjob: "
-        run_cmd = jobtorun
-        if (
-            re.search(r"(^|\s)nextflow(\s|$)", jobtorun)
-            and "NXF_SYNTAX_PARSER" not in jobtorun
-        ):
-            run_cmd = "NXF_SYNTAX_PARSER=v1 " + jobtorun
-            log.warning(
-                logid
-                + "Nextflow 26.04+ strict parser detected; forcing legacy parser (NXF_SYNTAX_PARSER=v1) for compatibility with generated workflows."
-            )
         # return subprocess.run(jobtorun, shell=True, universal_newlines=True, capture_output=True)  # python >= 3.7
         job = subprocess.Popen(
-            run_cmd,
+            jobtorun,
             shell=True,
             universal_newlines=True,
             stdout=subprocess.PIPE,
@@ -890,7 +911,7 @@ def runjob(jobtorun):
                         log.error(logid + "STOPPING: " + str(output))
                     log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
-                    sys.exit()
+                    sys.exit(1)
                 else:
                     log.info(logid + str(output))
             if outerr and outerr != "":
@@ -905,7 +926,7 @@ def runjob(jobtorun):
                     log.error(logid + "STOPPING: " + str(outerr))
                     log.info("PLEASE CHECK LOG AT LOGS/MONSDA.log")
                     job.kill()
-                    sys.exit()
+                    sys.exit(1)
                 else:
                     log.info(logid + str(outerr))
             if job.poll() is not None:
@@ -935,7 +956,7 @@ def runjob(jobtorun):
             exc_tb,
         )
         log.error("".join(tbe.format()))
-        sys.exit()
+        sys.exit(1)
 
 
 def main():
@@ -972,6 +993,7 @@ def main():
 
         # --- set ORAS registry for container image pulls ---
         mw.set_oras_registry(knownargs.oras_registry)
+        mw.set_oras_namespace(knownargs.oras_namespace)
 
         log.debug(
             f"{logid} ARGS: {args} {type(args)} KNOWNARGS: {knownargs} {type(knownargs)} OPTIONALARGS: {optionalargs} {type(optionalargs)}"
@@ -985,7 +1007,8 @@ def main():
             + "{}".format(" ".join([shlex.quote(s) for s in sys.argv[1:]]))
         )
 
-        required_version = load_configfile(knownargs.configfile).get("VERSION")
+        config = load_configfile(knownargs.configfile)
+        required_version = config.get("VERSION")
         if not required_version:
             sys.exit(
                 "Can not check version needed, please add VERSION key to config file"
@@ -1008,6 +1031,13 @@ def main():
             )
         else:
             log.info("Running MONSDA version " + __version__ + " as configured")
+
+        postde_section = config.get("POSTDE")
+        if postde_section is not None:
+            try:
+                mw.load_postde_config(postde_section, config=config)
+            except ValueError as err:
+                sys.exit("POSTDE config invalid: " + str(err))
 
         MIN_PYTHON = (3, 11)
         if sys.version_info < MIN_PYTHON:

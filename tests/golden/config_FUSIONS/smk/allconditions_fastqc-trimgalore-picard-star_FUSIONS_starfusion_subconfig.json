@@ -1,0 +1,49 @@
+{
+  "BINS": "<REPO>/MONSDA/MONSDA/scripts",
+  "FUSIONS": {
+    "Test": {
+      "starfusion": {
+        "OPTIONS": {
+          "BUILD": "",
+          "FUSION": "",
+          "INDEX": "GENOMES/ctat_genome_lib"
+        }
+      }
+    }
+  },
+  "FUSIONSBIN": "STAR-Fusion",
+  "FUSIONSENV": "starfusion",
+  "MAXTHREADS": "4",
+  "RUNDEDUP": "enabled",
+  "SAMPLES": [
+    "Test/SRR6357070",
+    "Test/SRR6357071",
+    "Test/SRR6357072"
+  ],
+  "SETTINGS": {
+    "Test": {
+      "ANNOTATION": {
+        "GFF": "GENOME/genomic.gff.gz",
+        "GTF": "GENOME/genomic.gtf.gz"
+      },
+      "BATCHES": "",
+      "DECOY": "",
+      "GROUPS": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "INDEX": "",
+      "IP": "",
+      "PREFIX": "",
+      "REFERENCE": "GENOME/genome.fa.gz",
+      "SAMPLES": [
+        "SRR6357070",
+        "SRR6357071",
+        "SRR6357072"
+      ],
+      "SEQUENCING": "paired",
+      "TYPES": ""
+    }
+  }
+}

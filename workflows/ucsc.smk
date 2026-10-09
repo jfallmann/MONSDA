@@ -17,7 +17,7 @@ if not all(checklist):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            log:    "LOGS/{scombo}/{file}/TRACKS/ucsc/bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -28,7 +28,7 @@ if not all(checklist):
         rule BamToBed:
             input:  expand("MAPPED/{scombo}/{{file}}_mapped_{{type}}.bam", scombo=scombo)
             output: "BED/{scombo}/{file}_mapped_{type}.bed.gz"
-            log:    "LOGS/PEAKS/{scombo}/{file}bam2bed_{type}.log"
+            log:    "LOGS/{scombo}/{file}/TRACKS/ucsc/bam2bed_{type}.log"
             conda:  "bedtools.yaml"
             container: "oras://jfallmann/monsda:bedtools"
             threads: 1
@@ -47,11 +47,11 @@ for file in samplecond(SAMPLES, config):
 if not all(checklist):
     rule BedToBedg:
         input:  bed = "BED/{combo}/{file}_mapped_{type}.bed.gz",
-                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '')),
-                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+                fai = expand("{ref}.fa.fai", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa')),
+                sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
         output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bedg.gz",
                 re = "TRACKS/{combo}/{file}_mapped_{type}.re.bedg.gz"
-        log:    "LOGS/TRACKS/{combo}/{file}_{type}_ucscbedtobedgraph.log"
+        log:    "LOGS/{combo}/{file}/TRACKS/ucsc/{type}_ucscbedtobedgraph.log"
         conda:  "bedtools.yaml"
         container: "oras://jfallmann/monsda:bedtools"
         threads: 1
@@ -64,7 +64,7 @@ rule NormalizeBedg:
             re = rules.BedToBedg.output.re
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.norm.bedg.gz",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.norm.bedg.gz"
-    log:    "LOGS/TRACKS/{combo}/{file}_{type}_ucscnormalizebedgraph.log"
+    log:    "LOGS/{combo}/{file}/TRACKS/ucsc/{type}_ucscnormalizebedgraph.log"
     conda:  "perl.yaml"
     container: "oras://jfallmann/monsda:perl"
     threads: 1
@@ -75,12 +75,12 @@ rule NormalizeBedg:
 rule BedgToTRACKS:
     input:  fw = rules.NormalizeBedg.output.fw,
             re = rules.NormalizeBedg.output.re,
-            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', ''))
+            sizes = expand("{ref}.chrom.sizes", ref=REFERENCE.replace('.fa.gz', '').replace('.fa.bgz', '').removesuffix('.fa'))
     output: fw = "TRACKS/{combo}/{file}_mapped_{type}.fw.bw",
             re = "TRACKS/{combo}/{file}_mapped_{type}.re.bw",
             tfw = temp("TRACKS/{combo}/{file}_mapped_{type}.fw.tmp"),
             tre = temp("TRACKS/{combo}/{file}_mapped_{type}.re.tmp")
-    log:    "LOGS/TRACKS/{combo}/{file}_{type}_bedgtoucsc.log"
+    log:    "LOGS/{combo}/{file}/TRACKS/ucsc/{type}_bedgtoucsc.log"
     conda:  "ucsc.yaml"
     container: "oras://jfallmann/monsda:ucsc"
     threads: 1
@@ -92,7 +92,7 @@ rule GenerateTrack:
             re = rules.BedgToTRACKS.output.re
     output: "TRACKS/{combo}/{file}_mapped_{type}.fw.bw.trackdone",
             "TRACKS/{combo}/{file}_mapped_{type}.re.bw.trackdone"
-    log:    "LOGS/TRACKS/{combo}/{file}_track_{type}.log"
+    log:    "LOGS/{combo}/{file}/TRACKS/ucsc/track_{type}.log"
     conda:  "base.yaml"
     container: "oras://jfallmann/monsda:base"
     threads: MAXTHREAD

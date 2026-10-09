@@ -411,7 +411,7 @@ def merge_dicts(d:dict, u:dict) -> dict:
     # python 3.8+ compatibility
     try:
         collectionsAbc = collections.abc
-    except:
+    except AttributeError:
         collectionsAbc = collections
 
     for k, v in six.iteritems(u):
@@ -876,7 +876,9 @@ def toarray(file:str, ulim:int) -> np.array:
         usecols=(ulim),
         delimiter="\t",
         unpack=True,
-        converters={ulim: lambda s: convertcol(s.decode("utf-8"))},
+        converters={
+            ulim: lambda s: convertcol(s.decode("utf-8") if isinstance(s, bytes) else s)
+        },
     )
     return x
 
@@ -1128,6 +1130,68 @@ def check_ref(reference:str) -> str:
         return reference
     elif os.path.exists(os.path.abspath(reference + ".gz")):
         return reference + ".gz"
+    elif os.path.exists(os.path.abspath(reference + ".bgz")):
+        return reference + ".bgz"
+
+
+@check_run
+def link_bgz_to_gz(config: dict) -> dict:
+    """Replace .bgz file paths in config with .gz symlinks
+
+    Walks the config recursively, for every string value pointing to an
+    existing .bgz file a sibling symlink with .gz ending is created
+    (bgzip is gzip compatible) and the config value is replaced by the
+    .gz path, so all tools relying on .gz endings work transparently.
+
+    Parameters
+    ----------
+    config : dict
+        config to check
+
+    Returns
+    -------
+    dict
+        config with .bgz paths replaced by .gz symlinks
+    """
+    logid = scriptname + ".Utils_link_bgz_to_gz: "
+
+    def _fix(val):
+        if isinstance(val, str) and val.endswith(".bgz"):
+            if not os.path.isfile(val):
+                log.warning(
+                    logid
+                    + f"{val} is not a readable file (missing or dangling link?), cannot link to .gz"
+                )
+                return val
+            gz = val[: -len(".bgz")] + ".gz"
+            if os.path.isfile(gz):
+                log.info(logid + f"Using existing {gz} instead of {val}")
+                return gz
+            if os.path.lexists(gz):
+                log.warning(
+                    logid
+                    + f"{gz} exists but is no readable file (broken link?), keeping {val}"
+                )
+                return val
+            try:
+                os.symlink(os.path.basename(val), gz)
+                log.info(logid + f"Linked {val} to {gz} for .gz compatibility")
+            except OSError as e:
+                log.warning(
+                    logid + f"Could not link {val} to {gz}: {e}, keeping .bgz path"
+                )
+                return val
+            return gz
+        return val
+
+    for key, value in config.items():
+        if isinstance(value, dict):
+            link_bgz_to_gz(value)
+        elif isinstance(value, list):
+            config[key] = [_fix(v) for v in value]
+        else:
+            config[key] = _fix(value)
+    return config
 
 
 @check_run

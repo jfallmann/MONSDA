@@ -1,0 +1,52 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Index a reference sequence
+
+Usage: piscem build [OPTIONS] --threads <THREADS> --output <OUTPUT> <--ref-seqs <REF_SEQS>|--ref-lists <REF_LISTS>|--ref-dirs <REF_DIRS>>
+
+Options:
+  -o, --output <OUTPUT>            output file stem
+      --decoy-paths <DECOY_PATHS>  path to (optional) ',' sparated list of decoy sequences used to
+                                   insert poison k-mer information into the index
+  -h, --help                       Print help
+  -V, --version                    Print version
+
+Input:
+  -s, --ref-seqs <REF_SEQS>    ',' separated list of reference FASTA files
+  -l, --ref-lists <REF_LISTS>  ',' separated list of files (each listing input FASTA files)
+  -d, --ref-dirs <REF_DIRS>    ',' separated list of directories (all FASTA files in each directory
+                               will be indexed, but not recursively)
+
+Index Construction Parameters:
+  -k, --klen <KLEN>
+          length of k-mer to use, must be <= 31 and odd [default: 31]
+  -m, --mlen <MLEN>
+          length of minimizer to use; must be < `klen` [default: 19]
+  -t, --threads <THREADS>
+          number of threads to use
+      --no-ec-table
+          skip the construction of the equivalence class lookup table when building the index (not
+          recommended)
+      --polya-clip-length <POLYA_CLIP_LENGTH>
+          If provided (default is not to clip polyA), then reference sequences ending with polyA
+          tails of length greater than or equal to this value will be clipped
+      --seed <SEED>
+          index construction seed (seed value passed to SSHash index construction; useful if empty
+          buckets occur) [default: 1]
+      --dict <DICT>
+          dictionary artifacts to emit: `auto` (default), `sshash`, or `tiny` [default: auto]
+          [possible values: auto, sshash, tiny]
+
+Indexing Details:
+      --keep-intermediate-dbg          retain the reduced format GFA files produced by cuttlefish
+                                       that describe the reference cDBG (the default is to remove
+                                       these)
+  -w, --work-dir <WORK_DIR>            working directory where temporary files should be placed
+                                       [default: ./workdir.noindex]
+      --overwrite                      overwite an existing index if the output path is the same
+      --tmp-dir <TMP_DIR>              directory for SSHash's external minimizer-sort scratch files.
+                                       This is a distinct, later phase from the cDBG construction
+                                       that `--work-dir` covers. Unset keeps SSHash's default
+                                       (`sshash_tmp` in the current directory)
+      --ram-limit-gib <RAM_LIMIT_GIB>  RAM ceiling, in GiB, for SSHash's external minimizer sort.
+                                       Unset keeps SSHash's default (8 GiB); a smaller value spills
+                                       to disk sooner

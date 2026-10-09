@@ -2,6 +2,7 @@ import hashlib
 import io
 import os
 import shutil
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 
@@ -11,6 +12,7 @@ from MONSDA.Utils import (
     NestedDefaultDict,
     add_to_innermost_key_by_list,
     check_ref,
+    cluster2trna,
     comment_remover,
     convertcol,
     depth,
@@ -42,6 +44,7 @@ from MONSDA.Utils import (
     rmempty,
     sub_dict,
     subset_dict,
+    toarray,
     value_extract,
     yield_from_dict,
 )
@@ -177,9 +180,16 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(gethighest_dict(a, n), {"a": 5, "e": 4, "c": 3})
 
     def test_toarray(self):
-        # Assuming toarray function converts a file to np.array
-        # This test might need to create a temporary file to fully test toarray functionality
-        pass
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".tsv", delete=False) as fh:
+            fh.write("a\t1.5\nb\t2.5\nc\tnan\n")
+            path = fh.name
+        try:
+            arr = toarray(path, 1)
+            self.assertEqual(arr[0], 1.5)
+            self.assertEqual(arr[1], 2.5)
+            self.assertTrue(np.isnan(arr[2]))
+        finally:
+            os.remove(path)
 
     def test_convertcol(self):
         self.assertEqual(convertcol("1.23"), 1.23)
@@ -215,16 +225,47 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(idfromfa(id), ["cluster1", "chr19", "+"])
 
     def test_cluster2trna(self):
-        # Assuming cluster2trna function converts cluster to tRNA
-        # This test might need to create a temporary file to fully test cluster2trna functionality
-        pass
+        fasta = (
+            ">cluster1:chr19.tRNA5-LysCTT(+)\nACGT\n"
+            ">cluster1:chr19.tRNA6-LysCTT(+)\nTGCA\n"
+            ">cluster2:chr1.tRNA25-ArgTCT(-)\nGGGG\n"
+        )
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".fa", delete=False) as fh:
+            fh.write(fasta)
+            path = fh.name
+        try:
+            result = cluster2trna(path)
+            self.assertEqual(
+                result["cluster"]["CLUSTER1"], ["TRNA5-LYSCTT", "TRNA6-LYSCTT"]
+            )
+            self.assertEqual(result["cluster"]["CLUSTER2"], ["TRNA25-ARGTCT"])
+            self.assertEqual(result["tRNA"]["CHR19"]["+"], ["TRNA5-LYSCTT", "TRNA6-LYSCTT"])
+            self.assertEqual(result["tRNA"]["CHR1"]["-"], ["TRNA25-ARGTCT"])
+        finally:
+            os.remove(path)
 
     def test_check_ref(self):
-        reference = "test_ref"
-        with open(reference, "w") as f:
-            f.write("test")
-        self.assertEqual(check_ref(reference), reference)
-        os.remove(reference)
+        with tempfile.TemporaryDirectory() as directory:
+            reference = os.path.join(directory, "reference.fa")
+            with open(reference, "w") as f:
+                f.write("test")
+            self.assertEqual(check_ref(reference), reference)
+
+            gzip_reference = os.path.join(directory, "reference_gzip.fa.gz")
+            with open(gzip_reference, "w") as f:
+                f.write("test")
+            self.assertEqual(
+                check_ref(os.path.join(directory, "reference_gzip.fa")),
+                gzip_reference,
+            )
+
+            bgzip_reference = os.path.join(directory, "reference_bgzip.fa.bgz")
+            with open(bgzip_reference, "w") as f:
+                f.write("test")
+            self.assertEqual(
+                check_ref(os.path.join(directory, "reference_bgzip.fa")),
+                bgzip_reference,
+            )
 
     def test_multi_replace(self):
         repl = {"a": "1", "b": "2"}

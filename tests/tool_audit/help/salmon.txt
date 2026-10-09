@@ -1,0 +1,17 @@
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+RNA-seq transcript quantification
+
+Usage: salmon [OPTIONS] <COMMAND>
+
+Commands:
+  index       Build a salmon index from a transcriptome FASTA
+  quant       Quantify transcript abundances from FASTQ reads
+  quantmerge  Merge a column across multiple samples' quant files into a matrix
+  debug-map   Diagnostic: per-read best-mapping detail (placement, seed coverage, score)
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -q, --quiet             Reduce logging to warnings and errors only
+      --no-version-check  Accepted for compatibility with C++ salmon. salmon 2.0 never contacts the network to check for a newer release, so this flag (and the `SALMON_NO_VERSION_CHECK` environment variable) is a no-op
+  -h, --help              Print help
+  -V, --version           Print version

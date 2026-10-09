@@ -9,7 +9,7 @@ rule generate_index:
     input:  fa = REFERENCE
     output: idx = INDEX,
             uidx = expand("{refd}/INDICES/{mape}_{unikey}.idx", refd=REFDIR, mape=MAPPERENV, unikey=unik)
-    log:    expand("LOGS/{sets}/{mape}.idx.log", sets=SETS, mape=MAPPERENV)
+    log:    expand("LOGS/{sets}/MAPPING/{mape}/idx.log", sets=SETS, mape=MAPPERENV)
     conda:  ""+MAPPERENV+".yaml"
     container: "oras://jfallmann/monsda:"+MAPPERENV+""
     threads: MAXTHREAD
@@ -30,7 +30,7 @@ if paired == 'paired':
                 mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
                 sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
                 txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/segemehl3/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD
@@ -49,7 +49,7 @@ else:
                 mult = report("MAPPED/{combo}/{file}.mult.bed", category="MAPPING"),
                 sngl = report("MAPPED/{combo}/{file}.sngl.bed", category="MAPPING"),
                 txt = report("MAPPED/{combo}/{file}.trns.txt", category="MAPPING")
-        log:    "LOGS/{combo}/{file}/mapping.log"
+        log:    "LOGS/{combo}/{file}/MAPPING/segemehl3/mapping.log"
         conda:  ""+MAPPERENV+".yaml"
         container: "oras://jfallmann/monsda:"+MAPPERENV+""
         threads: MAXTHREAD

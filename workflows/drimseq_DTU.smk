@@ -7,6 +7,10 @@ comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 
+TERMINUSENV = 'terminus'
+termpara = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('TERMINUS', None)
+runterminus = termpara is not None
+
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 keydict["DECOY"] = DECOY
@@ -31,85 +35,7 @@ rule themall:
             sig_ug   = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
 
-rule salmon_index:
-    input:  fa = REFERENCE
-    output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/{cape}.idx.log", sets=SETS, cape=COUNTENV)
-    conda:  ""+COUNTENV+".yaml"
-    container: "oras://jfallmann/monsda:"+COUNTENV+""
-    threads: MAXTHREAD
-    params: mapp = COUNTBIN,
-            ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
-            decoy = f"-d {os.path.abspath(DECOY)}" if DECOY else '',
-            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
-
-if paired == 'paired':
-    rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
-        output: r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz"
-        threads: 1
-        params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1)),
-                filetolink2 = lambda w, input: "{r}".format(r=os.path.abspath(input.r2))
-        shell:  "ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}"
-
-else:
-    rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
-        output: r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
-        threads: 1
-        params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
-        shell:  "ln -s {params.filetolink} {output.r1}"
-
-if paired == 'paired':
-    rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
-                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
-                index = rules.salmon_index.output.idx,
-                uix = rules.salmon_index.output.uidx
-        output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
-        conda:  ""+COUNTENV+".yaml"
-        container: "oras://jfallmann/monsda:"+COUNTENV+""
-        threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
-                mapp=COUNTBIN,
-                stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
-                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
-
-else:
-    rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
-                index = rules.salmon_index.output.idx,
-                uix = rules.salmon_index.output.uidx
-        output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/salmonquant.log"
-        conda:  ""+COUNTENV+".yaml"
-        container: "oras://jfallmann/monsda:"+COUNTENV+""
-        threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
-                mapp=COUNTBIN,
-                stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
-                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
-
-
-rule create_annotation_table:
-    input:  dir  = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config)),
-    output: anno = expand("DTU/{combo}/Tables/{scombo}_ANNOTATION.gz", combo=combo, scombo=scombo)
-    log:    expand("LOGS/DTU/{combo}/create_DTU_table.log", combo=combo)
-    conda:  ""+COUNTENV+".yaml"
-    container: "oras://jfallmann/monsda:"+COUNTENV+""
-    threads: 1
-    params: dereps = lambda wildcards, input: get_reps(input.dir, config, 'DTU'),
-            bins = BINS
-    shell:  "python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}"
+include: "dtu_base.smk"
 
 rule run_DTU:
     input:  anno = expand(rules.create_annotation_table.output.anno, combo=combo, scombo=scombo)
@@ -122,7 +48,7 @@ rule run_DTU:
             fig_P   = rules.themall.input.fig_P,
             fig_PV  = rules.themall.input.fig_PV,
             fig_files = rules.themall.input.fig_files
-    log:    expand("LOGS/DTU/{combo}/run_DTU.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/run_DTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
@@ -143,13 +69,14 @@ rule filter_significant_drimseq:
             sig_t   = rules.themall.input.sig_t,
             sig_dt  = rules.themall.input.sig_dt,
             sig_ut  = rules.themall.input.sig_ut
-    log:    "LOGS/DTU/filter_drimseqDTU.log"
+    log:    expand("LOGS/{combo}/DTU/drimseq/filter_drimseqDTU.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: 1
-    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'pvalue'),
-            lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc')
-    shell:  "set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orr[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orrd[$i]}}\"; cp \"${{orr[$i]}}\" \"${{orru[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orr[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orru[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; fn=\"${{a##*/}}\"; if [[ -s \"$a\" ]];then zcat $a| head -n1 |gzip > \"${{orrt[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\"; cp \"${{orrt[$i]}}\" \"${{orrtu[$i]}}\"; zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut} ||$F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrt[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] >= {params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtu[$i]}}\" && zcat $a| tail -n+2 |grep -v -w 'NA'|perl -F\'\\t\' -wlane 'next if (!$F[2] || !$F[1]);if ($F[1] < {params.pv_cut} && ($F[2] <= -{params.lfc_cut}) ){{print}}' |gzip >> \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}"
+    params: pv_cut = get_cutoff_as_string(config, 'DTU', 'padj'),
+            lfc_cut = get_cutoff_as_string(config, 'DTU', 'lfc'),
+            bins = BINS
+    shell:  "set +o pipefail; arr=({input.res_g}); arrt=({input.res_t}); orr=({output.sig_g}); orrd=({output.sig_dg}); orru=({output.sig_ug}); orrt=({output.sig_t}); orrtd=({output.sig_dt}); orrtu=({output.sig_ut}); for i in \"${{!arr[@]}}\"; do a=\"${{arr[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column lfc --adjusted-p-column adj_pvalue --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orr[$i]}}\" --output-up \"${{orru[$i]}}\" --output-down \"${{orrd[$i]}}\"; else touch \"${{orr[$i]}}\" \"${{orrd[$i]}}\" \"${{orru[$i]}}\"; fi;done; for i in \"${{!arrt[@]}}\"; do a=\"${{arrt[$i]}}\"; if [[ -s \"$a\" ]];then python3 {params.bins}/Analysis/filter_significant.py --effect-column lfc --adjusted-p-column adj_pvalue --p-cutoff {params.pv_cut} --lfc-cutoff {params.lfc_cut} --input \"$a\" --output-sig \"${{orrt[$i]}}\" --output-up \"${{orrtu[$i]}}\" --output-down \"${{orrtd[$i]}}\"; else touch \"${{orrt[$i]}}\" \"${{orrtd[$i]}}\" \"${{orrtu[$i]}}\"; fi;done 2> {log}"
 
 rule create_summary_snippet:
     input:  rules.run_DTU.output.res_t,
@@ -167,7 +94,7 @@ rule create_summary_snippet:
             rules.themall.input.sig_ut,
             rules.themall.input.session
     output: rules.themall.input.Rmd
-    log:    expand("LOGS/DTU/{combo}/create_summary_snippet.log", combo=combo)
+    log:    expand("LOGS/{combo}/DTU/drimseq/create_summary_snippet.log", combo=combo)
     conda:  ""+DTUENV+".yaml"
     container: "oras://jfallmann/monsda:"+DTUENV+""
     threads: int(MAXTHREAD-1) if int(MAXTHREAD-1) >= 1 else 1
