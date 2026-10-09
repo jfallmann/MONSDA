@@ -140,7 +140,7 @@
       }
     }
   },
-  "MAP": {
+  "MAPPING": {
     "TOOLS": {
       "star": "STAR",
       "segemehl3": "segemehl.x",
@@ -504,4 +504,5 @@
             }
         }
     }
+  }
 }
