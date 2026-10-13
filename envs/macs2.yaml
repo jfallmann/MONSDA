@@ -4,7 +4,9 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  - bc =1.07.1
   - macs2 =2.2.7.1
+  - perl =5.32.1
   - readline =8.2
   - samtools =1.21
   - sed =4.8
