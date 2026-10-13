@@ -4,7 +4,9 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  - bc =1.07.1
   - grep =2.14
+  - perl =5.32.1
   - ucsc-bedgraphtobigwig =377
   - ucsc-beditemoverlapcount =377
   - ucsc-fatotwobit =377

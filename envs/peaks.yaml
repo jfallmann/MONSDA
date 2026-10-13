@@ -4,6 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  - bc =1.07.1
   - clustalw =2.1
   - curl =7.87.0
   - grep =3.12

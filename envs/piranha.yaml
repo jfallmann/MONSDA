@@ -5,5 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - bamtools =2.5.1
+  - bc =1.07.1
+  - perl =5.32.1
   - piranha =1.2.1
   - readline =8.2
