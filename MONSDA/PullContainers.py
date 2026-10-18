@@ -4,19 +4,21 @@ MONSDA (sub-)Snakefile, without creating conda environments.
 
 This mirrors what ``snakemake --conda-create-envs-only`` does for conda, but
 for containers. It exists because snakemake's own
-``--conda-create-envs-only`` unconditionally implies the conda deployment
-method and then always calls ``DAG.create_conda_envs()`` even when only
-``--use-apptainer``/``--use-singularity`` was requested. If the rules also
-declare a ``container:`` directive (as all MONSDA rules do), snakemake then
-tries to create the per-job conda environment *inside* the container via
-``singularity/apptainer exec ... conda info --json``, which fails with
-``conda: not found`` unless conda happens to be on PATH inside that
-container (see snakemake/snakemake#3088, #3202).
+``--conda-create-envs-only`` (``DAGApi.conda_create_envs()``) unconditionally
+implies the conda deployment method *before* the DAG is even built. Once
+conda is implied, building the DAG itself (``Job.get_wait_for_files()``)
+accesses each job's conda env address/hash, which for a rule that also
+declares a ``container:`` directive (as all MONSDA rules do) lazily runs
+``conda info --json`` *inside* the container via
+``singularity/apptainer exec``. That fails with ``conda: not found`` unless
+conda happens to be on PATH inside the container (see
+snakemake/snakemake#3088, #3202) - regardless of whether
+``DAG.create_conda_envs()`` itself ever actually runs.
 
-This script builds the same DAG snakemake would, but calls
-``DAG.pull_container_imgs()`` directly and neutralizes
-``DAG.create_conda_envs()`` for the duration of the call, so only the
-containers are pulled.
+This script therefore never lets CONDA enter the deployment method at all:
+it builds the DAG by hand with only APPTAINER set (the same private
+``Workflow._prepare_dag()``/``_build_dag()`` calls snakemake itself uses for
+e.g. ``--unlock``) and then calls ``DAG.pull_container_imgs()`` directly.
 """
 
 import argparse
@@ -24,7 +26,6 @@ import sys
 from pathlib import Path
 
 from snakemake.api import SnakemakeApi
-from snakemake.dag import DAG
 from snakemake.settings.types import (
     ConfigSettings,
     DAGSettings,
@@ -50,26 +51,36 @@ def parse_args(argv=None):
 
 
 def pull_containers(snakefile, configfile, cores=1, directory=None, apptainer_prefix=None, apptainer_args=""):
-    """Build the DAG for snakefile/configfile and pull all referenced containers."""
-    orig_create_conda_envs = DAG.create_conda_envs
-    DAG.create_conda_envs = lambda self, *a, **k: None
-    try:
-        with SnakemakeApi(OutputSettings()) as snakemake_api:
-            workflow_api = snakemake_api.workflow(
-                resource_settings=ResourceSettings(cores=cores),
-                config_settings=ConfigSettings(configfiles=[configfile]),
-                deployment_settings=DeploymentSettings(
-                    deployment_method={DeploymentMethod.APPTAINER},
-                    apptainer_prefix=apptainer_prefix,
-                    apptainer_args=apptainer_args,
-                ),
-                snakefile=snakefile,
-                workdir=directory,
-            )
-            dag_api = workflow_api.dag(dag_settings=DAGSettings())
-            dag_api.conda_create_envs()
-    finally:
-        DAG.create_conda_envs = orig_create_conda_envs
+    """Build the DAG for snakefile/configfile and pull all referenced containers.
+
+    Deliberately avoids DAGApi.conda_create_envs()/WorkflowApi.dag(...).conda_create_envs(),
+    both of which unconditionally imply DeploymentMethod.CONDA before building the DAG
+    (see snakemake.api.DAGApi.conda_create_envs). With CONDA implied, DAG construction
+    itself (Job.get_wait_for_files()) accesses each rule's conda env address/hash, which
+    for a non-externally-managed env lazily instantiates Conda(container_img=...) and
+    runs 'conda info --json' *inside* the container via apptainer/singularity exec -
+    exactly the failure --apptainer-create-envs-only exists to avoid. So here the DAG is
+    built by hand with only APPTAINER in the deployment method, the same private
+    _prepare_dag()/_build_dag() calls snakemake itself uses for e.g. --unlock, and then
+    only DAG.pull_container_imgs() is invoked.
+    """
+    with SnakemakeApi(OutputSettings()) as snakemake_api:
+        workflow_api = snakemake_api.workflow(
+            resource_settings=ResourceSettings(cores=cores),
+            config_settings=ConfigSettings(configfiles=[configfile]),
+            deployment_settings=DeploymentSettings(
+                deployment_method={DeploymentMethod.APPTAINER},
+                apptainer_prefix=apptainer_prefix,
+                apptainer_args=apptainer_args,
+            ),
+            snakefile=snakefile,
+            workdir=directory,
+        )
+        workflow_api.dag(dag_settings=DAGSettings())
+        workflow = workflow_api._workflow
+        workflow._prepare_dag(forceall=False, ignore_incomplete=True, lock_warn_only=True)
+        workflow._build_dag()
+        workflow.dag.pull_container_imgs()
 
 
 def main(argv=None):
