@@ -123,16 +123,13 @@ if postde_enabled:
     rule postde:
         input:  bundle = rules.run_deseq2.output.bundle,
                 staged = postde_inputs,
-                config = os.path.join(postde_inputs, "config.json"),
-                script = os.path.join(BINS, "Analysis", "PostDE", "run.R"),
-                common = os.path.join(BINS, "Analysis", "PostDE", "common.R"),
-                enrichment = os.path.join(BINS, "Analysis", "PostDE", "enrichment.R"),
-                regulatory = os.path.join(BINS, "Analysis", "PostDE", "regulatory.R")
+                config = os.path.join(postde_inputs, "config.json")
         output: outdir = directory(expand("POSTDE/{combo}", combo=combo))
         log:    os.path.abspath(os.path.join("LOGS", combo, "DE", "deseq2", "postde.log"))
         conda:  "postde.yaml"
         container: "oras://jfallmann/monsda:postde"
         threads: 1
         params: bundle = lambda w, input: os.path.abspath(input.bundle[0]),
-                outdir = lambda w: os.path.abspath(os.path.join("POSTDE", combo))
-        shell:  "(cd {input.staged:q} && Rscript {input.script:q} --bundle {params.bundle:q} --config config.json --output {params.outdir:q}) 2> {log:q} && test -s {params.outdir:q}/manifest.json"
+                outdir = lambda w: os.path.abspath(os.path.join("POSTDE", combo)),
+                script = os.path.join(BINS, "Analysis", "PostDE", "run.R")
+        shell:  "(cd {input.staged:q} && Rscript {params.script:q} --bundle {params.bundle:q} --config config.json --output {params.outdir:q}) 2> {log:q} && test -s {params.outdir:q}/manifest.json"
