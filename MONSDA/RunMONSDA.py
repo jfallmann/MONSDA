@@ -168,6 +168,19 @@ def parseargs():
     return parser.parse_known_args()
 
 
+def _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only, extra_opts=""):
+    """Build the shell command for one generated (sub-)Snakefile.
+
+    If pull_apptainer_only is set, route through MONSDA.PullContainers instead
+    of snakemake directly, so only the referenced containers get pulled
+    without snakemake also trying (and failing) to create conda envs inside
+    them, see --apptainer-create-envs-only.
+    """
+    if pull_apptainer_only:
+        return f"python3 -m MONSDA.PullContainers -j {threads} -s {smko} --configfile {confo} --directory {workdir} {rest}"
+    return f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs{extra_opts} {rest}"
+
+
 def run_snakemake(
     configfile,
     workdir,
@@ -197,10 +210,25 @@ def run_snakemake(
                 + "'conda info --json' through singularity/apptainer exec, which fails with 'conda: not found' if "
                 + "conda is not reachable on PATH inside that container (a known upstream snakemake limitation, see "
                 + "e.g. snakemake/snakemake#3088 and #3202). Drop --use-apptainer/--use-singularity to pre-create the "
-                + "conda environments on the host instead, or drop --conda-create-envs-only and let "
-                + "--use-apptainer/--use-singularity pull/use the containers directly without creating conda envs."
+                + "conda environments on the host instead, or use --apptainer-create-envs-only instead of "
+                + "--conda-create-envs-only to pre-pull all referenced containers without touching conda."
             )
             sys.exit(1)
+        pull_apptainer_only = bool(
+            optionalargs and "--apptainer-create-envs-only" in optionalargs
+        )
+        if pull_apptainer_only:
+            if not any(
+                [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+            ):
+                log.error(
+                    logid
+                    + "--apptainer-create-envs-only requires --use-apptainer or --use-singularity to also be set."
+                )
+                sys.exit(1)
+            optionalargs = [
+                x for x in optionalargs if x != "--apptainer-create-envs-only"
+            ]
         if useconda and not any(
             [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
         ):
@@ -315,7 +343,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs -p {rest}"
+                        _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only, extra_opts=" -p")
                     )
 
                 for job in jobstorun:
@@ -368,7 +396,7 @@ def run_snakemake(
                         rest = " ".join(argslist)
 
                         jobstorun.append(
-                            f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                            _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only)
                         )
 
                     for job in jobstorun:
@@ -409,7 +437,7 @@ def run_snakemake(
                 rest = " ".join(argslist)
 
                 jobstorun.append(
-                    f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                    _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only)
                 )
 
             for job in jobstorun:
@@ -455,7 +483,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only)
                     )
 
                 for job in jobstorun:
@@ -485,7 +513,7 @@ def run_snakemake(
                     smko, confo = job
                     rest = " ".join(argslist)
                     jobstorun.append(
-                        f"snakemake -j {threads} -s {smko} --configfile {confo} --directory {workdir} --printshellcmds --show-failed-logs {rest}"
+                        _snakemake_job_command(smko, confo, threads, workdir, rest, pull_apptainer_only)
                     )
 
                 for job in jobstorun:
