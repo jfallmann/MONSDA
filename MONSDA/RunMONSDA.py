@@ -186,6 +186,21 @@ def run_snakemake(
         mp.create_skeleton(subdir, skeleton)
 
         argslist = list()
+        if optionalargs and "--conda-create-envs-only" in optionalargs and any(
+            [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
+        ):
+            log.error(
+                logid
+                + "--conda-create-envs-only cannot be combined with --use-apptainer/--use-singularity. "
+                + "Snakemake's conda_create_envs() always implies the conda deployment method, so this combination "
+                + "makes it try to create the per-job conda environments inside the container by running "
+                + "'conda info --json' through singularity/apptainer exec, which fails with 'conda: not found' if "
+                + "conda is not reachable on PATH inside that container (a known upstream snakemake limitation, see "
+                + "e.g. snakemake/snakemake#3088 and #3202). Drop --use-apptainer/--use-singularity to pre-create the "
+                + "conda environments on the host instead, or drop --conda-create-envs-only and let "
+                + "--use-apptainer/--use-singularity pull/use the containers directly without creating conda envs."
+            )
+            sys.exit(1)
         if useconda and not any(
             [x in optionalargs for x in ["--use-apptainer", "--use-singularity"]]
         ):
