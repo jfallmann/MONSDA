@@ -36,18 +36,19 @@ params.gDTUDECOY = get_always('DTUDECOY')
 params.gDTUIDX = get_always('DTUIDX')
 params.gDTUUIDX = get_always('DTUUIDX')
 params.gDTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
+params.gCOUNTTOOL = get_always('DTUCOUNTTOOL') ?: 'salmon'
+params.gCOUNTBIN = params.gCOUNTTOOL
+params.gCOUNTENV = params.gCOUNTTOOL
 params.gIDXPARAMS = get_always('spit_DTU_params_INDEX') ?: ''
 params.gCOUNTPARAMS = get_always('spit_DTU_params_COUNT') ?: ''
 params.gDTUPARAMS = get_always('spit_DTU_params_DTU') ?: ''
-params.gRUNTERMINUS = get_always('spit_DTU_params_TERMINUS') ?: ''
+params.gRUNTERMINUS = (params.gCOUNTTOOL != 'salmon') ? '' : (get_always('spit_DTU_params_TERMINUS') ?: '')
 params.gDTUREPS = get_always('DTUREPS') ?: ''
 params.gDTUCOMP = get_always('DTUCOMP') ?: ''
 params.gDTUCOMPS = get_always('DTUCOMPS') ?: ''
 params.gPVAL = get_always('DTUPVAL') ?: ''
 params.gLFC = get_always('DTULFC') ?: ''
 params.gPCOMBO = get_always('COMBO') ?: 'none'
-params.gCOUNTBIN = 'salmon'
-params.gCOUNTENV = 'salmon'
 params.gRSAMPLES = {
 if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     return params.gSAMPLES.collect{
@@ -144,6 +145,31 @@ process salmon_quant{
         ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -r $read &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }
+}
+process oarfish_dtu_quant{
+    conda "<REPO>/envs/${params.gCOUNTENV}"+".yaml"
+    container "oras://ghcr.io/jfallmann/monsda:"+"${params.gCOUNTENV}"+"-VERSION"
+    cpus params.gTHREADS
+	cache 'lenient'
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    saveAs: {filename ->
+        if (filename.indexOf(".log") >0)        "LOGS/${params.gSCOMBO}/${params.gCONDITION}/DTU/"+"${params.gCOUNTENV}"+"/${file(filename).getName()}"
+        else                                    "DTU/${params.gSCOMBO}/"+"${params.gCOUNTENV}"+"/${params.gCONDITION}/${file(filename).getName()}"
+    }
+    input:
+    path bam
+    output:
+    path "*.gz", includeInputs:false, emit: counts
+    path "*.log", emit: logs
+    script:
+    fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
+    lf = "${params.gCOUNTENV}_"+fn+".log"
+    prefix = fn+"/"+params.gCOUNTENV
+    oz = fn+"/quant.sf.gz"
+    ol = fn+"_counts.gz"
+    """
+    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; zcat -f ${params.gDTUANNO} > $fn/annotation.gtf 2>> $lf; ${params.gCOUNTBIN} --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $fn/annotation.gtf --genome-fasta ${params.gDTUREF} ${params.gCOUNTPARAMS} --output $prefix &>> $lf && rm -f namecollated.bam $fn/annotation.gtf && python3 ${params.gBINS}/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    """
 }
 process create_summary_snippet{
     conda "<REPO>/envs/${params.gDTUENV}"+".yaml"
@@ -281,36 +307,47 @@ process collect_spit{
 workflow DTU{ 
     take: collection
     main:
-    TRIMSAMPLES = params.gLONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_{R1,R2}*.fastq.gz"
-        }
-    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
     annofile = Channel.fromPath(params.gDTUANNO)
-    checkidx = file(params.gDTUIDX)
-    if (checkidx.exists()){
-        idxfile = Channel.fromPath(params.gDTUUIDX)
-        if (params.gPAIRED == 'paired'){
-            salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
-        } else{
-            salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
-        }        
+    if (params.gCOUNTTOOL == 'salmon'){
+        TRIMSAMPLES = params.gLONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${params.gCOMBO}/"+element+"_{R1,R2}*.fastq.gz"
+            }
+        trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
+        checkidx = file(params.gDTUIDX)
+        if (checkidx.exists()){
+            idxfile = Channel.fromPath(params.gDTUUIDX)
+            if (params.gPAIRED == 'paired'){
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
+            }        
+        }
+        else{
+            genomefile = Channel.fromPath(params.gDTUREF)
+            salmon_idx(genomefile)
+            if (params.gPAIRED == 'paired'){
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
+            }
+        }
+        quantcounts = salmon_quant.out.counts
     }
     else{
-        genomefile = Channel.fromPath(params.gDTUREF)
-        salmon_idx(genomefile)
-        if (params.gPAIRED == 'paired'){
-            salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
-        } else{
-            salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
-        }
+        MAPPEDSAMPLES = params.gLONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../MAPPED/${params.gCOMBO}/"+element+"_mapped_sorted.bam"
+            }
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+        oarfish_dtu_quant(mapsamples_ch.collate(1))
+        quantcounts = oarfish_dtu_quant.out.counts
     }
     prepare_dtu_annotation()
     if (params.gRUNTERMINUS?.length() > 0){
-        terminus_collapse(salmon_quant.out.counts.collect())
+        terminus_collapse(quantcounts.collect())
         dtucounts = terminus_collapse.out.counts
     }
     else{
-        dtucounts = salmon_quant.out.counts
+        dtucounts = quantcounts
     }
     run_spit(dtucounts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_spit.out.tbls.concat(run_spit.out.figs.concat(run_spit.out.session)).collect())

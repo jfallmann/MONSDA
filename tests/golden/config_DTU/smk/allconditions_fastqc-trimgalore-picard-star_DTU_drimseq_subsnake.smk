@@ -243,19 +243,26 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
         if x == 'DTU':
-            IDX = XCONF.get('INDEX')
-            if IDX:
-                INDEX = IDX
-            if not INDEX:
-                INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
-                keydict["REF"] = REFERENCE
-                keydict["DECOY"] = DECOY
-                keydict["ENV"] = XENV
-                unik = get_dict_hash(keydict)
-                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
-            INDICES = INDEX.split(',') if INDEX else list(UIDX)
-            INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+            COUNTTOOL = tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'].get('COUNTTOOL', 'salmon')
+            if COUNTTOOL == 'salmon':
+                IDX = XCONF.get('INDEX')
+                if IDX:
+                    INDEX = IDX
+                if not INDEX:
+                    INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
+                    keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                    keydict["REF"] = REFERENCE
+                    keydict["DECOY"] = DECOY
+                    keydict["ENV"] = XENV
+                    unik = get_dict_hash(keydict)
+                    UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=COUNTTOOL, unikey=unik)
+                INDICES = INDEX.split(',') if INDEX else list(UIDX)
+                INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+            else:
+                # Long-read quantifiers (e.g. oarfish) quantify directly from
+                # the genome-mapped BAM, no transcript index is built.
+                INDEX = None
+                UIDX = None
 # CIRCS Variables
 if 'CIRCS' in config:
     CIRCCONF = sub_dict(config['CIRCS'], SETUP)
@@ -304,13 +311,17 @@ wildcard_constraints:
 logid = 'drimseq_DTU.smk '
 DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
 log.debug(logid+"DTUENV: "+str(DTUENV))
-COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config(SAMPLES, config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTTOOL = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('COUNTTOOL', 'salmon')
+COUNTBIN, COUNTENV = [COUNTTOOL, COUNTTOOL]
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
 usededup = config.get('RUNDEDUP', False)
 TERMINUSENV = 'terminus'
 termpara = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('TERMINUS', None)
 runterminus = termpara is not None
+if runterminus and COUNTTOOL != 'salmon':
+    log.warning(logid+f"TERMINUS grouping is only supported for the salmon quantifier, ignoring TERMINUS option for COUNTTOOL={COUNTTOOL}")
+    runterminus = False
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE
 keydict["DECOY"] = DECOY
@@ -333,69 +344,94 @@ rule themall:
             sig_dg   = expand("DTU/{combo}/Tables/SigDOWN_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             sig_ug   = expand("DTU/{combo}/Tables/SigUP_DTU_DRIMSEQ_{scombo}_{comparison}_table_genes.tsv.gz", combo=combo, comparison=compstr, scombo=scombo),
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo)
-rule salmon_index:
-    input:  fa = REFERENCE
-    output: idx = directory(INDEX),
-            uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
-    log:    expand("LOGS/{sets}/DTU/{cape}/idx.log", sets=SETS, cape=COUNTENV)
-    conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-    container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
-    threads: MAXTHREAD
-    params: mapp = COUNTBIN,
-            ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
-            decoy = f"-d {os.path.abspath(DECOY)}" if DECOY else '',
-            linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
-    shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
-if paired == 'paired':
-    rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
-        output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
-                r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
-        threads: 1
-        params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1)),
-                filetolink2 = lambda w, input: "{r}".format(r=os.path.abspath(input.r2))
-        shell:  "ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}"
+if COUNTTOOL == 'salmon':
+    rule salmon_index:
+        input:  fa = REFERENCE
+        output: idx = directory(INDEX),
+                uidx = directory(expand("{refd}/INDICES/{mape}_{unikey}", refd=REFDIR, mape=COUNTENV, unikey=unik))
+        log:    expand("LOGS/{sets}/DTU/{cape}/idx.log", sets=SETS, cape=COUNTENV)
+        conda:  "<REPO>/envs/"+COUNTENV+".yaml"
+        container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
+        threads: MAXTHREAD
+        params: mapp = COUNTBIN,
+                ipara = lambda wildcards, input: tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('INDEX', ""),
+                decoy = f"-d {os.path.abspath(DECOY)}" if DECOY else '',
+                linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
+        shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
+    if paired == 'paired':
+        rule simulate_trim:
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
+                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_R1_trimmed.fastq.gz",
+                    r2 = "TRIMMED_FASTQ/{scombo}/{file}_R2_trimmed.fastq.gz"
+            threads: 1
+            params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1)),
+                    filetolink2 = lambda w, input: "{r}".format(r=os.path.abspath(input.r2))
+            shell:  "ln -s {params.filetolink} {output.r1} && ln -s {params.filetolink2} {output.r2}"
+    else:
+        rule simulate_trim:
+            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
+            output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
+            threads: 1
+            params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
+            shell:  "ln -s {params.filetolink} {output.r1}"
+    if paired == 'paired':
+        rule mapping:
+            input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
+                    r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
+                    index = rules.salmon_index.output.idx,
+                    uix = rules.salmon_index.output.uidx
+            output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
+                    ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
+            log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
+            conda:  "<REPO>/envs/"+COUNTENV+".yaml"
+            container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
+            threads: MAXTHREAD
+            params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
+                    mapp=COUNTBIN,
+                    stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
+                    linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
+            shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+    else:
+        rule mapping:
+            input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
+                    index = rules.salmon_index.output.idx,
+                    uix = rules.salmon_index.output.uidx
+            output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
+                    ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
+            log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
+            conda:  "<REPO>/envs/"+COUNTENV+".yaml"
+            container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
+            threads: MAXTHREAD
+            params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
+                    mapp=COUNTBIN,
+                    stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
+                    linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
+            shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 else:
-    rule simulate_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
-        output: r1 = "TRIMMED_FASTQ/{scombo}/{file}_trimmed.fastq.gz"
-        threads: 1
-        params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
-        shell:  "ln -s {params.filetolink} {output.r1}"
-if paired == 'paired':
+    # Long-read quantifier path (e.g. oarfish): quantify directly from the
+    # already generated genome-mapped, sorted BAM. No trimming/index step
+    # is needed, output is normalized to the salmon quant.sf schema so
+    # downstream DTU tooling (tximport type="salmon", build_DTU_table.py,
+    # SPIT.py) does not need to change.
     rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
-                r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
-                index = rules.salmon_index.output.idx,
-                uix = rules.salmon_index.output.uidx
-        output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
+        input:  bam = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                anno = ANNOTATION,
+                fa = REFERENCE
+        output: cnts = report("DTU/{combo}/"+COUNTENV+"/{file}_counts.sf.gz", category="COUNTING"),
+                ctsdir = report(directory("DTU/{combo}/"+COUNTENV+"/{file}"), category="COUNTING")
+        log:    "LOGS/{combo}/{file}/DTU/"+COUNTENV+"/quant.log"
         conda:  "<REPO>/envs/"+COUNTENV+".yaml"
         container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
         threads: MAXTHREAD
         params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
-                mapp=COUNTBIN,
-                stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
-                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
-else:
-    rule mapping:
-        input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_trimmed.fastq.gz", scombo=scombo),
-                index = rules.salmon_index.output.idx,
-                uix = rules.salmon_index.output.uidx
-        output: cnts = report("DTU/{combo}/salmon/{file}_counts.sf.gz", category="COUNTING"),
-                ctsdir = report(directory("DTU/{combo}/salmon/{file}"), category="COUNTING")
-        log:    "LOGS/{combo}/{file}/DTU/salmon/salmonquant.log"
-        conda:  "<REPO>/envs/"+COUNTENV+".yaml"
-        container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
-        threads: MAXTHREAD
-        params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
-                mapp=COUNTBIN,
-                stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
-                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-        shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+                mapp = COUNTBIN,
+                nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
+                anno = lambda wildcards, output: os.path.join(str(output.ctsdir), "annotation.gtf"),
+                prefix = lambda wildcards, output: os.path.join(str(output.ctsdir), COUNTENV),
+                linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir)),
+                bins = BINS
+        shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; zcat -f {input.anno} > {params.anno} 2>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {params.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} {params.anno} && python3 {params.bins}/Analysis/oarfish_to_salmon.py -i {params.prefix}.quant -o {output.ctsdir}/quant.sf.gz &>> {log} ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 if runterminus:
     rule terminus_group:
         input:  ctsdir = rules.mapping.output.ctsdir

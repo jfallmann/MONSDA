@@ -243,19 +243,26 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
         if x == 'DTU':
-            IDX = XCONF.get('INDEX')
-            if IDX:
-                INDEX = IDX
-            if not INDEX:
-                INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
-                keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
-                keydict["REF"] = REFERENCE
-                keydict["DECOY"] = DECOY
-                keydict["ENV"] = XENV
-                unik = get_dict_hash(keydict)
-                UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe="salmon", unikey=unik)
-            INDICES = INDEX.split(',') if INDEX else list(UIDX)
-            INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+            COUNTTOOL = tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'].get('COUNTTOOL', 'salmon')
+            if COUNTTOOL == 'salmon':
+                IDX = XCONF.get('INDEX')
+                if IDX:
+                    INDEX = IDX
+                if not INDEX:
+                    INDEX = str.join(os.sep, [REFDIR, 'INDICES', XENV])+'.idx'
+                    keydict = sub_dict(tool_params(SAMPLES[0], None, config, x, XENV)['OPTIONS'], ['INDEX'])
+                    keydict["REF"] = REFERENCE
+                    keydict["DECOY"] = DECOY
+                    keydict["ENV"] = XENV
+                    unik = get_dict_hash(keydict)
+                    UIDX = expand("{refd}/INDICES/{xe}/{unikey}.idx", refd=REFDIR, xe=COUNTTOOL, unikey=unik)
+                INDICES = INDEX.split(',') if INDEX else list(UIDX)
+                INDEX = str(os.path.abspath(INDICES[0])) if str(os.path.abspath(INDICES[0])) not in UIDX else str(os.path.abspath(INDICES[0]))+'_idx'
+            else:
+                # Long-read quantifiers (e.g. oarfish) quantify directly from
+                # the genome-mapped BAM, no transcript index is built.
+                INDEX = None
+                UIDX = None
 # CIRCS Variables
 if 'CIRCS' in config:
     CIRCCONF = sub_dict(config['CIRCS'], SETUP)

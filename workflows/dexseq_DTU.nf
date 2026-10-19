@@ -14,10 +14,9 @@ COUNTENV = COUNTTOOL
 IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
-RUNTERMINUS = get_always('dexseq_DTU_params_TERMINUS') ?: ''
-if (COUNTTOOL != 'salmon' && RUNTERMINUS?.length() > 0){
+RUNTERMINUS = (COUNTTOOL != 'salmon') ? '' : (get_always('dexseq_DTU_params_TERMINUS') ?: '')
+if (COUNTTOOL != 'salmon' && (get_always('dexseq_DTU_params_TERMINUS') ?: '')?.length() > 0){
     log.warn "TERMINUS grouping is only supported for the salmon quantifier, ignoring TERMINUS option for COUNTTOOL=${COUNTTOOL}"
-    RUNTERMINUS = ''
 }
 DTUREPS = get_always('DTUREPS') ?: ''
 DTUCOMP = get_always('DTUCOMP') ?: ''
