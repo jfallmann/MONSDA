@@ -133,7 +133,7 @@ jobs:
           export APPTAINER_DOCKER_PASSWORD="$TOKEN"
           tag="ghcr.io/jfallmann/monsda:${ENVIRONMENT}-${VERSION}"
           apptainer pull -F --disable-cache "${ENVIRONMENT}-${VERSION}.sif" "docker://${tag}"
-          apptainer registry push "${ENVIRONMENT}-${VERSION}.sif" "oras://${tag}"
+          apptainer push "${ENVIRONMENT}-${VERSION}.sif" "oras://${tag}"
 
   verify:
     needs: [prepare, sif]
