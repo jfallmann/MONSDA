@@ -483,21 +483,29 @@
     },
     "deseq2": {
       "comment": {
+          "COUNTTOOL": "Gene-level counting tool used for DE, like the TOOLS key but for the counting step. 'featureCounts' for short-read BAMs (default). 'oarfish' aggregates long-read (PacBio/Nanopore) transcript-level quantification from the genome-mapped BAM to gene level.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "oarfish quant options, only used when COUNTTOOL is 'oarfish'",
           "DE": "Options for DE Analysis, e.g. path to spike-in"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t gene -g gene_id --fraction -O",
+          "QUANT": "",
           "DE": "controlgenes=spike-in.list"
       }
     },
     "edger": {
       "comment": {
+          "COUNTTOOL": "Gene-level counting tool used for DE, like the TOOLS key but for the counting step. 'featureCounts' for short-read BAMs (default). 'oarfish' aggregates long-read (PacBio/Nanopore) transcript-level quantification from the genome-mapped BAM to gene level.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
+          "QUANT": "oarfish quant options, only used when COUNTTOOL is 'oarfish'",
           "DE": "Options for DE Analysis, e.g. path to spike-in"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t gene -g gene_id --fraction -O",
+          "QUANT": "",
           "DE": "controlgenes=spike-in.list"
       }
     }
@@ -521,20 +529,24 @@
     },
     "dexseq": {
       "comment": {
+          "COUNTTOOL": "Counting tool used for DEU, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t exon -g gene_id -f --fraction -O",
           "DEU": ""
       }
     },
     "edger": {
       "comment": {
+          "COUNTTOOL": "Counting tool used for DEU, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DEU": "Options for DEU Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t exon -g gene_id -f --fraction -O",
           "DEU": ""
       }
@@ -559,20 +571,24 @@
     },
     "diego": {
       "comment":{
+          "COUNTTOOL": "Counting tool used for DAS, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DAS": "Options for DAS Analysis"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t exon -g gene_id -f --fraction -O",
           "DAS": "-c 10 -d 3 -q 0.01 -z 1.0 -r"
       }
     },
     "edger": {
       "comment": {
+          "COUNTTOOL": "Counting tool used for DAS, like the TOOLS key but for the counting step. Only 'featureCounts' (default) is currently supported; kept as an explicit option for consistency/future tool additions.",
           "COUNT": "Options for read counting, independent of COUNTS workflows, utilizes FeatureCounts",
           "DAS": "Options for DAS Analysis, leave blank unless you know exactly what you are doing"
       },
       "OPTIONS": {
+          "COUNTTOOL": "featureCounts",
           "COUNT": "-t exon -g gene_id -f --fraction -O",
           "DAS": ""
       }

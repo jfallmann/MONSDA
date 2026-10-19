@@ -16,9 +16,11 @@ POSTDE_ENABLED = get_always('POSTDE_ENABLED') ?: false
 POSTDE_INPUTS = get_always('POSTDE_INPUTS') ?: ''
 POSTDE_FLAG = POSTDE_ENABLED ? '1' : '0'
 
-COUNTBIN = 'featureCounts'
-COUNTENV = 'countreads_de'
+COUNTTOOL = get_always('DECOUNTTOOL') ?: 'featureCounts'
+COUNTBIN = (COUNTTOOL == 'featureCounts') ? 'featureCounts' : COUNTTOOL
+COUNTENV = (COUNTTOOL == 'featureCounts') ? 'countreads_de' : COUNTTOOL
 COUNTPARAMS = get_always('deseq2_DE_params_COUNT') ?: ''
+QUANTPARAMS = get_always('deseq2_DE_params_QUANT') ?: ''
 
 //DE PROCESSES
 
@@ -68,6 +70,40 @@ process featurecount_deseq{
     }
     """
     mkdir -p TMP; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a <(gzip -cdfq $anno) -o tmpcts $reads 2> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    """
+}
+
+process oarfish_gene_count{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus THREADS
+    memory { 16.GB * (1 << ((task.attempt ?: 1) - 1)) }
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf(".counts.gz") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf(".counts.summary") > 0)      "DE/${SCOMBO}/Featurecounts/${CONDITION}/${file(filename).getName()}"
+        else if (filename.indexOf(".log") > 0)        "LOGS/${SCOMBO}/${CONDITION}/${file(filename).getSimpleName()}/DE/deseq2/"+"${COUNTENV}"+"_deseq2_unique.log"
+    }
+
+    input:
+    path fls
+
+    output:
+    path "*.counts.gz", emit: fc_cts
+    path "*.summary", emit: fc_summary
+    path "*.log", emit: fc_log
+
+    script:
+    anno = fls[0]
+    bam = fls[1]
+    fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
+    oc = fn+".counts.gz"
+    os = fn+".counts.summary"
+    ol = fn+".log"
+    """
+    samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; zcat -f $anno > annotation.gtf 2>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation annotation.gtf --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam annotation.gtf && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
     """
 }
 
@@ -244,22 +280,35 @@ workflow DE{
 
     main:
     
-    if (RUNDEDUP){
-        MAPPEDSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique_dedup.bam"
-        }
-    }else{
-        MAPPEDSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
-        }
-    }
-
-    mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
-    //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
     annofile = Channel.fromPath(DEANNO)
 
-    featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
-    prepare_count_table(featurecount_deseq.out.fc_cts.collect())
+    if (COUNTTOOL == 'featureCounts'){
+        if (RUNDEDUP){
+            MAPPEDSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique_dedup.bam"
+            }
+        }else{
+            MAPPEDSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted_unique.bam"
+            }
+        }
+
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+        //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
+
+        featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
+        countcts = featurecount_deseq.out.fc_cts
+    }else{
+        MAPPEDSAMPLES = LONGSAMPLES.collect{
+            element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
+        }
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+
+        oarfish_gene_count(annofile.combine(mapsamples_ch.collate(1)))
+        countcts = oarfish_gene_count.out.fc_cts
+    }
+
+    prepare_count_table(countcts.collect())
     run_deseq2(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
     filter_significant(run_deseq2.out.result_tbls)
     create_summary_snippet(run_deseq2.out.tbls.concat(run_deseq2.out.figs.concat(run_deseq2.out.session)).collect())

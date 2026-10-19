@@ -13,7 +13,8 @@ PVAL = get_always('DEUPVAL') ?: ''
 LFC = get_always('DEULFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
 
-COUNTBIN = 'featureCounts'
+COUNTTOOL = get_always('DEUCOUNTTOOL') ?: 'featureCounts'
+COUNTBIN = COUNTTOOL
 COUNTENV = 'countreads_de'
 
 //DEU PROCESSES

@@ -15,7 +15,8 @@ PVAL = get_always('DASPVAL') ?: ''
 LFC = get_always('DASLFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
 
-COUNTBIN = 'featureCounts'
+COUNTTOOL = get_always('DASCOUNTTOOL') ?: 'featureCounts'
+COUNTBIN = COUNTTOOL
 COUNTENV = 'countreads_de'
 
 //DAS PROCESSES

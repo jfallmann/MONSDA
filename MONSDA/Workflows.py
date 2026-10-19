@@ -2252,26 +2252,34 @@ def nf_fetch_params(
                     retconf[x + "IDX"] = ""
                     retconf[x + "UIDX"] = ""
                     retconf[x + "UIDXNAME"] = ""
-            elif x == "DAS" and XBIN == "DIEGO.py":
-                cnd = [
-                    os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x)
-                    + "_mapped_sorted_unique.counts.gz"
-                    for x in LONGSAMPLES
-                ]
-                retconf[x + "SAMPLES"] = (
-                    "'"
-                    + mp.get_diego_samples(cnd, config, x)
-                    .replace(os.linesep, "|")
-                    .replace("\t", ":")
-                    + "'"
-                )
-                retconf[x + "GROUPS"] = (
-                    "'"
-                    + mp.get_diego_groups(cnd, config, x)
-                    .replace(os.linesep, "|")
-                    .replace("\t", ":")
-                    + "'"
-                )
+            elif x == "DE":
+                retconf[x + "COUNTTOOL"] = mp.tool_params(
+                    SAMPLES[0], None, config, x, XENV
+                )["OPTIONS"].get("COUNTTOOL", "featureCounts")
+            elif x in ("DEU", "DAS"):
+                retconf[x + "COUNTTOOL"] = mp.tool_params(
+                    SAMPLES[0], None, config, x, XENV
+                )["OPTIONS"].get("COUNTTOOL", "featureCounts")
+                if x == "DAS" and XBIN == "DIEGO.py":
+                    cnd = [
+                        os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x)
+                        + "_mapped_sorted_unique.counts.gz"
+                        for x in LONGSAMPLES
+                    ]
+                    retconf[x + "SAMPLES"] = (
+                        "'"
+                        + mp.get_diego_samples(cnd, config, x)
+                        .replace(os.linesep, "|")
+                        .replace("\t", ":")
+                        + "'"
+                    )
+                    retconf[x + "GROUPS"] = (
+                        "'"
+                        + mp.get_diego_groups(cnd, config, x)
+                        .replace(os.linesep, "|")
+                        .replace("\t", ":")
+                        + "'"
+                    )
             retconf[x + "REF"] = REFERENCE
             retconf[x + "REFDIR"] = REFDIR
             retconf[x + "ANNO"] = ANNOTATION

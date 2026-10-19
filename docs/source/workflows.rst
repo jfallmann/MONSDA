@@ -284,6 +284,10 @@ Includes DE, DEU, DAS and DTU
 
   DTU can be run on long-read data by setting the ``COUNTTOOL`` option of a DTU tool to ``oarfish`` (default ``salmon``), which quantifies directly from the mapped genome BAM instead of a salmon index/FASTQ quantification step. ``TERMINUS`` pre-grouping is only available when ``COUNTTOOL`` is ``salmon``.
 
+  DE (DESeq2/edgeR) can also be run on long-read data via ``COUNTTOOL: oarfish`` (default ``featureCounts``): oarfish quantifies transcripts from the mapped genome BAM and transcript counts are aggregated to gene level into a featureCounts-compatible table, so the downstream DE steps are unchanged. oarfish tool options are read from the ``QUANT`` option key in this mode.
+
+  DEU (DEXSeq/edgeR) and DAS (DIEGO/edgeR) accept the same ``COUNTTOOL`` option for consistency; currently only the default ``featureCounts`` is supported.
+
 PostDE (GO/GSEA/GSVA/decoupleR/dream)
 #####################################
 

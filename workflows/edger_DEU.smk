@@ -1,5 +1,6 @@
 DEUBIN, DEUENV = env_bin_from_config(config,'DEU')
-COUNTBIN, COUNTENV = ['featureCounts','countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTTOOL = tool_params(samplecond(SAMPLES, config)[0], None, config, "DEU", DEUENV.split('_')[0])['OPTIONS'].get('COUNTTOOL', 'featureCounts')
+COUNTBIN, COUNTENV = [COUNTTOOL,'countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 comparison = comparable_as_string(config,'DEU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]

@@ -15,9 +15,9 @@ can put under that step's `TOOLS` key. Env names match a `.yaml` in `envs/`.
 | `COUNTING` | Quantify reads/transcripts | `countreads: featureCounts`, `salmon: salmon` (FASTQ or, via `OPTIONS.BAM = "transcriptome"\|"genome"`, directly from BAM), `kallisto: kallisto`, `oarfish: oarfish` (long-read, from transcriptome BAM), `alevinfry: alevin-fry` (needs a piscem RAD file), `simpleaf: simpleaf` (self-contained single-cell index+map+quant) |
 | `TRACKS` | trackdb.txt + BIGWIG for UCSC/genome browsers | `ucsc: ucsc` |
 | `PEAKS` | Peak calling (ChIP/RIP/CLIP) | `piranha: piranha` (CLIP/RIP), `macs: macs` (ChIP TF binding; use `COMPARABLE` for signal-vs-background pairs), `scyphy: piranha` (cyPhyRNA-Seq), `peaks: peaks` (quick/unpublished window scan) |
-| `DE` | Differential gene expression | `deseq2`, `edger` (R scripts under `Analysis/DE/`) |
-| `DEU` | Differential exon usage | `dexseq`, `edger` |
-| `DAS` | Differential alternative splicing | `edger`, `diego` |
+| `DE` | Differential gene expression | `deseq2`, `edger` (R scripts under `Analysis/DE/`; both accept a `COUNTTOOL` option selecting the counter: `featureCounts` for short reads, default, or `oarfish` for long-read BAMs — oarfish quantifies from the mapped genome BAM and transcript counts are aggregated to gene level; oarfish options come from `OPTIONS.QUANT`) |
+| `DEU` | Differential exon usage | `dexseq`, `edger` (both accept a `COUNTTOOL` option; only `featureCounts`, the default, is currently implemented) |
+| `DAS` | Differential alternative splicing | `edger`, `diego` (both accept a `COUNTTOOL` option; only `featureCounts`, the default, is currently implemented) |
 | `DTU` | Differential transcript usage | `dexseq`, `drimseq`, `spit` (all three accept an optional `TERMINUS` option to pre-group transcripts, and a `COUNTTOOL` option selecting the quantifier: `salmon` for short reads, default, or `oarfish` for long-read BAMs; `TERMINUS` only works with `COUNTTOOL: salmon`) |
 | `CIRCS` | circRNA detection | `ciri2: $Path_to_CIRI2.pl` (install locally, no conda pkg) |
 | `FUSIONS` | Fusion gene detection | `starfusion: STAR-Fusion` — needs `MAPPING` with `star` and chimeric output enabled (`--chimSegmentMin 12 --chimOutType Junctions` in the STAR `MAP` OPTIONS), or set `FUSIONS.OPTIONS.FASTQ = "true"` to run directly on trimmed FASTQ instead. Needs a CTAT genome resource dir in `INDEX` (auto-built from `REFERENCE`+`ANNOTATION` if missing — slow). |
@@ -32,7 +32,10 @@ Notes:
 - Long-read (Nanopore/PacBio): `minimap`/`rammap` (MAPPING) + `oarfish`
   (COUNTING, from transcriptome BAM). `DTU` can also run on long reads by
   setting `COUNTTOOL: oarfish` in each DTU tool's `OPTIONS` (it reuses the
-  already-mapped genome BAM instead of a salmon index/quant step).
+  already-mapped genome BAM instead of a salmon index/quant step). `DE`
+  works the same way via `COUNTTOOL: oarfish` in each DE tool's `OPTIONS`
+  (oarfish quantifies from the genome BAM, transcript counts are summed to
+  gene level into a featureCounts-compatible table).
 - Bisulfite: `bwameth` or `segemehl{2,3}bisulfite` for MAPPING.
 - Tools marked "no conda pkg" need `ENV`/`BIN` pointing at a locally
   installed executable instead of a bioconda environment name.
