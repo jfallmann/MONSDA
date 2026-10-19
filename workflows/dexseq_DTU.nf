@@ -8,10 +8,17 @@ DTUDECOY = get_always('DTUDECOY')
 DTUIDX = get_always('DTUIDX')
 DTUUIDX = get_always('DTUUIDX')
 DTUUIDXNAME = get_always('DTUUIDXNAME')+'.idx'
+COUNTTOOL = get_always('DTUCOUNTTOOL') ?: 'salmon'
+COUNTBIN = COUNTTOOL
+COUNTENV = COUNTTOOL
 IDXPARAMS = get_always('dexseq_DTU_params_INDEX') ?: ''
 COUNTPARAMS = get_always('dexseq_DTU_params_COUNT') ?: ''
 DTUPARAMS = get_always('dexseq_DTU_params_DTU') ?: ''
 RUNTERMINUS = get_always('dexseq_DTU_params_TERMINUS') ?: ''
+if (COUNTTOOL != 'salmon' && RUNTERMINUS?.length() > 0){
+    log.warn "TERMINUS grouping is only supported for the salmon quantifier, ignoring TERMINUS option for COUNTTOOL=${COUNTTOOL}"
+    RUNTERMINUS = ''
+}
 DTUREPS = get_always('DTUREPS') ?: ''
 DTUCOMP = get_always('DTUCOMP') ?: ''
 DTUCOMPS = get_always('DTUCOMPS') ?: ''
@@ -19,12 +26,9 @@ PVAL = get_always('DTUPVAL') ?: ''
 LFC = get_always('DTULFC') ?: ''
 PCOMBO = get_always('COMBO') ?: 'none'
 
-COUNTBIN = 'salmon'
-COUNTENV = 'salmon'
-
 //DTU PROCESSES
 
-include { salmon_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
+include { salmon_quant; oarfish_dtu_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
 
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
@@ -146,39 +150,50 @@ workflow DTU{
 
     main:
     
-    TRIMSAMPLES = LONGSAMPLES.collect{
-            element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
-        }
-
-    trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
     annofile = Channel.fromPath(DTUANNO)
-    checkidx = file(DTUIDX)
-    
-    if (checkidx.exists()){
-        idxfile = Channel.fromPath(DTUUIDX)
-        if (PAIRED == 'paired'){
-            salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
-        } else{
-            salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
-        }        
+
+    if (COUNTTOOL == 'salmon'){
+        TRIMSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../TRIMMED_FASTQ/${COMBO}/"+element+"_{R1,R2}*.fastq.gz"
+            }
+        trimsamples_ch =  Channel.fromPath(TRIMSAMPLES.sort())
+        checkidx = file(DTUIDX)
+
+        if (checkidx.exists()){
+            idxfile = Channel.fromPath(DTUUIDX)
+            if (PAIRED == 'paired'){
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
+            }        
+        }
+        else{
+            genomefile = Channel.fromPath(DTUREF)
+            salmon_idx(genomefile)
+            if (PAIRED == 'paired'){
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
+            } else{
+                salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
+            }
+        }
+        quantcounts = salmon_quant.out.counts
     }
     else{
-        genomefile = Channel.fromPath(DTUREF)
-        salmon_idx(genomefile)
-        if (PAIRED == 'paired'){
-            salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
-        } else{
-            salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))
-        }
+        MAPPEDSAMPLES = LONGSAMPLES.collect{
+                element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
+            }
+        mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
+        oarfish_dtu_quant(mapsamples_ch.collate(1))
+        quantcounts = oarfish_dtu_quant.out.counts
     }
 
     prepare_dtu_annotation()
     if (RUNTERMINUS?.length() > 0){
-        terminus_collapse(salmon_quant.out.counts.collect())
+        terminus_collapse(quantcounts.collect())
         dtucounts = terminus_collapse.out.counts
     }
     else{
-        dtucounts = salmon_quant.out.counts
+        dtucounts = quantcounts
     }
     run_dexseq(dtucounts.collect(), prepare_dtu_annotation.out.anno, annofile)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())

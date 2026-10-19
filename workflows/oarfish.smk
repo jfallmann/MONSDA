@@ -23,5 +23,6 @@ rule mapping:
             nbam = lambda wildcards, output: os.path.join(str(output.ctsdir), "namecollated.bam"),
             anno = lambda wildcards, output: os.path.join(str(output.ctsdir), "annotation.gtf"),
             prefix = lambda wildcards, output: os.path.join(str(output.ctsdir), "oarfish"),
-            linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
-    shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; zcat -f {input.anno} > {params.anno} 2>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {params.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} {params.anno} && gzip -c {params.prefix}.quant > {output.ctsdir}/quant.sf.gz ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
+            linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir)),
+            bins = BINS
+    shell: "set +euo pipefail; mkdir -p {output.ctsdir}; samtools collate -@ {threads} -o {params.nbam} {input.bam} &>> {log}; zcat -f {input.anno} > {params.anno} 2>> {log}; {params.mapp} --threads {threads} --genome-alignments {params.nbam} --annotation {params.anno} --genome-fasta {input.fa} {params.cpara} --output {params.prefix} &>> {log} && rm -f {params.nbam} {params.anno} && python3 {params.bins}/Analysis/oarfish_to_salmon.py -i {params.prefix}.quant -o {output.ctsdir}/quant.sf.gz &>> {log} ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"

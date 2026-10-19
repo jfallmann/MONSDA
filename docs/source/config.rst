@@ -42,6 +42,7 @@ The next key-level is the *OPTIONS* key which is where you can define additional
   * **long-read quantification**: use ``minimap`` with ``-x map-ont``/``-x map-pb`` (or ``rammap``) for mapping and ``oarfish`` for transcript quantification from the resulting transcriptome BAM.
   * **single-cell**: use ``piscem`` as MAPPING tool (emits a RAD file, single-cell only, generic post-mapping is skipped) together with ``alevinfry`` as COUNTING tool, or use the self-contained ``simpleaf`` COUNTING tool.
   * **DTU pre-grouping**: any DTU tool (drimseq/dexseq/spit) accepts an optional ``TERMINUS`` option to pre-group transcripts with terminus before analysis. It is disabled by default.
+  * **DTU quantifier**: any DTU tool accepts a ``COUNTTOOL`` option (analogous to the top-level ``TOOLS`` key, but for the quantifier used to generate its transcript-level counts), defaulting to ``salmon``. Set it to ``oarfish`` to run DTU on long-read data, quantifying directly from the already-mapped genome BAM instead of indexing/quantifying with salmon from FASTQ. ``TERMINUS`` pre-grouping is only supported when ``COUNTTOOL`` is ``salmon`` and is ignored otherwise.
 
 
 .. literalinclude:: ../../configs/template.json

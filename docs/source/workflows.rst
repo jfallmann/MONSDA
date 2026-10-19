@@ -282,6 +282,8 @@ Includes DE, DEU, DAS and DTU
 
   For DTU analyses, transcripts can optionally be pre-grouped with `terminus <https://github.com/COMBINE-lab/terminus>`_ to collapse transcripts that cannot be confidently distinguished. This is disabled by default and enabled per DTU tool via the ``TERMINUS`` option.
 
+  DTU can be run on long-read data by setting the ``COUNTTOOL`` option of a DTU tool to ``oarfish`` (default ``salmon``), which quantifies directly from the mapped genome BAM instead of a salmon index/FASTQ quantification step. ``TERMINUS`` pre-grouping is only available when ``COUNTTOOL`` is ``salmon``.
+
 PostDE (GO/GSEA/GSVA/decoupleR/dream)
 #####################################
 

@@ -62,6 +62,36 @@ process salmon_quant{
     }
 }
 
+process oarfish_dtu_quant{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus THREADS
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'copyNoFollow',
+    saveAs: {filename ->
+        if (filename.indexOf(".log") >0)        "LOGS/${SCOMBO}/${CONDITION}/DTU/"+"${COUNTENV}"+"/${file(filename).getName()}"
+        else                                    "DTU/${SCOMBO}/"+"${COUNTENV}"+"/${CONDITION}/${file(filename).getName()}"
+    }
+
+    input:
+    path bam
+
+    output:
+    path "*.gz", includeInputs:false, emit: counts
+    path "*.log", emit: logs
+
+    script:
+    fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
+    lf = "${COUNTENV}_"+fn+".log"
+    prefix = fn+"/"+COUNTENV
+    oz = fn+"/quant.sf.gz"
+    ol = fn+"_counts.gz"
+    """
+    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; zcat -f $DTUANNO > $fn/annotation.gtf 2>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $fn/annotation.gtf --genome-fasta $DTUREF $COUNTPARAMS --output $prefix &>> $lf && rm -f namecollated.bam $fn/annotation.gtf && python3 $BINS/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    """
+}
+
 process create_summary_snippet{
     conda "$DTUENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$DTUENV"

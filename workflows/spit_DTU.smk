@@ -1,7 +1,8 @@
 logid = 'spit_DTU.smk '
 DTUBIN, DTUENV = env_bin_from_config(config,'DTU')
 log.debug(logid+"DTUENV: "+str(DTUENV))
-COUNTBIN, COUNTENV = ['salmon','salmon']#env_bin_from_config(SAMPLES, config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
+COUNTTOOL = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('COUNTTOOL', 'salmon')
+COUNTBIN, COUNTENV = [COUNTTOOL, COUNTTOOL]
 
 comparison = comparable_as_string(config,'DTU')
 compstr = [i.split(":")[0] for i in comparison.split(",")]
@@ -10,6 +11,9 @@ usededup = config.get('RUNDEDUP', False)
 TERMINUSENV = 'terminus'
 termpara = tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'].get('TERMINUS', None)
 runterminus = termpara is not None
+if runterminus and COUNTTOOL != 'salmon':
+    log.warning(logid+f"TERMINUS grouping is only supported for the salmon quantifier, ignoring TERMINUS option for COUNTTOOL={COUNTTOOL}")
+    runterminus = False
 
 keydict = sub_dict(tool_params(SAMPLES[0], None, config, 'DTU', DTUENV)['OPTIONS'], ['INDEX'])
 keydict["REF"] = REFERENCE

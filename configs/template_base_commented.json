@@ -598,12 +598,14 @@
     },
     "drimseq": {
       "comment": {
+          "COUNTTOOL": "Quantifier used to generate the transcript-level counts DTU runs on, like the TOOLS key but for the counting step. 'salmon' for short-read FASTQ (default), 'oarfish' for long-read (PacBio/Nanopore) BAMs. TERMINUS grouping is only available for 'salmon'.",
           "INDEX": "salmon index options, e.g. path to decoy file",
-          "QUANT": "salmon quant options",
+          "QUANT": "salmon/oarfish quant options",
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
-          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable. Only supported when COUNTTOOL is 'salmon'."
       },
       "OPTIONS": {
+          "COUNTTOOL": "salmon",
           "INDEX": "-d GENOMES/salmon_decoy",
           "QUANT": "--seqBias --gcBias",
           "DTU": ""
@@ -611,12 +613,14 @@
     },
     "dexseq": {
       "comment": {
+          "COUNTTOOL": "Quantifier used to generate the transcript-level counts DTU runs on, like the TOOLS key but for the counting step. 'salmon' for short-read FASTQ (default), 'oarfish' for long-read (PacBio/Nanopore) BAMs. TERMINUS grouping is only available for 'salmon'.",
           "INDEX": "salmon index options, e.g. path to decoy file",
-          "QUANT": "salmon quant options",
+          "QUANT": "salmon/oarfish quant options",
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, , can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
-          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable. Only supported when COUNTTOOL is 'salmon'."
       },
       "OPTIONS": {
+          "COUNTTOOL": "salmon",
           "INDEX": "-d GENOMES/salmon_decoy",
           "QUANT": "--seqBias --gcBias",
           "DTU": ""
@@ -624,12 +628,14 @@
     },
     "spit": {
       "comment": {
+          "COUNTTOOL": "Quantifier used to generate the transcript-level counts DTU runs on, like the TOOLS key but for the counting step. 'salmon' for short-read FASTQ (default), 'oarfish' for long-read (PacBio/Nanopore) BAMs. TERMINUS grouping is only available for 'salmon'.",
           "INDEX": "salmon index options, e.g. path to decoy file",
-          "QUANT": "salmon quant options",
+          "QUANT": "salmon/oarfish quant options",
           "DTU": "Options for DTU Analysis, leave blank unless you know exactly what you are doing, can be used to set cutoffs for filtering, e.g. min_samps_feature_expr, min_gene_expr ...",
-          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable."
+          "TERMINUS": "Optional: enable terminus transcript grouping prior to DTU. Leave blank/absent to disable (default). Set terminus group options here (e.g. -m 0.1) to enable. Only supported when COUNTTOOL is 'salmon'."
       },
       "OPTIONS": {
+          "COUNTTOOL": "salmon",
           "INDEX": "-d GENOMES/salmon_decoy",
           "QUANT": "--seqBias --gcBias",
           "DTU": ""

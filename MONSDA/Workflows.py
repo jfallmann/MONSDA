@@ -2215,30 +2215,43 @@ def nf_fetch_params(
             retconf[x + "PVAL"] = pval
             retconf[x + "LFC"] = lfc
             if x == "DTU":
-                IDX = XCONF.get("INDEX")
-                if IDX:
-                    INDEX = IDX
-                if not INDEX:
-                    INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
-                    keydict = mu.sub_dict(
-                        mp.tool_params(SAMPLES[0], None, config, x, XENV)["OPTIONS"],
-                        ["INDEX"],
+                COUNTTOOL = mp.tool_params(SAMPLES[0], None, config, x, XENV)[
+                    "OPTIONS"
+                ].get("COUNTTOOL", "salmon")
+                retconf[x + "COUNTTOOL"] = COUNTTOOL
+                if COUNTTOOL == "salmon":
+                    IDX = XCONF.get("INDEX")
+                    if IDX:
+                        INDEX = IDX
+                    if not INDEX:
+                        INDEX = str.join(os.sep, [REFDIR, "INDICES", XENV]) + ".idx"
+                        keydict = mu.sub_dict(
+                            mp.tool_params(SAMPLES[0], None, config, x, XENV)[
+                                "OPTIONS"
+                            ],
+                            ["INDEX"],
+                        )
+                        keydict["REF"] = REFERENCE
+                        keydict["DECOY"] = DECOY
+                        keydict["ENV"] = XENV
+                        unikey = mu.get_dict_hash(keydict)
+                        UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
+                        UIDXNAME = f"{XENV}_{unikey}"
+                    INDICES = INDEX.split(",") if INDEX else list(UIDX)
+                    INDEX = (
+                        str(os.path.abspath(INDICES[0]))
+                        if str(os.path.abspath(INDICES[0])) not in UIDX
+                        else str(os.path.abspath(INDICES[0])) + "_idx"
                     )
-                    keydict["REF"] = REFERENCE
-                    keydict["DECOY"] = DECOY
-                    keydict["ENV"] = XENV
-                    unikey = mu.get_dict_hash(keydict)
-                    UIDX = f"{REFDIR}/INDICES/{XENV}_{unikey}.idx"
-                    UIDXNAME = f"{XENV}_{unikey}"
-                INDICES = INDEX.split(",") if INDEX else list(UIDX)
-                INDEX = (
-                    str(os.path.abspath(INDICES[0]))
-                    if str(os.path.abspath(INDICES[0])) not in UIDX
-                    else str(os.path.abspath(INDICES[0])) + "_idx"
-                )
-                retconf[x + "IDX"] = INDEX
-                retconf[x + "UIDX"] = UIDX
-                retconf[x + "UIDXNAME"] = UIDXNAME
+                    retconf[x + "IDX"] = INDEX
+                    retconf[x + "UIDX"] = UIDX
+                    retconf[x + "UIDXNAME"] = UIDXNAME
+                else:
+                    # Long-read quantifiers (e.g. oarfish) quantify directly
+                    # from the genome-mapped BAM, no transcript index needed.
+                    retconf[x + "IDX"] = ""
+                    retconf[x + "UIDX"] = ""
+                    retconf[x + "UIDXNAME"] = ""
             elif x == "DAS" and XBIN == "DIEGO.py":
                 cnd = [
                     os.path.join(os.sep.join(["Just", "A", "Placeholder", "Here"]), x)
