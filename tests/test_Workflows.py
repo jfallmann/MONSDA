@@ -13,7 +13,7 @@ from snakemake.common.configfile import load_configfile  # noqa: E402
 import MONSDA.Params as mp  # noqa: E402
 import MONSDA.Workflows as mw  # noqa: E402
 from MONSDA.Containers import normalize_container_version  # noqa: E402
-from scripts.container_matrix import environment_names  # noqa: E402
+from scripts.container_matrix import SKIP_ENVIRONMENTS, environment_names  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 DATA = REPO / "tests" / "data"
@@ -329,6 +329,25 @@ def test_make_post_dtu_file_set_stable(engine, workdir):
     _check_golden(f"config_DTU/{engine}/_filelist.txt", "\n".join(names) + "\n")
 
 
+def test_make_post_reuses_combinations_across_calls(workdir):
+    """Regression: generating smk then nf postflows in one process must write
+    files for both; get_combo used to return a one-shot iterator that the
+    first call drained."""
+    cfg = _load("config_DTU_test.json")
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples_postprocess(cfg, "DTU")
+
+    mp.create_skeleton("SubPostSnakes", None)
+    mw.make_post("DTU", cfg, samples, conditions, "SubPostSnakes", "INFO", combinations=combos)
+    mp.create_skeleton("SubPostFlows", None)
+    mw.nf_make_post("DTU", cfg, samples, conditions, "SubPostFlows", "INFO", combinations=combos)
+
+    assert glob.glob(os.path.join("SubPostSnakes", "*")), "smk postflow empty"
+    assert glob.glob(os.path.join("SubPostFlows", "*")), "nf postflow empty after smk call"
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file snapshot for the FUSIONS postprocessing step (STAR-Fusion).
 # --------------------------------------------------------------------------- #
@@ -521,7 +540,10 @@ def test_oras_static_and_nextflow_containers_are_versioned(monkeypatch):
 
 
 def test_container_matrix_covers_every_environment():
-    expected = sorted(path.stem for path in (REPO / "envs").glob("*.yaml"))
+    expected = sorted(
+        path.stem for path in (REPO / "envs").glob("*.yaml")
+        if path.stem not in SKIP_ENVIRONMENTS
+    )
     assert environment_names(REPO) == expected
 
 

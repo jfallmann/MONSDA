@@ -254,6 +254,9 @@ workflow DEU{
     take: collection
 
     main:
+    if (COUNTTOOL != 'featureCounts') {
+        error "COUNTTOOL ${COUNTTOOL} is not supported for DEU: only 'featureCounts' is valid (oarfish is DE-only, via gene-level aggregation)"
+    }
     
     if (RUNDEDUP){
         MAPPEDSAMPLES = LONGSAMPLES.collect{

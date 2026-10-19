@@ -201,6 +201,8 @@ def nf_paramize(content):
     drop = set()
     ifblocks = []
     ifnames = []
+    guards = []
+    guard_n = 0
     i = 0
     while i < n:
         ln = lines[i]
@@ -225,17 +227,25 @@ def nf_paramize(content):
                     buf.append(lines[i])
                     depth += lines[i].count("{") - lines[i].count("}")
                     i += 1
-                for k in range(start, i):
-                    drop.add(k)
                 nm = None
                 for bl in buf:
                     mm = re.match(r"^\s*([A-Za-z_]\w*)\s*=(?!=)", bl)
                     if mm:
                         nm = mm.group(1)
                         break
+                for k in range(start, i):
+                    drop.add(k)
                 if nm:
                     ifblocks.append((nm, buf))
                     ifnames.append(nm)
+                else:
+                    # No assignment inside (e.g. a validation log.warn/error):
+                    # still mixing a bare statement with process/workflow
+                    # declarations is rejected by the strict nf parser, so
+                    # wrap it in a synthetic params assignment instead of
+                    # dropping it silently.
+                    guard_n += 1
+                    guards.append(("_nf_guard_%d" % guard_n, buf))
                 continue
             else:
                 drop.add(i)
@@ -277,6 +287,12 @@ def nf_paramize(content):
         block = "\n".join(tb)
         block = _nf_rw(block, scalars, channels, ex_s=nm)
         defs.append("params.%s%s = {\n%s\n}()" % (_NF_PFX, nm, block))
+
+    for nm, buf in guards:
+        block = _nf_rw("\n".join(buf), scalars, channels)
+        defs.append(
+            "params.%s%s = {\n%s\nreturn true\n}()" % (_NF_PFX, nm, block)
+        )
 
     kept = [ln for idx, ln in enumerate(lines) if idx not in drop]
     body = "\n".join(kept)
@@ -450,9 +466,10 @@ def get_combo(wfs, config, conditions):
                 ret.append(tools)
 
         log.debug(f"{logid} Itertools {ret}")
-        combos[condition] = itertools.product(*ret)
+        # materialise: a bare itertools.product is one-shot and would be
+        # drained by the first consumer, leaving later calls with no combos
+        combos[condition] = list(itertools.product(*ret))
 
-    # no debug log here or iterator will be consumed
     return combos
 
 

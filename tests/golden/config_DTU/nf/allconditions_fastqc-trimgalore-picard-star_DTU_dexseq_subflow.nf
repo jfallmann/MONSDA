@@ -60,6 +60,12 @@ if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
     }
 }
 }()
+params.g_nf_guard_1 = {
+if (params.gCOUNTTOOL != 'salmon' && (get_always('dexseq_DTU_params_TERMINUS') ?: '')?.length() > 0){
+    log.warn "TERMINUS grouping is only supported for the salmon quantifier, ignoring TERMINUS option for COUNTTOOL=${params.gCOUNTTOOL}"
+}
+return true
+}()
 def sort_reads(rds){
     def rdslist = (rds instanceof Collection) ? rds.toList() : [rds]
     return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }

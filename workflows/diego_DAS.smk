@@ -1,5 +1,7 @@
 DASBIN, DASENV = env_bin_from_config(config, 'DAS')
 COUNTTOOL = tool_params(samplecond(SAMPLES, config)[0], None, config, "DAS", DASENV.split('_')[0])['OPTIONS'].get('COUNTTOOL', 'featureCounts')
+if COUNTTOOL != 'featureCounts':
+    raise ValueError(f"COUNTTOOL {COUNTTOOL!r} is not supported for DAS: only 'featureCounts' is valid (oarfish is DE-only, via gene-level aggregation)")
 COUNTBIN, COUNTENV = [COUNTTOOL,'countreads_de']#env_bin_from_config(config,'COUNTING') ##PINNING subreads package to version 1.6.4 due to changes in 2.0.1 gene_id length cutoff that interfers
 
 comparison = comparable_as_string(config,'DAS')
