@@ -13,6 +13,14 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER envs/${ENVIRONMENT}.yaml /tmp/environment.y
 COPY --chown=$MAMBA_USER:$MAMBA_USER scripts /opt/MONSDA/scripts
 RUN find /opt/MONSDA/scripts -type f \( -name '*.py' -o -name '*.R' -o -name '*.sh' -o -name '*.pl' \) -exec chmod a+x {} +
 
+# envs/monsda.yaml pins "monsda =<version>" for bioconda. Rewrite that pin to
+# the version being released instead of relying on it being bumped by hand,
+# so this only ever fails because bioconda does not have the release yet, not
+# because the committed pin is stale.
+RUN if [ "${ENVIRONMENT}" = "monsda" ]; then \
+      sed -i "s/^\( *-\s*monsda\s*\)=.*/\1=${MONSDA_VERSION}/" /tmp/environment.yaml; \
+    fi
+
 RUN micromamba create --yes --prefix /opt/conda/envs/monsda --file /tmp/environment.yaml \
     && micromamba clean --all --yes
 

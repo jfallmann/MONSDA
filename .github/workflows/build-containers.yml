@@ -5,19 +5,42 @@ on:
     types: [closed]
   release:
     types: [published]
+  # Gate container builds on the test suite: this fires once "MONSDA CI"
+  # finishes for a tag push (tags trigger its pypi-publish job too), so
+  # containers are only built/pushed after tests pass.
+  workflow_run:
+    workflows: ["MONSDA CI"]
+    types: [completed]
   workflow_dispatch:
+  # Allows build-monsda-container.yml to build just the "monsda" environment
+  # once it is available on bioconda, without waiting for a new release.
+  workflow_call:
+    inputs:
+      environment:
+        description: "Single environment to build, bypassing the default skip list"
+        required: false
+        type: string
+      revision:
+        description: "Git ref/sha to build from"
+        required: false
+        type: string
 
 permissions:
   contents: read
   packages: write
 
 concurrency:
-  group: containers-${{ github.event_name }}-${{ github.ref }}
+  group: containers-${{ github.event_name }}-${{ github.ref }}-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
   prepare:
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.merged == true
+    if: >-
+      (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true) ||
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v')) ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -27,9 +50,21 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.merge_commit_sha || github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+          ref: >-
+            ${{ inputs.revision
+                || (github.event_name == 'pull_request_target' && github.event.pull_request.merge_commit_sha)
+                || (github.event_name == 'release' && github.event.release.tag_name)
+                || (github.event_name == 'workflow_run' && github.event.workflow_run.head_sha)
+                || github.sha }}
       - id: matrix
-        run: echo "matrix=$(python scripts/container_matrix.py)" >> "$GITHUB_OUTPUT"
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          if [ -n "$ENVIRONMENT" ]; then
+            echo "matrix={\"environment\":[\"${ENVIRONMENT}\"]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=$(python scripts/container_matrix.py)" >> "$GITHUB_OUTPUT"
+          fi
       - id: version
         run: python scripts/container_matrix.py --version >> "$GITHUB_OUTPUT"
       - id: revision
@@ -114,8 +149,9 @@ jobs:
           sudo apt-get install -y apptainer
       - env:
           VERSION: ${{ needs.prepare.outputs.version }}
+          MATRIX: ${{ needs.prepare.outputs.matrix }}
         run: |
           apptainer registry login -u "$ACTOR" -p "$TOKEN" oras://ghcr.io
-          for environment in $(python scripts/container_matrix.py | python -c 'import json,sys; print(" ".join(json.load(sys.stdin)["environment"]))'); do
+          for environment in $(echo "$MATRIX" | python -c 'import json,sys; print(" ".join(json.load(sys.stdin)["environment"]))'); do
             apptainer pull -F --disable-cache "verify-${environment}.sif" "oras://ghcr.io/jfallmann/monsda:${environment}-${VERSION}"
           done

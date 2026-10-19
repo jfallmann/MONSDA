@@ -10,8 +10,17 @@ sys.path.insert(0, str(ROOT))
 from MONSDA.Containers import normalize_container_version  # noqa: E402
 
 
+# Environments that cannot be built into a container yet, e.g. because they
+# pin a conda package (monsda itself) that is not published on bioconda for
+# the current version. Remove an entry here once the package is available.
+SKIP_ENVIRONMENTS = {"monsda"}
+
+
 def environment_names(root):
-    names = sorted(path.stem for path in (root / "envs").glob("*.yaml"))
+    names = sorted(
+        path.stem for path in (root / "envs").glob("*.yaml")
+        if path.stem not in SKIP_ENVIRONMENTS
+    )
     if not names:
         raise RuntimeError("No environment definitions found")
     return names
