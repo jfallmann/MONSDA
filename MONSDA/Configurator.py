@@ -106,6 +106,9 @@ class PROJECT:
         self.commentsDict = NestedDefaultDict()
         self.conditionsDict = NestedDefaultDict()
         self.samplesDict = NestedDefaultDict()
+        # seq/strand info per condition ("A:B:C" -> {"seq": ..., "strand": ...})
+        # for sample-assignment paths (e.g. SRA) that don't populate samplesDict.
+        self.sequencingDict = {}
         self.workflowsDict = NestedDefaultDict()
         self.settingsDict = NestedDefaultDict()
         self.settingsList = []
@@ -985,6 +988,20 @@ def assign_SRA(only_conditions=None):
                 question=ques,
             )
             AccNumbers = guide.answer.split(",")
+
+            opts = {"1": "single", "2": "paired", "3": "singlecell"}
+            guide.display(
+                question="Specify sequencing method", options=opts, proof=opts.keys()
+            )
+            seq = opts[guide.answer]
+
+            opts = {"1": "unstranded", "2": "rf", "3": "fr", "4": "ff"}
+            guide.display(
+                question="Specify strandedness", options=opts, proof=opts.keys()
+            )
+            stranded = opts[guide.answer]
+            project.sequencingDict[condition] = {"seq": seq, "strand": stranded}
+
             set_by_path(
                 project.settingsDict,
                 cond_as_list,
@@ -1140,13 +1157,23 @@ def set_settings():
                 continue
             prRed(f"\n   Condition:   {' : '.join(maplist)} \n")
             seq = ""
+            strand = ""
             for k in project.samplesDict.keys():
                 try:
                     if project.samplesDict[k]["cond"] == ":".join(maplist):
                         seq = project.samplesDict[k]["seq"]
+                        strand = project.samplesDict[k]["strand"]
                 except (KeyError, TypeError):
                     continue
-            setInDict(project.settingsDict, maplist + ["SEQUENCING"], seq)
+            if not seq:
+                # SRA accessions don't populate samplesDict, look up the
+                # seq/strand recorded for this condition by assign_SRA instead.
+                sra_info = project.sequencingDict.get(":".join(maplist))
+                if sra_info:
+                    seq = sra_info.get("seq", "")
+                    strand = sra_info.get("strand", "")
+            sequencing = f"{seq},{strand}" if strand else seq
+            setInDict(project.settingsDict, maplist + ["SEQUENCING"], sequencing)
             settings_to_make = ["REFERENCE", "DECOY", "GTF", "GFF"]
             if list(set(project.workflowsDict.keys()) & set(IP_workflows)):
                 settings_to_make = settings_to_make + ["IP"]

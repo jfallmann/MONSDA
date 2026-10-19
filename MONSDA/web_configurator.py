@@ -51,7 +51,8 @@ class ConditionFiles(BaseModel):
     condition: str  # slash-separated condition path e.g. "Ecoli/WT"
     fastq_dir: str = ""  # directory containing FASTQ files for this condition
     fastq_files: List[str] = Field(default_factory=list)  # explicit file paths
-    sequencing: str = "paired"  # paired | single
+    sequencing: str = "paired"  # paired | single | singlecell
+    strand: str = "unstranded"  # unstranded | rf | fr | ff
     reference: str = ""  # absolute path to genome FASTA
     gtf: str = ""  # absolute path to GTF annotation
     gff: str = ""  # absolute path to GFF annotation (optional)
@@ -430,6 +431,13 @@ def create_project(req: ProjectRequest) -> Dict[str, Any]:
                 node = node.get(key, {})
 
             samples = node.get("SAMPLES", [])
+
+            if cond_info:
+                node["SEQUENCING"] = (
+                    f"{cond_info.sequencing},{cond_info.strand}"
+                    if cond_info.strand
+                    else cond_info.sequencing
+                )
 
             # Link FASTQ files: prefer explicit file list, fall back to directory+sample matching
             if cond_info and cond_info.fastq_files:
@@ -1372,6 +1380,7 @@ async function createProject() {
         fastq_dir: useFiles ? '' : (card.querySelector('.cond-fastq-dir')?.value?.trim() || ''),
         fastq_files: fastqFiles,
         sequencing: card.querySelector('.cond-sequencing')?.value || 'paired',
+        strand: card.querySelector('.cond-strand')?.value || 'unstranded',
         reference: card.querySelector('.cond-reference')?.value?.trim() || '',
         gtf: card.querySelector('.cond-gtf')?.value?.trim() || '',
         gff: card.querySelector('.cond-gff')?.value?.trim() || '',
@@ -1416,7 +1425,8 @@ function loadProjectConditions() {
   function walkSettings(node, path) {
     if (!node || typeof node !== 'object') return;
     if (Array.isArray(node.SAMPLES)) {
-      conditions.push({ path: path.join('/'), samples: node.SAMPLES, sequencing: node.SEQUENCING || 'paired', reference: node.REFERENCE || '', gtf: (node.ANNOTATION && node.ANNOTATION.GTF) || '', gff: (node.ANNOTATION && node.ANNOTATION.GFF) || '', decoy: node.DECOY || '' });
+      const seqParts = String(node.SEQUENCING || 'paired').split(',');
+      conditions.push({ path: path.join('/'), samples: node.SAMPLES, sequencing: seqParts[0] || 'paired', strand: seqParts[1] || 'unstranded', reference: node.REFERENCE || '', gtf: (node.ANNOTATION && node.ANNOTATION.GTF) || '', gff: (node.ANNOTATION && node.ANNOTATION.GFF) || '', decoy: node.DECOY || '' });
       return;
     }
     for (const [k, v] of Object.entries(node)) {
@@ -1474,7 +1484,17 @@ function loadProjectConditions() {
           <label>Sequencing</label>
           <select class="cond-sequencing">
             <option value="paired" ${c.sequencing === 'paired' ? 'selected' : ''}>Paired-end</option>
-            <option value="single" ${c.sequencing !== 'paired' ? 'selected' : ''}>Single-end</option>
+            <option value="single" ${c.sequencing === 'single' ? 'selected' : ''}>Single-end</option>
+            <option value="singlecell" ${c.sequencing === 'singlecell' ? 'selected' : ''}>Single-cell</option>
+          </select>
+        </div>
+        <div>
+          <label>Strandedness</label>
+          <select class="cond-strand">
+            <option value="unstranded" ${c.strand === 'unstranded' ? 'selected' : ''}>Unstranded</option>
+            <option value="rf" ${c.strand === 'rf' ? 'selected' : ''}>rf</option>
+            <option value="fr" ${c.strand === 'fr' ? 'selected' : ''}>fr</option>
+            <option value="ff" ${c.strand === 'ff' ? 'selected' : ''}>ff</option>
           </select>
         </div>
         <div>
