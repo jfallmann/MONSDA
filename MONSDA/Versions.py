@@ -359,6 +359,25 @@ def write_versions(config, steps, envdir, monsda_version, configfile=None, path=
 
     rows = collect_versions(config, steps, envdir)
 
+    body = ""
+    if configfile:
+        body += "# config: {c}\n".format(c=str(configfile))
+    body += (
+        "# versions as pinned in the conda env yamls of the configured tools, not queried from the running binaries\n"
+    )
+    body += "#tool\tversion\tmultiqc_module\tsteps\n"
+    for row in rows:
+        body += "\t".join(row) + "\n"
+
+    if os.path.isfile(path):
+        with open(path, "r") as existing:
+            old_body = "".join(
+                line for line in existing if not line.startswith("# MONSDA ")
+            )
+        if old_body == body:
+            log.info(logid + "Tool versions unchanged, keeping " + str(path))
+            return path
+
     with open(path, "w") as out:
         out.write(
             "# MONSDA {v}\t{ts}\n".format(
@@ -366,14 +385,7 @@ def write_versions(config, steps, envdir, monsda_version, configfile=None, path=
                 ts=datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S"),
             )
         )
-        if configfile:
-            out.write("# config: {c}\n".format(c=str(configfile)))
-        out.write(
-            "# versions as pinned in the conda env yamls of the configured tools, not queried from the running binaries\n"
-        )
-        out.write("#tool\tversion\tmultiqc_module\tsteps\n")
-        for row in rows:
-            out.write("\t".join(row) + "\n")
+        out.write(body)
 
     log.info(logid + "Tool versions written to " + str(path))
     return path
