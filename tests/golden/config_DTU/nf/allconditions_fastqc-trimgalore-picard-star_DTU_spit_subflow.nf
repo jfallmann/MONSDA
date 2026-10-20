@@ -174,7 +174,7 @@ process oarfish_dtu_quant{
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; zcat -f ${params.gDTUANNO} > $fn/annotation.gtf 2>> $lf; ${params.gCOUNTBIN} --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $fn/annotation.gtf --genome-fasta ${params.gDTUREF} ${params.gCOUNTPARAMS} --output $prefix &>> $lf && rm -f namecollated.bam $fn/annotation.gtf && python3 ${params.gBINS}/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; zcat -f ${params.gDTUANNO} > $fn/annotation.gtf 2>> $lf; if [ ! -s $fn/annotation.gtf ]; then echo "ERROR: decompressed annotation from ${params.gDTUANNO} is empty, check source file and filesystem" >> $lf; exit 1; fi; ${params.gCOUNTBIN} --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $fn/annotation.gtf --genome-fasta ${params.gDTUREF} ${params.gCOUNTPARAMS} --output $prefix &>> $lf && rm -f namecollated.bam $fn/annotation.gtf && python3 ${params.gBINS}/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
     """
 }
 process create_summary_snippet{

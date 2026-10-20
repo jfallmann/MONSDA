@@ -69,7 +69,7 @@ process featurecount_deseq{
             stranded = ''
     }
     """
-    mkdir -p TMP; zcat -f $anno > annotation.gtf 2> $ol; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a annotation.gtf -o tmpcts $reads 2>> $ol && rm -f annotation.gtf && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; zcat -f $anno > annotation.gtf 2> $ol; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a annotation.gtf -o tmpcts $reads 2>> $ol && rm -f annotation.gtf && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -103,7 +103,7 @@ process oarfish_gene_count{
     os = fn+".counts.summary"
     ol = fn+".log"
     """
-    samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; zcat -f $anno > annotation.gtf 2>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation annotation.gtf --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam annotation.gtf && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
+    samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; zcat -f $anno > annotation.gtf 2>> $ol; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation annotation.gtf --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam annotation.gtf && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
     """
 }
 
