@@ -27,7 +27,7 @@ PCOMBO = get_always('COMBO') ?: 'none'
 
 //DTU PROCESSES
 
-include { salmon_quant; oarfish_dtu_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
+include { salmon_quant; decompress_annotation_dtu; oarfish_dtu_quant; create_summary_snippet; terminus_collapse } from "dtu_base.nf"
 
 process salmon_idx{
     conda "$COUNTENV"+".yaml"
@@ -182,7 +182,9 @@ workflow DTU{
                 element -> return "${workflow.workDir}/../MAPPED/${COMBO}/"+element+"_mapped_sorted.bam"
             }
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
-        oarfish_dtu_quant(mapsamples_ch.collate(1))
+        decompress_annotation_dtu(annofile)
+        annogtf_dtu = decompress_annotation_dtu.out.anno_plain
+        oarfish_dtu_quant(annogtf_dtu.combine(mapsamples_ch.collate(1)))
         quantcounts = oarfish_dtu_quant.out.counts
     }
 
