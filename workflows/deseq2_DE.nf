@@ -24,6 +24,30 @@ QUANTPARAMS = get_always('deseq2_DE_params_QUANT') ?: ''
 
 //DE PROCESSES
 
+process decompress_annotation_deseq{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus 1
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DE/deseq2/decompress_annotation.log"
+    }
+
+    input:
+    path anno
+
+    output:
+    path "annotation.gtf", emit: anno_plain
+    path "log", emit: log
+
+    script:
+    """
+    zcat -f $anno > annotation.gtf 2> log; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> log; exit 1; fi
+    """
+}
+
 process featurecount_deseq{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -69,7 +93,7 @@ process featurecount_deseq{
             stranded = ''
     }
     """
-    mkdir -p TMP; zcat -f $anno > annotation.gtf 2> $ol; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a annotation.gtf -o tmpcts $reads 2>> $ol && rm -f annotation.gtf && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
+    mkdir -p TMP; : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; $COUNTBIN -T ${task.cpus} $COUNTPARAMS $pair $stranded -a $anno -o tmpcts $reads 2>> $ol && head -n2 tmpcts |gzip > $oc && export LC_ALL=C; tail -n+3 tmpcts|sort --parallel=${task.cpus} -S $sortmem -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> $oc 2>> $ol && mv tmpcts.summary $os
     """
 }
 
@@ -103,7 +127,7 @@ process oarfish_gene_count{
     os = fn+".counts.summary"
     ol = fn+".log"
     """
-    samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; zcat -f $anno > annotation.gtf 2>> $ol; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation annotation.gtf --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam annotation.gtf && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
+    : > $ol; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $ol; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $ol; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $DEREF $QUANTPARAMS --output $fn &>> $ol && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_featurecounts.py -i ${fn}.quant -g $anno -s ${fn}_mapped_sorted.bam -o $oc 2>> $ol && touch $os
     """
 }
 
@@ -282,6 +306,9 @@ workflow DE{
     
     annofile = Channel.fromPath(DEANNO)
 
+    decompress_annotation_deseq(annofile)
+    annogtf = decompress_annotation_deseq.out.anno_plain
+
     if (COUNTTOOL == 'featureCounts'){
         if (RUNDEDUP){
             MAPPEDSAMPLES = LONGSAMPLES.collect{
@@ -296,7 +323,7 @@ workflow DE{
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
         //mapsamples_ch.subscribe {  println "MAP: $it \t COMBO: ${COMBO} SCOMBO: ${SCOMBO} LONG: ${LONGSAMPLES}"  }
 
-        featurecount_deseq(annofile.combine(mapsamples_ch.collate(1)))
+        featurecount_deseq(annogtf.combine(mapsamples_ch.collate(1)))
         countcts = featurecount_deseq.out.fc_cts
     }else{
         MAPPEDSAMPLES = LONGSAMPLES.collect{
@@ -304,7 +331,7 @@ workflow DE{
         }
         mapsamples_ch = Channel.fromPath(MAPPEDSAMPLES.sort())
 
-        oarfish_gene_count(annofile.combine(mapsamples_ch.collate(1)))
+        oarfish_gene_count(annogtf.combine(mapsamples_ch.collate(1)))
         countcts = oarfish_gene_count.out.fc_cts
     }
 

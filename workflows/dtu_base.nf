@@ -62,6 +62,30 @@ process salmon_quant{
     }
 }
 
+process decompress_annotation_dtu{
+    conda "$COUNTENV"+".yaml"
+    container "oras://jfallmann/monsda:"+"$COUNTENV"
+    cpus 1
+	cache 'lenient'
+
+    publishDir "${workflow.workDir}/../" , mode: 'link',
+    saveAs: {filename ->
+        if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}/DTU/"+"${COUNTENV}"+"/decompress_annotation.log"
+    }
+
+    input:
+    path anno
+
+    output:
+    path "annotation.gtf", emit: anno_plain
+    path "log", emit: log
+
+    script:
+    """
+    zcat -f $anno > annotation.gtf 2> log; if [ ! -s annotation.gtf ]; then echo "ERROR: decompressed annotation from $anno is empty, check source file and filesystem" >> log; exit 1; fi
+    """
+}
+
 process oarfish_dtu_quant{
     conda "$COUNTENV"+".yaml"
     container "oras://jfallmann/monsda:"+"$COUNTENV"
@@ -75,20 +99,22 @@ process oarfish_dtu_quant{
     }
 
     input:
-    path bam
+    path fls
 
     output:
     path "*.gz", includeInputs:false, emit: counts
     path "*.log", emit: logs
 
     script:
+    anno = fls[0]
+    bam = fls[1]
     fn = file(bam).getSimpleName().replaceAll(/\Q_mapped_sorted\E/,"")
     lf = "${COUNTENV}_"+fn+".log"
     prefix = fn+"/"+COUNTENV
     oz = fn+"/quant.sf.gz"
     ol = fn+"_counts.gz"
     """
-    mkdir -p $fn; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; zcat -f $DTUANNO > $fn/annotation.gtf 2>> $lf; if [ ! -s $fn/annotation.gtf ]; then echo "ERROR: decompressed annotation from $DTUANNO is empty, check source file and filesystem" >> $lf; exit 1; fi; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $fn/annotation.gtf --genome-fasta $DTUREF $COUNTPARAMS --output $prefix &>> $lf && rm -f namecollated.bam $fn/annotation.gtf && python3 $BINS/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
+    mkdir -p $fn; : > $lf; if [ ! -s $anno ]; then echo "ERROR: decompressed annotation $anno is empty, check source file and filesystem" >> $lf; exit 1; fi; samtools collate -@ ${task.cpus} -o namecollated.bam $bam &>> $lf; $COUNTBIN --threads ${task.cpus} --genome-alignments namecollated.bam --annotation $anno --genome-fasta $DTUREF $COUNTPARAMS --output $prefix &>> $lf && rm -f namecollated.bam && python3 $BINS/Analysis/oarfish_to_salmon.py -i ${prefix}.quant -o $oz &>> $lf && ln -fs $oz $ol
     """
 }
 

@@ -30,9 +30,19 @@ rule themall:
             Rmd = expand("REPORTS/SUMMARY/RmdSnippets/{combo}.Rmd", combo=combo),
             postde = expand("POSTDE/{combo}", combo=combo) if postde_enabled else []
 
+rule decompress_annotation:
+    input:  anno = ANNOTATION
+    output: anno = temp("DE/{combo}/Featurecounts/annotation.gtf")
+    log:    "LOGS/{combo}/DE/deseq2/decompress_annotation.log"
+    conda:  ""+COUNTENV+".yaml"
+    container: "oras://jfallmann/monsda:"+COUNTENV+""
+    threads: 1
+    shell:  "zcat -f {input.anno} > {output.anno} 2> {log}; if [ ! -s {output.anno} ]; then echo 'ERROR: decompressed annotation from {input.anno} is empty, check source file and filesystem' >> {log}; exit 1; fi"
+
 if COUNTTOOL == 'featureCounts':
     rule featurecount_unique:
-        input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo)
+        input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique.bam", scombo=scombo) if not usededup else expand("MAPPED/{scombo}/{{file}}_mapped_sorted_unique_dedup.bam", scombo=scombo),
+                anno  = rules.decompress_annotation.output.anno
         output: tmp   = temp("DE/{combo}/Featurecounts/{file}_tmp.counts"),
                 tmph  = temp("DE/{combo}/Featurecounts/{file}_tmp.head.gz"),
                 tmpc  = temp("DE/{combo}/Featurecounts/{file}_tmp.count.gz"),
@@ -42,30 +52,30 @@ if COUNTTOOL == 'featureCounts':
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: countb = COUNTBIN,
-                anno = ANNOTATION,
                 cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
                 paired   = lambda x: '-p' if paired == 'paired' else '',
                 stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
                 sortmem = get_sortmem,
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file
-        shell:  "mkdir -p $(dirname {params.prefix}); zcat -f {params.anno} > {params.prefix}_annotation.gtf 2> {log}; if [ ! -s {params.prefix}_annotation.gtf ]; then echo 'ERROR: decompressed annotation from {params.anno} is empty, check source file and filesystem' >> {log}; exit 1; fi; {params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {params.prefix}_annotation.gtf -o {output.tmp} {input.reads} 2>> {log} && rm -f {params.prefix}_annotation.gtf && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
+        shell:  "mkdir -p $(dirname {params.prefix}); {params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {input.anno} -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"
 else:
     # Long-read quantifiers (e.g. oarfish) quantify directly from the
     # genome-mapped BAM and are aggregated to gene level afterwards.
     rule featurecount_unique:
-        input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo)
+        input:  reads = expand("MAPPED/{scombo}/{{file}}_mapped_sorted.bam", scombo=scombo),
+                anno  = rules.decompress_annotation.output.anno
         output: cts   = "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique.counts.gz" if not usededup else "DE/{combo}/Featurecounts/{file}_mapped_sorted_unique_dedup.counts.gz"
         log:    "LOGS/{combo}/{file}/DE/deseq2/"+COUNTENV+"_deseq2_unique.log"
         conda:  ""+COUNTENV+".yaml"
         container: "oras://jfallmann/monsda:"+COUNTENV+""
         threads: MAXTHREAD
         params: countb = COUNTBIN,
-                anno = ANNOTATION,
+                origanno = ANNOTATION,
                 ref = REFERENCE,
                 cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('QUANT', ""),
                 bins = BINS,
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file
-        shell:  "mkdir -p $(dirname {params.prefix}); samtools collate -@ {threads} -o {params.prefix}_namecollated.bam {input.reads} 2> {log}; zcat -f {params.anno} > {params.prefix}_annotation.gtf 2>> {log}; if [ ! -s {params.prefix}_annotation.gtf ]; then echo 'ERROR: decompressed annotation from {params.anno} is empty, check source file and filesystem' >> {log}; exit 1; fi; {params.countb} --threads {threads} --genome-alignments {params.prefix}_namecollated.bam --annotation {params.prefix}_annotation.gtf --genome-fasta {params.ref} {params.cpara} --output {params.prefix} 2>> {log} && rm -f {params.prefix}_namecollated.bam {params.prefix}_annotation.gtf && python3 {params.bins}/Analysis/oarfish_to_featurecounts.py -i {params.prefix}.quant -g {params.anno} -s {wildcards.file}_mapped_sorted.bam -o {output.cts} 2>> {log}"
+        shell:  "mkdir -p $(dirname {params.prefix}); samtools collate -@ {threads} -o {params.prefix}_namecollated.bam {input.reads} 2> {log}; {params.countb} --threads {threads} --genome-alignments {params.prefix}_namecollated.bam --annotation {input.anno} --genome-fasta {params.ref} {params.cpara} --output {params.prefix} 2>> {log} && rm -f {params.prefix}_namecollated.bam && python3 {params.bins}/Analysis/oarfish_to_featurecounts.py -i {params.prefix}.quant -g {params.origanno} -s {wildcards.file}_mapped_sorted.bam -o {output.cts} 2>> {log}"
 
 rule prepare_count_table:
     input:   cnd  = expand(rules.featurecount_unique.output.cts, combo=combo, file=samplecond(SAMPLES, config))
