@@ -326,6 +326,11 @@ if 'FUSIONS' in config:
         ANNOTATION = ANNO.get('GTF') if 'GTF' in ANNO and ANNO.get('GTF') != '' else ANNO.get('GFF')  # by default GTF format will be used
 
 
+if ANNOTATION and isinstance(ANNOTATION, str):
+    # Resolve once to an absolute path so every rule's shell command can read
+    # it reliably regardless of its own working directory (e.g. containers).
+    ANNOTATION = os.path.abspath(ANNOTATION)
+
 combo = ''
 
 if ANNOTATION:
