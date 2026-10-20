@@ -2356,6 +2356,13 @@ def nf_fetch_params(
     retconf["REFDIR"] = REFDIR
     retconf["IP"] = IP
 
+    # Resolve all annotation paths to absolute paths once, so every nf
+    # process can read them reliably regardless of its own work directory
+    # (mirrors the equivalent hardening in workflows/header.smk).
+    for key in list(retconf.keys()):
+        if key.endswith("ANNO") and isinstance(retconf[key], str) and retconf[key]:
+            retconf[key] = os.path.abspath(retconf[key])
+
     return retconf
 
 
