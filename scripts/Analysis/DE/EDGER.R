@@ -179,10 +179,26 @@ tmm <- tmm[c(ncol(tmm), 1:ncol(tmm) - 1)]
 tmm <- add_gene_coordinates(tmm, tmm$ID, gtf_gene, after = "ID")
 write.table(as.data.frame(tmm), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "AllConditionsNormalized.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
 
+## geometry (canvas size/res/point&label cex) scaled to the number of samples,
+## so DataSet figures stay legible whether there are a handful or hundreds
+ds_geom <- scaled_png_geometry(ncol(dge))
+
+## sample-to-sample Pearson correlation on log-CPM, consistent with the
+## correlation plot produced by the DESEQ2 DataSet figures
+plot_sample_correlation_heatmap(
+    cpm(dge, log = TRUE),
+    paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsCorrelation.png", sep = "_"),
+    group = dge$samples$group,
+    title = "Sample-to-sample Pearson correlation (log2 CPM)"
+)
+
 ## create file MDS-plot with and without summarized replicates
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsMDS.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
-safe_plotMDS(dge, col = as.numeric(dge$samples$group), cex = 1)
+png(out, width=ds_geom$width, height=ds_geom$height, res=ds_geom$res)
+safe_plotMDS(dge, col = as.numeric(dge$samples$group), pch = 16, cex = ds_geom$cex)
+if (ncol(dge) >= 3) {
+    legend("topright", legend = levels(as.factor(dge$samples$group)), col = seq_along(levels(as.factor(dge$samples$group))), pch = 16, cex = 0.8)
+}
 dev.off()
 
 ## estimate Dispersion
@@ -190,7 +206,7 @@ dge <- estimateDisp(dge, design, robust = TRUE)
 
 ## create file BCV-plot - visualizing estimated dispersions
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsBCV.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
+png(out, width=ds_geom$width, height=ds_geom$height, res=ds_geom$res)
 plotBCV(dge)
 dev.off()
 
@@ -199,7 +215,7 @@ fit <- glmQLFit(dge, design, robust = TRUE)
 
 ## create file quasi-likelihood-dispersion-plot
 out <- paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "AllConditionsQLDisp.png", sep = "_")
-png(out, width=1900, height=1200, res=300)
+png(out, width=ds_geom$width, height=ds_geom$height, res=ds_geom$res)
 plotQLDisp(fit)
 dev.off()
 

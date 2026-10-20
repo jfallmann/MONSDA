@@ -180,46 +180,41 @@ library("RColorBrewer")
 library("gplots")
 select <- order(rowMeans(counts(dds, normalized = TRUE)), decreasing = TRUE)[1:30]
 hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width=1900, height=1200, res=300)
+hm_geom <- scaled_png_geometry(ncol(counts(dds)))
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap1.png", sep = "_"), width=hm_geom$width, height=hm_geom$height, res=hm_geom$res)
 heatmap.2(counts(dds, normalized = TRUE)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
+    dendrogram = "none", trace = "none", margin = c(hm_geom$margin, 8), cexCol = hm_geom$cex
 )
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width=1900, height=1200, res=300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap2.png", sep = "_"), width=hm_geom$width, height=hm_geom$height, res=hm_geom$res)
 heatmap.2(assay(rld)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
+    dendrogram = "none", trace = "none", margin = c(hm_geom$margin, 8), cexCol = hm_geom$cex
 )
 dev.off()
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width=1900, height=1200, res=300)
+png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap3.png", sep = "_"), width=hm_geom$width, height=hm_geom$height, res=hm_geom$res)
 heatmap.2(assay(vsd)[select, ],
     col = hmcol,
     Rowv = FALSE, Colv = FALSE, scale = "none",
-    dendrogram = "none", trace = "none", margin = c(12, 8)
+    dendrogram = "none", trace = "none", margin = c(hm_geom$margin, 8), cexCol = hm_geom$cex
 )
 dev.off()
 
 # The above shows heatmaps for 30 most highly expressed genes (not necessarily the biggest fold change). The data is of raw counts (left), regularized log transformation (center) and from variance stabilizing transformation (right) and you can clearly see the effect of the transformation has by shrinking the variance so that we don’t get the squish effect shown in the left hand graph.
 ##############################
-# Now we calculate sample to sample distances so we can make a dendrogram to look at the clustering of samples.
-distsRL <- dist(t(assay(rld)))
-mat <- as.matrix(distsRL)
-rownames(mat) <- colnames(mat) <- with(colData(dds), condition)
-# updated in latest vignette (See comment by Michael Love)
-# this line was incorrect
-# heatmap.2(mat, trace='none', col = rev(hmcol), margin=c(16, 16))
-# From the Apr 2015 vignette
-hc <- hclust(distsRL)
-png(paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"), width=1900, height=1200, res=300)
-heatmap.2(mat,
-    Rowv = as.dendrogram(hc),
-    symm = TRUE, trace = "none",
-    col = rev(hmcol), margin = c(13, 13)
+# Sample-to-sample Pearson correlation of the rlog-transformed counts. A
+# correlation matrix is directly interpretable (bounded -1..1) and, via the
+# shared plot_sample_correlation_heatmap() helper, stays legible and keeps its
+# color key from overlapping the plot regardless of sample count.
+plot_sample_correlation_heatmap(
+    assay(rld),
+    paste("Figures/DE", "DESEQ2", combi, "DataSet", "figure", "heatmap-samplebysample.png", sep = "_"),
+    group = colData(dds)$condition,
+    title = "Sample-to-sample Pearson correlation (rlog)"
 )
-dev.off()
 
 ### Now we run comparisons
 

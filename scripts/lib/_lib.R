@@ -256,3 +256,90 @@ format_edger_results <- function(tbl, gtf_gene, center = FALSE) {
     }
     add_gene_coordinates(out, out$Gene_ID, gtf_gene, after = "Gene_ID")
 }
+
+## Derive a PNG canvas size, resolution and label cex from the number of
+## samples/labels a DataSet-level figure has to show, instead of every call
+## site hardcoding a fixed width/height/res that only looks right for a
+## handful of samples and becomes illegible (or, worse, silently truncated)
+## once a study has dozens to hundreds of samples.
+scaled_png_geometry <- function(n, base_w = 1900, base_h = 1200, base_res = 300, per_label_px = 18, max_px = 8000) {
+    n <- max(1, n)
+    width <- min(max_px, max(base_w, base_w + per_label_px * n))
+    height <- min(max_px, max(base_h, base_h + per_label_px * n))
+    cex <- max(0.25, min(1, 30 / n))
+    cex_margin <- max(6, min(30, 6 + n / 10))
+    list(width = width, height = height, res = base_res, cex = cex, margin = cex_margin)
+}
+
+## Base-R (no gplots/pheatmap dependency, so the same function works in every
+## DE/DAS/DEU/DTU conda env) sample-to-sample Pearson correlation heatmap.
+## Unlike a Euclidean-distance heatmap.2 plot, the color scale here is a
+## directly interpretable correlation coefficient, the color-key legend is
+## drawn in its own panel so it cannot overlap the title or the matrix, and at
+## high sample counts the dendrogram and axis labels are thinned/omitted
+## intentionally (with a one-line caption) instead of being silently
+## undrawable, which is what produced unreadable output previously.
+plot_sample_correlation_heatmap <- function(expr_mat, outfile, group = NULL, title = "Sample-to-sample correlation", method = "pearson", max_dendro_n = 60, max_label_n = 80) {
+    n <- ncol(expr_mat)
+    geom <- scaled_png_geometry(n)
+    cmat <- cor(expr_mat, method = method)
+    ord <- if (n > 2) hclust(as.dist(1 - cmat))$order else seq_len(n)
+    cmat <- cmat[ord, ord]
+    labels <- colnames(cmat)
+    show_every <- max(1, ceiling(n / max_label_n))
+    shown_idx <- seq(1, n, by = show_every)
+    draw_labels <- rep("", n)
+    draw_labels[shown_idx] <- labels[shown_idx]
+    has_dendro <- n > 2 && n <= max_dendro_n
+    has_strip <- !is.null(group)
+    ## margin only needs to fit the labels actually drawn, not every sample,
+    ## otherwise thinning labels at high n still leaves a huge, mostly empty
+    ## margin reserved for text that was never printed
+    geom$margin <- scaled_png_geometry(min(n, max_label_n))$margin
+
+    grDevices::png(outfile, width = geom$width, height = geom$height, res = geom$res)
+    on.exit(grDevices::dev.off(), add = TRUE)
+    top_h <- if (has_dendro) 1.2 else 0.1
+    strip_h <- if (has_strip) 0.3 else 0
+    graphics::layout(
+        matrix(c(1, 3, 2, 4), nrow = 2),
+        widths = c(5, 1), heights = c(top_h + strip_h, 5)
+    )
+    hmcol <- grDevices::colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+
+    ## top-left: dendrogram (if small enough) and/or condition color strip
+    graphics::par(mar = c(0.2, geom$margin, 2, 1))
+    if (has_dendro) {
+        dend <- as.dendrogram(hclust(as.dist(1 - cmat)))
+        graphics::plot(dend, axes = FALSE, leaflab = "none", main = title, cex.main = 0.9)
+    } else {
+        graphics::plot.new()
+        graphics::title(main = title, cex.main = 0.9)
+        graphics::mtext(paste0("(dendrogram omitted above ", max_dendro_n, " samples; order from hclust on ", n, " samples)"), side = 1, cex = 0.6)
+    }
+    if (has_strip) {
+        group <- as.factor(group)[ord]
+        strip_col <- grDevices::rainbow(nlevels(group))[as.integer(group)]
+        graphics::par(new = TRUE, mar = c(0.2, geom$margin, 0, 1))
+        graphics::plot(1, type = "n", xlim = c(0.5, n + 0.5), ylim = c(0, 1), axes = FALSE, xlab = "", ylab = "")
+        graphics::rect(1:n - 0.5, 0, 1:n + 0.5, 1, col = strip_col, border = NA)
+    }
+
+    ## top-right: empty spacer above the color key
+    graphics::par(mar = c(0.2, 1, 2, 3))
+    graphics::plot.new()
+
+    ## bottom-left: the correlation matrix itself
+    graphics::par(mar = c(geom$margin, geom$margin, 0.2, 1))
+    graphics::image(1:n, 1:n, t(cmat[n:1, ]), col = hmcol, zlim = c(-1, 1), axes = FALSE, xlab = "", ylab = "")
+    graphics::axis(1, at = 1:n, labels = draw_labels, las = 2, cex.axis = geom$cex)
+    graphics::axis(2, at = 1:n, labels = rev(draw_labels), las = 2, cex.axis = geom$cex)
+
+    ## bottom-right: the color key
+    graphics::par(mar = c(geom$margin, 1, 0.2, 3))
+    key <- matrix(seq(-1, 1, length.out = 100), nrow = 1)
+    graphics::image(1, seq(-1, 1, length.out = 100), key, col = hmcol, axes = FALSE, xlab = "", ylab = "")
+    graphics::axis(4, at = seq(-1, 1, 0.5), las = 2, cex.axis = 0.8)
+    graphics::mtext("Pearson r", side = 3, line = 0.5, cex = 0.8)
+    invisible(cmat)
+}
