@@ -111,6 +111,7 @@ comparison_objs <- list()
 
 WD <- getwd()
 setwd(outdir)
+outdir_abs <- getwd()
 
 ## Calculate CPM and TPM
 cpm_matrix <- calc_cpm(countData_all)
@@ -597,7 +598,7 @@ for (contrast in comparison) {
 
 
 if (postde_enabled) {
-    postde_write(outdir, combi, "edger")
+    postde_write(outdir_abs, combi, "edger")
 }
 
 save.image(file = paste("DE_EDGER", combi, "SESSION.gz", sep = "_"), version = NULL, ascii = FALSE, compress = "gzip", safe = TRUE)
