@@ -167,8 +167,17 @@ for (contrast in comparison) {
         print("Spike-in used, data will be normalized to spike in separately")
         spiken <- strsplit(spike, "=")[[1]][2]
         setwd(WD)
-        ctrlgenes <- readLines(spiken)
+        ctrlgenes <- trimws(readLines(spiken))
+        ctrlgenes <- ctrlgenes[nzchar(ctrlgenes)]
         setwd(outdir)
+        missing_ctrlgenes <- setdiff(ctrlgenes, rownames(countData))
+        if (length(missing_ctrlgenes) > 0) {
+            warning(paste0("Control genes not found in count table and will be ignored: ", paste(missing_ctrlgenes, collapse = ", ")))
+        }
+        ctrlgenes <- intersect(ctrlgenes, rownames(countData))
+        if (length(ctrlgenes) == 0) {
+            stop(paste0("None of the control genes in ", spiken, " are present in the count table, cannot normalize by spike-in"))
+        }
         counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
         ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived normalization factors
         counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
