@@ -29,6 +29,10 @@ if (!is.null(postde_common) && file.exists(postde_common)) {
 }
 
 postde_bundles <- list()
+postde_entry_ids <- character(0)
+if (!exists("postde_cache_dir")) {
+    postde_cache_dir <- NULL
+}
 
 postde_results_deseq2 <- function(res) {
     out <- data.frame(
@@ -110,25 +114,49 @@ postde_capture <- function(engine, id, A, B, normalized, metadata, counts, expre
         results = results,
         mean_scale = mean_scale
     )
-    postde_bundles[[length(postde_bundles) + 1L]] <<- entry
-    invisible(entry)
+    # Spill each entry to its own file immediately rather than keeping every
+    # contrast's counts/expression matrices resident for the whole run: with
+    # dozens of contrasts (and a _norm variant for each) the accumulated list
+    # has been large enough to exhaust job memory before the final save. Only
+    # the small id and file path are kept in memory; postde_write() streams
+    # the files back together one at a time for the single combined saveRDS.
+    if (!is.null(postde_cache_dir)) {
+        san_id <- postde_sanitize_id(id)
+        entry_path <- file.path(postde_cache_dir, paste0(san_id, ".rds"))
+        saveRDS(entry, entry_path)
+        postde_entry_ids <<- c(postde_entry_ids, id)
+        postde_bundles[[length(postde_bundles) + 1L]] <<- entry_path
+        rm(entry)
+    } else {
+        postde_entry_ids <<- c(postde_entry_ids, id)
+        postde_bundles[[length(postde_bundles) + 1L]] <<- entry
+    }
+    invisible(NULL)
 }
 
 postde_write <- function(outdir, combi, engine) {
     if (length(postde_bundles) == 0L) {
         stop("MONSDA_POSTDE=1 but no contrast entries were captured; refusing to write an empty bundle")
     }
-    ids <- vapply(postde_bundles, function(e) e$id, character(1))
+    ids <- postde_entry_ids
     if (anyDuplicated(ids)) {
         stop(paste0("postde: duplicate entry ids: ", paste(ids[duplicated(ids)], collapse = ", ")))
     }
     postde_check_sanitized_ids(ids)
+    contrasts <- setNames(vector("list", length(postde_bundles)), ids)
+    for (i in seq_along(postde_bundles)) {
+        item <- postde_bundles[[i]]
+        contrasts[[i]] <- if (is.character(item)) readRDS(item) else item
+    }
     bundle <- list(
         schema_version = 1L,
         engine = engine,
-        contrasts = setNames(postde_bundles, ids)
+        contrasts = contrasts
     )
     path <- file.path(outdir, paste0("DE_", engine, "_", combi, "_postde.rds"))
     saveRDS(bundle, path)
+    if (!is.null(postde_cache_dir)) {
+        unlink(postde_cache_dir, recursive = TRUE)
+    }
     invisible(path)
 }
