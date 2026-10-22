@@ -1,12 +1,43 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+usage() {
+    printf 'Usage: %s [-e environment[,environment...]] [repo] [out]\n' "$(basename "${BASH_SOURCE[0]}")" >&2
+    printf '  -e  Build only the given environment(s) instead of the full matrix.\n' >&2
+    printf '      May be repeated or given as a comma-separated list, e.g.\n' >&2
+    printf '      -e deseq2_DE -e edger_DE  or  -e deseq2_DE,edger_DE\n' >&2
+}
+
+only_environments=()
+while getopts ":e:h" opt; do
+    case "$opt" in
+        e) IFS=',' read -ra envs <<< "$OPTARG"; only_environments+=("${envs[@]}") ;;
+        h) usage; exit 0 ;;
+        \?) printf 'Unknown option: -%s\n' "$OPTARG" >&2; usage; exit 1 ;;
+        :) printf 'Option -%s requires an argument\n' "$OPTARG" >&2; usage; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
 repo=${1:-${HOME}/Gits/Monsda}
 out=${2:-${HOME}/Work2/Container/MONSDA}
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 version=$(cd "$repo" && python scripts/container_matrix.py --version | cut -d= -f2)
 revision=$(cd "$repo" && git rev-parse HEAD)
-mapfile -t environments < <(cd "$repo" && python scripts/container_matrix.py | python -c 'import json,sys; print("\n".join(json.load(sys.stdin)["environment"]))')
+if (( ${#only_environments[@]} > 0 )); then
+    mapfile -t all_environments < <(cd "$repo" && python scripts/container_matrix.py | python -c 'import json,sys; print("\n".join(json.load(sys.stdin)["environment"]))')
+    environments=()
+    for environment in "${only_environments[@]}"; do
+        [[ -z "$environment" ]] && continue
+        if [[ ! " ${all_environments[*]} " == *" $environment "* ]]; then
+            printf 'Unknown environment: %s (available: %s)\n' "$environment" "${all_environments[*]}" >&2
+            exit 1
+        fi
+        environments+=("$environment")
+    done
+else
+    mapfile -t environments < <(cd "$repo" && python scripts/container_matrix.py | python -c 'import json,sys; print("\n".join(json.load(sys.stdin)["environment"]))')
+fi
 mkdir -p "$out/logs" "$out/tmp"
 printf 'environment\tstatus\timage\n' > "$out/results.tsv"
 
