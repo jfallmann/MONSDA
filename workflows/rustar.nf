@@ -92,7 +92,7 @@ process rustar_mapping{
     script:
     idx = reads[0]
     idxdir = idx.toRealPath()
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
         r1 = rds[0]
         r2 = rds[1]
@@ -105,7 +105,7 @@ process rustar_mapping{
         """
     }
     else{
-        if (PAIRED != 'singlecell'){
+        if (MAPPINGPAIRED != 'singlecell'){
             read = reads[1]
             fn = file(reads[1]).getSimpleName().replaceAll(/(_dedup)?_trimmed$/,"")+"."
             of = fn+'Aligned.out.sam'
@@ -115,9 +115,9 @@ process rustar_mapping{
             """
         }
         else{
-            if (STRANDED == 'fr'){
+            if (MAPPINGSTRANDED == 'fr'){
                 stranded = '--soloStrand Forward'
-            }else if (STRANDED == 'rf'){
+            }else if (MAPPINGSTRANDED == 'rf'){
                 stranded = '--soloStrand Reverse'
             }else{
                 stranded = '--soloStrand Unstranded'

@@ -212,15 +212,15 @@ process featurecount{
     os = fn+".counts.summary"
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
-    if (PAIRED == 'paired'){
+    if (COUNTINGPAIRED == 'paired'){
         pair = "-p"
     }
     else{
         pair= ""
     }
-    if (STRANDED == 'fr' || STRANDED == 'ISF'){
+    if (COUNTINGSTRANDED == 'fr' || COUNTINGSTRANDED == 'ISF'){
             stranded = '-s 1'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (COUNTINGSTRANDED == 'rf' || COUNTINGSTRANDED == 'ISR'){
             stranded = '-s 2'
         }else{
             stranded = ''

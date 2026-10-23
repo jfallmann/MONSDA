@@ -652,11 +652,25 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                             tempconf["RUNDEDUP"] = "enabled"
                         continue
                     if mu.sub_dict(config[subwork], condition).get("ANNOTATION"):
-                        tempconf[subwork]["ANNOTATION"] = mu.sub_dict(
+                        subwork_annotation = mu.sub_dict(
                             config[subwork], condition
                         )["ANNOTATION"]
                     elif config[subwork].get("ANNOTATION"):
-                        tempconf[subwork]["ANNOTATION"] = config[subwork]["ANNOTATION"]
+                        subwork_annotation = config[subwork]["ANNOTATION"]
+                    else:
+                        subwork_annotation = None
+                    # per-step SEQUENCING override (e.g. 'single,rf'), same
+                    # condition-level lookup as ANNOTATION above; a tool-nested
+                    # override (alongside a tool's OPTIONS) is already carried
+                    # through via the per-tool subset_dict merge below.
+                    if mu.sub_dict(config[subwork], condition).get("SEQUENCING"):
+                        subwork_sequencing = mu.sub_dict(
+                            config[subwork], condition
+                        )["SEQUENCING"]
+                    elif config[subwork].get("SEQUENCING"):
+                        subwork_sequencing = config[subwork]["SEQUENCING"]
+                    else:
+                        subwork_sequencing = None
                     if ("TOOLS" in config[key] and env == "" and exe == "") and len(
                         mu.get_from_dict(config[key], condition)
                     ) != 0:  # env and exe overrule TOOLS
@@ -674,6 +688,14 @@ def create_subworkflow(config, subwork, conditions, envs=None, stage=None):
                                 tempconf[key] = mu.subset_dict(config[key], condition)
                     else:
                         tempconf[key] = mu.subset_dict(config[key], condition)
+                    # (Re-)apply the ANNOTATION/SEQUENCING overrides: the TOOLS
+                    # handling above can replace tempconf[key] wholesale (e.g.
+                    # when no envs filter is given, as for DE/DEU/DAS/DTU),
+                    # which would otherwise silently drop them again.
+                    if subwork_annotation:
+                        tempconf[subwork]["ANNOTATION"] = subwork_annotation
+                    if subwork_sequencing:
+                        tempconf[subwork]["SEQUENCING"] = subwork_sequencing
 
                     if stage and stage == "POST":
                         tempconf["SAMPLES"] = mp.get_samples_postprocess(config, key)
@@ -1968,6 +1990,9 @@ def nf_fetch_params(
         retconf["PAIRED"] = paired
     if stranded:
         retconf["STRANDED"] = stranded
+    # Per-step pairedness/strandedness, default to the global values above and
+    # overridden below wherever a workflow step defines its own SEQUENCING key.
+    MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded
     if rundedup:
         retconf["RUNDEDUP"] = rundedup
     if prededup:
@@ -1986,6 +2011,10 @@ def nf_fetch_params(
         REF = mapper_dict.get("REFERENCE", MAPCONF.get("REFERENCE"))
         MANNO = mapper_dict.get("ANNOTATION", MAPCONF.get("ANNOTATION"))
         MDECOY = mapper_dict.get("DECOY", MAPCONF.get("DECOY"))
+        MSEQ = mapper_dict.get("SEQUENCING", MAPCONF.get("SEQUENCING"))
+        MAPPING_PAIRED, MAPPING_STRANDED = mp.resolve_sequencing(
+            MSEQ, paired, stranded
+        )
         if REF:
             REFERENCE = REF
             REFDIR = str(os.path.dirname(REFERENCE))
@@ -2070,6 +2099,8 @@ def nf_fetch_params(
         retconf["MAPPINGUIDXNAME"] = UIDXNAME
         retconf["MAPPINGUIDX2NAME"] = UIDX2NAME
         retconf["MAPPINGPREFIX"] = PREFIX
+        retconf["MAPPINGPAIRED"] = MAPPING_PAIRED
+        retconf["MAPPINGSTRANDED"] = MAPPING_STRANDED
 
     # Peak Calling Variables
     if "PEAKS" in config:
@@ -2085,6 +2116,13 @@ def nf_fetch_params(
             ANNOTATION = (
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF forma
+        # downstream steps consume the MAPPING output, so default to its pairedness
+        PSEQ = PEAKCONF.get("SEQUENCING")
+        PEAKS_PAIRED, PEAKS_STRANDED = mp.resolve_sequencing(
+            PSEQ, MAPPING_PAIRED, MAPPING_STRANDED
+        )
+        retconf["PEAKPAIRED"] = PEAKS_PAIRED
+        retconf["PEAKSTRANDED"] = PEAKS_STRANDED
         if not IP:
             IP = mp.check_IP(SAMPLES, config)
         log.debug(logid + "Running Peak finding for " + IP + " protocol")
@@ -2133,9 +2171,29 @@ def nf_fetch_params(
             XCONF = mu.sub_dict(config[x], SETUP)
             XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
-            REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
-            XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
-            XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+            # Subconfigs from the non-combo nf_make_sub path have the toolenv
+            # key stripped out (same as MAPPING above); fall back to XCONF
+            # itself when the toolenv key is absent, otherwise REFERENCE/
+            # ANNOTATION/DECOY/SEQUENCING would silently raise KeyError/be lost.
+            x_dict = XCONF.get(XENV) if mu.dict_inst(XCONF) else None
+            if not mu.dict_inst(x_dict):
+                x_dict = XCONF
+            REF = x_dict.get(
+                "REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE"))
+            )
+            XANNO = x_dict.get(
+                "ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION"))
+            )
+            XDECOY = x_dict.get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+            XSEQ = x_dict.get(
+                "SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING"))
+            )
+            # TRACKS/COUNTING consume the MAPPING output, so default to its pairedness
+            x_paired, x_stranded = mp.resolve_sequencing(
+                XSEQ, MAPPING_PAIRED, MAPPING_STRANDED
+            )
+            retconf[x + "PAIRED"] = x_paired
+            retconf[x + "STRANDED"] = x_stranded
             if XANNO:
                 ANNOTATION = XANNO
             else:
@@ -2194,9 +2252,36 @@ def nf_fetch_params(
             XBIN, XENV = mp.env_bin_from_config(config, x)
             XENV = XENV.split("_")[0]
             log.debug(logid + "XCONFIG: " + str(SETUP) + "\t" + str(XCONF))
-            REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE"))
-            XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION"))
-            XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY"))
+            # Subconfigs from the non-combo nf_make_sub path have the toolenv
+            # key stripped out (same as MAPPING/TRACKS/COUNTING above); fall
+            # back to XCONF itself when the toolenv key is absent, otherwise
+            # REFERENCE/ANNOTATION/DECOY/SEQUENCING would silently raise
+            # KeyError/be lost.
+            x_dict = XCONF.get(XENV) if mu.dict_inst(XCONF) else None
+            if not mu.dict_inst(x_dict):
+                x_dict = XCONF
+            REF = x_dict.get(
+                "REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE"))
+            )
+            XANNO = x_dict.get(
+                "ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION"))
+            )
+            XDECOY = x_dict.get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+            XSEQ = x_dict.get(
+                "SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING"))
+            )
+            if x == "DTU":
+                # DTU's default salmon path quantifies directly from
+                # TRIMMED_FASTQ, independent of the MAPPING step, so fall
+                # back to the global layout
+                x_paired, x_stranded = mp.resolve_sequencing(XSEQ, paired, stranded)
+            else:
+                # DE/DEU/DAS consume the MAPPING output, so default to its pairedness
+                x_paired, x_stranded = mp.resolve_sequencing(
+                    XSEQ, MAPPING_PAIRED, MAPPING_STRANDED
+                )
+            retconf[x + "PAIRED"] = x_paired
+            retconf[x + "STRANDED"] = x_stranded
             if XANNO:
                 ANNOTATION = XANNO
             else:
@@ -2319,9 +2404,16 @@ def nf_fetch_params(
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF format will be used
 
+        CSEQ = CIRCCONF.get("SEQUENCING")
+        CIRCS_PAIRED, CIRCS_STRANDED = mp.resolve_sequencing(
+            CSEQ, MAPPING_PAIRED, MAPPING_STRANDED
+        )
+
         retconf["CIRCSREF"] = REFERENCE
         retconf["CIRCSREFDIR"] = REFDIR
         retconf["CIRCSANNO"] = ANNOTATION
+        retconf["CIRCSPAIRED"] = CIRCS_PAIRED
+        retconf["CIRCSSTRANDED"] = CIRCS_STRANDED
 
     # FUSIONS Variables
     if "FUSIONS" in config:
@@ -2340,9 +2432,16 @@ def nf_fetch_params(
                 ANNO.get("GTF") if "GTF" in ANNO else ANNO.get("GFF")
             )  # by default GTF format will be used
 
+        FSEQ = FUSCONF.get("SEQUENCING")
+        FUSIONS_PAIRED, FUSIONS_STRANDED = mp.resolve_sequencing(
+            FSEQ, MAPPING_PAIRED, MAPPING_STRANDED
+        )
+
         retconf["FUSIONSREF"] = REFERENCE
         retconf["FUSIONSREFDIR"] = REFDIR
         retconf["FUSIONSANNO"] = ANNOTATION
+        retconf["FUSIONSPAIRED"] = FUSIONS_PAIRED
+        retconf["FUSIONSSTRANDED"] = FUSIONS_STRANDED
         retconf["FUSIONSLIB"] = FUSCONF.get(FUSENV, {}).get("OPTIONS", {}).get(
             "INDEX", ""
         ) or os.path.join(REFDIR, "CTAT", FUSENV)

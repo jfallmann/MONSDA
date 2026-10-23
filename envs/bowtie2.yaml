@@ -1,0 +1,10 @@
+name: bowtie2
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - bowtie2 =2.5.4
+  - samtools =1.21
+  - pigz =2.6
+  - rename =1.601

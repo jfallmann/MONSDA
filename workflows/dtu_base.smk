@@ -13,7 +13,7 @@ if COUNTTOOL == 'salmon':
                 linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
         shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 
-    if paired == 'paired':
+    if DTU_PAIRED == 'paired':
         rule simulate_trim:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
@@ -32,7 +32,7 @@ if COUNTTOOL == 'salmon':
             params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
             shell:  "ln -s {params.filetolink} {output.r1}"
 
-    if paired == 'paired':
+    if DTU_PAIRED == 'paired':
         rule mapping:
             input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                     r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
@@ -46,7 +46,7 @@ if COUNTTOOL == 'salmon':
             threads: MAXTHREAD
             params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                     mapp=COUNTBIN,
-                    stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
+                    stranded = lambda x: '-l ISF' if (DTU_STRANDED == 'fr' or DTU_STRANDED == 'ISF') else '-l ISR' if (DTU_STRANDED == 'rf' or DTU_STRANDED == 'ISR') else '-l IU',
                     linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
             shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 
@@ -63,7 +63,7 @@ if COUNTTOOL == 'salmon':
             threads: MAXTHREAD
             params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                     mapp=COUNTBIN,
-                    stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
+                    stranded = lambda x: '-l SF' if (DTU_STRANDED == 'fr' or DTU_STRANDED == 'SF') else '-l SR' if (DTU_STRANDED == 'rf' or DTU_STRANDED == 'SR') else '-l U',
                     linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
             shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 

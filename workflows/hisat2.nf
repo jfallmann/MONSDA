@@ -92,13 +92,13 @@ process hisat2_mapping{
     }
     
     idx = reads[0]
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
-        if (STRANDED == 'fr'){
+        if (MAPPINGSTRANDED == 'fr'){
             stranded = '--rna-strandness FR --fr'
-        }else if (STRANDED == 'rf'){
+        }else if (MAPPINGSTRANDED == 'rf'){
             stranded = '--rna-strandness RF --rf'
-        }else if (STRANDED == 'ff'){
+        }else if (MAPPINGSTRANDED == 'ff'){
             stranded = '--ff'
         }else{
             stranded = ''
@@ -115,9 +115,9 @@ process hisat2_mapping{
         $MAPBIN $MAPPARAMS $stranded -p ${task.cpus} -x ${idx}/${MAPPREFIX} -1 $r1 -2 $r2 --un-conc-gz ${fn}.unmapped -S $pf &> $lf && gzip $pf && touch $ufo $uft && rename 's/.unmapped.([1|2]).gz/_R\$1_unmapped.fastq.gz/' ${fn}.unmapped.*.gz  &>> $lf
         """
     }else{
-        if (STRANDED == 'fr'){
+        if (MAPPINGSTRANDED == 'fr'){
             stranded = '--rna-strandness F'
-        }else if (STRANDED == 'rf'){
+        }else if (MAPPINGSTRANDED == 'rf'){
             stranded = '--rna-strandness R'
         }else{
             stranded = ''

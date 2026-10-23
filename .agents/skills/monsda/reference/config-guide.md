@@ -109,6 +109,20 @@ Each step listed in `WORKFLOWS` needs:
 - `ENV`/`BIN` at the condition level override the step-level default (useful
   to benchmark two installs of the same tool, or point at a local binary for
   tools without a conda package, e.g. `guppy`, `dorado`).
+- `SEQUENCING` can likewise be set at the step level (or nested inside a
+  tool's own block) to override the global `SETTINGS.SEQUENCING` for just
+  that step, same `"single"/"paired"/"singlecell"[,rf|fr]` syntax. Useful for
+  e.g. QuantSeq-style 3' protocols: keep the global value `"paired,rf"` so
+  TRIMMING/DEDUP see both reads (read2 carries the UMI), but set
+  `"SEQUENCING": "single,rf"` under `MAPPING` (and `COUNTING` if needed) so
+  only read1 is actually mapped/counted. Steps downstream of MAPPING (PEAKS,
+  TRACKS, COUNTING, CIRCS, FUSIONS, DE, DEU, DAS) default to the resolved
+  MAPPING pairedness/strandedness, not the global one, when they don't set
+  their own — a MAPPING-level override already propagates to DE/DEU/DAS
+  automatically, e.g. so their featureCounts calls use the right `-p`/`-s`
+  flags. DTU is the exception: its default salmon path quantifies from the
+  trimmed FASTQ directly, independent of MAPPING, so it falls back to the
+  global value instead.
 - Inside each tool's block, `OPTIONS` holds one key per sub-step (e.g.
   `INDEX` vs `MAP` for a mapper) with a **raw command-line string** of extra
   flags for that tool — exactly as you'd type them, minus anything MONSDA

@@ -79,15 +79,15 @@ process featurecount_edger{
     os = fn+".counts.summary"
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
-    if (PAIRED == 'paired'){
+    if (DEPAIRED == 'paired'){
         pair = "-p"
     }
     else{
         pair= ""
     }
-    if (STRANDED == 'fr' || STRANDED == 'ISF'){
+    if (DESTRANDED == 'fr' || DESTRANDED == 'ISF'){
             stranded = '-s 1'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (DESTRANDED == 'rf' || DESTRANDED == 'ISR'){
             stranded = '-s 2'
         }else{
             stranded = ''

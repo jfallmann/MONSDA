@@ -53,8 +53,8 @@ if COUNTTOOL == 'featureCounts':
         threads: MAXTHREAD
         params: countb = COUNTBIN,
                 cpara = lambda wildcards: tool_params(wildcards.file, None, config, "DE", DEENV.split('_')[0])['OPTIONS'].get('COUNT', ""),
-                paired   = lambda x: '-p' if paired == 'paired' else '',
-                stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+                paired   = lambda x: '-p' if DE_PAIRED == 'paired' else '',
+                stranded = lambda x: '-s 1' if DE_STRANDED == 'fr' else '-s 2' if DE_STRANDED == 'rf' else '',
                 sortmem = get_sortmem,
                 prefix = lambda wildcards: "DE/"+combo+"/Featurecounts/"+wildcards.file
         shell:  "mkdir -p $(dirname {params.prefix}); {params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a {input.anno} -o {output.tmp} {input.reads} 2> {log} && head -n2 {output.tmp} |gzip > {output.tmph} && export LC_ALL=C; tail -n+3 {output.tmp}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.tmpc} && zcat {output.tmph} {output.tmpc} |gzip > {output.cts} && mv {output.tmp}.summary {output.cts}.summary"

@@ -16,7 +16,7 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 loglevel='INFO'
 try:
@@ -113,6 +113,18 @@ elif paired == 'singlecell':
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+# Per-step pairedness/strandedness, default to the global values above and
+# overridden below wherever a workflow step defines its own SEQUENCING key.
+MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded
+PEAKS_PAIRED, PEAKS_STRANDED = paired, stranded
+TRACKS_PAIRED, TRACKS_STRANDED = paired, stranded
+COUNTING_PAIRED, COUNTING_STRANDED = paired, stranded
+CIRCS_PAIRED, CIRCS_STRANDED = paired, stranded
+FUSIONS_PAIRED, FUSIONS_STRANDED = paired, stranded
+DE_PAIRED, DE_STRANDED = paired, stranded
+DEU_PAIRED, DEU_STRANDED = paired, stranded
+DAS_PAIRED, DAS_STRANDED = paired, stranded
+DTU_PAIRED, DTU_STRANDED = paired, stranded
 # MAPPING Variables
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
@@ -122,6 +134,8 @@ if 'MAPPING' in config:
     REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE", config['MAPPING'].get("REFERENCE")))
     MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION", config['MAPPING'].get("ANNOTATION")))
     MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY", config['MAPPING'].get("DECOY")))
+    MSEQ = MAPCONF[MAPPERENV].get("SEQUENCING", MAPCONF.get("SEQUENCING", config['MAPPING'].get("SEQUENCING")))
+    MAPPING_PAIRED, MAPPING_STRANDED = resolve_sequencing(MSEQ, paired, stranded)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -172,6 +186,9 @@ if 'PEAKS' in config:
     PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
     REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE', config['PEAKS'].get('REFERENCE')))
     ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION', config['PEAKS'].get('ANNOTATION')))
+    PSEQ = PEAKCONF.get('SEQUENCING', PEAKCONF[PEAKENV].get('SEQUENCING', config['PEAKS'].get('SEQUENCING')))
+    # downstream steps consume the MAPPING output, so default to its pairedness
+    PEAKS_PAIRED, PEAKS_STRANDED = resolve_sequencing(PSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -192,6 +209,9 @@ for x in ['TRACKS', 'COUNTING']:
         REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE', config[x].get('REFERENCE')))
         XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION', config[x].get('ANNOTATION')))
         XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+        XSEQ = XCONF[XENV].get("SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING")))
+        # TRACKS/COUNTING consume the MAPPING output, so default to its pairedness
+        globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -229,6 +249,13 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE")))
         XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION")))
         XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+        XSEQ = XCONF[XENV].get("SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING")))
+        if x == 'DTU':
+            # DTU's default salmon path quantifies directly from TRIMMED_FASTQ,
+            # independent of the MAPPING step, so fall back to the global layout
+            globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, paired, stranded)
+        else:
+            globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
         if XANNO and XANNO != '':
             ANNOTATION = XANNO            
         else:
@@ -270,6 +297,8 @@ if 'CIRCS' in config:
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE', config['CIRCS'].get('REFERENCE')))
     XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION', config['CIRCS'].get('ANNOTATION')))
+    CSEQ = CIRCCONF.get('SEQUENCING', CIRCCONF[XENV].get('SEQUENCING', config['CIRCS'].get('SEQUENCING')))
+    CIRCS_PAIRED, CIRCS_STRANDED = resolve_sequencing(CSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -285,6 +314,8 @@ if 'FUSIONS' in config:
     log.debug(logid+'FUSCONFIG: '+str(SETUP)+'\t'+str(FUSCONF))
     REF = FUSCONF.get('REFERENCE', FUSCONF[XENV].get('REFERENCE', config['FUSIONS'].get('REFERENCE')))
     XANNO = FUSCONF.get('ANNOTATION', FUSCONF[XENV].get('ANNOTATION', config['FUSIONS'].get('ANNOTATION')))
+    FSEQ = FUSCONF.get('SEQUENCING', FUSCONF[XENV].get('SEQUENCING', config['FUSIONS'].get('SEQUENCING')))
+    FUSIONS_PAIRED, FUSIONS_STRANDED = resolve_sequencing(FSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -506,7 +537,7 @@ rule generate_index:
             lnkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0])),
             stmp = expand("TMP/{mape}_{unikey}/generate_index", mape=MAPPERENV, unikey=unik)[0]
     shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf {params.stmp} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.stmp} --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf {params.stmp}"
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -530,9 +561,9 @@ if paired == 'paired':
                 tocopy = lambda wildcards, output: os.path.dirname(output.mapped)
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} "
 else:
-    if paired != 'singlecell':
+    if MAPPING_PAIRED != 'singlecell':
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  r1 = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.idxfile,
                     ref = REFERENCE
@@ -569,7 +600,7 @@ else:
             container: "oras://ghcr.io/jfallmann/monsda:"+MAPPERENV+""+"-VERSION"
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                    stranded = lambda x: '--soloStrand Forward' if stranded == 'fr' else '--soloStrand Reverse' if stranded == 'rf' else '--soloStrand Unstranded',
+                    stranded = lambda x: '--soloStrand Forward' if MAPPING_STRANDED == 'fr' else '--soloStrand Reverse' if MAPPING_STRANDED == 'rf' else '--soloStrand Unstranded',
                     mapp = MAPPERBIN,
                     anno = ANNOTATION,
                     pref = PREFIX,

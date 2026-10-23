@@ -16,7 +16,7 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 loglevel='INFO'
 try:
@@ -113,6 +113,18 @@ elif paired == 'singlecell':
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+# Per-step pairedness/strandedness, default to the global values above and
+# overridden below wherever a workflow step defines its own SEQUENCING key.
+MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded
+PEAKS_PAIRED, PEAKS_STRANDED = paired, stranded
+TRACKS_PAIRED, TRACKS_STRANDED = paired, stranded
+COUNTING_PAIRED, COUNTING_STRANDED = paired, stranded
+CIRCS_PAIRED, CIRCS_STRANDED = paired, stranded
+FUSIONS_PAIRED, FUSIONS_STRANDED = paired, stranded
+DE_PAIRED, DE_STRANDED = paired, stranded
+DEU_PAIRED, DEU_STRANDED = paired, stranded
+DAS_PAIRED, DAS_STRANDED = paired, stranded
+DTU_PAIRED, DTU_STRANDED = paired, stranded
 # MAPPING Variables
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
@@ -122,6 +134,8 @@ if 'MAPPING' in config:
     REF = MAPCONF[MAPPERENV].get("REFERENCE", MAPCONF.get("REFERENCE", config['MAPPING'].get("REFERENCE")))
     MANNO = MAPCONF[MAPPERENV].get("ANNOTATION", MAPCONF.get("ANNOTATION", config['MAPPING'].get("ANNOTATION")))
     MDECOY = MAPCONF[MAPPERENV].get("DECOY", MAPCONF.get("DECOY", config['MAPPING'].get("DECOY")))
+    MSEQ = MAPCONF[MAPPERENV].get("SEQUENCING", MAPCONF.get("SEQUENCING", config['MAPPING'].get("SEQUENCING")))
+    MAPPING_PAIRED, MAPPING_STRANDED = resolve_sequencing(MSEQ, paired, stranded)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -172,6 +186,9 @@ if 'PEAKS' in config:
     PEAKBIN, PEAKENV = env_bin_from_config(config, 'PEAKS')
     REF = PEAKCONF.get('REFERENCE', PEAKCONF[PEAKENV].get('REFERENCE', config['PEAKS'].get('REFERENCE')))
     ANNOPEAK = PEAKCONF.get('ANNOTATION', PEAKCONF[PEAKENV].get('ANNOTATION', config['PEAKS'].get('ANNOTATION')))
+    PSEQ = PEAKCONF.get('SEQUENCING', PEAKCONF[PEAKENV].get('SEQUENCING', config['PEAKS'].get('SEQUENCING')))
+    # downstream steps consume the MAPPING output, so default to its pairedness
+    PEAKS_PAIRED, PEAKS_STRANDED = resolve_sequencing(PSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -192,6 +209,9 @@ for x in ['TRACKS', 'COUNTING']:
         REF = XCONF[XENV].get('REFERENCE', XCONF.get('REFERENCE', config[x].get('REFERENCE')))
         XANNO = XCONF[XENV].get('ANNOTATION', XCONF.get('ANNOTATION', config[x].get('ANNOTATION')))
         XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+        XSEQ = XCONF[XENV].get("SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING")))
+        # TRACKS/COUNTING consume the MAPPING output, so default to its pairedness
+        globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
         if XANNO and XANNO != '':
             ANNOTATION = XANNO
         else:
@@ -229,6 +249,13 @@ for x in ['DE', 'DEU', 'DAS', 'DTU']:
         REF = XCONF[XENV].get("REFERENCE", XCONF.get("REFERENCE", config[x].get("REFERENCE")))
         XANNO = XCONF[XENV].get("ANNOTATION", XCONF.get("ANNOTATION", config[x].get("ANNOTATION")))
         XDECOY = XCONF[XENV].get("DECOY", XCONF.get("DECOY", config[x].get("DECOY")))
+        XSEQ = XCONF[XENV].get("SEQUENCING", XCONF.get("SEQUENCING", config[x].get("SEQUENCING")))
+        if x == 'DTU':
+            # DTU's default salmon path quantifies directly from TRIMMED_FASTQ,
+            # independent of the MAPPING step, so fall back to the global layout
+            globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, paired, stranded)
+        else:
+            globals()[x+'_PAIRED'], globals()[x+'_STRANDED'] = resolve_sequencing(XSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
         if XANNO and XANNO != '':
             ANNOTATION = XANNO            
         else:
@@ -270,6 +297,8 @@ if 'CIRCS' in config:
     log.debug(logid+'CIRCCONFIG: '+str(SETUP)+'\t'+str(CIRCCONF))
     REF = CIRCCONF.get('REFERENCE', CIRCCONF[XENV].get('REFERENCE', config['CIRCS'].get('REFERENCE')))
     XANNO = CIRCCONF.get('ANNOTATION', CIRCCONF[XENV].get('ANNOTATION', config['CIRCS'].get('ANNOTATION')))
+    CSEQ = CIRCCONF.get('SEQUENCING', CIRCCONF[XENV].get('SEQUENCING', config['CIRCS'].get('SEQUENCING')))
+    CIRCS_PAIRED, CIRCS_STRANDED = resolve_sequencing(CSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -285,6 +314,8 @@ if 'FUSIONS' in config:
     log.debug(logid+'FUSCONFIG: '+str(SETUP)+'\t'+str(FUSCONF))
     REF = FUSCONF.get('REFERENCE', FUSCONF[XENV].get('REFERENCE', config['FUSIONS'].get('REFERENCE')))
     XANNO = FUSCONF.get('ANNOTATION', FUSCONF[XENV].get('ANNOTATION', config['FUSIONS'].get('ANNOTATION')))
+    FSEQ = FUSCONF.get('SEQUENCING', FUSCONF[XENV].get('SEQUENCING', config['FUSIONS'].get('SEQUENCING')))
+    FUSIONS_PAIRED, FUSIONS_STRANDED = resolve_sequencing(FSEQ, MAPPING_PAIRED, MAPPING_STRANDED)
     if REF:
         REFERENCE = REF
         REFDIR = str(os.path.dirname(REFERENCE))
@@ -352,7 +383,7 @@ if COUNTTOOL == 'salmon':
                 decoy = f"-d {os.path.abspath(DECOY)}" if DECOY else '',
                 linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
         shell:  "set +euo pipefail; {params.mapp} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
-    if paired == 'paired':
+    if DTU_PAIRED == 'paired':
         rule simulate_trim:
             input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R1_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file),
                     r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not usededup else "DEDUP_FASTQ/{scombo}/{file}_R2_dedup.fastq.gz".format(scombo=scombo, file=wildcards.file)
@@ -369,7 +400,7 @@ if COUNTTOOL == 'salmon':
             threads: 1
             params: filetolink = lambda w, input: "{r}".format(r=os.path.abspath(input.r1))
             shell:  "ln -s {params.filetolink} {output.r1}"
-    if paired == 'paired':
+    if DTU_PAIRED == 'paired':
         rule mapping:
             input:  r1 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R1_trimmed.fastq.gz", scombo=scombo),
                     r2 = expand("TRIMMED_FASTQ/{scombo}/{{file}}_R2_trimmed.fastq.gz", scombo=scombo),
@@ -383,7 +414,7 @@ if COUNTTOOL == 'salmon':
             threads: MAXTHREAD
             params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                     mapp=COUNTBIN,
-                    stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
+                    stranded = lambda x: '-l ISF' if (DTU_STRANDED == 'fr' or DTU_STRANDED == 'ISF') else '-l ISR' if (DTU_STRANDED == 'rf' or DTU_STRANDED == 'ISR') else '-l IU',
                     linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
             shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -1 {input.r1} -2 {input.r2} &>> {log} && gzip {output.ctsdir}/quant.sf && ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
     else:
@@ -399,7 +430,7 @@ if COUNTTOOL == 'salmon':
             threads: MAXTHREAD
             params: cpara = lambda wildcards: tool_params(wildcards.file, None, config, 'DTU', DTUENV)['OPTIONS'].get('QUANT', ""),
                     mapp=COUNTBIN,
-                    stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
+                    stranded = lambda x: '-l SF' if (DTU_STRANDED == 'fr' or DTU_STRANDED == 'SF') else '-l SR' if (DTU_STRANDED == 'rf' or DTU_STRANDED == 'SR') else '-l U',
                     linksf = lambda wildcards, output: str(os.path.abspath(output.ctsdir))
             shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.index} {params.stranded} {params.cpara} -o {output.ctsdir} -r {input.r1} &>> {log} && gzip {output.ctsdir}/quant.sf ; ln -fs {params.linksf}/quant.sf.gz {output.cnts} &>> {log}"
 else:

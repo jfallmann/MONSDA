@@ -161,7 +161,7 @@ workflow DTU{
 
         if (checkidx.exists()){
             idxfile = Channel.fromPath(DTUUIDX)
-            if (PAIRED == 'paired'){
+            if (DTUPAIRED == 'paired'){
                 salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
             } else{
                 salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
@@ -170,7 +170,7 @@ workflow DTU{
         else{
             genomefile = Channel.fromPath(DTUREF)
             salmon_idx(genomefile)
-            if (PAIRED == 'paired'){
+            if (DTUPAIRED == 'paired'){
                 salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
             } else{
                 salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))

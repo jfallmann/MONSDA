@@ -19,7 +19,7 @@ rule generate_index:
             tolink = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.idx).split(os.sep)[:-1])))
     shell:  "if [[ -f \"{output.uidx}\\/*\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\" ; else {params.indexer} index -p {output.uidx} {params.ipara} {input.ref} 2> {log} && ln -fs {params.linkidx} {output.idx} && touch {output.uidx};fi"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
 	rule mapping:
 		input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
 				r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -39,7 +39,7 @@ if paired == 'paired':
 
 else:
 	rule mapping:
-		input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+		input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
 				uidx = rules.generate_index.output.uidx[0],
 				ref = REFERENCE
 		output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),

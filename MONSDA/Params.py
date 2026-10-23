@@ -1628,6 +1628,36 @@ def checkstranded(sample: list, config: dict) -> str:
     return stranded
 
 
+def resolve_sequencing(seqval: str, default_paired: str, default_stranded: str):
+    """Resolve a per-workflow-step SEQUENCING override (e.g. 'single,rf') into
+    a (paired, stranded) tuple, falling back to the given defaults (usually
+    the global SETTINGS.SEQUENCING derived values, or the resolved MAPPING
+    values for steps downstream of MAPPING) when the step itself does not
+    define its own override. This allows e.g. a quantseq MAPPING step to run
+    in 'single' mode while TRIMMING/DEDUP still see the global 'paired' mode
+    needed for UMI extraction from read2.
+
+    Parameters
+    ----------
+    seqval : str
+        SEQUENCING value configured for the step, e.g. 'single,rf', or falsy
+        if not configured for this step.
+    default_paired : str
+        paired value to fall back to when seqval is not set.
+    default_stranded : str
+        stranded value to fall back to when seqval is not set.
+
+    Returns
+    -------
+    tuple(str, str)
+        (paired, stranded)
+    """
+    if seqval and seqval != "":
+        parts = str(seqval).split(",")
+        return parts[0], (parts[1] if len(parts) > 1 else "")
+    return default_paired, default_stranded
+
+
 @check_run
 def set_pairing(samples: list, config: dict) -> list:
     """get pairs of samples

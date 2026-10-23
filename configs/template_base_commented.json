@@ -212,6 +212,7 @@
       "hisat2": "hisat2",
       "bwa": "bwa mem",
       "bwameth": "bwameth.py",
+      "bowtie2": "bowtie2",
       "minimap": "minimap2",
       "salmonalign": "salmon",
       "rammap": "rammap",
@@ -291,6 +292,19 @@
           "EXTENSION" : ""
       }
     },
+    "bowtie2": {
+      "comment": {
+        "INDEX" : "Indexing options",
+        "MAP": "Mapping options",
+        "EXTENSION" : "Prefix for index name, can be left empty.",
+        "SEQUENCING": "OPTIONAL per-step override of SETTINGS.SEQUENCING, e.g. 'single,rf' to map only read1 (e.g. for QuantSeq-style protocols where read2 carries the UMI used by DEDUP/TRIMMING). Bowtie2 has no native stranded-protocol flag, so only the paired/single part has an effect here."
+      },
+      "OPTIONS": {
+          "INDEX" : "",
+          "MAP": "",
+          "EXTENSION" : ""
+      }
+    },
     "minimap": {
       "comment": {
         "INDEX" : "Indexing options",
@@ -332,7 +346,7 @@
           "INDEX" : "",
           "MAP": ""
       }
-    },
+    }
   },
   "COUNTING": {
     "TOOLS": {

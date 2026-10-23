@@ -163,6 +163,7 @@
                      "hisat2": "hisat2",
                      "bwa": "bwa mem",
                      "bwameth": "bwameth",
+                     "bowtie2": "bowtie2",
                      "minimap": "minimap2"
                  },
                  "id": {
@@ -219,6 +220,15 @@
                                     "MAP": "",
                                     "EXTENSION" : ""
                                 }
+                              },
+                              "bowtie2": {
+                                "OPTIONS":
+                                {
+                                    "INDEX" : "",
+                                    "MAP": "",
+                                    "EXTENSION" : ""
+                                },
+                                "SEQUENCING": "single,rf"  # per-step override, e.g. map only read1 for quantseq-style UMI protocols while TRIMMING/DEDUP keep the global paired SEQUENCING from SETTINGS
                               }
                          }
                      }

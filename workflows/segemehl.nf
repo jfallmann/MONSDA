@@ -87,7 +87,7 @@ process segemehl_mapping{
     gen =  genome.getName()
     idx = idxfile.getName()
 
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[2..3])
         r1 = rds[0]
         r2 = rds[1]

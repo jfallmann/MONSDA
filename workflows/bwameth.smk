@@ -18,7 +18,7 @@ rule generate_index:
             linkidx = lambda wildcards, output: str(os.path.abspath(str.join(os.sep, str(output.uidx[0]).split(os.sep)[:-1]))) if PREFIX != '' else str(os.path.abspath(str(output.uidx[0]))),
     shell:  "if [[ -f \"{output.uidx}\" ]]; then ln -fs {params.linkidx} {output.idx} && touch {output.uidx} && echo \"Found bwa index, continue with mapping\";else zcat {input.ref} > {output.uidx} && {params.indexer} {output.uidx} {params.ipara} 2> {log} && ln -fs {params.linkidx} {output.idx};fi"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -35,7 +35,7 @@ if paired == 'paired':
         shell: "{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 uidx = rules.generate_index.output.uidx[0],
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"

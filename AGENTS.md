@@ -14,7 +14,7 @@ State clearly what was actually verified and what was not.
 `snakemake` and `nextflow` live in the `monsda` conda env, they are *not* on the
 default PATH:
 
-    export PATH=/home/fall/anaconda3/envs/monsda/bin:$PATH
+    export PATH=${HOME}/anaconda3/envs/monsda/bin:$PATH
 
 Confirmed there: snakemake 9.20.0, nextflow 26.04.0.12031. `multiqc` is **not**
 installed in that env, MultiQC behaviour cannot be verified locally.

@@ -24,7 +24,7 @@ rule generate_index:
             stmp = expand("TMP/{mape}_{unikey}/generate_index", mape=MAPPERENV, unikey=unik)[0]
     shell:  "if [[ -f \"{output.idxfile}\" ]]; then touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && echo \"Found SAindex, continue with mapping\" ; else zcat {input.fa} > {output.tmpfa} && zcat {params.anno} > {output.tmpref} && mkdir -p {output.uidx} && rm -rf {params.stmp} && {params.mapp} {params.ipara} --runThreadN {threads} --runMode genomeGenerate --outFileNamePrefix {output.uidx}/{params.pref} --outTmpDir {params.stmp} --genomeDir {output.uidx} --genomeFastaFiles {output.tmpfa}  &> {log} && touch {output.idxfile} && ln -fs {params.lnkidx} {output.idx} && cat {output.uidx}/*Log.out >> {log};fi && rm -rf {params.stmp}"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -49,9 +49,9 @@ if paired == 'paired':
         shell: "{params.mapp} {params.mpara} --runThreadN {threads} --genomeDir {input.uidx} --readFilesCommand zcat --readFilesIn {input.r1} {input.r2} --outFileNamePrefix {output.tmp}. --outReadsUnmapped Fastx &> {log} && gzip -c {output.tmp}.Aligned.out.sam > {output.mapped} && rm -f {output.tmp}.Aligned.out.sam 2>> {log} && touch {output.tmp}.Unmapped.out.mate1 {output.tmp}.Unmapped.out.mate2 && cat {output.tmp}.Unmapped.out.mate1 | paste - - - - |tr \"\\t\" \"\\n\" |gzip > {output.unmapped_r1} && cat {output.tmp}.Unmapped.out.mate2| paste - - - - |tr \"\\t\" \"\\n\"| gzip > {output.unmapped_r2} && rm -f {output.tmp}.Unmapped.out* && mv -f {output.tmp}*Log.out {output.log} && mv -f {output.tmp}*Log.final.out {output.log_final} && rm -f {output.tmp}*.Log.progress.out && mv {output.tmp}*.out* {params.tocopy} 2>> {log} && touch {output.tmp} "
 
 else:
-    if paired != 'singlecell':
+    if MAPPING_PAIRED != 'singlecell':
         rule mapping:
-            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  r1 = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                     uidx = rules.generate_index.output.uidx[0],
                     dummy = rules.generate_index.output.idxfile,
                     ref = REFERENCE
@@ -88,7 +88,7 @@ else:
             container: "oras://jfallmann/monsda:"+MAPPERENV+""
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
-                    stranded = lambda x: '--soloStrand Forward' if stranded == 'fr' else '--soloStrand Reverse' if stranded == 'rf' else '--soloStrand Unstranded',
+                    stranded = lambda x: '--soloStrand Forward' if MAPPING_STRANDED == 'fr' else '--soloStrand Reverse' if MAPPING_STRANDED == 'rf' else '--soloStrand Unstranded',
                     mapp = MAPPERBIN,
                     anno = ANNOTATION,
                     pref = PREFIX,

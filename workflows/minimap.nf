@@ -85,7 +85,7 @@ process minimap_mapping{
     script:    
     idxfile = reads[0]
     idx = idxfile.getName()
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
         r1 = rds[0]
         r2 = rds[1]

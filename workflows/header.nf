@@ -64,6 +64,32 @@ PAIRED = get_always('PAIRED') ?: null
 RUNDEDUP = get_always('RUNDEDUP') ?: null
 PREDEDUP = get_always('PREDEDUP') ?: null
 STRANDED = get_always('STRANDED') ?: null
+// Per-step pairedness/strandedness, default to the global values above and
+// overridden by the workflow-specific MONSDA config key SEQUENCING, e.g. a
+// quantseq MAPPING step can run 'single' while TRIMMING/DEDUP still see the
+// global 'paired' mode needed for UMI extraction from read2.
+MAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: PAIRED
+MAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: STRANDED
+PEAKPAIRED = get_always('PEAKPAIRED') ?: MAPPINGPAIRED
+PEAKSTRANDED = get_always('PEAKSTRANDED') ?: MAPPINGSTRANDED
+TRACKSPAIRED = get_always('TRACKSPAIRED') ?: MAPPINGPAIRED
+TRACKSSTRANDED = get_always('TRACKSSTRANDED') ?: MAPPINGSTRANDED
+COUNTINGPAIRED = get_always('COUNTINGPAIRED') ?: MAPPINGPAIRED
+COUNTINGSTRANDED = get_always('COUNTINGSTRANDED') ?: MAPPINGSTRANDED
+CIRCSPAIRED = get_always('CIRCSPAIRED') ?: MAPPINGPAIRED
+CIRCSSTRANDED = get_always('CIRCSSTRANDED') ?: MAPPINGSTRANDED
+FUSIONSPAIRED = get_always('FUSIONSPAIRED') ?: MAPPINGPAIRED
+FUSIONSSTRANDED = get_always('FUSIONSSTRANDED') ?: MAPPINGSTRANDED
+DEPAIRED = get_always('DEPAIRED') ?: MAPPINGPAIRED
+DESTRANDED = get_always('DESTRANDED') ?: MAPPINGSTRANDED
+DEUPAIRED = get_always('DEUPAIRED') ?: MAPPINGPAIRED
+DEUSTRANDED = get_always('DEUSTRANDED') ?: MAPPINGSTRANDED
+DASPAIRED = get_always('DASPAIRED') ?: MAPPINGPAIRED
+DASSTRANDED = get_always('DASSTRANDED') ?: MAPPINGSTRANDED
+// DTU's default salmon path quantifies directly from TRIMMED_FASTQ, independent
+// of the MAPPING step, so it falls back to the global layout, not MAPPING's
+DTUPAIRED = get_always('DTUPAIRED') ?: PAIRED
+DTUSTRANDED = get_always('DTUSTRANDED') ?: STRANDED
 IP = get_always('IP') ?: null
 CONDITION = get_always('CONDITION') ?: null
 COMBO = get_always('COMBO') ?: ''

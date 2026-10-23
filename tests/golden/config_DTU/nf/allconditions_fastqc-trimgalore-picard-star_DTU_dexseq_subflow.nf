@@ -11,6 +11,26 @@ params.gPAIRED = get_always('PAIRED') ?: null
 params.gRUNDEDUP = get_always('RUNDEDUP') ?: null
 params.gPREDEDUP = get_always('PREDEDUP') ?: null
 params.gSTRANDED = get_always('STRANDED') ?: null
+params.gMAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: params.gPAIRED
+params.gMAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: params.gSTRANDED
+params.gPEAKPAIRED = get_always('PEAKPAIRED') ?: params.gMAPPINGPAIRED
+params.gPEAKSTRANDED = get_always('PEAKSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gTRACKSPAIRED = get_always('TRACKSPAIRED') ?: params.gMAPPINGPAIRED
+params.gTRACKSSTRANDED = get_always('TRACKSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gCOUNTINGPAIRED = get_always('COUNTINGPAIRED') ?: params.gMAPPINGPAIRED
+params.gCOUNTINGSTRANDED = get_always('COUNTINGSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gCIRCSPAIRED = get_always('CIRCSPAIRED') ?: params.gMAPPINGPAIRED
+params.gCIRCSSTRANDED = get_always('CIRCSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gFUSIONSPAIRED = get_always('FUSIONSPAIRED') ?: params.gMAPPINGPAIRED
+params.gFUSIONSSTRANDED = get_always('FUSIONSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDEPAIRED = get_always('DEPAIRED') ?: params.gMAPPINGPAIRED
+params.gDESTRANDED = get_always('DESTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDEUPAIRED = get_always('DEUPAIRED') ?: params.gMAPPINGPAIRED
+params.gDEUSTRANDED = get_always('DEUSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDASPAIRED = get_always('DASPAIRED') ?: params.gMAPPINGPAIRED
+params.gDASSTRANDED = get_always('DASSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDTUPAIRED = get_always('DTUPAIRED') ?: params.gPAIRED
+params.gDTUSTRANDED = get_always('DTUSTRANDED') ?: params.gSTRANDED
 params.gIP = get_always('IP') ?: null
 params.gCONDITION = get_always('CONDITION') ?: null
 params.gCOMBO = get_always('COMBO') ?: ''
@@ -114,10 +134,10 @@ process salmon_quant{
     path "*.log", emit: logs
     script:
     idx = reads[0]
-    if (params.gPAIRED == 'paired'){
-        if (params.gSTRANDED == 'fr' || params.gSTRANDED == 'ISF'){
+    if (params.gDTUPAIRED == 'paired'){
+        if (params.gDTUSTRANDED == 'fr' || params.gDTUSTRANDED == 'ISF'){
             stranded = '-l ISF'
-        }else if (params.gSTRANDED == 'rf' || params.gSTRANDED == 'ISR'){
+        }else if (params.gDTUSTRANDED == 'rf' || params.gDTUSTRANDED == 'ISR'){
             stranded = '-l ISR'
         }else{
             stranded = '-l IU'
@@ -134,9 +154,9 @@ process salmon_quant{
         ${params.gCOUNTBIN} ${params.gCOUNTPARAMS} quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
-        if (params.gSTRANDED == 'fr' || params.gSTRANDED == 'SF'){
+        if (params.gDTUSTRANDED == 'fr' || params.gDTUSTRANDED == 'SF'){
             stranded = '-l SF'
-        }else if (params.gSTRANDED == 'rf' || params.gSTRANDED == 'SR'){
+        }else if (params.gDTUSTRANDED == 'rf' || params.gDTUSTRANDED == 'SR'){
             stranded = '-l SR'
         }else{
             stranded = '-l U'
@@ -344,7 +364,7 @@ workflow DTU{
         checkidx = file(params.gDTUIDX)
         if (checkidx.exists()){
             idxfile = Channel.fromPath(params.gDTUUIDX)
-            if (params.gPAIRED == 'paired'){
+            if (params.gDTUPAIRED == 'paired'){
                 salmon_quant(idxfile.combine(trimsamples_ch.collate(2)))
             } else{
                 salmon_quant(idxfile.combine(trimsamples_ch.collate(1)))
@@ -353,7 +373,7 @@ workflow DTU{
         else{
             genomefile = Channel.fromPath(params.gDTUREF)
             salmon_idx(genomefile)
-            if (params.gPAIRED == 'paired'){
+            if (params.gDTUPAIRED == 'paired'){
                 salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(2)))
             } else{
                 salmon_quant(salmon_idx.out.idx.combine(trimsamples_ch.collate(1)))

@@ -121,8 +121,8 @@ rule featurecount:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
 
@@ -137,8 +137,8 @@ rule featurecount_unique:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
 
@@ -153,8 +153,8 @@ rule featurecount_dedup:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.s} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
 
@@ -169,8 +169,8 @@ rule featurecount_unique_dedup:
     params: countb = COUNTBIN,
             anno = ANNOTATION,
             cpara = lambda wildcards: tool_params(wildcards.file, None, config, "COUNTING", COUNTENV)['OPTIONS'].get('COUNT', "")+' -t '+wildcards.feat+' -g '+config['COUNTING']['FEATURES'][wildcards.feat],
-            paired = lambda x: '-p' if paired == 'paired' else '',
-            stranded = lambda x: '-s 1' if stranded == 'fr' else '-s 2' if stranded == 'rf' else '',
+            paired = lambda x: '-p' if COUNTING_PAIRED == 'paired' else '',
+            stranded = lambda x: '-s 1' if COUNTING_STRANDED == 'fr' else '-s 2' if COUNTING_STRANDED == 'rf' else '',
             sortmem = get_sortmem
     shell:  "{params.countb} -T {threads} {params.cpara} {params.paired} {params.stranded} -a <(gzip -cdfq {params.anno}) -o {output.t} {input.u} 2> {log} && head -n2 {output.t} |gzip > {output.cts} && export LC_ALL=C; tail -n+3 {output.t}|sort --parallel={threads} -S {params.sortmem}G -T TMP -k1,1 -k2,2n -k3,3n -u |gzip >> {output.cts} && mv {output.t}.summary {output.cts}.summary && cp -f {output.cts}.summary $(dirname {log})/"
 

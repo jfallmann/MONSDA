@@ -2,8 +2,8 @@ Bootstrap: docker
 From: continuumio/miniconda3
    
 %files
-    /home/fall/Gits/Monsda/envs/rammap.yaml /opt/envs/
-    /home/fall/Gits/Monsda/scripts /opt/MONSDA/
+    ${HOME}/Gits/Monsda/envs/rammap.yaml /opt/envs/
+    ${HOME}/Gits/Monsda/scripts /opt/MONSDA/
 
 %environment
    

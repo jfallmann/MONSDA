@@ -21,7 +21,7 @@ rule generate_index:
             linkidx2 = lambda wildcards, output: str(os.path.abspath(output.uidx2[0]))
     shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx1} -y {output.uidx2} &> {log} && ln -fs {params.linkidx1} {output.idx1} && ln -fs {params.linkidx2} {output.idx2}"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",                
@@ -40,7 +40,7 @@ if paired == 'paired':
         shell: "set +o pipefail;{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 uidx1 = rules.generate_index.output.uidx1[0],
                 uidx2= rules.generate_index.output.uidx2[0],
                 fa = REFERENCE

@@ -22,7 +22,7 @@ rule generate_index:
 bwaalg = MAPPERBIN.split(' ')[1]
 
 if bwaalg == 'mem':
-    if paired == 'paired':
+    if MAPPING_PAIRED == 'paired':
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -42,7 +42,7 @@ if bwaalg == 'mem':
 
     else:
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                     uidx = rules.generate_index.output.uidx[0],
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
@@ -57,7 +57,7 @@ if bwaalg == 'mem':
             shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
 
 elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to continue the workflow
-    if paired == 'paired': # handled like sampe
+    if MAPPING_PAIRED == 'paired': # handled like sampe
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -94,7 +94,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 
     else: #handled like samse
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                     ref = REFERENCE
             output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
                     mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
@@ -109,7 +109,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
-#            input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+#            input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
 #                    #index = lambda wildcards: expand(rules.generate_index.output.idx, ref=REFERENCE, dir=source_from_sample(wildcards.file, config), gen=genome(wildcards.file, config), name=namefromfile(wildcards.file, config), mape=MAPPERENV, extension=check_tool_params(wildcards.file, None, config, 'MAPPING', 2)),
 #                    ref = lambda wildcards: expand(rules.generate_index.input.fa, ref=REFERENCE, dir = source_from_sample(wildcards.file, config), gen =genome(wildcards.file, config), name=namefromfile(wildcards.file, config))
 #            output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
@@ -124,7 +124,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
 
 elif bwaalg == 'samse':
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 ref = REFERENCE
         output: sai = report("MAPPED/{combo}/{file}_mapped.sai", category="MAPPING"),
                 mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
@@ -158,7 +158,7 @@ elif bwaalg == 'sampe':
         shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 elif bwaalg == 'bwasw':
-    if paired == 'paired':
+    if MAPPING_PAIRED == 'paired':
         rule mapping:
             input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                     r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -176,7 +176,7 @@ elif bwaalg == 'bwasw':
 
     else:
         rule mapping:
-            input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+            input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                     ref = REFERENCE
             output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                     unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"

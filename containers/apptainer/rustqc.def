@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3:latest
    
 %files
-    /home/fall/MONSDA/envs/rustqc.yaml /opt/envs/
+    ${HOME}/MONSDA/envs/rustqc.yaml /opt/envs/
     ${HOME}/MONSDA/scripts /opt/MONSDA/
 
 %environment

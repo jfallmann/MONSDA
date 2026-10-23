@@ -97,7 +97,7 @@ process segemehl3_mapping{
     idx = idxfile.getName()
     idx2 = idxfile2.getName()
 
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[3..4])
         r1 = rds[0]
         r2 = rds[1]

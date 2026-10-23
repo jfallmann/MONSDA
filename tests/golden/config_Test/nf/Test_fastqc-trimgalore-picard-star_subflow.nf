@@ -11,6 +11,26 @@ params.gPAIRED = get_always('PAIRED') ?: null
 params.gRUNDEDUP = get_always('RUNDEDUP') ?: null
 params.gPREDEDUP = get_always('PREDEDUP') ?: null
 params.gSTRANDED = get_always('STRANDED') ?: null
+params.gMAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: params.gPAIRED
+params.gMAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: params.gSTRANDED
+params.gPEAKPAIRED = get_always('PEAKPAIRED') ?: params.gMAPPINGPAIRED
+params.gPEAKSTRANDED = get_always('PEAKSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gTRACKSPAIRED = get_always('TRACKSPAIRED') ?: params.gMAPPINGPAIRED
+params.gTRACKSSTRANDED = get_always('TRACKSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gCOUNTINGPAIRED = get_always('COUNTINGPAIRED') ?: params.gMAPPINGPAIRED
+params.gCOUNTINGSTRANDED = get_always('COUNTINGSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gCIRCSPAIRED = get_always('CIRCSPAIRED') ?: params.gMAPPINGPAIRED
+params.gCIRCSSTRANDED = get_always('CIRCSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gFUSIONSPAIRED = get_always('FUSIONSPAIRED') ?: params.gMAPPINGPAIRED
+params.gFUSIONSSTRANDED = get_always('FUSIONSSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDEPAIRED = get_always('DEPAIRED') ?: params.gMAPPINGPAIRED
+params.gDESTRANDED = get_always('DESTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDEUPAIRED = get_always('DEUPAIRED') ?: params.gMAPPINGPAIRED
+params.gDEUSTRANDED = get_always('DEUSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDASPAIRED = get_always('DASPAIRED') ?: params.gMAPPINGPAIRED
+params.gDASSTRANDED = get_always('DASSTRANDED') ?: params.gMAPPINGSTRANDED
+params.gDTUPAIRED = get_always('DTUPAIRED') ?: params.gPAIRED
+params.gDTUSTRANDED = get_always('DTUSTRANDED') ?: params.gSTRANDED
 params.gIP = get_always('IP') ?: null
 params.gCONDITION = get_always('CONDITION') ?: null
 params.gCOMBO = get_always('COMBO') ?: ''
@@ -363,7 +383,7 @@ process star_mapping{
     script:
     idx = reads[0]
     idxdir = idx.toRealPath()
-    if (params.gPAIRED == 'paired'){
+    if (params.gMAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
         r1 = rds[0]
         r2 = rds[1]
@@ -376,7 +396,7 @@ process star_mapping{
         """
     }
     else{
-        if (params.gPAIRED != 'singlecell'){
+        if (params.gMAPPINGPAIRED != 'singlecell'){
             read = reads[1]
             fn = file(reads[1]).getSimpleName().replaceAll(/(_dedup)?_trimmed$/,"")+"."
             of = fn+'Aligned.out.sam'
@@ -387,9 +407,9 @@ process star_mapping{
         }
         else{
             rds = sort_reads(reads[1..2])
-            if (params.gSTRANDED == 'fr'){
+            if (params.gMAPPINGSTRANDED == 'fr'){
                 stranded = '--soloStrand Forward'
-            }else if (params.gSTRANDED == 'rf'){
+            }else if (params.gMAPPINGSTRANDED == 'rf'){
                 stranded = '--soloStrand Reverse'
             }else{
                 stranded = '--soloStrand Unstranded'

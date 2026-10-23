@@ -18,7 +18,7 @@ rule generate_index:
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell: "{params.indexer} --threads {threads} {params.ipara} -d {input.fa} -x {output.uidx} &> {log} && ln -fs {params.linkidx} {output.idx}"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -37,7 +37,7 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 uidx = rules.generate_index.output.uidx[0],
                 fa = REFERENCE
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),

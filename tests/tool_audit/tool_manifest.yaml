@@ -224,6 +224,26 @@ tools:
         source_refs: [workflows/hisat2.smk]
         note: "--un-conc-gz is the base --un-conc flag + '-gz' suffix, documented in the same help text."
 
+  bowtie2:
+    container: bowtie2
+    binary: bowtie2
+    invocations:
+      - name: help
+        args: ["--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["--un-conc-gz", "--un-gz", "-x", "-p", "--threads", "-S"]
+        source_refs: [workflows/bowtie2.smk]
+
+  bowtie2-build:
+    container: bowtie2
+    binary: bowtie2-build
+    invocations:
+      - name: help
+        args: ["--help"]
+        expect_exit: [0, 1]
+        expected_flags: ["--threads"]
+        source_refs: [workflows/bowtie2.smk]
+
   macs2:
     container: macs2
     binary: macs2

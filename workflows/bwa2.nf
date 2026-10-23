@@ -86,7 +86,7 @@ process bwa2_mapping{
 
     script:
     idx = reads[0]
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
         r1 = rds[0]
         r2 = rds[1]

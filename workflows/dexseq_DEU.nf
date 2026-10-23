@@ -46,9 +46,9 @@ process prepare_deu_annotation{
     da = fn+"_dexseqflat.gtf.gz"
     ol = "featurecount_dexseq_annotation.log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
-    if (STRANDED == 'fr' || STRANDED == 'ISF'){
+    if (DEUSTRANDED == 'fr' || DEUSTRANDED == 'ISF'){
             stranded = '-s'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (DEUSTRANDED == 'rf' || DEUSTRANDED == 'ISR'){
             stranded = '-s'
         }else{
             stranded = ''
@@ -89,15 +89,15 @@ process featurecount_dexseq{
     os = fn+".counts.summary"
     ol = fn+".log"
     def sortmem = Math.ceil(task.memory.giga as double) as int 
-    if (PAIRED == 'paired'){
+    if (DEUPAIRED == 'paired'){
         pair = "-p"
     }
     else{
         pair= ""
     }
-    if (STRANDED == 'fr' || STRANDED == 'ISF'){
+    if (DEUSTRANDED == 'fr' || DEUSTRANDED == 'ISF'){
             stranded = '-s 1'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (DEUSTRANDED == 'rf' || DEUSTRANDED == 'ISR'){
             stranded = '-s 2'
         }else{
             stranded = ''

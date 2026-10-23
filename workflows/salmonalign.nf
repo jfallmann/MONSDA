@@ -70,11 +70,11 @@ process salmonalign_mapping{
     script:    
     idxfile = reads[0]
     idx = idxfile.getName()
-    if (PAIRED == 'paired'){
+    if (MAPPINGPAIRED == 'paired'){
         rds = sort_reads(reads[1..2])
-        if (STRANDED == 'fr' || STRANDED == 'ISF'){
+        if (MAPPINGSTRANDED == 'fr' || MAPPINGSTRANDED == 'ISF'){
             stranded = '-l ISF'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (MAPPINGSTRANDED == 'rf' || MAPPINGSTRANDED == 'ISR'){
             stranded = '-l ISR'
         }else{
             stranded = '-l IU'
@@ -90,9 +90,9 @@ process salmonalign_mapping{
         $MAPBIN quant -p ${task.cpus} -i $idx $stranded $MAPPARAMS --writeMappings=/dev/stdout -o $fn -1 $r1 -2 $r2 2> $lf|tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2 2>> $lf &> /dev/null
         """
     }else{
-        if (STRANDED == 'fr' || STRANDED == 'SF'){
+        if (MAPPINGSTRANDED == 'fr' || MAPPINGSTRANDED == 'SF'){
             stranded = '-l SF'
-        }else if (STRANDED == 'rf' || STRANDED == 'SR'){
+        }else if (MAPPINGSTRANDED == 'rf' || MAPPINGSTRANDED == 'SR'){
             stranded = '-l SR'
         }else{
             stranded = '-l U'

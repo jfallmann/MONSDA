@@ -20,7 +20,7 @@ rule generate_index:
             linkidx = lambda wildcards, output: str(os.path.abspath(output.uidx[0]))
     shell: "set +euo pipefail; {params.indexer} index {params.ipara} {params.decoy} -p {threads} -t {input.fa} -i {output.uidx} &>> {log} && ln -fs {params.linkidx} {output.idx}"
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  q1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 q2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -34,13 +34,13 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
-                stranded = lambda x: '-l ISF' if (stranded == 'fr' or stranded == 'ISF') else '-l ISR' if (stranded == 'rf' or stranded == 'ISR') else '-l IU',
+                stranded = lambda x: '-l ISF' if (MAPPING_STRANDED == 'fr' or MAPPING_STRANDED == 'ISF') else '-l ISR' if (MAPPING_STRANDED == 'rf' or MAPPING_STRANDED == 'ISR') else '-l IU',
                 outdir = lambda wildcards: "MAPPED/"+wildcards.combo+"/"+wildcards.file+"_salmonalign"
         shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -1 {input.q1} -2 {input.q2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 uidx = rules.generate_index.output.uidx[0]
         output: mapped = temp(report("MAPPED/{combo}/{file}_mapped.sam.gz", category="MAPPING")),
                 unmapped = "UNMAPPED/{combo}/{file}_unmapped.fastq.gz"
@@ -50,6 +50,6 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
-                stranded = lambda x: '-l SF' if (stranded == 'fr' or stranded == 'SF') else '-l SR' if (stranded == 'rf' or stranded == 'SR') else '-l U',
+                stranded = lambda x: '-l SF' if (MAPPING_STRANDED == 'fr' or MAPPING_STRANDED == 'SF') else '-l SR' if (MAPPING_STRANDED == 'rf' or MAPPING_STRANDED == 'SR') else '-l U',
                 outdir = lambda wildcards: "MAPPED/"+wildcards.combo+"/"+wildcards.file+"_salmonalign"
         shell: "set +euo pipefail; {params.mapp} quant -p {threads} -i {input.uidx} {params.stranded} {params.mpara} --writeMappings=/dev/stdout -o {params.outdir} -r {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"

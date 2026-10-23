@@ -23,7 +23,7 @@ rule generate_index:
 
 hs2alg = MAPPERBIN.split(' ')[1] if ' ' in MAPPERBIN else MAPPERBIN
 
-if paired == 'paired':
+if MAPPING_PAIRED == 'paired':
     rule mapping:
         input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
                 r2 = "TRIMMED_FASTQ/{combo}/{file}_R2_trimmed.fastq.gz",
@@ -40,7 +40,7 @@ if paired == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                stranded = lambda x: '--rna-strandness FR --fr' if stranded == 'fr' else '--rna-strandness RF --rf' if stranded == 'rf' else '--ff' if stranded == 'ff' else '',
+                stranded = lambda x: '--rna-strandness FR --fr' if MAPPING_STRANDED == 'fr' else '--rna-strandness RF --rf' if MAPPING_STRANDED == 'rf' else '--ff' if MAPPING_STRANDED == 'ff' else '',
                 um = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', '.unmapped.gz'),
                 umn = lambda wildcards, output: output.unmapped_r1.replace('_R1_unmapped.fastq.gz', ''),
                 muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
@@ -49,7 +49,7 @@ if paired == 'paired':
 
 else:
     rule mapping:
-        input:  query = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz",
+        input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
                 uidx = rules.generate_index.output.uidx[0],
                 dummy = rules.generate_index.output.idxfile,
                 ref = REFERENCE
@@ -62,7 +62,7 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN,
-                stranded = lambda x: '--rna-strandness F' if stranded == 'fr' else '--rna-strandness R' if stranded == 'rf' else '',
+                stranded = lambda x: '--rna-strandness F' if MAPPING_STRANDED == 'fr' else '--rna-strandness R' if MAPPING_STRANDED == 'rf' else '',
                 muz = lambda wildcards, output: output.mapped.replace('.gz', ''),
                 pref = PREFIX
         shell: "set +euo pipefail; {params.mapp} {params.mpara} {params.stranded} -p {threads} -x {input.uidx}/{params.pref} -U {input.query} --new-summary --summary-file {output.summary} --un-gz {output.unmapped} -S {params.muz} &> {log} && gzip {params.muz} && touch {output.unmapped}"

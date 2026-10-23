@@ -23,10 +23,10 @@ process salmon_quant{
     script:
 
     idx = reads[0]
-    if (PAIRED == 'paired'){
-        if (STRANDED == 'fr' || STRANDED == 'ISF'){
+    if (DTUPAIRED == 'paired'){
+        if (DTUSTRANDED == 'fr' || DTUSTRANDED == 'ISF'){
             stranded = '-l ISF'
-        }else if (STRANDED == 'rf' || STRANDED == 'ISR'){
+        }else if (DTUSTRANDED == 'rf' || DTUSTRANDED == 'ISR'){
             stranded = '-l ISR'
         }else{
             stranded = '-l IU'
@@ -43,9 +43,9 @@ process salmon_quant{
         $COUNTBIN $COUNTPARAMS quant -p ${task.cpus} -i $idx $stranded -o $fn -1 $r1 -2 $r2 &>> $lf && gzip $of && ln -fs $oz $ol
         """
     }else{
-        if (STRANDED == 'fr' || STRANDED == 'SF'){
+        if (DTUSTRANDED == 'fr' || DTUSTRANDED == 'SF'){
             stranded = '-l SF'
-        }else if (STRANDED == 'rf' || STRANDED == 'SR'){
+        }else if (DTUSTRANDED == 'rf' || DTUSTRANDED == 'SR'){
             stranded = '-l SR'
         }else{
             stranded = '-l U'
