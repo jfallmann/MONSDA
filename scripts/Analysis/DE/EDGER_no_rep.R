@@ -21,18 +21,53 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-bcv <- if (argsLen > 7) as.numeric(args[8]) else 0.2
-spike <- if (argsLen > 8) args[9] else ""
-if (!exists(quote(bcv))){
-    bcv <- 0.2
+deopts_raw <- if (argsLen > 7) args[8:argsLen] else character(0)
+## Legacy call form passed the BCV as a bare positional number before the
+## options, accept it so existing invocations keep working.
+if (length(deopts_raw) > 0 && !grepl("^[A-Za-z_][A-Za-z0-9_.]*=", deopts_raw[1])) {
+    deopts_raw <- c(paste0("bcv=", deopts_raw[1]), deopts_raw[-1])
 }
 
 print(args)
-print(paste0("Typical values for the common BCV (square-root-dispersion) for datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms or 0.01 for technical replicates. You selected ", bcv, sep = ""))
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
 source(libp)
+
+de_opts <- parse_de_options(deopts_raw)
+bcv_raw <- de_option(de_opts, "bcv", "0.2")
+bcv <- suppressWarnings(as.numeric(bcv_raw))
+if (is.na(bcv) || bcv <= 0) {
+    stop(paste0("DE option bcv must be a positive number, got '", bcv_raw, "'"))
+}
+spike <- de_option(de_opts, "controlgenes")
+## model formula for the per-contrast fit, over condition/type/batch, e.g.
+## design=batch+condition. Empty means MONSDA derives it from the annotation.
+design_spec <- de_option(de_opts, "design")
+
+print(paste0("Typical values for the common BCV (square-root-dispersion) for datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms or 0.01 for technical replicates. You selected ", bcv, sep = ""))
+
+## With a fixed BCV edgeR cannot run glmQLFTest, but it can still fit a GLM, and that
+## is the only way to honour covariates: exactTest compares two groups and ignores the
+## design completely. Use the GLM whenever the design carries more than the condition,
+## and keep the exact test when it does not, or when the design is not fittable for
+## this contrast, which is the usual case with a single sample per group.
+fixed_bcv_test <- function(dge_obj, design_mat, A, B, bcv, label) {
+    coef_name <- paste0("condition", A)
+    extra <- setdiff(colnames(design_mat), c("(Intercept)", coef_name))
+    if (length(extra) == 0) {
+        return(exactTest(dge_obj, pair = c(B, A), dispersion = bcv^2, prior.count = 2))
+    }
+    if (!coef_name %in% colnames(design_mat)) {
+        stop(paste0("Design for ", label, " has no column '", coef_name, "' (columns: ", paste(colnames(design_mat), collapse = ", "), ")"))
+    }
+    if (ncol(design_mat) > nrow(design_mat) || qr(design_mat)$rank < ncol(design_mat)) {
+        warning(paste0("Design for ", label, " is not fittable with ", nrow(design_mat), " samples and ", ncol(design_mat), " coefficients, falling back to the exact test, which ignores ", paste(extra, collapse = ", ")), call. = FALSE)
+        return(exactTest(dge_obj, pair = c(B, A), dispersion = bcv^2, prior.count = 2))
+    }
+    print(paste0("Testing ", label, " with a fixed-BCV GLM (glmFit/glmLRT) on coefficient ", coef_name, ", covariates: ", paste(extra, collapse = ", ")))
+    glmLRT(glmFit(dge_obj, design_mat, dispersion = bcv^2), coef = coef_name)
+}
 
 ### SCRIPT
 print(paste("Run EdgeR DE with ", availablecores, " cores", sep = ""))
@@ -138,34 +173,18 @@ for (contrast in comparison) {
     bl <- sapply("batch", paste0, levels(sampleData$batch)[1:length(levels(sampleData$batch)) - 1])
     tl <- sapply("type", paste0, levels(sampleData$type)[1:length(levels(sampleData$type)) - 1])
 
-    ## Create design-table considering different types (paired, unpaired) and batches
-    if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1) {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            des <- ~ type + batch + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(sampleData$condition), tl, bl)
-        } else {
-            des <- ~ type + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(condition), tl)
-        }
-    } else {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            des <- ~ batch + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(sampleData$condition), bl)
-        } else {
-            des <- ~condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- levels(sampleData$condition)
-        }
-    }
+    ## Design for this contrast: `design=` from the config if set, otherwise derived
+    ## from the types and batches present in the two groups. The dispersion is fixed
+    ## here rather than estimated, so a term only has to be fittable and needs no
+    ## residual degree of freedom of its own.
+    des <- build_de_design(design_spec, sampleData, A, B, contrast_name, min_residual_df = 0)
+    design <- model.matrix(des, data = sampleData)
     print(design)
 
     ## check genes and spike-ins
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spiken <- strsplit(spike, "=")[[1]][2]
+        spiken <- spike
         setwd(WD)
         ctrlgenes <- trimws(readLines(spiken))
         ctrlgenes <- ctrlgenes[nzchar(ctrlgenes)]
@@ -185,7 +204,7 @@ for (contrast in comparison) {
         countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
 
         sampleData_norm <- cbind(sampleData, pData(counts_norm))
-        design_norm <- model.matrix(as.formula(paste(deparse(des), colnames(pData(counts_norm))[1], sep = " + ")), data = sampleData_norm)
+        design_norm <- model.matrix(ruv_add_w_terms(des, colnames(pData(counts_norm))), data = sampleData_norm)
         # colnames(design_norm) <- c(colnames(design),"W_1")
 
         dge_norm <- DGEList(counts = counts_norm_mat, group = sampleData$condition, samples = samples, genes = genes)
@@ -294,7 +313,7 @@ for (contrast in comparison) {
         # dge <- estimateDisp(dge, design, robust = TRUE)
         # AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES => no glmQLFTest possible
         # qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-        qlf <- exactTest(dge, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
+        qlf <- fixed_bcv_test(dge, design, A, B, bcv, contrast_name)
 
         # add comp object to list for image
         comparison_objs[[contrast_name]] <- qlf
@@ -373,7 +392,7 @@ for (contrast in comparison) {
             #AvsB <- makeContrasts(TreatvsUntreat = paste("condition", A, sep = ""), levels = design)
             # THIS IS SKIPPED AS WE HAVE TO SET BCV MANUALLY WITHOUT REPLICATES, no glmQLFTest possible
             #qlf <- glmQLFTest(fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            qlf <- exactTest(dge_norm, pair = c(B, A), dispersion = bcv^2, prior.count = 2)
+            qlf <- fixed_bcv_test(dge_norm, design_norm, A, B, bcv, paste0(contrast_name, " spike-in branch"))
             # add comp object to list for image
             comparison_objs[[paste0(contrast_name, "_norm")]] <- qlf
 

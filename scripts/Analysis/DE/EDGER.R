@@ -46,6 +46,9 @@ spike <- de_option(de_opts, "controlgenes")
 ## control genes (permutation test on the variance spectrum), an integer pins
 ## it, 0 switches the W covariates off and normalizes on the spike-in scale only
 ruvk <- de_option(de_opts, "ruvk", "auto")
+## model formula for the per-contrast fit, over condition/type/batch, e.g.
+## design=batch+condition. Empty means MONSDA derives it from the annotation.
+design_spec <- de_option(de_opts, "design")
 
 postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
 if (postde_enabled) {
@@ -267,28 +270,10 @@ for (contrast in comparison) {
     bl <- sapply("batch", paste0, levels(sampleData$batch)[1:length(levels(sampleData$batch)) - 1])
     tl <- sapply("type", paste0, levels(sampleData$type)[1:length(levels(sampleData$type)) - 1])
 
-    ## Create design-table considering different types (paired, unpaired) and batches
-    if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1) {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            des <- ~ type + batch + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(sampleData$condition), tl, bl)
-        } else {
-            des <- ~ type + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(condition), tl)
-        }
-    } else {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            des <- ~ batch + condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- c(levels(sampleData$condition), bl)
-        } else {
-            des <- ~ condition
-            design <- model.matrix(des, data = sampleData)
-            # colnames(design) <- levels(sampleData$condition)
-        }
-    }
+    ## Design for this contrast: `design=` from the config if set, otherwise
+    ## derived from the types and batches present in the two groups
+    des <- build_de_design(design_spec, sampleData, A, B, contrast_name)
+    design <- model.matrix(des, data = sampleData)
     print(design)
 
     ## Results, tables and figures of one spike-in branch. Byte-identical in structure to

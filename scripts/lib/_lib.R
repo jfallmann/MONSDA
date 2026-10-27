@@ -364,12 +364,20 @@ plot_sample_correlation_heatmap <- function(expr_mat, outfile, group = NULL, tit
 parse_de_options <- function(args_tail) {
     opts <- list()
     tokens <- unlist(strsplit(trimws(paste(args_tail, collapse = " ")), "[[:space:]]+"))
-    for (tok in tokens[nzchar(tokens)]) {
-        if (!grepl("=", tok, fixed = TRUE)) {
+    tokens <- tokens[nzchar(tokens)]
+    key <- NULL
+    for (tok in tokens) {
+        if (grepl("^[A-Za-z_][A-Za-z0-9_.]*=", tok)) {
+            key <- tolower(sub("=.*$", "", tok))
+            opts[[key]] <- sub("^[^=]*=", "", tok)
+        } else if (!is.null(key)) {
+            ## continuation of the previous value: Nextflow splits the unquoted
+            ## option string on whitespace, so 'design=~ batch + condition'
+            ## arrives as four tokens
+            opts[[key]] <- trimws(paste(opts[[key]], tok))
+        } else {
             message(paste0("WARNING: ignoring DE option '", tok, "', expected key=value"))
-            next
         }
-        opts[[tolower(sub("=.*$", "", tok))]] <- sub("^[^=]*=", "", tok)
     }
     opts
 }
@@ -389,6 +397,103 @@ ruv_add_w_terms <- function(f, w_names) {
     tt <- stats::terms(f)
     rhs <- paste(c(if (attr(tt, "intercept") == 0) "0", w_names, attr(tt, "term.labels")), collapse = " + ")
     stats::as.formula(paste("~", rhs), env = environment(f))
+}
+
+## Variables a DE design may reference. The MONSDA annotation table carries
+## exactly three columns: GROUPS -> condition, TYPES -> type, BATCHES -> batch.
+DE_DESIGN_VARS <- c("condition", "type", "batch")
+
+## The design MONSDA derives when the config does not set one: a nuisance term
+## is taken along only if it varies inside at least one of the two groups under
+## test, which is what the DE scripts did before `design=` existed.
+auto_de_design <- function(meta, A, B) {
+    varies <- function(v) {
+        length(unique(meta[[v]][meta$condition == A])) > 1 ||
+            length(unique(meta[[v]][meta$condition == B])) > 1
+    }
+    rhs <- c(if (varies("type")) "type", if (varies("batch")) "batch", "condition")
+    stats::as.formula(paste("~", paste(rhs, collapse = " + ")))
+}
+
+## Turn the `design=` option into a formula and reject up front what the
+## contrast machinery downstream cannot express.
+parse_de_design <- function(spec, available = DE_DESIGN_VARS) {
+    txt <- trimws(spec)
+    if (!startsWith(txt, "~")) {
+        txt <- paste("~", txt)
+    }
+    f <- tryCatch(stats::as.formula(txt),
+        error = function(e) stop(paste0("DE option design='", spec, "' is not a valid R formula: ", conditionMessage(e)))
+    )
+    if (length(f) != 2) {
+        stop(paste0("DE option design='", spec, "' must be one-sided, the response is always the count matrix"))
+    }
+    tt <- stats::terms(f)
+    if (attr(tt, "intercept") == 0) {
+        stop(paste0("DE option design='", spec, "' suppresses the intercept. The pairwise contrast is read off the treatment-contrast coefficient (DESeq2 condition_<A>_vs_<B>, edgeR condition<A>), which does not exist without an intercept, so remove the '0 +' / '- 1'."))
+    }
+    unknown <- setdiff(all.vars(f), available)
+    if (length(unknown) > 0) {
+        stop(paste0("DE option design='", spec, "' references unknown variable(s) ", paste(unknown, collapse = ", "), ". Available are ", paste(available, collapse = ", "), ", filled from GROUPS, TYPES and BATCHES in the config."))
+    }
+    if (!"condition" %in% attr(tt, "term.labels")) {
+        stop(paste0("DE option design='", spec, "' has no 'condition' main effect, which is the term the contrast tests"))
+    }
+    inter <- grep("(^|:)condition(:|$)", grep(":", attr(tt, "term.labels"), value = TRUE), value = TRUE)
+    if (length(inter) > 0) {
+        warning(paste0("DE option design='", spec, "' contains the interaction(s) ", paste(inter, collapse = ", "), ". Both engines then report the condition effect at the reference level of the interacting variable, not an effect averaged over it. Keep it only if that simple effect is what you want to test."), call. = FALSE)
+    }
+    f
+}
+
+## Reduce a design to the terms that are actually estimable for this contrast.
+## `condition` is never dropped. A nuisance term goes when it has no contrast
+## left in the subset, when it is confounded with the rest of the design, or
+## when it would leave fewer than `min_residual_df` residual degrees of freedom
+## (set it to 0 when the dispersion is fixed rather than estimated). Dropping rather
+## than aborting keeps the remaining contrasts of a run alive, but it changes
+## the model, so every drop is warned about individually.
+resolve_de_design <- function(f, meta, label = "", min_residual_df = 1) {
+    tag <- if (nzchar(label)) paste0(" for contrast ", label) else ""
+    labs <- attr(stats::terms(f), "term.labels")
+    kept <- character(0)
+    for (tm in setdiff(labs, "condition")) {
+        reason <- NULL
+        tm_vars <- all.vars(stats::as.formula(paste("~", tm)))
+        constant <- tm_vars[vapply(tm_vars, function(v) length(unique(meta[[v]])) < 2, logical(1))]
+        if (length(constant) > 0) {
+            reason <- paste0("'", paste(constant, collapse = "', '"), "' has only one level in this comparison")
+        } else {
+            mm <- stats::model.matrix(stats::as.formula(paste("~", paste(c(kept, tm, "condition"), collapse = " + "))), data = meta)
+            rank <- qr(mm)$rank
+            if (rank < ncol(mm)) {
+                reason <- "it is confounded with the rest of the design (rank deficient)"
+            } else if (nrow(mm) - rank < min_residual_df) {
+                reason <- paste0("it would leave fewer than ", min_residual_df, " residual degree(s) of freedom for dispersion estimation")
+            }
+        }
+        if (is.null(reason)) {
+            kept <- c(kept, tm)
+        } else {
+            warning(paste0("Design term '", tm, "' dropped", tag, ": ", reason), call. = FALSE)
+        }
+    }
+    stats::as.formula(paste("~", paste(labs[labs %in% c(kept, "condition")], collapse = " + ")))
+}
+
+## Design used for one contrast: the configured one when `design=` was given,
+## the auto-derived one otherwise, in both cases reduced to its estimable terms.
+build_de_design <- function(spec, meta, A, B, label = "", min_residual_df = 1) {
+    if (nzchar(spec)) {
+        f <- parse_de_design(spec)
+        origin <- "configured"
+    } else {
+        f <- auto_de_design(meta, A, B)
+        origin <- "auto-derived"
+    }
+    out <- resolve_de_design(f, meta, label, min_residual_df)
+    message(paste0("Design (", origin, ")", if (nzchar(label)) paste0(" for contrast ", label) else "", ": ", paste(deparse(out), collapse = "")))
+    out
 }
 
 

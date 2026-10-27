@@ -51,6 +51,9 @@ spike <- de_option(de_opts, "controlgenes")
 ## control genes (permutation test on the variance spectrum), an integer pins
 ## it, 0 switches the W covariates off and normalizes on the spike-in scale only
 ruvk <- de_option(de_opts, "ruvk", "auto")
+## model formula for the per-contrast fit, over condition/type/batch, e.g.
+## design=batch+condition. Empty means MONSDA derives it from the annotation.
+design_spec <- de_option(de_opts, "design")
 
 postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
 if (postde_enabled) {
@@ -262,20 +265,9 @@ for (contrast in comparison) {
     sampleData <- sel$sampleData
     countData <- sel$countData
 
-    ## Create design-table considering different types (paired, unpaired) and batches
-    if (length(unique(subset(sampleData, A == condition)$type)) > 1 | length(unique(subset(sampleData, B == condition)$type)) > 1) {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            design <- ~ type + batch + condition
-        } else {
-            design <- ~ type + condition
-        }
-    } else {
-        if (length(unique(subset(sampleData, A == condition)$batch)) > 1 | length(unique(subset(sampleData, B == condition)$batch)) > 1) {
-            design <- ~ batch + condition
-        } else {
-            design <- ~ condition
-        }
-    }
+    ## Design for this contrast: `design=` from the config if set, otherwise
+    ## derived from the types and batches present in the two groups
+    design <- build_de_design(design_spec, sampleData, A, B, contrast_name)
     print(design)
 
     ## Fit one spike-in branch (_norm or _ruv) and write its QC outputs. Identical to the
