@@ -63,6 +63,10 @@ if (postde_enabled) {
     }
     source(postde_lib)
     postde_bundles <- list()
+    postde_entry_ids <- character(0)
+    postde_cache_dir <- file.path(outdir, ".postde_cache")
+    dir.create(postde_cache_dir, recursive = TRUE, showWarnings = FALSE)
+    postde_cache_dir <- normalizePath(postde_cache_dir)
 }
 
 ## plotMDS needs at least 3 samples/columns, fall back to a placeholder plot otherwise

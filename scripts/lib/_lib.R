@@ -33,13 +33,16 @@ get_exon_name <- function(id, df) {
         message("WARNING: gene_name not found as colname, will be replaced by gene column, please make sure the gtf file is in the correct format")
         df$gene_name <- df$gene
     }
-    name_list <- df$gene_name[df["type"] == "exon" & df["gene_id"] == id]
-    if (length(unique(name_list)) == 1) {
-        return(name_list[1])
-    } else {
-        message(paste("WARNING: ambigous gene id: ", id))
-        return(paste(unique(name_list), sep = "|"))
+    name_list <- unique(df$gene_name[df["type"] == "exon" & df["gene_id"] == id])
+    if (length(name_list) == 0) {
+        message(paste("WARNING: gene id not found in annotation, using id as name: ", id))
+        return(id)
     }
+    if (length(name_list) == 1) {
+        return(name_list)
+    }
+    message(paste("WARNING: ambigous gene id: ", id))
+    return(paste(name_list, collapse = "|"))
 }
 
 get_gene_coords <- function(id, df) {
@@ -67,6 +70,10 @@ add_gene_coordinates <- function(df, gene_ids, gtf_df, after = NULL) {
         colnames(gtf_df)[grepl("id$", names(gtf_df), ignore.case = TRUE)][1] <- "gene_id"
     }
     df <- as.data.frame(df)
+    if (length(gene_ids) != nrow(df)) {
+        message(paste0("WARNING: gene_ids length (", length(gene_ids), ") does not match data rows (", nrow(df), "); falling back to rownames(df)"))
+        gene_ids <- rownames(df)
+    }
     g <- gtf_df[gtf_df["type"] == "gene", ]
     coords <- paste(g$seqnames, g$start, g$end, g$strand, sep = ":")
     names(coords) <- as.character(g$gene_id)
@@ -102,10 +109,18 @@ calc_tpm <- function(counts, gtf) {
     gene_lengths <- gtf$width
     names(gene_lengths) <- gtf$gene_id
     matched_lengths <- gene_lengths[rownames(counts)]
-    gene_lengths_kb <- matched_lengths / 1000
-    rpk <- counts / gene_lengths_kb
+    # ids without a length (e.g. ERCC spikes that only have exon rows in the GTF)
+    # must not enter the per-sample scaling sum, otherwise one NA poisons the whole column
+    has_len <- !is.na(matched_lengths)
+    if (any(!has_len)) {
+        message(paste0("WARNING: no gene length for ", sum(!has_len), " features, excluded from TPM (set to NA): ", paste(head(rownames(counts)[!has_len], 5), collapse = ", "), if (sum(!has_len) > 5) ", ..." else ""))
+    }
+    tpm <- matrix(NA_real_, nrow = nrow(counts), ncol = ncol(counts), dimnames = dimnames(counts))
+    counts_l <- counts[has_len, , drop = FALSE]
+    gene_lengths_kb <- matched_lengths[has_len] / 1000
+    rpk <- counts_l / gene_lengths_kb
     scaling_factors <- colSums(rpk)
-    tpm <- t(t(rpk) / scaling_factors * 1e6)
+    tpm[has_len, ] <- t(t(rpk) / scaling_factors * 1e6)
     return(tpm)
 }
 
@@ -220,7 +235,7 @@ format_deseq2_results <- function(res, gtf_gene, shrink = TRUE, center = FALSE) 
         message(paste0("Global shift (median log2FoldChange) subtracted in log2FoldChange_centered: ", shift))
         res$log2FoldChange_centered <- res$log2FoldChange - shift
     }
-    add_gene_coordinates(res, res$Gene_ID, gtf_gene, after = "Gene_ID")
+    add_gene_coordinates(res, rownames(res), gtf_gene, after = "Gene_ID")
 }
 
 ## Format an edgeR result table (qlf$table or a topTags table) for export.
