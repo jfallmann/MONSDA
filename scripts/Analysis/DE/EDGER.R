@@ -21,7 +21,10 @@ outdir <- args[4]
 cmp <- args[5]
 combi <- args[6]
 availablecores <- as.integer(args[7])
-spike <- if (argsLen > 7) args[8] else ""
+## everything beyond the fixed arguments is the free-form DE option string
+## ("controlgenes=<file> ruvk=auto|<int>"), which snakemake passes as one
+## argument and nextflow as one argument per whitespace separated token
+deopts_raw <- if (argsLen > 7) args[8:argsLen] else character(0)
 
 print(args)
 
@@ -36,6 +39,13 @@ if (!file.exists(libp)) {
     libp <- file.path(dirname(normalizePath(postde_file)), "..", "..", "lib", "_lib.R")
 }
 source(libp)
+
+de_opts <- parse_de_options(deopts_raw)
+spike <- de_option(de_opts, "controlgenes")
+## number of RUVg factors of unwanted variation: "auto" estimates it from the
+## control genes (permutation test on the variance spectrum), an integer pins
+## it, 0 switches the W covariates off and normalizes on the spike-in scale only
+ruvk <- de_option(de_opts, "ruvk", "auto")
 
 postde_enabled <- Sys.getenv("MONSDA_POSTDE") == "1"
 if (postde_enabled) {
@@ -124,7 +134,7 @@ write.table(add_gene_coordinates(tpm_matrix, rownames(tpm_matrix), gtf_gene), gz
 ## Normalize by spike in if available
 if (spike != "") {
     print("Spike-in used, data will be normalized to spike in separately")
-    spiken <- strsplit(spike, "=")[[1]][2]
+    spiken <- spike
     setwd(WD)
     ctrlgenes <- trimws(readLines(spiken))
     ctrlgenes <- ctrlgenes[nzchar(ctrlgenes)]
@@ -137,22 +147,29 @@ if (spike != "") {
     if (length(ctrlgenes) == 0) {
         stop(paste0("None of the control genes in ", spiken, " are present in the count table, cannot normalize by spike-in"))
     }
-    counts_norm_set <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = 1)
-    sampleData_norm <- cbind(sampleData_all, pData(counts_norm_set))
-    ctrl_idx_all <- rownames(counts(counts_norm_set)) %in% ctrlgenes # for spike-in-derived normalization factors
-    # Derive the scale from the spike-ins (TMM on control genes) rather than RUVg's normCounts(),
-    # which only removes unwanted variation (W_1) and does not carry the spike-in scale.
-    spike_counts_all <- counts(counts_norm_set)[ctrl_idx_all, , drop = FALSE]
-    dge_spike_all <- calcNormFactors(DGEList(counts = spike_counts_all), method = "TMM")
-    eff_lib_all <- dge_spike_all$samples$lib.size * dge_spike_all$samples$norm.factors
-    size_factor_all <- eff_lib_all / exp(mean(log(eff_lib_all)))
-    counts_norm <- as.data.frame(sweep(counts(counts_norm_set), 2, size_factor_all, FUN = "/"))
+    ctrl_idx_all <- rownames(countData_all) %in% ctrlgenes # for spike-in-derived normalization factors
+    # Derive the scale from the spike-ins themselves (median of ratios over the control
+    # genes); counts_norm below is that _norm scale. RUVg's factors are covariates, not a
+    # count scale, and live in sampleData_ruv.
+    size_factor_all <- spikein_size_factors(as.matrix(countData_all)[ctrl_idx_all, , drop = FALSE])
+    # how many factors of unwanted variation the control genes actually support
+    ruv_all <- ruv_estimate_k(countData_all, ctrlgenes, model.matrix(~condition, data = sampleData_all),
+        condition = sampleData_all$condition, size_factors = size_factor_all, k = ruvk, label = "DataSet")
+    ruv_write_k_report(ruv_all, paste("Tables/DE", "EDGER", combi, "DataSet", "table", "ruv_k_selection.tsv", sep = "_"))
+    ruv_plot_k(ruv_all, paste("Figures/DE", "EDGER", combi, "DataSet", "figure", "RUV_k_selection.png", sep = "_"))
+    if (ruv_all$k > 0) {
+        ruv_set_all <- RUVg(newSeqExpressionSet(as.matrix(countData_all)), ctrlgenes, k = ruv_all$k)
+        sampleData_ruv <- cbind(sampleData_all, pData(ruv_set_all))
+    } else {
+        sampleData_ruv <- sampleData_all
+    }
+    counts_norm <- as.data.frame(sweep(as.matrix(countData_all), 2, size_factor_all, FUN = "/"))
     countData_clean <- countData_all %>% subset(!row.names(countData_all) %in% ctrlgenes) # removing spike-ins for standard analysis
     counts_norm_clean <- counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes) # removing spike-ins for standard analysis
     write.table(add_gene_coordinates(counts_norm, rownames(counts_norm), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     write.table(add_gene_coordinates(counts_norm_clean, rownames(counts_norm_clean), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_norm_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     write.table(add_gene_coordinates(countData_clean, rownames(countData_clean), gtf_gene), gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "counts_clean.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
-    write.table(sampleData_norm, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "sampleData_norm.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
+    write.table(sampleData_ruv, gzfile(paste("Tables/DE", "EDGER", combi, "DataSet", "table", "sampleData_ruv.tsv.gz", sep = "_")), sep = "\t", col.names = NA, quote = FALSE)
     # Calculate CPM and TPM
     cpm_norm_matrix <- calc_cpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes))
     tpm_norm_matrix <- calc_tpm(counts_norm %>% subset(!row.names(counts_norm) %in% ctrlgenes), gtf_gene)
@@ -274,10 +291,94 @@ for (contrast in comparison) {
     }
     print(design)
 
+    ## Results, tables and figures of one spike-in branch. Byte-identical in structure to
+    ## the plain branch below, only the suffix and the fitted object differ.
+    emit_spike_branch <- function(branch, meta_b, counts_b, des_b, suffix) {
+        contrast_col <- paste0("condition", A)
+        if (!contrast_col %in% colnames(branch$design)) {
+            stop(paste0("Spike-in design ", suffix, " has no column '", contrast_col, "' (columns: ", paste(colnames(branch$design), collapse = ", "), ")"))
+        }
+        AvsB <- setNames(numeric(ncol(branch$design)), colnames(branch$design))
+        AvsB[contrast_col] <- 1
+        qlf <- glmQLFTest(branch$fit, contrast = AvsB) ## glm quasi-likelihood-F-Test
+
+        if (postde_enabled) {
+            postde_capture(engine = "edger", id = paste0(contrast_name, suffix), A = A, B = B, normalized = TRUE, metadata = meta_b, counts = counts_b, expression = cpm(branch$dge, log = TRUE), formula = des_b, results = postde_results_edger(qlf), mean_scale = "logCPM")
+        }
+
+        res <- format_edger_results(qlf$table, gtf_gene, center = TRUE)
+        pdf(file = paste("Figures/DE", "EDGER", combi, contrast_name, paste0("figure_Volcano", suffix, ".pdf"), sep = "_"), width = 15, height = 10)
+        print(EnhancedVolcano(res,
+            lab = res$Gene, x = "log2FoldChange", y = "padj",
+            title = paste0(contrast_name, suffix, "_p005_lfc15"),
+            pCutoff = 0.05, FCcutoff = 1.5, pointSize = 3.0, labSize = 5.0, colAlpha = .3,
+            legendLabels = c("Not sig.", "Log (base 2) FC", "p-value", "p-value & Log (base 2) FC"),
+            legendPosition = "right", legendLabSize = 10, legendIconSize = 5.0,
+            drawConnectors = TRUE, widthConnectors = 0.75
+        ))
+        dev.off()
+        write.table(as.data.frame(apply(res, 2, as.character)), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", paste0("results", suffix, ".tsv.gz"), sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+
+        for (sorting in c("logFC", "PValue")) {
+            tops <- format_edger_results(topTags(qlf, n = nrow(qlf$table), sort.by = sorting)$table, gtf_gene, center = TRUE)
+            label <- if (sorting == "logFC") "resultsLogFCsorted" else "resultsPValueSorted"
+            write.table(as.data.frame(apply(tops, 2, as.character)), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", paste0(label, suffix, ".tsv.gz"), sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+        }
+
+        png(paste("Figures/DE", "EDGER", combi, contrast_name, "figure", paste0("MD", suffix, ".png"), sep = "_"), width=1900, height=1200, res=300)
+        print(plotMD(qlf, main = paste0(contrast_name, suffix)))
+        abline(h = c(-1, 1), col = "blue")
+        dev.off()
+        qlf
+    }
+
+    ## Fit one spike-in branch (_norm or _ruv) and write its QC outputs. Identical to the
+    ## plain branch below except for the suffix, the normalization and the design, so the
+    ## three readings stay directly comparable.
+    fit_spike_branch <- function(counts_b, meta_b, des_b, size_factors, suffix) {
+        design_b <- model.matrix(des_b, data = meta_b)
+        print(paste0("Design of the ", suffix, " branch: ", paste(colnames(design_b), collapse = ", ")))
+        d <- DGEList(counts = counts_b, group = meta_b$condition, samples = samples, genes = rownames(counts_b))
+        d <- d[filterByExpr(d), , keep.lib.sizes = FALSE]
+        d$samples$group <- relevel(d$samples$group, ref = B[[1]])
+        if (is.null(size_factors)) {
+            d <- calcNormFactors(d, method = "TMM", BPPARAM = BPPARAM)
+        } else {
+            d <- set_spikein_offsets(d, size_factors[colnames(d)])
+        }
+
+        tmm_b <- as.data.frame(cpm(d))
+        colnames(tmm_b) <- t(d$samples$samples)
+        tmm_b$ID <- d$genes$genes
+        tmm_b <- tmm_b[c(ncol(tmm_b), 1:ncol(tmm_b) - 1)]
+        tmm_b <- add_gene_coordinates(tmm_b, tmm_b$ID, gtf_gene, after = "ID")
+        write.table(as.data.frame(tmm_b), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", paste0("Normalized", suffix, ".tsv.gz"), sep = "_")), sep = "\t", quote = F, row.names = FALSE)
+
+        png(paste("Figures/DE", "EDGER", combi, contrast_name, "figure", paste0("MDS", suffix, ".png"), sep = "_"), width=1900, height=1200, res=300)
+        print(safe_plotMDS(d, col = as.numeric(d$samples$group), cex = 1))
+        dev.off()
+
+        if (no_residual_df(design_b)) {
+            stop(paste0("Spike-in design ", suffix, " for contrast ", contrast_name, " has no residual degrees of freedom (", nrow(design_b), " samples, design rank ", qr(design_b)$rank, "). The nuisance-adjusted model cannot be fit; refusing to fall back to an unadjusted test that ignores the covariates."))
+        }
+        d <- estimateDisp(d, design_b, robust = TRUE)
+
+        png(paste("Figures/DE", "EDGER", combi, contrast_name, "figure", paste0("BCV", suffix, ".png"), sep = "_"), width=1900, height=1200, res=300)
+        print(plotBCV(d))
+        dev.off()
+
+        f <- glmQLFit(d, design_b, robust = TRUE)
+
+        png(paste("Figures/DE", "EDGER", combi, contrast_name, "figure", paste0("QLDisp", suffix, ".png"), sep = "_"), width=1900, height=1200, res=300)
+        print(plotQLDisp(f))
+        dev.off()
+        list(dge = d, fit = f, design = design_b)
+    }
+
     ## check genes and spike-ins
     if (spike != "") {
         print("Spike-in used, data will be normalized to spike in separately")
-        spiken <- strsplit(spike, "=")[[1]][2]
+        spiken <- spike
         setwd(WD)
         ctrlgenes <- trimws(readLines(spiken))
         ctrlgenes <- ctrlgenes[nzchar(ctrlgenes)]
@@ -290,72 +391,49 @@ for (contrast in comparison) {
         if (length(ctrlgenes) == 0) {
             stop(paste0("None of the control genes in ", spiken, " are present in the count table, cannot normalize by spike-in"))
         }
-        counts_norm <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = 1)
-        ctrl_idx <- rownames(counts(counts_norm)) %in% ctrlgenes # for spike-in-derived normalization factors
-        counts_norm_mat <- counts(counts_norm)[!ctrl_idx, , drop = FALSE] # removing spike-ins for actual DE testing
-        genes <- rownames(counts_norm_mat)
-        countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
-        sampleData_norm <- cbind(sampleData, pData(counts_norm))        
-        des_norm <- as.formula(paste(gsub("~", "~ W_1 +", deparse(des)), collapse = ""))  # Last argument is variable of interest
-        # des_norm <- as.formula(paste(deparse(des), " + W_1"), collapse = "")
-        design_norm <- model.matrix(des_norm, data = sampleData_norm)
-        print(paste0("Design with spike-in normalization: ", paste(colnames(design_norm), collapse = ", ")))
+        ctrl_idx <- rownames(countData) %in% ctrlgenes # spike-ins are never tested themselves
+        counts_endo <- as.matrix(countData)[!ctrl_idx, , drop = FALSE]
 
-        dge_norm <- DGEList(counts = counts_norm_mat, group = sampleData$condition, samples = samples, genes = genes)
-        ## filter low counts; keep original (pre-filter) lib sizes since the spike-in-derived
-        ## normalization factors below are only valid relative to them
-        keep <- filterByExpr(dge_norm)
-        dge_norm <- dge_norm[keep, , keep.lib.sizes = TRUE]
+        ## Spike-in derived scale (median of ratios over the control genes): the normalization
+        ## of the _norm branch, and the reference the k diagnostics compare the factors of
+        ## unwanted variation against.
+        size_factor_spike <- spikein_size_factors(as.matrix(countData)[ctrl_idx, , drop = FALSE])
+        write_scaling_log(size_factor_spike, colnames(countData), paste("Tables/DE", "EDGER", combi, contrast_name, "table", "scaling.log", sep = "_"))
 
-        # relevel to base condition B
-        dge_norm$samples$group <- relevel(dge_norm$samples$group, ref = B[[1]])
+        ## how many factors of unwanted variation the control genes support for this contrast
+        ruv_sel <- ruv_estimate_k(countData, ctrlgenes, design,
+            condition = sampleData$condition, size_factors = size_factor_spike, k = ruvk, label = contrast_name, contrast = c(A, B))
+        ruv_write_k_report(ruv_sel, paste("Tables/DE", "EDGER", combi, contrast_name, "table", "ruv_k_selection.tsv", sep = "_"))
+        ruv_plot_k(ruv_sel, paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "RUV_k_selection.png", sep = "_"))
 
-        ## normalize using the spike-in (control gene) counts rather than TMM on the endogenous
-        ## genes: this is what actually puts the spike-in scale into the normalized results, the
-        ## W_1 covariate alone only adjusts for unwanted variation, not scale.
-        spike_counts <- counts(counts_norm)[ctrl_idx, , drop = FALSE]
-        dge_spike <- calcNormFactors(DGEList(counts = spike_counts), method = "TMM")
-        dge_norm$samples$norm.factors <- dge_spike$samples$norm.factors
-
-        eff_lib_norm <- dge_norm$samples$lib.size * dge_norm$samples$norm.factors
-        scaling_factors <- eff_lib_norm / exp(mean(log(eff_lib_norm)))
-        write_scaling_log(scaling_factors, dge_norm$samples$samples, paste("Tables/DE", "EDGER", combi, contrast_name, "table", "scaling.log", sep = "_"))
-
-        ## create file normalized table
-        tmm_norm <- as.data.frame(cpm(dge_norm))
-        colnames(tmm_norm) <- t(dge_norm$samples$samples)
-        tmm_norm$ID <- dge_norm$genes$genes
-        tmm_norm <- tmm_norm[c(ncol(tmm_norm), 1:ncol(tmm_norm) - 1)]
-
-        tmm_norm <- add_gene_coordinates(tmm_norm, tmm_norm$ID, gtf_gene, after = "ID")
-        write.table(as.data.frame(tmm_norm), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "Normalized_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-        ## create file MDS-plot with and without summarized replicates
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MDS_norm.png", sep = "_")
-        png(out, width=1900, height=1200, res=300)
-        print(safe_plotMDS(dge_norm, col = as.numeric(dge_norm$samples$group), cex = 1))
-        dev.off()
-
-        ## estimate Dispersion
-        if (no_residual_df(design_norm)) {
-            stop(paste0("Spike-in normalized design for contrast ", contrast_name, " has no residual degrees of freedom (", nrow(design_norm), " samples, design rank ", qr(design_norm)$rank, "). The nuisance-adjusted model cannot be fit; refusing to fall back to an unadjusted test that ignores the covariates."))
+        if (ruv_sel$k > 0) {
+            ruv_set <- RUVg(newSeqExpressionSet(as.matrix(countData)), ctrlgenes, k = ruv_sel$k)
+            sampleData_ruv <- cbind(sampleData, pData(ruv_set))
+            des_ruv <- ruv_add_w_terms(des, colnames(pData(ruv_set)))  # Last argument is variable of interest
+        } else {
+            sampleData_ruv <- sampleData
+            des_ruv <- des
         }
-        dge_norm <- estimateDisp(dge_norm, design_norm, robust = TRUE)
+        countData <- countData %>% subset(!row.names(countData) %in% ctrlgenes) # removing spike-ins for standard analysis
 
-        ## create file BCV-plot - visualizing estimated dispersions
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "BCV_norm.png", sep = "_")
-        png(out, width=1900, height=1200, res=300)
-        print(plotBCV(dge_norm))
-        dev.off()
+        ## _norm: the spike-ins set the scale. Offsets from the control genes, design
+        ## unchanged, so its fold changes are absolute (per cell) rather than per library.
+        print("Spike-in branch _norm: offsets from the control genes, no RUV covariates")
+        branch_norm <- fit_spike_branch(counts_endo, sampleData, des, size_factor_spike, "_norm")
+        dge_norm <- branch_norm$dge
+        fit_norm <- branch_norm$fit
+        design_norm <- branch_norm$design
 
-        ## fitting a quasi-likelihood negative binomial generalized log-linear model to counts
-        fit_norm <- glmQLFit(dge_norm, design_norm, robust = TRUE)
-
-        ## create file quasi-likelihood-dispersion-plot
-        out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "QLDisp_norm.png", sep = "_")
-        png(out, width=1900, height=1200, res=300)
-        print(plotQLDisp(fit_norm))
-        dev.off()
+        ## _ruv: RUVg exactly as the RUVSeq vignette prescribes it. The W_i covariates enter
+        ## the design and normalization is edgeR's own TMM over the endogenous genes; the
+        ## spike-in offsets are deliberately NOT applied on top. Both are estimated from the
+        ## same control genes, so combining them would correct the same quantity twice and
+        ## leave the result depending on which of the two wins.
+        print("Spike-in branch _ruv: RUVg factors as covariates, standard TMM normalization")
+        branch_ruv <- fit_spike_branch(counts_endo, sampleData_ruv, des_ruv, NULL, "_ruv")
+        dge_ruv <- branch_ruv$dge
+        fit_ruv <- branch_ruv$fit
+        design_ruv <- branch_ruv$design
     }
 
     # Same without spike-in normalization
@@ -503,89 +581,11 @@ for (contrast in comparison) {
         abline(h = c(-1, 1), col = "blue")
         dev.off()
 
-        if (spike != "") { # Same for spike-in normalized
-            rm(qlf, tops, res)
-
-            # determine contrast, only for complex cases, not needed for our pairwise comparisons now
-            # A <- strsplit(contrast_groups[[1]][1], "\\+")
-            # B <- strsplit(contrast_groups[[1]][2], "\\+")
-            # minus <- 1/length(A[[1]])*(-1)
-            # plus <- 1/length(B[[1]])
-            # contrast <- cbind(integer(dim(design)[2]), colnames(design))
-            # for(i in A[[1]]){
-            #    contrast[which(contrast[,2]==i)]<- minus
-            # }
-            # for(i in B[[1]]){
-            #    contrast[which(contrast[,2]==i)]<- plus
-            # }
-            # contrast <- as.numeric(contrast[,1])
-
-            ## Testing
-            # qlf <- glmQLFTest(fit, contrast=contrast) ## glm quasi-likelihood-F-Test
-            contrast_col <- paste0("condition", A)
-            if (!contrast_col %in% colnames(design_norm)) {
-                stop(paste0("Spike-in design has no column '", contrast_col, "' (columns: ", paste(colnames(design_norm), collapse = ", "), ")"))
-            }
-            AvsB <- setNames(numeric(ncol(design_norm)), colnames(design_norm))
-            AvsB[contrast_col] <- 1
-            qlf <- glmQLFTest(fit_norm, contrast = AvsB) ## glm quasi-likelihood-F-Test
-            # add comp object to list for image
-            if (postde_enabled) {
-                postde_capture(engine = "edger", id = paste0(contrast_name, "_norm"), A = A, B = B, normalized = TRUE, metadata = sampleData_norm, counts = counts_norm_mat, expression = cpm(dge_norm, log = TRUE), formula = des_norm, results = postde_results_edger(qlf), mean_scale = "logCPM")
-            }
-            comparison_objs[[paste0(contrast_name, "_norm")]] <- qlf
-
-            # # Add gene names  (check how gene_id col is named )
-            res <- format_edger_results(qlf$table, gtf_gene, center = TRUE)
-
-            # plotVolcano
-            pdf(
-                file = paste("Figures/DE", "EDGER", combi, contrast_name, "figure_Volcano_norm.pdf", sep = "_"), width = 15, height = 10
-            )
-            print(EnhancedVolcano(res,
-                lab = res$Gene,
-                x = "log2FoldChange",
-                y = "padj",
-                title = paste0(contrast_name, "_p005_lfc15", sep = ""),
-                pCutoff = 0.05,
-                FCcutoff = 1.5,
-                pointSize = 3.0,
-                labSize = 5.0,
-                colAlpha = .3,
-                legendLabels = c(
-                    "Not sig.", "Log (base 2) FC", "p-value",
-                    "p-value & Log (base 2) FC"
-                ),
-                legendPosition = "right",
-                legendLabSize = 10,
-                legendIconSize = 5.0,
-                drawConnectors = TRUE,
-                widthConnectors = 0.75
-            ))
-            dev.off()
-
-            res <- as.data.frame(apply(res, 2, as.character))
-
-            # create results table
-            write.table(as.data.frame(res), gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "results_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-            # create sorted results Tables
-            tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "logFC")
-            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
-            tops <- as.data.frame(apply(tops, 2, as.character))
-            write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsLogFCsorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-            tops <- topTags(qlf, n = nrow(qlf$table), sort.by = "PValue")
-            tops <- format_edger_results(tops$table, gtf_gene, center = TRUE)
-            tops <- as.data.frame(apply(tops, 2, as.character))
-            write.table(tops, gzfile(paste("Tables/DE", "EDGER", combi, contrast_name, "table", "resultsPValueSorted_norm.tsv.gz", sep = "_")), sep = "\t", quote = F, row.names = FALSE)
-
-            ## plot lFC vs CPM
-            out <- paste("Figures/DE", "EDGER", combi, contrast_name, "figure", "MD_norm.png", sep = "_")
-            png(out, width=1900, height=1200, res=300)
-            print(plotMD(qlf, main = contrast_name))
-            abline(h = c(-1, 1), col = "blue")
-            dev.off()
+        if (spike != "") { # DE runs for the two spike-in branches
+            # _norm: spike-in offsets, plain design   -> absolute (per cell) fold changes
+            comparison_objs[[paste0(contrast_name, "_norm")]] <- emit_spike_branch(branch_norm, sampleData, counts_endo, des, "_norm")
+            # _ruv: RUVg covariates, TMM normalization -> unwanted variation removed
+            comparison_objs[[paste0(contrast_name, "_ruv")]] <- emit_spike_branch(branch_ruv, sampleData_ruv, counts_endo, des_ruv, "_ruv")
         }
 
         # cleanup
