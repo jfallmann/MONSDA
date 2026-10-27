@@ -4,6 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  - bc =1.07.1
   - grep >=2.14
   - perl >=5.26.2
   - perl-app-cpanminus >=1.7044
