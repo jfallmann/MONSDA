@@ -540,6 +540,7 @@ def run_snakemake(
             exc_tb,
         )
         log.error("".join(tbe.format()))
+        sys.exit(1)
 
 
 def run_nextflow(
@@ -918,6 +919,7 @@ def run_nextflow(
             exc_tb,
         )
         log.error("".join(tbe.format()))
+        sys.exit(1)
 
 
 def runjob(jobtorun):

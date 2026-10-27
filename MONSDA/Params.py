@@ -513,7 +513,7 @@ def get_samples(config: dict) -> list():
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
-        sys.exit()
+        sys.exit(1)
 
     log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return RETSAMPLES
@@ -593,7 +593,7 @@ def get_samples_postprocess(config: dict, subwork: str) -> list:
             + str(subwork)
             + ", please check config file"
         )
-        sys.exit()
+        sys.exit(1)
 
     log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return RETSAMPLES
@@ -687,7 +687,7 @@ def basecall_samples(config: dict) -> list:
     log.debug(logid + "SAMPLETEST: " + str(RETSAMPLES))
     if len(RETSAMPLES) < 1:
         log.error(logid + "No samples found, please check config file")
-        sys.exit()
+        sys.exit(1)
 
     log.debug(logid + "SAMPLES: " + str(RETSAMPLES))
     return list(set(RETSAMPLES))

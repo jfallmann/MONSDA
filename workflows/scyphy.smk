@@ -192,6 +192,18 @@ elif IP == 'revCLIP':
                 opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
         shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
 
+else:
+    rule PreprocessPeaks:
+        input:  bedg = rules.BedToBedg.output.concat
+        output: pre = "PEAKS/{combo}/{file}_prepeak_{type}_nosoftclip.bed.gz"
+        log:    "LOGS/{combo}/{file}/PEAKS/scyphy/prepeak_{type}.log"
+        conda:  "perl.yaml"
+        container: "oras://jfallmann/monsda:perl"
+        threads: 1
+        params:  bins = BINS,
+                opts = lambda wildcards: tool_params(wildcards.file, None, config, "PEAKS", PEAKENV)['OPTIONS'].get('PREPROCESS', "")
+        shell:  "perl {params.bins}/Analysis/PreprocessPeaks.pl -p <(zcat {input.bedg}) {params.opts} | sort -t$'\t' -k1,1 -k3,3n -k2,2n -k6,6 | gzip > {output.pre} 2> {log}"
+
 #rule FindPeaks:
 #    input:  pre = rules.PreprocessPeaks.output.pre
 #    output: peak = "PEAKS/{combo}/{file}_peak_{type}.bed.gz"

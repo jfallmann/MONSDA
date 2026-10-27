@@ -530,7 +530,7 @@ def get_processes(config):
             postprocess = []
     else:
         log.error("NO WORKFLOWS DEFINED, NOTHING TO DO!")
-        sys.exit()
+        sys.exit(1)
 
     if preprocess:
         try:
@@ -2779,6 +2779,7 @@ def nf_make_pre(
                         jobs.append([nfo, confo, tpl, para])
 
     else:
+        works = [subwork]  # no combinations, this branch handles a single preprocessing step
         for condition in conditions:
             flowlist = list()
             subjobs = list()
