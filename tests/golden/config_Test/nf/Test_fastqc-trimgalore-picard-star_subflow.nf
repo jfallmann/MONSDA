@@ -612,7 +612,7 @@ process mqc{
         cp -f "\$VERSIONS" "\$OUT"/
     fi
     export LC_ALL=C.UTF-8
-    multiqc -f ${params.gMQCPARAMS} \$MODS -k json -z -s -o "\$OUT" \$SCAN
+    multiqc -f ${params.gMQCPARAMS} \$MODS -k json -z -o "\$OUT" \$SCAN
     """
 }
 workflow MULTIQC{

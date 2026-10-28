@@ -12,10 +12,15 @@ def _bamqc(rulename, **kwargs):
         return []
     return expand(getattr(rules, rulename).output.js, file=samplecond(SAMPLES, config), combo=combo, **kwargs)
 
+_dedup_bamqc = (
+    _bamqc('rustqc_dedupmapped', type=['sorted', 'sorted_unique'])
+) if rundedup else []
+
 if paired == 'paired':
     rule multiqc:
         input:  _bamqc('rustqc_mapped'),
                 _bamqc('rustqc_uniquemapped'),
+                _dedup_bamqc,
                 _mapbams,
                 versions = "LOGS/versions.txt"
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
@@ -25,12 +30,13 @@ if paired == 'paired':
         threads: 1
         params: qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', ""),
                 preqcenv = config.get('PREQCENV', 'fastqc')
-        shell:  "OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/{params.preqcenv}/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+        shell:  "OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/{params.preqcenv}/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 
 else:
     rule multiqc:
         input:  _bamqc('rustqc_mapped'),
                 _bamqc('rustqc_uniquemapped'),
+                _dedup_bamqc,
                 _mapbams,
                 versions = "LOGS/versions.txt"
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
@@ -40,4 +46,4 @@ else:
         threads: 1
         params: qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', ""),
                 preqcenv = config.get('PREQCENV', 'fastqc')
-        shell:  "OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/{params.preqcenv}/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -s -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
+        shell:  "OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/{params.preqcenv}/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
