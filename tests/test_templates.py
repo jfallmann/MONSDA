@@ -151,3 +151,29 @@ def test_checks_cover_all_templates():
     """Guard against the selectors silently matching nothing."""
     assert len(_postprocess_smk()) > 20
     assert len(_postprocess_nf()) > 20
+
+
+def test_multiqc_does_not_ignore_linked_inputs():
+    """Nextflow publishes QC files as links, which MultiQC must scan."""
+    for name in (
+        "multiqc.nf",
+        "multiqc_rustqc.nf",
+        "premultiqc.nf",
+        "multiqc.smk",
+        "multiqc_rustqc.smk",
+    ):
+        text = (WORKFLOWS / name).read_text()
+        assert not re.search(r"\bmultiqc\b[^\n]*\s-s(?:\s|$)", text), name
+
+
+def test_rustqc_multiqc_includes_deduplicated_bams():
+    """RustQC's FeatureCounts QC must also run on the deduplicated BAMs."""
+    rustqc = (WORKFLOWS / "rustqc.smk").read_text()
+    multiqc = (WORKFLOWS / "multiqc_rustqc.smk").read_text()
+    generator = (REPO / "MONSDA" / "Workflows.py").read_text()
+
+    assert '"MAPPED/{combo}/{file}_mapped_{type}_dedup.bam"' in rustqc
+    assert "_bamqc('rustqc_dedupmapped', type=['sorted', 'sorted_unique'])" in multiqc
+    assert generator.count(
+        'rustqc_mapping_channel += ".concat(DEDUPBAM.out.dedup)"'
+    ) == 2

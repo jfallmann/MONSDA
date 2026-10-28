@@ -262,6 +262,38 @@ def test_make_sub_file_set_stable(engine, workdir):
     _check_golden(f"config_Test/{engine}/_filelist.txt", "\n".join(names) + "\n")
 
 
+def test_nf_rustqc_receives_deduplicated_bams(workdir):
+    cfg = _load("config_Test.json")
+    cfg["WORKFLOWS"] = "QC,TRIMMING,DEDUP,MAPPING"
+    qc_options = cfg["QC"]["Test"]["fastqc"]
+    cfg["QC"]["TOOLS"] = {"rustqc": "rustqc"}
+    cfg["QC"]["Test"] = {"rustqc": qc_options}
+
+    conditions = mp.get_conditions(cfg)
+    _pre, subworkflows, _post = mw.get_processes(cfg)
+    samples = mp.get_samples(cfg)
+    combinations = mw.get_combo(subworkflows, cfg, conditions)
+    subdir = "RustqcSubFlows"
+    mp.create_skeleton(subdir, None)
+    mw.nf_make_sub(
+        subworkflows,
+        cfg,
+        samples,
+        conditions,
+        subdir,
+        "INFO",
+        combinations=combinations,
+    )
+
+    generated = "\n".join(
+        path.read_text() for path in Path(subdir).glob("*.nf")
+    )
+    assert (
+        "RUSTQC_MAPPING(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni)"
+        ".concat(DEDUPBAM.out.dedup))"
+    ) in generated
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file snapshot for the DTU postprocessing trio (drimseq/dexseq/spit).
 # These share a large amount of scaffolding; the snapshot pins current output

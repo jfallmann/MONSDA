@@ -3285,10 +3285,15 @@ def nf_make_sub(
                                     + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                                 )
                         elif w == "RUSTQC_MAPPING":
+                            rustqc_mapping_channel = (
+                                "POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni)"
+                            )
+                            if "DEDUPBAM" in flowlist:
+                                rustqc_mapping_channel += ".concat(DEDUPBAM.out.dedup)"
                             subjobs.append(
                                 " " * 4
                                 + w
-                                + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                                + f"({rustqc_mapping_channel})\n"
                             )
                         elif w == "MULTIQC":
                             if "QC_RAW" not in flowlist and (
@@ -3606,10 +3611,15 @@ def nf_make_sub(
                                 + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
                             )
                     elif w == "RUSTQC_MAPPING":
+                        rustqc_mapping_channel = (
+                            "POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni)"
+                        )
+                        if "DEDUPBAM" in flowlist:
+                            rustqc_mapping_channel += ".concat(DEDUPBAM.out.dedup)"
                         subjobs.append(
                             " " * 4
                             + w
-                            + "(POSTMAPPING.out.postmap.concat(POSTMAPPING.out.postmapuni))\n"
+                            + f"({rustqc_mapping_channel})\n"
                         )
                     elif w == "MULTIQC":
                         if "QC_RAW" not in flowlist and (

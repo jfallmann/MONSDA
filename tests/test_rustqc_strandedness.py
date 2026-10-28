@@ -138,14 +138,14 @@ def fake_rustqc(tmp_path, monkeypatch):
     return bins
 
 
-@pytest.mark.parametrize('unique', [False, True])
+@pytest.mark.parametrize('bam_variant', ['', '_unique', '_dedup'])
 @pytest.mark.parametrize('mismatch', [False, True])
-def test_snakemake_gate(tmp_path, monkeypatch, fake_rustqc, unique, mismatch):
+def test_snakemake_gate(tmp_path, monkeypatch, fake_rustqc, bam_variant, mismatch):
     engine = shutil.which('snakemake')
     if not engine:
         pytest.skip('snakemake not on PATH')
     monkeypatch.setenv('INFER_TEXT', infer_text())
-    bam = 'MAPPED/combo/sample_mapped_sorted' + ('_unique' if unique else '')
+    bam = 'MAPPED/combo/sample_mapped_sorted' + bam_variant
     (tmp_path / bam).parent.mkdir(parents=True)
     (tmp_path / (bam + '.bam')).touch()
     (tmp_path / (bam + '.bam.bai')).touch()
