@@ -99,13 +99,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build wheel setuptools versioneer
       - name: Capture clean package version
-        run: echo "MONSDA_BUILD_VERSION=$(python setup.py --version)" >> "$GITHUB_ENV"
+        id: capture-version
+        run: echo "version=$(python setup.py --version)" >> "$GITHUB_OUTPUT"
       - name: Sync config versions
         run: |
           python scripts/update_config_versions.py configs/*.json tests/data/config_*.json
       - name: Build distribution
         env:
           PYTHONPATH: ${{ github.workspace }}
+          MONSDA_BUILD_VERSION: ${{ steps.capture-version.outputs.version }}
         run: |
           python -m build
       - name: Check build artifacts
