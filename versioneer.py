@@ -1602,6 +1602,16 @@ def get_versions(verbose=False):
 
     Returns dict with two keys: 'version' and 'full'.
     """
+    build_version = os.environ.get("MONSDA_BUILD_VERSION")
+    if build_version:
+        return {
+            "version": build_version,
+            "full-revisionid": None,
+            "dirty": False,
+            "error": None,
+            "date": None,
+        }
+
     if "versioneer" in sys.modules:
         # see the discussion in cmdclass.py:get_cmdclass()
         del sys.modules["versioneer"]
