@@ -182,10 +182,10 @@
                                     }
                              },
                              "rustar":{
-                                 "OPTIONS":  # drop-in STAR replacement (rustar-aligner), same options as star
+                                 "OPTIONS":  # drop-in STAR replacement (rustar-aligner), STAR option names, but only a subset is implemented, --outSAMprimaryFlag and --outTmpDir are not
                                     {
                                         "INDEX" : "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --genomeSAindexNbases 13",  #indexing options
-                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMprimaryFlag AllBestScore --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
+                                        "MAP": "--sjdbGTFfeatureExon exon --sjdbGTFtagExonParentTranscript Parent --outSAMattributes NH HI NM MD AS nM jM jI XS",  #mapping options
                                         "EXTENSION" : ""
                                     }
                              },

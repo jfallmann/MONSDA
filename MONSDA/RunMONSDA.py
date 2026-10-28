@@ -1077,6 +1077,15 @@ def main():
         else:
             log.info("Running MONSDA version " + __version__ + " as configured")
 
+        option_problems = mu.check_tool_options(config)
+        if option_problems:
+            for problem in option_problems:
+                log.error(problem)
+            sys.exit(
+                "Mandatory tool options missing:\n  "
+                + "\n  ".join(option_problems)
+            )
+
         postde_section = config.get("POSTDE")
         if postde_section is not None:
             try:

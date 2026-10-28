@@ -1,13 +1,21 @@
-# non-SAM mappers (e.g. piscem) emit no SAM, so sam2bam/sam2bamuniq are not part of the workflow
+# Mappers that do not emit SAM (e.g. piscem writing RAD) have no sam2bam step,
+# so neither the BAMs nor any QC running on them are part of the workflow.
+_hasbam = rules.has('sam2bam')
 _mapbams = (
     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo)
     + expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
-) if rules.has('sam2bam') else []
+) if _hasbam else []
+
+def _bamqc(rulename, **kwargs):
+    """QC targets of a BAM consuming rule, empty for non-SAM mappers."""
+    if not _hasbam or not rules.has(rulename):
+        return []
+    return expand(getattr(rules, rulename).output.js, file=samplecond(SAMPLES, config), combo=combo, **kwargs)
 
 if paired == 'paired':
     rule multiqc:
-        input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
-                expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+        input:  _bamqc('rustqc_mapped'),
+                _bamqc('rustqc_uniquemapped'),
                 _mapbams,
                 versions = "LOGS/versions.txt"
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
@@ -21,8 +29,8 @@ if paired == 'paired':
 
 else:
     rule multiqc:
-        input:  expand(rules.rustqc_mapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
-                expand(rules.rustqc_uniquemapped.output.js, file=samplecond(SAMPLES, config), combo=combo),
+        input:  _bamqc('rustqc_mapped'),
+                _bamqc('rustqc_uniquemapped'),
                 _mapbams,
                 versions = "LOGS/versions.txt"
         output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")

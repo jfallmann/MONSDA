@@ -38,7 +38,7 @@ if MAPPING_PAIRED == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.r1} -p {input.r2} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 else:
     rule mapping:
@@ -55,4 +55,4 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp=MAPPERBIN
-        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell: "{params.mapp} {params.mpara} -d {input.fa} -i {input.uidx1} -j {input.uidx2} -q {input.query} --threads {threads} -o {output.tmpmap} 2> {log} && cat {output.tmpmap}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"
