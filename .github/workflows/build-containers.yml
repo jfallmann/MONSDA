@@ -92,6 +92,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
+          provenance: false
           build-args: |
             ENVIRONMENT=${{ matrix.environment }}
             MONSDA_VERSION=${{ needs.prepare.outputs.version }}

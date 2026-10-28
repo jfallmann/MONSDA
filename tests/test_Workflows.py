@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytest.importorskip("snakemake")
 
@@ -577,6 +578,18 @@ def test_container_matrix_covers_every_environment():
         if path.stem not in SKIP_ENVIRONMENTS
     )
     assert environment_names(REPO) == expected
+
+
+def test_container_build_disables_provenance_for_apptainer():
+    workflow = yaml.safe_load(
+        (REPO / ".github" / "workflows" / "build-containers.yml").read_text()
+    )
+    build_step = next(
+        step
+        for step in workflow["jobs"]["build"]["steps"]
+        if step.get("uses") == "docker/build-push-action@v7"
+    )
+    assert build_step["with"]["provenance"] is False
 
 
 def test_all_template_container_calls_are_versioned():
