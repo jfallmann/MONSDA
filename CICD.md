@@ -63,6 +63,10 @@ Builds distribution packages:
 - Validates build artifacts with twine
 - Stores artifacts for 7 days
 
+The workflow captures the Versioneer-derived version before synchronizing config
+files, then uses that captured version for the package metadata. This keeps
+release configs in sync without marking the build version as dirty.
+
 **Tools:**
 - setuptools
 - wheel
