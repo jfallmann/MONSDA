@@ -32,7 +32,7 @@ if MAPPING_PAIRED == 'paired':
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
                 mapp = MAPPERBIN
-        shell: "{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell: "{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 else:
     rule mapping:
         input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
@@ -45,4 +45,4 @@ else:
         threads: MAXTHREAD
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN
-        shell:  "{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell:  "{params.mapp} {params.mpara} --threads {threads} --reference {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"

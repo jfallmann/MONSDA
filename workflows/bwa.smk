@@ -38,7 +38,7 @@ if bwaalg == 'mem':
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get("MAP", ""),
                     mapp = MAPPERBIN
                     #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-            shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+            shell: "{params.mapp} {params.mpara} -t {threads} {input.index} {input.r1} {input.r2}  2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
     else:
         rule mapping:
@@ -54,7 +54,7 @@ if bwaalg == 'mem':
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN
                     #idx = lambda wildcards, input: str.join(os.sep,[str(input.index), PREFIX]) if PREFIX != '' else input.index
-            shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell:  "{params.mapp} {params.mpara} -t {threads} {input.uidx} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"
 
 elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to continue the workflow
     if MAPPING_PAIRED == 'paired': # handled like sampe
@@ -74,7 +74,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN,
                     mapp1 = MAPPERBIN.split(' ')[0]
-            shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+            shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
 #            input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz",
@@ -106,7 +106,7 @@ elif bwaalg == 'aln': # not supported as stand alone as we need mappign files to
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN,
                     mapp1 = MAPPERBIN.split(' ')[0]
-            shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log} | tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"
 ### FOR LATER IF WE EVER NEED aln MODE
 #        rule mapping:
 #            input:  query = ("TRIMMED_FASTQ/{combo}/{file}_R1_trimmed.fastq.gz" if (MAPPING_PAIRED != 'paired' and paired == 'paired') else "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"),
@@ -136,7 +136,7 @@ elif bwaalg == 'samse':
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
                 mapp1 = MAPPERBIN.split(' ')[0]
-        shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+        shell:  "{params.mapp1} aln {params.mpara} -t {threads} {input.ref} {input.query} > {output.sai} && {params.mapp} {params.mpara} {input.ref} {output.sai} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"
 
 elif bwaalg == 'sampe':
     rule mapping:
@@ -155,7 +155,7 @@ elif bwaalg == 'sampe':
         params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                 mapp = MAPPERBIN,
                 mapp1 = MAPPERBIN.split(' ')[0]
-        shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+        shell:  "{params.mapp} {params.mpara} {input.ref} {input.sai1} {input.sai2} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
 elif bwaalg == 'bwasw':
     if MAPPING_PAIRED == 'paired':
@@ -172,7 +172,7 @@ elif bwaalg == 'bwasw':
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN
-            shell: "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} &>/dev/null && touch {output.unmapped1} {output.unmapped2}"
+            shell: "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.r1} {input.r2} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 {output.unmapped1} -2 {output.unmapped2} - ) 2>> {log} >/dev/null && touch {output.unmapped1} {output.unmapped2}"
 
     else:
         rule mapping:
@@ -186,4 +186,4 @@ elif bwaalg == 'bwasw':
             threads: MAXTHREAD
             params: mpara = lambda wildcards: tool_params(wildcards.file, None, config, 'MAPPING', MAPPERENV)['OPTIONS'].get('MAP', ""),
                     mapp = MAPPERBIN
-            shell:  "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} &>/dev/null && touch {output.unmapped}"
+            shell:  "{params.mapp} {params.mpara} -t {threads} {input.ref} {input.query} 2> {log}| tee >(samtools view -h -F 4 |gzip > {output.mapped}) >(samtools view -h -f 4 |samtools fastq -n - | pigz > {output.unmapped}) 2>> {log} >/dev/null && touch {output.unmapped}"

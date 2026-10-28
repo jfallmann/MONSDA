@@ -4,8 +4,10 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
+  # rustar-aligner is not packaged on bioconda/conda-forge, it is installed
+  # from crates.io by rustar.post-deploy.sh, which needs this toolchain.
   - samtools =1.21
-  - rust >=1.85
+  - rust >=1.88
   - git
   - openssl
   - pkg-config

@@ -1286,6 +1286,86 @@ def add_to_innermost_key_by_list(addto:dict, toadd:str, keylist:list) -> dict:
     return addto
 
 
+# Tools that cannot run with their default options. Maps tool key to the
+# option keys that must carry a given flag, plus the reason shown to the user.
+MANDATORY_TOOL_OPTIONS = {
+    "segemehlbisulfite": {
+        "flag": "-F",
+        "keys": ["INDEX", "MAP"],
+        "hint": (
+            "segemehl needs the bisulfite protocol flag '-F 1' (Lister/MethylC-seq,"
+            " directional) or '-F 2' (Cokus/BS-seq, non-directional). Without it no"
+            " second index is built and mapping stalls on an interactive prompt."
+            " The same value has to be set for INDEX and MAP."
+        ),
+    },
+}
+MANDATORY_TOOL_OPTIONS["segemehl2bisulfite"] = MANDATORY_TOOL_OPTIONS[
+    "segemehlbisulfite"
+]
+MANDATORY_TOOL_OPTIONS["segemehl3bisulfite"] = MANDATORY_TOOL_OPTIONS[
+    "segemehlbisulfite"
+]
+
+
+@check_run
+def collect_tool_options(config: dict, tool: str) -> list:
+    """Collect every OPTIONS dict configured for one tool, across all conditions.
+
+    Parameters
+    ----------
+    config : dict
+        the loaded MONSDA config
+    tool : str
+        tool key as used in the TOOLS section, e.g. 'segemehl3bisulfite'
+
+    Returns
+    -------
+    list
+        list of OPTIONS dicts found for that tool
+    """
+    found = list()
+
+    def _walk(node):
+        if not dict_inst(node):
+            return
+        for k, v in node.items():
+            if k == tool and dict_inst(v) and "OPTIONS" in v:
+                found.append(v["OPTIONS"])
+            else:
+                _walk(v)
+
+    _walk(config)
+    return found
+
+
+@check_run
+def check_tool_options(config: dict) -> list:
+    """Validate options of tools that have no usable defaults.
+
+    Returns a list of human readable problem descriptions, empty if the config
+    is fine.
+    """
+    logid = scriptname + ".Utils_check_tool_options: "
+    problems = list()
+
+    for tool, req in MANDATORY_TOOL_OPTIONS.items():
+        for options in collect_tool_options(config, tool):
+            missing = [
+                key
+                for key in req["keys"]
+                if req["flag"] not in str(options.get(key, ""))
+            ]
+            if missing:
+                problems.append(
+                    f"{tool}: option(s) {', '.join(missing)} must contain"
+                    f" '{req['flag']}'. {req['hint']}"
+                )
+
+    log.debug(logid + str(problems))
+    return problems
+
+
 @check_run
 def write_if_different(filepath, content):
     logid = scriptname + ".Utils_write_if_different: "

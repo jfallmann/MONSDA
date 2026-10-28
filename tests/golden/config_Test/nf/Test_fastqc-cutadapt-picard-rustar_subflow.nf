@@ -359,7 +359,7 @@ process rustar_idx{
     gen =  genome.getName()
     an  = anno.getName()
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p ${params.gMAPUIDXNAME} && ${params.gMAPBIN} ${params.gIDXPARAMS} --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir RUSTARTMP --genomeDir ${params.gMAPUIDXNAME} --genomeFastaFiles tmp.fa && touch ${params.gMAPUIDXNAME} && ln -s ${params.gMAPUIDXNAME} rustar.idx && rm -f tmp.fa tmp_anno && ln -fs ${params.gMAPUIDXNAME}/* . && rm -rf RUSTARTMP
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p ${params.gMAPUIDXNAME} && ${params.gMAPBIN} ${params.gIDXPARAMS} --runThreadN ${task.cpus} --runMode genomeGenerate --genomeDir ${params.gMAPUIDXNAME} --genomeFastaFiles tmp.fa && touch ${params.gMAPUIDXNAME} && ln -s ${params.gMAPUIDXNAME} rustar.idx && rm -f tmp.fa tmp_anno && ln -fs ${params.gMAPUIDXNAME}/* .
     """
 }
 process rustar_mapping{

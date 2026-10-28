@@ -10,6 +10,9 @@ MAPPREFIX = get_always('MAPPINGPREFIX') ?: 'piscem_idx'
 
 IDXPARAMS = get_always('piscem_params_INDEX') ?: ''
 MAPPARAMS = get_always('piscem_params_MAP') ?: ''
+// piscem needs a sub-command. MONSDA maps bulk libraries, single-cell mapping
+// is only used when the user asks for it by passing a --geometry to MAP.
+PISCEMSUB = MAPPARAMS.contains('--geometry') ? 'map-sc' : 'map-bulk'
 
 
 //MAPPING PROCESSES
@@ -73,7 +76,9 @@ process piscem_mapping{
     path reads
 
     output:
-    path "*_map", emit: maps
+    // map-sc writes the directory <stem>_map, map-bulk the files
+    // <stem>_map.rad and <stem>_map.map_info.json
+    path "*_map*", emit: maps
     path "*.log", emit: logs
 
     script:
@@ -82,10 +87,10 @@ process piscem_mapping{
     r1 = rds[0]
     r2 = rds[1]
     fn = file(r1).getSimpleName().replaceAll(/\Q_R1_trimmed\E/,"")
-    of = fn+"_map"
+    of = fn+"_map"   // directory for map-sc, file stem for map-bulk
     lf = "piscem_"+fn+".log"
     """
-    $MAPBIN map-sc -t ${task.cpus} $MAPPARAMS -i $idxdir/$MAPPREFIX -1 $r1 -2 $r2 -o $of &> $lf
+    $MAPBIN $PISCEMSUB -t ${task.cpus} $MAPPARAMS -i $idxdir/$MAPPREFIX -1 $r1 -2 $r2 -o $of &> $lf
     """
 }
 

@@ -56,7 +56,7 @@ process rustar_idx{
     an  = anno.getName()
 
     """
-    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --outTmpDir RUSTARTMP --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME rustar.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* . && rm -rf RUSTARTMP
+    zcat $gen > tmp.fa && zcat $an > tmp_anno && mkdir -p $MAPUIDXNAME && $MAPBIN $IDXPARAMS --runThreadN ${task.cpus} --runMode genomeGenerate --genomeDir $MAPUIDXNAME --genomeFastaFiles tmp.fa && touch $MAPUIDXNAME && ln -s $MAPUIDXNAME rustar.idx && rm -f tmp.fa tmp_anno && ln -fs $MAPUIDXNAME/* .
     """
 }
 

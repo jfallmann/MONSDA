@@ -97,7 +97,7 @@ process segemehl_mapping{
         uf2 = fn+"_R2_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -d $gen -q $r1 -p $r2  2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf &>/dev/null && touch $uf1 $uf2
+        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -d $gen -q $r1 -p $r2  2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools collate -u -O -|samtools fastq -n -c 6 -1 $uf1 -2 $uf2 ) 2>> $lf >/dev/null && touch $uf1 $uf2
         """
     }else{
         fn = file(reads[2]).getSimpleName().replaceAll(/\Q_trimmed\E/,"")
@@ -106,7 +106,7 @@ process segemehl_mapping{
         uf = fn+"_unmapped.fastq.gz"
         lf = "segemehl_"+fn+".log"
         """
-        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -d $gen -q $read 2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf &> /dev/null && touch $uf
+        $MAPBIN $MAPPARAMS --threads ${task.cpus} -i $idx -d $gen -q $read 2> $lf| tee >(samtools view -h -F 4 |gzip > $pf) >(samtools view -h -f 4 |samtools fastq -n - | pigz > $uf) 2>> $lf >/dev/null && touch $uf
         """
     }
 }

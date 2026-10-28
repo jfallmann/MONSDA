@@ -55,6 +55,60 @@ envpath = os.path.join(installpath, "MONSDA", "envs") + os.sep
 binpath = os.path.join(installpath, "MONSDA", "scripts")
 condapath = re.compile(r'conda:\s+"')
 logfix = re.compile(r'loglevel="INFO"')
+
+# Alignment format a mapper writes. Everything not listed here emits SAM and
+# goes through the sam2bam postprocessing in mapping.smk/mapping.nf.
+MAPPER_OUTPUT_FORMAT = {
+    "piscem": "rad",
+}
+# Formats that are not SAM, so sam2bam and the SAM based postprocessing do not
+# apply. 'rad' has no BAM equivalent at all, 'cram' is written by the mapper.
+NON_SAM_FORMATS = ("rad", "cram")
+
+
+def mapper_output_format(tool: str) -> str:
+    """Alignment format written by a mapper, 'sam' unless registered otherwise."""
+    return MAPPER_OUTPUT_FORMAT.get(str(tool), "sam")
+
+
+def needs_postmapping(tool: str) -> bool:
+    """True if the mapper output has to be converted/sorted by mapping.smk|nf."""
+    return mapper_output_format(tool) not in NON_SAM_FORMATS
+
+
+def maps_single_cell(config: dict, tool: str) -> bool:
+    """True if the mapper is configured for single-cell reads.
+
+    piscem only runs 'map-sc' when the user supplies a read --geometry, bulk
+    libraries use 'map-bulk'. The two write their output differently, so the
+    targets in themall depend on it.
+    """
+    if config is None:
+        return False
+    return any(
+        "--geometry" in str(opts.get("MAP", ""))
+        for opts in mu.collect_tool_options(config, tool)
+    )
+
+
+def mapping_targets(tool: str, dedup: bool = False, config: dict = None) -> str:
+    """Final MAPPED/ targets of a mapper, as an expand() call for themall."""
+    mapfmt = mapper_output_format(tool)
+    if mapfmt == "rad":
+        if maps_single_cell(config, tool):  # map-sc writes into a directory
+            return 'expand("MAPPED/{combo}/{file}/map.rad", combo=combo, file=samplecond(SAMPLES, config))'
+        # map-bulk treats -o as a file stem
+        return 'expand("MAPPED/{combo}/{file}.rad", combo=combo, file=samplecond(SAMPLES, config))'
+    suffix = "_dedup." + mapfmt if dedup else "." + mapfmt
+    if mapfmt == "sam":  # sam is converted to bam by sam2bam
+        suffix = "_dedup.bam" if dedup else ".bam"
+    return (
+        'expand("MAPPED/{combo}/{file}_mapped_{type}'
+        + suffix
+        + '", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
+    )
+
+
 # Matches oras:// NOT already followed by a registry host (i.e. followed directly by a
 # Docker Hub namespace like "jfallmann/" without dots before the first slash)
 oraspath = re.compile(r'oras://(?![\w.-]+\.[\w.-]+/)')
@@ -827,6 +881,7 @@ def make_pre(
                             condapath,
                             logfix,
                             envlist[i],
+                            envs[works.index("MAPPING")] if "MAPPING" in works else None,
                         )
                     )
                 )
@@ -987,6 +1042,7 @@ def make_pre(
                             condapath,
                             logfix,
                             subname.replace(".smk", ""),
+                            toolenv if subwork == "MAPPING" else None,
                         )
                     )
                 )  # RuleThemAll for snakemake depending on chosen workflows
@@ -1096,6 +1152,7 @@ def make_sub(
                             condapath,
                             logfix,
                             envlist[i],
+                            envs[works.index("MAPPING")] if "MAPPING" in works else None,
                         )
                     )
                 )
@@ -1188,9 +1245,9 @@ def make_sub(
                         subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
                         subjobs.append("\n\n")
 
-                if "MAPPING" in works and envs[works.index("MAPPING")] not in [
-                    "piscem"
-                ]:
+                if "MAPPING" in works and needs_postmapping(
+                    envs[works.index("MAPPING")]
+                ):
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
                     subjobs.extend(_fill_template(smkf, loglevel, logfix, condapath, 'conda: "' + envpath, nfmode=False))
                     subjobs.append("\n\n")
@@ -1324,6 +1381,7 @@ def make_sub(
                                 condapath,
                                 logfix,
                                 subname.replace(".smk", ""),
+                                toolenv if subwork == "MAPPING" else None,
                             )
                         )
                     )
@@ -1335,7 +1393,7 @@ def make_sub(
             if "MAPPING" in subworkflows:
                 _map_tools, _ = create_subworkflow(config, "MAPPING", [condition])
                 _skip_postmap = _map_tools is not None and any(
-                    str(t[0]) in ["piscem"] for t in _map_tools
+                    not needs_postmapping(t[0]) for t in _map_tools
                 )
                 if not _skip_postmap:
                     smkf = os.path.abspath(os.path.join(workflowpath, "mapping.smk"))
@@ -1768,13 +1826,11 @@ def make_summary(config, subdir, loglevel, combinations=None):
 
 
 @check_run
-def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo=""):
+def rulethemall(subworkflows, config, loglevel, condapath, logfix, combo="", mapper=None):
     logid = scriptname + ".Workflows_rulethemall: "
 
-    allmap = (
-        'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
-        if "DEDUP" not in subworkflows
-        else 'rule themall:\n\tinput:\texpand("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", combo=combo, file=samplecond(SAMPLES, config), type=["sorted", "sorted_unique"])'
+    allmap = "rule themall:\n\tinput:\t" + mapping_targets(
+        mapper, dedup="DEDUP" in subworkflows, config=config
     )
     allqc = 'expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
     allrawqc = 'rule themall:\n\tinput:\texpand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)'
@@ -3132,7 +3188,7 @@ def nf_make_sub(
 
                     flowlist.append("MAPPING")
 
-                    maprad = envs[works.index("MAPPING")] in ["piscem"]
+                    maprad = not needs_postmapping(envs[works.index("MAPPING")])
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
                     subjobs.append("\n\n")
@@ -3449,7 +3505,7 @@ def nf_make_sub(
             if "MAPPING" in subworkflows:
                 _map_tools, _ = create_subworkflow(config, "MAPPING", [condition])
                 maprad = _map_tools is not None and any(
-                    str(t[0]) in ["piscem"] for t in _map_tools
+                    not needs_postmapping(t[0]) for t in _map_tools
                 )
                 if "QC" not in subworkflows:
                     log.debug(logid + "Mapping without QC!")

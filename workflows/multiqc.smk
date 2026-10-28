@@ -1,8 +1,20 @@
-# non-SAM mappers (e.g. piscem) emit no SAM, so sam2bam/sam2bamuniq are not part of the workflow
+# Mappers that do not emit SAM (e.g. piscem writing RAD) have no sam2bam step,
+# so neither the BAMs nor any QC running on them are part of the workflow.
+_hasbam = rules.has('sam2bam')
 _mapbams = (
     expand(rules.sam2bam.output.bam, file=samplecond(SAMPLES, config), combo=combo)
     + expand(rules.sam2bamuniq.output.uniqbam, file=samplecond(SAMPLES, config), combo=combo)
-) if rules.has('sam2bam') else []
+) if _hasbam else []
+
+def _bamqc(rulename, **kwargs):
+    """QC targets of a BAM consuming rule, empty for non-SAM mappers."""
+    if not _hasbam or not rules.has(rulename):
+        return []
+    return expand(getattr(rules, rulename).output.o1, file=samplecond(SAMPLES, config), combo=combo, **kwargs)
+
+_dedupbams = (
+    expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
+) if _hasbam and rules.has('dedupbam') else []
 
 if rundedup:
     if paired == 'paired':
@@ -11,12 +23,12 @@ if rundedup:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
                         expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),
                         expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),
-                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                        _bamqc('qc_mapped'),
+                        _bamqc('qc_uniquemapped'),
+                        _bamqc('qc_dedupmapped'),
+                        _bamqc('qc_uniquededup'),
                         _mapbams,
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        _dedupbams,
                         versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
                 log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
@@ -29,12 +41,12 @@ if rundedup:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
                         expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),                    
-                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                        _bamqc('qc_mapped'),
+                        _bamqc('qc_uniquemapped'),
+                        _bamqc('qc_dedupmapped'),
+                        _bamqc('qc_uniquededup'),
                         _mapbams,
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        _dedupbams,
                         versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
                 log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
@@ -50,12 +62,12 @@ if rundedup:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
                         expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo),
                         expand(rules.qc_dedup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                        _bamqc('qc_mapped'),
+                        _bamqc('qc_uniquemapped'),
+                        _bamqc('qc_dedupmapped'),
+                        _bamqc('qc_uniquededup'),
                         _mapbams,
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo,type=["sorted", "sorted_unique"]),
+                        _dedupbams,
                         versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
                 log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
@@ -68,12 +80,12 @@ if rundedup:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
                         expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo),                 
-                        expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_dedupmapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                        expand(rules.qc_uniquededup.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                        _bamqc('qc_mapped'),
+                        _bamqc('qc_uniquemapped'),
+                        _bamqc('qc_dedupmapped'),
+                        _bamqc('qc_uniquededup'),
                         _mapbams,
-                        expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"]),
+                        _dedupbams,
                         versions = "LOGS/versions.txt"
                 output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
                 log:    "LOGS/{combo}/MULTIQC/multiqc/{condition}_multiqc.log"
@@ -88,8 +100,8 @@ else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
                     expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                    _bamqc('qc_mapped'),
+                    _bamqc('qc_uniquemapped'),
                     _mapbams,
                     versions = "LOGS/versions.txt"
             output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
@@ -104,8 +116,8 @@ else:
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), combo=combo),
                     expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.qc_mapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
-                    expand(rules.qc_uniquemapped.output.o1, file=samplecond(SAMPLES, config), combo=combo),
+                    _bamqc('qc_mapped'),
+                    _bamqc('qc_uniquemapped'),
                     _mapbams,
                     versions = "LOGS/versions.txt"
             output: html = report("QC/Multi/{combo}/{condition}/multiqc_report.html", category="QC")
