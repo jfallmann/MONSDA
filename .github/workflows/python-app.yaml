@@ -100,7 +100,13 @@ jobs:
           python -m pip install build wheel setuptools versioneer
       - name: Capture clean package version
         id: capture-version
-        run: echo "version=$(python setup.py --version)" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+          else
+            version="$(python setup.py --version)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Sync config versions
         run: |
           python scripts/update_config_versions.py configs/*.json tests/data/config_*.json
