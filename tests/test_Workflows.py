@@ -592,6 +592,15 @@ def test_container_build_disables_provenance_for_apptainer():
     assert build_step["with"]["provenance"] is False
 
 
+def test_container_build_only_runs_for_releases_or_reusable_calls():
+    workflow = yaml.safe_load(
+        (REPO / ".github" / "workflows" / "build-containers.yml").read_text()
+    )
+    triggers = workflow.get("on", workflow.get(True))
+    assert set(triggers) == {"release", "workflow_call"}
+    assert triggers["release"]["types"] == ["published"]
+
+
 def test_all_template_container_calls_are_versioned():
     calls = list()
     for pattern in ("*.smk", "*.nf"):
