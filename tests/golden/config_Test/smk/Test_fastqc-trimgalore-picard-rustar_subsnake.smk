@@ -113,8 +113,25 @@ elif paired == 'singlecell':
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+def raw_fastq_input(wildcards, read=None):
+    sample = getattr(wildcards, 'file', None) or getattr(wildcards, 'rawfile')
+    rawfile = [x for x in SAMPLES if x.split(os.sep)[-1] in sample][0]
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if paired in ['paired', 'singlecell'] else "")
+    return f"FASTQ/{rawfile}{suffix}.fastq.gz"
+def dedup_fastq_input(wildcards, read=None):
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if DEDUP_PAIRED == 'paired' else "")
+    return f"DEDUP_FASTQ/{wildcards.combo}/{wildcards.file}{suffix}_dedup.fastq.gz"
+def trimmed_fastq_input(wildcards, read=None):
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if TRIMMING_PAIRED == 'paired' else "")
+    return f"TRIMMED_FASTQ/{wildcards.combo}/{wildcards.file}{suffix}_trimmed.fastq.gz"
 # Per-step pairedness/strandedness, default to the global values above and
 # overridden below wherever a workflow step defines its own SEQUENCING key.
+QC_PAIRED, QC_STRANDED = paired, stranded
+TRIMMING_PAIRED, TRIMMING_STRANDED = paired, stranded
+DEDUP_PAIRED, DEDUP_STRANDED = paired, stranded
 MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded
 PEAKS_PAIRED, PEAKS_STRANDED = paired, stranded
 TRACKS_PAIRED, TRACKS_STRANDED = paired, stranded
@@ -125,6 +142,24 @@ DE_PAIRED, DE_STRANDED = paired, stranded
 DEU_PAIRED, DEU_STRANDED = paired, stranded
 DAS_PAIRED, DAS_STRANDED = paired, stranded
 DTU_PAIRED, DTU_STRANDED = paired, stranded
+for step in ['QC', 'TRIMMING', 'DEDUP']:
+    if step not in config:
+        continue
+    if step == 'QC':
+        stepenv = config.get('POSTQCENV') or config.get('PREQCENV')
+    else:
+        _, stepenv = env_bin_from_config(config, step)
+    if not stepenv:
+        continue
+    stepenv = stepenv.split('_')[0]
+    stepconf = sub_dict(config[step], SETUP)
+    step_toolconf = stepconf.get(stepenv, {})
+    step_seq = step_toolconf.get('SEQUENCING')
+    if not step_seq:
+        step_seq = stepconf.get('SEQUENCING') or config[step].get('SEQUENCING')
+    globals()[step+'_PAIRED'], globals()[step+'_STRANDED'] = resolve_sequencing(
+        step_seq, paired, stranded
+    )
 # MAPPING Variables
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')
@@ -347,10 +382,10 @@ rule themall:
 		expand("QC/Multi/{combo}/{condition}/multiqc_report.html", condition=str.join(os.sep, conditiononly(SAMPLES[0], config)), combo=combo)
 
 QCBIN, QCENV = env_bin_from_config(config, 'PREQC')
-if paired == 'paired':
+if QC_PAIRED == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
         log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_{read}_raw.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -360,7 +395,7 @@ if paired == 'paired':
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_dedup.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -370,7 +405,7 @@ if paired == 'paired':
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_trimmed.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -381,7 +416,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_raw.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -391,7 +426,7 @@ else:
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_dedup.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -401,7 +436,7 @@ else:
         params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('QC', "")
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_trimmed.log"
         conda: "<REPO>/envs/"+QCENV+".yaml"
@@ -459,10 +494,10 @@ TRIMBIN, TRIMENV = env_bin_from_config(config,'TRIMMING')
 #    outdir = outdir
 #rule trimthemall:
 #    input: expand("{outdir}{file}_{read}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config), read=["R1","R2"]) if paired == \'paired\' else expand("{outdir}{file}_trimmed.fastq.gz", outdir=outdir, file=samplecond(SAMPLES, config))
-if paired == 'paired':
+if TRIMMING_PAIRED == 'paired':
     rule trimgalore_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1') if not prededup else dedup_fastq_input(wildcards, 'R1'),
+                r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2') if not prededup else dedup_fastq_input(wildcards, 'R2')
         output: o1 = "TRIMMED_FASTQ/{combo}/{file}_R1_val_1.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_R1_dedup_val_1.fq.gz",
                 o2 = "TRIMMED_FASTQ/{combo}/{file}_R2_val_2.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_R2_dedup_val_2.fq.gz"
         log:   "LOGS/{combo}/{file}/TRIMMING/trimgalore/trim.log"
@@ -484,7 +519,7 @@ if paired == 'paired':
         shell:  "mv {input.o1} {output.r1} && mv {input.o2} {output.r2}"
 else:
     rule trimgalore_trim:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]) if not prededup else "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards) if not prededup else dedup_fastq_input(wildcards)
         output: o1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fq.gz" if not prededup else "TRIMMED_FASTQ/{combo}/{file}_dedup_trimmed.fq.gz"
         log:    "LOGS/{combo}/{file}/TRIMMING/trimgalore/trim.log"
         conda: "<REPO>/envs/"+TRIMENV+".yaml"
@@ -679,7 +714,7 @@ _dedupbams = (
     expand(rules.dedupbam.output.bam, file=samplecond(SAMPLES, config), combo=combo, type=["sorted", "sorted_unique"])
 ) if _hasbam and rules.has('dedupbam') else []
 if rundedup:
-    if paired == 'paired':
+    if QC_PAIRED == 'paired':
         if prededup:
             rule multiqc:
                 input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
@@ -756,7 +791,7 @@ if rundedup:
                 params:  qpara = lambda wildcards: tool_params(SAMPLES[0], None, config, 'QC', QCENV)['OPTIONS'].get('MULTI', "")
                 shell:  "OUT=$(dirname {output.html}); mkdir -p $OUT; SCAN=LOGS/{wildcards.combo}/{wildcards.condition}; for d in QC/{wildcards.combo}/{wildcards.condition} QC/$(echo {wildcards.combo}|sed 's/rustqc/fastqc/g')/{wildcards.condition}; do case \" $SCAN \" in *\" $d \"*) continue;; esac; if [ -d \"$d\" ]; then SCAN=\"$SCAN $d\"; fi; done; MODS=$(grep -v '^#' {input.versions}|cut -f3|tr ',' '\\n'|grep -vx '-'|sort -u|sed 's/^/-m /'|tr '\\n' ' ');export LC_ALL=C.UTF-8; multiqc -f {params.qpara} $MODS -k json -z -o $OUT $SCAN 2>> {log}; cp -f {input.versions} $OUT/"
 else:
-    if paired == 'paired':
+    if QC_PAIRED == 'paired':
         rule multiqc:
             input:  expand(rules.qc_raw.output.o1, rawfile=list(SAMPLES), read=['R1','R2'], combo=combo),
                     expand(rules.qc_trimmed.output.o1, file=samplecond(SAMPLES, config), read=['R1','R2'], combo=combo),

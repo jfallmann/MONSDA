@@ -78,7 +78,9 @@
                                "setting": {
                                    "ENV" : "fastqc",  # name of conda env for QC
                                    "BIN" : "fastqc", # binary for QC
+                                   "SEQUENCING": "",  # optional QC sequencing override, e.g. single,rf
                                    "fastqc":{
+                                       "SEQUENCING": "",  # optional tool-specific QC override
                                        "OPTIONS":
                                           {
                                               "QC": "",  #QC options here if any, paired is not required, will be resolved by rules
@@ -101,13 +103,16 @@
                           "setting": { # See above
                                        "ENV": "trimgalore", # name of conda env for trimming
                                        "BIN": "trim_galore", # name of binary for trimming
+                                       "SEQUENCING": "",  # optional TRIMMING sequencing override
                                        "trimgalore":{
+                                           "SEQUENCING": "",  # optional tool-specific TRIMMING override
                                            "OPTIONS":
                                             {
                                                 "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
                                             }
                                        },
                                        "cutadapt":{
+                                           "SEQUENCING": "",  # optional tool-specific TRIMMING override
                                            "OPTIONS":
                                            {
                                                 "TRIM": "-q 15 --length 8 -e 0.15"  # trimming options here, --paired is not required, will be resolved by rules
@@ -128,7 +133,9 @@
                        "setting": { # See above
                                     "ENV": "umitools", # name of conda env for dedup
                                     "BIN": "umi_tools", # name of binary for dedup
+                                    "SEQUENCING": "",  # optional DEDUP sequencing override
                                     "umitools":{
+                                        "SEQUENCING": "",  # optional tool-specific DEDUP override
                                         "OPTIONS":
                                         {
                                             "WHITELIST" : "--extract-method string --bc-pattern 'XNNNNX'",# umitools whitelist options
@@ -137,6 +144,7 @@
                                         }
                                     },
                                     "picard":{
+                                        "SEQUENCING": "",  # optional tool-specific DEDUP override
                                         "OPTIONS":
                                         {
                                             "JAVA" : "",# options
@@ -144,6 +152,7 @@
                                         }
                                     },
                                     "fgumi":{
+                                        "SEQUENCING": "",  # optional tool-specific DEDUP override
                                         "OPTIONS":
                                         {
                                             "EXTRACT": "",  # fgumi extract options, e.g. --read-structures 8M+T +T

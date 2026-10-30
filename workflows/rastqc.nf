@@ -41,7 +41,7 @@ workflow QC_RAW{
 
     main:
     
-    qc_raw(samples_ch)
+    qc_raw(reads_for_mode(samples_ch, QCPAIRED))
 
     emit:
     qc = qc_raw.out.fastqc_results
@@ -86,7 +86,7 @@ workflow QC_TRIMMING{
 
     main:
     
-    qc_trimmed(collection)
+    qc_trimmed(reads_for_mode(collection, QCPAIRED))
 
     emit:
     qc = qc_trimmed.out.fastqc_results
@@ -176,7 +176,7 @@ workflow QC_DEDUP{
 
     main:
    
-    qc_dedup(collection)
+    qc_dedup(reads_for_mode(collection, QCPAIRED))
 
     emit:
     qc = qc_dedup.out.fastqc_results

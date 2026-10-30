@@ -96,11 +96,14 @@
     },
     "ENV" : "",
     "BIN" : "",
+    "SEQUENCING": "",
     "fastqc": {
       "comment": {
+        "SEQUENCING": "Optional QC override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "QC": "QC options here if any, paired is not required, will be resolved by rules",
         "MULTI": "MultiQC options here if any, paired is not required, will be resolved by rules"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "QC": "",
         "MULTI": ""
@@ -108,9 +111,11 @@
     },
     "rustqc": {
       "comment": {
+        "SEQUENCING": "Optional QC override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "QC": "RustQC options here if any, post-alignment QC",
         "MULTI": "MultiQC options for rustqc if any"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "QC": "",
         "MULTI": ""
@@ -126,34 +131,43 @@
     },
     "ENV" : "",
     "BIN" : "",
+    "SEQUENCING": "",
     "trimgalore": {
       "comment": {
+        "SEQUENCING": "Optional TRIMMING override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
       }
     },
     "cutadapt": {
       "comment": {
+        "SEQUENCING": "Optional TRIMMING override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
       }
     },
     "bbduk": {
       "comment": {
+        "SEQUENCING": "Optional TRIMMING override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "TRIM": "-q 15 --length 8 -e 0.15"
       }
     },
     "fastp": {
       "comment": {
+        "SEQUENCING": "Optional TRIMMING override, e.g. 'single,rf'; defaults to SETTINGS.SEQUENCING",
         "TRIM": "Trimming options here, --paired is not required, will be resolved by rules"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
         "TRIM": "-q 15 -l 8"
       }
@@ -167,12 +181,15 @@
     },
     "ENV" : "",
     "BIN" : "",
+    "SEQUENCING": "",
     "umitools": {
       "comment": {
+          "SEQUENCING": "Optional DEDUP override, e.g. 'paired,rf'; defaults to SETTINGS.SEQUENCING",
           "WHITELIST" : "umi_tools whitelist options",
           "EXTRACT": "umi_tools extract options",
           "DEDUP": "umi_tools dedup options"
       },
+      "SEQUENCING": "",
       "OPTIONS": {
           "WHITELIST" : "--extract-method string --bc-pattern 'XNNNNX'",
           "EXTRACT": "--extract-umi-method read_id",
@@ -182,9 +199,11 @@
     "picard":{
       "comment":
         {
+            "SEQUENCING": "Optional DEDUP override, e.g. 'paired,rf'; defaults to SETTINGS.SEQUENCING",
             "JAVA" : "Options for JRE",
             "DEDUP": "Dedup options"
         },
+        "SEQUENCING": "",
         "OPTIONS":
         {
             "JAVA" : "",
@@ -194,9 +213,11 @@
     "fgumi": {
       "comment":
         {
+            "SEQUENCING": "Optional DEDUP override, e.g. 'paired,rf'; defaults to SETTINGS.SEQUENCING",
             "EXTRACT": "fgumi extract options, e.g. --read-structures 8M+T +T",
             "DEDUP": "fgumi dedup options"
         },
+      "SEQUENCING": "",
       "OPTIONS":
         {
             "EXTRACT": "",

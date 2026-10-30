@@ -34,7 +34,7 @@ workflow QC_RAW{
 
     main:
     
-    qc_raw(samples_ch)
+    qc_raw(reads_for_mode(samples_ch, QCPAIRED))
 
     emit:
     qc = qc_raw.out.fastqc_results

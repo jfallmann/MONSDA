@@ -295,6 +295,42 @@ def test_nf_rustqc_receives_deduplicated_bams(workdir):
     ) in generated
 
 
+def test_nf_make_sub_passes_step_sequencing_overrides(workdir):
+    cfg = _load("config_Test.json")
+    cfg["QC"]["Test"]["fastqc"]["SEQUENCING"] = "single,rf"
+    cfg["TRIMMING"]["SEQUENCING"] = "single,fr"
+    cfg["TRIMMING"]["Test"]["bbduk"]["SEQUENCING"] = ""
+    cfg["DEDUP"]["Test"]["picard"]["SEQUENCING"] = "single,rf"
+
+    conditions = mp.get_conditions(cfg)
+    _pre, subworkflows, _post = mw.get_processes(cfg)
+    combinations = mw.get_combo(subworkflows, cfg, conditions)
+    mp.create_skeleton("StepSequencingSubFlows", None)
+    jobs = mw.nf_make_sub(
+        subworkflows,
+        cfg,
+        mp.get_samples(cfg),
+        conditions,
+        "StepSequencingSubFlows",
+        "INFO",
+        combinations=combinations,
+    )
+
+    params = {
+        os.path.basename(job[0]): job[3]
+        for job in jobs
+        if "fastqc-bbduk-picard" in os.path.basename(job[0])
+    }
+    assert params
+    step_params = next(iter(params.values()))
+    assert step_params["QCPAIRED"] == "single"
+    assert step_params["QCSTRANDED"] == "rf"
+    assert step_params["TRIMMINGPAIRED"] == "single"
+    assert step_params["TRIMMINGSTRANDED"] == "fr"
+    assert step_params["DEDUPPAIRED"] == "single"
+    assert step_params["DEDUPSTRANDED"] == "rf"
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file snapshot for the DTU postprocessing trio (drimseq/dexseq/spit).
 # These share a large amount of scaffolding; the snapshot pins current output

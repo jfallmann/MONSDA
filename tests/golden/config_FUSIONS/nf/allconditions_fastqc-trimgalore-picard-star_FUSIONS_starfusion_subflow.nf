@@ -11,6 +11,12 @@ params.gPAIRED = get_always('PAIRED') ?: null
 params.gRUNDEDUP = get_always('RUNDEDUP') ?: null
 params.gPREDEDUP = get_always('PREDEDUP') ?: null
 params.gSTRANDED = get_always('STRANDED') ?: null
+params.gQCPAIRED = get_always('QCPAIRED') ?: params.gPAIRED
+params.gQCSTRANDED = params.containsKey('QCSTRANDED') ? get_always('QCSTRANDED') : params.gSTRANDED
+params.gTRIMMINGPAIRED = get_always('TRIMMINGPAIRED') ?: params.gPAIRED
+params.gTRIMMINGSTRANDED = params.containsKey('TRIMMINGSTRANDED') ? get_always('TRIMMINGSTRANDED') : params.gSTRANDED
+params.gDEDUPPAIRED = get_always('DEDUPPAIRED') ?: params.gPAIRED
+params.gDEDUPSTRANDED = params.containsKey('DEDUPSTRANDED') ? get_always('DEDUPSTRANDED') : params.gSTRANDED
 params.gMAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: params.gPAIRED
 params.gMAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: params.gSTRANDED
 params.gPEAKPAIRED = get_always('PEAKPAIRED') ?: params.gMAPPINGPAIRED
@@ -43,6 +49,7 @@ def dummy(){
     def dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
     return dummy
 }
+params.gRSAMPLES = fastq_patterns(params.gSAMPLES, params.gPAIRED == 'singlecell' ? 'paired' : params.gPAIRED)
 def samples_ch(){
     def samples_ch = Channel.fromPath(params.gRSAMPLES)
     return samples_ch
@@ -57,20 +64,27 @@ params.gFUSLIBDIR = params.gFUSLIB.startsWith('/') ? params.gFUSLIB : "${workflo
 params.gFUSPARAMS = get_always('starfusion_params_FUSION') ?: ''
 params.gFUSBUILD = get_always('starfusion_params_BUILD') ?: ''
 params.gFUSFASTQ = (get_always('starfusion_params_FASTQ') ?: '').toString().toLowerCase() in ['1', 'true', 'yes']
-params.gRSAMPLES = {
-if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
-    return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
-    }
-}else{
-    return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-    }
-}
-}()
 def sort_reads(rds){
     def rdslist = (rds instanceof Collection) ? rds.toList() : [rds]
     return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }
+}
+def reads_for_mode(reads, mode){
+    if (mode == 'paired' || !(params.gPAIRED in ['paired', 'singlecell'])) return reads
+    return reads.map{ item ->
+        def files = (item instanceof Collection) ? item.toList() : [item]
+        def read1 = files.find{ read ->
+            read.toString().contains('_R1.') || read.toString().contains('_R1_')
+        }
+        if (read1 == null) throw new Exception("reads_for_mode: no R1 found in "+item)
+        return read1
+    }
+}
+def fastq_patterns(samples, mode){
+    return samples.collect{ sample ->
+        if (mode == 'paired') return "${workflow.workDir}/../FASTQ/"+sample+"_{R1,R2}.*fastq.gz"
+        if (params.gPAIRED in ['paired', 'singlecell']) return "${workflow.workDir}/../FASTQ/"+sample+"_R1.*fastq.gz"
+        return "${workflow.workDir}/../FASTQ/"+sample+".*fastq.gz"
+    }
 }
 def rep_basename(f){
     return f.toString().split('/')[-1]

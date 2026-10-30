@@ -177,3 +177,24 @@ def test_rustqc_multiqc_includes_deduplicated_bams():
     assert generator.count(
         'rustqc_mapping_channel += ".concat(DEDUPBAM.out.dedup)"'
     ) == 2
+
+
+def test_qc_trimming_and_dedup_use_step_sequencing():
+    smk_header = (WORKFLOWS / "header.smk").read_text()
+    nf_header = (WORKFLOWS / "header.nf").read_text()
+    for name in ("QC_PAIRED", "TRIMMING_PAIRED", "DEDUP_PAIRED"):
+        assert name in smk_header
+    for name in ("QCPAIRED", "TRIMMINGPAIRED", "DEDUPPAIRED"):
+        assert name in nf_header
+
+    assert "QC_PAIRED == 'paired'" in (WORKFLOWS / "fastqc.smk").read_text()
+    assert "reads_for_mode(collection, QCPAIRED)" in (WORKFLOWS / "fastqc_dedup.nf").read_text()
+    assert "TRIMMING_PAIRED == 'paired'" in (WORKFLOWS / "trimgalore.smk").read_text()
+    assert "TRIMMINGPAIRED == 'paired'" in (WORKFLOWS / "trimgalore.nf").read_text()
+    assert "DEDUP_PAIRED == 'paired'" in (WORKFLOWS / "umitools.smk").read_text()
+    assert "DEDUPPAIRED == 'paired'" in (WORKFLOWS / "umitools.nf").read_text()
+
+    rustqc_smk = (WORKFLOWS / "rustqc.smk").read_text()
+    rustqc_nf = (WORKFLOWS / "rustqc.nf").read_text()
+    assert "rustqc_stranded(QC_STRANDED)" in rustqc_smk
+    assert "rustqc_stranded(QCSTRANDED" in rustqc_nf

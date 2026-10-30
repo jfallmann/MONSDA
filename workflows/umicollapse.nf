@@ -35,7 +35,7 @@ process whitelist{
         touch $outf
         """
     } else {
-        if (PAIRED == 'paired'){
+        if (DEDUPPAIRED == 'paired'){
             smpls = sort_reads(samples)
             r1 = smpls[0]
             r2 = smpls[1]
@@ -76,7 +76,7 @@ process extract_fq{
     path "ex.log", emit: logs
 
     script:
-    if (PAIRED == 'paired'){
+    if (DEDUPPAIRED == 'paired'){
         smpls = sort_reads(samples)
         r1 = smpls[0]
         r2 = smpls[1]
@@ -115,20 +115,20 @@ workflow DEDUPEXTRACT{
     main:
     //SAMPLE CHANNELS
     if ( PREDEDUP == 'enabled' ){ 
-        if (PAIRED == 'paired'){                
-            whitelist(samples_ch.collate( 2 ))
-            extract_fq(whitelist.out.wl, samples_ch.collate( 2 ))
+        if (DEDUPPAIRED == 'paired'){
+            whitelist(reads_for_mode(samples_ch, DEDUPPAIRED).collate( 2 ))
+            extract_fq(whitelist.out.wl, reads_for_mode(samples_ch, DEDUPPAIRED).collate( 2 ))
         } else{                
-            whitelist(samples_ch.collate( 1 ))
-            extract_fq(whitelist.out.wl, samples_ch.collate( 1 ))
+            whitelist(reads_for_mode(samples_ch, DEDUPPAIRED).collate( 1 ))
+            extract_fq(whitelist.out.wl, reads_for_mode(samples_ch, DEDUPPAIRED).collate( 1 ))
         }
     }else{
-        if (PAIRED == 'paired'){
-            whitelist(collection.collate(2))
-            extract_fq(whitelist.out.wl, collection.collate( 2 ))
+        if (DEDUPPAIRED == 'paired'){
+            whitelist(reads_for_mode(collection, DEDUPPAIRED).collate(2))
+            extract_fq(whitelist.out.wl, reads_for_mode(collection, DEDUPPAIRED).collate( 2 ))
         } else{
-            whitelist(collection.collate( 1 ))
-            extract_fq(whitelist.out.wl, collection.collate( 1 ))
+            whitelist(reads_for_mode(collection, DEDUPPAIRED).collate( 1 ))
+            extract_fq(whitelist.out.wl, reads_for_mode(collection, DEDUPPAIRED).collate( 1 ))
         }
     }
 

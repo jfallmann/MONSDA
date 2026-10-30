@@ -11,6 +11,12 @@ params.gPAIRED = get_always('PAIRED') ?: null
 params.gRUNDEDUP = get_always('RUNDEDUP') ?: null
 params.gPREDEDUP = get_always('PREDEDUP') ?: null
 params.gSTRANDED = get_always('STRANDED') ?: null
+params.gQCPAIRED = get_always('QCPAIRED') ?: params.gPAIRED
+params.gQCSTRANDED = params.containsKey('QCSTRANDED') ? get_always('QCSTRANDED') : params.gSTRANDED
+params.gTRIMMINGPAIRED = get_always('TRIMMINGPAIRED') ?: params.gPAIRED
+params.gTRIMMINGSTRANDED = params.containsKey('TRIMMINGSTRANDED') ? get_always('TRIMMINGSTRANDED') : params.gSTRANDED
+params.gDEDUPPAIRED = get_always('DEDUPPAIRED') ?: params.gPAIRED
+params.gDEDUPSTRANDED = params.containsKey('DEDUPSTRANDED') ? get_always('DEDUPSTRANDED') : params.gSTRANDED
 params.gMAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: params.gPAIRED
 params.gMAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: params.gSTRANDED
 params.gPEAKPAIRED = get_always('PEAKPAIRED') ?: params.gMAPPINGPAIRED
@@ -43,6 +49,7 @@ def dummy(){
     def dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
     return dummy
 }
+params.gRSAMPLES = fastq_patterns(params.gSAMPLES, params.gPAIRED == 'singlecell' ? 'paired' : params.gPAIRED)
 def samples_ch(){
     def samples_ch = Channel.fromPath(params.gRSAMPLES)
     return samples_ch
@@ -71,20 +78,27 @@ params.gMAPPARAMS = get_always('rustar_params_MAP') ?: ''
 params.gMQCENV = get_always('PREQCENV')
 params.gMQCBIN = get_always('PREQCBIN')
 params.gMQCPARAMS = get_always('fastqc_params_MULTI') ?: ''
-params.gRSAMPLES = {
-if (params.gPAIRED == 'paired' || params.gPAIRED == 'singlecell'){
-    return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
-    }
-}else{
-    return params.gSAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-    }
-}
-}()
 def sort_reads(rds){
     def rdslist = (rds instanceof Collection) ? rds.toList() : [rds]
     return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }
+}
+def reads_for_mode(reads, mode){
+    if (mode == 'paired' || !(params.gPAIRED in ['paired', 'singlecell'])) return reads
+    return reads.map{ item ->
+        def files = (item instanceof Collection) ? item.toList() : [item]
+        def read1 = files.find{ read ->
+            read.toString().contains('_R1.') || read.toString().contains('_R1_')
+        }
+        if (read1 == null) throw new Exception("reads_for_mode: no R1 found in "+item)
+        return read1
+    }
+}
+def fastq_patterns(samples, mode){
+    return samples.collect{ sample ->
+        if (mode == 'paired') return "${workflow.workDir}/../FASTQ/"+sample+"_{R1,R2}.*fastq.gz"
+        if (params.gPAIRED in ['paired', 'singlecell']) return "${workflow.workDir}/../FASTQ/"+sample+"_R1.*fastq.gz"
+        return "${workflow.workDir}/../FASTQ/"+sample+".*fastq.gz"
+    }
 }
 def rep_basename(f){
     return f.toString().split('/')[-1]
@@ -137,7 +151,7 @@ workflow QC_RAW{
     take:
     collection
     main:
-    qc_raw(samples_ch())
+    qc_raw(reads_for_mode(samples_ch(), params.gQCPAIRED))
     emit:
     qc = qc_raw.out.fastqc_results
 }
@@ -164,7 +178,7 @@ process qc_trimmed{
 workflow QC_TRIMMING{
     take: collection
     main:
-    qc_trimmed(collection)
+    qc_trimmed(reads_for_mode(collection, params.gQCPAIRED))
     emit:
     qc = qc_trimmed.out.fastqc_results
 }
@@ -218,7 +232,7 @@ process qc_dedup{
 workflow QC_DEDUP{
     take: collection
     main:
-    qc_dedup(collection)
+    qc_dedup(reads_for_mode(collection, params.gQCPAIRED))
     emit:
     qc = qc_dedup.out.fastqc_results
 }
@@ -241,7 +255,7 @@ process trim{
     path "*_trimmed.fastq.gz", emit: trim
     path "*trimming_report.txt", emit: rep
     script:
-    if (params.gPAIRED == 'paired'){
+    if (params.gTRIMMINGPAIRED == 'paired'){
         rds = sort_reads(reads)
         r1 = rds[0]
         r2 = rds[1]
@@ -265,12 +279,12 @@ workflow TRIMMING{
     collection    
     main:
     if ( params.gPREDEDUP == 'enabled' ){  
-        trim(collection)
+        trim(reads_for_mode(collection, params.gTRIMMINGPAIRED))
     }else {        
-        if (params.gPAIRED == 'paired'){
-            trim(samples_ch().collate(2))
+        if (params.gTRIMMINGPAIRED == 'paired'){
+            trim(reads_for_mode(samples_ch(), params.gTRIMMINGPAIRED).collate(2))
         } else{
-            trim(samples_ch().collate(1))
+            trim(reads_for_mode(samples_ch(), params.gTRIMMINGPAIRED).collate(1))
         }
     }
     emit:

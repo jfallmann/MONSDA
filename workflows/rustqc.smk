@@ -9,8 +9,8 @@ def rustqc_stranded(stranded):
     else:
         return 'unstranded'
 
-RUSTQC_STRANDED = rustqc_stranded(stranded)
-RUSTQC_PAIRED = '-p' if paired == 'paired' else ''
+RUSTQC_STRANDED = rustqc_stranded(QC_STRANDED)
+RUSTQC_PAIRED = '-p' if QC_PAIRED == 'paired' else ''
 
 rule rustqc_mapped:
     input:   r1 = "MAPPED/{combo}/{file}_mapped_sorted.bam"

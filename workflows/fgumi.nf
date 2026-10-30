@@ -26,7 +26,7 @@ process extract_fq{
     path "ex.log", emit: logs
 
     script:
-    if (PAIRED == 'paired'){
+    if (DEDUPPAIRED == 'paired'){
         reads = sort_reads(samples)
         r1 = reads[0]
         r2 = reads[1]
@@ -56,16 +56,16 @@ workflow DEDUPEXTRACT{
     main:
     //SAMPLE CHANNELS
     if ( PREDEDUP == 'enabled' ){
-        if (PAIRED == 'paired'){
-            extract_fq(samples_ch.collate( 2 ))
+        if (DEDUPPAIRED == 'paired'){
+            extract_fq(reads_for_mode(samples_ch, DEDUPPAIRED).collate( 2 ))
         } else{
-            extract_fq(samples_ch.collate( 1 ))
+            extract_fq(reads_for_mode(samples_ch, DEDUPPAIRED).collate( 1 ))
         }
     }else{
-        if (PAIRED == 'paired'){
-            extract_fq(collection.collate( 2 ))
+        if (DEDUPPAIRED == 'paired'){
+            extract_fq(reads_for_mode(collection, DEDUPPAIRED).collate( 2 ))
         } else{
-            extract_fq(collection.collate( 1 ))
+            extract_fq(reads_for_mode(collection, DEDUPPAIRED).collate( 1 ))
         }
     }
 
@@ -74,4 +74,3 @@ workflow DEDUPEXTRACT{
     ubam = extract_fq.out.ubam
     logs = extract_fq.out.logs
 }
-

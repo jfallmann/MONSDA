@@ -2046,6 +2046,30 @@ def nf_fetch_params(
         retconf["PAIRED"] = paired
     if stranded:
         retconf["STRANDED"] = stranded
+    for step, prefix in (
+        ("QC", "QC"),
+        ("TRIMMING", "TRIMMING"),
+        ("DEDUP", "DEDUP"),
+    ):
+        if step not in config:
+            continue
+        if step == "QC":
+            stepenv = config.get("POSTQCENV") or config.get("PREQCENV")
+        else:
+            _, stepenv = mp.env_bin_from_config(config, step)
+        if not stepenv:
+            continue
+        stepenv = stepenv.split("_")[0]
+        stepconf = mu.sub_dict(config[step], SETUP)
+        step_toolconf = stepconf.get(stepenv, {})
+        step_seq = step_toolconf.get("SEQUENCING")
+        if not step_seq:
+            step_seq = stepconf.get("SEQUENCING") or config[step].get("SEQUENCING")
+        step_paired, step_stranded = mp.resolve_sequencing(
+            step_seq, paired, stranded
+        )
+        retconf[prefix + "PAIRED"] = step_paired
+        retconf[prefix + "STRANDED"] = step_stranded
     # Per-step pairedness/strandedness, default to the global values above and
     # overridden below wherever a workflow step defines its own SEQUENCING key.
     MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded

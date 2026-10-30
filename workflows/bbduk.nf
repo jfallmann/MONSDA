@@ -27,7 +27,7 @@ process trim{
     path "*trimming_report.txt", emit: rep
 
     script:
-    if (PAIRED == 'paired'){
+    if (TRIMMINGPAIRED == 'paired'){
         rds = sort_reads(reads)
         r1 = rds[0]
         r2 = rds[1]
@@ -54,12 +54,12 @@ workflow TRIMMING{
     main:
     //check = collection.toList()
     if ( PREDEDUP == 'enabled' ){  // && !check.contains('MONSDA.log')){
-        trim(collection)
+        trim(reads_for_mode(collection, TRIMMINGPAIRED))
     }else {        
-        if (PAIRED == 'paired'){
-            trim(samples_ch.collate(2))
+        if (TRIMMINGPAIRED == 'paired'){
+            trim(reads_for_mode(samples_ch, TRIMMINGPAIRED).collate(2))
         } else{
-            trim(samples_ch.collate(1))
+            trim(reads_for_mode(samples_ch, TRIMMINGPAIRED).collate(1))
         }
     }
 

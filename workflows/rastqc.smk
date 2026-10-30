@@ -1,9 +1,9 @@
 QCBIN, QCENV = env_bin_from_config(config, 'PREQC')
 
-if paired == 'paired':
+if QC_PAIRED == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
         log:    "LOGS/{combo}/{rawfile}/QC/rastqc/fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
@@ -14,7 +14,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/rastqc/{read}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
@@ -25,7 +25,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")"
 
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/rastqc/{read}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
@@ -37,7 +37,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}/QC/rastqc/fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
@@ -48,7 +48,7 @@ else:
         shell: "OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/rastqc/fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
@@ -59,7 +59,7 @@ else:
         shell: "OUT=$(dirname {output.o1});rastqc --quiet --extract -o $OUT -t {threads} {params.qpara} {input.r1} 2> {log}; FILE=$(basename {input.r1}); BASE=${{FILE%.gz}}; BASE=${{BASE%.*}}_fastqc; sed -i -E '/^>>.*\t(PASS|WARN|FAIL)$/ s/\tPASS$/\tpass/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tWARN$/\twarn/; /^>>.*\t(PASS|WARN|FAIL)$/ s/\tFAIL$/\tfail/' \"$OUT/$BASE/fastqc_data.txt\"; rm \"$OUT/$BASE.zip\"; (cd \"$OUT\" && python -m zipfile -c \"$BASE.zip\" \"$BASE\")"
 
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/rastqc/fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"

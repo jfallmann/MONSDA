@@ -34,7 +34,7 @@ process dedup_bam{
     bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
     outl = bams.getSimpleName()+"_dedup.log"
-    if (PAIRED == 'paired'){        
+    if (DEDUPPAIRED == 'paired'){
         """
             mkdir -p TMP && $DEDUPBIN bam -i $bams -o TMP/dedup.unsorted.bam --paired $DEDUPPARAMS > $outl 2>&1 && samtools sort -@ ${task.cpus} -o $outf TMP/dedup.unsorted.bam >> $outl 2>&1 && samtools index $outf >> $outl 2>&1
         """

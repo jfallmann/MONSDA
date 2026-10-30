@@ -32,7 +32,7 @@ process dedup_bam{
     bais = todedup[1]
     outf = bams.getSimpleName()+"_dedup.bam"
     outl = bams.getSimpleName()+"_dedup.log"
-    if (PAIRED == 'paired'){        
+    if (DEDUPPAIRED == 'paired'){
         """
             mkdir tmp && $DEDUPBIN dedup $DEDUPPARAMS --temp-dir tmp --log=$outl --paired --stdin=$bams --stdout=$outf && samtools index $outf >> $outl
         """
@@ -59,5 +59,4 @@ workflow DEDUPBAM{
     dedupbai = dedup_bam.out.bai
     deduplog = dedup_bam.out.logs
 }
-
 

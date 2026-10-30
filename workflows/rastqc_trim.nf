@@ -40,17 +40,7 @@ workflow QC_RAW{
 
     main:
     //SAMPLE CHANNELS
-    if (PAIRED == 'paired'){
-        SAMPLES = SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
-        }
-    }else{
-        SAMPLES=SAMPLES.collect{
-            element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-        }
-    }
-
-    samples_ch = Channel.fromPath(SAMPLES.sort())
+    samples_ch = Channel.fromPath(fastq_patterns(SAMPLES, QCPAIRED).sort())
 
     qc_raw(samples_ch.collect())
 
@@ -98,7 +88,7 @@ workflow QC_TRIMMING{
 
     main:
     
-    qc_trimmed(collection.collect())
+    qc_trimmed(reads_for_mode(collection, QCPAIRED).collect())
 
     emit:
     qc = qc_trimmed.out.fastqc_results

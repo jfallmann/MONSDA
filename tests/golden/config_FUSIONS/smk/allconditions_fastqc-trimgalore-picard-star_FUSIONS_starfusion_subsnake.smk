@@ -113,8 +113,25 @@ elif paired == 'singlecell':
 stranded = checkstranded([SAMPLES[0]], config)
 if stranded != '':
     log.info('RUNNING SNAKEMAKE WITH STRANDEDNESS '+str(stranded))
+def raw_fastq_input(wildcards, read=None):
+    sample = getattr(wildcards, 'file', None) or getattr(wildcards, 'rawfile')
+    rawfile = [x for x in SAMPLES if x.split(os.sep)[-1] in sample][0]
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if paired in ['paired', 'singlecell'] else "")
+    return f"FASTQ/{rawfile}{suffix}.fastq.gz"
+def dedup_fastq_input(wildcards, read=None):
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if DEDUP_PAIRED == 'paired' else "")
+    return f"DEDUP_FASTQ/{wildcards.combo}/{wildcards.file}{suffix}_dedup.fastq.gz"
+def trimmed_fastq_input(wildcards, read=None):
+    read = read or getattr(wildcards, 'read', None)
+    suffix = f"_{read}" if read else ("_R1" if TRIMMING_PAIRED == 'paired' else "")
+    return f"TRIMMED_FASTQ/{wildcards.combo}/{wildcards.file}{suffix}_trimmed.fastq.gz"
 # Per-step pairedness/strandedness, default to the global values above and
 # overridden below wherever a workflow step defines its own SEQUENCING key.
+QC_PAIRED, QC_STRANDED = paired, stranded
+TRIMMING_PAIRED, TRIMMING_STRANDED = paired, stranded
+DEDUP_PAIRED, DEDUP_STRANDED = paired, stranded
 MAPPING_PAIRED, MAPPING_STRANDED = paired, stranded
 PEAKS_PAIRED, PEAKS_STRANDED = paired, stranded
 TRACKS_PAIRED, TRACKS_STRANDED = paired, stranded
@@ -125,6 +142,24 @@ DE_PAIRED, DE_STRANDED = paired, stranded
 DEU_PAIRED, DEU_STRANDED = paired, stranded
 DAS_PAIRED, DAS_STRANDED = paired, stranded
 DTU_PAIRED, DTU_STRANDED = paired, stranded
+for step in ['QC', 'TRIMMING', 'DEDUP']:
+    if step not in config:
+        continue
+    if step == 'QC':
+        stepenv = config.get('POSTQCENV') or config.get('PREQCENV')
+    else:
+        _, stepenv = env_bin_from_config(config, step)
+    if not stepenv:
+        continue
+    stepenv = stepenv.split('_')[0]
+    stepconf = sub_dict(config[step], SETUP)
+    step_toolconf = stepconf.get(stepenv, {})
+    step_seq = step_toolconf.get('SEQUENCING')
+    if not step_seq:
+        step_seq = stepconf.get('SEQUENCING') or config[step].get('SEQUENCING')
+    globals()[step+'_PAIRED'], globals()[step+'_STRANDED'] = resolve_sequencing(
+        step_seq, paired, stranded
+    )
 # MAPPING Variables
 if 'MAPPING' in config:
     MAPPERBIN, MAPPERENV = env_bin_from_config(config, 'MAPPING')

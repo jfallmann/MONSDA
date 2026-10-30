@@ -22,6 +22,26 @@ def sort_reads(rds){
     return rdslist.toSorted{ a, b -> a.toString().split('/')[-1] <=> b.toString().split('/')[-1] }
 }
 
+def reads_for_mode(reads, mode){
+    if (mode == 'paired' || !(PAIRED in ['paired', 'singlecell'])) return reads
+    return reads.map{ item ->
+        def files = (item instanceof Collection) ? item.toList() : [item]
+        def read1 = files.find{ read ->
+            read.toString().contains('_R1.') || read.toString().contains('_R1_')
+        }
+        if (read1 == null) throw new Exception("reads_for_mode: no R1 found in "+item)
+        return read1
+    }
+}
+
+def fastq_patterns(samples, mode){
+    return samples.collect{ sample ->
+        if (mode == 'paired') return "${workflow.workDir}/../FASTQ/"+sample+"_{R1,R2}.*fastq.gz"
+        if (PAIRED in ['paired', 'singlecell']) return "${workflow.workDir}/../FASTQ/"+sample+"_R1.*fastq.gz"
+        return "${workflow.workDir}/../FASTQ/"+sample+".*fastq.gz"
+    }
+}
+
 //build_count_table.py zips the '-r' list positionally with '-c'/'-t'/'-b', so the replicate
 //order must always follow the config derived REPS list and must never be taken from the
 //order in which staged files arrive on a channel. This rewrites the '-r' list in place with
@@ -68,6 +88,12 @@ STRANDED = get_always('STRANDED') ?: null
 // overridden by the workflow-specific MONSDA config key SEQUENCING, e.g. a
 // quantseq MAPPING step can run 'single' while TRIMMING/DEDUP still see the
 // global 'paired' mode needed for UMI extraction from read2.
+QCPAIRED = get_always('QCPAIRED') ?: PAIRED
+QCSTRANDED = params.containsKey('QCSTRANDED') ? get_always('QCSTRANDED') : STRANDED
+TRIMMINGPAIRED = get_always('TRIMMINGPAIRED') ?: PAIRED
+TRIMMINGSTRANDED = params.containsKey('TRIMMINGSTRANDED') ? get_always('TRIMMINGSTRANDED') : STRANDED
+DEDUPPAIRED = get_always('DEDUPPAIRED') ?: PAIRED
+DEDUPSTRANDED = params.containsKey('DEDUPSTRANDED') ? get_always('DEDUPSTRANDED') : STRANDED
 MAPPINGPAIRED = get_always('MAPPINGPAIRED') ?: PAIRED
 MAPPINGSTRANDED = get_always('MAPPINGSTRANDED') ?: STRANDED
 PEAKPAIRED = get_always('PEAKPAIRED') ?: MAPPINGPAIRED
@@ -102,14 +128,5 @@ SETS = get_always('SETS') ?: null
 dummy = Channel.fromPath("${workflow.workDir}/../LOGS/MONSDA.log")
 
 //SAMPLE CHANNELS
-if (PAIRED == 'paired' || PAIRED == 'singlecell'){
-    RSAMPLES = SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+"_{R1,R2}.*fastq.gz"
-    }
-}else{
-    RSAMPLES=SAMPLES.collect{
-        element -> return "${workflow.workDir}/../FASTQ/"+element+".*fastq.gz"
-    }
-}
-
+RSAMPLES = fastq_patterns(SAMPLES, PAIRED == 'singlecell' ? 'paired' : PAIRED)
 samples_ch = Channel.fromPath(RSAMPLES)

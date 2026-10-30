@@ -16,7 +16,7 @@ _dedup_bamqc = (
     _bamqc('rustqc_dedupmapped', type=['sorted', 'sorted_unique'])
 ) if rundedup else []
 
-if paired == 'paired':
+if QC_PAIRED == 'paired':
     rule multiqc:
         input:  _bamqc('rustqc_mapped'),
                 _bamqc('rustqc_uniquemapped'),

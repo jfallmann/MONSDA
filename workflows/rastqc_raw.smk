@@ -1,9 +1,9 @@
 QCBIN, QCENV = env_bin_from_config(config, 'PREQC')
 
-if paired == 'paired':
+if QC_PAIRED == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip")
         log:    "LOGS/{combo}/{rawfile}/QC/rastqc/fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
@@ -24,7 +24,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}/QC/rastqc/fastqc_raw.log"
         conda:  ""+QCENV+".yaml"

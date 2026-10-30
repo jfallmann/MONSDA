@@ -6,11 +6,11 @@ eparams = tool_params(SAMPLES[0], None, config, "DEDUP", DEDUPENV)['OPTIONS'].ge
 wildcard_constraints:
     type = "sorted|sorted_unique"
 
-if paired == 'paired':
+if DEDUP_PAIRED == 'paired':
     if wlparams:
         rule whitelist:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                    r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+            input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                    r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2')
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}/DEDUP/umitools/dedup_whitelist.log"
@@ -23,8 +23,8 @@ if paired == 'paired':
 
         if eparams:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                        r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                        r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2'),
                         wl = rules.whitelist.output.wl
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                         o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
@@ -38,8 +38,8 @@ if paired == 'paired':
                 shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
         else:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                        r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                        r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2'),
                         wl = rules.whitelist.output.wl
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                         o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
@@ -50,8 +50,8 @@ if paired == 'paired':
     else:
         if eparams:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                        r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                        r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2')
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                         o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
@@ -64,8 +64,8 @@ if paired == 'paired':
                 shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --read2-in={input.r2} --stdout={output.o1} --read2-out={output.o2}"
         else:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                        r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                        r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2')
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                         o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
@@ -76,7 +76,7 @@ if paired == 'paired':
 else:
     if wlparams:
         rule whitelist:
-            input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+            input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
             output: wl = "DEDUP_FASTQ/{combo}/{file}_whitelist",
                     td = temp(directory("TMP/UMIWL/{combo}/{file}"))
             log:   "LOGS/{combo}/{file}/DEDUP/umitools/dedup_whitelist.log"
@@ -89,7 +89,7 @@ else:
 
         if eparams:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards),
                         wl = rules.whitelist.output.wl
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
@@ -102,7 +102,7 @@ else:
                 shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --error-correct-cell --whitelist={input.wl} --stdin={input.r1} --stdout={output.o1}"
         else:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards),
                         wl = rules.whitelist.output.wl
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
@@ -113,7 +113,7 @@ else:
     else:
         if eparams:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
                 log:   "LOGS/{combo}/{file}/DEDUP/umitools/dedup_extract.log"
@@ -125,14 +125,14 @@ else:
                 shell:  "mkdir -p {output.td} && {params.dedup} extract {params.dpara} --temp-dir {output.td} --log={log} --stdin={input.r1} --stdout={output.o1}"
         else:
             rule extract:
-                input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+                input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
                 output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                         td = temp(directory("TMP/UMIEX/{combo}/{file}"))
                 log:   "LOGS/{combo}/{file}/DEDUP/umitools/dedup_extract.log"
                 threads: 1
                 shell:  "mkdir -p {output.td} && echo 'EXTRACT unset, linking input fastq(s) as-is' > {log} && ln -sf $(readlink -f {input.r1}) {output.o1} 2>> {log}"
 
-if paired == 'paired':
+if DEDUP_PAIRED == 'paired':
     rule dedupbam:
         input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam"
         output: bam = report("MAPPED/{combo}/{file}_mapped_{type}_dedup.bam", category="DEDUP"),

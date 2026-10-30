@@ -11,10 +11,10 @@ QCBIN, QCENV = env_bin_from_config(config, 'PREQC')
 #rule themall:
 #    input: expand("QC/Multi/{combo}/{condition}/multiqc_report.html", moutdir=moutdir, condition=str.join(os.sep, conditiononly(SAMPLES[0], config)))
 
-if paired == 'paired':
+if QC_PAIRED == 'paired':
     log.info('Running paired mode QC')
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}_{read}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_{read}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_{read}_raw.log"
         conda:  ""+QCENV+".yaml"
@@ -24,7 +24,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_{read}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
@@ -34,7 +34,7 @@ if paired == 'paired':
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_{read}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_{read}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/{read}_fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"
@@ -57,7 +57,7 @@ if paired == 'paired':
 
 else:
     rule qc_raw:
-        input:  r1 = "FASTQ/{rawfile}.fastq.gz"
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{rawfile}_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{rawfile}/QC/fastqc/fastqc_raw.log"
         conda:  ""+QCENV+".yaml"
@@ -67,7 +67,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_dedup:
-        input:  r1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz"
+        input:  r1 = lambda wildcards: dedup_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_dedup_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_dedup.log"
         conda:  ""+QCENV+".yaml"
@@ -77,7 +77,7 @@ else:
         shell: "OUT=$(dirname {output.o1});fastqc --quiet -o $OUT -t {threads} --noextract {params.qpara} -f fastq {input.r1} 2> {log}"
 
     rule qc_trimmed:
-        input:  r1 = "TRIMMED_FASTQ/{combo}/{file}_trimmed.fastq.gz"
+        input:  r1 = lambda wildcards: trimmed_fastq_input(wildcards)
         output: o1 = report("QC/{combo}/{file}_trimmed_fastqc.zip", category="QC")
         log:    "LOGS/{combo}/{file}/QC/fastqc/fastqc_trimmed.log"
         conda:  ""+QCENV+".yaml"

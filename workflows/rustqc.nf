@@ -11,8 +11,8 @@ def rustqc_stranded(stranded) {
     else return 'unstranded'
 }
 
-RUSTQC_STRANDED = rustqc_stranded(STRANDED ?: '')
-RUSTQC_PAIRED = (PAIRED == 'paired') ? '-p' : ''
+RUSTQC_STRANDED = rustqc_stranded(QCSTRANDED ?: '')
+RUSTQC_PAIRED = (QCPAIRED == 'paired') ? '-p' : ''
 
 //RUSTQC on mapped BAMs
 

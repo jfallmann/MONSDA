@@ -3,10 +3,10 @@ DEDUPBIN, DEDUPENV = env_bin_from_config(config, 'DEDUP')
 wildcard_constraints:
     type = "sorted|sorted_unique"
 
-if paired == 'paired':
+if DEDUP_PAIRED == 'paired':
     rule extract:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}_R1.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0]),
-                r2 = lambda wildcards: "FASTQ/{rawfile}_R2.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards, 'R1'),
+                r2 = lambda wildcards: raw_fastq_input(wildcards, 'R2')
         output: o1 = "DEDUP_FASTQ/{combo}/{file}_R1_dedup.fastq.gz",
                 o2 = "DEDUP_FASTQ/{combo}/{file}_R2_dedup.fastq.gz",
                 ubam = "TMP/FGEX/{combo}/{file}_extracted.bam",
@@ -21,7 +21,7 @@ if paired == 'paired':
         shell:  "mkdir -p {output.td} && {params.dedup} extract {params.epara} --inputs {input.r1} {input.r2} --sample {params.sname} --library {params.sname} --output {output.ubam} > {log} 2>&1 && samtools fastq -n -1 {output.o1} -2 {output.o2} -0 /dev/null -s /dev/null {output.ubam} >> {log} 2>&1"
 else:
     rule extract:
-        input:  r1 = lambda wildcards: "FASTQ/{rawfile}.fastq.gz".format(rawfile=[x for x in SAMPLES if x.split(os.sep)[-1] in wildcards.file][0])
+        input:  r1 = lambda wildcards: raw_fastq_input(wildcards)
         output: o1 = "DEDUP_FASTQ/{combo}/{file}_dedup.fastq.gz",
                 ubam = "TMP/FGEX/{combo}/{file}_extracted.bam",
                 td = temp(directory("TMP/FGEX/{combo}/{file}"))
@@ -34,7 +34,7 @@ else:
                 sname = lambda wildcards: os.path.basename(wildcards.file)
         shell:  "mkdir -p {output.td} && {params.dedup} extract {params.epara} --inputs {input.r1} --sample {params.sname} --library {params.sname} --output {output.ubam} > {log} 2>&1 && samtools fastq -n {output.ubam} | gzip -c > {output.o1} && echo done >> {log}"
 
-if paired == 'paired':
+if DEDUP_PAIRED == 'paired':
     rule dedupbam:
         input:  bam = "MAPPED/{combo}/{file}_mapped_{type}.bam",
                 ubam = "TMP/FGEX/{combo}/{file}_extracted.bam"
