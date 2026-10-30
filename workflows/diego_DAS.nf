@@ -164,7 +164,7 @@ process run_diego{
     saveAs: {filename ->
         if (filename.indexOf("csv") > 0)      "DAS/${SCOMBO}/Tables/${file(filename).getName()}"                
         else if (filename.indexOf("dendrogram") > 0)      "DAS/${SCOMBO}/Figures/${file(filename).getName()}"                
-        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}_${COMBO}_${COMPSTR}/DAS/diego/run_diego.log"
+        else if (filename.indexOf("log") > 0)        "LOGS/${SCOMBO}_${COMBO}_${DASCOMPS}/DAS/diego/run_diego.log"
     }
 
     input:

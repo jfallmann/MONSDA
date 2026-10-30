@@ -214,6 +214,62 @@ def test_nf_make_workflow_pcombo_preserves_key(workdir):
         assert "get_always('params.gCOMBO')" not in text, rel
 
 
+def test_diego_nf_log_path_uses_declared_comparisons(workdir):
+    cfg = _load("config_Test.json")
+    cfg["DAS"]["TOOLS"] = {"diego": "Analysis/DAS/DIEGO.py"}
+    cfg["DAS"]["Test"] = {
+        "diego": {
+            "OPTIONS": {
+                "COUNT": "-t exon -g gene_id -f",
+                "DAS": "",
+            }
+        }
+    }
+    cfg["DAS"]["COMPARABLE"] = {"T1-VS-T2": [["T1"], ["T2"]]}
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples_postprocess(cfg, "DAS")
+    subdir = "SubPostFlows"
+    mp.create_skeleton(subdir, None)
+    mw.nf_make_post(
+        "DAS", cfg, samples, conditions, subdir, "INFO", combinations=combos
+    )
+    produced = glob.glob(os.path.join(subdir, "*DAS_diego_subflow.nf"))
+    assert produced, "generator produced no DIEGO subflow"
+    text = Path(produced[0]).read_text()
+    assert (
+        "LOGS/${params.gSCOMBO}_${params.gCOMBO}_${params.gDASCOMPS}"
+        "/DAS/diego/run_diego.log"
+    ) in text
+    assert "COMPSTR" not in text
+
+
+def test_nf_piscem_skips_bam_postmapping_and_qc(workdir):
+    cfg = _load("config_Test.json")
+    cfg["WORKFLOWS"] = "QC,TRIMMING,MAPPING"
+    cfg["MAPPING"]["TOOLS"] = {"piscem": "piscem"}
+    cfg["MAPPING"]["Test"] = {"piscem": {"OPTIONS": {"INDEX": "", "MAP": ""}}}
+    conditions = mp.get_conditions(cfg)
+    _pre, sub, _post = mw.get_processes(cfg)
+    combos = mw.get_combo(sub, cfg, conditions)
+    samples = mp.get_samples(cfg)
+    subdir = "SubFlows"
+    mp.create_skeleton(subdir, None)
+    mw.nf_make_sub(
+        sub, cfg, samples, conditions, subdir, "INFO", combinations=combos
+    )
+    produced = glob.glob(os.path.join(subdir, "*_subflow.nf"))
+    assert produced, "generator produced no Piscem subflow"
+    workflow = Path(produced[0]).read_text().rsplit("workflow {", 1)[-1]
+    assert "POSTMAPPING.out" not in workflow
+    assert "QC_MAPPING(" not in workflow
+    assert (
+        "MULTIQC(QC_RAW.out.qc.concat(QC_TRIMMING.out.qc)"
+        ".concat(MAPPING.out.logs).collect())"
+    ) in workflow
+
+
 # --------------------------------------------------------------------------- #
 # Golden-file / snapshot tests: file-emitting generators
 # --------------------------------------------------------------------------- #
