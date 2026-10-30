@@ -316,7 +316,7 @@ make sync-config-versions    # Stamp config VERSION fields with the git-tag vers
 make check-config-versions   # Verify config VERSION fields are in sync (CI mode)
 
 # Or invoke the script directly with an explicit version
-python scripts/update_config_versions.py --version 1.5.0 configs/*.json
+python scripts/update_config_versions.py --version 1.5.1 configs/*.json
 ```
 
 ## Best Practices

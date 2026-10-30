@@ -8,7 +8,7 @@ dependencies:
   - fastapi =0.136.1
   - grep >=3.4
   - isort =8.0.1
-  - monsda =1.5.0
+  - monsda =1.5.1
   - natsort =8.4.0
   - nextflow =26.04.0
   - numpy =2.4.3
