@@ -76,6 +76,19 @@ def needs_postmapping(tool: str) -> bool:
     return mapper_output_format(tool) not in NON_SAM_FORMATS
 
 
+def nf_rad_multiqc_input(flowlist: list[str]) -> str:
+    channels = [
+        f"{step}.out.qc"
+        for step in ("QC_RAW", "QC_TRIMMING")
+        if step in flowlist
+    ]
+    channels.append("MAPPING.out.logs")
+    expression = channels[0]
+    for channel in channels[1:]:
+        expression += f".concat({channel})"
+    return expression
+
+
 def maps_single_cell(config: dict, tool: str) -> bool:
     """True if the mapper is configured for single-cell reads.
 
@@ -3213,6 +3226,12 @@ def nf_make_sub(
                     flowlist.append("MAPPING")
 
                     maprad = not needs_postmapping(envs[works.index("MAPPING")])
+                    if maprad:
+                        flowlist = [
+                            step
+                            for step in flowlist
+                            if step not in ("QC_MAPPING", "RUSTQC_MAPPING")
+                        ]
                     nfi = os.path.abspath(os.path.join(workflowpath, "mapping.nf"))
                     subjobs.extend(_fill_template(nfi, loglevel, logfix, condapath, 'conda "' + envpath, nfmode=True))
                     subjobs.append("\n\n")
@@ -3327,6 +3346,12 @@ def nf_make_sub(
                                 # RustQC: only BAM-level QC, no FASTQ QC
                                 subjobs.append(
                                     " " * 4 + w + f"({map_qc_chan}.collect())\n"
+                                )
+                            elif "MAPPING" in flowlist and maprad:
+                                subjobs.append(
+                                    " " * 4
+                                    + w
+                                    + f"({nf_rad_multiqc_input(flowlist)}.collect())\n"
                                 )
                             elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                                 subjobs.append(
@@ -3536,6 +3561,12 @@ def nf_make_sub(
                 maprad = _map_tools is not None and any(
                     not needs_postmapping(t[0]) for t in _map_tools
                 )
+                if maprad:
+                    flowlist = [
+                        step
+                        for step in flowlist
+                        if step not in ("QC_MAPPING", "RUSTQC_MAPPING")
+                    ]
                 if "QC" not in subworkflows:
                     log.debug(logid + "Mapping without QC!")
                 if "TRIMMING" not in subworkflows:
@@ -3652,6 +3683,12 @@ def nf_make_sub(
                             # RustQC: only BAM-level QC, no FASTQ QC
                             subjobs.append(
                                 " " * 4 + w + f"({map_qc_chan}.collect())\n"
+                            )
+                        elif "MAPPING" in flowlist and maprad:
+                            subjobs.append(
+                                " " * 4
+                                + w
+                                + f"({nf_rad_multiqc_input(flowlist)}.collect())\n"
                             )
                         elif "DEDUPBAM" in flowlist and "QC_TRIMMING" in flowlist:
                             subjobs.append(
