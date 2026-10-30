@@ -268,10 +268,11 @@ process trim{
         """
     }
     else{
-        o = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"        
-        r = file(reads).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
+        r1 = reads instanceof Collection ? reads[0] : reads
+        o = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimmed.fastq.gz"
+        r = file(r1).getSimpleName().replaceAll(/_dedup/,"").replaceAll(/.fastq.gz/,"")+"_trimming_report.txt"
         """
-        ${params.gTRIMBIN} ${params.gTRIMPARAMS} t=${task.cpus} in=$r1 out=$o &> $r 
+        ${params.gTRIMBIN} ${params.gTRIMPARAMS} t=${task.cpus} in=$r1 out=$o &> $r
         """
     }
 }
