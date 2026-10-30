@@ -155,6 +155,7 @@ def test_snakemake_gate(tmp_path, monkeypatch, fake_rustqc, bam_variant, mismatc
         "def tool_params(*args): return {'OPTIONS': {}}\n"
         "SAMPLES = ['sample']\nMAXTHREAD = 1\npaired = 'paired'\n"
         f"stranded = {'rf' if mismatch else 'fr'!r}\n"
+        "QC_PAIRED = paired\nQC_STRANDED = stranded\n"
         f"BINS = {str(fake_rustqc)!r}\nANNOTATION = 'annotation with spaces.gtf'\n"
     )
     downstream = (f'\nrule downstream:\n    input: "{out}/rustqc_summary.json"\n'
@@ -186,7 +187,8 @@ def test_nextflow_gate(tmp_path, monkeypatch, fake_rustqc, mismatch):
         'def get_always(key) {\n    return params[key]\n}\n'
         f'BINS = {json.dumps(str(fake_rustqc))}\n'
         f'STRANDED = {json.dumps("rf" if mismatch else "fr")}\n'
-        "PAIRED = 'paired'\nTHREADS = 1\nCOMBO = 'combo'\nCONDITION = 'condition'\n"
+        "PAIRED = 'paired'\nQCPAIRED = PAIRED\nQCSTRANDED = STRANDED\n"
+        "THREADS = 1\nCOMBO = 'combo'\nCONDITION = 'condition'\n"
     )
     suffix = '''
 process downstream {
