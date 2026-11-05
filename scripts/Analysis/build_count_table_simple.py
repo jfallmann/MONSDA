@@ -15,9 +15,30 @@ def parseargs():
     parser.add_argument(
         "-r",
         "--replicates",
-        required=True,
         type=str,
+        default=None,
         help="Comma-separated list of replicate count files",
+    )
+    parser.add_argument(
+        "--dir",
+        dest="dir",
+        type=str,
+        default=None,
+        help="Directory holding the count files, use with --samples and --suffix instead of -r to keep the command line short",
+    )
+    parser.add_argument(
+        "--samples",
+        dest="samples",
+        type=str,
+        default=None,
+        help="Comma-separated sample names, count file is <dir>/<sample><suffix>",
+    )
+    parser.add_argument(
+        "--suffix",
+        dest="suffix",
+        type=str,
+        default="",
+        help="File name suffix appended to each sample name",
     )
     parser.add_argument(
         "--table",
@@ -36,7 +57,16 @@ def parseargs():
         help="Name of anno to write to",
     )
     parser.add_argument("--loglevel", default="INFO", help="Log verbosity")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.replicates is None:
+        if not (args.dir and args.samples):
+            parser.error("either -r or both --dir and --samples are required")
+        args.replicates = ",".join(
+            os.path.join(args.dir, x + args.suffix)
+            for x in args.samples.split(",")
+            if x
+        )
+    return args
 
 
 def setup_logger(loglevel):
@@ -103,6 +133,7 @@ def prepare_table(replicates, table, anno, log):
         exc_type, exc_value, exc_tb = sys.exc_info()
         tbe = tb.TracebackException(exc_type, exc_value, exc_tb)
         log.error("".join(tbe.format()))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
