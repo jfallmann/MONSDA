@@ -39,7 +39,7 @@ from snakemake.common.configfile import load_configfile as _load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
-from MONSDA.Utils import get_dict_hash, setup_logger
+from MONSDA.Utils import get_dict_hash, makeoutdir, setup_logger
 
 # cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 # for x in cmd_subfolder:
