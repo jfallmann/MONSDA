@@ -12,7 +12,6 @@ COUNTUIDX?.replace('.idx','')
 COUNTPARAMS = get_always('featurecounts_params_COUNT') ?: ''
 FEAT = get_always('COUNTINGFEAT') ?: ''
 COUNTMAP = get_always('COUNTINGMAP') ?: ''
-DEREPS = get_always('DEREPS') ?: ''
 
 //COUNTING PROCESSES
 process count_fastq{
@@ -234,32 +233,37 @@ process featurecount{
 process prepare_count_table{
     conda "base.yaml"
     container "oras://jfallmann/monsda:"+"base"
-    cpus THREADS
+    cpus 1
 	cache 'lenient'
     //validExitStatus 0,1
 
     publishDir "${workflow.workDir}/../" , mode: 'link',
     saveAs: {filename ->
-        if (filename == "COUNTS.gz")      "DE/${SCOMBO}/Tables/${COMBO}_COUNTS.gz"
-        else if (filename == "ANNOTATION.gz")      "DE/${SCOMBO}/Tables/${COMBO}_ANNOTATION.gz"
-        else if (filename == "SampleDict.gz")      "DE/${SCOMBO}/Tables/${COMBO}_SampleDict.gz"
-        else if (filename == "log")      "LOGS/${SCOMBO}/DE/countreads/${COMBO}_prepare_count_table.log"
+        if (filename.endsWith(".counts.gz"))      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${filename}"
+        else if (filename.endsWith(".samples.gz"))      "COUNTS/Featurecounts_${FEAT}s/${SCOMBO}/${CONDITION}/${filename}"
+        else if (filename == "log")      "LOGS/${SCOMBO}/${CONDITION}/COUNTING/countreads/Prepare_${FEAT}_count_table.log"
     }
 
     input:
-    //path '*.count*'// from reads
     path reps
 
-    output: 
-    path "*COUNTS.gz", emit: counts
-    path "*ANNOTATION.gz", emit: anno
-    path "*SampleDict.gz", emit: sdict
+    output:
+    path "COUNTS_*.counts.gz", emit: counts
+    path "COUNTS_*.samples.gz", emit: anno
     path "log", emit: log
 
     script:
-    repargs = rep_args(DEREPS, reps)
+    // same script as in the snakemake workflow, one table per counting variant
+    // (mapped, mapped_unique, mapped_dedup, ...), sample order is the sorted file name
+    def stagedlist = (reps instanceof Collection) ? reps.toList() : [reps]
+    def variants = stagedlist.groupBy{ f -> f.getName().replaceFirst(/^.*?_mapped_sorted/, '').replaceFirst(/\.counts\.gz$/, '') }
+    def cmds = variants.collect{ v, files ->
+        def tag = "_mapped"+v
+        def names = files.collect{ it.getName() }.sort().join(',')
+        return "${BINS}/Analysis/build_count_table_simple.py -r ${names} --table COUNTS${tag}.counts.gz --anno COUNTS${tag}.samples.gz 2>> log"
+    }
     """
-    ${BINS}/Analysis/build_count_table.py $repargs --table COUNTS.gz --anno ANNOTATION.gz --nextflow 2> log
+    touch log && ${cmds.join(' && ')}
     """
 }
 
