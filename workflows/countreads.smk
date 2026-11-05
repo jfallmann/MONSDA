@@ -176,8 +176,8 @@ rule featurecount_unique_dedup:
 
 if rundedup:
     rule summarize_counts:
-        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
-                t = lambda wildcards: expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo) if paired == 'paired' else expand(rules.count_trimmed_fastq.output, file=samplecond(SAMPLES, config), combo=combo),
+        input:  f = lambda wildcards: expand(rules.count_fastq.output, file=wildcards.file, combo=wildcards.combo),
+                t = lambda wildcards: expand(rules.count_trimmed_fastq.output, file=wildcards.file, combo=wildcards.combo),
                 m = rules.count_mappers.output,
                 u = rules.count_unique_mappers.output,
                 d = rules.count_dedup_mappers.output,
@@ -187,8 +187,7 @@ if rundedup:
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params: curfile = lambda wildcards: wildcards.file
-        shell:  "arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); alen=${{#arr[@]}}; filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.d}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.x}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+        shell:  "for f in {input}; do printf '%s\\t' \"$f\"; if [[ -s $f ]]; then cat $f; else echo 0; fi; done > {output} 2> {log}"
 
     rule prepare_count_table:
         input:  cts  = lambda wildcards: expand(rules.featurecount.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
@@ -207,12 +206,10 @@ if rundedup:
         conda:   "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params:  samples = lambda wildcards, input: ','.join(input.cts),
-                 samples_u = lambda wildcards, input: ','.join(input.cts_u),
-                 samples_d = lambda wildcards, input: ','.join(input.cts_d),
-                 samples_ud = lambda wildcards, input: ','.join(input.cts_ud),
+        params:  cdir = lambda wildcards: "COUNTS/Featurecounts_{feat}s/{combo}".format(feat=wildcards.feat, combo=wildcards.combo),
+                 samples = lambda wildcards: ','.join(samplecond(SAMPLES, config)),
                  bins = BINS
-        shell:  "{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_d} --table {output.tbl_d} --anno {output.anno_d} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_ud} --table {output.tbl_ud} --anno {output.anno_ud} 2> {log}"
+        shell:  "{params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_dedup.counts.gz --table {output.tbl_d} --anno {output.anno_d} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique_dedup.counts.gz --table {output.tbl_ud} --anno {output.anno_ud} 2>> {log}"
 
 else:
     rule summarize_counts:
@@ -225,8 +222,7 @@ else:
         conda:  "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params: curfile = lambda wildcards: wildcards.file
-        shell:  "arr=({input.f}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" > {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.t}); filtered=();for val in ${{arr[@]}}; do [[ \"$val\" == *\"{params.curfile}\"* ]] && filtered+=(\"$val\");done; arr=filtered; alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.m}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done && arr=({input.u}); alen=${{#arr[@]}}; for i in \"${{!arr[@]}}\";do echo -ne \"${{arr[$i]}}\t\" >> {output} && if [[ -s ${{arr[$i]}} ]]; then cat ${{arr[$i]}} >> {output}; else echo '0' >> {output};fi;done 2> {log}"
+        shell:  "for f in {input}; do printf '%s\\t' \"$f\"; if [[ -s $f ]]; then cat $f; else echo 0; fi; done > {output} 2> {log}"
 
     rule prepare_count_table:
         input:  cts  = lambda wildcards: expand(rules.featurecount.output.cts, file=samplecond(SAMPLES, config), feat=wildcards.feat, combo=wildcards.combo),
@@ -239,10 +235,10 @@ else:
         conda:   "base.yaml"
         container: "oras://jfallmann/monsda:base"
         threads: 1
-        params:  samples = lambda wildcards, input: ','.join(input.cts),
-                 samples_u = lambda wildcards, input: ','.join(input.cts_u),                 
+        params:  cdir = lambda wildcards: "COUNTS/Featurecounts_{feat}s/{combo}".format(feat=wildcards.feat, combo=wildcards.combo),
+                 samples = lambda wildcards: ','.join(samplecond(SAMPLES, config)),
                  bins = BINS
-        shell:  "{params.bins}/Analysis/build_count_table_simple.py -r {params.samples} --table {output.tbl} --anno {output.anno} 2> {log} && {params.bins}/Analysis/build_count_table_simple.py -r {params.samples_u} --table {output.tbl_u} --anno {output.anno_u} 2> {log}"
+        shell:  "{params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log}"
     
 rule cpm_tpm_table:
     input:
