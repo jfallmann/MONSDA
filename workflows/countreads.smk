@@ -209,7 +209,7 @@ if rundedup:
         params:  cdir = lambda wildcards: "COUNTS/Featurecounts_{feat}s/{combo}".format(feat=wildcards.feat, combo=wildcards.combo),
                  samples = lambda wildcards: ','.join(samplecond(SAMPLES, config)),
                  bins = BINS
-        shell:  "{params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_dedup.counts.gz --table {output.tbl_d} --anno {output.anno_d} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique_dedup.counts.gz --table {output.tbl_ud} --anno {output.anno_ud} 2>> {log}"
+        shell:  "S={params.samples}; {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted_dedup.counts.gz --table {output.tbl_d} --anno {output.anno_d} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted_unique_dedup.counts.gz --table {output.tbl_ud} --anno {output.anno_ud} 2>> {log}"
 
 else:
     rule summarize_counts:
@@ -238,7 +238,7 @@ else:
         params:  cdir = lambda wildcards: "COUNTS/Featurecounts_{feat}s/{combo}".format(feat=wildcards.feat, combo=wildcards.combo),
                  samples = lambda wildcards: ','.join(samplecond(SAMPLES, config)),
                  bins = BINS
-        shell:  "{params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples {params.samples} --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log}"
+        shell:  "S={params.samples}; {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted.counts.gz --table {output.tbl} --anno {output.anno} 2>> {log} && {params.bins}/Analysis/build_count_table_simple.py --dir {params.cdir} --samples $S --suffix _mapped_sorted_unique.counts.gz --table {output.tbl_u} --anno {output.anno_u} 2>> {log}"
     
 rule cpm_tpm_table:
     input:

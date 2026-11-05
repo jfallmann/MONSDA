@@ -64,6 +64,7 @@ except Exception:
 
 def parseargs():
     parser = argparse.ArgumentParser(
+        fromfile_prefix_chars="@",
         description="Wrapper around snakemake to run config based jobs automatically"
     )
     # parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")

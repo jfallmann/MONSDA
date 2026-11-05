@@ -163,6 +163,7 @@ process run_dexseq{
 
     output:
     path "*_table*", emit: tbls
+    path "*_table_results.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*.html", emit: html
     path "*SESSION.gz", emit: session
@@ -277,7 +278,7 @@ workflow DEU{
     featurecount_dexseq(prepare_deu_annotation.out.fc_gtf.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_dexseq.out.fc_cts.collect())
     run_dexseq(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile, prepare_deu_annotation.out.f_gtf)
-    filter_significant(run_dexseq.out.tbls)
+    filter_significant(run_dexseq.out.result_tbls)
     create_summary_snippet(run_dexseq.out.tbls.concat(run_dexseq.out.figs.concat(run_dexseq.out.session)).collect())
     collect_dexseq(filter_significant.out.sigtbls.collect())
 

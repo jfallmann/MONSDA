@@ -63,6 +63,7 @@ except Exception:
 
 def parseargs():
     parser = argparse.ArgumentParser(
+        fromfile_prefix_chars="@",
         description="Parses FeatureCounts output tables into DIEGO ready format"
     )
     # parser.add_argument("-l", "--list", type=str, required=True, help="List of samples")

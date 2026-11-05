@@ -32,6 +32,14 @@ print(args)
 
 ## FUNCS
 libp <- paste0(gsub("/bin/conda", "/envs/monsda", Sys.getenv("CONDA_EXE")), "/share/MONSDA/scripts/lib/_lib.R")
+if (!file.exists(libp)) {
+    postde_args <- commandArgs(trailingOnly = FALSE)
+    postde_file <- sub("^--file=", "", postde_args[grep("^--file=", postde_args)])
+    if (length(postde_file) == 0) {
+        stop("Rscript --file path not found in commandArgs")
+    }
+    libp <- file.path(dirname(normalizePath(postde_file)), "..", "..", "lib", "_lib.R")
+}
 source(libp)
 
 de_opts <- parse_de_options(deopts_raw)

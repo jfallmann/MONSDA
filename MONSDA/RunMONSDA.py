@@ -146,6 +146,15 @@ def parseargs():
              "On the first run an augmented config (<config>_with_settings.json) is written for reuse.",
     )
     parser.add_argument(
+        "--shell-executable",
+        type=str,
+        default="/bin/bash",
+        metavar="PATH",
+        help="Shell snakemake uses to run rule commands (default: /bin/bash, which exists on hosts and in containers). "
+             "Overlong commands are run as '<shell> script.sh' inside the container, so a host-only bash from PATH "
+             "(e.g. EESSI under /cvmfs) fails there. Use 'default' to keep snakemake's own choice.",
+    )
+    parser.add_argument(
         "--oras-registry",
         type=str,
         default="ghcr.io",
@@ -1009,6 +1018,7 @@ def main():
     try:
         args = parseargs()
         knownargs = args[0]
+        os.environ["MONSDA_SHELL_EXECUTABLE"] = knownargs.shell_executable
         optionalargs = args[1:]
 
         if knownargs.version:
