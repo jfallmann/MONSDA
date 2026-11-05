@@ -85,7 +85,7 @@ rule prepare_count_table:
     conda:   ""+DEENV+".yaml"
     container: "oras://jfallmann/monsda:"+DEENV+""
     threads: 1
-    params:  dereps = lambda wildcards, input: get_reps(input.cnd, config, 'DE'),
+    params:  dereps = lambda wildcards, input: get_reps_file(input.cnd, config, 'DE'),
              bins = BINS
     shell: "{params.bins}/Analysis/build_count_table.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 

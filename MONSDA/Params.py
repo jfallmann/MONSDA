@@ -39,7 +39,7 @@ from snakemake.common.configfile import load_configfile as _load_configfile
 
 import MONSDA.Utils as mu
 from MONSDA.Utils import check_run as check_run
-from MONSDA.Utils import setup_logger
+from MONSDA.Utils import get_dict_hash, setup_logger
 
 # cmd_subfolder = [os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"MONSDA/lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"../lib"), os.path.join(os.path.dirname(os.path.realpath(os.path.abspath(inspect.getfile( inspect.currentframe() )) )),"lib")]
 # for x in cmd_subfolder:
@@ -1214,6 +1214,45 @@ def get_reps(samples: list, config: dict, analysis: str, process: str = "smk") -
 
     log.debug(logid + "RETURN: " + str(rets))
     return rets
+
+
+@check_run
+def get_reps_file(
+    samples: list, config: dict, analysis: str, process: str = "smk"
+) -> str:
+    """get reps from samples and write to file
+
+    Parameters
+    ----------
+    samples : list
+        samples
+    config : dict
+        config
+    analysis : str
+        workflow part
+    process : str, optional
+        , by default "smk"
+        snakemake or nextflow process
+    Returns
+    -------
+    str
+        condition string for differential analysis per sample in file
+    """
+    argstr = get_reps(samples, config, analysis, process)
+    toks = argstr.split()
+    lines = []
+    for i in range(0, len(toks), 2):
+        lines.append(toks[i] + "=" + toks[i + 1])
+    content = "\n".join(lines) + "\n"
+    fn = os.path.join(
+        "TMP", "reps_" + analysis + "_" + get_dict_hash({"c": content}) + ".args"
+    )
+    if not os.path.exists(fn):
+        makeoutdir("TMP")
+        with open(fn + "." + str(os.getpid()), "w") as fh:
+            fh.write(content)
+        os.replace(fn + "." + str(os.getpid()), fn)
+    return "@" + fn
 
 
 @check_run

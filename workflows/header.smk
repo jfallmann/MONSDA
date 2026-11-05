@@ -18,7 +18,7 @@ for x in cmd_subfolder:
         sys.path.insert(0, x)
 
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 
 loglevel="INFO"
@@ -52,6 +52,18 @@ except Exception as err:
     log.error(''.join(tbe.format()))
 
 logid = 'header.smk: '
+
+# Shell used by snakemake for rule commands. Commands that exceed the OS argument limit are written to a
+# script.sh and run as '<shell> script.sh', inside containers on HPC nodes the host bash found via PATH
+# (e.g. EESSI under /cvmfs) does not exist, so default to /bin/bash which exists in both.
+# Override with MONSDA --shell-executable <path|default>, 'default' keeps what snakemake picked.
+try:
+    from snakemake.shell import shell as _smkshell
+    _shexe = os.environ.get('MONSDA_SHELL_EXECUTABLE', '/bin/bash')
+    if _shexe and _shexe.lower() != 'default':
+        _smkshell.executable(_shexe)
+except Exception as err:
+    print('header.smk: could not set shell executable: '+str(err), file=sys.stderr)
 
 #Make sure we have a TMP directory
 makeoutdir("TMP")

@@ -124,6 +124,7 @@ process run_edger{
     output:
     path "*_DataSet_*", emit: datasets
     path "*_table*", emit: tbls
+    path "*_table_resultsDiffSpliceExonTest.tsv.gz", emit: result_tbls
     path "*_figure*", emit: figs
     path "*SESSION.gz", emit: session
     path "log", emit: log
@@ -233,7 +234,7 @@ workflow DAS{
     featurecount_edger(annofile.combine(mapsamples_ch.collate(1)))
     prepare_count_table(featurecount_edger.out.fc_cts.collect())
     run_edger(prepare_count_table.out.counts, prepare_count_table.out.anno, annofile)
-    filter_significant(run_edger.out.tbls)
+    filter_significant(run_edger.out.result_tbls)
     create_summary_snippet(run_edger.out.tbls.concat(run_edger.out.figs.concat(run_edger.out.session)).collect())
     collect_edger(filter_significant.out.sigtbls.collect())
 

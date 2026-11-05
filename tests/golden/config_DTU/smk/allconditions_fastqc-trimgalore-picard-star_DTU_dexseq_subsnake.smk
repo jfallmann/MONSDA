@@ -16,7 +16,7 @@ for x in cmd_subfolder:
     if x not in sys.path:
         sys.path.insert(0, x)
 from MONSDA.Logger import makelogdir, setup_logger
-from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
+from MONSDA.Params import checkpaired, checkstranded, check_IP, sampleslong, basecall_samples, download_samples, env_bin_from_config, tool_params, samplecond, conditiononly, comparable_as_string, get_cutoff_as_string, get_reps, get_reps_file, get_diego_samples, get_diego_groups, get_pairing, set_pairing, get_samples_postprocess, fixRunParameters, resolve_sequencing
 from MONSDA.Utils import get_dict_hash, sub_dict, makeoutdir, keysets_from_dict, dict_inst
 loglevel='INFO'
 try:
@@ -45,6 +45,17 @@ except Exception as err:
     )
     log.error(''.join(tbe.format()))
 logid = 'header.smk: '
+# Shell used by snakemake for rule commands. Commands that exceed the OS argument limit are written to a
+# script.sh and run as '<shell> script.sh', inside containers on HPC nodes the host bash found via PATH
+# (e.g. EESSI under /cvmfs) does not exist, so default to /bin/bash which exists in both.
+# Override with MONSDA --shell-executable <path|default>, 'default' keeps what snakemake picked.
+try:
+    from snakemake.shell import shell as _smkshell
+    _shexe = os.environ.get('MONSDA_SHELL_EXECUTABLE', '/bin/bash')
+    if _shexe and _shexe.lower() != 'default':
+        _smkshell.executable(_shexe)
+except Exception as err:
+    print('header.smk: could not set shell executable: '+str(err), file=sys.stderr)
 #Make sure we have a TMP directory
 makeoutdir("TMP")
 # Parse SUBCONFIG
@@ -519,7 +530,7 @@ if runterminus:
         container: "oras://ghcr.io/jfallmann/monsda:"+TERMINUSENV+""+"-VERSION"
         threads: MAXTHREAD
         params: outdir = lambda wildcards, input: os.path.dirname(os.path.dirname(str(input.grps[0])))
-        shell:  "terminus collapse -d {input.dirs} -o {params.outdir} &> {log}; for d in {input.dirs}; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
+        shell:  "D=\"{input.dirs}\"; terminus collapse -d $D -o {params.outdir} &> {log}; for d in $D; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
     ctsource = expand("DTU/{combo}/terminus/{file}", combo=combo, file=samplecond(SAMPLES, config))
 else:
     ctsource = expand(rules.mapping.output.ctsdir, combo=combo, file=samplecond(SAMPLES, config))
@@ -530,7 +541,7 @@ rule create_annotation_table:
     conda:  "<REPO>/envs/"+COUNTENV+".yaml"
     container: "oras://ghcr.io/jfallmann/monsda:"+COUNTENV+""+"-VERSION"
     threads: 1
-    params: dereps = lambda wildcards, input: get_reps(input.dir, config, 'DTU'),
+    params: dereps = lambda wildcards, input: get_reps_file(input.dir, config, 'DTU'),
             bins = BINS
     shell:  "python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}"
 rule run_DTU:

@@ -60,7 +60,7 @@ rule prepare_junction_usage_matrix:
     container: "oras://jfallmann/monsda:"+DASENV+""
     threads: 1
     params: bins = BINS,
-            dereps = lambda wildcards, input: get_reps(input.cnd, config,'DAS'),
+            dereps = lambda wildcards, input: get_reps_file(input.cnd, config,'DAS'),
     shell:  "{params.bins}/Analysis/DAS/FeatureCounts2DIEGO.py {params.dereps} --table {output.tbl} --anno {output.anno} 2> {log}"
 
 

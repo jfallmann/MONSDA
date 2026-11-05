@@ -122,7 +122,7 @@ if runterminus:
         container: "oras://jfallmann/monsda:"+TERMINUSENV+""
         threads: MAXTHREAD
         params: outdir = lambda wildcards, input: os.path.dirname(os.path.dirname(str(input.grps[0])))
-        shell:  "terminus collapse -d {input.dirs} -o {params.outdir} &> {log}; for d in {input.dirs}; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
+        shell:  "D=\"{input.dirs}\"; terminus collapse -d $D -o {params.outdir} &> {log}; for d in $D; do b=$(basename $d); gzip -c {params.outdir}/$b/quant.sf > {params.outdir}/$b/quant.sf.gz; done 2>> {log}"
 
     ctsource = expand("DTU/{combo}/terminus/{file}", combo=combo, file=samplecond(SAMPLES, config))
 else:
@@ -135,6 +135,6 @@ rule create_annotation_table:
     conda:  ""+COUNTENV+".yaml"
     container: "oras://jfallmann/monsda:"+COUNTENV+""
     threads: 1
-    params: dereps = lambda wildcards, input: get_reps(input.dir, config, 'DTU'),
+    params: dereps = lambda wildcards, input: get_reps_file(input.dir, config, 'DTU'),
             bins = BINS
     shell:  "python3 {params.bins}/Analysis/build_DTU_table.py {params.dereps} --anno {output.anno} --loglevel DEBUG 2> {log}"
