@@ -365,6 +365,85 @@ class TestLoadPostdeConfig:
             load_postde_config(cfg)
 
 
+class TestGsvaGeneSets:
+    def _files(self, tmp_path):
+        (tmp_path / "cp_t2g.tsv").write_text("term\tgene\nGO:1\tG1\n")
+        (tmp_path / "gs_t2g.tsv").write_text("term\tgene\nH1\tG1\n")
+        (tmp_path / "gs_t2n.tsv").write_text("term\tname\nH1\tHallmark1\n")
+
+    def test_gsva_own_files_without_clusterprofiler(self, tmp_path):
+        self._files(tmp_path)
+        sec = {
+            "enabled": True,
+            "gsva": {
+                "enabled": True,
+                "term2gene": "gs_t2g.tsv",
+                "term2name": "gs_t2n.tsv",
+            },
+        }
+        out = load_postde_config(_cfg_with(sec))
+        assert out["analysis"]["gsva"]["term2gene"] == "gs_t2g.tsv"
+
+    def test_gsva_falls_back_to_clusterprofiler(self, tmp_path):
+        self._files(tmp_path)
+        sec = {
+            "enabled": True,
+            "clusterprofiler": {"enabled": False, "term2gene": "cp_t2g.tsv"},
+            "gsva": {"enabled": True},
+        }
+        assert load_postde_config(_cfg_with(sec))["enabled"] is True
+
+    def test_gsva_without_any_term2gene_rejected(self):
+        sec = {"enabled": True, "gsva": {"enabled": True}}
+        with pytest.raises(ValueError, match="gsva.term2gene or clusterprofiler"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_clusterprofiler_still_requires_term2gene(self, tmp_path):
+        self._files(tmp_path)
+        sec = {
+            "enabled": True,
+            "clusterprofiler": {"enabled": True},
+            "gsva": {"enabled": True, "term2gene": "gs_t2g.tsv"},
+        }
+        with pytest.raises(ValueError, match="clusterprofiler.term2gene required"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_gsva_term2name_requires_term2gene(self, tmp_path):
+        self._files(tmp_path)
+        sec = {
+            "enabled": True,
+            "clusterprofiler": {"enabled": True, "term2gene": "cp_t2g.tsv"},
+            "gsva": {"enabled": True, "term2name": "gs_t2n.tsv"},
+        }
+        with pytest.raises(ValueError, match="gsva.term2name requires"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_gsva_missing_own_file_rejected(self, tmp_path):
+        self._files(tmp_path)
+        sec = {"enabled": True, "gsva": {"enabled": True, "term2gene": "nope.tsv"}}
+        with pytest.raises(ValueError, match="resource file not found: gsva.term2gene"):
+            load_postde_config(_cfg_with(sec))
+
+    def test_gsva_files_are_staged(self, tmp_path):
+        self._files(tmp_path)
+        analysis = {
+            "clusterprofiler": {"enabled": True, "term2gene": "cp_t2g.tsv"},
+            "gsva": {
+                "enabled": True,
+                "term2gene": "gs_t2g.tsv",
+                "term2name": "gs_t2n.tsv",
+            },
+        }
+        staged = prepare_postde(_postde_cfg(tmp_path, analysis), "SubSnakes")
+        assert os.path.isfile(os.path.join(staged, "gsva_term2gene.tsv"))
+        assert os.path.isfile(os.path.join(staged, "gsva_term2name.tsv"))
+        assert os.path.isfile(os.path.join(staged, "clusterprofiler_term2gene.tsv"))
+        staged_cfg = json.load(open(os.path.join(staged, "config.json")))
+        assert staged_cfg["gsva"]["term2gene"] == "gsva_term2gene.tsv"
+        assert staged_cfg["gsva"]["term2name"] == "gsva_term2name.tsv"
+        assert staged_cfg["clusterprofiler"]["term2gene"] == "clusterprofiler_term2gene.tsv"
+
+
 def _bg(**kw):
     return {"enabled": True, "background": kw}
 

@@ -241,9 +241,10 @@ postde_run_enrichment <- function(entry, config, outdir) {
     }
     term2gene <- NULL
     term2name <- NULL
-    if (cp_enabled || gs_enabled) {
+    gs_own <- gs_enabled && !is.null(gs$term2gene)
+    if (cp_enabled || (gs_enabled && !gs_own)) {
         if (is.null(cp$term2gene)) {
-            stop("term2gene path missing (clusterprofiler.term2gene required for clusterprofiler/gsva)")
+            stop("term2gene path missing (clusterprofiler.term2gene required for clusterprofiler, or gsva.term2gene for gsva)")
         }
         term2gene <- postde_read_term2gene(cp$term2gene)
         if (!is.null(cp$term2name)) {
@@ -252,6 +253,12 @@ postde_run_enrichment <- function(entry, config, outdir) {
         if (isTRUE(cp$go_expand)) {
             term2gene <- postde_build_gomap(term2gene)
         }
+    }
+    gs_term2gene <- term2gene
+    gs_term2name <- term2name
+    if (gs_own) {
+        gs_term2gene <- postde_read_term2gene(gs$term2gene)
+        gs_term2name <- if (!is.null(gs$term2name)) postde_read_term2name(gs$term2name) else NULL
     }
     universe <- postde_ora_universe(entry$results)
     out <- list()
@@ -273,7 +280,7 @@ postde_run_enrichment <- function(entry, config, outdir) {
         out$gsea <- postde_run_gsea(entry, term2gene, term2name, config$min_size, config$max_size, config$seed, outdir)
     }
     if (gs_enabled) {
-        out$gsva <- postde_run_gsva(entry, term2gene, term2name, config, outdir)
+        out$gsva <- postde_run_gsva(entry, gs_term2gene, gs_term2name, config, outdir)
     }
     out
 }
