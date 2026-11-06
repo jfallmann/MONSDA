@@ -1,7 +1,8 @@
 name: qc
 channels:
-- bioconda
 - conda-forge
+- bioconda
+- nodefaults
 dependencies:
 - multiqc =1.35
 - fastqc =0.12.1

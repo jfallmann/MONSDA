@@ -1,7 +1,7 @@
 name: spit_DTU
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - nodefaults
 dependencies:
   - python >=3.9

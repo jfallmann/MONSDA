@@ -1,7 +1,8 @@
 name: rustqc
 channels:
-- bioconda
 - conda-forge
+- bioconda
+- nodefaults
 dependencies:
 - rustqc =0.2.1
 - multiqc =1.35
