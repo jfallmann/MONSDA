@@ -11,5 +11,5 @@ dependencies:
   - perl =5.44.0
   - pigz =2.8
   - pip =26.2.1
-  - python =3.13.15
+  - python =3.13.18
   - rename =1.601

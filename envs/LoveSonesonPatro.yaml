@@ -5,7 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - bioconductor-annotationdbi =1.72.0
-  - bioconductor-biomart =2.66.1
+  - bioconductor-biomart =2.66.2
   - bioconductor-deseq2 =1.50.2
   - bioconductor-dexseq =1.56.0
   - bioconductor-drimseq =1.38.0

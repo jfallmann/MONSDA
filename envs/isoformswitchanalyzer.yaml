@@ -8,7 +8,7 @@ dependencies:
   - bioconductor-dexseq =1.56.0
   - bioconductor-edger =4.8.2
   - bioconductor-genomicranges =1.62.1
-  - bioconductor-isoformswitchanalyzer =2.10.0
+  - bioconductor-isoformswitchanalyzer =2.12.0
   - bioconductor-summarizedexperiment =1.40.0
   - bioconductor-tximport =1.38.2
   - r-base =4.5.3

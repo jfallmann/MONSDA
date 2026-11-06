@@ -4,13 +4,13 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bioconductor-apeglm =1.28.0
-  - bioconductor-biomart =2.62.0  
-  - bioconductor-deseq2 =1.46.0  
-  - bioconductor-edger =4.4.0
-  - bioconductor-enhancedvolcano =1.24.0  
-  - bioconductor-rsamtools =2.22.0  
-  - bioconductor-ruvseq=1.40.0  
+  - bioconductor-apeglm =1.32.0
+  - bioconductor-biomart =2.66.2  
+  - bioconductor-deseq2 =1.50.2  
+  - bioconductor-edger =4.8.2
+  - bioconductor-enhancedvolcano =1.28.2  
+  - bioconductor-rsamtools =2.26.0  
+  - bioconductor-ruvseq=1.44.0  
   - pigz =2.6
   - readline =8.2
   - sed =4.7
