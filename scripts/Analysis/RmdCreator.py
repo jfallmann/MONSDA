@@ -171,14 +171,20 @@ def create_file_tree(files):
             WF, TOOL, COMBI, NAME = setting.split("_")
             tree[WF][TOOL][COMBI]["DataSet"][NAME] = file
             continue
-        filename = setting.split("_")
-        if len(filename) < 7:
-            log.debug(logid + "FILE: " + str(file))
-            WF, TOOL, COMBI, COMP, RES, NAME = setting.split("_")
-            EXT = os.path.basename(file).split(".", 1)[1]
-            tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
-        else:
+        parts = setting.split("_")
+        # WF_TOOL_COMBI_<COMPARISON>_<table|figure>_<NAME>; the comparison
+        # may itself contain underscores (e.g. KO_vs_WT)
+        kind = [i for i, x in enumerate(parts) if i >= 4 and x in ("table", "figure")]
+        if len(parts) < 6 or not kind:
+            log.debug(logid + "SKIPPING FILE: " + str(file))
             continue
+        i = kind[0]
+        WF, TOOL, COMBI = parts[:3]
+        COMP, RES, NAME = "_".join(parts[3:i]), parts[i], "_".join(parts[i + 1 :])
+        if not NAME or "_" in NAME:  # derived/auxiliary files (e.g. *_norm) are skipped
+            log.debug(logid + "SKIPPING FILE: " + str(file))
+            continue
+        tree[WF][TOOL][COMBI][COMP][RES][NAME] = file
     log.debug(logid + "FILE-TREE: " + str(pretty(tree)))
     return tree
 
