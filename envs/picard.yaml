@@ -4,5 +4,5 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - picard =2.27.4
-  - samtools =1.21
+  - picard =3.5.0
+  - samtools =1.25

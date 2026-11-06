@@ -4,11 +4,11 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bbmap =40.02
+  - bbmap =40.5
   - cutadapt =5.2
-  - fastqc =0.12.1
+  - fastqc =0.13.0
   - trim-galore =2.3.0
-  - perl =5.32.1
+  - perl =5.44.0
   - pigz =2.8
   - pip =26.2.1
   - python =3.13.15

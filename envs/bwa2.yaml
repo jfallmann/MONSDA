@@ -4,6 +4,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bwa-mem2 =2.2.1
+  - bwa-mem2 =2.3
   - pigz =2.6
-  - samtools =1.21
+  - samtools =1.25

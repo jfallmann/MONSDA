@@ -4,5 +4,5 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - piscem =0.23.0
-  - samtools =1.21
+  - piscem =0.25.0
+  - samtools =1.25

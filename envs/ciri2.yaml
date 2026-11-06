@@ -4,5 +4,5 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - perl =5.32.0
-  - samtools =1.21
+  - perl =5.44.0
+  - samtools =1.25

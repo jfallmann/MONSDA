@@ -4,6 +4,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - cutadapt =4.1
+  - cutadapt =5.2
   - rename =1.601
 

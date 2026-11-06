@@ -25,4 +25,4 @@ dependencies:
   - r-rmarkdown=2.32
   - r-knitr=1.52
   - r-lme4=2.0_6
-  - quarto=1.9.38
+  - quarto=1.11.9
