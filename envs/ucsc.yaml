@@ -6,10 +6,10 @@ channels:
 dependencies:
   - bc =1.07.1
   - grep =2.14
-  - perl =5.32.1
-  - ucsc-bedgraphtobigwig =377
-  - ucsc-beditemoverlapcount =377
-  - ucsc-fatotwobit =377
-  - ucsc-twobitinfo =377
+  - perl =5.44.0
+  - ucsc-bedgraphtobigwig =502
+  - ucsc-beditemoverlapcount =502
+  - ucsc-fatotwobit =502
+  - ucsc-twobitinfo =502
   - pigz =2.6
 

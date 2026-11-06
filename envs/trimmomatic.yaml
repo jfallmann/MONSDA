@@ -4,7 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - trimmomatic =0.39
-  - python =3.11.0
-  - fastqc =0.11.8
+  - trimmomatic =0.41
+  - python =3.13.15
+  - fastqc =0.13.0
   - rename =1.601

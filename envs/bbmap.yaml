@@ -4,6 +4,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bbmap =39.01
+  - bbmap =40.5
   - rename =1.601
 

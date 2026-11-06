@@ -4,7 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - rammap =1.1.2
+  - rammap =1.2.0
   - zlib
   - pigz =2.6
-  - samtools =1.21
+  - samtools =1.25

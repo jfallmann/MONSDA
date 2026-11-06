@@ -719,7 +719,7 @@ def test_static_container_environments_exist():
 
 def test_rammap_is_provided_by_environment_without_runtime_install():
     environment = (REPO / "envs" / "rammap.yaml").read_text()
-    assert "rammap =1.1.2" in environment
+    assert "rammap =1.2.0" in environment
     for suffix in ("smk", "nf"):
         workflow = (REPO / "workflows" / f"rammap.{suffix}").read_text()
         assert "cargo install" not in workflow

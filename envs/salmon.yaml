@@ -4,6 +4,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - salmon =2.7.0
-  - samtools =1.21
+  - salmon =2.11.0
+  - samtools =1.25
   - pigz =2.6

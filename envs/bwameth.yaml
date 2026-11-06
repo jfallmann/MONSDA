@@ -4,7 +4,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bwameth =0.2.7
-  - bwa-mem2 =2.2.1
+  - bwameth =0.2.10
+  - bwa-mem2 =2.3
   - pigz =2.6
-  - samtools =1.21
+  - samtools =1.25

@@ -4,8 +4,8 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bamtools =2.5.1
+  - bamtools =2.5.3
   - bc =1.07.1
-  - perl =5.32.1
+  - perl =5.44.0
   - piranha =1.2.1
   - readline =8.2

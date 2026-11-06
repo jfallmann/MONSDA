@@ -7,11 +7,10 @@ dependencies:
   - bamtools =2.5.1
   - bc =1.07.1
   - bzip2 =1.0.8
-  - perl =5.32.1
+  - perl =5.44.0
   - piranha =1.2.1
   - pyfaidx =0.7.0
   - pysam =0.20.0
   - python =2.7.15
-  - readline =8.2
+  - readline =8.3
   - samtools =1.18
-  
