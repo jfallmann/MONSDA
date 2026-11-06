@@ -5,6 +5,6 @@ channels:
   - nodefaults
 dependencies:
   - trimmomatic =0.41
-  - python =3.13.15
+  - python =3.15.2
   - fastqc =0.13.0
   - rename =1.601
