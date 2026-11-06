@@ -41,7 +41,9 @@ POSTDE_METHOD_KEYS = {
         }
     ),
     "clusterprofiler": frozenset({"enabled", "term2gene", "term2name", "go_expand"}),
-    "gsva": frozenset({"enabled", "method", "min_size", "max_size"}),
+    "gsva": frozenset(
+        {"enabled", "method", "min_size", "max_size", "term2gene", "term2name"}
+    ),
     "decoupler": frozenset(
         {
             "enabled",
@@ -66,6 +68,7 @@ POSTDE_METHOD_KEYS = {
 POSTDE_RESOURCE_KEYS = {
     "background": ("file",),
     "clusterprofiler": ("term2gene", "term2name"),
+    "gsva": ("term2gene", "term2name"),
     "decoupler": ("network",),
     "dream": ("metadata",),
 }
@@ -259,10 +262,16 @@ def _validate_analysis_config(analysis, base_dir):
             )
     cp = analysis.get("clusterprofiler", {})
     gs = analysis.get("gsva", {})
-    if (cp.get("enabled") or gs.get("enabled")) and not cp.get("term2gene"):
+    if cp.get("enabled") and not cp.get("term2gene"):
         raise ValueError(
-            "POSTDE config clusterprofiler.term2gene required when clusterprofiler/gsva enabled"
+            "POSTDE config clusterprofiler.term2gene required when clusterprofiler enabled"
         )
+    if gs.get("enabled") and not (gs.get("term2gene") or cp.get("term2gene")):
+        raise ValueError(
+            "POSTDE config gsva.term2gene or clusterprofiler.term2gene required when gsva enabled"
+        )
+    if gs.get("term2name") and not gs.get("term2gene"):
+        raise ValueError("POSTDE config gsva.term2name requires gsva.term2gene")
     if "method" in gs and gs["method"] not in POSTDE_GSVA_METHODS:
         raise ValueError(
             "POSTDE config gsva.method must be one of " + ", ".join(POSTDE_GSVA_METHODS)
